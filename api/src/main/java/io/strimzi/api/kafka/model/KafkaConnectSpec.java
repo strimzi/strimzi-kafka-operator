@@ -51,6 +51,8 @@ public class KafkaConnectSpec implements Serializable {
     private Affinity affinity;
     private List<Toleration> tolerations;
     private String bootstrapServers;
+    private KafkaConnectTls tls;
+    private KafkaConnectAuthentication authentication;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the Kafka Connect group.")
@@ -174,6 +176,26 @@ public class KafkaConnectSpec implements Serializable {
 
     public void setBootstrapServers(String bootstrapServers) {
         this.bootstrapServers = bootstrapServers;
+    }
+
+    @Description("TLS configuration")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KafkaConnectTls getTls() {
+        return tls;
+    }
+
+    public void setTls(KafkaConnectTls tls) {
+        this.tls = tls;
+    }
+
+    @Description("Authentication configuration for Kafka Connect")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KafkaConnectAuthentication getAuthentication() {
+        return authentication;
+    }
+
+    public void setAuthentication(KafkaConnectAuthentication authentication) {
+        this.authentication = authentication;
     }
 
     @JsonAnyGetter
