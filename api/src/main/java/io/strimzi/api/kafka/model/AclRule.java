@@ -35,6 +35,16 @@ public class AclRule implements Serializable {
     private AclOperation operation;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    public AclRule() {
+    }
+
+    public AclRule(AclRuleType type, AclRuleResource resource, String host, AclOperation operation) {
+        this.type = type;
+        this.resource = resource;
+        this.host = host;
+        this.operation = operation;
+    }
+
     @Description("The type of the rule." +
             "Currently the only supported type is `allow`." +
             "ACL rules with type `allow` are used to allow user to execute the specified operations. " +

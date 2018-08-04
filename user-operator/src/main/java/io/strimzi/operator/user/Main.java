@@ -14,6 +14,8 @@ import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
+import io.strimzi.operator.user.operator.SimpleAclOperator;
+
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -54,9 +56,10 @@ public class Main {
         OpenSslCertManager certManager = new OpenSslCertManager();
         SecretOperator secretOperations = new SecretOperator(vertx, client);
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
+        SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, config.getZookeperConnect(), config.getZookeeperSessionTimeoutMs(), config.getZookeeperSessionTimeoutMs());
 
         KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
-                certManager, crdOperations, secretOperations, config.getCaName(), config.getCaNamespace());
+                certManager, crdOperations, secretOperations, aclOperations, config.getCaName(), config.getCaNamespace());
 
         Future<String> fut = Future.future();
         UserOperator operator = new UserOperator(config.getNamespace(),

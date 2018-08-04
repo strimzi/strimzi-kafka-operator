@@ -47,6 +47,7 @@ public class KafkaUserOperator {
     private final Vertx vertx;
     private final CrdOperator crdOperator;
     private final SecretOperator secretOperations;
+    private final SimpleAclOperator aclOperations;
     private final CertManager certManager;
     private final String caName;
     private final String caNamespace;
@@ -60,11 +61,12 @@ public class KafkaUserOperator {
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,
                              CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperator,
-                             SecretOperator secretOperations, String caName, String caNamespace) {
+                             SecretOperator secretOperations, SimpleAclOperator aclOperations, String caName, String caNamespace) {
         this.vertx = vertx;
         this.certManager = certManager;
         this.secretOperations = secretOperations;
         this.crdOperator = crdOperator;
+        this.aclOperations = aclOperations;
         this.caName = caName;
         this.caNamespace = caNamespace;
     }
@@ -198,7 +200,11 @@ public class KafkaUserOperator {
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", RESOURCE_KIND, trigger, resourceSelector, resourceNames);
 
+        Set<String> usersWithAcls = aclOperations.getUsersWithAcls();
+        log.debug("reconcileAll({}, {}): User with ACLs: {}", RESOURCE_KIND, trigger, usersWithAcls);
+
         desiredNames.addAll(resourceNames);
+        desiredNames.addAll(usersWithAcls);
 
         // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
         // Using futures would be more complex for no benefit

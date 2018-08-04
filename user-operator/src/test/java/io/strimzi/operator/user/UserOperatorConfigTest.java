@@ -24,6 +24,8 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, "label1=value1,label2=value2");
         envVars.put(UserOperatorConfig.STRIMZI_CA_NAME, "ca-secret");
         envVars.put(UserOperatorConfig.STRIMZI_CA_NAMESPACE, "differentnamespace");
+        envVars.put(UserOperatorConfig.STRIMZI_ZOOKEEPER_CONNECT, "somehost:2181");
+        envVars.put(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS, "6000");
 
         Map labels = new HashMap<>(2);
         labels.put("label1", "value1");
@@ -41,6 +43,8 @@ public class UserOperatorConfigTest {
         assertEquals(expectedLabels, config.getLabels());
         assertEquals(envVars.get(UserOperatorConfig.STRIMZI_CA_NAME), config.getCaName());
         assertEquals(envVars.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE), config.getCaNamespace());
+        assertEquals(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_CONNECT), config.getZookeperConnect());
+        assertEquals(Long.parseLong(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS)), config.getZookeeperSessionTimeoutMs());
     }
 
     @Test(expected = InvalidConfigurationException.class)
