@@ -34,17 +34,9 @@ public class SimpleAclOperator {
     private final Vertx vertx;
     private final SimpleAclAuthorizer authorizer;
 
-    public SimpleAclOperator(Vertx vertx, String zookeeperConnect, Long zookeeperConnectionTimeoutMs, Long zookeeeprSessionTimeoutMs)  {
+    public SimpleAclOperator(Vertx vertx, SimpleAclAuthorizer authorizer)  {
         this.vertx = vertx;
-        log.debug("Conneting to Zookeeper {}", zookeeperConnect);
-        Map authorizerConfig = new HashMap<String, Object>();
-        authorizerConfig.put(SimpleAclAuthorizer.ZkUrlProp(), zookeeperConnect);
-        authorizerConfig.put("zookeeper.connect", zookeeperConnect);
-        authorizerConfig.put(SimpleAclAuthorizer.ZkConnectionTimeOutProp(), zookeeperConnectionTimeoutMs);
-        authorizerConfig.put(SimpleAclAuthorizer.ZkSessionTimeOutProp(), zookeeeprSessionTimeoutMs);
-
-        this.authorizer = new SimpleAclAuthorizer();
-        this.authorizer.configure(authorizerConfig);
+        this.authorizer = authorizer;
     }
 
     Future<ReconcileResult<Set<SimpleAclRule>>> reconcile(String username, Set<SimpleAclRule> desired) {
@@ -89,9 +81,9 @@ public class SimpleAclOperator {
 
             Acl acl = rule.toKafkaAcl(principal);
             Resource resource = rule.getResource().toKafkaResource();
-            scala.collection.immutable.Set<Acl> remove = new scala.collection.immutable.Set.Set1<Acl>(acl);
+            scala.collection.immutable.Set<Acl> add = new scala.collection.immutable.Set.Set1<Acl>(acl);
 
-            authorizer.addAcls(remove, resource);
+            authorizer.addAcls(add, resource);
         }
 
         return Future.succeededFuture(ReconcileResult.created(desired));

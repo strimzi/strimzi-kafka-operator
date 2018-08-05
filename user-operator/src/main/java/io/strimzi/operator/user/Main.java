@@ -22,6 +22,7 @@ import io.vertx.core.Vertx;
 import java.util.HashMap;
 import java.util.Map;
 
+import kafka.security.auth.SimpleAclAuthorizer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,8 +43,9 @@ public class Main {
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
         Vertx vertx = Vertx.vertx();
         KubernetesClient client = new DefaultKubernetesClient();
+        SimpleAclAuthorizer authorizer = createSimpleAclAuthorizer(config);
 
-        run(vertx, client, config).setHandler(ar -> {
+        run(vertx, client, authorizer, config).setHandler(ar -> {
             if (ar.failed()) {
                 log.error("Unable to start operator", ar.cause());
                 System.exit(1);
@@ -51,12 +53,12 @@ public class Main {
         });
     }
 
-    static Future<String> run(Vertx vertx, KubernetesClient client, UserOperatorConfig config) {
+    static Future<String> run(Vertx vertx, KubernetesClient client, SimpleAclAuthorizer authorizer, UserOperatorConfig config) {
         printEnvInfo();
         OpenSslCertManager certManager = new OpenSslCertManager();
         SecretOperator secretOperations = new SecretOperator(vertx, client);
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
-        SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, config.getZookeperConnect(), config.getZookeeperSessionTimeoutMs(), config.getZookeeperSessionTimeoutMs());
+        SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, authorizer);
 
         KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
                 certManager, crdOperations, secretOperations, aclOperations, config.getCaName(), config.getCaNamespace());
@@ -78,6 +80,19 @@ public class Main {
             });
 
         return fut;
+    }
+
+    private static SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {
+        log.debug("Creating SimpleAclAuthorizer for Zookeeper {}", config.getZookeperConnect());
+        Map authorizerConfig = new HashMap<String, Object>();
+        authorizerConfig.put(SimpleAclAuthorizer.ZkUrlProp(), config.getZookeperConnect());
+        authorizerConfig.put("zookeeper.connect", config.getZookeperConnect());
+        authorizerConfig.put(SimpleAclAuthorizer.ZkConnectionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
+        authorizerConfig.put(SimpleAclAuthorizer.ZkSessionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
+
+        SimpleAclAuthorizer authorizer = new SimpleAclAuthorizer();
+        authorizer.configure(authorizerConfig);
+        return authorizer;
     }
 
     static void printEnvInfo() {
