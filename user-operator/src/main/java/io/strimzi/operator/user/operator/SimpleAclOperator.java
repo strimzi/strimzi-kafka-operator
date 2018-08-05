@@ -1,11 +1,17 @@
+/*
+ * Copyright 2017-2018, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.user.operator;
 
+import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclResourcePatternType;
 import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.AclRuleClusterResource;
 import io.strimzi.api.kafka.model.AclRuleGroupResource;
 import io.strimzi.api.kafka.model.AclRuleResource;
 import io.strimzi.api.kafka.model.AclRuleTopicResource;
+import io.strimzi.api.kafka.model.AclRuleType;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 
 import java.util.ArrayList;
@@ -47,6 +53,8 @@ import org.apache.logging.log4j.Logger;
 import scala.Tuple2;
 import scala.collection.Iterator;
 
+import static org.apache.kafka.common.resource.ResourceType.TOPIC;
+
 public class SimpleAclOperator {
     private static final Logger log = LogManager.getLogger(SimpleAclOperator.class.getName());
 
@@ -69,50 +77,29 @@ public class SimpleAclOperator {
     Future<ReconcileResult<List<AclRule>>> reconcile(String username, List<AclRule> desired) {
         Future<ReconcileResult<List<AclRule>>> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    List<AclRule> current = getAcls(username);
+            future -> {
+                List<AclRule> current = getAcls(username);
 
-                    if (desired == null || desired.isEmpty()) {
-                        if (current.size() == 0)    {
-                            log.debug("User {}: No expected Acl rules and no existing Acl rules -> NoOp", username);
-                            future.complete(ReconcileResult.noop());
-                        } else {
-                            log.debug("User {}: No expected Acl rules, but {} existing Acl rules -> Deleting rules", username, current.size());
-                            internalDelete(username, current).setHandler(future);
-                        }
+                if (desired == null || desired.isEmpty()) {
+                    if (current.size() == 0)    {
+                        log.debug("User {}: No expected Acl rules and no existing Acl rules -> NoOp", username);
+                        future.complete(ReconcileResult.noop());
                     } else {
-                        if (current.isEmpty())  {
-                            log.debug("User {}: {} expected Acl rules, but no existing Acl rules -> Adding rules", username, desired.size());
-                            internalCreate(username, desired).setHandler(future);
-                        } else  {
-                            log.debug("User {}: {} expected Acl rules and {} existing Acl rules -> Updating rules", username, desired.size(), current.size());
-                            // Update rules
-                        }
+                        log.debug("User {}: No expected Acl rules, but {} existing Acl rules -> Deleting rules", username, current.size());
+                        internalDelete(username, current).setHandler(future);
                     }
-
-                    /*T current = operation().inNamespace(namespace).withName(name).get();
-                    if (desired != null) {
-                        if (current == null) {
-                            log.debug("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                            internalCreate(namespace, name, desired).setHandler(future);
-                        } else {
-                            log.debug("{} {}/{} already exists, patching it", resourceKind, namespace, name);
-                            internalPatch(namespace, name, current, desired).setHandler(future);
-                        }
-                    } else {
-                        if (current != null) {
-                            // Deletion is desired
-                            log.debug("{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                            internalDelete(namespace, name).setHandler(future);
-                        } else {
-                            log.debug("{} {}/{} does not exist, noop", resourceKind, namespace, name);
-                            future.complete(ReconcileResult.noop());
-                        }
-                    }*/
-
-                },
-                false,
-                fut.completer()
+                } else {
+                    if (current.isEmpty())  {
+                        log.debug("User {}: {} expected Acl rules, but no existing Acl rules -> Adding rules", username, desired.size());
+                        internalCreate(username, desired).setHandler(future);
+                    } else  {
+                        log.debug("User {}: {} expected Acl rules and {} existing Acl rules -> Updating rules", username, desired.size(), current.size());
+                        // Update rules
+                    }
+                }
+            },
+            false,
+            fut.completer()
         );
         return fut;
     }
@@ -193,12 +180,13 @@ public class SimpleAclOperator {
 
         Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> iter = rules.iterator();
         while (iter.hasNext())  {
-            scala.collection.immutable.Set<Acl> acls = iter.next()._2;
+            Tuple2<Resource, scala.collection.immutable.Set<Acl>> tuple = iter.next();
+            AclRuleResource resource = createAclRuleResourceFromResource(tuple._1());
+            scala.collection.immutable.Set<Acl> acls = tuple._2();
 
             Iterator<Acl> iter2 = acls.iterator();
             while (iter2.hasNext()) {
-                Acl rule = iter2.next();
-                result.add(new AclRule());
+                result.add(createAclRuleFromAcl(resource, iter2.next()));
             }
         }
 
@@ -218,7 +206,7 @@ public class SimpleAclOperator {
 
         Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> iter = rules.iterator();
         while (iter.hasNext())  {
-            scala.collection.immutable.Set<Acl> acls = iter.next()._2;
+            scala.collection.immutable.Set<Acl> acls = iter.next()._2();
 
             Iterator<Acl> iter2 = acls.iterator();
             while (iter2.hasNext()) {
@@ -293,15 +281,71 @@ public class SimpleAclOperator {
         return new Acl(principal, type, rule.getHost(), operation);
     }
 
+    private static AclRule createAclRuleFromAcl(AclRuleResource resource, Acl acl)   {
+        AclRuleType type;
+        AclOperation operation;
+
+        switch (acl.permissionType().toJava()) {
+            case DENY:
+                type = AclRuleType.DENY;
+                break;
+            case ALLOW:
+                type = AclRuleType.ALLOW;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid AclRule type: " + acl.permissionType().toJava());
+        }
+
+        switch (acl.operation().toJava()) {
+            case READ:
+                operation = AclOperation.READ;
+                break;
+            case WRITE:
+                operation = AclOperation.WRITE;
+                break;
+            case CREATE:
+                operation = AclOperation.CREATE;
+                break;
+            case DELETE:
+                operation = AclOperation.DELETE;
+                break;
+            case ALTER:
+                operation = AclOperation.ALTER;
+                break;
+            case DESCRIBE:
+                operation = AclOperation.DESCRIBE;
+                break;
+            case CLUSTER_ACTION:
+                operation = AclOperation.CLUSTERACTION;
+                break;
+            case ALTER_CONFIGS:
+                operation = AclOperation.ALTERCONFIGS;
+                break;
+            case DESCRIBE_CONFIGS:
+                operation = AclOperation.DESCRIBECONFIGS;
+                break;
+            case IDEMPOTENT_WRITE:
+                operation = AclOperation.IDEMPOTENTWRITE;
+                break;
+            case ALL:
+                operation = AclOperation.ALL;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid AclRule operation: " + acl.operation().toJava());
+        }
+
+        return new AclRule(type, resource, acl.host(), operation);
+    }
+
     private static Resource createResourceFromAclResource(AclRuleResource resource)   {
         ResourceType type;
-        String name= "";
+        String name = "";
         PatternType pattern = PatternType.LITERAL;
 
         switch (resource.getType()) {
             case AclRuleTopicResource.TYPE_TOPIC:
                 type = Topic$.MODULE$;
-                AclRuleTopicResource adaptedTopic = ((AclRuleTopicResource) resource);
+                AclRuleTopicResource adaptedTopic = (AclRuleTopicResource) resource;
                 name = adaptedTopic.getName();
 
                 if (AclResourcePatternType.PREFIX.equals(adaptedTopic.getPatternType()))   {
@@ -311,7 +355,7 @@ public class SimpleAclOperator {
                 break;
             case AclRuleGroupResource.TYPE_GROUP:
                 type = Group$.MODULE$;
-                AclRuleGroupResource adaptedGroup = ((AclRuleGroupResource) resource);
+                AclRuleGroupResource adaptedGroup = (AclRuleGroupResource) resource;
                 name = adaptedGroup.getName();
 
                 if (AclResourcePatternType.PREFIX.equals(adaptedGroup.getPatternType()))   {
@@ -327,5 +371,59 @@ public class SimpleAclOperator {
         }
 
         return new Resource(type, name, pattern);
+    }
+
+    private static AclRuleResource createAclRuleResourceFromResource(Resource resource)   {
+        AclRuleResource ourResource;
+
+        switch (resource.resourceType().toJava()) {
+            case TOPIC:
+                String topicName = resource.name();
+                AclResourcePatternType topicPattern;
+
+                switch (resource.patternType()) {
+                    case LITERAL:
+                        topicPattern = AclResourcePatternType.LITERAL;
+                        break;
+                    case PREFIXED:
+                        topicPattern = AclResourcePatternType.PREFIX;
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid Resource type: " + resource.resourceType());
+                }
+
+                ourResource = new AclRuleTopicResource();
+                ((AclRuleTopicResource) ourResource).setName(topicName);
+                ((AclRuleTopicResource) ourResource).setPatternType(topicPattern);
+
+                break;
+            case GROUP:
+                String groupName = resource.name();
+                AclResourcePatternType groupPattern;
+
+                switch (resource.patternType()) {
+                    case LITERAL:
+                        groupPattern = AclResourcePatternType.LITERAL;
+                        break;
+                    case PREFIXED:
+                        groupPattern = AclResourcePatternType.PREFIX;
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid Resource type: " + resource.resourceType());
+                }
+
+                ourResource = new AclRuleTopicResource();
+                ((AclRuleTopicResource) ourResource).setName(groupName);
+                ((AclRuleTopicResource) ourResource).setPatternType(groupPattern);
+
+                break;
+            case CLUSTER:
+                ourResource = new AclRuleClusterResource();
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid Resource type: " + resource.resourceType());
+        }
+
+        return ourResource;
     }
 }

@@ -22,6 +22,7 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -104,7 +105,8 @@ public class KafkaUserOperator {
         }
 
         log.debug("{}: Updating User", reconciliation, userName, namespace);
-        secretOperations.reconcile(namespace, user.getSecretName(), user.generateSecret())
+        CompositeFuture.join(secretOperations.reconcile(namespace, user.getSecretName(), user.generateSecret()),
+                aclOperations.reconcile(userName, user.getSimpleAclRules()))
                 .map((Void) null).setHandler(handler);
     }
 
@@ -118,7 +120,8 @@ public class KafkaUserOperator {
         String user = reconciliation.name();
 
         log.debug("{}: Deleting User", reconciliation, user, namespace);
-        secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null)
+        CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
+                aclOperations.reconcile(user, null))
             .map((Void) null).setHandler(handler);
     }
 

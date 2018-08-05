@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user;
 
+import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
@@ -34,6 +35,26 @@ public class ResourceUtils {
                 )
                 .withNewSpec()
                 .withAuthentication(new KafkaUserTlsClientAuthentication())
+                .withNewKafkaUserAuthorizationSimpleAuthorization()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResourceResource()
+                            .withName("my-topic")
+                        .endAclRuleTopicResourceResource()
+                        .withOperation(AclOperation.READ)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResourceResource()
+                            .withName("my-topic")
+                        .endAclRuleTopicResourceResource()
+                        .withOperation(AclOperation.DESCRIBE)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleGroupResourceResource()
+                            .withName("my-group")
+                        .endAclRuleGroupResourceResource()
+                        .withOperation(AclOperation.READ)
+                    .endAcl()
+                .endKafkaUserAuthorizationSimpleAuthorization()
                 .endSpec()
                 .build();
     }

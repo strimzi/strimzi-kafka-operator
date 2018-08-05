@@ -4,8 +4,10 @@
  */
 package io.strimzi.operator.user.model;
 
+import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthentication;
+import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
@@ -17,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.Secret;
@@ -36,6 +39,8 @@ public class KafkaUserModel {
     protected KafkaUserAuthentication authentication;
     protected CertAndKey caCertAndKey;
     protected CertAndKey userCertAndKey;
+
+    protected List<AclRule> simpleAclRules = null;
 
     /**
      * Constructor
@@ -58,6 +63,11 @@ public class KafkaUserModel {
 
         if (kafkaUser.getSpec().getAuthentication() != null && kafkaUser.getSpec().getAuthentication().getType().equals(KafkaUserTlsClientAuthentication.TYPE_TLS)) {
             result.maybeGenerateCertificates(certManager, clientsCa, userSecret);
+        }
+
+        if (kafkaUser.getSpec().getAuthorization() != null && kafkaUser.getSpec().getAuthorization().getType().equals(KafkaUserAuthorizationSimple.TYPE_SIMPLE)) {
+            KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) kafkaUser.getSpec().getAuthorization();
+            result.setSimpleAclRules(simple.getAcls());
         }
 
         return result;
@@ -176,7 +186,16 @@ public class KafkaUserModel {
     }
 
     /**
-     * Generates the name of the User secret based on the username
+     * Gets the Username
+     *
+     * @return
+     */
+    public String getUserName()    {
+        return name;
+    }
+
+    /**
+     * Generates the name of the USer secret based on the username
      *
      * @return
      */
@@ -200,5 +219,23 @@ public class KafkaUserModel {
      */
     public void setAuthentication(KafkaUserAuthentication authentication) {
         this.authentication = authentication;
+    }
+
+    /**
+     * Get list of ACL rules for Simple Authorization which should apply to this user
+     *
+     * @return
+     */
+    public List<AclRule> getSimpleAclRules() {
+        return simpleAclRules;
+    }
+
+    /**
+     * Sets list of ACL rules for SImple authorization
+     *
+     * @param simpleAclRules List of ACL rules which should be applied to this user
+     */
+    public void setSimpleAclRules(List<AclRule> simpleAclRules) {
+        this.simpleAclRules = simpleAclRules;
     }
 }

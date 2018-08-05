@@ -5,6 +5,7 @@
 package io.strimzi.operator.user.model;
 
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertManager;
@@ -34,6 +35,10 @@ public class KafkaUserModelTest {
         assertEquals(ResourceUtils.NAME, model.name);
         assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND), model.labels);
         assertEquals(KafkaUserTlsClientAuthentication.TYPE_TLS, model.authentication.getType());
+
+        KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) user.getSpec().getAuthorization();
+        assertEquals(simple.getAcls().size(), model.getSimpleAclRules().size());
+        assertEquals(simple.getAcls(), model.getSimpleAclRules());
     }
 
     @Test
@@ -83,11 +88,20 @@ public class KafkaUserModelTest {
     }
 
     @Test
-    public void testNoTlsAuth()    {
+    public void testNoTlsAuthn()    {
         KafkaUser user = ResourceUtils.createKafkaUser();
         user.setSpec(new KafkaUserSpec());
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, user, clientsCa, userCert);
 
         assertNull(model.generateSecret());
+    }
+
+    @Test
+    public void testNoSimpleAuthz()    {
+        KafkaUser user = ResourceUtils.createKafkaUser();
+        user.setSpec(new KafkaUserSpec());
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, user, clientsCa, userCert);
+
+        assertNull(model.getSimpleAclRules());
     }
 }

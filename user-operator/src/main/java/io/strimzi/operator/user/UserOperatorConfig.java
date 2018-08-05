@@ -66,10 +66,11 @@ public class UserOperatorConfig {
             throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
         }
 
-        long zookeeperSessionTimeoutMs = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
-        String zookeeperSessionTimeoutMsEnvVar = map.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
-        if (zookeeperSessionTimeoutMsEnvVar != null) {
-            zookeeperSessionTimeoutMs = Long.parseLong(zookeeperSessionTimeoutMsEnvVar);
+
+        long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
+        String reconciliationIntervalEnvVar = map.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
+        if (reconciliationIntervalEnvVar != null) {
+            reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
         }
 
         String zookeeperConnect = DEFAULT_ZOOKEEPER_CONNECT;
@@ -78,10 +79,10 @@ public class UserOperatorConfig {
             zookeeperConnect = zookeeperConnectEnvVar;
         }
 
-        long reconciliationInterval = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
-        String reconciliationIntervalEnvVar = map.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS);
-        if (reconciliationIntervalEnvVar != null) {
-            reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
+        long zookeeperSessionTimeoutMs = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
+        String zookeeperSessionTimeoutMsEnvVar = map.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS);
+        if (zookeeperSessionTimeoutMsEnvVar != null) {
+            zookeeperSessionTimeoutMs = Long.parseLong(zookeeperSessionTimeoutMsEnvVar);
         }
 
         Labels labels;
