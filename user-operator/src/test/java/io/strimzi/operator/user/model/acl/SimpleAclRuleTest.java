@@ -1,3 +1,7 @@
+/*
+ * Copyright 2018, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.user.model.acl;
 
 import io.strimzi.api.kafka.model.AclOperation;
@@ -20,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 
 public class SimpleAclRuleTest {
     private static AclRuleResource crdResource;
-    private static SimpleAclRuleResource resource  =new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
+    private static SimpleAclRuleResource resource = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
     private static Resource kafkaResource = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
     private static KafkaPrincipal kafkaPrincipal = new KafkaPrincipal("User", "my-user");
 
