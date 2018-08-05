@@ -30,8 +30,7 @@
         <valid4j.version>1.1</valid4j.version>
         <fasterxml.jackson.version>2.9.5</fasterxml.jackson.version>
         <fasterxml.jackson-annotations.version>2.9.5</fasterxml.jackson-annotations.version>
-        <kafka.client.version>2.0.0</kafka.client.version>
-        <kafka.broker.version>1.1.1</kafka.broker.version>
+        <kafka.version>2.0.0</kafka.version>
         <scala-library.version>2.12.6</scala-library.version>
         <zookeeper.version>3.4.13</zookeeper.version>
         <mockito.version>2.12.0</mockito.version>
@@ -128,12 +127,12 @@
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
-                <version>${kafka.client.version}</version>
+                <version>${kafka.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.12</artifactId>
-                <version>${kafka.broker.version}</version>
+                <version>${kafka.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
