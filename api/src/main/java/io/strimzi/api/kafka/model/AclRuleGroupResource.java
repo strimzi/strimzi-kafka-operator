@@ -25,7 +25,7 @@ public class AclRuleGroupResource extends AclRuleResource {
     public static final String TYPE_GROUP = "group";
 
     private String name;
-    private AclResourcePatternType patternType;
+    private AclResourcePatternType patternType = AclResourcePatternType.LITERAL;
 
     @Description("Must be `" + TYPE_GROUP + "`")
     @Override

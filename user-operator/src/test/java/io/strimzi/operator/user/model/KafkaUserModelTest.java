@@ -37,8 +37,8 @@ public class KafkaUserModelTest {
         assertEquals(KafkaUserTlsClientAuthentication.TYPE_TLS, model.authentication.getType());
 
         KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) user.getSpec().getAuthorization();
-        assertEquals(simple.getAcls().size(), model.getSimpleAclRules().size());
-        assertEquals(simple.getAcls(), model.getSimpleAclRules());
+        assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), model.getSimpleAclRules().size());
+        assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), model.getSimpleAclRules());
     }
 
     @Test

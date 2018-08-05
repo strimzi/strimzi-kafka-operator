@@ -15,6 +15,7 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.ResourceUtils;
+import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import java.util.Arrays;
 import java.util.Base64;
@@ -70,7 +71,7 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<List<AclRule>> aclRulesCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
@@ -105,14 +106,13 @@ public class KafkaUserOperatorTest {
             context.assertEquals(1, capturedAclNames.size());
             context.assertEquals(ResourceUtils.NAME, capturedAclNames.get(0));
 
-            List<List<AclRule>> capturedAcls = aclRulesCaptor.getAllValues();
-            KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) user.getSpec().getAuthorization();
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
             context.assertEquals(1, capturedAcls.size());
-            List<AclRule> aclRules = capturedAcls.get(0);
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
 
-            context.assertEquals(simple.getAcls().size(), aclRules.size());
-            context.assertEquals(simple.getAcls(), aclRules);
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
 
             async.complete();
         });
@@ -130,7 +130,7 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<List<AclRule>> aclRulesCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
@@ -166,14 +166,13 @@ public class KafkaUserOperatorTest {
             context.assertEquals(1, capturedAclNames.size());
             context.assertEquals(ResourceUtils.NAME, capturedAclNames.get(0));
 
-            List<List<AclRule>> capturedAcls = aclRulesCaptor.getAllValues();
-            KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) user.getSpec().getAuthorization();
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
             context.assertEquals(1, capturedAcls.size());
-            List<AclRule> aclRules = capturedAcls.get(0);
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
 
-            context.assertEquals(simple.getAcls().size(), aclRules.size());
-            context.assertEquals(simple.getAcls(), aclRules);
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
 
             async.complete();
         });
@@ -196,7 +195,7 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<List<AclRule>> aclRulesCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
@@ -229,11 +228,10 @@ public class KafkaUserOperatorTest {
             context.assertEquals(1, capturedAclNames.size());
             context.assertEquals(ResourceUtils.NAME, capturedAclNames.get(0));
 
-            List<List<AclRule>> capturedAcls = aclRulesCaptor.getAllValues();
-            KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) user.getSpec().getAuthorization();
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
             context.assertEquals(1, capturedAcls.size());
-            List<AclRule> aclRules = capturedAcls.get(0);
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
             context.assertNull(aclRules);
 
             async.complete();
@@ -252,7 +250,7 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<List<AclRule>> aclRulesCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
@@ -341,7 +339,7 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<List<AclRule>> aclRulesCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
@@ -377,14 +375,13 @@ public class KafkaUserOperatorTest {
             context.assertEquals(1, capturedAclNames.size());
             context.assertEquals(ResourceUtils.NAME, capturedAclNames.get(0));
 
-            List<List<AclRule>> capturedAcls = aclRulesCaptor.getAllValues();
-            KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) user.getSpec().getAuthorization();
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
             context.assertEquals(1, capturedAcls.size());
-            List<AclRule> aclRules = capturedAcls.get(0);
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
 
-            context.assertEquals(simple.getAcls().size(), aclRules.size());
-            context.assertEquals(simple.getAcls(), aclRules);
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
 
             async.complete();
         });
@@ -407,7 +404,7 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<List<AclRule>> aclRulesCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
@@ -443,14 +440,13 @@ public class KafkaUserOperatorTest {
             context.assertEquals(1, capturedAclNames.size());
             context.assertEquals(ResourceUtils.NAME, capturedAclNames.get(0));
 
-            List<List<AclRule>> capturedAcls = aclRulesCaptor.getAllValues();
-            KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) user.getSpec().getAuthorization();
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
             context.assertEquals(1, capturedAcls.size());
-            List<AclRule> aclRules = capturedAcls.get(0);
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
 
-            context.assertEquals(simple.getAcls().size(), aclRules.size());
-            context.assertEquals(simple.getAcls(), aclRules);
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
 
             async.complete();
         });

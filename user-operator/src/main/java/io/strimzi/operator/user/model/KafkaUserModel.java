@@ -13,14 +13,17 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -40,7 +43,7 @@ public class KafkaUserModel {
     protected CertAndKey caCertAndKey;
     protected CertAndKey userCertAndKey;
 
-    protected List<AclRule> simpleAclRules = null;
+    protected Set<SimpleAclRule> simpleAclRules = null;
 
     /**
      * Constructor
@@ -226,7 +229,7 @@ public class KafkaUserModel {
      *
      * @return
      */
-    public List<AclRule> getSimpleAclRules() {
+    public Set<SimpleAclRule> getSimpleAclRules() {
         return simpleAclRules;
     }
 
@@ -235,7 +238,13 @@ public class KafkaUserModel {
      *
      * @param simpleAclRules List of ACL rules which should be applied to this user
      */
-    public void setSimpleAclRules(List<AclRule> simpleAclRules) {
+    public void setSimpleAclRules(List<AclRule> rules) {
+        Set<SimpleAclRule> simpleAclRules = new HashSet<SimpleAclRule>();
+
+        for (AclRule rule : rules)  {
+            simpleAclRules.add(SimpleAclRule.fromCrd(rule));
+        }
+
         this.simpleAclRules = simpleAclRules;
     }
 }

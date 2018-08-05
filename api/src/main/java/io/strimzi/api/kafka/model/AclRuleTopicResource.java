@@ -25,7 +25,7 @@ public class AclRuleTopicResource extends AclRuleResource {
     public static final String TYPE_TOPIC = "topic";
 
     private String name;
-    private AclResourcePatternType patternType;
+    private AclResourcePatternType patternType = AclResourcePatternType.LITERAL;
 
     @Description("Must be `" + TYPE_TOPIC + "`")
     @Override

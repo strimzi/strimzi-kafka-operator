@@ -29,9 +29,9 @@ import io.vertx.core.cli.annotations.DefaultValue;
 public class AclRule implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private AclRuleType type;
+    private AclRuleType type = AclRuleType.ALLOW;
     private AclRuleResource resource;
-    private String host;
+    private String host = "*";
     private AclOperation operation;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
