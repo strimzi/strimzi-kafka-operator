@@ -5,6 +5,7 @@
 package io.strimzi.operator.user.operator;
 
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 
@@ -65,8 +66,8 @@ public class SimpleAclOperator {
                         log.debug("User {}: {} expected Acl rules, but no existing Acl rules -> Adding rules", username, desired.size());
                         internalCreate(username, desired).setHandler(future);
                     } else  {
-                        log.debug("User {}: {} expected Acl rules and {} existing Acl rules -> Updating rules", username, desired.size(), current.size());
-                        // Update rules
+                        log.debug("User {}: {} expected Acl rules and {} existing Acl rules -> Reconciling rules", username, desired.size(), current.size());
+                        internalUpdate(username, desired, current).setHandler(future);
                     }
                 }
             },
@@ -82,7 +83,10 @@ public class SimpleAclOperator {
     protected Future<ReconcileResult<Set<SimpleAclRule>>> internalCreate(String username, Set<SimpleAclRule> desired) {
         KafkaPrincipal principal = new KafkaPrincipal("User", username);
         for (SimpleAclRule rule : desired)    {
-            log.trace("Adding Acl rule {}", rule);
+            if (log.isTraceEnabled()) {
+                log.trace("Adding Acl rule {}", rule);
+            }
+
             Acl acl = rule.toKafkaAcl(principal);
             Resource resource = rule.getResource().toKafkaResource();
             scala.collection.immutable.Set<Acl> remove = new scala.collection.immutable.Set.Set1<Acl>(acl);
@@ -126,7 +130,10 @@ public class SimpleAclOperator {
     protected Future<ReconcileResult<Set<SimpleAclRule>>> internalDelete(String username, Set<SimpleAclRule> current) {
         KafkaPrincipal principal = new KafkaPrincipal("User", username);
         for (SimpleAclRule rule : current)    {
-            log.trace("Removing Acl rule {}", rule);
+            if (log.isTraceEnabled()) {
+                log.trace("Removing Acl rule {}", rule);
+            }
+
             Acl acl = rule.toKafkaAcl(principal);
             Resource resource = rule.getResource().toKafkaResource();
             scala.collection.immutable.Set<Acl> remove = new scala.collection.immutable.Set.Set1<Acl>(acl);
@@ -185,11 +192,14 @@ public class SimpleAclOperator {
                 KafkaPrincipal principal = iter2.next().principal();
 
                 if (KafkaPrincipal.USER_TYPE.equals(principal.getPrincipalType()))  {
+                    // Username in ACL might keep different format (for exmaple based on user's subject) and need to be decoded
+                    String username = KafkaUserModel.decodeUsername(principal.getName());
+
                     if (log.isTraceEnabled())   {
-                        log.trace("Adding user {} to Set of users with ACLs", principal.getName());
+                        log.trace("Adding user {} to Set of users with ACLs", username);
                     }
 
-                    result.add(principal.getName());
+                    result.add(username);
                 }
             }
         }

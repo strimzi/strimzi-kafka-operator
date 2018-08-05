@@ -15,6 +15,8 @@ import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -189,12 +192,40 @@ public class KafkaUserModel {
     }
 
     /**
+     * Generates the name of the USer secret based on the username
+     *
+     * @return
+     */
+    public static String decodeUsername(String username) {
+        if (username.contains("CN="))   {
+            try {
+                return new LdapName(username).getRdns().stream()
+                        .filter(rdn -> rdn.getType().equalsIgnoreCase("cn"))
+                        .map(rdn -> rdn.getValue().toString()).collect(Collectors.joining());
+            } catch (InvalidNameException e)    {
+                throw new IllegalArgumentException(e);
+            }
+        } else  {
+            return username;
+        }
+    }
+
+    /**
+     * Generates the name of the USer secret based on the username
+     *
+     * @return
+     */
+    public static String getUserName(String username)    {
+        return "CN=" + username;
+    }
+
+    /**
      * Gets the Username
      *
      * @return
      */
     public String getUserName()    {
-        return name;
+        return getUserName(name);
     }
 
     /**

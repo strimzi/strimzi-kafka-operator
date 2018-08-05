@@ -104,4 +104,16 @@ public class KafkaUserModelTest {
 
         assertNull(model.getSimpleAclRules());
     }
+
+    @Test
+    public void testDecodeUsername()    {
+        assertEquals("my-user", KafkaUserModel.decodeUsername("CN=my-user"));
+        assertEquals("my-user", KafkaUserModel.decodeUsername("CN=my-user,OU=my-org"));
+        assertEquals("my-user", KafkaUserModel.decodeUsername("OU=my-org,CN=my-user"));
+    }
+
+    @Test
+    public void testGetUsername()    {
+        assertEquals("CN=my-user", KafkaUserModel.getUserName("my-user"));
+    }
 }

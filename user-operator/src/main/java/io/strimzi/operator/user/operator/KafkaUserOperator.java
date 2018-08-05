@@ -106,7 +106,7 @@ public class KafkaUserOperator {
 
         log.debug("{}: Updating User", reconciliation, userName, namespace);
         CompositeFuture.join(secretOperations.reconcile(namespace, user.getSecretName(), user.generateSecret()),
-                aclOperations.reconcile(userName, user.getSimpleAclRules()))
+                aclOperations.reconcile(user.getUserName(), user.getSimpleAclRules()))
                 .map((Void) null).setHandler(handler);
     }
 
@@ -121,7 +121,7 @@ public class KafkaUserOperator {
 
         log.debug("{}: Deleting User", reconciliation, user, namespace);
         CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
-                aclOperations.reconcile(user, null))
+                aclOperations.reconcile(KafkaUserModel.getUserName(user), null))
             .map((Void) null).setHandler(handler);
     }
 
@@ -161,6 +161,8 @@ public class KafkaUserOperator {
                         delete(reconciliation, deleteResult -> {
                             if (deleteResult.succeeded())   {
                                 log.info("{}: User {} deleted", reconciliation, name);
+                                lock.release();
+                                log.debug("{}: Lock {} released", reconciliation, lockName);
                                 handler.handle(deleteResult);
                             } else {
                                 log.error("{}: Deletion of user {} failed", reconciliation, name, deleteResult.cause());

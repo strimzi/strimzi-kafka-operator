@@ -77,6 +77,15 @@ public class SimpleAclRule {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "SimpleAclRule(" +
+                "type: " + type + ", " +
+                "resource: " + resource + ", " +
+                "host: " + host + ", " +
+                "operation: " + operation + ")";
+    }
+
     public Acl toKafkaAcl(KafkaPrincipal principal)   {
         PermissionType kafkaType;
         Operation kafkaOperation;

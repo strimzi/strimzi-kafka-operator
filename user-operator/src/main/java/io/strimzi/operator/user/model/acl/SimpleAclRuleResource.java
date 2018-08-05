@@ -5,6 +5,7 @@
 package io.strimzi.operator.user.model.acl;
 
 import io.strimzi.api.kafka.model.AclResourcePatternType;
+import io.strimzi.api.kafka.model.AclRuleClusterResource;
 import io.strimzi.api.kafka.model.AclRuleGroupResource;
 import io.strimzi.api.kafka.model.AclRuleResource;
 import io.strimzi.api.kafka.model.AclRuleTopicResource;
@@ -59,9 +60,17 @@ public class SimpleAclRuleResource {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "SimpleAclRuleResource(" +
+                "name: " + name + ", " +
+                "type: " + type + ", " +
+                "pattern: " + pattern + ")";
+    }
+
     public Resource toKafkaResource()   {
         ResourceType kafkaType;
-        String kafkaName = "";
+        String kafkaName;
         PatternType kafkaPattern = PatternType.LITERAL;
 
         switch (type) {
@@ -85,6 +94,7 @@ public class SimpleAclRuleResource {
                 break;
             case CLUSTER:
                 kafkaType = Cluster$.MODULE$;
+                kafkaName = "kafka-cluster";
                 break;
             default:
                 throw new IllegalArgumentException("Invalid Acl resource type: " + type);
@@ -94,7 +104,7 @@ public class SimpleAclRuleResource {
     }
 
     public static SimpleAclRuleResource fromKafkaResource(Resource kafkaResource)   {
-        String resourceName = null;
+        String resourceName;
         SimpleAclRuleResourceType resourceType;
         AclResourcePatternType resourcePattern = null;
 
@@ -133,6 +143,8 @@ public class SimpleAclRuleResource {
                 break;
             case CLUSTER:
                 resourceType = SimpleAclRuleResourceType.CLUSTER;
+                resourceName = "kafka-cluster";
+                resourcePattern = AclResourcePatternType.LITERAL;
                 break;
             default:
                 throw new IllegalArgumentException("Invalid Resource type: " + kafkaResource.resourceType());
@@ -148,8 +160,8 @@ public class SimpleAclRuleResource {
         } else if (resource instanceof AclRuleGroupResource)   {
             AclRuleGroupResource adapted = (AclRuleGroupResource) resource;
             return new SimpleAclRuleResource(adapted.getName(), SimpleAclRuleResourceType.GROUP, adapted.getPatternType());
-        } else if (resource instanceof AclRuleTopicResource)   {
-            return new SimpleAclRuleResource(null, SimpleAclRuleResourceType.CLUSTER, null);
+        } else if (resource instanceof AclRuleClusterResource)   {
+            return new SimpleAclRuleResource("kafka-cluster", SimpleAclRuleResourceType.CLUSTER, AclResourcePatternType.LITERAL);
         } else  {
             throw new IllegalArgumentException("Invalid Acl resource class: " + resource.getClass());
         }
