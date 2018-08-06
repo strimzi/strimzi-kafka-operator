@@ -4,6 +4,16 @@ if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
 export KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"
 fi
 
+if [ -n "$KAFKA_CONNECT_TRUSTED_CERTS" ]; then
+    # Generate temporary keystore password
+    export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+
+    mkdir -p /tmp/kafka
+
+    # Import certificates into truststore
+    ./kafka_connect_tls_prepare_certificates.sh
+fi
+
 # Generate and print the config file
 echo "Starting Kafka Connect with configuration:"
 ./kafka_connect_config_generator.sh | tee /tmp/strimzi-connect.properties

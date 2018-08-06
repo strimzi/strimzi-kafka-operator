@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.operator.common.model.Labels;
@@ -38,6 +39,7 @@ public class KafkaConnectCluster extends AbstractModel {
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
 
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
+    protected static final String TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/trusted-certs/";
 
     // Configuration defaults
     protected static final String DEFAULT_IMAGE =
@@ -51,8 +53,11 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_CONFIGURATION = "KAFKA_CONNECT_CONFIGURATION";
     protected static final String ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED = "KAFKA_CONNECT_METRICS_ENABLED";
     protected static final String ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS = "KAFKA_CONNECT_BOOTSTRAP_SERVERS";
+    protected static final String ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS = "KAFKA_CONNECT_TRUSTED_CERTS";
 
     protected String bootstrapServers;
+
+    private List<CertSecretSource> trustedCertificates;
 
     /**
      * Constructor
@@ -133,6 +138,10 @@ public class KafkaConnectCluster extends AbstractModel {
             kafkaConnect.setUserAffinity(spec.getAffinity());
             kafkaConnect.setTolerations(spec.getTolerations());
             kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
+
+            if (spec.getTls() != null) {
+                kafkaConnect.setTrustedCertificates(spec.getTls().getTrustedCertificates());
+            }
         }
         return kafkaConnect;
     }
@@ -160,6 +169,14 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>(1);
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        if (trustedCertificates != null && trustedCertificates.size() > 0) {
+            for (CertSecretSource certSecretSource: trustedCertificates) {
+                // skipping if a volume with same Secret name was already added
+                if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
+                    volumeList.add(createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName()));
+                }
+            }
+        }
 
         return volumeList;
     }
@@ -167,6 +184,15 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(1);
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        if (trustedCertificates != null && trustedCertificates.size() > 0) {
+            for (CertSecretSource certSecretSource: trustedCertificates) {
+                // skipping if a volume mount with same Secret name was already added
+                if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
+                    volumeMountList.add(createVolumeMount(certSecretSource.getSecretName(),
+                            TRUSTED_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
+                }
+            }
+        }
 
         return volumeMountList;
     }
@@ -219,6 +245,18 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
+        if (trustedCertificates != null && trustedCertificates.size() > 0) {
+            StringBuilder sb = new StringBuilder();
+            boolean separator = false;
+            for (CertSecretSource certSecretSource: trustedCertificates) {
+                if (separator) {
+                    sb.append(";");
+                }
+                sb.append(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
+                separator = true;
+            }
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, sb.toString()));
+        }
         return varList;
     }
 
@@ -233,5 +271,13 @@ public class KafkaConnectCluster extends AbstractModel {
      */
     protected void setBootstrapServers(String bootstrapServers) {
         this.bootstrapServers = bootstrapServers;
+    }
+
+    /**
+     * Set the trusted certificates with the certificate to trust
+     * @param trustedCertificates trusted certificates list
+     */
+    protected void setTrustedCertificates(List<CertSecretSource> trustedCertificates) {
+        this.trustedCertificates = trustedCertificates;
     }
 }
