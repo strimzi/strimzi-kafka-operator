@@ -46,6 +46,7 @@ public class ConnectS2IST extends AbstractST {
 
         // Start a new image build using the plugins directory
         kubeClient.exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", "./my-plugins/");
+        LOGGER.info("Resource for deletion {}", connectS2IPodName);
         kubeClient.waitForResourceDeletion("pod", connectS2IPodName);
 
         kubeClient.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
