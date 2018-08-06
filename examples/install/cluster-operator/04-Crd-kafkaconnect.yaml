@@ -264,7 +264,7 @@ spec:
             authentication:
               type: object
               properties:
-                certificate:
+                certificateAndKey:
                   type: object
                   properties:
                     certificate:
@@ -279,6 +279,8 @@ spec:
                   - secretName
                 type:
                   type: string
+              required:
+              - certificateAndKey
             bootstrapServers:
               type: string
             config:
@@ -316,5 +318,7 @@ spec:
                         type: string
                       secretName:
                         type: string
+              required:
+              - trustedCertificates
           required:
           - bootstrapServers

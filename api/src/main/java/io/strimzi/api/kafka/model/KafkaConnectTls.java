@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
@@ -33,7 +34,7 @@ public class KafkaConnectTls implements Serializable {
     private Map<String, Object> additionalProperties;
 
     @Description("Trusted certificates for TLS connection")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(required = true)
     public List<CertSecretSource> getTrustedCertificates() {
         return trustedCertificates;
     }

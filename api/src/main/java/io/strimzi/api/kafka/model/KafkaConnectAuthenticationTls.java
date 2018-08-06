@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
@@ -22,7 +23,7 @@ public class KafkaConnectAuthenticationTls extends KafkaConnectAuthentication {
 
     public static final String TYPE_TLS = "tls";
 
-    private CertAndKeySecretSource certificate;
+    private CertAndKeySecretSource certificateAndKey;
 
     @Description("Must be `" + TYPE_TLS + "`")
     @Override
@@ -31,12 +32,12 @@ public class KafkaConnectAuthenticationTls extends KafkaConnectAuthentication {
     }
 
     @Description("Certificate and private key pair for TLS authentication.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public CertAndKeySecretSource getCertificate() {
-        return certificate;
+    @JsonProperty(required = true)
+    public CertAndKeySecretSource getCertificateAndKey() {
+        return certificateAndKey;
     }
 
-    public void setCertificate(CertAndKeySecretSource certificate) {
-        this.certificate = certificate;
+    public void setCertificateAndKey(CertAndKeySecretSource certificateAndKey) {
+        this.certificateAndKey = certificateAndKey;
     }
 }
