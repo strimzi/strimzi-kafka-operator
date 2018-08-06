@@ -1,0 +1,29 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnect
+metadata:
+  name: test-kafka-connect
+spec:
+  image: foo
+  replicas: 6
+  bootstrapServers: kafka:9092
+  config:
+    name: bar
+  tolerations:
+    - key: "key1"
+      operator: "Equal"
+      value: "value1"
+      effect: "NoSchedule"
+    - key: "key2"
+      operator: "Equal"
+      value: "value2"
+      effect: "NoSchedule"
+  tls:
+    trustedCertificates:
+      - secretName: my-secret
+        certificate: ca.crt
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-user-secret
+      key: user.key
+      certificate: user.crt

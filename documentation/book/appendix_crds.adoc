@@ -447,10 +447,10 @@ The `type` property is a discriminator that distinguishes the use of the type `K
 It must have the value `tls` for the type `KafkaConnectAuthenticationTls`.
 [options="header"]
 |====
-|Field               |Description
-|certificate  1.2+<.<|Certificate and private key pair for TLS authentication.
+|Field                     |Description
+|certificateAndKey  1.2+<.<|Certificate and private key pair for TLS authentication.
 |xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
-|type         1.2+<.<|Must be `tls`.
+|type               1.2+<.<|Must be `tls`.
 |string
 |====
 

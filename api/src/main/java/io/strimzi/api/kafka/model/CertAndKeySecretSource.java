@@ -24,7 +24,6 @@ public class CertAndKeySecretSource extends CertSecretSource {
     protected String key;
 
     @Description("The name of the private key in the Secret.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public String getKey() {
         return key;

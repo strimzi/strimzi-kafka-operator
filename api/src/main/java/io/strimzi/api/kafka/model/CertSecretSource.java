@@ -33,7 +33,6 @@ public class CertSecretSource implements Serializable {
     protected Map<String, Object> additionalProperties;
 
     @Description("The name of the Secret containing the certificate.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public String getSecretName() {
         return secretName;
@@ -44,7 +43,6 @@ public class CertSecretSource implements Serializable {
     }
 
     @Description("The name of the file certificate in the Secret.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public String getCertificate() {
         return certificate;

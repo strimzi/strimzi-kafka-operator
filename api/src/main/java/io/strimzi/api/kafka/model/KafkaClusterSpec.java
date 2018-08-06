@@ -232,7 +232,6 @@ public class KafkaClusterSpec implements Serializable {
     }
 
     @Description("Configures listeners of Kafka brokers")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public KafkaListeners getListeners() {
         return listeners;

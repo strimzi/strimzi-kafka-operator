@@ -59,4 +59,23 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         }
     }
 
+    @Test
+    public void testKafkaWithTls() {
+        createDelete(KafkaConnect.class, "KafkaConnect-with-tls.yaml");
+    }
+
+    @Test
+    public void testKafkaWithTlsAuth() {
+        createDelete(KafkaConnect.class, "KafkaConnect-with-tls-auth.yaml");
+    }
+
+    @Test
+    public void testKafkaWithTlsAuthWithMissingRequired() {
+        try {
+            createDelete(KafkaConnect.class, "KafkaConnect-with-tls-auth-with-missing-required.yaml");
+        } catch (KubeClusterException.InvalidResource e) {
+            assertTrue(e.getMessage().contains("spec.authentication.certificateAndKey.certificate in body is required"));
+            assertTrue(e.getMessage().contains("spec.authentication.certificateAndKey.key in body is required"));
+        }
+    }
 }
