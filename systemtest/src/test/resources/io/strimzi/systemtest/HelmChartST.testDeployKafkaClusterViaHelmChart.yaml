@@ -5,6 +5,9 @@ metadata:
 spec:
   kafka:
     replicas: 3
+    listeners:
+      plain: {}
+      tls: {}
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
@@ -17,15 +20,6 @@ spec:
       transaction.state.log.min.isr: 2
     storage:
       type: ephemeral
-    metrics:
-      lowercaseOutputName: true
-      rules:
-        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"
-          name: "kafka_server_$1_$2_total"
-        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count"
-          name: "kafka_server_$1_$2_total"
-          labels:
-            topic: "$3"
   zookeeper:
     replicas: 3
     readinessProbe:
