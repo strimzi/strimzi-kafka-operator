@@ -30,9 +30,10 @@ public class KafkaUserSpec  implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private KafkaUserAuthentication authentication;
+    private KafkaUserAuthorization authorization;
     private Map<String, Object> additionalProperties;
 
-    @Description("Authentication mechanism enabled for this Kafka user")
+    @Description("Authentication mechanism enabled for this Kafka user.")
     @JsonProperty(required = true)
     public KafkaUserAuthentication getAuthentication() {
         return authentication;
@@ -40,6 +41,16 @@ public class KafkaUserSpec  implements Serializable {
 
     public void setAuthentication(KafkaUserAuthentication authentication) {
         this.authentication = authentication;
+    }
+
+    @Description("Authorization rules for this Kafka user.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public KafkaUserAuthorization getAuthorization() {
+        return authorization;
+    }
+
+    public void setAuthorization(KafkaUserAuthorization authorization) {
+        this.authorization = authorization;
     }
 
     @JsonAnyGetter

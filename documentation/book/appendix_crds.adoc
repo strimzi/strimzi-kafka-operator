@@ -607,6 +607,8 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |Field                  |Description
 |authentication  1.2+<.<|Authentication mechanism enabled for this Kafka user. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls].
 |xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`]
+|authorization   1.2+<.<|Authorization rules for this Kafka user. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple].
+|xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
 |====
 
 [id='type-KafkaUserTlsClientAuthentication-{context}']
@@ -621,6 +623,95 @@ It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 |====
 |Field        |Description
 |type  1.2+<.<|Must be `tls`.
+|string
+|====
+
+[id='type-KafkaUserAuthorizationSimple-{context}']
+### `KafkaUserAuthorizationSimple` schema reference
+
+Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserAuthorizationSimple` from other subtypes which may be added in the future.
+It must have the value `simple` for the type `KafkaUserAuthorizationSimple`.
+[options="header"]
+|====
+|Field        |Description
+|acls  1.2+<.<|List of ACL rules which should be applied to this user.
+|xref:type-AclRule-{context}[`AclRule`] array
+|type  1.2+<.<|Must be `simple`.
+|string
+|====
+
+[id='type-AclRule-{context}']
+### `AclRule` schema reference
+
+Used in: xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
+
+
+[options="header"]
+|====
+|Field             |Description
+|host       1.2+<.<|The host from which the action described in the ACL rule is allowed or denied.
+|string
+|operation  1.2+<.<|Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
+|string (one of [Read, Write, Delete, Alter, Describe, All, IdempotentWrite, ClusterAction, Create, AlterConfigs, DescribeConfigs])
+|resource   1.2+<.<|Indicates the resource for which given ACL rule applies. The type depends on the value of the `resource.type` property within the given object, which must be one of [topic, group, cluster].
+|xref:type-AclRuleTopicResource-{context}[`AclRuleTopicResource`], xref:type-AclRuleGroupResource-{context}[`AclRuleGroupResource`], xref:type-AclRuleClusterResource-{context}[`AclRuleClusterResource`]
+|type       1.2+<.<|The type of the rule.Currently the only supported type is `allow`.ACL rules with type `allow` are used to allow user to execute the specified operations. Default value is `allow`.
+|string (one of [allow, deny])
+|====
+
+[id='type-AclRuleTopicResource-{context}']
+### `AclRuleTopicResource` schema reference
+
+Used in: xref:type-AclRule-{context}[`AclRule`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `AclRuleTopicResource` from xref:type-AclRuleGroupResource-{context}[`AclRuleGroupResource`], xref:type-AclRuleClusterResource-{context}[`AclRuleClusterResource`].
+It must have the value `topic` for the type `AclRuleTopicResource`.
+[options="header"]
+|====
+|Field               |Description
+|name         1.2+<.<|Name of resource for which given ACL rule applies. Can be combined with `patternType` field to use prefix pattern.
+|string
+|patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full topic name. With `prefix` pattern type, the resource name will be used only as a prefix. Default value is `literal`.
+|string (one of [prefix, literal])
+|type         1.2+<.<|Must be `topic`.
+|string
+|====
+
+[id='type-AclRuleGroupResource-{context}']
+### `AclRuleGroupResource` schema reference
+
+Used in: xref:type-AclRule-{context}[`AclRule`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `AclRuleGroupResource` from xref:type-AclRuleTopicResource-{context}[`AclRuleTopicResource`], xref:type-AclRuleClusterResource-{context}[`AclRuleClusterResource`].
+It must have the value `group` for the type `AclRuleGroupResource`.
+[options="header"]
+|====
+|Field               |Description
+|name         1.2+<.<|Name of resource for which given ACL rule applies. Can be combined with `patternType` field to use prefix pattern.
+|string
+|patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full topic name. With `prefix` pattern type, the resource name will be used only as a prefix. Default value is `literal`.
+|string (one of [prefix, literal])
+|type         1.2+<.<|Must be `group`.
+|string
+|====
+
+[id='type-AclRuleClusterResource-{context}']
+### `AclRuleClusterResource` schema reference
+
+Used in: xref:type-AclRule-{context}[`AclRule`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `AclRuleClusterResource` from xref:type-AclRuleTopicResource-{context}[`AclRuleTopicResource`], xref:type-AclRuleGroupResource-{context}[`AclRuleGroupResource`].
+It must have the value `cluster` for the type `AclRuleClusterResource`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `cluster`.
 |string
 |====
 
