@@ -27,7 +27,7 @@ import scala.Tuple2;
 import scala.collection.Iterator;
 
 /**
- * SimlpeAclOperator is repsonsible for managing the authorization rules in Apache Kafka / Apache Zookeeper.
+ * SimlpeAclOperator is responsible for managing the authorization rules in Apache Kafka / Apache Zookeeper.
  * It is using Kafka's SimpleAclAuthorizer class to interact with Zookeeper and manage Acl rules.
  * Since SimpleAclAuthorizer is written in Scala, this operator is using some Scala structures required for passing to / returned from the SimpleAclAuthorizer object.
  * This class expects the SimpleAclAuthorizer instance to be passed from the outside.
@@ -158,7 +158,7 @@ public class SimpleAclOperator {
     }
 
     /**
-     * Get Set of ACLs applying to single user
+     * Returns Set of ACLs applying to single user
      *
      * @param username  Name of the user
      * @return
@@ -205,7 +205,7 @@ public class SimpleAclOperator {
                 KafkaPrincipal principal = iter2.next().principal();
 
                 if (KafkaPrincipal.USER_TYPE.equals(principal.getPrincipalType()))  {
-                    // Username in ACL might keep different format (for exmaple based on user's subject) and need to be decoded
+                    // Username in ACL might keep different format (for example based on user's subject) and need to be decoded
                     String username = KafkaUserModel.decodeUsername(principal.getName());
 
                     if (log.isTraceEnabled())   {
