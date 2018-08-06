@@ -4,14 +4,20 @@
  */
 package io.strimzi.operator.user;
 
+import io.strimzi.api.kafka.model.AclOperation;
+import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -34,6 +40,26 @@ public class ResourceUtils {
                 )
                 .withNewSpec()
                 .withAuthentication(new KafkaUserTlsClientAuthentication())
+                .withNewKafkaUserAuthorizationSimpleAuthorization()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResourceResource()
+                            .withName("my-topic")
+                        .endAclRuleTopicResourceResource()
+                        .withOperation(AclOperation.READ)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResourceResource()
+                            .withName("my-topic")
+                        .endAclRuleTopicResourceResource()
+                        .withOperation(AclOperation.DESCRIBE)
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleGroupResourceResource()
+                            .withName("my-group")
+                        .endAclRuleGroupResourceResource()
+                        .withOperation(AclOperation.READ)
+                    .endAcl()
+                .endKafkaUserAuthorizationSimpleAuthorization()
                 .endSpec()
                 .build();
     }
@@ -60,5 +86,21 @@ public class ResourceUtils {
                 .addToData("user.key", Base64.getEncoder().encodeToString("expected-key".getBytes()))
                 .addToData("user.crt", Base64.getEncoder().encodeToString("expected-crt".getBytes()))
                 .build();
+    }
+
+    public static Set<SimpleAclRule> createExpectedSimpleAclRules(KafkaUser user) {
+        Set<SimpleAclRule> simpleAclRules = new HashSet<SimpleAclRule>();
+
+        if (user.getSpec().getAuthorization() != null && KafkaUserAuthorizationSimple.TYPE_SIMPLE.equals(user.getSpec().getAuthorization().getType())) {
+            KafkaUserAuthorizationSimple adapted = (KafkaUserAuthorizationSimple) user.getSpec().getAuthorization();
+
+            if (adapted.getAcls() != null) {
+                for (AclRule rule : adapted.getAcls()) {
+                    simpleAclRules.add(SimpleAclRule.fromCrd(rule));
+                }
+            }
+        }
+
+        return simpleAclRules;
     }
 }

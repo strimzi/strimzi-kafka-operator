@@ -13,6 +13,8 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.ResourceUtils;
+import io.strimzi.operator.user.model.KafkaUserModel;
+import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import java.util.Arrays;
 import java.util.Base64;
@@ -29,6 +31,7 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,7 +39,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singleton;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -61,13 +63,17 @@ public class KafkaUserOperatorTest {
     public void testCreateUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUser();
         Secret clientsCa = ResourceUtils.createClientsCa();
 
@@ -95,6 +101,18 @@ public class KafkaUserOperatorTest {
             context.assertEquals("crt file", new String(Base64.getDecoder().decode(captured.getData().get("user.crt"))));
             context.assertEquals("key file", new String(Base64.getDecoder().decode(captured.getData().get("user.key"))));
 
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
+
+            context.assertEquals(1, capturedAcls.size());
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+
             async.complete();
         });
     }
@@ -103,13 +121,18 @@ public class KafkaUserOperatorTest {
     public void testUpdateUserNoChange(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUser();
         Secret clientsCa = ResourceUtils.createClientsCa();
         Secret userCert = ResourceUtils.createUserCert();
@@ -138,6 +161,78 @@ public class KafkaUserOperatorTest {
             context.assertEquals(userCert.getData().get("user.crt"), captured.getData().get("user.crt"));
             context.assertEquals(userCert.getData().get("user.key"), captured.getData().get("user.key"));
 
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
+
+            context.assertEquals(1, capturedAcls.size());
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+
+            async.complete();
+        });
+    }
+
+    /**
+     * Tests what happens when the TlsClisteAuth and SimpleAuthorization are suddenyl desiabled for the user (delete from the KafkaUser resource)
+     *
+     * @param context
+     */
+    @Test
+    public void testUpdateUserNoAuthnAuthz(TestContext context)    {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+
+        ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        KafkaUser user = ResourceUtils.createKafkaUser();
+        user.getSpec().setAuthorization(null);
+        user.getSpec().setAuthentication(null);
+        Secret clientsCa = ResourceUtils.createClientsCa();
+        Secret userCert = ResourceUtils.createUserCert();
+
+        Async async = context.async();
+        op.createOrUpdate(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, clientsCa, userCert, res -> {
+            context.assertTrue(res.succeeded());
+
+            List<String> capturedNames = secretNameCaptor.getAllValues();
+            context.assertEquals(1, capturedNames.size());
+            context.assertEquals(ResourceUtils.NAME, capturedNames.get(0));
+
+            List<String> capturedNamespaces = secretNamespaceCaptor.getAllValues();
+            context.assertEquals(1, capturedNamespaces.size());
+            context.assertEquals(ResourceUtils.NAMESPACE, capturedNamespaces.get(0));
+
+            List<Secret> capturedSecrets = secretCaptor.getAllValues();
+
+            context.assertEquals(1, capturedSecrets.size());
+
+            Secret captured = capturedSecrets.get(0);
+            context.assertNull(captured);
+
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
+
+            context.assertEquals(1, capturedAcls.size());
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+            context.assertNull(aclRules);
+
             async.complete();
         });
     }
@@ -146,13 +241,18 @@ public class KafkaUserOperatorTest {
     public void testUpdateUserNewCert(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUser();
         Secret clientsCa = ResourceUtils.createClientsCa();
         clientsCa.getData().put("clients-ca.key", Base64.getEncoder().encodeToString("different-clients-ca-key".getBytes()));
@@ -191,12 +291,16 @@ public class KafkaUserOperatorTest {
     public void testDeleteUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
 
         Async async = context.async();
         op.delete(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), res -> {
@@ -210,6 +314,10 @@ public class KafkaUserOperatorTest {
             context.assertEquals(1, capturedNamespaces.size());
             context.assertEquals(ResourceUtils.NAMESPACE, capturedNamespaces.get(0));
 
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
             async.complete();
         });
     }
@@ -218,8 +326,9 @@ public class KafkaUserOperatorTest {
     public void testReconcileNewUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUser();
         Secret clientsCa = ResourceUtils.createClientsCa();
 
@@ -227,6 +336,10 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(null);
@@ -257,6 +370,18 @@ public class KafkaUserOperatorTest {
             context.assertEquals("crt file", new String(Base64.getDecoder().decode(captured.getData().get("user.crt"))));
             context.assertEquals("key file", new String(Base64.getDecoder().decode(captured.getData().get("user.key"))));
 
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
+
+            context.assertEquals(1, capturedAcls.size());
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+
             async.complete();
         });
     }
@@ -265,8 +390,9 @@ public class KafkaUserOperatorTest {
     public void testReconcileExistingUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUser();
         Secret clientsCa = ResourceUtils.createClientsCa();
         Secret userCert = ResourceUtils.createUserCert();
@@ -275,6 +401,10 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(userCert);
@@ -305,6 +435,18 @@ public class KafkaUserOperatorTest {
             context.assertEquals(userCert.getData().get("user.crt"), captured.getData().get("user.crt"));
             context.assertEquals(userCert.getData().get("user.key"), captured.getData().get("user.key"));
 
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
+
+            context.assertEquals(1, capturedAcls.size());
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+
             async.complete();
         });
     }
@@ -313,8 +455,9 @@ public class KafkaUserOperatorTest {
     public void testReconcileDeleteUser(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUser();
         Secret clientsCa = ResourceUtils.createClientsCa();
         Secret userCert = ResourceUtils.createUserCert();
@@ -322,6 +465,9 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(userCert);
@@ -340,6 +486,10 @@ public class KafkaUserOperatorTest {
             context.assertEquals(1, capturedNamespaces.size());
             context.assertEquals(ResourceUtils.NAMESPACE, capturedNamespaces.get(0));
 
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
             async.complete();
         });
     }
@@ -348,6 +498,7 @@ public class KafkaUserOperatorTest {
     public void testReconcileAll(TestContext context)    {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
 
         KafkaUser newUser = ResourceUtils.createKafkaUser();
         newUser.getMetadata().setName("new-user");
@@ -361,6 +512,7 @@ public class KafkaUserOperatorTest {
 
         when(mockCrdOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS)))).thenReturn(Arrays.asList(newUser, existingUser));
         when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingUserCert, deletedUserCert));
+        when(aclOps.getUsersWithAcls()).thenReturn(new HashSet<String>(Arrays.asList("existing-user", "second-deleted-user")));
 
         when(mockCrdOps.get(eq(newUser.getMetadata().getNamespace()), eq(newUser.getMetadata().getName()))).thenReturn(newUser);
         when(mockCrdOps.get(eq(existingUser.getMetadata().getNamespace()), eq(existingUser.getMetadata().getName()))).thenReturn(existingUser);
@@ -373,11 +525,11 @@ public class KafkaUserOperatorTest {
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
-        Async async = context.async(3);
+        Async async = context.async(4);
         KafkaUserOperator op = new KafkaUserOperator(vertx,
                 mockCertManager,
                 mockCrdOps,
-                mockSecretOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE) {
+                mockSecretOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE) {
 
             @Override
             public void createOrUpdate(Reconciliation reconciliation, KafkaUser user, Secret clientCa, Secret userSecret, Handler<AsyncResult<Void>> h) {
@@ -399,6 +551,6 @@ public class KafkaUserOperatorTest {
         async.await();
 
         context.assertEquals(new HashSet(asList("new-user", "existing-user")), createdOrUpdated);
-        context.assertEquals(singleton("deleted-user"), deleted);
+        context.assertEquals(new HashSet(asList("deleted-user", "second-deleted-user")), deleted);
     }
 }

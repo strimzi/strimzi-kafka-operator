@@ -14,12 +14,15 @@ import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
+import io.strimzi.operator.user.operator.SimpleAclOperator;
+
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import kafka.security.auth.SimpleAclAuthorizer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,8 +43,9 @@ public class Main {
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
         Vertx vertx = Vertx.vertx();
         KubernetesClient client = new DefaultKubernetesClient();
+        SimpleAclAuthorizer authorizer = createSimpleAclAuthorizer(config);
 
-        run(vertx, client, config).setHandler(ar -> {
+        run(vertx, client, authorizer, config).setHandler(ar -> {
             if (ar.failed()) {
                 log.error("Unable to start operator", ar.cause());
                 System.exit(1);
@@ -49,14 +53,15 @@ public class Main {
         });
     }
 
-    static Future<String> run(Vertx vertx, KubernetesClient client, UserOperatorConfig config) {
+    static Future<String> run(Vertx vertx, KubernetesClient client, SimpleAclAuthorizer authorizer, UserOperatorConfig config) {
         printEnvInfo();
         OpenSslCertManager certManager = new OpenSslCertManager();
         SecretOperator secretOperations = new SecretOperator(vertx, client);
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
+        SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, authorizer);
 
         KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
-                certManager, crdOperations, secretOperations, config.getCaName(), config.getCaNamespace());
+                certManager, crdOperations, secretOperations, aclOperations, config.getCaName(), config.getCaNamespace());
 
         Future<String> fut = Future.future();
         UserOperator operator = new UserOperator(config.getNamespace(),
@@ -75,6 +80,21 @@ public class Main {
             });
 
         return fut;
+    }
+
+    private static SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {
+        log.debug("Creating SimpleAclAuthorizer for Zookeeper {}", config.getZookeperConnect());
+        Map authorizerConfig = new HashMap<String, Object>();
+        // The SimpleAclAuthorizer from KAfka requires the Zookeeper URL to be provided twice.
+        // See the comments in the SimpleAclAuthorizer.scala class for more details
+        authorizerConfig.put(SimpleAclAuthorizer.ZkUrlProp(), config.getZookeperConnect());
+        authorizerConfig.put("zookeeper.connect", config.getZookeperConnect());
+        authorizerConfig.put(SimpleAclAuthorizer.ZkConnectionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
+        authorizerConfig.put(SimpleAclAuthorizer.ZkSessionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
+
+        SimpleAclAuthorizer authorizer = new SimpleAclAuthorizer();
+        authorizer.configure(authorizerConfig);
+        return authorizer;
     }
 
     static void printEnvInfo() {

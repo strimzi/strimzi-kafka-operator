@@ -4,20 +4,29 @@
  */
 package io.strimzi.operator.user.model;
 
+import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthentication;
+import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -37,6 +46,8 @@ public class KafkaUserModel {
     protected CertAndKey caCertAndKey;
     protected CertAndKey userCertAndKey;
 
+    protected Set<SimpleAclRule> simpleAclRules = null;
+
     /**
      * Constructor
      *
@@ -50,6 +61,15 @@ public class KafkaUserModel {
         this.labels = labels;
     }
 
+    /**
+     * Creates instance of KafkaUserModel from CRD definition
+     *
+     * @param certManager   CertManager instance for work with certificates
+     * @param kafkaUser     The Custom Resource based on which the model should be created
+     * @param clientsCa     Kubernetes secret with the clients certification authority
+     * @param userSecret    ubernetes secret with existing user certificate
+     * @return
+     */
     public static KafkaUserModel fromCrd(CertManager certManager, KafkaUser kafkaUser, Secret clientsCa, Secret userSecret) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
@@ -60,9 +80,20 @@ public class KafkaUserModel {
             result.maybeGenerateCertificates(certManager, clientsCa, userSecret);
         }
 
+        if (kafkaUser.getSpec().getAuthorization() != null && kafkaUser.getSpec().getAuthorization().getType().equals(KafkaUserAuthorizationSimple.TYPE_SIMPLE)) {
+            KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) kafkaUser.getSpec().getAuthorization();
+            result.setSimpleAclRules(simple.getAcls());
+        }
+
         return result;
     }
 
+    /**
+     * Generates secret containing the certificate for TLS client auth when TLS client auth is enabled for this user.
+     * Returns null otherwise.
+     *
+     * @return
+     */
     public Secret generateSecret()  {
         if (authentication != null && authentication.getType().equals(KafkaUserTlsClientAuthentication.TYPE_TLS)) {
             Map<String, String> data = new HashMap<>();
@@ -176,6 +207,43 @@ public class KafkaUserModel {
     }
 
     /**
+     * Generates the name of the User secret based on the username
+     *
+     * @return
+     */
+    public static String decodeUsername(String username) {
+        if (username.contains("CN="))   {
+            try {
+                return new LdapName(username).getRdns().stream()
+                        .filter(rdn -> rdn.getType().equalsIgnoreCase("cn"))
+                        .map(rdn -> rdn.getValue().toString()).collect(Collectors.joining());
+            } catch (InvalidNameException e)    {
+                throw new IllegalArgumentException(e);
+            }
+        } else  {
+            return username;
+        }
+    }
+
+    /**
+     * Generates the name of the User secret based on the username
+     *
+     * @return
+     */
+    public static String getUserName(String username)    {
+        return "CN=" + username;
+    }
+
+    /**
+     * Gets the Username
+     *
+     * @return
+     */
+    public String getUserName()    {
+        return getUserName(name);
+    }
+
+    /**
      * Generates the name of the USer secret based on the username
      *
      * @return
@@ -200,5 +268,29 @@ public class KafkaUserModel {
      */
     public void setAuthentication(KafkaUserAuthentication authentication) {
         this.authentication = authentication;
+    }
+
+    /**
+     * Get list of ACL rules for Simple Authorization which should apply to this user
+     *
+     * @return
+     */
+    public Set<SimpleAclRule> getSimpleAclRules() {
+        return simpleAclRules;
+    }
+
+    /**
+     * Sets list of ACL rules for Simple authorization
+     *
+     * @param simpleAclRules List of ACL rules which should be applied to this user
+     */
+    public void setSimpleAclRules(List<AclRule> rules) {
+        Set<SimpleAclRule> simpleAclRules = new HashSet<SimpleAclRule>();
+
+        for (AclRule rule : rules)  {
+            simpleAclRules.add(SimpleAclRule.fromCrd(rule));
+        }
+
+        this.simpleAclRules = simpleAclRules;
     }
 }

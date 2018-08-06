@@ -22,6 +22,7 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -47,6 +48,7 @@ public class KafkaUserOperator {
     private final Vertx vertx;
     private final CrdOperator crdOperator;
     private final SecretOperator secretOperations;
+    private final SimpleAclOperator aclOperations;
     private final CertManager certManager;
     private final String caName;
     private final String caNamespace;
@@ -60,11 +62,12 @@ public class KafkaUserOperator {
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,
                              CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperator,
-                             SecretOperator secretOperations, String caName, String caNamespace) {
+                             SecretOperator secretOperations, SimpleAclOperator aclOperations, String caName, String caNamespace) {
         this.vertx = vertx;
         this.certManager = certManager;
         this.secretOperations = secretOperations;
         this.crdOperator = crdOperator;
+        this.aclOperations = aclOperations;
         this.caName = caName;
         this.caNamespace = caNamespace;
     }
@@ -102,7 +105,8 @@ public class KafkaUserOperator {
         }
 
         log.debug("{}: Updating User", reconciliation, userName, namespace);
-        secretOperations.reconcile(namespace, user.getSecretName(), user.generateSecret())
+        CompositeFuture.join(secretOperations.reconcile(namespace, user.getSecretName(), user.generateSecret()),
+                aclOperations.reconcile(user.getUserName(), user.getSimpleAclRules()))
                 .map((Void) null).setHandler(handler);
     }
 
@@ -116,7 +120,8 @@ public class KafkaUserOperator {
         String user = reconciliation.name();
 
         log.debug("{}: Deleting User", reconciliation, user, namespace);
-        secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null)
+        CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
+                aclOperations.reconcile(KafkaUserModel.getUserName(user), null))
             .map((Void) null).setHandler(handler);
     }
 
@@ -156,6 +161,8 @@ public class KafkaUserOperator {
                         delete(reconciliation, deleteResult -> {
                             if (deleteResult.succeeded())   {
                                 log.info("{}: User {} deleted", reconciliation, name);
+                                lock.release();
+                                log.debug("{}: Lock {} released", reconciliation, lockName);
                                 handler.handle(deleteResult);
                             } else {
                                 log.error("{}: Deletion of user {} failed", reconciliation, name, deleteResult.cause());
@@ -198,7 +205,11 @@ public class KafkaUserOperator {
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", RESOURCE_KIND, trigger, resourceSelector, resourceNames);
 
+        Set<String> usersWithAcls = aclOperations.getUsersWithAcls();
+        log.debug("reconcileAll({}, {}): User with ACLs: {}", RESOURCE_KIND, trigger, usersWithAcls);
+
         desiredNames.addAll(resourceNames);
+        desiredNames.addAll(usersWithAcls);
 
         // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
         // Using futures would be more complex for no benefit

@@ -16,18 +16,24 @@ spec:
         type: "topic"
         name: "my-topic"
         patternType: "prefix"
+      host: "*"
       operation: "Read"
-    - resource:
+    - type: "allow"
+      resource:
         type: "topic"
         name: "my"
         patternType: "prefix"
       host: "127.0.0.1"
       operation: "Read"
-    - resource:
+    - type: "allow"
+      resource:
         type: "group"
         name: "my-group"
+        patternType: "literal"
       host: "127.0.0.1"
       operation: "Read"
-    - resource:
+    - type: "allow"
+      resource:
         type: "cluster"
+      host: "*"
       operation: "Read"
