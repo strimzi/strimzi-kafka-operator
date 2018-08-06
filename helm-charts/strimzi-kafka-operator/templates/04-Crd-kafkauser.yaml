@@ -55,10 +55,13 @@ spec:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> Replace operation field with Enum
 =======
 >>>>>>> Update the AclRule
+=======
+>>>>>>> Regenerate YAML and doc after rebase
                         enum:
                         - Read
                         - Write
@@ -73,6 +76,7 @@ spec:
                         - All
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> Update the AclRule
 =======
@@ -81,6 +85,8 @@ spec:
 =======
 >>>>>>> Update the AclRule
 >>>>>>> Update the AclRule
+=======
+>>>>>>> Regenerate YAML and doc after rebase
                       resource:
                         type: object
                         properties:
