@@ -13,6 +13,7 @@ import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -94,8 +95,8 @@ public class SimpleAclOperatorTest {
         doNothing().when(mockAuthorizer).addAcls(aclCaptor.capture(), resourceCaptor.capture());
 
         SimpleAclRuleResource resource = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
-        SimpleAclRule rule1 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.WRITE);
-        SimpleAclRule rule2 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.READ);
+        SimpleAclRule rule1 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.READ);
+        SimpleAclRule rule2 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.WRITE);
 
         KafkaPrincipal foo = new KafkaPrincipal("User", "CN=foo");
         Acl acl1 = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
@@ -105,7 +106,7 @@ public class SimpleAclOperatorTest {
         Resource res1 = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
 
         Async async = context.async();
-        Future<Void> fut = aclOp.reconcile("CN=foo", new HashSet(asList(rule1, rule2)));
+        Future<ReconcileResult<Set<SimpleAclRule>>> fut = aclOp.reconcile("CN=foo", new LinkedHashSet<>(asList(rule1, rule2)));
         fut.setHandler(res -> {
             context.assertTrue(res.succeeded());
 
@@ -154,7 +155,7 @@ public class SimpleAclOperatorTest {
         when(mockAuthorizer.removeAcls(deleteAclCaptor.capture(), deleterResourceCaptor.capture())).thenReturn(true);
 
         Async async = context.async();
-        Future<Void> fut = aclOp.reconcile("CN=foo", new HashSet(asList(rule1)));
+        Future<Void> fut = aclOp.reconcile("CN=foo", new LinkedHashSet(asList(rule1)));
         fut.setHandler(res -> {
             context.assertTrue(res.succeeded());
 
