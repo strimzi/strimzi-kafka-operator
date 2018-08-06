@@ -432,8 +432,6 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |config            1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers.
 |map
 |resources         1.2+<.<|Resource constraints (limits and requests).
-<<<<<<< HEAD
-<<<<<<< HEAD
 |xref:type-Resources-{context}[`Resources`]
 |tls               1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
@@ -499,12 +497,6 @@ Used in: xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
 |string
 |secretName   1.2+<.<|The name of the Secret containing the certificate.
 |string
-=======
-|<<type-Resources,`Resources`>>
->>>>>>> Update the AclRule
-=======
-|xref:type-Resources-{context}[`Resources`]
->>>>>>> Resovle conflicts
 |====
 
 [id='type-KafkaConnectS2I-{context}']
@@ -790,7 +782,7 @@ It must have the value `topic` for the type `AclRuleTopicResource`.
 |Field               |Description
 |name         1.2+<.<|Name of resource for which given ACL rule applies. Can be combined with `patternType` field to use prefix pattern.
 |string
-|patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full topic name. With `prefix` pattern type, the resoruce name will be used only as a prefix. Default value is `literal`.
+|patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full topic name. With `prefix` pattern type, the resource name will be used only as a prefix. Default value is `literal`.
 |string (one of [prefix, literal])
 |type         1.2+<.<|Must be `topic`.
 |string
@@ -809,7 +801,7 @@ It must have the value `group` for the type `AclRuleGroupResource`.
 |Field               |Description
 |name         1.2+<.<|Name of resource for which given ACL rule applies. Can be combined with `patternType` field to use prefix pattern.
 |string
-|patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full topic name. With `prefix` pattern type, the resoruce name will be used only as a prefix. Default value is `literal`.
+|patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full topic name. With `prefix` pattern type, the resource name will be used only as a prefix. Default value is `literal`.
 |string (one of [prefix, literal])
 |type         1.2+<.<|Must be `group`.
 |string
