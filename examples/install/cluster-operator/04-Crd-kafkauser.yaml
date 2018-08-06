@@ -35,29 +35,10 @@ spec:
                   items:
                     type: object
                     properties:
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-                      group:
-                        type: string
->>>>>>> Add Authorization section to KafkaUser CRD
-=======
->>>>>>> Update the AclRule
                       host:
                         type: string
                       operation:
                         type: string
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Replace operation field with Enum
-=======
->>>>>>> Update the AclRule
-=======
->>>>>>> Regenerate YAML and doc after rebase
                         enum:
                         - Read
                         - Write
@@ -70,19 +51,6 @@ spec:
                         - DescribeConfigs
                         - IdempotentWrite
                         - All
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Update the AclRule
-=======
->>>>>>> Replace operation field with Enum
-=======
-=======
->>>>>>> Update the AclRule
->>>>>>> Update the AclRule
-=======
->>>>>>> Regenerate YAML and doc after rebase
                       resource:
                         type: object
                         properties:
@@ -95,26 +63,6 @@ spec:
                             - prefix
                           type:
                             type: string
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-                      resourcePatternType:
-                        type: string
-                        enum:
-                        - literal
-                        - prefix
-                      topic:
-                        type: string
->>>>>>> Add Authorization section to KafkaUser CRD
-=======
->>>>>>> Update the AclRule
-=======
-                        required:
-                        - name
->>>>>>> Replace operation field with Enum
-=======
->>>>>>> Fields cannot be required
                       type:
                         type: string
                         enum:
