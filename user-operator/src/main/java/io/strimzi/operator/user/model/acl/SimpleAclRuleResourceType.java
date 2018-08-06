@@ -4,6 +4,12 @@
  */
 package io.strimzi.operator.user.model.acl;
 
+
+/**
+ * Enum representing Kafka resource type.
+ * Currently supports only Topic, Groups and Clusters.
+ * TransactionIds and Delegation tokens are currently unsupported.
+ */
 public enum SimpleAclRuleResourceType {
     TOPIC,
     GROUP,

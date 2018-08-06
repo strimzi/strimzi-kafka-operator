@@ -26,12 +26,24 @@ import kafka.security.auth.Read$;
 import kafka.security.auth.Write$;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
+/**
+ * Immutable class which represents a single ACL rule for SimpleAclAuthorizer.
+ * The main reason for not using directly the classes from the api module is that we need immutable objects for use in Sets.
+ */
 public class SimpleAclRule {
     private final AclRuleType type;
     private final SimpleAclRuleResource resource;
     private final String host;
     private final AclOperation operation;
 
+    /**
+     * Constructor
+     *
+     * @param type          Type of the Acl rule (Allow or Deny)
+     * @param resource      The resource to which this rule applies (Topic, Group, Cluster, ...)
+     * @param host          The host from which is this rule allowed / denied
+     * @param operation     The Operation which is allowed or denied
+     */
     public SimpleAclRule(AclRuleType type, SimpleAclRuleResource resource, String host, AclOperation operation) {
         this.type = type;
         this.resource = resource;
@@ -39,18 +51,38 @@ public class SimpleAclRule {
         this.operation = operation;
     }
 
+    /**
+     * Returns the type of the ACL rule
+     *
+     * @return
+     */
     public AclRuleType getType() {
         return type;
     }
 
+    /**
+     * Returns the resource to which this rule applies
+     *
+     * @return
+     */
     public SimpleAclRuleResource getResource() {
         return resource;
     }
 
+    /**
+     * Returns the host from which this rule is allowed / denied
+     *
+     * @return
+     */
     public String getHost() {
         return host;
     }
 
+    /**
+     * Returns the operation which is allowed / denied
+     *
+     * @return
+     */
     public AclOperation getOperation() {
         return operation;
     }
@@ -86,6 +118,12 @@ public class SimpleAclRule {
                 "operation: " + operation + ")";
     }
 
+    /**
+     * Create Kafka's Acl object from SimpleAclRule object.
+     *
+     * @param principal     Kafka prinmcipal needed to create Kafka's Acl object
+     * @return
+     */
     public Acl toKafkaAcl(KafkaPrincipal principal)   {
         PermissionType kafkaType;
         Operation kafkaOperation;
@@ -142,6 +180,13 @@ public class SimpleAclRule {
         return new Acl(principal, kafkaType, getHost(), kafkaOperation);
     }
 
+    /**
+     * Creates SimpleAclRule object based on Kafka's Acl object and an resource the rule should apply to.
+     *
+     * @param resource  The resource the newly created rule should apply to
+     * @param acl       The Acl object which should be used to create the rule
+     * @return
+     */
     public static SimpleAclRule fromKafkaAcl(SimpleAclRuleResource resource, Acl acl)   {
         AclRuleType type;
         AclOperation operation;
@@ -198,8 +243,13 @@ public class SimpleAclRule {
         return new SimpleAclRule(type, resource, acl.host(), operation);
     }
 
+    /**
+     * Creates SimpleAclRule object based on AclRule object which is received as part ofthe KafkaUser CRD.
+     *
+     * @param rule  AclRule object from KafkaUser CR
+     * @return
+     */
     public static SimpleAclRule fromCrd(AclRule rule)   {
-        //return new SimpleAclRule(rule.getType() != null ? rule.getType() : AclRuleType.ALLOW, SimpleAclRuleResource.fromCrd(rule.getResource()), rule.getHost(), rule.getOperation());
         return new SimpleAclRule(rule.getType(), SimpleAclRuleResource.fromCrd(rule.getResource()), rule.getHost(), rule.getOperation());
     }
 }

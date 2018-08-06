@@ -61,6 +61,15 @@ public class KafkaUserModel {
         this.labels = labels;
     }
 
+    /**
+     * Creates instance of KafkaUserModel from CRD definition
+     *
+     * @param certManager   CertManager instance for work with certificates
+     * @param kafkaUser     The Custom Resource based on which the model should be created
+     * @param clientsCa     Kubernetes secret with the clients certification authority
+     * @param userSecret    ubernetes secret with existing user certificate
+     * @return
+     */
     public static KafkaUserModel fromCrd(CertManager certManager, KafkaUser kafkaUser, Secret clientsCa, Secret userSecret) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
@@ -79,6 +88,12 @@ public class KafkaUserModel {
         return result;
     }
 
+    /**
+     * Generates secret containing the certificate for TLS client auth when TLS client auth is enabled for this user.
+     * Returns null otherwise.
+     *
+     * @return
+     */
     public Secret generateSecret()  {
         if (authentication != null && authentication.getType().equals(KafkaUserTlsClientAuthentication.TYPE_TLS)) {
             Map<String, String> data = new HashMap<>();
@@ -265,7 +280,7 @@ public class KafkaUserModel {
     }
 
     /**
-     * Sets list of ACL rules for SImple authorization
+     * Sets list of ACL rules for Simple authorization
      *
      * @param simpleAclRules List of ACL rules which should be applied to this user
      */

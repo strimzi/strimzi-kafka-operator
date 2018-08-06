@@ -26,17 +26,37 @@ import org.apache.logging.log4j.Logger;
 import scala.Tuple2;
 import scala.collection.Iterator;
 
+/**
+ * SimlpeAclOperator is repsonsible for managing the authorization rules in Apache Kafka / Apache Zookeeper.
+ * It is using Kafka's SimpleAclAuthorizer class to interact with Zookeeper and manage Acl rules.
+ * Since SimpleAclAuthorizer is written in Scala, this operator is using some Scala structures required for passing to / returned from the SimpleAclAuthorizer object.
+ * This class expects the SimpleAclAuthorizer instance to be passed from the outside.
+ * That is useful for testing and is similar to how the Kubernetes client is passed around.
+ */
 public class SimpleAclOperator {
     private static final Logger log = LogManager.getLogger(SimpleAclOperator.class.getName());
 
     private final Vertx vertx;
     private final SimpleAclAuthorizer authorizer;
 
+    /**
+     * Constructor
+     *
+     * @param vertx     Vertx instance
+     * @param authorizer    SimpleAcAuthorizer instance
+     */
     public SimpleAclOperator(Vertx vertx, SimpleAclAuthorizer authorizer)  {
         this.vertx = vertx;
         this.authorizer = authorizer;
     }
 
+    /**
+     * Reconciles Acl rules for given user
+     *
+     * @param username  User name of the reconciled user. When using TLS client auth, the username should be already in the Kafka format, e.g. CN=my-user
+     * @param desired   The list of desired Acl rules
+     * @return
+     */
     Future<ReconcileResult<Set<SimpleAclRule>>> reconcile(String username, Set<SimpleAclRule> desired) {
         Future<ReconcileResult<Set<SimpleAclRule>>> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -88,7 +108,10 @@ public class SimpleAclOperator {
     }
 
     /**
-     * Update all ACLs for given user
+     * Update all ACLs for given user.
+     * SimpleAclAuthorizer doesn't support modyfication of existing rules.
+     * This class is using Sets to decide which rules need to be added and which need to be deleted.
+     * It delagates to {@link #internalCreate(String username, Set<SimpleAclRule> desired) internalCreate} and {@link #internalDelete(String username, Set<SimpleAclRule> desired) internalDelete} methods for the actual addition or deletion.
      */
     protected Future<ReconcileResult<Set<SimpleAclRule>>> internalUpdate(String username, Set<SimpleAclRule> desired, Set<SimpleAclRule> current) {
         Set<SimpleAclRule> toBeDeleted = new HashSet<SimpleAclRule>(current);
