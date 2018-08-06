@@ -61,7 +61,15 @@ public class SimpleAclOperator {
         Future<ReconcileResult<Set<SimpleAclRule>>> fut = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
-                Set<SimpleAclRule> current = getAcls(username);
+                Set<SimpleAclRule> current;
+
+                try {
+                    current = getAcls(username);
+                } catch (Exception e)   {
+                    log.error("Reconciliation failed for user {}", username, e);
+                    future.fail(e);
+                    return;
+                }
 
                 if (desired == null || desired.isEmpty()) {
                     if (current.size() == 0)    {
@@ -97,11 +105,16 @@ public class SimpleAclOperator {
                 log.trace("Adding Acl rule {}", rule);
             }
 
-            Acl acl = rule.toKafkaAcl(principal);
-            Resource resource = rule.getResource().toKafkaResource();
-            scala.collection.immutable.Set<Acl> add = new scala.collection.immutable.Set.Set1<Acl>(acl);
+            try {
+                Acl acl = rule.toKafkaAcl(principal);
+                Resource resource = rule.getResource().toKafkaResource();
+                scala.collection.immutable.Set<Acl> add = new scala.collection.immutable.Set.Set1<Acl>(acl);
 
-            authorizer.addAcls(add, resource);
+                authorizer.addAcls(add, resource);
+            } catch (Exception e)   {
+                log.error("Adding Acl rule {} for user {} failed", rule, username, e);
+                return Future.failedFuture(e);
+            }
         }
 
         return Future.succeededFuture(ReconcileResult.created(desired));
@@ -111,7 +124,7 @@ public class SimpleAclOperator {
      * Update all ACLs for given user.
      * SimpleAclAuthorizer doesn't support modyfication of existing rules.
      * This class is using Sets to decide which rules need to be added and which need to be deleted.
-     * It delagates to {@link #internalCreate(String username, Set<SimpleAclRule> desired) internalCreate} and {@link #internalDelete(String username, Set<SimpleAclRule> desired) internalDelete} methods for the actual addition or deletion.
+     * It delagates to {@link #internalCreate internalCreate} and {@link #internalDelete internalDelete} methods for the actual addition or deletion.
      */
     protected Future<ReconcileResult<Set<SimpleAclRule>>> internalUpdate(String username, Set<SimpleAclRule> desired, Set<SimpleAclRule> current) {
         Set<SimpleAclRule> toBeDeleted = new HashSet<SimpleAclRule>(current);
@@ -130,6 +143,7 @@ public class SimpleAclOperator {
             if (res.succeeded())    {
                 fut.complete(ReconcileResult.patched(desired));
             } else  {
+                log.error("Updating Acl rules for user {} failed", username, res.cause());
                 fut.fail(res.cause());
             }
         });
@@ -147,11 +161,16 @@ public class SimpleAclOperator {
                 log.trace("Removing Acl rule {}", rule);
             }
 
-            Acl acl = rule.toKafkaAcl(principal);
-            Resource resource = rule.getResource().toKafkaResource();
-            scala.collection.immutable.Set<Acl> remove = new scala.collection.immutable.Set.Set1<Acl>(acl);
+            try {
+                Acl acl = rule.toKafkaAcl(principal);
+                Resource resource = rule.getResource().toKafkaResource();
+                scala.collection.immutable.Set<Acl> remove = new scala.collection.immutable.Set.Set1<Acl>(acl);
 
-            authorizer.removeAcls(remove, resource);
+                authorizer.removeAcls(remove, resource);
+            } catch (Exception e)   {
+                log.error("Deleting Acl rule {} for user {} failed", rule, username, e);
+                return Future.failedFuture(e);
+            }
         }
 
         return Future.succeededFuture(ReconcileResult.deleted());
@@ -168,7 +187,14 @@ public class SimpleAclOperator {
         Set<SimpleAclRule> result = new HashSet<SimpleAclRule>();
         KafkaPrincipal principal = new KafkaPrincipal("User", username);
 
-        scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> rules =  authorizer.getAcls(principal);
+        scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> rules;
+
+        try {
+            rules = authorizer.getAcls(principal);
+        } catch (Exception e)   {
+            log.error("Failed to get existing Acls rules for user {}", username, e);
+            throw e;
+        }
 
         Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> iter = rules.iterator();
         while (iter.hasNext())  {
@@ -194,7 +220,15 @@ public class SimpleAclOperator {
         Set<String> result = new HashSet<String>();
 
         log.debug("Searching for Users with any ACL rules");
-        scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> rules =  authorizer.getAcls();
+
+        scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> rules;
+
+        try {
+            rules =  authorizer.getAcls();
+        } catch (Exception e)   {
+            log.error("Failed to get existing Acls rules all users", e);
+            return result;
+        }
 
         Iterator<Tuple2<Resource, scala.collection.immutable.Set<Acl>>> iter = rules.iterator();
         while (iter.hasNext())  {

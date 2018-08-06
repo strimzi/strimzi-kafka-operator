@@ -30,7 +30,7 @@ public class UserOperator extends AbstractVerticle {
 
     public static final String STRIMZI_CLUSTER_OPERATOR_DOMAIN = "user.operator.strimzi.io";
 
-    private static final int HEALTH_SERVER_PORT = 8081;
+    private static final int HEALTH_SERVER_PORT = 8080;
 
     private final KubernetesClient client;
     private final String namespace;

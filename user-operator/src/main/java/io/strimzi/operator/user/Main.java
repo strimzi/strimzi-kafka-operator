@@ -85,6 +85,8 @@ public class Main {
     private static SimpleAclAuthorizer createSimpleAclAuthorizer(UserOperatorConfig config) {
         log.debug("Creating SimpleAclAuthorizer for Zookeeper {}", config.getZookeperConnect());
         Map authorizerConfig = new HashMap<String, Object>();
+        // The SimpleAclAuthorizer from KAfka requires the Zookeeper URL to be provided twice.
+        // See the comments in the SimpleAclAuthorizer.scala class for more details
         authorizerConfig.put(SimpleAclAuthorizer.ZkUrlProp(), config.getZookeperConnect());
         authorizerConfig.put("zookeeper.connect", config.getZookeperConnect());
         authorizerConfig.put(SimpleAclAuthorizer.ZkConnectionTimeOutProp(), config.getZookeeperSessionTimeoutMs());
