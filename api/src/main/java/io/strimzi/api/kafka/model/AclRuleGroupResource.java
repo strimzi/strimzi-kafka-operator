@@ -36,7 +36,7 @@ public class AclRuleGroupResource extends AclRuleResource {
     @Description("Describes the pattern used in the resource field. " +
             "The supported types are `literal` and `prefix`. " +
             "With `literal` pattern type, the resource field will be used as a definition of a full topic name. " +
-            "With `prefix` pattern type, the resoruce name will be used only as a prefix. " +
+            "With `prefix` pattern type, the resource name will be used only as a prefix. " +
             "Default value is `literal`.")
     @DefaultValue("literal")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)

@@ -45,8 +45,6 @@ public enum AclOperation {
                 return IDEMPOTENTWRITE;
             case "All":
                 return ALL;
-
-
             default:
                 return null;
         }
