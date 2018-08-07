@@ -76,6 +76,8 @@ docu_htmlnoheaderclean:
 systemtests:
 	./systemtest/scripts/run_tests.sh $(SYSTEMTEST_ARGS)
 
+helm_examples: helm-charts
+
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
