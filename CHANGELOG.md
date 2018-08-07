@@ -10,6 +10,8 @@
 * Configure Kafka _super users_ (`super.users` field in Kafka configuration) 
 * User operator
 * Kafka 2.0.0
+* Kafka Connect:
+  * Added TLS support for connecting to the Kafka cluster
 
 ## 0.5.0
 
