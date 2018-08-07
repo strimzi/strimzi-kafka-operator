@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// master.adoc
+// cluster-operator.adoc
 
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.
@@ -11,8 +11,6 @@ include::common/attributes.adoc[]
 
 [id='assembly-scheduling-{context}']
 = Configuring pod scheduling
-
-:context: scheduling
 
 include::assembly-scheduling-based-on-other-pods.adoc[leveloffset=+1]
 
