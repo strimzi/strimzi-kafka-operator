@@ -12,6 +12,7 @@
 * Kafka 2.0.0
 * Kafka Connect:
   * Added TLS support for connecting to the Kafka cluster
+  * Added TLS client authentication when connecting to the Kafka cluster 
 
 ## 0.5.0
 

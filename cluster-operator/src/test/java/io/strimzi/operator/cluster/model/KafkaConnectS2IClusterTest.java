@@ -15,6 +15,7 @@ import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -296,12 +297,70 @@ public class KafkaConnectS2IClusterTest {
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertEquals(KafkaConnectCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "my-secret",
+        assertEquals(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret",
                 containers.get(0).getVolumeMounts().get(1).getMountPath());
-        assertEquals(KafkaConnectCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "my-another-secret",
+        assertEquals(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-another-secret",
                 containers.get(0).getVolumeMounts().get(2).getMountPath());
 
         assertEquals("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS));
+    }
+
+    @Test
+    public void testGenerateDeploymentConfigWithTlsAuth() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                .editOrNewTls()
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                .endTls()
+                .withAuthentication(
+                        new KafkaConnectAuthenticationTlsBuilder()
+                                .withNewCertificateAndKey()
+                                .withSecretName("user-secret")
+                                .withCertificate("user.crt")
+                                .withKey("user.key")
+                                .endCertificateAndKey()
+                                .build())
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap());
+
+        assertEquals("user-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertEquals(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "user-secret",
+                containers.get(0).getVolumeMounts().get(2).getMountPath());
+
+        assertEquals("user-secret/user.crt",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT));
+        assertEquals("user-secret/user.key",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithTlsSameSecret() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                .editOrNewTls()
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                .endTls()
+                .withAuthentication(
+                        new KafkaConnectAuthenticationTlsBuilder()
+                                .withNewCertificateAndKey()
+                                .withSecretName("my-secret")
+                                .withCertificate("user.crt")
+                                .withKey("user.key")
+                                .endCertificateAndKey()
+                                .build())
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap());
+
+        // 2 = 1 volume from logging/metrics + just 1 from above certs Secret
+        assertEquals(2, dep.getSpec().getTemplate().getSpec().getVolumes().size());
+        assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
     }
 }

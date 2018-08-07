@@ -10,7 +10,7 @@ if [ -n "$KAFKA_CONNECT_TRUSTED_CERTS" ]; then
 
     mkdir -p /tmp/kafka
 
-    # Import certificates into truststore
+    # Import certificates into keystore and truststore
     ./kafka_connect_tls_prepare_certificates.sh
 fi
 
