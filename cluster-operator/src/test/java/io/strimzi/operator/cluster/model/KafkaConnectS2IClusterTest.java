@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -13,7 +14,9 @@ import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
+import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -23,6 +26,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,10 +72,10 @@ public class KafkaConnectS2IClusterTest {
     private final boolean insecureSourceRepo = false;
 
 
-    private final KafkaConnectS2I cm = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
+    private final KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers);
 
-    private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(cm);
+    private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
 
     @Rule
     public ResourceTester<KafkaConnectS2I, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2I.class, KafkaConnectS2ICluster::fromCrd);
@@ -159,7 +163,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testGenerateDeploymentConfig()   {
-        DeploymentConfig dep = kc.generateDeploymentConfig(new HashMap<String, String>());
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap());
 
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
@@ -271,5 +275,33 @@ public class KafkaConnectS2IClusterTest {
     public void withTolerations() throws IOException {
         resourceTester
             .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(new HashMap<String, String>()).getSpec().getTemplate().getSpec().getTolerations());
+    }
+
+    @Test
+    public void testGenerateDeploymentConfigWithTls() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                .editOrNewTls()
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("new-cert.crt").build())
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-another-secret").withCertificate("another-cert.crt").build())
+                .endTls()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap());
+
+        assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
+        assertEquals("my-another-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertEquals(KafkaConnectCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "my-secret",
+                containers.get(0).getVolumeMounts().get(1).getMountPath());
+        assertEquals(KafkaConnectCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "my-another-secret",
+                containers.get(0).getVolumeMounts().get(2).getMountPath());
+
+        assertEquals("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS));
     }
 }

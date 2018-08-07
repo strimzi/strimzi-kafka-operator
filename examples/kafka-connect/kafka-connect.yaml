@@ -10,6 +10,10 @@ spec:
   livenessProbe:
     initialDelaySeconds: 60
     timeoutSeconds: 5
-  bootstrapServers: my-cluster-kafka-bootstrap:9092
+  bootstrapServers: my-cluster-kafka-bootstrap:9093
   metrics:
     lowercaseOutputName: true
+  tls:
+    trustedCertificates:
+      - secretName: my-cluster-cluster-ca-cert
+        certificate: ca.crt

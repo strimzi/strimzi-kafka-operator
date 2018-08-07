@@ -5,10 +5,12 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.Probe;
@@ -20,6 +22,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -192,5 +195,33 @@ public class KafkaConnectClusterTest {
     public void withTolerations() throws IOException {
         resourceTester
             .assertDesiredResource("-Deployment.yaml", kcc -> kcc.generateDeployment(new HashMap<String, String>()).getSpec().getTemplate().getSpec().getTolerations());
+    }
+
+    @Test
+    public void testGenerateDeploymentWithTls() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                .editOrNewTls()
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("new-cert.crt").build())
+                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-another-secret").withCertificate("another-cert.crt").build())
+                .endTls()
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
+        Deployment dep = kc.generateDeployment(Collections.emptyMap());
+
+        assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
+        assertEquals("my-another-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertEquals(KafkaConnectCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "my-secret",
+                containers.get(0).getVolumeMounts().get(1).getMountPath());
+        assertEquals(KafkaConnectCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "my-another-secret",
+                containers.get(0).getVolumeMounts().get(2).getMountPath());
+
+        assertEquals("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS));
     }
 }
