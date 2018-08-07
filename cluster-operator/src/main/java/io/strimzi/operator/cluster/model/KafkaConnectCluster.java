@@ -17,8 +17,10 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
+import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.operator.common.model.Labels;
 
@@ -39,7 +41,7 @@ public class KafkaConnectCluster extends AbstractModel {
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
 
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
-    protected static final String TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/trusted-certs/";
+    protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/connect-certs/";
 
     // Configuration defaults
     protected static final String DEFAULT_IMAGE =
@@ -54,10 +56,13 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED = "KAFKA_CONNECT_METRICS_ENABLED";
     protected static final String ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS = "KAFKA_CONNECT_BOOTSTRAP_SERVERS";
     protected static final String ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS = "KAFKA_CONNECT_TRUSTED_CERTS";
+    protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT = "KAFKA_CONNECT_TLS_AUTH_CERT";
+    protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY = "KAFKA_CONNECT_TLS_AUTH_KEY";
 
     protected String bootstrapServers;
 
     private List<CertSecretSource> trustedCertificates;
+    private CertAndKeySecretSource tlsAuthCertAndKey;
 
     /**
      * Constructor
@@ -142,6 +147,13 @@ public class KafkaConnectCluster extends AbstractModel {
             if (spec.getTls() != null) {
                 kafkaConnect.setTrustedCertificates(spec.getTls().getTrustedCertificates());
             }
+
+            if (spec.getAuthentication() != null && spec.getAuthentication().getType().equals(KafkaConnectAuthenticationTls.TYPE_TLS)) {
+                kafkaConnect.setTlsAuthCertAndKey(((KafkaConnectAuthenticationTls) spec.getAuthentication()).getCertificateAndKey());
+                if (spec.getTls() == null) {
+                    log.warn("TLS configuration missing: related TLS client authentication will not work properly");
+                }
+            }
         }
         return kafkaConnect;
     }
@@ -177,6 +189,12 @@ public class KafkaConnectCluster extends AbstractModel {
                 }
             }
         }
+        if (tlsAuthCertAndKey != null) {
+            // skipping if a volume with same Secret name was already added
+            if (!volumeList.stream().anyMatch(v -> v.getName().equals(tlsAuthCertAndKey.getSecretName()))) {
+                volumeList.add(createSecretVolume(tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getSecretName()));
+            }
+        }
 
         return volumeList;
     }
@@ -189,8 +207,15 @@ public class KafkaConnectCluster extends AbstractModel {
                 // skipping if a volume mount with same Secret name was already added
                 if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
                     volumeMountList.add(createVolumeMount(certSecretSource.getSecretName(),
-                            TRUSTED_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
+                            TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
                 }
+            }
+        }
+        if (tlsAuthCertAndKey != null) {
+            // skipping if a volume mount with same Secret name was already added
+            if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(tlsAuthCertAndKey.getSecretName()))) {
+                volumeMountList.add(createVolumeMount(tlsAuthCertAndKey.getSecretName(),
+                        TLS_CERTS_BASE_VOLUME_MOUNT + tlsAuthCertAndKey.getSecretName()));
             }
         }
 
@@ -257,6 +282,12 @@ public class KafkaConnectCluster extends AbstractModel {
             }
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, sb.toString()));
         }
+        if (tlsAuthCertAndKey != null) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT,
+                    String.format("%s/%s", tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getCertificate())));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY,
+                    String.format("%s/%s", tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getKey())));
+        }
         return varList;
     }
 
@@ -279,5 +310,13 @@ public class KafkaConnectCluster extends AbstractModel {
      */
     protected void setTrustedCertificates(List<CertSecretSource> trustedCertificates) {
         this.trustedCertificates = trustedCertificates;
+    }
+
+    /**
+     * Ste the certificate and related private key for TLS based authentication
+     * @param tlsAuthCertAndKey certificate and private key bundle
+     */
+    protected void setTlsAuthCertAndKey(CertAndKeySecretSource tlsAuthCertAndKey) {
+        this.tlsAuthCertAndKey = tlsAuthCertAndKey;
     }
 }

@@ -113,7 +113,7 @@
         </module>
         <module name="NPathComplexity">
             <!-- default is 200 -->
-            <property name="max" value="900"/>
+            <property name="max" value="1158"/>
         </module>
 
         <module name="IllegalToken">
