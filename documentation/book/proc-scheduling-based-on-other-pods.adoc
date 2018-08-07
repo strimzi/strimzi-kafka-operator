@@ -1,0 +1,56 @@
+// Module included in the following assemblies:
+//
+// assembly-scheduling-based-on-other-pods.adoc
+
+include::common/attributes.adoc[]
+
+[id='configuring-pod-anti-affinity-in-kafka-components-{context}']
+= Configuring pod anti-affinity in Kafka components
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator.
+
+.Procedure
+
+. Edit the `affinity` property in the resource specifying the cluster deployment.
+Use labels to specify the pods which should not be scheduled on the same nodes.
+The `topologyKey` should be set to `kubernetes.io/hostname` to specify that the selected pods should not be scheduled on nodes with the same hostname.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: application
+                  operator: In
+                  values:
+                    - postgresql
+                    - mongodb
+          topologyKey: "kubernetes.io/hostname"
+    # ...
+  zookeeper:
+    # ...
+----
+
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

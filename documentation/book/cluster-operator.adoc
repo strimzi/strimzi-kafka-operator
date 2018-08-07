@@ -1321,3 +1321,5 @@ roleRef:
   name: strimzi-cluster-operator-role
   apiGroup: v1
 ----
+
+include::assembly-scheduling.adoc[leveloffset=+2]
