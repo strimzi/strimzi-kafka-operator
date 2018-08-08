@@ -15,4 +15,4 @@ To achieve the best possible performance, it is important to allow scheduling of
 {ProductPlatformName} uses node affinity to schedule workloads onto specific nodes.
 Node affinity allows you to create a scheduling constraint for the node on which the pod will be scheduled.
 The constraint is specified as a label selector.
-You can specify the label using either the built-in node label like beta.kubernetes.io/instance-type or custom labels to select the right node.
+You can specify the label using either the built-in node label like `beta.kubernetes.io/instance-type` or custom labels to select the right node.
