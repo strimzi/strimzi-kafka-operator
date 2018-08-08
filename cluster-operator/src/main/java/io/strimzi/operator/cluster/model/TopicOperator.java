@@ -372,7 +372,6 @@ public class TopicOperator extends AbstractModel {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
                     .withName(getServiceAccountName())
-                    .addToLabels("app", "strimzi")
                     .withNamespace(namespace)
                 .endMetadata()
             .build();
