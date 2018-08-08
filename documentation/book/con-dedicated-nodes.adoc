@@ -5,7 +5,7 @@
 include::common/attributes.adoc[]
 
 [id='con-dedicated-nodes-{context}']
-= Dedicating nodes
+= Dedicated nodes
 
 Cluster administrators can mark selected {ProductPlatformName} nodes as tainted.
 Nodes with taints are excluded from regular scheduling and normal pods will not be scheduled to run on them.
@@ -17,4 +17,4 @@ Running Kafka and its components on dedicated nodes can have many advantages.
 There will be no other applications running on the same nodes which could cause disturbance or consume the resources needed for Kafka.
 That can lead to improved performance and stability.
 
-To schedule Kafka pods on the dedicated nodes, the node affinity and tolerations features of {ProductPlatformName} has to be used.
+To schedule Kafka pods on the dedicated nodes, configure xref:affinity-{context}[node affinity] and xref:tolerations-{context}[tolerations].
