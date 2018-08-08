@@ -15,37 +15,31 @@ include::common/attributes.adoc[]
 = Configuring Cluster Operator to watch multiple namespaces
 
 The `STRIMZI_NAMESPACE` environment variable can be used to configure a single operator instance
-to operate in multiple namespaces. For each namespace given, the operator will watch for cluster ConfigMaps
-and perform periodic reconciliation. To be able to do this, the operator's `ServiceAccount` needs
-access to the necessary resources in those other namespaces. This can be done by creating an additional
-RoleBinding in each of those namespaces, associating the operator's ServiceAccount
-(`strimzi-cluster-operator` in the examples) with the operator's
-Role (`strimzi-operator-role` in the examples).
+to operate in multiple namespaces. For each namespace given, the operator will watch for cluster resources
+and perform periodic reconciliation. 
 
 .Procedure
 
 //Add a procedure to explain how to configure operator to watch multiple name spaces
 
-In the following example, the operator deployed in namespace `foo` and needs to operate in namespace `bar`.
-The following RoleBinding would grant the necessary permissions:
+The following change needs to be done to the environment variables in Cluster Operator deployment:
 
-.Example RoleBinding for a operator to operate in namespace `bar`
+.Example `Deployment` for an operator watching in bamespace `bar` and `baz`
 [source,yaml,options="nowrap"]
 ----
-apiVersion: v1
-kind: RoleBinding
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
-  name: strimzi-cluster-operator-binding-bar
-  namespace: bar
+  name: strimzi-cluster-operator
   labels:
     app: strimzi
-subjects:
-  - kind: ServiceAccount
-    name: strimzi-cluster-operator
-    namespace: foo
-roleRef:
-  kind: Role
-  name: strimzi-cluster-operator-role
-  apiGroup: v1
+spec:
+  template:
+    spec:
+      # ...
+      env:
+        - name: STRIMZI_NAMESPACE
+          value: bar,baz
+      # ...
 ----
 
