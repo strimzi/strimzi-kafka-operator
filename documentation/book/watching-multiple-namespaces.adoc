@@ -1,0 +1,45 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='cluster-operator-{context}']
+// * Title: = Configure Cluster Operator
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
+[id='watching-multiple-namespaces-{context}']
+= Configuring Cluster Operator to watch multiple namespaces
+
+The `STRIMZI_NAMESPACE` environment variable can be used to configure a single operator instance
+to operate in multiple namespaces. For each namespace given, the operator will watch for cluster resources
+and perform periodic reconciliation. 
+
+.Procedure
+
+//Add a procedure to explain how to configure operator to watch multiple name spaces
+
+The following change needs to be done to the environment variables in Cluster Operator deployment:
+
+.Example `Deployment` for an operator watching in bamespace `bar` and `baz`
+[source,yaml,options="nowrap"]
+----
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: strimzi-cluster-operator
+  labels:
+    app: strimzi
+spec:
+  template:
+    spec:
+      # ...
+      env:
+        - name: STRIMZI_NAMESPACE
+          value: bar,baz
+      # ...
+----
+
