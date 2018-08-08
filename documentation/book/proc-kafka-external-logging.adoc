@@ -1,0 +1,30 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-logging.adoc
+
+[id='kafka-external-logging-{context}']
+= Using external ConfigMap for logging setting
+.Procedure
+
+. Edit the YAML file to specify the name of the `ConfigMap` which should be used for the required components. For example:
++
+----
+  logging:
+    type: external
+    name: customConfigMap
+----
++
+Remember to place your custom ConfigMap under `log4j.properties` eventually `log4j2.properties` key.
++
+. Create or update the Kafka resource in {ProductPlatformName}.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

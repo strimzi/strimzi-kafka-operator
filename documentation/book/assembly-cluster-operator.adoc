@@ -35,5 +35,7 @@ ifdef::Helm[]
 include::proc-deploying-cluster-operator-helm-chart.adoc[leveloffset=+1]
 endif::Helm[]
 
+include::assembly-kafka-logging.adoc[leveloffset=+1]
+
 // Restore the context to what it was before this assembly.
 :context: {parent-context}
