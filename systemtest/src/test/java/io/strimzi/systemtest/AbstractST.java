@@ -240,7 +240,7 @@ public class AbstractST {
 
     protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = client.pods().inNamespace(namespace).withName(podName).get();
-        assertNotNull("Expected a pod called " + podName + " but found " +
+        assertNotNull("Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
             client.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()),
             po);
         Container container = po.getSpec().getContainers().get(0);

@@ -49,9 +49,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.entriesToMap;
 import static io.strimzi.test.TestUtils.entry;
+import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -665,7 +665,12 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 // Here we record the state of the cluster
                 LOGGER.info("Creating cluster operator with Helm Chart {} before test per @ClusterOperator annotation on {}", cc, name(element));
                 Path pathToChart = new File(HELM_CHART).toPath();
+                String oldNamespace = kubeClient().namespace("kube-system");
+                String pathToHelmServiceAccount = Thread.currentThread().getContextClassLoader().getResource("helm/helm-service-account.yaml").getPath();
+                String helmServiceAccount = TestUtils.getFileAsString(pathToHelmServiceAccount);
+                kubeClient().applyContent(helmServiceAccount);
                 helmClient().init();
+                kubeClient().namespace(oldNamespace);
                 helmClient().install(pathToChart, HELM_RELEASE_NAME, allValues);
             }
 

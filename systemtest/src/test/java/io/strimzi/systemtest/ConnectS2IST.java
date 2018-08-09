@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
 public class ConnectS2IST extends AbstractST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
-    public static final String CONNECT_CLUSTER_NAME = "my-cluster";
+    public static final String CONNECT_CLUSTER_NAME = "connect-s2i-tests";
     public static final String CONNECT_DEPLOYMENT_NAME = CONNECT_CLUSTER_NAME + "-connect";
 
     @Test

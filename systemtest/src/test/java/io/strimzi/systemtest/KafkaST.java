@@ -299,19 +299,19 @@ public class KafkaST extends AbstractST {
     @Test
     @JUnitGroup(name = "regression")
     public void testJvmAndResources() {
-        assertResources(client.getNamespace(), "jvm-resource-cluster-kafka-0",
+        assertResources(kubeClient.namespace(), "jvm-resource-cluster-kafka-0",
                 "2Gi", "400m", "2Gi", "400m");
         assertExpectedJavaOpts("jvm-resource-cluster-kafka-0",
                 "-Xmx1g", "-Xms1G", "-server", "-XX:+UseG1GC");
 
-        assertResources(client.getNamespace(), "jvm-resource-cluster-zookeeper-0",
+        assertResources(kubeClient.namespace(), "jvm-resource-cluster-zookeeper-0",
                 "1Gi", "300m", "1Gi", "300m");
         assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
         String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-operator-")).findFirst().get().getMetadata().getName();
 
-        assertResources(client.getNamespace(), podName,
+        assertResources(kubeClient.namespace(), podName,
                 "500M", "300m", "500M", "300m");
     }
 

@@ -34,7 +34,7 @@ public class Helm implements HelmClient {
     @Override
     public HelmClient init() {
         if (!initialized) {
-            Exec.exec(wait(command("init")));
+            Exec.exec(wait(command("init", "--service-account", "tiller")));
             initialized = true;
         }
         return this;
