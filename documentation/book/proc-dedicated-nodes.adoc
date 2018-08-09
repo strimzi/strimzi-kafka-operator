@@ -1,0 +1,85 @@
+// Module included in the following assemblies:
+//
+// assembly-dedicated-nodes.adoc
+
+include::common/attributes.adoc[]
+
+[id='proc-dedicated-nodes-{context}']
+= Setting up dedicated nodes and scheduling pods on them
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator.
+
+.Procedure
+
+. Select the nodes which should be used as dedicated
+. Make sure there are no workloads scheduled on these nodes
+. Set the taints on the selected nodes
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl taint`:
+[source,shell,subs=+quotes]
+kubectl taint node _<your-node>_ -l dedicated=Kafka:NoSchedule
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc adm taint`:
++
+[source,shell,subs=+quotes]
+oc adm taint node _<your-node>_ -l dedicated=Kafka:NoSchedule
++
+. Additionally, add a label to the selected nodes as well.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl label`:
+[source,shell,subs=+quotes]
+kubectl label node _<your-node>_ -l dedicated=Kafka
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc label`:
++
+[source,shell,subs=+quotes]
+oc label node _<your-node>_ -l dedicated=Kafka
++
+. Edit the `affinity` and `tolerations` properties in the resource specifying the cluster deployment.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "Kafka"
+        effect: "NoSchedule"
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: dedicated
+              operator: In
+              values:
+              - Kafka
+    # ...
+  zookeeper:
+    # ...
+----
+
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

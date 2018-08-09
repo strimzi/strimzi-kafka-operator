@@ -1,0 +1,25 @@
+// Module included in the following assemblies:
+//
+// assembly-node-scheduling.adoc
+// assembly-dedicated-nodes.adoc
+
+include::common/attributes.adoc[]
+
+[id='affinity-{context}']
+= Affinity
+
+Affinity can be configured using the `affinity` property in following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.zookeeper`
+* `Kafka.spec.topicOperator`
+* `KafkaConnect.spec`
+* `KafkaConnectS2I.spec`
+
+The affinity configuration can include different types of affinity:
+
+* Pod affinity and anti-affinity
+* Node affinity
+
+The format of the `affinity` property follows the {ProductPlatformName} specification.
+For more details visit the {K8sAffinity}.

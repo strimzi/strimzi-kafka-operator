@@ -13,7 +13,7 @@
 
 . Edit the `Kafka` resource specifying in the `Kafka.spec.topicOperator.resources` property the resource requests and limits you want the Topic Operator to have.
 +
-[source,yaml]
+[source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
