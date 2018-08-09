@@ -34,9 +34,8 @@ public class TopicOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_IMAGE = System.getenv().getOrDefault(
-            "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE",
-            "strimzi/topic-operator:latest");
+    public static final String DEFAULT_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator:latest");
     public static final String DEFAULT_TLS_SIDECAR_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator-stunnel:latest");
     public static final int DEFAULT_REPLICAS = 1;
@@ -68,7 +67,7 @@ public class TopicOperatorSpec implements Serializable {
         this.watchedNamespace = watchedNamespace;
     }
 
-    @Description("The image to use for the topic operator")
+    @Description("The image to use for the Topic Operator")
     public String getImage() {
         return image;
     }

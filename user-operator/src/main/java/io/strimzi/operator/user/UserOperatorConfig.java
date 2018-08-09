@@ -41,7 +41,7 @@ public class UserOperatorConfig {
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param zookeperConnect Connecton URL for Zookeeper
      * @param zookeeperSessionTimeoutMs Session timeout for Zookeeper connections
-     * @param labels    Map with labels which should be used to find the KAfkaUser resources
+     * @param labels    Map with labels which should be used to find the KafkaUser resources
      * @param caName    Name of the secret containing the Certification Authority
      * @param caNamespace   Namespace with the CA secret
      */
