@@ -11,8 +11,6 @@ import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.StrimziRunner;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -25,9 +23,8 @@ import static org.junit.Assert.assertThat;
 @KafkaFromClasspathYaml
 public class ConnectS2IST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
     public static final String NAMESPACE = "connect-s2i-cluster-test";
-    public static final String CONNECT_CLUSTER_NAME = "my-cluster";
+    public static final String CONNECT_CLUSTER_NAME = "connect-s2i-tests";
     public static final String CONNECT_DEPLOYMENT_NAME = CONNECT_CLUSTER_NAME + "-connect";
 
     @Test
