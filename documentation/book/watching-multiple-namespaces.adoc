@@ -24,7 +24,7 @@ and perform periodic reconciliation.
 
 The following change needs to be done to the environment variables in Cluster Operator deployment:
 
-.Example `Deployment` for an operator watching in bamespace `bar` and `baz`
+.Example `Deployment` for an operator watching in namespace `bar` and `baz`
 [source,yaml,options="nowrap"]
 ----
 apiVersion: extensions/v1beta1
