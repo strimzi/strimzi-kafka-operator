@@ -2,8 +2,6 @@
 //
 // assembly-kafka-connect.adoc
 
-include::common/attributes.adoc[]
-
 [id='deploying-kafka-connect-kubernetes-{context}']
 = Deploying Kafka Connect to {KubernetesName}
 

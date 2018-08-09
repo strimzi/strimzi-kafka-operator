@@ -2,8 +2,6 @@
 //
 // assembly-node-scheduling.adoc
 
-include::common/attributes.adoc[]
-
 [id='con-scheduling-to-specific-nodes-{context}']
 = Node scheduling
 

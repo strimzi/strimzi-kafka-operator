@@ -2,8 +2,6 @@
 //
 // assembly-scheduling-based-on-other-pods.adoc
 
-include::common/attributes.adoc[]
-
 [id='con-scheduling-based-on-other-pods-{context}']
 = Avoid critical applications to share the node
 

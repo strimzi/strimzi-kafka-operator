@@ -3,8 +3,6 @@
 // assembly-node-scheduling.adoc
 // assembly-dedicated-nodes.adoc
 
-include::common/attributes.adoc[]
-
 [id='affinity-{context}']
 = Affinity
 

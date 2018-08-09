@@ -2,8 +2,6 @@
 //
 // assembly-kafka-cluster.adoc
 
-include::common/attributes.adoc[]
-
 [id='deploying-kafka-cluster-kubernetes-{context}']
 = Deploying the Kafka cluster to {KubernetesName}
 

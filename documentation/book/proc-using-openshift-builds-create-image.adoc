@@ -2,8 +2,6 @@
 //
 // assembly-using-kafka-connect-with-plugins.adoc
 
-include::common/attributes.adoc[]
-
 [id='using-openshift-s2i-create-image-{context}']
 = Using {OpenShiftName} builds and S2I to create new images
 

@@ -2,8 +2,6 @@
 //
 // assembly-cluster-operator.adoc
 
-include::common/attributes.adoc[]
-
 [id='deploying-cluster-operator-openshift-{context}']
 = Deploying the Cluster Operator to {OpenShiftName}
 

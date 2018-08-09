@@ -2,8 +2,6 @@
 //
 // assembly-dedicated-nodes.adoc
 
-include::common/attributes.adoc[]
-
 [id='con-dedicated-nodes-{context}']
 = Dedicated nodes
 

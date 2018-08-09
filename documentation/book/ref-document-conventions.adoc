@@ -2,8 +2,6 @@
 //
 // assembly-overview.adoc
 
-include::common/attributes.adoc[]
-
 [id='document-conventions-{context}']
 = Document Conventions
 

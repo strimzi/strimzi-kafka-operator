@@ -2,8 +2,6 @@
 //
 // topic-operator.adoc
 
-include::common/attributes.adoc[]
-
 [id='topic-operator-environment-{context}']
 = Topic Operator environment
 

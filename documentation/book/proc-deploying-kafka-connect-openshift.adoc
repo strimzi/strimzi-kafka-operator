@@ -2,8 +2,6 @@
 //
 // assembly-kafka-connect.adoc
 
-include::common/attributes.adoc[]
-
 [id='deploying-kafka-connect-openshift-{context}']
 = Deploying Kafka Connect to {OpenShiftName}
 

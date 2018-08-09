@@ -2,8 +2,6 @@
 //
 // assembly-scheduling.adoc
 
-include::common/attributes.adoc[]
-
 [id='con-scheduling-{context}']
 
 IMPORTANT: When two application are scheduled to the same {ProductPlatformName} node, both applications might use the same resources like disk I/O and impact performance.
