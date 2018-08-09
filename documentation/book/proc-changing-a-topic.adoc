@@ -2,8 +2,6 @@
 //
 // assembly-using-the-topic-operator.adoc
 
-include::common/attributes.adoc[]
-
 [id='changing-a-topic-{context}']
 = Changing a topic
 

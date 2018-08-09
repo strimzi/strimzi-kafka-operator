@@ -2,8 +2,6 @@
 //
 // topic-operator.adoc
 
-include::common/attributes.adoc[]
-
 [id='what-the-topic-operator-does-{context}']
 = What the Topic Operator does
 

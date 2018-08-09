@@ -2,8 +2,6 @@
 //
 // assembly-using-the-topic-operator.adoc
 
-include::common/attributes.adoc[]
-
 [id='deleting-a-topic-{context}']
 = Deleting a topic
 

@@ -2,8 +2,6 @@
 //
 // assembly-node-scheduling.adoc
 
-include::common/attributes.adoc[]
-
 [id='proc-configuring-node-affinity-{context}']
 = Configuring node affinity in Kafka components
 

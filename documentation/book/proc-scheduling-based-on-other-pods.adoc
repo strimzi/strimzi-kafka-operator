@@ -2,8 +2,6 @@
 //
 // assembly-scheduling-based-on-other-pods.adoc
 
-include::common/attributes.adoc[]
-
 [id='configuring-pod-anti-affinity-in-kafka-components-{context}']
 = Configuring pod anti-affinity in Kafka components
 

@@ -2,8 +2,6 @@
 //
 // assembly-using-kafka-connect-with-plugins.adoc
 
-include::common/attributes.adoc[]
-
 [id='creating-new-image-from-base-{context}']
 = Create a new image based on our base image
 

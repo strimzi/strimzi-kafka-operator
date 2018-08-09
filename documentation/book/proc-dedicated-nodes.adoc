@@ -2,8 +2,6 @@
 //
 // assembly-dedicated-nodes.adoc
 
-include::common/attributes.adoc[]
-
 [id='proc-dedicated-nodes-{context}']
 = Setting up dedicated nodes and scheduling pods on them
 

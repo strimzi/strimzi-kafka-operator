@@ -2,8 +2,6 @@
 //
 // getting-started.adoc
 
-include::common/attributes.adoc[]
-
 [id='downloads-{context}']
 = {ProductName} Downloads
 
