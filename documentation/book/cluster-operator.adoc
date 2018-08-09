@@ -886,7 +886,7 @@ kind: KafkaConnect
 metadata:
   name: my-connect-cluster
 spec:
-  nodes: 1
+  replicas: 1
   image: {DockerKafkaConnect}
   readinessProbe:
     initialDelaySeconds: 60
@@ -1009,7 +1009,7 @@ kind: KafkaConnectS2I
 metadata:
   name: my-connect-cluster
 spec:
-  nodes: 1
+  replicas: 1
   image: {DockerKafkaConnectS2I}
   readinessProbe:
     initialDelaySeconds: 60
