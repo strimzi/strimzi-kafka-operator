@@ -31,6 +31,7 @@ public class EntityOperatorSpec implements Serializable {
 
     public static final String DEFAULT_TLS_SIDECAR_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", "strimzi/entity-operator-stunnel:latest");
+    public static final int DEFAULT_REPLICAS = 1;
 
     private TopicOperatorSpec topicOperator;
     private UserOperatorSpec userOperator;
