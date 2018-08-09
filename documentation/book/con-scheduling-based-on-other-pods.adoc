@@ -7,11 +7,5 @@ include::common/attributes.adoc[]
 [id='con-scheduling-based-on-other-pods-{context}']
 = Avoid critical applications to share the node
 
-When two application are scheduled to the same {ProductPlatformName} node, both applications might use the same resources like disk I/O and impact performance.
-You can use pod anti-affinity to ensure that critical applications are never scheduled on the same disk.
+Pod anti-affinity can be used to ensure that critical applications are never scheduled on the same disk.
 When running Kafka cluster, it is recommended to use pod anti-affinity to ensure that the Kafka brokers do not share the nodes with other workloads like databases.
-
-When two applications are scheduled to the same {ProductPlatformName} node they can affect each other.
-This happens especially when both of these workloads are heavily using the same resources such as for example disk I/O.
-Pod anti-affinity can be used to make sure that some critical applications are never scheduled on the same disk.
-When running Kafka cluster, this should be typically used to ensure that the Kafka brokers do not share the nodes with other workloads such as databases.

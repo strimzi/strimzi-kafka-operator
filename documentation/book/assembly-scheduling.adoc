@@ -12,6 +12,8 @@ include::common/attributes.adoc[]
 [id='assembly-scheduling-{context}']
 = Configuring pod scheduling
 
+include::con-scheduling.adoc[leveloffset=+1]
+
 include::assembly-scheduling-based-on-other-pods.adoc[leveloffset=+1]
 
 include::assembly-node-scheduling.adoc[leveloffset=+1]
