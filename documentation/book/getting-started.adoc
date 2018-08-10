@@ -39,6 +39,7 @@ include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
 include::assembly-kafka-connect.adoc[leveloffset=+1]
 
+include::assembly-hello-world.adoc[leveloffset=+1]
 //Modularized above here
 
 == Topic Operator

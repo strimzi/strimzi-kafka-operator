@@ -1,0 +1,26 @@
+// Module included in the following assemblies:
+//
+// assembly-hello-world.adoc
+
+[id='deploying-example-clients-{context}']
+== Deploying example clients
+
+.Prerequisites
+* An existing Kafka cluster for the client to connect to.
+
+.Procedure
+
+You can deploy the client in a single command.
+This is an example command you should substitute _test_ for your topic and _my-cluster-kafka-bootstrap:9092_ by your server address for both producer and consumer.
+
+. Deploy the producer
++
+`oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-producer.sh --broker-list _my-cluster-kafka-bootstrap:9092_ --topic _test_`
+
+. Send messages by writing into the console where you run the producer and hit the enter.
+
+. Deploy the consumer
++
+`oc run kafka-consumer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-consumer.sh --bootstrap-server _my-cluster-kafka-bootstrap:9092_ --topic _test_ --from-beginning`
+
+You can now see the incoming messages in the consumer console.
