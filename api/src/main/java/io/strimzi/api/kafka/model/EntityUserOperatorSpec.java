@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -24,19 +25,22 @@ import java.util.Map;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserOperatorSpec implements Serializable {
+@JsonPropertyOrder({"watchedNamespace", "image",
+        "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
+        "resources", "logging"})
+public class EntityUserOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/user-operator:latest");
-    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
-    public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = 6_000;
+    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
+    public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 6;
 
     private String watchedNamespace;
     private String image = DEFAULT_IMAGE;
-    private long reconciliationIntervalMilliseconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
-    private long zookeeperSessionTimeoutMilliseconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
+    private long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
+    private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     private Resources resources;
     private Logging logging;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -61,22 +65,22 @@ public class UserOperatorSpec implements Serializable {
 
     @Description("Interval between periodic reconciliations.")
     @Minimum(0)
-    public long getReconciliationIntervalMilliseconds() {
-        return reconciliationIntervalMilliseconds;
+    public long getReconciliationIntervalSeconds() {
+        return reconciliationIntervalSeconds;
     }
 
-    public void setReconciliationIntervalMilliseconds(long reconciliationIntervalMilliseconds) {
-        this.reconciliationIntervalMilliseconds = reconciliationIntervalMilliseconds;
+    public void setReconciliationIntervalSeconds(long reconciliationIntervalSeconds) {
+        this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
     }
 
     @Description("Timeout for the Zookeeper session")
     @Minimum(0)
-    public long getZookeeperSessionTimeoutMilliseconds() {
-        return zookeeperSessionTimeoutMilliseconds;
+    public long getZookeeperSessionTimeoutSeconds() {
+        return zookeeperSessionTimeoutSeconds;
     }
 
-    public void setZookeeperSessionTimeoutMilliseconds(long zookeeperSessionTimeoutMilliseconds) {
-        this.zookeeperSessionTimeoutMilliseconds = zookeeperSessionTimeoutMilliseconds;
+    public void setZookeeperSessionTimeoutSeconds(long zookeeperSessionTimeoutSeconds) {
+        this.zookeeperSessionTimeoutSeconds = zookeeperSessionTimeoutSeconds;
     }
 
     @Description("Resource constraints (limits and requests).")

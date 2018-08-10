@@ -7,13 +7,16 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,6 +28,9 @@ import java.util.Map;
         builderPackage = "io.strimzi.api.kafka.model"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({
+        "topicOperator", "userOperator", "affinity",
+        "tolerations", "tlsSidecar"})
 public class EntityOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -33,38 +39,53 @@ public class EntityOperatorSpec implements Serializable {
             System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", "strimzi/entity-operator-stunnel:latest");
     public static final int DEFAULT_REPLICAS = 1;
 
-    private TopicOperatorSpec topicOperator;
-    private UserOperatorSpec userOperator;
+    private EntityTopicOperatorSpec topicOperator;
+    private EntityUserOperatorSpec userOperator;
     private Affinity affinity;
+    private List<Toleration> tolerations;
     private Sidecar tlsSidecar;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Topic Operator")
-    public TopicOperatorSpec getTopicOperator() {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public EntityTopicOperatorSpec getTopicOperator() {
         return topicOperator;
     }
 
-    public void setTopicOperator(TopicOperatorSpec topicOperator) {
+    public void setTopicOperator(EntityTopicOperatorSpec topicOperator) {
         this.topicOperator = topicOperator;
     }
 
     @Description("Configuration of the User Operator")
-    public UserOperatorSpec getUserOperator() {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public EntityUserOperatorSpec getUserOperator() {
         return userOperator;
     }
 
-    public void setUserOperator(UserOperatorSpec userOperator) {
+    public void setUserOperator(EntityUserOperatorSpec userOperator) {
         this.userOperator = userOperator;
     }
 
     @Description("Pod affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Affinity getAffinity() {
         return affinity;
     }
 
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
+    }
+
+    @Description("Pod's tolerations.")
+    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<Toleration> getTolerations() {
+        return tolerations;
+    }
+
+    public void setTolerations(List<Toleration> tolerations) {
+        this.tolerations = tolerations;
     }
 
     @Description("TLS sidecar configuration")

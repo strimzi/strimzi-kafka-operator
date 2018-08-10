@@ -237,7 +237,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 [id='type-Resources-{context}']
 ### `Resources` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Sidecar-{context}[`Sidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-UserOperatorSpec-{context}[`UserOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Sidecar-{context}[`Sidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -267,7 +267,7 @@ Used in: xref:type-Resources-{context}[`Resources`]
 [id='type-InlineLogging-{context}']
 ### `InlineLogging` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-UserOperatorSpec-{context}[`UserOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `InlineLogging` from xref:type-ExternalLogging-{context}[`ExternalLogging`].
@@ -284,7 +284,7 @@ It must have the value `inline` for the type `InlineLogging`.
 [id='type-ExternalLogging-{context}']
 ### `ExternalLogging` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-UserOperatorSpec-{context}[`UserOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `ExternalLogging` from xref:type-InlineLogging-{context}[`InlineLogging`].
@@ -357,7 +357,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 [id='type-TopicOperatorSpec-{context}']
 ### `TopicOperatorSpec` schema reference
 
-Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type-KafkaSpec-{context}[`KafkaSpec`]
+Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
 [options="header"]
@@ -394,39 +394,68 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 [options="header"]
 |====
 |Field                 |Description
+|topicOperator  1.2+<.<|Configuration of the Topic Operator.
+|xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`]
+|userOperator   1.2+<.<|Configuration of the User Operator.
+|xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`]
 |affinity       1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity].
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
+|tolerations    1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations].
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |tlsSidecar     1.2+<.<|TLS sidecar configuration.
 |xref:type-Sidecar-{context}[`Sidecar`]
-|topicOperator  1.2+<.<|Configuration of the Topic Operator.
-|xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
-|userOperator   1.2+<.<|Configuration of the User Operator.
-|xref:type-UserOperatorSpec-{context}[`UserOperatorSpec`]
 |====
 
-[id='type-UserOperatorSpec-{context}']
-### `UserOperatorSpec` schema reference
+[id='type-EntityTopicOperatorSpec-{context}']
+### `EntityTopicOperatorSpec` schema reference
 
 Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 
 [options="header"]
 |====
-|Field                                       |Description
-|image                                1.2+<.<|The image to use for the User Operator.
+|Field                                  |Description
+|watchedNamespace                1.2+<.<|The namespace the Topic Operator should watch.
 |string
-|logging                              1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
-|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|reconciliationIntervalMilliseconds   1.2+<.<|Interval between periodic reconciliations.
+|image                           1.2+<.<|The image to use for the Topic Operator.
+|string
+|reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
 |integer
-|resources                            1.2+<.<|Resource constraints (limits and requests).
+|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
+|integer
+|resources                       1.2+<.<|Resource constraints (limits and requests).
 |xref:type-Resources-{context}[`Resources`]
-|watchedNamespace                     1.2+<.<|The namespace the User Operator should watch.
-|string
-|zookeeperSessionTimeoutMilliseconds  1.2+<.<|Timeout for the Zookeeper session.
+|topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
+|logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|====
+
+[id='type-EntityUserOperatorSpec-{context}']
+### `EntityUserOperatorSpec` schema reference
+
+Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
+
+
+[options="header"]
+|====
+|Field                                  |Description
+|watchedNamespace                1.2+<.<|The namespace the User Operator should watch.
+|string
+|image                           1.2+<.<|The image to use for the User Operator.
+|string
+|reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
+|integer
+|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
+|integer
+|resources                       1.2+<.<|Resource constraints (limits and requests).
+|xref:type-Resources-{context}[`Resources`]
+|logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |====
 
 [id='type-KafkaConnect-{context}']
