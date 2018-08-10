@@ -14,8 +14,6 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
-import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
-import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Sidecar;
@@ -104,7 +102,7 @@ public class EntityOperator extends AbstractModel {
      * Create a Entity Operator from given desired resource
      *
      * @param certManager Certificate manager for certificates generation
-     * @param kafkaAssembly desired resource with cluster configuration containing the entity operator one
+     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
      * @param secrets Secrets containing already generated certificates
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
@@ -122,44 +120,8 @@ public class EntityOperator extends AbstractModel {
             result.setUserAffinity(entityOperatorSpec.getAffinity());
             result.setTolerations(entityOperatorSpec.getTolerations());
             result.setTlsSidecar(entityOperatorSpec.getTlsSidecar());
-
-            EntityTopicOperatorSpec topicOperatorSpec = entityOperatorSpec.getTopicOperator();
-            if (topicOperatorSpec != null) {
-
-                EntityTopicOperator topicOperator = new EntityTopicOperator(
-                        namespace,
-                        kafkaAssembly.getMetadata().getName(),
-                        Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
-
-                topicOperator.setImage(topicOperatorSpec.getImage());
-                topicOperator.setWatchedNamespace(topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace);
-                topicOperator.setReconciliationIntervalMs(topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
-                topicOperator.setZookeeperSessionTimeoutMs(topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
-                topicOperator.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
-                topicOperator.setLogging(topicOperatorSpec.getLogging());
-                topicOperator.setResources(topicOperatorSpec.getResources());
-
-                result.setTopicOperator(topicOperator);
-            }
-
-            EntityUserOperatorSpec userOperatorSpec = entityOperatorSpec.getUserOperator();
-            if (userOperatorSpec != null) {
-
-                EntityUserOperator userOperator = new EntityUserOperator(
-                        namespace,
-                        kafkaAssembly.getMetadata().getName(),
-                        Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
-
-                userOperator.setImage(userOperatorSpec.getImage());
-                userOperator.setWatchedNamespace(userOperatorSpec.getWatchedNamespace());
-                userOperator.setReconciliationIntervalMs(userOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
-                userOperator.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
-                userOperator.setLogging(userOperatorSpec.getLogging());
-                userOperator.setResources(userOperatorSpec.getResources());
-
-                result.setUserOperator(userOperator);
-            }
-
+            result.setTopicOperator(EntityTopicOperator.fromCrd(kafkaAssembly));
+            result.setUserOperator(EntityUserOperator.fromCrd(kafkaAssembly));
             result.generateCertificates(certManager, secrets);
         }
         return result;

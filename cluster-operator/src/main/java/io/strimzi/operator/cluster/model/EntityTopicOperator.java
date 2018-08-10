@@ -9,7 +9,9 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -151,6 +153,38 @@ public class EntityTopicOperator extends AbstractModel {
     @Override
     String getAncillaryConfigMapKeyLogConfig() {
         return "log4j2.properties";
+    }
+
+    /**
+     * Create an Entity Topic Operator from given desired resource
+     *
+     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
+     * @return Entity Topic Operator instance, null if not configured in the ConfigMap
+     */
+    public static EntityTopicOperator fromCrd(Kafka kafkaAssembly) {
+        EntityTopicOperator result = null;
+        EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
+        if (entityOperatorSpec != null) {
+
+            EntityTopicOperatorSpec topicOperatorSpec = entityOperatorSpec.getTopicOperator();
+            if (topicOperatorSpec != null) {
+
+                String namespace = kafkaAssembly.getMetadata().getNamespace();
+                result = new EntityTopicOperator(
+                        namespace,
+                        kafkaAssembly.getMetadata().getName(),
+                        Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+
+                result.setImage(topicOperatorSpec.getImage());
+                result.setWatchedNamespace(topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace);
+                result.setReconciliationIntervalMs(topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
+                result.setZookeeperSessionTimeoutMs(topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
+                result.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
+                result.setLogging(topicOperatorSpec.getLogging());
+                result.setResources(topicOperatorSpec.getResources());
+            }
+        }
+        return result;
     }
 
     @Override

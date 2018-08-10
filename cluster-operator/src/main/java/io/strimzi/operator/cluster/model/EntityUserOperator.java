@@ -9,7 +9,9 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -114,6 +116,37 @@ public class EntityUserOperator extends AbstractModel {
     @Override
     String getAncillaryConfigMapKeyLogConfig() {
         return "log4j2.properties";
+    }
+
+    /**
+     * Create an Entity User Operator from given desired resource
+     *
+     * @param kafkaAssembly desired resource with cluster configuration containing the Entity User Operator one
+     * @return Entity User Operator instance, null if not configured in the ConfigMap
+     */
+    public static EntityUserOperator fromCrd(Kafka kafkaAssembly) {
+        EntityUserOperator result = null;
+        EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
+        if (entityOperatorSpec != null) {
+
+            EntityUserOperatorSpec userOperatorSpec = entityOperatorSpec.getUserOperator();
+            if (userOperatorSpec != null) {
+
+                String namespace = kafkaAssembly.getMetadata().getNamespace();
+                result = new EntityUserOperator(
+                        namespace,
+                        kafkaAssembly.getMetadata().getName(),
+                        Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+
+                result.setImage(userOperatorSpec.getImage());
+                result.setWatchedNamespace(userOperatorSpec.getWatchedNamespace());
+                result.setReconciliationIntervalMs(userOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
+                result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
+                result.setLogging(userOperatorSpec.getLogging());
+                result.setResources(userOperatorSpec.getResources());
+            }
+        }
+        return result;
     }
 
     @Override
