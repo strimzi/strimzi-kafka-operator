@@ -100,6 +100,14 @@ public class EntityUserOperator extends AbstractModel {
         return String.format("%s:%d", "localhost", EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_PORT);
     }
 
+    public void setZookeeperConnect(String zookeeperConnect) {
+        this.zookeeperConnect = zookeeperConnect;
+    }
+
+    public String getZookeeperConnect() {
+        return zookeeperConnect;
+    }
+
     public static String userOperatorName(String cluster) {
         return cluster + NAME_SUFFIX;
     }
