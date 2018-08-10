@@ -43,5 +43,5 @@ On {OpenShiftName} this can be done using `oc apply`:
 oc apply -f _<your-file>_
 
 .Additional resources
-* For more information about the supported authorization methods, see xref:red-kafka-authorization-{context}[authorization reference].
+* For more information about the supported authorization methods, see xref:ref-kafka-authorization-{context}[authorization reference].
 * For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
