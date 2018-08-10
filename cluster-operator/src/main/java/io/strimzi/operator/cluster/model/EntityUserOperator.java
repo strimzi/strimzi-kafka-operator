@@ -28,7 +28,7 @@ public class EntityUserOperator extends AbstractModel {
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Port configuration
-    protected static final int HEALTHCHECK_PORT = 8080;
+    protected static final int HEALTHCHECK_PORT = 8081;
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
 
     // User Operator configuration keys
