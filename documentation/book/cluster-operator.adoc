@@ -1322,4 +1322,8 @@ roleRef:
   apiGroup: v1
 ----
 
+// Modularized content!!!
+
+include::assembly-storage.adoc[leveloffset=+2]
+
 include::assembly-scheduling.adoc[leveloffset=+2]

@@ -1,0 +1,125 @@
+// Module included in the following assemblies:
+//
+// assembly-storage.adoc
+
+[id='ref-storage-{context}']
+= Storage
+
+Storage can be configured using the `storage` property in following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.zookeeper`
+
+{ProductName} supports two types of storage:
+
+* Ephemeral
+* Persistent
+
+The type of storage is specified in the `type` field.
+
+== Ephemeral storage
+
+Ephemeral storage is using the {K8sEmptyDir} to store tha data.
+To use ephemeral storage, the `type` field should be set to `ephemeral`.
+
+IMPORTANT: `EmptyDir` volumes are not persistent and the data stored in them will be lost when the Pod is restarted.
+After the new pod is started, it has to recover all data from other nodes of the cluster.
+Ephemeral storage is not suitable for use with single node Zookeeper clusters and for Kafka topics with replication factor 1, because it will lead to data loss.
+
+.An example of Ephemeral storage
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    storage:
+      type: ephemeral
+    # ...
+  zookeeper:
+    # ...
+    storage:
+      type: ephemeral
+    # ...
+----
+
+== Persistent storage
+
+Persistent storage is using K8sPersistentVolumeClaims to provisine persistent volumes for storing data.
+Persistent Volume Claims can be used to provision volumes of many different types, depending on the {K8SStorageClass} which will provision the volume.
+The data types which can be used with persistent volume claims include many types of SAN storage as well as {K8sLocalPersistentVolumes}.
+
+To use persistent storage, the `type` has to be set to `persistent-claim`.
+Persistent storage supports additional configuration options:
+
+`size` (required)::
+Defines the size of the persistent volume claim, for example, "1000Gi".
+
+`class` (optional)::
+The {ProductPlatformName} {K8SStorageClass} to use for dynamic volume provisioning.
+
+`selector` (optional)::
+Allows to select a specific persistent volumes to use.
+It contains a `matchLabels` field which contains key:value pairs representing labels for selecting such a volume.
+
+`delete-claim` (optional)::
+Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
+Default is `false`.
+
+.Example fragment of persistent storage configuration with 1000Gi `size`
+[source,yaml]
+----
+# ...
+storage:
+  type: persistent-claim
+  size: 1000Gi
+# ...
+----
+
+The following example demonstrates use of a storage class.
+
+.Example fragment of persistent storage configuration with specific Storage Class
+[source,yaml,subs="attributes+"]
+----
+# ...
+storage:
+  type: persistent-claim
+  size: 1Gi
+  class: my-storage-class
+# ...
+----
+
+Finally, a `selector` can be used in order to select a specific labelled persistent volume which provides some needed features (such as an SSD).
+
+.Example fragment of persistent storage configuration with selector
+[source,yaml,subs="attributes+"]
+----
+# ...
+storage:
+  type: persistent-claim
+  size: 1Gi
+  selector:
+    matchLabels:
+      "hdd-type": "ssd"
+  deleteClaim: true
+# ...
+----
+
+=== Persistent Volume Claim naming
+
+When the persistent storage is used, it will create Persistent Volume Claims with following names:
+
+`data-[cluster-name]-kafka-[idx]`::
+Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`.
+
+`data-[cluster-name]-zookeeper-[idx]`::
+Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`.
+
+== Additional resources
+
+* For more information about ephemeral storage, visit xref:type-EphemeralStorage-reference[ephemeral storage schema reference].
+* For more information about persistent storage, visit xref:type-PersistentClaimStorage-reference[persistent storage schema reference].
+* For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
