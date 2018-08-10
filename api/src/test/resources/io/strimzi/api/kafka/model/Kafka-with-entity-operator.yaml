@@ -21,5 +21,5 @@ spec:
       reconciliationIntervalSeconds: 60
     userOperator:
       watchedNamespaces: my-other-ns
-      reconciliationIntervalMilliseconds: 20000
+      reconciliationIntervalSeconds: 60
 
