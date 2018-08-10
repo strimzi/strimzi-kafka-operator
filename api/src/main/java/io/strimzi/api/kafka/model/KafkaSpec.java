@@ -35,6 +35,7 @@ public class KafkaSpec implements Serializable {
     private KafkaClusterSpec kafka;
     private ZookeeperClusterSpec zookeeper;
     private TopicOperatorSpec topicOperator;
+    private EntityOperatorSpec entityOperator;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Kafka cluster")
@@ -64,6 +65,15 @@ public class KafkaSpec implements Serializable {
 
     public void setTopicOperator(TopicOperatorSpec topicOperator) {
         this.topicOperator = topicOperator;
+    }
+
+    @Description("Configuration of the Entity Operator")
+    public EntityOperatorSpec getEntityOperator() {
+        return entityOperator;
+    }
+
+    public void setEntityOperator(EntityOperatorSpec entityOperator) {
+        this.entityOperator = entityOperator;
     }
 
     @JsonAnyGetter

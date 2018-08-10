@@ -60,4 +60,10 @@ public class KafkaCrdIT extends AbstractCrdIT {
         }
     }
 
+    @Test
+
+    public void testKafkaWithEntityOperator() {
+        createDelete(Kafka.class, "Kafka-with-entity-operator.yaml");
+    }
+
 }
