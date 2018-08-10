@@ -60,3 +60,4 @@
 :InstallationAppendix:
 :MetricsAppendix:
 :Downloading:
+:SecurityImg:
