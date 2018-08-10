@@ -1,0 +1,28 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-authentication-and-authorization.adoc
+
+[id='ref-kafka-authorization-{context}']
+= Authorization
+
+Authorization can be configured using the `authorization` property in the `Kafka.spec.kafka` resource.
+When the `authorization` property is missing, no authorization will be enabled.
+When authorization is enabled it will be applied for all enabled xref:assembly-configuring-kafka-broker-listeners-{context}[listeners].
+The authorization method is defined by the `type` field.
+
+Currently, the only supported authorization method is the Simple authorization.
+
+== Simple authorization
+
+Simple authorization is using the `SimpleAclAuthorizer` plugin.
+`SimpleAclAuthorizer` is the default authorization plugin which is part of Apache Kafka.
+To enable simple authorization, the `type` field should be set to `simple`.
+
+.An example of Simple auhtorization
+[source,yaml,subs="attributes+"]
+----
+# ...
+authorization:
+  type: simple
+# ...
+----

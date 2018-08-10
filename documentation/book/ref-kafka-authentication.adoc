@@ -1,0 +1,26 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-authentication-and-authorization.adoc
+
+[id='ref-kafka-authentication-{context}']
+= Authentication
+
+Authentication is configured as part of the xref:assembly-configuring-kafka-broker-listeners-{context}[listener configuration] in the `authentication` property.
+When the `authentication` property is missing, no authentication will be enabled on given listener.
+The authentication mechanism which will be used is defined by the `type` field.
+
+Currently, the only support authentication mechanism is the TLS client authentication.
+
+== TLS Client Authentication
+
+TLS Client authentication can be enabled by specifying the `type` as `tls`.
+The TLS client authentication is supported only on the `tls` listener.
+
+.An example of `authentication` with type `tls`
+[source,yaml,subs="attributes+"]
+----
+# ...
+authentication:
+  type: tls
+# ...
+----
