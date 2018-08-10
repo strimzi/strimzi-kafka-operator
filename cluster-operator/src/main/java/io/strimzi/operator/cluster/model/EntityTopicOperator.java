@@ -1,0 +1,192 @@
+/*
+ * Copyright 2017-2018, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+package io.strimzi.operator.cluster.model;
+
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
+import io.strimzi.operator.common.model.Labels;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static java.util.Collections.singletonList;
+
+/**
+ * Represents the Topic Operator deployment
+ */
+public class EntityTopicOperator extends AbstractModel {
+
+    protected static final String TOPIC_OPERATOR_NAME = "topic-operator";
+    private static final String NAME_SUFFIX = "-topic-operator";
+    protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
+
+    // Port configuration
+    protected static final int HEALTHCHECK_PORT = 8080;
+    protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
+
+    // Topic Operator configuration keys
+    public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
+    public static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
+    public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
+    public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
+    public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
+    public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
+    public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
+    public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+
+    // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
+    private String kafkaBootstrapServers;
+    private String zookeeperConnect;
+
+    private String watchedNamespace;
+    private int reconciliationIntervalMs;
+    private int zookeeperSessionTimeoutMs;
+    private String topicConfigMapLabels;
+    private int topicMetadataMaxAttempts;
+
+    /**
+     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
+     * @param cluster overall cluster name
+     * @param labels
+     */
+    protected EntityTopicOperator(String namespace, String cluster, Labels labels) {
+        super(namespace, cluster, labels);
+        this.name = topicOperatorName(cluster);
+        this.image = EntityTopicOperatorSpec.DEFAULT_IMAGE;
+        this.readinessPath = "/";
+        this.readinessTimeout = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.readinessInitialDelay = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessPath = "/";
+        this.livenessTimeout = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.livenessInitialDelay = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
+
+        // create a default configuration
+        this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
+        this.zookeeperConnect = defaultZookeeperConnect(cluster);
+        this.watchedNamespace = namespace;
+        this.reconciliationIntervalMs = EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
+        this.zookeeperSessionTimeoutMs = EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
+        this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
+        this.topicMetadataMaxAttempts = EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+
+        this.ancillaryConfigName = metricAndLogConfigsName(cluster);
+        this.logAndMetricsConfigVolumeName = "topic-operator-metrics-and-logging";
+        this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
+        this.validLoggerFields = getDefaultLogConfig();
+    }
+
+    public void setWatchedNamespace(String watchedNamespace) {
+        this.watchedNamespace = watchedNamespace;
+    }
+
+    public String getWatchedNamespace() {
+        return watchedNamespace;
+    }
+
+    public void setTopicConfigMapLabels(String topicConfigMapLabels) {
+        this.topicConfigMapLabels = topicConfigMapLabels;
+    }
+
+    public String getTopicConfigMapLabels() {
+        return topicConfigMapLabels;
+    }
+
+    public void setReconciliationIntervalMs(int reconciliationIntervalMs) {
+        this.reconciliationIntervalMs = reconciliationIntervalMs;
+    }
+
+    public int getReconciliationIntervalMs() {
+        return reconciliationIntervalMs;
+    }
+
+    public void setZookeeperSessionTimeoutMs(int zookeeperSessionTimeoutMs) {
+        this.zookeeperSessionTimeoutMs = zookeeperSessionTimeoutMs;
+    }
+
+    public int getZookeeperSessionTimeoutMs() {
+        return zookeeperSessionTimeoutMs;
+    }
+
+    public void setTopicMetadataMaxAttempts(int topicMetadataMaxAttempts) {
+        this.topicMetadataMaxAttempts = topicMetadataMaxAttempts;
+    }
+
+    public int getTopicMetadataMaxAttempts() {
+        return topicMetadataMaxAttempts;
+    }
+
+    protected static String defaultZookeeperConnect(String cluster) {
+        return String.format("%s:%d", "localhost", EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT);
+    }
+
+    protected static String defaultBootstrapServers(String cluster) {
+        return KafkaCluster.serviceName(cluster) + ":" + EntityTopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
+    }
+
+    protected static String defaultTopicConfigMapLabels(String cluster) {
+        return String.format("%s=%s",
+                Labels.STRIMZI_CLUSTER_LABEL, cluster);
+    }
+
+    public static String topicOperatorName(String cluster) {
+        return cluster + NAME_SUFFIX;
+    }
+
+    public static String metricAndLogConfigsName(String cluster) {
+        return cluster + METRICS_AND_LOG_CONFIG_SUFFIX;
+    }
+
+    @Override
+    protected String getDefaultLogConfigFileName() {
+        return "topicOperatorDefaultLoggingProperties";
+    }
+
+    @Override
+    String getAncillaryConfigMapKeyLogConfig() {
+        return "log4j2.properties";
+    }
+
+    @Override
+    protected List<Container> getContainers() {
+
+        return Collections.singletonList(new ContainerBuilder()
+                .withName(TOPIC_OPERATOR_NAME)
+                .withImage(getImage())
+                .withEnv(getEnvVars())
+                .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
+                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
+                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
+                .withResources(resources(getResources()))
+                .withVolumeMounts(getVolumeMounts())
+                .build());
+    }
+
+    @Override
+    protected List<EnvVar> getEnvVars() {
+        List<EnvVar> varList = new ArrayList<>();
+        varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, topicConfigMapLabels));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
+        varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
+        varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
+        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
+        varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
+        varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
+        return varList;
+    }
+
+    public List<Volume> getVolumes() {
+        return Collections.singletonList(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+    }
+
+    private List<VolumeMount> getVolumeMounts() {
+        return Collections.singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+    }
+}

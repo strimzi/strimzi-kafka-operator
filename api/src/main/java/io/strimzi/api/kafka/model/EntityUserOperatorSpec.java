@@ -34,6 +34,9 @@ public class EntityUserOperatorSpec implements Serializable {
 
     public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/user-operator:latest");
+    public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
+    public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
     public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 6;
 
