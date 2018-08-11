@@ -48,7 +48,7 @@ spec:
 
 == Persistent storage
 
-Persistent storage is using K8sPersistentVolumeClaims to provisine persistent volumes for storing data.
+Persistent storage is using {K8sPersistentVolumeClaims} to provisine persistent volumes for storing data.
 Persistent Volume Claims can be used to provision volumes of many different types, depending on the {K8SStorageClass} which will provision the volume.
 The data types which can be used with persistent volume claims include many types of SAN storage as well as {K8sLocalPersistentVolumes}.
 
