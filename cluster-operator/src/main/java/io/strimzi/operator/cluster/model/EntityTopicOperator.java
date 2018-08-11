@@ -116,6 +116,14 @@ public class EntityTopicOperator extends AbstractModel {
         return zookeeperSessionTimeoutMs;
     }
 
+    public void setKafkaBootstrapServers(String kafkaBootstrapServers) {
+        this.kafkaBootstrapServers = kafkaBootstrapServers;
+    }
+
+    public String getKafkaBootstrapServers() {
+        return kafkaBootstrapServers;
+    }
+
     public void setTopicMetadataMaxAttempts(int topicMetadataMaxAttempts) {
         this.topicMetadataMaxAttempts = topicMetadataMaxAttempts;
     }
@@ -126,6 +134,14 @@ public class EntityTopicOperator extends AbstractModel {
 
     protected static String defaultZookeeperConnect(String cluster) {
         return String.format("%s:%d", "localhost", EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT);
+    }
+
+    public void setZookeeperConnect(String zookeeperConnect) {
+        this.zookeeperConnect = zookeeperConnect;
+    }
+
+    public String getZookeeperConnect() {
+        return zookeeperConnect;
     }
 
     protected static String defaultBootstrapServers(String cluster) {

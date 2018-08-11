@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
@@ -66,10 +67,16 @@ public class EntityUserOperatorTest {
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_ZOOKEEPER_CONNECT).withValue(String.format("%s:%d", "localhost", EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_PORT)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_WATCHED_NAMESPACE).withValue(uoWatchedNamespace).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(uoReconciliationInterval * 1000)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(String.valueOf(uoZookeeperSessionTimeout * 1000)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_NAME).withValue(KafkaCluster.clientsCASecretName(cluster)).build());
         return expected;
+    }
+
+    @Test
+    public void testEnvVars()   {
+        Assert.assertEquals(getExpectedEnvVars(), entityUserOperator.getEnvVars());
     }
 
     @Test
@@ -90,8 +97,26 @@ public class EntityUserOperatorTest {
     }
 
     @Test
-    public void testEnvVars()   {
-        Assert.assertEquals(getExpectedEnvVars(), entityUserOperator.getEnvVars());
+    public void testFromCrdDefault() {
+        EntityUserOperatorSpec entityUserOperatorSpec = new EntityUserOperatorSpecBuilder()
+                .build();
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+                .withUserOperator(entityUserOperatorSpec)
+                .build();
+        Kafka resource =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                        .withEntityOperator(entityOperatorSpec)
+                        .endSpec()
+                        .build();
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
+
+        assertEquals(namespace, entityUserOperator.getWatchedNamespace());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_IMAGE, entityUserOperator.getImage());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, entityUserOperator.getReconciliationIntervalMs());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, entityUserOperator.getZookeeperSessionTimeoutMs());
+        assertEquals(EntityUserOperator.defaultZookeeperConnect(cluster), entityUserOperator.getZookeeperConnect());
+        assertNull(entityUserOperator.getLogging());
     }
 
     @Test
@@ -113,5 +138,26 @@ public class EntityUserOperatorTest {
                         .build();
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
         assertNull(entityUserOperator);
+    }
+
+    @Test
+    public void testGetContainers() {
+        List<Container> containers = entityUserOperator.getContainers();
+        assertEquals(1, containers.size());
+
+        Container container = containers.get(0);
+        assertEquals(EntityUserOperator.USER_OPERATOR_NAME, container.getName());
+        assertEquals(entityUserOperator.getImage(), container.getImage());
+        assertEquals(getExpectedEnvVars(), container.getEnv());
+        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), container.getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT), container.getLivenessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), container.getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT), container.getReadinessProbe().getTimeoutSeconds());
+        assertEquals(1, container.getPorts().size());
+        assertEquals(new Integer(EntityUserOperator.HEALTHCHECK_PORT), container.getPorts().get(0).getContainerPort());
+        assertEquals(EntityUserOperator.HEALTHCHECK_PORT_NAME, container.getPorts().get(0).getName());
+        assertEquals("TCP", container.getPorts().get(0).getProtocol());
+        assertEquals("/opt/user-operator/custom-config/", container.getVolumeMounts().get(0).getMountPath());
+        assertEquals("user-operator-metrics-and-logging", container.getVolumeMounts().get(0).getName());
     }
 }
