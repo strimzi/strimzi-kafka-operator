@@ -82,8 +82,16 @@ public class EntityOperator extends AbstractModel {
         this.topicOperator = topicOperator;
     }
 
+    public EntityTopicOperator getTopicOperator() {
+        return topicOperator;
+    }
+
     public void setUserOperator(EntityUserOperator userOperator) {
         this.userOperator = userOperator;
+    }
+
+    public EntityUserOperator getUserOperator() {
+        return userOperator;
     }
 
     public static String entityOperatorName(String cluster) {
@@ -92,6 +100,14 @@ public class EntityOperator extends AbstractModel {
 
     protected static String defaultZookeeperConnect(String cluster) {
         return ZookeeperCluster.serviceName(cluster) + ":" + EntityOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
+    }
+
+    public void setZookeeperConnect(String zookeeperConnect) {
+        this.zookeeperConnect = zookeeperConnect;
+    }
+
+    public String getZookeeperConnect() {
+        return zookeeperConnect;
     }
 
     public static String secretName(String cluster) {
