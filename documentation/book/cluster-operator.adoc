@@ -500,7 +500,7 @@ It is possible to configure a `metrics` object in the `kafka` and `zookeeper` ob
 In all cases the `metrics` object should be the configuration for the JMX exporter. 
 You can find more information on how to use it in the corresponding GitHub repo.
 
-For more information about using the metrics with Prometheus and Grafana, see xref:metrics[Metrics]
+For more information about using the metrics with Prometheus and Grafana, see xref:metrics-str[Metrics]
 
 
 [[logging_examples]]
