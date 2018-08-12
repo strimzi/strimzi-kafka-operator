@@ -17,9 +17,12 @@ import io.sundr.builder.annotations.Buildable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
         "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics"})
-public class KafkaConnectS2IAssemblySpec extends KafkaConnectSpec {
+public class KafkaConnectS2ISpec extends KafkaConnectSpec {
 
     private static final long serialVersionUID = 1L;
+
+    public static final String DEFAULT_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE", "strimzi/kafka-connect-s2i:latest");
 
     private boolean insecureSourceRepository = false;
 

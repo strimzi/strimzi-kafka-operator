@@ -60,7 +60,7 @@ public class KafkaConnectS2I extends CustomResource {
 
     private String apiVersion;
     private ObjectMeta metadata;
-    private KafkaConnectS2IAssemblySpec spec;
+    private KafkaConnectS2ISpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -91,11 +91,11 @@ public class KafkaConnectS2I extends CustomResource {
     }
 
     @Description("The specification of the Kafka Connect deployment.")
-    public KafkaConnectS2IAssemblySpec getSpec() {
+    public KafkaConnectS2ISpec getSpec() {
         return spec;
     }
 
-    public void setSpec(KafkaConnectS2IAssemblySpec spec) {
+    public void setSpec(KafkaConnectS2ISpec spec) {
         this.spec = spec;
     }
 
