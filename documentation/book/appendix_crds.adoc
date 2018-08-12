@@ -205,7 +205,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [id='type-Probe-{context}']
 ### `Probe` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -220,7 +220,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 [id='type-JvmOptions-{context}']
 ### `JvmOptions` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -237,7 +237,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 [id='type-Resources-{context}']
 ### `Resources` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Sidecar-{context}[`Sidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Sidecar-{context}[`Sidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -267,7 +267,7 @@ Used in: xref:type-Resources-{context}[`Resources`]
 [id='type-InlineLogging-{context}']
 ### `InlineLogging` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `InlineLogging` from xref:type-ExternalLogging-{context}[`ExternalLogging`].
@@ -284,7 +284,7 @@ It must have the value `inline` for the type `InlineLogging`.
 [id='type-ExternalLogging-{context}']
 ### `ExternalLogging` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `ExternalLogging` from xref:type-InlineLogging-{context}[`InlineLogging`].
@@ -515,7 +515,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 [id='type-KafkaConnectAuthenticationTls-{context}']
 ### `KafkaConnectAuthenticationTls` schema reference
 
-Used in: xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaConnectAuthenticationTls` from other subtypes which may be added in the future.
@@ -549,7 +549,7 @@ Used in: xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenti
 [id='type-KafkaConnectTls-{context}']
 ### `KafkaConnectTls` schema reference
 
-Used in: xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 
 
 [options="header"]
@@ -582,11 +582,11 @@ Used in: xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
 |====
 |Field        |Description
 |spec  1.2+<.<|The specification of the Kafka Connect deployment.
-|xref:type-KafkaConnectS2IAssemblySpec-{context}[`KafkaConnectS2IAssemblySpec`]
+|xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`]
 |====
 
-[id='type-KafkaConnectS2IAssemblySpec-{context}']
-### `KafkaConnectS2IAssemblySpec` schema reference
+[id='type-KafkaConnectS2ISpec-{context}']
+### `KafkaConnectS2ISpec` schema reference
 
 Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
