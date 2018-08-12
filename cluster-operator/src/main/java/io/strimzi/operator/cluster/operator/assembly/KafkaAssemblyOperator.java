@@ -17,6 +17,9 @@ import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.model.EntityOperator;
+import io.strimzi.operator.cluster.model.EntityTopicOperator;
+import io.strimzi.operator.cluster.model.EntityUserOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -96,6 +99,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         createOrUpdateZk(reconciliation, kafkaAssembly, assemblySecrets)
             .compose(i -> createOrUpdateKafka(reconciliation, kafkaAssembly, assemblySecrets))
             .compose(i -> createOrUpdateTopicOperator(reconciliation, kafkaAssembly, assemblySecrets))
+            .compose(i -> {
+                // if Topic Operator wasn't deployed
+                if (!i) {
+                    return createOrUpdateEntityOperator(reconciliation, kafkaAssembly, assemblySecrets);
+                }
+                return Future.succeededFuture();
+            })
             .compose(ar -> f.complete(), f);
     }
 
@@ -325,6 +335,57 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
     }
 
+    /**
+     * Brings the description of a Entity Operator entity
+     * An instance of this class is used during the Future(s) composition when the Entity Operator
+     * is created or updated. It brings information used from a call to the next one and can be
+     * enriched if the subsequent call needs more information.
+     */
+    private static class EntityOperatorDescription {
+
+        public static final EntityOperatorDescription EMPTY =
+                new EntityOperatorDescription(null, null, null, null, null);
+
+        private final EntityOperator entityOperator;
+        private final Deployment deployment;
+        private final Secret entityOperatorSecret;
+        private final ConfigMap topicOperatorMetricsAndLogsConfigMap;
+        private final ConfigMap userOperatorMetricsAndLogsConfigMap;
+
+        EntityOperatorDescription(EntityOperator entityOperator, Deployment deployment, Secret entityOperatorSecret,
+                                  ConfigMap topicOperatorMetricsAndLogsConfigMap, ConfigMap userOperatorMetricsAndLogsConfigMap) {
+            this.entityOperator = entityOperator;
+            this.deployment = deployment;
+            this.entityOperatorSecret = entityOperatorSecret;
+            this.topicOperatorMetricsAndLogsConfigMap = topicOperatorMetricsAndLogsConfigMap;
+            this.userOperatorMetricsAndLogsConfigMap = userOperatorMetricsAndLogsConfigMap;
+        }
+
+        EntityOperator entityOperator() {
+            return this.entityOperator;
+        }
+
+        ConfigMap topicOperatorMetricsAndLogsConfigMap() {
+            return topicOperatorMetricsAndLogsConfigMap;
+        }
+
+        ConfigMap userOperatorMetricsAndLogsConfigMap() {
+            return userOperatorMetricsAndLogsConfigMap;
+        }
+
+        Deployment deployment() {
+            return deployment;
+        }
+
+        Secret entityOperatorSecret() {
+            return entityOperatorSecret;
+        }
+
+        Future<EntityOperatorDescription> withVoid(Future<?> r) {
+            return r.map(this);
+        }
+    }
+
     private final Future<KafkaClusterDescription> getKafkaClusterDescription(Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         Future<KafkaClusterDescription> fut = Future.future();
 
@@ -539,12 +600,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return fut;
     }
 
-    private final Future<Void> createOrUpdateTopicOperator(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
+    private final Future<Boolean> createOrUpdateTopicOperator(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         String namespace = kafkaAssembly.getMetadata().getNamespace();
         String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update topic operator {}", reconciliation, name);
 
-        Future<Void> chainFuture = Future.future();
+        Future<Boolean> chainFuture = Future.future();
         getTopicOperatorDescription(kafkaAssembly, assemblySecrets)
                 .compose(desc -> desc.withVoid(serviceAccountOperator.reconcile(namespace,
                         TopicOperator.topicOperatorServiceAccountName(name),
@@ -562,7 +623,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         desc.metricsAndLogsConfigMap())))
                 .compose(desc -> desc.withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), desc.deployment())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, TopicOperator.secretName(name), desc.topicOperatorSecret())))
-                .compose(desc -> chainFuture.complete(), chainFuture);
+                .compose(desc -> chainFuture.complete(desc != TopicOperatorDescription.EMPTY), chainFuture);
 
         return chainFuture;
     }
@@ -581,10 +642,117 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return CompositeFuture.join(result);
     }
 
+    private final Future<EntityOperatorDescription> getEntityOperatorDescription(Kafka kafkaAssembly, List<Secret> assemblySecrets) {
+        Future<EntityOperatorDescription> fut = Future.future();
+
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+            future -> {
+                try {
+                    EntityOperator entityOperator = EntityOperator.fromCrd(certManager, kafkaAssembly, assemblySecrets);
+
+                    EntityOperatorDescription desc;
+                    if (entityOperator != null) {
+                        EntityTopicOperator topicOperator = entityOperator.getTopicOperator();
+                        EntityUserOperator userOperator = entityOperator.getUserOperator();
+
+                        ConfigMap topicOperatorLogAndMetricsConfigMap = topicOperator != null ?
+                                topicOperator.generateMetricsAndLogConfigMap(topicOperator.getLogging() instanceof ExternalLogging ?
+                                        configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
+                                        null) : null;
+
+                        ConfigMap userOperatorLogAndMetricsConfigMap = userOperator != null ?
+                                userOperator.generateMetricsAndLogConfigMap(userOperator.getLogging() instanceof ExternalLogging ?
+                                        configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName()) :
+                                        null) : null;
+
+                        desc = new EntityOperatorDescription(entityOperator, entityOperator.generateDeployment(),
+                                entityOperator.generateSecret(), topicOperatorLogAndMetricsConfigMap, userOperatorLogAndMetricsConfigMap);
+                    } else {
+                        desc = EntityOperatorDescription.EMPTY;
+                    }
+
+                    future.complete(desc);
+                } catch (Throwable e) {
+                    future.fail(e);
+                }
+            }, true,
+            res -> {
+                if (res.succeeded()) {
+                    fut.complete((EntityOperatorDescription) res.result());
+                } else {
+                    fut.fail(res.cause());
+                }
+            }
+        );
+        return fut;
+    }
+
+    private final Future<Void> createOrUpdateEntityOperator(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
+        String namespace = kafkaAssembly.getMetadata().getNamespace();
+        String name = kafkaAssembly.getMetadata().getName();
+        log.debug("{}: create/update entity operator {}", reconciliation, name);
+
+        Future<Void> chainFuture = Future.future();
+        getEntityOperatorDescription(kafkaAssembly, assemblySecrets)
+                .compose(desc -> desc.withVoid(serviceAccountOperator.reconcile(namespace,
+                        EntityOperator.entityOperatorServiceAccountName(name),
+                        desc != EntityOperatorDescription.EMPTY ? desc.entityOperator().generateServiceAccount() : null)))
+                .compose(desc -> {
+                    String watchedNamespace = desc.entityOperator() != null && desc.entityOperator().getTopicOperator() != null ?
+                            desc.entityOperator().getTopicOperator().getWatchedNamespace() : null;
+                    return desc.withVoid(roleBindingOperator.reconcile(
+                            watchedNamespace != null && !watchedNamespace.isEmpty() ?
+                                    watchedNamespace : namespace,
+                            EntityTopicOperator.TO_ROLE_BINDING_NAME,
+                            desc != EntityOperatorDescription.EMPTY && desc.entityOperator().getTopicOperator() != null ?
+                                    desc.entityOperator().getTopicOperator().generateRoleBinding(namespace) : null));
+                })
+                .compose(desc -> {
+                    String watchedNamespace = desc.entityOperator() != null && desc.entityOperator().getUserOperator() != null ?
+                            desc.entityOperator().getUserOperator().getWatchedNamespace() : null;
+                    return desc.withVoid(roleBindingOperator.reconcile(
+                            watchedNamespace != null && !watchedNamespace.isEmpty() ?
+                                    watchedNamespace : namespace,
+                            EntityUserOperator.UO_ROLE_BINDING_NAME,
+                            desc != EntityOperatorDescription.EMPTY && desc.entityOperator().getUserOperator() != null ?
+                                    desc.entityOperator().getUserOperator().generateRoleBinding(namespace) : null));
+                })
+                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace,
+                        desc != EntityOperatorDescription.EMPTY && desc.entityOperator().getTopicOperator() != null ?
+                                desc.entityOperator().getTopicOperator().getAncillaryConfigName() : EntityTopicOperator.metricAndLogConfigsName(name),
+                        desc.topicOperatorMetricsAndLogsConfigMap())))
+                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace,
+                        desc != EntityOperatorDescription.EMPTY && desc.entityOperator().getUserOperator() != null ?
+                                desc.entityOperator().getUserOperator().getAncillaryConfigName() : EntityUserOperator.metricAndLogConfigsName(name),
+                        desc.userOperatorMetricsAndLogsConfigMap())))
+                .compose(desc -> desc.withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), desc.deployment())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name), desc.entityOperatorSecret())))
+                .compose(desc -> chainFuture.complete(), chainFuture);
+
+        return chainFuture;
+    }
+
+    private final Future<CompositeFuture> deleteEntityOperator(Reconciliation reconciliation) {
+        String namespace = reconciliation.namespace();
+        String name = reconciliation.name();
+        log.debug("{}: delete entity operator {}", reconciliation, name);
+
+        List<Future> result = new ArrayList<>(3);
+        result.add(configMapOperations.reconcile(namespace, EntityTopicOperator.metricAndLogConfigsName(name), null));
+        result.add(configMapOperations.reconcile(namespace, EntityUserOperator.metricAndLogConfigsName(name), null));
+        result.add(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), null));
+        result.add(secretOperations.reconcile(namespace, EntityOperator.secretName(name), null));
+        result.add(roleBindingOperator.reconcile(namespace, EntityTopicOperator.TO_ROLE_BINDING_NAME, null));
+        result.add(roleBindingOperator.reconcile(namespace, EntityUserOperator.UO_ROLE_BINDING_NAME, null));
+        result.add(serviceAccountOperator.reconcile(namespace, EntityOperator.entityOperatorServiceAccountName(name), null));
+        return CompositeFuture.join(result);
+    }
+
     @Override
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         Future<Void> f = Future.<Void>future().setHandler(handler);
-        deleteTopicOperator(reconciliation)
+        deleteEntityOperator(reconciliation)
+                .compose(i -> deleteTopicOperator(reconciliation))
                 .compose(i -> deleteKafka(reconciliation))
                 .compose(i -> deleteZk(reconciliation))
                 .compose(ar -> f.complete(), f);

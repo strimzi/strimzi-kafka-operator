@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +40,7 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_CLIENTS_CA_NAME = "STRIMZI_CA_NAME";
+    public static final String UO_ROLE_BINDING_NAME = "strimzi-user-operator-role-binding";
 
     private String zookeeperConnect;
     private String watchedNamespace;
@@ -190,5 +192,10 @@ public class EntityUserOperator extends AbstractModel {
 
     private List<VolumeMount> getVolumeMounts() {
         return Collections.singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+    }
+
+    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
+        return new RoleBindingOperator.RoleBinding(UO_ROLE_BINDING_NAME, EntityOperator.EO_CLUSTER_ROLE_NAME,
+                namespace, EntityOperator.entityOperatorServiceAccountName(cluster));
     }
 }
