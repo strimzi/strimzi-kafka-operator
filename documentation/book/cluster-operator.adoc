@@ -29,14 +29,10 @@ In order to handle failovers properly, a periodic reconciliation process is exec
 [[kafka_assembly_details]]
 === Format of the `Kafka` resource
 
-The full schema is described in xref:type-Kafka-reference[].
-
-Whatever other labels are applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
-This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
-
 [[kafka_config_map_details]]
 ==== Kafka
 
+<<<<<<< HEAD
 In order to configure a Kafka cluster deployment, it is possible to specify the following fields in Kafka resource (a dot is used to denote a nested YAML object):
 
 `spec.kafka.replicas`::
@@ -768,6 +764,8 @@ NOTE: When using both `affinity` and <<kafka_rack,`rack`>> be aware that `rack` 
 This is necessary so that broker pods are scheduled in different failure domains, as specified via the `topologyKey`.
 This anti-affinity will not be present in the `Kafka` resource's `affinity`, but is still present on the StatefulSet and thus will still be considered by the scheduler.
 
+=======
+>>>>>>> Rewrite the cluster-operator section into modules
 [[topic_operator_json_config]]
 ===== Topic Operator
 
@@ -782,9 +780,6 @@ The YAML representation of the 'topicOperator` has no mandatory fields and if th
 
 The configurable fields are the following :
 
-`image`::
-The Docker image to be used by the Topic Operator.
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE>>` environment variable of the Cluster Operator.
 `watchedNamespace`::
 The {ProductPlatformName} namespace in which the topic operator watches for `KafkaTopics`. Default is the namespace
 where the topic operator is running.
@@ -796,18 +791,7 @@ The Zookeeper session timeout in seconds. Default is 20 seconds.
 The number of attempts for getting topics metadata from Kafka. The time between each attempt is defined as an exponential
 back-off. You might want to increase this value when topic creation could take more time due to its larger size (i.e.
 many partitions / replicas). Default is `6`.
-`resources`::
-An object configuring the resource limits and requests for the topic operator container. The accepted JSON format is
-described in the <<resources_json_config>> section.
-`affinity`::
-Node and Pod affinity for the Topic Operator, as described in the <<affinity>> section.
-The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
-`tlsSidecar.image`::
-The Docker image to be used by the sidecar container which provides TLS support for Topic Operator.
-The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE,STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE>>` environment variable of the Cluster Operator.
-`tlsSidecar.resources`::
-An object configuring the resource limits and requests for the sidecar container which provides TLS support for the Topic Operator.
-For information about the accepted JSON format, see <<resources_json_config>>.
+
 
 .Example fragment of a `Kafka` resource with a Topic Operator configuration
 [source,yaml]
@@ -825,6 +809,7 @@ spec:
 
 More information about these configuration parameters in the related xref:deploying-the-topic-operator-str[] documentation page.
 
+<<<<<<< HEAD
 [[kafka_connect_config_map_details]]
 ==== Kafka Connect
 
@@ -1111,6 +1096,8 @@ To add multiple plugins to the deployment, they all have to be added within the 
 
 [id="provisioning-rbac-for-the-cluster-operator"]
 
+=======
+>>>>>>> Rewrite the cluster-operator section into modules
 === Provisioning Role-Based Access Control (RBAC) for the Cluster Operator
 
 For the Cluster Operator to function it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages and interacts with.

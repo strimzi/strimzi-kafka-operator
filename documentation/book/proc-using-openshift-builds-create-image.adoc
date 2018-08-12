@@ -1,6 +1,7 @@
 // Module included in the following assemblies:
 //
 // assembly-using-kafka-connect-with-plugins.adoc
+// assembly-deployment-configuration-kafka-connect-s2i.adoc
 
 [id='using-openshift-s2i-create-image-{context}']
 = Using {OpenShiftName} builds and S2I to create new images

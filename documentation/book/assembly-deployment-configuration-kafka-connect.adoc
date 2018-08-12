@@ -10,12 +10,39 @@
 
 [id='assembly-deployment-configuration-kafka-connect-{context}']
 
-= Kafka Connect custer configuration
+= Kafka Connect cluster configuration
+
+The full schema of the `KafkaConnect` resource is described in xref:type-KafkaConnect-reference[].
+All labels that are applied to the desired `KafkaConnect` resource will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster.
+This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
+
+include::assembly-kafka-connect-replicas.adoc[leveloffset=+1]
+
+include::assembly-bootstrap-servers.adoc[leveloffset=+1]
+
+// TODO:
+// Encryption
+// Authentication
+
+include::assembly-kafka-connect-configuration.adoc[leveloffset=+1]
+
+include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
+
+// TODO:
+// Add logging
+
+include::assembly-healthchecks.adoc[leveloffset=+1]
+
+include::assembly-metrics.adoc[leveloffset=+1]
+
+include::assembly-jvm-options.adoc[leveloffset=+1]
+
+include::assembly-configuring-container-images.adoc[leveloffset=+1]
 
 // TODO:
 // Include pod scheduling
 
-include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
+include::ref-list-of-kafka-connect-resources.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.
 :context: {parent-context}

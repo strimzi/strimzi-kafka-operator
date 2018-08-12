@@ -10,13 +10,44 @@
 
 [id='assembly-deployment-configuration-kafka-{context}']
 
-= Kafka custer configuration
+= Kafka cluster configuration
+
+The full schema of the `Kafka` resource is described in xref:type-Kafka-reference[].
+All labels that are applied to the desired `Kafka` resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
+This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
 
 // TODO:
 // Include storage
-// Include pod scheduling
+
+include::assembly-kafka-broker-replicas.adoc[leveloffset=+1]
+
+include::assembly-kafka-broker-configuration.adoc[leveloffset=+1]
+
+include::assembly-zookeeper-replicas.adoc[leveloffset=+1]
+
+include::assembly-zookeeper-node-configuration.adoc[leveloffset=+1]
 
 include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
+
+// TODO:
+// Add logging
+
+include::assembly-kafka-rack.adoc[leveloffset=+1]
+
+include::assembly-healthchecks.adoc[leveloffset=+1]
+
+include::assembly-metrics.adoc[leveloffset=+1]
+
+include::assembly-jvm-options.adoc[leveloffset=+1]
+
+include::assembly-configuring-container-images.adoc[leveloffset=+1]
+
+include::assembly-tls-sidecar.adoc[leveloffset=+1]
+
+// TODO:
+// Include pod scheduling
+
+include::ref-list-of-kafka-cluster-resources.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.
 :context: {parent-context}

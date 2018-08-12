@@ -44,6 +44,12 @@
 :K8sMeaningOfCpu: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu[Meaning of CPU^]
 :K8sMeaningOfMemory: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory[Meaning of memory^]
 :K8sManagingComputingResources: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/[Managing Compute Resources for Containers^]
+:K8sLivenessReadinessProbes: link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Configure Liveness and Readiness Probes^]
+
+:ApachaKafkaBrokerConfig: link:http://kafka.apache.org/11/documentation.html#brokerconfigs[Apache Kafka documentation^]
+:ApachaKafkaConnectConfig: link:http://kafka.apache.org/11/documentation.html#connectconfigs[Apache Kafka documentation^]
+:ApacheZookeeperConfig: link:http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html[Zookeeper documentation^]
+
 
 // Docker image names
 :DockerTag: {ProductVersion}
