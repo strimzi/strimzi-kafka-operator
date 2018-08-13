@@ -30,6 +30,9 @@ include::assembly-zookeeper-replicas.adoc[leveloffset=+1]
 
 include::assembly-zookeeper-node-configuration.adoc[leveloffset=+1]
 
+// TODO:
+// Entity operator
+
 include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
 
 // TODO:
