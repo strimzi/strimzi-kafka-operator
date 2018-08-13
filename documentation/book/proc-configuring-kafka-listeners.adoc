@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Edit the `listeners` property in the `Kafka.spec.kafka` resource
+. Edit the `listeners` property in the `Kafka.spec.kafka` resource.
 For example:
 +
 [source,yaml,subs=attributes+]

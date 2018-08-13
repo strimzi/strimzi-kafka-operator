@@ -6,7 +6,7 @@
 = Kafka listeners
 
 Kafka broker listeners can be configured using the `listeners` property in the `Kafka.spec.kafka` resource.
-The `listener` property contains two sub-properties:
+The `listeners` property contains two sub-properties:
 
 * `plain`
 * `tls`
@@ -33,7 +33,7 @@ listeners:
 ----
 
 The listener sub-properties might also contain additional configuration.
-Currently the only supported configuration is authentication on the `tls` listener.
+Currently, the only supported configuration is authentication on the `tls` listener.
 
 .An example of `tls` listener with TLS client authentication enabled
 [source,yaml,subs="attributes+"]
