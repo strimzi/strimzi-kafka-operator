@@ -168,7 +168,7 @@ public class EntityTopicOperatorTest {
         assertEquals(new Integer(EntityTopicOperator.HEALTHCHECK_PORT), container.getPorts().get(0).getContainerPort());
         assertEquals(EntityTopicOperator.HEALTHCHECK_PORT_NAME, container.getPorts().get(0).getName());
         assertEquals("TCP", container.getPorts().get(0).getProtocol());
-        assertEquals("/opt/topic-operator/custom-config/", container.getVolumeMounts().get(0).getMountPath());
-        assertEquals("topic-operator-metrics-and-logging", container.getVolumeMounts().get(0).getName());
+        assertEquals("/opt/entity-topic-operator/custom-config/", container.getVolumeMounts().get(0).getMountPath());
+        assertEquals("entity-topic-operator-metrics-and-logging", container.getVolumeMounts().get(0).getName());
     }
 }

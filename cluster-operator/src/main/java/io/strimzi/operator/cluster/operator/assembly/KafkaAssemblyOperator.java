@@ -99,13 +99,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         createOrUpdateZk(reconciliation, kafkaAssembly, assemblySecrets)
             .compose(i -> createOrUpdateKafka(reconciliation, kafkaAssembly, assemblySecrets))
             .compose(i -> createOrUpdateTopicOperator(reconciliation, kafkaAssembly, assemblySecrets))
-            .compose(i -> {
-                // if Topic Operator wasn't deployed
-                if (!i) {
-                    return createOrUpdateEntityOperator(reconciliation, kafkaAssembly, assemblySecrets);
-                }
-                return Future.succeededFuture();
-            })
+            .compose(i -> createOrUpdateEntityOperator(reconciliation, kafkaAssembly, assemblySecrets))
             .compose(ar -> f.complete(), f);
     }
 
@@ -600,12 +594,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return fut;
     }
 
-    private final Future<Boolean> createOrUpdateTopicOperator(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
+    private final Future<Void> createOrUpdateTopicOperator(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         String namespace = kafkaAssembly.getMetadata().getNamespace();
         String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update topic operator {}", reconciliation, name);
 
-        Future<Boolean> chainFuture = Future.future();
+        Future<Void> chainFuture = Future.future();
         getTopicOperatorDescription(kafkaAssembly, assemblySecrets)
                 .compose(desc -> desc.withVoid(serviceAccountOperator.reconcile(namespace,
                         TopicOperator.topicOperatorServiceAccountName(name),
@@ -623,7 +617,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         desc.metricsAndLogsConfigMap())))
                 .compose(desc -> desc.withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), desc.deployment())))
                 .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, TopicOperator.secretName(name), desc.topicOperatorSecret())))
-                .compose(desc -> chainFuture.complete(desc != TopicOperatorDescription.EMPTY), chainFuture);
+                .compose(desc -> chainFuture.complete(), chainFuture);
 
         return chainFuture;
     }
