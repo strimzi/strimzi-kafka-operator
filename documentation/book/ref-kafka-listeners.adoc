@@ -1,0 +1,47 @@
+// Module included in the following assemblies:
+//
+// assembly-configuring-kafka-listeners.adoc
+
+[id='ref-kafka-listeners-{context}']
+= Kafka listeners
+
+Kafka broker listeners can be configured using the `listeners` property in the `Kafka.spec.kafka` resource.
+The `listeners` property contains two sub-properties:
+
+* `plain`
+* `tls`
+
+When these sub-properties are not defined, the listener will be disabled.
+
+.An example of `listeners` property with all listeners enabled
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  plain: {}
+  tls: {}
+# ...
+----
+
+.An example of `listeners` property with only the plain listener enables
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  plain: {}
+# ...
+----
+
+The listener sub-properties might also contain additional configuration.
+Currently, the only supported configuration is authentication on the `tls` listener.
+
+.An example of `tls` listener with TLS client authentication enabled
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  tls:
+    authentication:
+      type: tls
+# ...
+----
