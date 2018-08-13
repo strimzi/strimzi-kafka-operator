@@ -8,7 +8,9 @@
   * Authorization
   * Authentication
 * Configure Kafka _super users_ (`super.users` field in Kafka configuration) 
-* User operator
+* Added new Entity Operator for deploying:
+  * User Operator
+  * Topic Operator
 * Kafka 2.0.0
 * Kafka Connect:
   * Added TLS support for connecting to the Kafka cluster
