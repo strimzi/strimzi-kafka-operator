@@ -16,7 +16,7 @@ To deploy a Kafka cluster, a `Kafka` resource with the cluster configuration has
 ifdef::Kubernetes[Kubernetes or]
 OpenShift cluster.
 Based on what is declared inside of the `Kafka` resource, the Cluster Operator deploys a corresponding Kafka cluster.
-The format of the `Kafka` resource is described in xref:kafka_assembly_details[Format of the `Kafka` resource].
+For more information about the different configuration options supported by the `Kafka` resource, visit xref:assembly-deployment-configuration-kafka-str[]
 
 NOTE: {ProductName} contains example YAML files, which make deploying a Cluster Operator easier.
 

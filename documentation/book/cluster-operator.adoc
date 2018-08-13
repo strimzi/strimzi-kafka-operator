@@ -26,6 +26,7 @@ if the operator is not running, or if a notification is not received for any rea
 
 In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so that it can compare the state of the desired resources with the current cluster deployments in order to have a consistent state across all of them.
 
+<<<<<<< HEAD
 [[kafka_assembly_details]]
 === Format of the `Kafka` resource
 
@@ -1098,6 +1099,8 @@ To add multiple plugins to the deployment, they all have to be added within the 
 
 =======
 >>>>>>> Rewrite the cluster-operator section into modules
+=======
+>>>>>>> Entity Operator
 === Provisioning Role-Based Access Control (RBAC) for the Cluster Operator
 
 For the Cluster Operator to function it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages and interacts with.
@@ -1239,14 +1242,14 @@ increased when using {ProductName} on clusters where regular {ProductPlatformNam
 
 [[STRIMZI_DEFAULT_KAFKA_IMAGE]] `STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
 The image name to use as a default when deploying Kafka, if
-no image is specified as the `kafka-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+no image is specified as the `kafka-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 [[STRIMZI_DEFAULT_KAFKA_INIT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `strimzi/kafka-init:latest`.
-The image name to use as default for the init container started before the broker for doing initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+The image name to use as default for the init container started before the broker for doing initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 [[STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`:: Optional, default `strimzi/kafka-stunnel:latest`.
 The image name to be used as a default when deploying the sidecar container which provides TLS support for Kafka if
-no image is specified as the `spec.kafka.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+no image is specified as the `spec.kafka.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 [[STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE]] `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
 The image name to use as a default when deploying Kafka Connect, if
@@ -1258,23 +1261,23 @@ no image is specified as the `image` in the cluster ConfigMap.
 
 [[STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator:latest`.
 The image name to use as a default when deploying the topic operator, if
-no image is specified as the `spec.topicOperator.image` in the <<topic_operator_json_config,topic operator config>>
+no image is specified as the `spec.topicOperator.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 of the `Kafka` resource.
 
 [[STRIMZI_DEFAULT_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
 The image name to use as a default when deploying Zookeeper, if
-no image is specified as the `zookeeper-image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+no image is specified as the `zookeeper-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 [[STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper-stunnel:latest`.
 The image name to use as a default when deploying the sidecar container which provides TLS support for Zookeeper, if
-no image is specified as the `spec.zookeeper.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+no image is specified as the `spec.zookeeper.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 [[STRIMZI_LOG_LEVEL]] `STRIMZI_LOG_LEVEL`:: Optional, default `INFO`.
 The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG` and `TRACE`.
 
 [[STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE]] `STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator-stunnel:latest`.
 The image name to use as a default when deploying the sidecar container which provides TLS support for the Topic Operator, if
-no image is specified as the `spec.topicOperator.tlsSidecar.image` in the <<kafka_config_map_details,Kafka cluster ConfigMap>>.
+no image is specified as the `spec.topicOperator.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 [[multi-namespace]]
 ==== Watching multiple namespaces

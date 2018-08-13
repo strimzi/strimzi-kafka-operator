@@ -12,6 +12,8 @@
 
 = Container images
 
+assembly-configuring-container-images-{context}
+
 {ProductName} allows you to configure container images which will be used for its componenets.
 Overriding container images is recommended especially in situations where you need to use a different container registry.
 For example, because your network does not allow access to the container repository used by {ProductName}.

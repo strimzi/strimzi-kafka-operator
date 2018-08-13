@@ -32,8 +32,8 @@ spec:
   authentication:
     type: tls
     certificateAndKey:
-      - secretName: my-secret
-        certificate: public.crt
-        key: private.key
+      secretName: my-secret
+      certificate: public.crt
+      key: private.key
   # ...
 ----

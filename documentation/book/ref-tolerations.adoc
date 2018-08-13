@@ -9,6 +9,7 @@ Tolerations ca be configured using the `tolerations` property in following resou
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
+* `Kafka.spec.entityOperator`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 
