@@ -48,7 +48,7 @@ spec:
 
 == Persistent storage
 
-Persistent storage is using {K8sPersistentVolumeClaims} to provisine persistent volumes for storing data.
+Persistent storage uses {K8sPersistentVolumeClaims} to provision persistent volumes for storing data.
 Persistent Volume Claims can be used to provision volumes of many different types, depending on the {K8SStorageClass} which will provision the volume.
 The data types which can be used with persistent volume claims include many types of SAN storage as well as {K8sLocalPersistentVolumes}.
 
@@ -62,7 +62,7 @@ Defines the size of the persistent volume claim, for example, "1000Gi".
 The {ProductPlatformName} {K8SStorageClass} to use for dynamic volume provisioning.
 
 `selector` (optional)::
-Allows to select a specific persistent volumes to use.
+Allows selecting a specific persistent volume to use.
 It contains a `matchLabels` field which contains key:value pairs representing labels for selecting such a volume.
 
 `delete-claim` (optional)::
@@ -79,7 +79,7 @@ storage:
 # ...
 ----
 
-The following example demonstrates use of a storage class.
+The following example demonstrates the use of a storage class.
 
 .Example fragment of persistent storage configuration with specific Storage Class
 [source,yaml,subs="attributes+"]
@@ -92,7 +92,7 @@ storage:
 # ...
 ----
 
-Finally, a `selector` can be used in order to select a specific labelled persistent volume which provides some needed features (such as an SSD).
+Finally, a `selector` can be used in order to select a specific labelled persistent volume which provides some needed features like an SSD.
 
 .Example fragment of persistent storage configuration with selector
 [source,yaml,subs="attributes+"]
@@ -112,10 +112,10 @@ storage:
 
 When the persistent storage is used, it will create Persistent Volume Claims with following names:
 
-`data-[cluster-name]-kafka-[idx]`::
+`data-_<cluster-name>_-kafka-_<idx>_`::
 Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`.
 
-`data-[cluster-name]-zookeeper-[idx]`::
+`data-_<cluster-name>_-zookeeper-_<idx>_`::
 Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`.
 
 == Additional resources

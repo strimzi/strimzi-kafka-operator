@@ -12,7 +12,7 @@
 
 Kafka brokers and Zookeeper are stateful applications.
 They need to store data on disks.
-{ProductName} allows users to configure the type of storage which they want to use for Kafka and Zookeeper.
+{ProductName} allows you to configure the type of storage, which they want to use for Kafka and Zookeeper.
 Storage configuration is mandatory and has to be specified in every `Kafka` resource.
 
 IMPORTANT: Once the Kafka cluster is deployed, the storage cannot be changed.
