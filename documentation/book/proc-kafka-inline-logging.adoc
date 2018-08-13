@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-logging.adoc
+
+[id='kafka-inline-logging-{context}']
+= Using inline logging setting
+.Procedure
+
+. Edit the YAML file to specify the loggers and their level for the required components. For example:
++
+----
+  logging:
+    type: inline
+    loggers:
+      logger.name: "INFO"
+----
++
+In the above example, the log level is set to INFO.
+You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information about the log levels, see link: https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
+
+. Create or update the Kafka resource in {ProductPlatformName}.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_
