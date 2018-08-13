@@ -72,6 +72,9 @@ spec:
                         enum:
                         - allow
                         - deny
+                    required:
+                    - operation
+                    - resource
                 type:
                   type: string
               required:

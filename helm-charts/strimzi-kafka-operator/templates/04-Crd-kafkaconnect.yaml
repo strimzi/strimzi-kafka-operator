@@ -322,6 +322,9 @@ spec:
                         type: string
                       secretName:
                         type: string
+                    required:
+                    - certificate
+                    - secretName
               required:
               - trustedCertificates
           required:
