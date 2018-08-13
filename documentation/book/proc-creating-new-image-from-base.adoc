@@ -29,4 +29,4 @@ USER {DockerImageUser}
 
 .Additional resources
 * For more information about the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable, see xref:STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE[].
-* For more information about the `KafkaConnect.spec.image property`, see xref:kafka_connect_config_map_details[].
+* For more information about the `KafkaConnect.spec.image property`, see xref:assembly-configuring-container-images-deployment-configuration-kafka-connect[].

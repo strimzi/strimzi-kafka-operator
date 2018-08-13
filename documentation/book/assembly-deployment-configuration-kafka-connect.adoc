@@ -5,12 +5,12 @@
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.
 // See also the complementary step on the last line of this file.
-:parent-context: {context}
-:context: deployment-cofiguration-kafka-connect
+:parent-context-deployment-cofiguration-kafka-connect: {context}
 
 [id='assembly-deployment-configuration-kafka-connect-{context}']
-
 = Kafka Connect cluster configuration
+
+:context: deployment-configuration-kafka-connect
 
 The full schema of the `KafkaConnect` resource is described in xref:type-KafkaConnect-reference[].
 All labels that are applied to the desired `KafkaConnect` resource will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster.
@@ -20,9 +20,9 @@ include::assembly-kafka-connect-replicas.adoc[leveloffset=+1]
 
 include::assembly-bootstrap-servers.adoc[leveloffset=+1]
 
-// TODO:
-// Encryption
-// Authentication
+include::assembly-kafka-connect-tls.adoc[leveloffset=+1]
+
+include::assembly-kafka-connect-authentication.adoc[leveloffset=+1]
 
 include::assembly-kafka-connect-configuration.adoc[leveloffset=+1]
 
@@ -39,10 +39,9 @@ include::assembly-jvm-options.adoc[leveloffset=+1]
 
 include::assembly-configuring-container-images.adoc[leveloffset=+1]
 
-// TODO:
-// Include pod scheduling
+include::assembly-scheduling.adoc[leveloffset=+1]
 
 include::ref-list-of-kafka-connect-resources.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.
-:context: {parent-context}
+:context: {parent-context-deployment-cofiguration-kafka-connect}

@@ -6,7 +6,6 @@
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.
 // See also the complementary step on the last line of this file.
-:parent-context: {context}
 
 [id='assembly-kafka-connect-configuration-{context}']
 
@@ -27,6 +26,3 @@ These options are automatically configured by {ProductName}.
 include::ref-kafka-connect-configuration.adoc[leveloffset=+1]
 
 include::proc-configuring-kafka-connect.adoc[leveloffset=+1]
-
-// Restore the context to what it was before this assembly.
-:context: {parent-context}
