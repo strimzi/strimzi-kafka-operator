@@ -32,7 +32,7 @@ It can tolerate 3 nodes being unavailable.
 
 NOTE: For development purposes, it is also possible to run Zookeeper only with a single node.
 
-Having more nodes doesn't necessarily mean better performance, as the costs to maintain the quorum will rise with the number of nodes in the cluster.
+Having more nodes does not necessarily mean better performance, as the costs to maintain the quorum will rise with the number of nodes in the cluster.
 Depending on your availability requirements, you can decide for the number of nodes to use.
 
 include::ref-zookeeper-replicas.adoc[leveloffset=+1]

@@ -14,7 +14,7 @@
 
 {ProductName} allows you to configure container images which will be used for its componenets.
 Overriding container images is recommended especially in situations where you need to use a different container registry.
-For example, because your network doesn't allow access to the container repository used by {ProductName}.
+For example, because your network does not allow access to the container repository used by {ProductName}.
 In such case, you should either copy the {ProductName} images or build them from source.
 In case the configured image is not compatible with {ProductName} images, it might not work properly.
 

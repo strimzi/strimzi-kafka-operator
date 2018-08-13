@@ -12,7 +12,7 @@
 
 Sidecar is a container which is running in a pod and serves an auxiliary purpose.
 In case of TLS sidecar, the purpose is encrypting / decrypting the communication between {ProductName} componenets and Zookeeper.
-Zookeeper doesn't support TLS encryption natively.
+Zookeeper does not support TLS encryption natively.
 Therefore {ProductName} uses the sidecar to add the TLS support.
 
 The TLS sidecar is currrently being used in:

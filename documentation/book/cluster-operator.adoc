@@ -1312,10 +1312,3 @@ roleRef:
   name: strimzi-cluster-operator-role
   apiGroup: v1
 ----
-
-// Modularized content!!!
-
-include::assembly-storage.adoc[leveloffset=+2]
-include::assembly-configuring-kafka-listeners.adoc[leveloffset=+2]
-include::assembly-kafka-authentication-and-authorization.adoc[leveloffset=+2]
-include::assembly-scheduling.adoc[leveloffset=+2]

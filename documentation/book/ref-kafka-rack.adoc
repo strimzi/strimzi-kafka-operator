@@ -10,6 +10,7 @@ The `rack` object has one mandatory field named `topologyKey`.
 This key needs to match one of the labels assigned to the {ProductPlatformName} cluster nodes.
 The label is used by {ProductPlatformName} when scheduling Kafka broker pods to nodes.
 If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
+If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
 Usually, the nodes are labeled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as `topologyKey` value.
 This will have the effect of spreading the broker pods across zones, and also setting the brokers `broker.rack` configuration parameter inside Kafka broker.
 
@@ -41,7 +42,7 @@ When the `brokerRackInitImage` field is missing, the following images will be us
 . `strimzi/kafka-init:latest` container image.
 
 WARNING: Overriding container images is recommended especially in situations where you need to use a different container registry.
-For example, because your network doesn't allow access to the container repository used by {ProductName}.
+For example, because your network does not allow access to the container repository used by {ProductName}.
 In such case, you should either copy the {ProductName} images or build them from source.
 In case the configured image is not compatible with {ProductName} images, it might not work properly.
 
