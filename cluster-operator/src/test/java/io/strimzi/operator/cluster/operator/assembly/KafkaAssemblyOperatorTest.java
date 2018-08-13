@@ -12,9 +12,7 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
-import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
-import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -437,14 +435,14 @@ public class KafkaAssemblyOperatorTest {
 
         Set<String> existingDepNames = new HashSet<>();
         when(mockDepOps.reconcile(eq(assemblyNamespace), anyString(), isNull())).thenAnswer(invocation -> {
-           String name = invocation.getArgument(1);
-           if (topicOperator != null && name.equals(TopicOperator.topicOperatorName(assemblyName))) {
-               existingDepNames.add(name);
-           }
-           if (entityOperator != null && name.equals(EntityOperator.entityOperatorName(assemblyName))) {
-               existingDepNames.add(name);
-           }
-           return Future.succeededFuture(ReconcileResult.deleted());
+            String name = invocation.getArgument(1);
+            if (topicOperator != null && name.equals(TopicOperator.topicOperatorName(assemblyName))) {
+                existingDepNames.add(name);
+            }
+            if (entityOperator != null && name.equals(EntityOperator.entityOperatorName(assemblyName))) {
+                existingDepNames.add(name);
+            }
+            return Future.succeededFuture(ReconcileResult.deleted());
         });
 
         if (topicOperator != null) {
