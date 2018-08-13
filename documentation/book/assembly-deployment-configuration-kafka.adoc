@@ -16,15 +16,15 @@ The full schema of the `Kafka` resource is described in xref:type-Kafka-referenc
 All labels that are applied to the desired `Kafka` resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
 
-// TODO:
-// Include storage
+include::assembly-storage.adoc[leveloffset=+1]
 
 include::assembly-kafka-broker-replicas.adoc[leveloffset=+1]
 
 include::assembly-kafka-broker-configuration.adoc[leveloffset=+1]
 
-// TODO:
-// Add interfaces, authn and authz
+include::assembly-configuring-kafka-listeners.adoc[leveloffset=+1]
+
+include::assembly-kafka-authentication-and-authorization.adoc[leveloffset=+1]
 
 include::assembly-zookeeper-replicas.adoc[leveloffset=+1]
 
