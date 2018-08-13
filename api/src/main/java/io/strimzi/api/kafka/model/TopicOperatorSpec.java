@@ -14,6 +14,7 @@ import io.sundr.builder.annotations.Buildable;
 /**
  * Representation of a Strimzi-managed Topic Operator deployment.
  */
+@Deprecated
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,

@@ -42,6 +42,7 @@ import static java.util.Collections.singletonList;
 /**
  * Represents the topic operator deployment
  */
+@Deprecated
 public class TopicOperator extends AbstractModel {
 
     /**
