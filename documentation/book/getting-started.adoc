@@ -65,8 +65,7 @@ The `logging` field allows the configuration of loggers. These loggers are liste
 [source]
 rootLogger.level
 
-// TODO: Fix loging link
-For information on the logging options and examples of how to set logging, see `_<TODO>_` for Kafka.
+For information on the logging options and examples of how to set logging, see xref:assembly-logging-deployment-configuration-kafka[] for Kafka.
 
 <<<<<<< HEAD
 When using external ConfigMap remember to place your custom ConfigMap under `log4j2.properties` key.

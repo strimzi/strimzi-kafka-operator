@@ -28,8 +28,7 @@ include::assembly-kafka-connect-configuration.adoc[leveloffset=+1]
 
 include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
 
-// TODO:
-// Add logging
+include::assembly-logging.adoc[leveloffset=+1]
 
 include::assembly-healthchecks.adoc[leveloffset=+1]
 
