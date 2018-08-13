@@ -101,4 +101,6 @@ objects:
         type: persistent-claim
         size: "${ZOOKEEPER_VOLUME_CAPACITY}"
         deleteClaim: false
-    topicOperator: {}
+    entityOperator:
+      topicOperator: {}
+      userOperator: {}

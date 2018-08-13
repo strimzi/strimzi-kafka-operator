@@ -91,4 +91,6 @@ objects:
         timeoutSeconds: ${{ZOOKEEPER_HEALTHCHECK_TIMEOUT}}
       storage:
         type: ephemeral
-    topicOperator: {}
+    entityOperator:
+      topicOperator: {}
+      userOperator: {}

@@ -45,4 +45,7 @@ spec:
       deleteClaim: false
     metrics:
       lowercaseOutputName: true
-  topicOperator: { }
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+
