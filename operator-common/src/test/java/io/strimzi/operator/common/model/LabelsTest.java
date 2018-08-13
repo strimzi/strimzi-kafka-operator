@@ -32,6 +32,16 @@ public class LabelsTest {
     }
 
     @Test
+    public void testParseNullLabelsInFromMap()   {
+        assertEquals(Labels.EMPTY, Labels.fromMap(null));
+    }
+
+    @Test
+    public void testParseNullLabelsInUserLabels()   {
+        assertEquals(Labels.EMPTY, Labels.userLabels(null));
+    }
+
+    @Test
     public void testParseEmptyLabels()   {
         String validLabels = "";
         assertEquals(Labels.EMPTY, Labels.fromString(validLabels));

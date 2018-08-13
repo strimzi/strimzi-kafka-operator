@@ -851,6 +851,7 @@ public class KafkaAssemblyOperatorTest {
         );
 
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(foo.getMetadata().getName())))).thenReturn(fooSecrets.get(0));
+        when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(foo.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
@@ -863,6 +864,7 @@ public class KafkaAssemblyOperatorTest {
                         barCluster.generateBrokersSecret(), barCluster.generateClusterPublicKeySecret()))
         );
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
+        when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         Labels bazLabels = Labels.forCluster("baz");
         KafkaCluster bazCluster = KafkaCluster.fromCrd(certManager, baz, bazSecrets);

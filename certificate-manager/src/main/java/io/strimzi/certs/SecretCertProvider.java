@@ -80,11 +80,25 @@ public class SecretCertProvider {
         data.put(keyKey, encoder.encodeToString(key));
         data.put(certKey, encoder.encodeToString(cert));
 
+        return createSecret(namespace, name, data, labels);
+    }
+
+    /**
+     * Create a Kubernetes secret containing the provided secret data section
+     *
+     * @param namespace Namespace
+     * @param name Secret name
+     * @param data Map with secret data / files
+     * @param labels Labels to add to the Secret
+     * @return the Secret
+     * @throws IOException
+     */
+    public Secret createSecret(String namespace, String name, Map<String, String> data, Map<String, String> labels) {
         Secret secret = new SecretBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                    .withLabels(labels)
+                .withName(name)
+                .withNamespace(namespace)
+                .withLabels(labels)
                 .endMetadata()
                 .withData(data)
                 .build();

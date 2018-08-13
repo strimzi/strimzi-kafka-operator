@@ -77,14 +77,18 @@ public class Labels {
     }
 
     public static Labels userLabels(Map<String, String> userLabels) {
-        for (String key : userLabels.keySet()) {
-            if (key.startsWith(STRIMZI_DOMAIN)
-                    && !key.equals(STRIMZI_KIND_LABEL)) {
-                throw new IllegalArgumentException("User labels includes a Strimzi label that is not "
-                        + STRIMZI_KIND_LABEL + ": " + key);
+        if (userLabels != null) {
+            for (String key : userLabels.keySet()) {
+                if (key.startsWith(STRIMZI_DOMAIN)
+                        && !key.equals(STRIMZI_KIND_LABEL)) {
+                    throw new IllegalArgumentException("User labels includes a Strimzi label that is not "
+                            + STRIMZI_KIND_LABEL + ": " + key);
+                }
             }
+            return new Labels(userLabels);
         }
-        return new Labels(userLabels);
+
+        return EMPTY;
     }
 
     /**
@@ -98,7 +102,11 @@ public class Labels {
      * Returns the labels from Map.
      */
     public static Labels fromMap(Map<String, String> labels) {
-        return new Labels(labels);
+        if (labels != null) {
+            return new Labels(labels);
+        }
+
+        return EMPTY;
     }
 
     /**
