@@ -44,18 +44,21 @@ release_helm_version:
 	# Update default image tag in chart README.md config grid with RELEASE_VERSION
 	sed -i 's/\(image\.tag[^\n]*\| \)`latest`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
 
-docu_html: docu_htmlclean
+docu_html: docu_htmlclean docu_check
 	mkdir -p documentation/html
 	cp -vrL documentation/book/images documentation/html/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) documentation/book/master.adoc -o documentation/html/index.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
 
 
-docu_htmlnoheader: docu_htmlnoheaderclean
+docu_htmlnoheader: docu_htmlnoheaderclean docu_check
 	mkdir -p documentation/htmlnoheader
 	cp -vrL documentation/book/images documentation/htmlnoheader/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -s documentation/book/master.adoc -o documentation/htmlnoheader/master.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -s documentation/contributing/master.adoc -o documentation/htmlnoheader/contributing.html
+
+docu_check:
+	./.travis/check_docs.sh
 
 docu_pushtowebsite: docu_htmlnoheader docu_html
 	./.travis/docu-push-to-website.sh
