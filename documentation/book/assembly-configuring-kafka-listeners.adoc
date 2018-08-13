@@ -8,7 +8,7 @@
 :parent-context: {context}
 
 [id='assembly-configuring-kafka-broker-listeners-{context}']
-= Configuring Kafka broker listeners
+= Kafka broker listeners
 
 {ProductName} allows users to configure the listeners which will be enabled in Kafka brokers.
 Two types of listeners are supported:

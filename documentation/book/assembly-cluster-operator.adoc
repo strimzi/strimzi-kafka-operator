@@ -20,6 +20,8 @@ For more information about the different configuration options supported by the 
 
 NOTE: {ProductName} contains example YAML files, which make deploying a Cluster Operator easier.
 
+include::con-what-the-cluster-operator-does.adoc[leveloffset=+1]
+
 ifdef::Kubernetes[]
 include::proc-deploying-cluster-operator-kubernetes.adoc[leveloffset=+1]
 endif::Kubernetes[]

@@ -8,7 +8,7 @@
 
 [id='assembly-kafka-rack-{context}']
 
-= Kafka rack awareness configuration
+= Kafka rack awareness
 
 {ProductName} allows you to enable Kafka rack awareness.
 The rack awareness feature helps to spread the Kafka broker pods and Kafka topic replicas across different racks.

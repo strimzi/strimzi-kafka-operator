@@ -10,7 +10,7 @@
 :source-highlighter: highlightjs
 :toc: left
 :linkattrs:
-:toclevels: 4
+:toclevels: 3
 
 // Name placeholders
 :ProductLongName: Strimzi

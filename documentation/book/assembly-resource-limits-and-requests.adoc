@@ -10,7 +10,7 @@
 
 [id='assembly-resource-limits-and-requests-{context}']
 
-= Configuring resources
+= CPU and memory resources
 
 For every deployed container, {ProductName} allows you to specify the resources which should be reserved for it and the maximal resources which should be consumed by it.
 {ProductName} supports two types of resources:

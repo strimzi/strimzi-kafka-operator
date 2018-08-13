@@ -2,7 +2,7 @@
 //
 // assembly-kafka-entity-operator.adoc
 
-[id='proc-configuring-kafka-broker-replicas-{context}']
+[id='proc-configuring-kafka-entity-operator-{context}']
 = Configuring Entity Operator
 
 .Prerequisites
