@@ -369,6 +369,10 @@ public class CrdGenerator {
         } else  {
             itemResult.put("type", "object");
             itemResult.set("properties", buildSchemaProperties(elementType));
+            ArrayNode required = buildSchemaRequired(elementType);
+            if (required.size() > 0) {
+                result.set("required", required);
+            }
         }
         return result;
     }
