@@ -309,7 +309,9 @@ public class KafkaST extends AbstractST {
         assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
-        String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-operator-")).findFirst().get().getMetadata().getName();
+        String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems()
+                .stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-entity-operator-"))
+                .findFirst().get().getMetadata().getName();
 
         assertResources(kubeClient.namespace(), podName,
                 "500M", "300m", "500M", "300m");
@@ -386,13 +388,15 @@ public class KafkaST extends AbstractST {
             }
         }
 
-        //Verifying docker image for topic-operator
-        String topicOperatorPodName = kubeClient.listResourcesByLabel("pod",
-                "strimzi.io/name=" + clusterName + "-topic-operator").get(0);
-        String imgFromPod = getContainerImageNameFromPod(topicOperatorPodName, "topic-operator");
+        //Verifying docker image for entity-operator
+        String entityOperatorPodName = kubeClient.listResourcesByLabel("pod",
+                "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
+        String imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "entity-topic-operator");
         assertEquals(imgFromDeplConf.get(TO_IMAGE), imgFromPod);
-        imgFromPod = getContainerImageNameFromPod(topicOperatorPodName, "tls-sidecar");
-        assertEquals(imgFromDeplConf.get(TLS_SIDECAR_TO_IMAGE), imgFromPod);
+        imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "entity-user-operator");
+        assertEquals(imgFromDeplConf.get(UO_IMAGE), imgFromPod);
+        imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "tls-sidecar");
+        assertEquals(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE), imgFromPod);
 
         LOGGER.info("Docker images verified");
     }

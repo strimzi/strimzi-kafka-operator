@@ -52,11 +52,13 @@ spec:
       "-server": true
       "-XX":
         UseG1GC: "true"
-  topicOperator:
-    resources:
-      limits:
-        memory: 500M
-        cpu: 300m
-      requests:
-        memory: 500M
-        cpu: 300m
+  entityOperator:
+    topicOperator:
+      resources:
+        limits:
+          memory: 500M
+          cpu: 300m
+        requests:
+          memory: 500M
+          cpu: 300m
+    userOperator: {}

@@ -32,4 +32,6 @@ spec:
       type: ephemeral
     metrics:
       lowercaseOutputName: true
-  topicOperator: { }
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}

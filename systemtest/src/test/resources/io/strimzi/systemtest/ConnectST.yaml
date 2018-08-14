@@ -30,4 +30,6 @@ spec:
       timeoutSeconds: 5
     storage:
       type: ephemeral
-  topicOperator: {}
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}

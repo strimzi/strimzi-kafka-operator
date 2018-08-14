@@ -26,5 +26,7 @@ spec:
       timeoutSeconds: 5
     storage:
       type: ephemeral
-  topicOperator:
-    watchedNamespace: topic-operator-namespace
+  entityOperator:
+    topicOperator:
+      watchedNamespace: topic-operator-namespace
+    userOperator: {}
