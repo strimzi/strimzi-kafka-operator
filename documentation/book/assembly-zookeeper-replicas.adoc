@@ -10,27 +10,26 @@
 
 = Replicas
 
-Zookeeper clusters / ensembles usually run with odd number of nodes.
-It always requires the majority of the nodes to be available in order to maintain quorum.
-Maintaining quorum is important because when the Zookeeper cluster loses quorum, it will stop responding to clients.
-As a result, Zookeeper cluster without a quorum will cause the Kafka brokers to stop working as well.
+Zookeeper clusters or ensembles usually run with an odd number of nodes and always requires the majority of the nodes to be available in order to maintain a quorum.
+Maintaining a quorum is important because when the Zookeeper cluster loses a quorum, it will stop responding to clients.
+As a result, a Zookeeper cluster without a quorum will cause the Kafka brokers to stop working as well.
 This is why having a stable and highly available Zookeeper cluster is very important for {ProductName}.
 
-Zookeeper cluster is usually deployed with 3, 5 or 7 nodes.
+A Zookeeper cluster is usually deployed with three, five, or seven nodes.
 
-3 nodes::
-Zookeeper cluster consisting of 3 nodes requires at least 2 nodes to be up and running in order to maintain the quorum.
+Three nodes::
+Zookeeper cluster consisting of three nodes requires at least two nodes to be up and running in order to maintain the quorum.
 It can tolerate only one node being unavailable.
 
-5 nodes::
-Zookeeper cluster consisting of 5 nodes requires at least 3 nodes to be up and running in order to maintain the quorum.
-It can tolerate 2 nodes being unavailable.
+Five nodes::
+Zookeeper cluster consisting of five nodes requires at least three nodes to be up and running in order to maintain the quorum.
+It can tolerate two nodes being unavailable.
 
-7 nodes::
-Zookeeper cluster consisting of 7 nodes requires at least 4 nodes to be up and running in order to maintain the quorum.
-It can tolerate 3 nodes being unavailable.
+Seven nodes::
+Zookeeper cluster consisting of seven nodes requires at least four nodes to be up and running in order to maintain the quorum.
+It can tolerate three nodes being unavailable.
 
-NOTE: For development purposes, it is also possible to run Zookeeper only with a single node.
+NOTE: For development purposes, it is also possible to run Zookeeper with a single node.
 
 Having more nodes does not necessarily mean better performance, as the costs to maintain the quorum will rise with the number of nodes in the cluster.
 Depending on your availability requirements, you can decide for the number of nodes to use.

@@ -8,10 +8,10 @@
 
 [id='assembly-tls-sidecar-{context}']
 
-= TLS Sidecar
+= TLS sidecar
 
 Sidecar is a container which is running in a pod and serves an auxiliary purpose.
-In case of TLS sidecar, the purpose is to encrypt or decrypt the communication between {ProductName} components and Zookeeper.
+The purpose of the TLS sidecar is to encrypt or decrypt the communication between {ProductName} components and Zookeeper since Zookeeper does not support TLS encryption natively.
 Zookeeper does not support TLS encryption natively.
 Therefore {ProductName} uses the sidecar to add the TLS support.
 

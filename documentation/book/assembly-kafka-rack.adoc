@@ -13,7 +13,8 @@
 {ProductName} allows you to enable Kafka rack awareness.
 The rack awareness feature helps to spread the Kafka broker pods and Kafka topic replicas across different racks.
 Enabling rack awareness helps to improve availability of Kafka brokers and the topics they are hosting.
-Rack might represent an availability zone, data center or actual rack in your data center.
+
+NOTE: "Rack" might represent an availability zone, data center or actual rack in your data center.
 
 include::ref-kafka-rack.adoc[leveloffset=+1]
 

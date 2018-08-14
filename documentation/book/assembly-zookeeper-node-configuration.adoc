@@ -15,7 +15,7 @@ You can specify and configure most of the options listed in {ApacheZookeeperConf
 
 The only options which cannot be configured are those related to the following areas:
 
-* Security (Encryption, Authentication and Authorization)
+* Security (Encryption, Authentication, and Authorization)
 * Listener configuration
 * Configuration of data directories
 * Zookeeper cluster composition

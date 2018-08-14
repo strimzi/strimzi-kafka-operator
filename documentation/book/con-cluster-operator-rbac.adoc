@@ -7,29 +7,28 @@
 
 == Provisioning Role-Based Access Control (RBAC) for the Cluster Operator
 
-For the Cluster Operator to function it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages and interacts with.
-These include the desired resources, such as  `Kafka`, `Kafka Connect`, and so on, as well as the managed resources, such as `ConfigMaps`, `Pods`, `Deployments`, `StatefulSets`, `Services`, and so on.
+For the Cluster Operator to function it needs permission within the {ProductPlatformName} cluster to interact with resources such as `Kafka`, `KafkaConnect`, and so on, as well as the managed resources, such as `ConfigMaps`, `Pods`, `Deployments`, `StatefulSets`, `Services`, and so on.
 Such permission is described in terms of {ProductPlatformName} role-based access control (RBAC) resources:
 
 * `ServiceAccount`,
 * `Role` and `ClusterRole`,
 * `RoleBinding` and `ClusterRoleBinding`.
 
-In addition to running under its own `ServiceAccount` with a `ClusterRoleBinding`, the Cluster Operator manages some RBAC resources because some of the components need access to {ProductPlatformName} resources.
+In addition to running under its own `ServiceAccount` with a `ClusterRoleBinding`, the Cluster Operator manages some RBAC resources for the components that need access to {ProductPlatformName} resources.
 
 {ProductPlatformName} also includes privilege escalation protections that prevent components operating under one `ServiceAccount` from granting other `ServiceAccounts` privileges that the granting `ServiceAccount` does not have.
-Because the Cluster Operator must be able to create the `ClusterRoleBindings` and `RoleBindings` needed by resources it manages, the Cluster Operator must also have those same privileges.
+Because the Cluster Operator must be able to create the `ClusterRoleBindings`, and `RoleBindings` needed by resources it manages, the Cluster Operator must also have those same privileges.
 
 [id='delegated-privileges-{context}']
 == Delegated privileges
 
 When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates `ServiceAccounts`, `RoleBindings` and `ClusterRoleBindings`, as follows:
 
-* The Kafka broker pods use a `ServiceAccount` called `<cluster-name>-kafka` (where `<cluster-name>` is a placeholder for the name of the `Kafka` resource)
-  - When the rack feature is used, the `strimzi-<cluster-name>-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`
+* The Kafka broker pods use a `ServiceAccount` called `_<cluster-name>_-kafka`
+  - When the rack feature is used, the `strimzi-_<cluster-name>_-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`
   - When the rack feature is not used no binding is created.
 * The Zookeeper pods use the default `ServiceAccount` as they have no need to access {ProductPlatformName} resources
-* The Topic Operator pod uses a `ServiceAccount` called `<cluster-name>-topic-operator` (where `<cluster-name>` is a placeholder for the name of the `Kafka` resource)
+* The Topic Operator pod uses a `ServiceAccount` called `_<cluster-name>_-topic-operator`
     - The Topic Operator produces {ProductPlatformName} events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-topic-operator` which grants this access via the `strimzi-topic-operator-role-binding` `RoleBinding`.
 
 The pods for `KafkaConnect` and `KafkaConnectS2I` resources use the default `ServiceAccount`, since they require no access to {ProductPlatformName} resources.

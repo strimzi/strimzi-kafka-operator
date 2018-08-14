@@ -11,8 +11,6 @@
 [id='assembly-logging-{context}']
 = Logging
 
-assembly-logging-{context}
-
 Logging enables you to diagnose error and performance issues of {ProductName}.
 For the logging, various logger implementations are used.
 Kafka and Zookeeper use `log4j` logger and Topic Operator, User Operator, and other components use `log4j2` logger.
