@@ -34,7 +34,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -127,12 +126,15 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         return null;
     }
 
-    private final void reconcileClusterCa(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+    private final void reconcileClusterCa(Reconciliation reconciliation, Labels labels, Handler<AsyncResult<Void>> handler) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
+                Secret clusterCa = secretOperations.get(reconciliation.namespace(), clusterCaName);
+                SecretCertProvider secretCertProvider = new SecretCertProvider();
+                Secret secret = null;
 
-                if (secretOperations.get(reconciliation.namespace(), clusterCaName) == null) {
+                if (clusterCa == null) {
                     log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
                     File clusterCAkeyFile = null;
                     File clusterCAcertFile = null;
@@ -146,13 +148,9 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
                         certManager.generateSelfSignedCert(clusterCAkeyFile, clusterCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
 
-                        SecretCertProvider secretCertProvider = new SecretCertProvider();
-                        Secret secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
+                        secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
                                 "cluster-ca.key", "cluster-ca.crt",
-                                clusterCAkeyFile, clusterCAcertFile, Collections.emptyMap());
-
-                        secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
-                                .compose(future::complete, future);
+                                clusterCAkeyFile, clusterCAcertFile, labels.toMap());
                     } catch (Throwable e) {
                         future.fail(e);
                     } finally {
@@ -164,8 +162,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                     log.debug("{}: End generating cluster CA {}", reconciliation, clusterCaName);
                 } else {
                     log.debug("{}: The cluster CA {} already exists", reconciliation, clusterCaName);
-                    future.complete();
+                    secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
+                            clusterCa.getData(), labels.toMap());
                 }
+
+                secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
+                        .compose(future::complete, future);
             }, true,
             res -> {
                 if (res.succeeded())
@@ -224,7 +226,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
                     if (cr != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
-                        reconcileClusterCa(reconciliation, certResult -> {
+                        Labels caLabels = Labels.userLabels(cr.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
+                        reconcileClusterCa(reconciliation, caLabels, certResult -> {
 
                             Labels labels = Labels.forCluster(assemblyName);
                             List<Secret> secrets = secretOperations.list(namespace, labels);
