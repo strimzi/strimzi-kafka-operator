@@ -26,7 +26,7 @@ import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblySpec;
+import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.Map;
@@ -34,13 +34,10 @@ import java.util.Map;
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
     // Kafka Connect S2I configuration
-    protected String sourceImageBaseName = DEFAULT_IMAGE.substring(0, DEFAULT_IMAGE.lastIndexOf(":"));
-    protected String sourceImageTag = DEFAULT_IMAGE.substring(DEFAULT_IMAGE.lastIndexOf(":") + 1);
+    protected String sourceImageBaseName = KafkaConnectS2ISpec.DEFAULT_IMAGE.substring(0, KafkaConnectS2ISpec.DEFAULT_IMAGE.lastIndexOf(":"));
+    protected String sourceImageTag = KafkaConnectS2ISpec.DEFAULT_IMAGE.substring(KafkaConnectS2ISpec.DEFAULT_IMAGE.lastIndexOf(":") + 1);
     protected String tag = "latest";
     protected boolean insecureSourceRepository = false;
-
-    // Configuration defaults
-    protected static final String DEFAULT_IMAGE = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE", "strimzi/kafka-connect-s2i:latest");
 
     /**
      * Constructor
@@ -50,12 +47,12 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      */
     private KafkaConnectS2ICluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
-        setImage(DEFAULT_IMAGE);
+        setImage(KafkaConnectS2ISpec.DEFAULT_IMAGE);
         this.validLoggerFields = getDefaultLogConfig();
     }
 
     public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2I kafkaConnectS2I) {
-        KafkaConnectS2IAssemblySpec spec = kafkaConnectS2I.getSpec();
+        KafkaConnectS2ISpec spec = kafkaConnectS2I.getSpec();
         KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(kafkaConnectS2I.getMetadata().getNamespace(),
                 kafkaConnectS2I.getMetadata().getName(),
                 Labels.fromResource(kafkaConnectS2I).withKind(kafkaConnectS2I.getKind())));

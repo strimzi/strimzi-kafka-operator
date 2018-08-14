@@ -44,8 +44,6 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/connect-certs/";
 
     // Configuration defaults
-    protected static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE", "strimzi/kafka-connect:latest");
     protected static final int DEFAULT_REPLICAS = 3;
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 60;
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
@@ -76,7 +74,7 @@ public class KafkaConnectCluster extends AbstractModel {
         this.serviceName = serviceName(cluster);
         this.validLoggerFields = getDefaultLogConfig();
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
-        this.image = DEFAULT_IMAGE;
+        this.image = KafkaConnectSpec.DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
