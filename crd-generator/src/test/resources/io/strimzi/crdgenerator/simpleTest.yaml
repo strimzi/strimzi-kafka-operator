@@ -300,6 +300,8 @@ spec:
                 type: "string"
               rightProperty:
                 type: "string"
+            required:
+            - "discrim"
         listOfRawList:
           type: "array"
           items:

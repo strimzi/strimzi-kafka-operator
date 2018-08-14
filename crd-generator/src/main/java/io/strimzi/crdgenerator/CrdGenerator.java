@@ -257,9 +257,15 @@ public class CrdGenerator {
     }
 
     private ObjectNode buildObjectSchema(AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType) {
-        checkClass(crdClass);
+
         ObjectNode result = nf.objectNode();
 
+        buildObjectSchema(result, crdClass, printType);
+        return result;
+    }
+
+    private void buildObjectSchema(ObjectNode result, Class<?> crdClass, boolean printType) {
+        checkClass(crdClass);
         if (printType) {
             result.put("type", "object");
         }
@@ -269,7 +275,6 @@ public class CrdGenerator {
         if (required.size() > 0) {
             result.set("required", required);
         }
-        return result;
     }
 
     private void checkClass(Class<?> crdClass) {
@@ -367,8 +372,7 @@ public class CrdGenerator {
                 || int.class.equals(elementType)) {
             itemResult.put("type", "integer");
         } else  {
-            itemResult.put("type", "object");
-            itemResult.set("properties", buildSchemaProperties(elementType));
+            buildObjectSchema(itemResult, elementType, true);
         }
         return result;
     }
