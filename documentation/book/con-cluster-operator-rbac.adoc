@@ -34,7 +34,7 @@ When the Cluster Operator deploys resources for a desired `Kafka` resource it al
 
 The pods for `KafkaConnect` and `KafkaConnectS2I` resources use the default `ServiceAccount`, since they require no access to {ProductPlatformName} resources.
 
-== Using a `ServiceAccount`
+== `ServiceAccount`
 
 The Cluster Operator is best run using a `ServiceAccount`:
 
@@ -55,7 +55,7 @@ include::examples/install/cluster-operator/05-Deployment-strimzi-cluster-operato
 
 Note line 12, where the the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
 
-== Defining `ClusterRoles`
+== `ClusterRoles`
 
 The Cluster Operator needs to operate using `ClusterRoles` that give it access to the necessary resources.
 Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the `ClusterRoles`.
@@ -63,7 +63,7 @@ Depending on the {ProductPlatformName} cluster setup, a cluster administrator mi
 NOTE: Cluster administrator rights are only needed for the creation of the `ClusterRoles`.
 The Cluster Operator will not run under the cluster admin account.
 
-The `ClusterRoles` follow the "principle of least privilege" and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
+The `ClusterRoles` follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
 
 [source,yaml,options="nowrap"]
 .Example `Role` for the Cluster Operator
@@ -87,7 +87,7 @@ The `strimzi-topic-operator` `ClusterRole` represents the access needed by the T
 include::examples/install/cluster-operator/04-ClusterRole-strimzi-topic-operator.yaml[]
 ----
 
-== Defining `ClusterRoleBindings`
+== `ClusterRoleBindings`
 
 The operator needs a `ClusterRoleBinding` which associates its `ClusterRole` with its `ServiceAccount`:
 

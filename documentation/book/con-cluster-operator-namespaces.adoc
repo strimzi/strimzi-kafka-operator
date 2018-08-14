@@ -7,7 +7,7 @@
 
 The Cluster Operator is able to watch for the `Kafka`, `KafkaConnect` and `KafkaConnectS2I` resources in multiple namespaces.
 It does not have to be installed in every single namespace separately.
-The only reason why to run multiple Cluster Operators in a single cluster is to use different versions of {ProductName}.
+The only reason to run multiple Cluster Operators in a single cluster is to use different versions of {ProductName}.
 
 // TODO: Link to env var definition
 

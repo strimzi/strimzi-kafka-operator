@@ -10,11 +10,11 @@
 
 = Replicas
 
-Zookeeper clusters / ensembles usually run in odd number of nodes.
-It always requires majority of the nodes to be available in order to maintain quorum.
-Maintaining quorum is important, because when the Zookeeper cluster looses quorum, it will stop responding to clients.
+Zookeeper clusters / ensembles usually run with odd number of nodes.
+It always requires the majority of the nodes to be available in order to maintain quorum.
+Maintaining quorum is important because when the Zookeeper cluster loses quorum, it will stop responding to clients.
 As a result, Zookeeper cluster without a quorum will cause the Kafka brokers to stop working as well.
-This is why having stable and highly available Zookeeper cluster is very important for {ProductName}.
+This is why having a stable and highly available Zookeeper cluster is very important for {ProductName}.
 
 Zookeeper cluster is usually deployed with 3, 5 or 7 nodes.
 
