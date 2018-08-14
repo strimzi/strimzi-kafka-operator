@@ -55,6 +55,8 @@ public class EntityOperator extends AbstractModel {
     private EntityUserOperator userOperator;
     private Sidecar tlsSidecar;
 
+    private boolean isDeployed;
+
     /**
      * Private key and certificate for encrypting communication with Zookeeper and Kafka
      */
@@ -112,6 +114,14 @@ public class EntityOperator extends AbstractModel {
         return cluster + CERTS_SUFFIX;
     }
 
+    public void setDeployed(boolean isDeployed) {
+        this.isDeployed = isDeployed;
+    }
+
+    public boolean isDeployed() {
+        return isDeployed;
+    }
+
     /**
      * Create a Entity Operator from given desired resource
      *
@@ -136,7 +146,10 @@ public class EntityOperator extends AbstractModel {
             result.setTlsSidecar(entityOperatorSpec.getTlsSidecar());
             result.setTopicOperator(EntityTopicOperator.fromCrd(kafkaAssembly));
             result.setUserOperator(EntityUserOperator.fromCrd(kafkaAssembly));
-            result.generateCertificates(certManager, secrets);
+            result.setDeployed(result.getTopicOperator() != null || result.getUserOperator() != null);
+            if (result.isDeployed()) {
+                result.generateCertificates(certManager, secrets);
+            }
         }
         return result;
     }
@@ -198,6 +211,12 @@ public class EntityOperator extends AbstractModel {
     }
 
     public Deployment generateDeployment() {
+
+        if (!isDeployed()) {
+            log.warn("Topic and/or User Operators not declared: Entity Operator will not be deployed");
+            return null;
+        }
+
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")
                 .build();
@@ -260,6 +279,11 @@ public class EntityOperator extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateSecret() {
+
+        if (!isDeployed()) {
+            return null;
+        }
+
         Map<String, String> data = new HashMap<>();
         data.put("cluster-ca.crt", Base64.getEncoder().encodeToString(clusterCA.cert()));
         data.put("entity-operator.key", Base64.getEncoder().encodeToString(cert.key()));
@@ -280,6 +304,11 @@ public class EntityOperator extends AbstractModel {
     }
 
     public ServiceAccount generateServiceAccount() {
+
+        if (!isDeployed()) {
+            return null;
+        }
+
         return new ServiceAccountBuilder()
                 .withNewMetadata()
                     .withName(getServiceAccountName())
