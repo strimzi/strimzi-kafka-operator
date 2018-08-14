@@ -3,7 +3,7 @@
 // assembly-using-the-user-operator.adoc
 
 [id='proc-changing-kafka-user-{context}']
-= Changing a user
+= Editing a Kafka user
 
 This procedure describes how to change the configuration of an existing Kafka user by using a `KafkaUser` {ProductPlatformName} resource.
 
@@ -15,7 +15,7 @@ This procedure describes how to change the configuration of an existing Kafka us
 
 .Procedure
 
-. Prepare a file containing the desired `KafkaUser`.
+. Prepare a YAML file containing the desired `KafkaUser`.
 +
 .An example `KafkaUser`
 [source,yaml,subs="attributes+"]
@@ -65,6 +65,7 @@ oc edit kafkauser _<your-user-name>_
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
++
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
 +

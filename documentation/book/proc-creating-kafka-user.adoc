@@ -3,7 +3,7 @@
 // assembly-using-the-user-operator.adoc
 
 [id='proc-creating-kafka-user-{context}']
-= Creating a user
+= Creating a Kafka user
 
 .Prerequisites
 
@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Prepare a file containing the `KafkaUser` to be created.
+. Prepare a YAML file containing the `KafkaUser` to be created.
 +
 .An example `KafkaUser`
 [source,yaml,subs="attributes+"]
@@ -50,6 +50,7 @@ spec:
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
++
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
 +

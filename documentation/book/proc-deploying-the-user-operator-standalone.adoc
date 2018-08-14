@@ -3,10 +3,10 @@
 // assembly-user-operator.adoc
 
 [id='proc-deploying-the-user-operator-standalone-{context}']
-= Deploying the User Operator standalone
+= Deploying the standalone User Operator
 
 Deploying the User Operator as a standalone component is more complicated than installing it using the Cluster Operator, but is more flexible.
-For instance is can operate _with_ any Kafka cluster, not necessarily one deployed by the Cluster Operator.
+For instance it can operate _with_ any Kafka cluster, not only the one deployed by the Cluster Operator.
 
 .Prerequisites
 
@@ -16,8 +16,8 @@ For instance is can operate _with_ any Kafka cluster, not necessarily one deploy
 
 . Edit the `examples/install/user-operator/05-Deployment-strimzi-user-operator.yaml` resource. You will need to change the following
 +
-.. The `STRIMZI_CA_NAME` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to point to an {ProductPlatformName} Secret which should contain the Cetificate Authority for signing new user certificates for TLS Client Authentication.
-The secret should contain the public key of the certificate authority under the key `clients-ca.crt` and the private key under `clients-ca.key`.
+.. The `STRIMZI_CA_NAME` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to point to an {ProductPlatformName} `Secret` which should contain the Certificate Authority for signing new user certificates for TLS Client Authentication.
+The `Secret` should contain the public key of the Certificate Authority under the key `clients-ca.crt` and the private key under `clients-ca.key`.
 .. The `STRIMZI_ZOOKEEPER_CONNECT` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of the Zookeeper nodes, given as a comma-separated list of `_<hostname>_:‍_<port>_` pairs. This should be the same Zookeeper cluster that your Kafka cluster is using.
 .. The `STRIMZI_NAMESPACE` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to the {ProductPlatformName} namespace in which you want the operator to watch for  `KafkaUser` resources.
 

@@ -3,9 +3,9 @@
 // assembly-using-the-user-operator.adoc
 
 [id='deleting-kafka-user-{context}']
-= Deleting a user
+= Deleting a Kafka user
 
-This procedure describes how to delete a Kafka user using a `KafkaUser` {ProductPlatformName} resource.
+This procedure describes how to delete a Kafka user created with `KafkaUser` {ProductPlatformName} resource.
 
 .Prerequisites
 
