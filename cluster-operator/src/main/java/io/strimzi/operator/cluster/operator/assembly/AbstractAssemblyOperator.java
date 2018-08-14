@@ -151,9 +151,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                         secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
                                 "cluster-ca.key", "cluster-ca.crt",
                                 clusterCAkeyFile, clusterCAcertFile, labels.toMap());
-
-                        secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
-                                .compose(future::complete, future);
                     } catch (Throwable e) {
                         future.fail(e);
                     } finally {
