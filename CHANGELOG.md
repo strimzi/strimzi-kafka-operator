@@ -11,6 +11,7 @@
 * Added new Entity Operator for deploying:
   * User Operator
   * Topic Operator
+* Deploying the Topic Operator outside of the new Entity Operator is now deprecated
 * Kafka 2.0.0
 * Kafka Connect:
   * Added TLS support for connecting to the Kafka cluster
