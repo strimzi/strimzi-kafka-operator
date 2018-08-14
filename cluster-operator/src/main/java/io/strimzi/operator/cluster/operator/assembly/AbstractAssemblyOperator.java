@@ -131,6 +131,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
             future -> {
                 String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
                 Secret clusterCa = secretOperations.get(reconciliation.namespace(), clusterCaName);
+                SecretCertProvider secretCertProvider = new SecretCertProvider();
+                Secret secret = null;
 
                 if (clusterCa == null) {
                     log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
@@ -146,8 +148,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
                         certManager.generateSelfSignedCert(clusterCAkeyFile, clusterCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
 
-                        SecretCertProvider secretCertProvider = new SecretCertProvider();
-                        Secret secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
+                        secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
                                 "cluster-ca.key", "cluster-ca.crt",
                                 clusterCAkeyFile, clusterCAcertFile, labels.toMap());
 
@@ -164,14 +165,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                     log.debug("{}: End generating cluster CA {}", reconciliation, clusterCaName);
                 } else {
                     log.debug("{}: The cluster CA {} already exists", reconciliation, clusterCaName);
-
-                    SecretCertProvider secretCertProvider = new SecretCertProvider();
-                    Secret secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
+                    secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
                             clusterCa.getData(), labels.toMap());
-
-                    secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
-                            .compose(future::complete, future);
                 }
+
+                secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
+                        .compose(future::complete, future);
             }, true,
             res -> {
                 if (res.succeeded())
