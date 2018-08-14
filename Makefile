@@ -1,5 +1,7 @@
 TOPDIR=$(dir $(lastword $(MAKEFILE_LIST)))
 RELEASE_VERSION ?= latest
+CHART_PATH ?= ./helm-charts/strimzi-kafka-operator/
+CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | sed 's/\([0-9.]*\).*/\1/')
 
 SUBDIRS=docker-images crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init helm-charts examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
@@ -32,7 +34,7 @@ release_maven:
 	mvn versions:set -DnewVersion=$(shell echo $(RELEASE_VERSION) | tr a-z A-Z)
 	mvn versions:commit
 
-release_pkg:
+release_pkg: helm_pkg	
 	tar -z -cf ./strimzi-$(RELEASE_VERSION).tar.gz strimzi-$(RELEASE_VERSION)/
 	zip -r ./strimzi-$(RELEASE_VERSION).zip strimzi-$(RELEASE_VERSION)/
 	rm -rf ./strimzi-$(RELEASE_VERSION)
@@ -43,6 +45,14 @@ release_helm_version:
 	sed -i 's/\(tag: \)latest/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
 	# Update default image tag in chart README.md config grid with RELEASE_VERSION
 	sed -i 's/\(image\.tag[^\n]*\| \)`latest`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
+
+helm_pkg:
+	# Copying unarchived Helm Chart to release directory
+	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
+	cp -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
+	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
+	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
+	rm -rf strimzi-$(RELEASE_VERSION)/charts/
 
 docu_html: docu_htmlclean docu_check
 	mkdir -p documentation/html

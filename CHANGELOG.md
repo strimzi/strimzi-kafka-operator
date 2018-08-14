@@ -2,12 +2,15 @@
 
 ## 0.6.0 (Work in Progress)
 
+* Helm chart for Strimzi Cluster Operator
 * Topic Operator moving to Custom Resources instead of Config Maps
 * Make it possible to enabled and disable:
   * Listeners
   * Authorization
   * Authentication
-* Configure Kafka _super users_ (`super.users` field in Kafka configuration) 
+* Configure Kafka _super users_ (`super.users` field in Kafka configuration)
+* User Operator
+  * Managing users and their ACL rights
 * Added new Entity Operator for deploying:
   * User Operator
   * Topic Operator
