@@ -27,13 +27,13 @@ ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 +
 [source,shell]
-kubectl apply -f examples/install/user-operator
+kubectl apply -f examples/install/topic-operator
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell]
-oc apply -f examples/install/user-operator
+oc apply -f examples/install/topic-operator
 
 . Verify that the Topic Operator has been deployed successfully. 
 ifdef::Kubernetes[]

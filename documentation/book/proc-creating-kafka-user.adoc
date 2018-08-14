@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Prepare a file containing the `KafkaUserq to be created.
+. Prepare a file containing the `KafkaUser` to be created.
 +
 .An example `KafkaUser`
 [source,yaml,subs="attributes+"]
