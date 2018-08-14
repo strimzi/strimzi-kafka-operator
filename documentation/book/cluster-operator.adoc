@@ -58,13 +58,13 @@ Default is 5.
 The initial delay for the readiness probe for each Kafka broker node.
 Default is 15.
 `spec.kafka.readinessProbe.timeoutSeconds`::
-The timeout on the readiness probe for each Kafka broker node. 
+The timeout on the readiness probe for each Kafka broker node.
 Default is 5.
 `spec.kafka.config`::
-The Kafka broker configuration. 
+The Kafka broker configuration.
 See section <<kafka_configuration_json_config>> for more details.
 `spec.kafka.storage`::
-The storage configuration for the Kafka broker nodes. 
+The storage configuration for the Kafka broker nodes.
 See section <<storage_configuration_json_config>> for more details.
 `spec.kafka.metrics`::
 The JMX exporter configuration for exposing metrics from Kafka broker nodes.
@@ -89,7 +89,7 @@ log4j.logger.state.change.logger
 log4j.logger.kafka.authorizer.logger
 
 `spec.kafka.resources`::
-The resource limits and requests for Kafka broker containers. 
+The resource limits and requests for Kafka broker containers.
 The accepted format is described in the <<resources_json_config>> section.
 `spec.kafka.jvmOptions`::
 An object allowing the JVM running Kafka to be configured.
@@ -113,16 +113,16 @@ The number of Zookeeper nodes.
 The Docker image to be used by the Zookeeper nodes.
 The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
 `spec.zookeeper.livenessProbe.initialDelaySeconds`::
-The initial delay for the liveness probe for each Zookeeper node. 
+The initial delay for the liveness probe for each Zookeeper node.
 Default is 15.
 `spec.zookeeper.livenessProbe.initialDelaySeconds`::
-The timeout on the liveness probe for each Zookeeper node. 
+The timeout on the liveness probe for each Zookeeper node.
 Default is 5.
 `spec.zookeeper.readinessProbe.initialDelaySeconds`::
-The initial delay for the readiness probe for each Zookeeper node. 
+The initial delay for the readiness probe for each Zookeeper node.
 Default is 15.
 `spec.zookeeper.readinessProbe.initialDelaySeconds`::
-The timeout on the readiness probe for each Zookeeper node. 
+The timeout on the readiness probe for each Zookeeper node.
 Default is 5.
 `spec.zookeeper.config`::
 The Zookeeper configuration. See section <<zookeeper_configuration_json_config>> for more details.
@@ -142,7 +142,7 @@ zookeeper.root.logger
 An object configuring the resource limits and requests for Zookeeper broker containers.
 For information about the accepted JSON format, see <<resources_json_config>> section.
 `spec.zookeeper.jvmOptions`::
-An object allowing the JVM running Zookeeper to be configured. 
+An object allowing the JVM running Zookeeper to be configured.
 For information about the accepted JSON format, see <<jvm_json_config>> section.
 `spec.zookeeper.affinity`::
 An object allowing control over how the Zookeeper pods are scheduled to nodes.
@@ -155,7 +155,7 @@ The default value is determined by the value specified in the `<<STRIMZI_DEFAULT
 An object configuring the resource limits and requests for the sidecar container which provides TLS support for Zookeeper nodes.
 For information about the accepted JSON format, see <<resources_json_config>>.
 `spec.topicOperator`::
-An object representing the topic operator configuration. 
+An object representing the topic operator configuration.
 See the <<topic_operator_json_config>> documentation for further details.
 More info about the topic operator in the related xref:deploying-the-topic-operator-using-the-cluster-operator-str[Topic Operator] documentation page.
 
@@ -198,7 +198,7 @@ spec:
             }
         ]
       }
-    logging: 
+    logging:
       type: external
       name: customConfigMap
   zookeeper:
@@ -217,9 +217,9 @@ spec:
       {
         "lowercaseOutputName": true
       }
-    logging: 
+    logging:
       type : inline
-      loggers : 
+      loggers :
         zookeeper.root.logger: INFO
 ----
 
@@ -233,9 +233,9 @@ The resources created by the Cluster Operator in the {ProductPlatformName} clust
 `[cluster-name]-kafka-bootstrap`:: Service can be used as bootstrap servers for Kafka clients
 `[cluster-name]-zookeeper-metrics-config`:: ConfigMap which contains the Zookeeper metrics configuration and mounted as a volume by the Zookeeper node pods
 `[cluster-name]-kafka-metrics-config`:: ConfigMap which contains the Kafka metrics configuration and mounted as a volume by the Kafka broker pods
-`[cluster-name]-zookeeper-config`:: 
+`[cluster-name]-zookeeper-config`::
 ConfigMap which contains the Zookeeper ancillary configuration and is mounted as a volume by the Zookeeper node pods
-`[cluster-name]-kafka-config`:: 
+`[cluster-name]-kafka-config`::
 ConfigMap which contains the Kafka ancillary configuration and is mounted as a volume by the Kafka broker pods
 
 [[kafka_configuration_json_config]]
@@ -412,14 +412,14 @@ WARNING: If the Zookeeper cluster is deployed using "ephemeral" storage, the Kaf
 
 In case of "persistent-claim" type the following fields can be provided as well:
 
-`size` (required):: 
+`size` (required)::
 defines the size of the persistent volume claim, for example, "1Gi".
 
-`class` (optional):: 
+`class` (optional)::
 the {ProductPlatformName} https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use for dynamic volume allocation.
 
 `selector` (optional)::
-allows to select a specific persistent volume to use. 
+allows to select a specific persistent volume to use.
 It contains a `matchLabels` field which contains key:value pairs representing labels for selecting such a volume.
 
 `delete-claim` (optional)::
@@ -485,10 +485,10 @@ spec:
 
 When the "persistent-claim" is used, other than the resources already described in the <<Kafka>> section, the following resources are generated :
 
-`data-[cluster-name]-kafka-[idx]`:: 
+`data-[cluster-name]-kafka-[idx]`::
 Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`.
 
-`data-[cluster-name]-zookeeper-[idx]`:: 
+`data-[cluster-name]-zookeeper-[idx]`::
 Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`.
 
 See the reference about xref:type-EphemeralStorage-reference[ephemeral storage] and xref:type-PersistentClaimStorage-reference[persistent storage] for further details.
@@ -496,11 +496,13 @@ See the reference about xref:type-EphemeralStorage-reference[ephemeral storage] 
 ===== Metrics
 
 {ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^] in order to expose metrics on each node.
-It is possible to configure a `metrics` object in the `kafka` and `zookeeper` objects in `Kafka` resources, and likewise a `metrics` object in the `spec` of `KafkaConnect` resources. 
-In all cases the `metrics` object should be the configuration for the JMX exporter. 
+It is possible to configure a `metrics` object in the `kafka` and `zookeeper` objects in `Kafka` resources, and likewise a `metrics` object in the `spec` of `KafkaConnect` resources.
+In all cases the `metrics` object should be the configuration for the JMX exporter.
 You can find more information on how to use it in the corresponding GitHub repo.
 
+ifdef::MetricsAppendix[]
 For more information about using the metrics with Prometheus and Grafana, see xref:metrics-str[Metrics]
+endif::MetricsAppendix[]
 
 
 [[logging_examples]]
@@ -552,7 +554,7 @@ spec:
   kafka:
     # ...
     resources:
-      requests: 
+      requests:
         cpu: "1"
         memory: "2Gi"
       limits:
@@ -647,7 +649,7 @@ metadata:
 spec:
   kafka:
     "-server": true,
-    "-XX": 
+    "-XX":
       "UseG1GC": true,
       "MaxGCPauseMillis": 20,
       "InitiatingHeapOccupancyPercent": 35,
@@ -749,7 +751,7 @@ metadata:
 spec:
   kafka:
     # ...
-    affinity: 
+    affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
@@ -772,7 +774,7 @@ This anti-affinity will not be present in the `Kafka` resource's `affinity`, but
 Alongside the Kafka cluster and the Zookeeper ensemble, the Cluster Operator can also deploy the topic operator.
 In order to do that, a `spec.topicOperator` object has to be included in the `Kafka` resource.
 This object contains the topic operator configuration.
-Without this object, the Cluster Operator does not deploy the topic operator. 
+Without this object, the Cluster Operator does not deploy the topic operator.
 It is still possible to deploy the topic operator by creating appropriate {ProductPlatformName} resources.
 
 The YAML representation of the 'topicOperator` has no mandatory fields and if the value is an empty object
@@ -836,10 +838,10 @@ in whatever way the user requires.
 
 The `KafkaConnect` resource supports the following within its `spec`:
 
-`nodes`:: 
+`nodes`::
 Number of Kafka Connect worker nodes. Default is 1.
 
-`image`:: 
+`image`::
 The Docker image to be used by the Kafka Connect workers.
 The default value is determined by the value specified in the `<<STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE,STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE>>` environment variable of the Cluster Operator.
 If S2I is used (only on {OpenShiftName}), then it should be the related S2I image.
@@ -857,18 +859,18 @@ Bootstrap servers to connect to. The value of the field must be a comma-separate
 This is a mandatory field.
 
 `config`::
-A JSON string with Kafka Connect configuration. 
+A JSON string with Kafka Connect configuration.
 See section <<kafka_connect_configuration_json_config>> for more details.
 
 `metrics-config`::
 A JSON string representing the JMX exporter configuration for exposing metrics from Kafka Connect nodes.
 When this field is absent no metrics will be exposed.
 
-`resources`:: 
+`resources`::
 A JSON string configuring the resource limits and requests for Kafka Connect containers.
 For information about the accepted JSON format, see <<resources_json_config>> section.
 
-`jvmOptions`:: 
+`jvmOptions`::
 A JSON string allowing the JVM running Kafka Connect to be configured.
 For information about the accepted JSON format, see <<jvm_json_config>> section.
 
@@ -909,7 +911,7 @@ ConfigMap which contains the Kafka Connect metrics configuration and is mounted 
 [[kafka_connect_configuration_json_config]]
 ===== Kafka Connect configuration
 
-The `spec.config` object of the `KafkaConnect` and `KafkaConnectS2I` resources allows detailed configuration of Apache Kafka Connect. 
+The `spec.config` object of the `KafkaConnect` and `KafkaConnectS2I` resources allows detailed configuration of Apache Kafka Connect.
 This object should contain the Kafka Connect configuration options as keys. The values could be in one of the following JSON types:
 
 
@@ -980,8 +982,8 @@ Selected options have default values:
 
 These options will be automatically configured in case they are not present in the `config` object.
 
-INFO:: The Cluster Operator does not validate the provided configuration. 
-When invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable. 
+INFO:: The Cluster Operator does not validate the provided configuration.
+When invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable.
 In such cases, the configuration in the `config` object should be fixed and the Cluster Operator will roll out the new configuration to all Kafka Connect instances.
 
 ===== Logging
@@ -1111,7 +1113,7 @@ To add multiple plugins to the deployment, they all have to be added within the 
 
 === Provisioning Role-Based Access Control (RBAC) for the Cluster Operator
 
-For the Cluster Operator to function it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages and interacts with. 
+For the Cluster Operator to function it needs permission within the {ProductPlatformName} cluster to interact with the resources it manages and interacts with.
 These include the desired resources, such as  `Kafka`, `Kafka Connect`, and so on, as well as the managed resources, such as `ConfigMaps`, `Pods`, `Deployments`, `StatefulSets`, `Services`, and so on.
 Such permission is described in terms of {ProductPlatformName} role-based access control (RBAC) resources:
 
@@ -1163,10 +1165,10 @@ Note line 12, where the the `strimzi-cluster-operator` `ServiceAccount` is speci
 
 ==== Defining `ClusterRoles`
 
-The Cluster Operator needs to operate using `ClusterRoles` that give it access to the necessary resources. 
+The Cluster Operator needs to operate using `ClusterRoles` that give it access to the necessary resources.
 Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the `ClusterRoles`.
 
-NOTE: Cluster administrator rights are only needed for the creation of the `ClusterRoles`. 
+NOTE: Cluster administrator rights are only needed for the creation of the `ClusterRoles`.
 The Cluster Operator will not run under the cluster admin account.
 
 The `ClusterRoles` follow the "principle of least privilege" and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
@@ -1184,8 +1186,8 @@ The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the ini
 ----
 # These are the privileges needed by the init container
 # in Kafka broker pods.
-# The Cluster Operator also needs these privileges since 
-# it binds the Kafka pods' ServiceAccount to this 
+# The Cluster Operator also needs these privileges since
+# it binds the Kafka pods' ServiceAccount to this
 # role.
 include::examples/install/cluster-operator/03-ClusterRole-strimzi-kafka-broker.yaml[]
 ----
@@ -1196,8 +1198,8 @@ The `strimzi-topic-operator` `ClusterRole` represents the access needed by the T
 .`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic Operator
 ----
 # These are the privileges needed by the Topic Operator.
-# The Cluster Operator also needs these privileges since 
-# it binds the Topic Operator's  ServiceAccount to this 
+# The Cluster Operator also needs these privileges since
+# it binds the Topic Operator's  ServiceAccount to this
 # role.
 include::examples/install/cluster-operator/04-ClusterRole-strimzi-topic-operator.yaml[]
 ----
