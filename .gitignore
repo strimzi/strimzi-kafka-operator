@@ -20,3 +20,7 @@ documentation/html/**
 documentation/htmlnoheader/**
 
 helm-charts/strimzi-kafka-operator-*.*.*.tgz
+
+# Connect plugin (tests)
+systemtest/*.tar.gz
+systemtest/my-plugins/
