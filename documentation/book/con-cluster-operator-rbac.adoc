@@ -22,7 +22,7 @@ Because the Cluster Operator must be able to create the `ClusterRoleBindings`, a
 [id='delegated-privileges-{context}']
 == Delegated privileges
 
-When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates `ServiceAccounts`, `RoleBindings` and `ClusterRoleBindings`, as follows:
+When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates `ServiceAccounts`, `RoleBindings`, and `ClusterRoleBindings`, as follows:
 
 * The Kafka broker pods use a `ServiceAccount` called `_<cluster-name>_-kafka`
   - When the rack feature is used, the `strimzi-_<cluster-name>_-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`
