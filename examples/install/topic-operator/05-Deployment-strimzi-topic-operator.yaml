@@ -14,7 +14,7 @@ spec:
       serviceAccountName: strimzi-topic-operator
       containers:
         - name: strimzi-topic-operator
-          image: strimzi/topic-operator:latest
+          image: strimzi/topic-operator:0.6.0-rc1
           env:
             - name: STRIMZI_CONFIGMAP_LABELS
               value: "strimzi.io/kind=topic"
