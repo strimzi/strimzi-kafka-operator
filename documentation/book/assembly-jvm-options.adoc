@@ -12,7 +12,7 @@
 
 = JVM Options
 
-Apache Kafka and Apache Zookeeper are running inside Java Virtual Machine (JVM).
+Apache Kafka and Apache Zookeeper are running inside of a Java Virtual Machine (JVM).
 JVM has many configuration options to optimize the performance for different platforms and architectures.
 {ProductName} allows configuring some of these options.
 
