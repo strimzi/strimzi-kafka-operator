@@ -28,9 +28,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -205,25 +207,43 @@ public class KafkaUserOperator {
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", RESOURCE_KIND, trigger, resourceSelector, resourceNames);
 
-        Set<String> usersWithAcls = aclOperations.getUsersWithAcls();
-        log.debug("reconcileAll({}, {}): User with ACLs: {}", RESOURCE_KIND, trigger, usersWithAcls);
+        CountDownLatch outerLatch = new CountDownLatch(1);
 
-        desiredNames.addAll(resourceNames);
-        desiredNames.addAll(usersWithAcls);
 
-        // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
-        // Using futures would be more complex for no benefit
-        CountDownLatch latch = new CountDownLatch(desiredNames.size());
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+            future -> {
+                try {
+                    Set<String> usersWithAcls = aclOperations.getUsersWithAcls();
+                    future.complete(usersWithAcls);
+                } catch (Throwable t) {
+                    future.failed();
+                }
+            }, res -> {
+                if (res.succeeded()) {
+                    log.debug("reconcileAll({}, {}): User with ACLs: {}", RESOURCE_KIND, trigger, res.result());
+                    desiredNames.addAll((Collection<? extends String>) res.result());
+                    desiredNames.addAll(resourceNames);
 
-        for (String name: desiredNames) {
-            Reconciliation reconciliation = new Reconciliation(trigger, ResourceType.USER, namespace, name);
-            reconcile(reconciliation, result -> {
-                handleResult(reconciliation, result);
-                latch.countDown();
+                    // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
+                    // Using futures would be more complex for no benefit
+                    AtomicInteger counter = new AtomicInteger(desiredNames.size());
+
+                    for (String name : desiredNames) {
+                        Reconciliation reconciliation = new Reconciliation(trigger, ResourceType.USER, namespace, name);
+                        reconcile(reconciliation, result -> {
+                            handleResult(reconciliation, result);
+                            if (counter.getAndDecrement() == 0) {
+                                outerLatch.countDown();
+                            }
+                        });
+                    }
+                } else {
+                    log.error("Error while getting users with ACLs");
+                }
+                return;
             });
-        }
 
-        return latch;
+        return outerLatch;
     }
 
     /**

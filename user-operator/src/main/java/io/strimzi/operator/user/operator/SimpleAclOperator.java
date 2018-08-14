@@ -122,7 +122,7 @@ public class SimpleAclOperator {
 
     /**
      * Update all ACLs for given user.
-     * SimpleAclAuthorizer doesn't support modyfication of existing rules.
+     * SimpleAclAuthorizer doesn't support modification of existing rules.
      * This class is using Sets to decide which rules need to be added and which need to be deleted.
      * It delagates to {@link #internalCreate internalCreate} and {@link #internalDelete internalDelete} methods for the actual addition or deletion.
      */
