@@ -61,3 +61,4 @@ spec:
         requests:
           memory: 500M
           cpu: 300m
+    userOperator: {}

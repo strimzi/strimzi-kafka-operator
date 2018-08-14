@@ -29,3 +29,4 @@ spec:
   entityOperator:
     topicOperator:
       watchedNamespace: topic-operator-namespace
+    userOperator: {}

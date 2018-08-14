@@ -34,3 +34,4 @@ spec:
       lowercaseOutputName: true
   entityOperator:
     topicOperator: {}
+    userOperator: {}

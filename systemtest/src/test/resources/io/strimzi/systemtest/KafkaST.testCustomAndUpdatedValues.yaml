@@ -36,3 +36,4 @@ spec:
       syncLimit: 2
   entityOperator:
     topicOperator: {}
+    userOperator: {}
