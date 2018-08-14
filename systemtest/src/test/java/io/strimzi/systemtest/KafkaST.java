@@ -309,7 +309,7 @@ public class KafkaST extends AbstractST {
         assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
-        String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-topic-operator-")).findFirst().get().getMetadata().getName();
+        String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems().stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-entity-operator-")).findFirst().get().getMetadata().getName();
 
         assertResources(kubeClient.namespace(), podName,
                 "500M", "300m", "500M", "300m");
