@@ -20,4 +20,4 @@ The affinity configuration can include different types of affinity:
 * Node affinity
 
 The format of the `affinity` property follows the {ProductPlatformName} specification.
-For more details visit the {K8sAffinity}.
+For more details, see the {K8sAffinity}.

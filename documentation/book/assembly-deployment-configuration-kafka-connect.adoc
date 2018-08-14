@@ -12,7 +12,7 @@
 
 :context: deployment-configuration-kafka-connect
 
-The full schema of the `KafkaConnect` resource is described in xref:type-KafkaConnect-reference[].
+The full schema of the `KafkaConnect` resource is described in the xref:type-KafkaConnect-reference[].
 All labels that are applied to the desired `KafkaConnect` resource will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
 

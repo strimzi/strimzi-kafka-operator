@@ -10,7 +10,7 @@
 
 = Deployment configuration
 
-This chapter described how to configure different aspects of the supported deployments:
+This chapter describes how to configure different aspects of the supported deployments:
 
 * Kafka clusters
 * Kafka Connect clusters

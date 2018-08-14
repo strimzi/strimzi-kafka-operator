@@ -18,7 +18,7 @@ For every deployed container, {ProductName} allows you to specify the resources 
 * Memory
 * CPU
 
-{ProductName} ise using the {ProductPlatformName} syntax for specifying CPU and memory resources.
+{ProductName} is using the {ProductPlatformName} syntax for specifying CPU and memory resources.
 
 include::ref-resource-limits-and-requests.adoc[leveloffset=+1]
 

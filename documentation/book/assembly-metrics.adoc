@@ -17,7 +17,7 @@ When metrics are enabled, they are exposed on port 9404.
 It is using link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^] to convert the JMX metrics supported by Apache Kafka and Zookeeper to Prometheus metrics.
 
 ifdef::MetricsAppendix[]
-For more information about configuring Prometheus and Grafana, see xref:metrics-str[Metrics]
+For more information about configuring Prometheus and Grafana, see xref:metrics-str[Metrics].
 endif::MetricsAppendix[]
 
 include::ref-metrics.adoc[leveloffset=+1]

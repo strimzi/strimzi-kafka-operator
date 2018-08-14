@@ -12,12 +12,12 @@
 
 = Healthchecks
 
-{ProductPlatformName} supports two types of healthcheck probes:
+{ProductPlatformName} supports two types of Healthcheck probes:
 
 * Liveness probes
 * Readiness probes
 
-For more details about the probes, visit Kubernetes documentation: {K8sLivenessReadinessProbes}.
+For more details about the probes, see Kubernetes documentation: {K8sLivenessReadinessProbes}.
 Both types of probes are used in {ProductName} components.
 
 Users can configure selected options for liveness and readiness probes

@@ -16,10 +16,10 @@ The `entityOperator` property supports several sub-properties:
 * `userOperator`
 
 The `tlsSidecar` property can be used to configure the TLS sidecar container which is used to communicate with Zookeeper.
-For more details about configuring the TLS sidecar, visit xref:assembly-tls-sidecar-{context}[].
+For more details about configuring the TLS sidecar, see xref:assembly-tls-sidecar-{context}[].
 
 The `affinity` and `tolerations` properties can be used to configure how {ProductPlatformName} schedules the Entity Operator pod.
-For more details about pod scheduling, visit xref:assembly-scheduling-{context}[].
+For more details about pod scheduling, see xref:assembly-scheduling-{context}[].
 
 The `topicOperator` property contains the configuration of the Topic Operator.
 When this option is missing, the Entity Operator will be deployed without the Topic Operator.
@@ -44,6 +44,8 @@ spec:
     userOperator: {}
 ----
 
+When both `topicOperator` and `userOperator` properties are missing, the Entity Operator will be not deployed.
+
 == Topic Operator
 
 Topic Operator deployment can be configured using additional options inside the `topicOperator` object.
@@ -66,15 +68,15 @@ You might want to increase this value when topic creation could take more time d
 
 `image`::
 The `image` property can be used to configure the container image which will be used.
-For more details about configuring custom container images, visit xref:assembly-configuring-container-images-{context}[].
+For more details about configuring custom container images, see xref:assembly-configuring-container-images-{context}[].
 
 `resources`::
 The `resources` property configures the amount of resources allocated to the Topic Operator
-For more details about resource request and limit configuration, visit xref:assembly-resource-limits-and-requests-{context}[].
+For more details about resource request and limit configuration, see xref:assembly-resource-limits-and-requests-{context}[].
 
 `logging`::
 The `logging` property configures the logging of the Topic Operator
-For more details about logging configuration, visit xref:assembly-logging-{context}[].
+For more details about logging configuration, see xref:assembly-logging-{context}[].
 
 .Example of Topic Operator configuration
 [source,yaml,subs=attributes+]
@@ -113,15 +115,15 @@ The Zookeeper session timeout in seconds. Default is 6 seconds.
 
 `image`::
 The `image` property can be used to configure the container image which will be used.
-For more details about configuring custom container images, visit xref:assembly-configuring-container-images-{context}[].
+For more details about configuring custom container images, vseesit xref:assembly-configuring-container-images-{context}[].
 
 `resources`::
 The `resources` property configures the amount of resources allocated to the User Operator
-For more details about resource request and limit configuration, visit xref:assembly-resource-limits-and-requests-{context}[].
+For more details about resource request and limit configuration, see xref:assembly-resource-limits-and-requests-{context}[].
 
 `logging`::
 The `logging` property configures the logging of the User Operator
-For more details about logging configuration, visit xref:assembly-logging-{context}[].
+For more details about logging configuration, see xref:assembly-logging-{context}[].
 
 .Example of Topic Operator configuration
 [source,yaml,subs=attributes+]

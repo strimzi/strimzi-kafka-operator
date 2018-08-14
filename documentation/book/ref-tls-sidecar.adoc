@@ -19,7 +19,7 @@ The TLS sidecar supports two additional options:
 The `resources` property can be used to specify the xref:assembly-resource-limits-and-requests-{context}[memory and cpu resources] allocated for the TLS sidecar.
 
 The `image` property can be used to configure the container image which will be used.
-For more details about configuring custom container images, visit xref:assembly-configuring-container-images-{context}[].
+For more details about configuring custom container images, see xref:assembly-configuring-container-images-{context}[].
 
 .Example of TLS sidecar configuration
 [source,yaml,subs=attributes+]

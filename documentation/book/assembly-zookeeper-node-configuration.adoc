@@ -10,10 +10,10 @@
 
 = Zookeeper configuration
 
-{ProductName} allows you to customise the configuration of Apache Zookeeper nodes.
+{ProductName} allows you to customize the configuration of Apache Zookeeper nodes.
 You can specify and configure most of the options listed in {ApacheZookeeperConfig}.
 
-The only options which cannot be configured are those related to following areas:
+The only options which cannot be configured are those related to the following areas:
 
 * Security (Encryption, Authentication and Authorization)
 * Listener configuration

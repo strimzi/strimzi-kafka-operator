@@ -13,4 +13,4 @@ The only reason why to run multiple Cluster Operators in a single cluster is to 
 
 The `STRIMZI_NAMESPACE` environment variable can be used to configure a single operator instance to operate in multiple namespaces.
 For each namespace given, the operator will watch for the `Kafka`, `KafkaConnect` and `KafkaConnectS2I` and perform periodic reconciliation.
-For more details about the `STIRMZI_NAMESPACE` environment variable, visit xref:ref-operators-cluster-operator-configuration-{context}[].
+For more details about the `STIRMZI_NAMESPACE` environment variable, see xref:ref-operators-cluster-operator-configuration-{context}[].

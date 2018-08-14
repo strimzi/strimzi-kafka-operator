@@ -14,4 +14,4 @@ Tolerations ca be configured using the `tolerations` property in following resou
 * `KafkaConnectS2I.spec`
 
 The format of the `tolerations` property follows the {ProductPlatformName} specification.
-For more details visit the {K8sTolerations}.
+For more details, see the {K8sTolerations}.

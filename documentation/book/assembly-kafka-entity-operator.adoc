@@ -11,20 +11,20 @@
 = Entity Operator
 
 Entity Operator is responsible for managing different entities in a running Kafka cluster.
-The supported entities currently are:
+The currently supported entities are:
 
 * Kafka topics
 * Kafka users
 
 Kafka topics are managed by the Topic Operator.
-Kafka users - their credentials and their ALC rules - are managed by the User operator.
-Both Topic and USer Operators can be deployed on their own.
-But the easiest way how to deploy them is together with the Kafka cluster as part of the Entity Operator.
+Kafka users' credentials and access control rules are managed by the User Operator.
+Both Topic and User Operators can be deployed on their own.
+But the easiest way to deploy them is together with the Kafka cluster as part of the Entity Operator.
 The Entity Operator can include either one or both of them depending on the configuration.
-They will be automatically configured to manage the topics and users for the Kafka cluster with which they are deployed.
+They will be automatically configured to manage the topics and users of the Kafka cluster with which they are deployed.
 
-For more information about Topic Operator, visit xref:deploying-the-topic-operator-str[].
-For more information about how to use Topic Operator to create or delete topics, visit xref:using-the-topic-operator-str[].
+For more information about Topic Operator, see xref:deploying-the-topic-operator-str[].
+For more information about how to use Topic Operator to create or delete topics, see xref:using-the-topic-operator-str[].
 
 // TODO:
 // Fix the links, add UO links

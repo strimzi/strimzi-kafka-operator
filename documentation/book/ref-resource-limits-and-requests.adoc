@@ -22,7 +22,7 @@ Resource limits and requests can be configured using the `resources` property in
 Requests specify the amount of resource which will be reserved for given container.
 Since the amount will be reserved it will be always available.
 
-IMPORTANT: If the resource request is biger than the amount of available free resources in {ProductPlatformName} cluster, the Pod which includes given container will not be scheduled.
+IMPORTANT: If the resource request is bigger than the amount of available free resources in {ProductPlatformName} cluster, the Pod which includes given container will not be scheduled.
 
 Resource requests can be specified in the `request` property.
 The resource requests currently supported by {ProductName} are memory and CPU.
@@ -132,7 +132,7 @@ resources:
 
 NOTE: The amount of computing power of 1 CPU core might differ depending on the platform where the {ProductPlatformName} is deployed.
 
-For more details about the CPU specification, visit the {K8sMeaningOfCpu} website.
+For more details about the CPU specification, see the {K8sMeaningOfCpu} website.
 
 == Supported memory formats
 
@@ -155,8 +155,8 @@ resources:
 # ...
 ----
 
-For more details about the memory specification and additional supported units, visit the {K8sMeaningOfMemory} website.
+For more details about the memory specification and additional supported units, see the {K8sMeaningOfMemory} website.
 
 == Additional resources
 
-* For more information about managing computing resources on {ProductPlatformName}, visit {K8sManagingComputingResources}.
+* For more information about managing computing resources on {ProductPlatformName}, see {K8sManagingComputingResources}.
