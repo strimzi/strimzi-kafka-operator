@@ -20,9 +20,7 @@ function create_keystore {
    RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -chain -CAfile $5 -name topic-operator -password pass:$2 -out $1
 }
 
-echo "CERTS_STORE_PASSWORD=${CERTS_STORE_PASSWORD}"
-
 echo "Preparing certificates for internal communication"
 create_truststore /tmp/topic-operator/replication.truststore.p12 $CERTS_STORE_PASSWORD /etc/tls-sidecar/certs/cluster-ca.crt cluster-ca
-create_keystore /tmp/topic-operator/replication.keystore.p12 $CERTS_STORE_PASSWORD /etc/tls-sidecar/certs/topic-operator.crt /etc/tls-sidecar/certs/topic-operator.key /etc/tls-sidecar/certs/cluster-ca.crt topic-operator
+create_keystore /tmp/topic-operator/replication.keystore.p12 $CERTS_STORE_PASSWORD /etc/tls-sidecar/certs/entity-operator.crt /etc/tls-sidecar/certs/entity-operator.key /etc/tls-sidecar/certs/cluster-ca.crt entity-operator
 echo "Preparing certificates for internal communication is complete"

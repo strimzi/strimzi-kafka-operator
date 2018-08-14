@@ -105,7 +105,7 @@
         </module>
         <module name="CyclomaticComplexity">
             <!-- default is 10-->
-            <property name="max" value="16"/>
+            <property name="max" value="18"/>
         </module>
         <module name="JavaNCSS">
             <!-- default is 50 -->
@@ -113,7 +113,7 @@
         </module>
         <module name="NPathComplexity">
             <!-- default is 200 -->
-            <property name="max" value="1158"/>
+            <property name="max" value="5832"/>
         </module>
 
         <module name="IllegalToken">

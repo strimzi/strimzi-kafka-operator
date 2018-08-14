@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,8 +26,8 @@ import static java.util.Collections.singletonList;
  */
 public class EntityTopicOperator extends AbstractModel {
 
-    protected static final String TOPIC_OPERATOR_NAME = "topic-operator";
-    private static final String NAME_SUFFIX = "-topic-operator";
+    protected static final String TOPIC_OPERATOR_NAME = "entity-topic-operator";
+    private static final String NAME_SUFFIX = "-entity-topic-operator";
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Port configuration
@@ -42,6 +43,7 @@ public class EntityTopicOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+    public static final String TO_ROLE_BINDING_NAME = "strimzi-entity-topic-operator-role-binding";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -79,8 +81,8 @@ public class EntityTopicOperator extends AbstractModel {
         this.topicMetadataMaxAttempts = EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
 
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
-        this.logAndMetricsConfigVolumeName = "topic-operator-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
+        this.logAndMetricsConfigVolumeName = "entity-topic-operator-metrics-and-logging";
+        this.logAndMetricsConfigMountPath = "/opt/entity-topic-operator/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
     }
 
@@ -163,7 +165,7 @@ public class EntityTopicOperator extends AbstractModel {
 
     @Override
     protected String getDefaultLogConfigFileName() {
-        return "topicOperatorDefaultLoggingProperties";
+        return "entityTopicOperatorDefaultLoggingProperties";
     }
 
     @Override
@@ -237,6 +239,14 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        return Collections.singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        List<VolumeMount> volumeMountList = new ArrayList<>();
+        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(createVolumeMount(EntityOperator.TLS_SIDECAR_VOLUME_NAME, EntityOperator.TLS_SIDECAR_VOLUME_MOUNT));
+        return volumeMountList;
+    }
+
+    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
+        return new RoleBindingOperator.RoleBinding(TO_ROLE_BINDING_NAME, EntityOperator.EO_CLUSTER_ROLE_NAME,
+                namespace, EntityOperator.entityOperatorServiceAccountName(cluster));
     }
 }

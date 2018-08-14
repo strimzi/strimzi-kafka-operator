@@ -14,6 +14,7 @@ import io.sundr.builder.annotations.Buildable;
 /**
  * Representation of a Strimzi-managed Topic Operator deployment.
  */
+@Deprecated
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
@@ -27,8 +28,7 @@ public class TopicOperatorSpec extends EntityTopicOperatorSpec {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator-stunnel:latest");
+    public static final String DEFAULT_TLS_SIDECAR_IMAGE = EntityOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
 
     private Affinity affinity;
     private Sidecar tlsSidecar;

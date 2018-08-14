@@ -4,6 +4,8 @@ metadata:
   name: my-cluster
 spec:
   entityOperator:
+    topicOperator: {}
+    entityOperator: {}
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:

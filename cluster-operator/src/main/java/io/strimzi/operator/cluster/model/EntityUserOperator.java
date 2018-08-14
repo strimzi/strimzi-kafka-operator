@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,8 +26,8 @@ import static java.util.Collections.singletonList;
  */
 public class EntityUserOperator extends AbstractModel {
 
-    protected static final String USER_OPERATOR_NAME = "user-operator";
-    private static final String NAME_SUFFIX = "-user-operator";
+    protected static final String USER_OPERATOR_NAME = "entity-user-operator";
+    private static final String NAME_SUFFIX = "-entity-user-operator";
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Port configuration
@@ -39,6 +40,7 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_CLIENTS_CA_NAME = "STRIMZI_CA_NAME";
+    public static final String UO_ROLE_BINDING_NAME = "strimzi-entity-user-operator-role-binding";
 
     private String zookeeperConnect;
     private String watchedNamespace;
@@ -68,8 +70,8 @@ public class EntityUserOperator extends AbstractModel {
         this.zookeeperSessionTimeoutMs = EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
 
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
-        this.logAndMetricsConfigVolumeName = "user-operator-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
+        this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
+        this.logAndMetricsConfigMountPath = "/opt/entity-user-operator/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
     }
 
@@ -119,7 +121,7 @@ public class EntityUserOperator extends AbstractModel {
 
     @Override
     protected String getDefaultLogConfigFileName() {
-        return "userOperatorDefaultLoggingProperties";
+        return "entityUserOperatorDefaultLoggingProperties";
     }
 
     @Override
@@ -190,5 +192,10 @@ public class EntityUserOperator extends AbstractModel {
 
     private List<VolumeMount> getVolumeMounts() {
         return Collections.singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+    }
+
+    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
+        return new RoleBindingOperator.RoleBinding(UO_ROLE_BINDING_NAME, EntityOperator.EO_CLUSTER_ROLE_NAME,
+                namespace, EntityOperator.entityOperatorServiceAccountName(cluster));
     }
 }

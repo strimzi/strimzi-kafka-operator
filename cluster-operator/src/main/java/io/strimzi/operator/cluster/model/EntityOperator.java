@@ -21,7 +21,6 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,12 +49,13 @@ public class EntityOperator extends AbstractModel {
     // Entity Operator configuration keys
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String EO_CLUSTER_ROLE_NAME = "strimzi-entity-operator";
-    public static final String EO_ROLE_BINDING_NAME = "strimzi-entity-operator-role-binding";
 
     private String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
     private Sidecar tlsSidecar;
+
+    private boolean isDeployed;
 
     /**
      * Private key and certificate for encrypting communication with Zookeeper and Kafka
@@ -114,6 +114,14 @@ public class EntityOperator extends AbstractModel {
         return cluster + CERTS_SUFFIX;
     }
 
+    public void setDeployed(boolean isDeployed) {
+        this.isDeployed = isDeployed;
+    }
+
+    public boolean isDeployed() {
+        return isDeployed;
+    }
+
     /**
      * Create a Entity Operator from given desired resource
      *
@@ -138,7 +146,10 @@ public class EntityOperator extends AbstractModel {
             result.setTlsSidecar(entityOperatorSpec.getTlsSidecar());
             result.setTopicOperator(EntityTopicOperator.fromCrd(kafkaAssembly));
             result.setUserOperator(EntityUserOperator.fromCrd(kafkaAssembly));
-            result.generateCertificates(certManager, secrets);
+            result.setDeployed(result.getTopicOperator() != null || result.getUserOperator() != null);
+            if (result.isDeployed()) {
+                result.generateCertificates(certManager, secrets);
+            }
         }
         return result;
     }
@@ -200,6 +211,12 @@ public class EntityOperator extends AbstractModel {
     }
 
     public Deployment generateDeployment() {
+
+        if (!isDeployed()) {
+            log.warn("Topic and/or User Operators not declared: Entity Operator will not be deployed");
+            return null;
+        }
+
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")
                 .build();
@@ -262,6 +279,11 @@ public class EntityOperator extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateSecret() {
+
+        if (!isDeployed()) {
+            return null;
+        }
+
         Map<String, String> data = new HashMap<>();
         data.put("cluster-ca.crt", Base64.getEncoder().encodeToString(clusterCA.cert()));
         data.put("entity-operator.key", Base64.getEncoder().encodeToString(cert.key()));
@@ -282,15 +304,16 @@ public class EntityOperator extends AbstractModel {
     }
 
     public ServiceAccount generateServiceAccount() {
+
+        if (!isDeployed()) {
+            return null;
+        }
+
         return new ServiceAccountBuilder()
                 .withNewMetadata()
                     .withName(getServiceAccountName())
                     .withNamespace(namespace)
                 .endMetadata()
                 .build();
-    }
-
-    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(EO_ROLE_BINDING_NAME, EO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName());
     }
 }

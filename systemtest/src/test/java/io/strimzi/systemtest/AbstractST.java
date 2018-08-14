@@ -70,7 +70,7 @@ public class AbstractST {
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
-    protected static final String TLS_SIDECAR_TO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_TOPIC_OPERATOR_IMAGE";
+    protected static final String TLS_SIDECAR_TO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
 
     @Rule
     public Stopwatch stopwatch = new Stopwatch() {

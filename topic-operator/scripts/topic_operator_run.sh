@@ -1,5 +1,4 @@
 #!/bin/bash
-set +x
 
 if [ -f /opt/topic-operator/custom-config/log4j2.properties ];
 then

@@ -36,6 +36,11 @@ topicOperator:
     repository: strimzi
     name: topic-operator
     tag: latest
+userOperator:
+  image:
+    repository: strimzi
+    name: user-operator
+    tag: latest
 kafkaInit:
   image:
     repository: strimzi
@@ -51,10 +56,10 @@ tlsSidecarKafka:
     repository: strimzi
     name: kafka-stunnel
     tag: latest
-tlsSidecarTopicOperator:
+tlsSidecarEntityOperator:
   image:
     repository: strimzi
-    name: topic-operator-stunnel
+    name: entity-operator-stunnel
     tag: latest
 resources:
   limits:

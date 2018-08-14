@@ -58,11 +58,13 @@ public class KafkaSpec implements Serializable {
         this.zookeeper = zookeeper;
     }
 
+    @Deprecated
     @Description("Configuration of the Topic Operator")
     public TopicOperatorSpec getTopicOperator() {
         return topicOperator;
     }
 
+    @Deprecated
     public void setTopicOperator(TopicOperatorSpec topicOperator) {
         this.topicOperator = topicOperator;
     }

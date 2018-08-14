@@ -10,6 +10,10 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.EntityOperatorSpec;
+import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
+import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
+import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -21,6 +25,7 @@ import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -101,7 +106,8 @@ public class KafkaAssemblyOperatorTest {
     private final Map<String, Object> kafkaConfig;
     private final Map<String, Object> zooConfig;
     private final Storage storage;
-    private final TopicOperatorSpec tcConfig;
+    private final TopicOperatorSpec toConfig;
+    private final EntityOperatorSpec eoConfig;
     private final boolean deleteClaim;
     private MockCertManager certManager = new MockCertManager();
 
@@ -111,15 +117,17 @@ public class KafkaAssemblyOperatorTest {
         private final Map<String, Object> kafkaConfig;
         private final Map<String, Object> zooConfig;
         private final Storage storage;
-        private final TopicOperatorSpec tcConfig;
+        private final TopicOperatorSpec toConfig;
+        private final EntityOperatorSpec eoConfig;
 
-        public Params(boolean openShift, boolean metrics, Map<String, Object> kafkaConfig, Map<String, Object> zooConfig, Storage storage, TopicOperatorSpec tcConfig) {
+        public Params(boolean openShift, boolean metrics, Map<String, Object> kafkaConfig, Map<String, Object> zooConfig, Storage storage, TopicOperatorSpec toConfig, EntityOperatorSpec eoConfig) {
             this.openShift = openShift;
             this.metrics = metrics;
             this.kafkaConfig = kafkaConfig;
             this.zooConfig = zooConfig;
             this.storage = storage;
-            this.tcConfig = tcConfig;
+            this.toConfig = toConfig;
+            this.eoConfig = eoConfig;
         }
 
         public String toString() {
@@ -128,7 +136,8 @@ public class KafkaAssemblyOperatorTest {
                     ",kafkaConfig=" + kafkaConfig +
                     ",zooConfig=" + zooConfig +
                     ",storage=" + storage +
-                    ",tcConfig=" + tcConfig;
+                    ",toConfig=" + toConfig +
+                    ",eoConfig=" + eoConfig;
         }
     }
 
@@ -154,11 +163,18 @@ public class KafkaAssemblyOperatorTest {
             emptyMap(),
             singletonMap("foo", "bar")
         };
-        TopicOperatorSpec[] tcConfigs = {
+        TopicOperatorSpec[] toConfigs = {
             null,
             new TopicOperatorSpec(),
             new TopicOperatorSpecBuilder().withReconciliationIntervalSeconds(600)
                     .withZookeeperSessionTimeoutSeconds(10).build()
+        };
+        EntityOperatorSpec[] eoConfigs = {
+            null,
+            new EntityOperatorSpecBuilder()
+                    .withUserOperator(new EntityUserOperatorSpecBuilder().build())
+                    .withTopicOperator(new EntityTopicOperatorSpecBuilder().build())
+                    .build()
         };
         List<Params> result = new ArrayList();
         for (boolean shift: shiftiness) {
@@ -166,8 +182,13 @@ public class KafkaAssemblyOperatorTest {
                 for (Map kafkaConfig: kafkaConfigs) {
                     for (Map zooConfig: zooConfigs) {
                         for (Storage storage : storageConfigs) {
-                            for (TopicOperatorSpec tcConfig : tcConfigs) {
-                                result.add(new Params(shift, metric, kafkaConfig, zooConfig, storage, tcConfig));
+                            for (TopicOperatorSpec toConfig : toConfigs) {
+                                for (EntityOperatorSpec eoConfig: eoConfigs) {
+                                    // TO and EO cannot be deployed together so no need for testing this case
+                                    if (!(toConfig != null && eoConfig != null)) {
+                                        result.add(new Params(shift, metric, kafkaConfig, zooConfig, storage, toConfig, eoConfig));
+                                    }
+                                }
                             }
                         }
                     }
@@ -183,7 +204,8 @@ public class KafkaAssemblyOperatorTest {
         this.kafkaConfig = params.kafkaConfig;
         this.zooConfig = params.zooConfig;
         this.storage = params.storage;
-        this.tcConfig = params.tcConfig;
+        this.toConfig = params.toConfig;
+        this.eoConfig = params.eoConfig;
         this.deleteClaim = Storage.deleteClaim(params.storage);
     }
 
@@ -208,6 +230,7 @@ public class KafkaAssemblyOperatorTest {
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(certManager, clusterCm, secrets);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(certManager, clusterCm, secrets);
         TopicOperator topicOperator = TopicOperator.fromCrd(certManager, clusterCm, secrets);
+        EntityOperator entityOperator = EntityOperator.fromCrd(certManager, clusterCm, secrets);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = supplierWithMocks();
@@ -243,15 +266,23 @@ public class KafkaAssemblyOperatorTest {
                 KafkaCluster.clusterPublicKeyName(clusterCmName),
                 KafkaCluster.brokersSecretName(clusterCmName),
                 ZookeeperCluster.nodesSecretName(clusterCmName));
-        if (tcConfig != null) {
+        if (toConfig != null) {
             // it's expected only when the Topic Operator is deployed by the Cluster Operator
             expectedSecrets.add(TopicOperator.secretName(clusterCmName));
+        }
+        if (eoConfig != null) {
+            // it's expected only when the Entity Operator is deployed by the Cluster Operator
+            expectedSecrets.add(EntityOperator.secretName(clusterCmName));
         }
 
         when(mockDepOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
             Deployment desired = invocation.getArgument(2);
             if (desired != null) {
-                context.assertEquals(TopicOperator.topicOperatorName(clusterCmName), desired.getMetadata().getName());
+                if (topicOperator != null) {
+                    context.assertEquals(TopicOperator.topicOperatorName(clusterCmName), desired.getMetadata().getName());
+                } else if (entityOperator != null) {
+                    context.assertEquals(EntityOperator.entityOperatorName(clusterCmName), desired.getMetadata().getName());
+                }
             }
             return Future.succeededFuture(ReconcileResult.created(desired));
         });
@@ -317,6 +348,7 @@ public class KafkaAssemblyOperatorTest {
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(certManager, clusterCm, secrets);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(certManager, clusterCm, secrets);
         TopicOperator topicOperator = TopicOperator.fromCrd(certManager, clusterCm, secrets);
+        EntityOperator entityOperator = EntityOperator.fromCrd(certManager, clusterCm, secrets);
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = supplierWithMocks();
@@ -351,8 +383,36 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.get(assemblyNamespace, KafkaCluster.clusterPublicKeyName(assemblyName))).thenReturn(clusterPublicKeySecret);
         when(mockSecretOps.get(assemblyNamespace, ZookeeperCluster.nodesSecretName(assemblyName))).thenReturn(nodesSecret);
 
-        ArgumentCaptor<String> secretsCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockSecretOps.reconcile(eq(assemblyNamespace), secretsCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+        Set<String> expectedSecrets = set(
+                KafkaCluster.clientsCASecretName(assemblyName),
+                KafkaCluster.clientsPublicKeyName(assemblyName),
+                KafkaCluster.clusterPublicKeyName(assemblyName),
+                KafkaCluster.brokersSecretName(assemblyName),
+                ZookeeperCluster.nodesSecretName(assemblyName));
+        if (toConfig != null) {
+            // it's expected only when the Topic Operator is deployed by the Cluster Operator
+            expectedSecrets.add(TopicOperator.secretName(assemblyName));
+        }
+        if (eoConfig != null) {
+            // it's expected only when the Entity Operator is deployed by the Cluster Operator
+            expectedSecrets.add(EntityOperator.secretName(assemblyName));
+        }
+
+        Set<String> existingSecrets = new HashSet<>();
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
+            String name = invocation.getArgument(1);
+            if (!name.equals(TopicOperator.secretName(assemblyName)) &&
+                !name.equals(EntityOperator.secretName(assemblyName))) {
+                existingSecrets.add(name);
+            }
+            if (topicOperator != null && name.equals(TopicOperator.secretName(assemblyName))) {
+                existingSecrets.add(name);
+            }
+            if (entityOperator != null && name.equals(EntityOperator.secretName(assemblyName))) {
+                existingSecrets.add(name);
+            }
+            return Future.succeededFuture(ReconcileResult.deleted());
+        });
 
         when(mockKafkaOps.get(assemblyNamespace, assemblyName)).thenReturn(clusterCm);
 
@@ -373,11 +433,25 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> pvcCaptor = ArgumentCaptor.forClass(String.class);
         when(mockPvcOps.reconcile(eq(assemblyNamespace), pvcCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockDepOps.reconcile(eq(assemblyNamespace), depCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+        Set<String> existingDepNames = new HashSet<>();
+        when(mockDepOps.reconcile(eq(assemblyNamespace), anyString(), isNull())).thenAnswer(invocation -> {
+            String name = invocation.getArgument(1);
+            if (topicOperator != null && name.equals(TopicOperator.topicOperatorName(assemblyName))) {
+                existingDepNames.add(name);
+            }
+            if (entityOperator != null && name.equals(EntityOperator.entityOperatorName(assemblyName))) {
+                existingDepNames.add(name);
+            }
+            return Future.succeededFuture(ReconcileResult.deleted());
+        });
+
         if (topicOperator != null) {
-            Deployment tcDep = topicOperator.generateDeployment();
-            when(mockDepOps.get(assemblyNamespace, TopicOperator.topicOperatorName(assemblyName))).thenReturn(tcDep);
+            Deployment toDep = topicOperator.generateDeployment();
+            when(mockDepOps.get(assemblyNamespace, TopicOperator.topicOperatorName(assemblyName))).thenReturn(toDep);
+        }
+        if (entityOperator != null) {
+            Deployment eoDep = entityOperator.generateDeployment();
+            when(mockDepOps.get(assemblyNamespace, EntityOperator.entityOperatorName(assemblyName))).thenReturn(eoDep);
         }
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
@@ -407,14 +481,7 @@ public class KafkaAssemblyOperatorTest {
             context.assertEquals(set(zookeeperCluster.getName(), kafkaCluster.getName()), captured(ssCaptor));
 
             // verify deleted Secrets
-            context.assertEquals(set(
-                    KafkaCluster.clientsCASecretName(assemblyName),
-                    KafkaCluster.clientsPublicKeyName(assemblyName),
-                    KafkaCluster.brokersSecretName(assemblyName),
-                    KafkaCluster.clusterPublicKeyName(assemblyName),
-                    ZookeeperCluster.nodesSecretName(assemblyName),
-                    TopicOperator.secretName(assemblyName)),
-                    captured(secretsCaptor));
+            context.assertEquals(expectedSecrets, existingSecrets);
 
             // PvcOperations only used for deletion
             Set<String> expectedPvcDeletions = new HashSet<>();
@@ -426,11 +493,16 @@ public class KafkaAssemblyOperatorTest {
             }
             context.assertEquals(expectedPvcDeletions, captured(pvcCaptor));
 
+            Set<String> expectedDepNames = new HashSet<>();
             // if topic operator configuration was defined in the CM
             if (topicOperator != null) {
-                Set<String> expectedDepNames = new HashSet<>();
                 expectedDepNames.add(TopicOperator.topicOperatorName(assemblyName));
-                context.assertEquals(expectedDepNames, captured(depCaptor));
+            }
+            if (entityOperator != null) {
+                expectedDepNames.add(EntityOperator.entityOperatorName(assemblyName));
+            }
+            if (expectedDepNames.size() > 0) {
+                context.assertEquals(existingDepNames, existingDepNames);
             }
 
             async.complete();
@@ -444,7 +516,17 @@ public class KafkaAssemblyOperatorTest {
         int healthDelay = 120;
         int healthTimeout = 30;
         Map<String, Object> metricsCmJson = metrics ? METRICS_CONFIG : null;
-        return ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
+
+        Kafka resource = ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, null, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
+
+        Kafka kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .withTopicOperator(toConfig)
+                    .withEntityOperator(eoConfig)
+                .endSpec()
+                .build();
+
+        return kafka;
     }
 
     private List<Secret> getInitialSecrets(String clusterName) {
@@ -599,7 +681,7 @@ public class KafkaAssemblyOperatorTest {
     @Test
     public void testUpdateTopicOperatorConfig(TestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
-        if (tcConfig != null) {
+        if (toConfig != null) {
             kafkaAssembly.getSpec().getTopicOperator().setImage("some/other:image");
             kafkaAssembly = new KafkaBuilder(kafkaAssembly)
                     .editSpec().editTopicOperator()
@@ -619,6 +701,7 @@ public class KafkaAssemblyOperatorTest {
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(certManager, originalAssembly, secrets);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(certManager, updatedAssembly, secrets);
         TopicOperator originalTopicOperator = TopicOperator.fromCrd(certManager, originalAssembly, secrets);
+        EntityOperator originalEntityOperator = EntityOperator.fromCrd(certManager, originalAssembly, secrets);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = supplierWithMocks();
@@ -716,6 +799,11 @@ public class KafkaAssemblyOperatorTest {
         if (originalTopicOperator != null) {
             when(mockDepOps.get(clusterNamespace, TopicOperator.topicOperatorName(clusterName))).thenReturn(
                     originalTopicOperator.generateDeployment()
+            );
+        }
+        if (originalEntityOperator != null) {
+            when(mockDepOps.get(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
+                    originalEntityOperator.generateDeployment()
             );
         }
 

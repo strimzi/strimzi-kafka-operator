@@ -42,6 +42,7 @@ import static java.util.Collections.singletonList;
 /**
  * Represents the topic operator deployment
  */
+@Deprecated
 public class TopicOperator extends AbstractModel {
 
     /**
@@ -278,8 +279,8 @@ public class TopicOperator extends AbstractModel {
                 } else {
                     log.debug("Topic Operator certificate already exists");
                     cert = new CertAndKey(
-                            decodeFromSecret(topicOperatorSecret.get(), "topic-operator.key"),
-                            decodeFromSecret(topicOperatorSecret.get(), "topic-operator.crt"));
+                            decodeFromSecret(topicOperatorSecret.get(), "entity-operator.key"),
+                            decodeFromSecret(topicOperatorSecret.get(), "entity-operator.crt"));
                 }
             } else {
                 throw new NoCertificateSecretException("The cluster CA certificate Secret is missing");
@@ -413,8 +414,8 @@ public class TopicOperator extends AbstractModel {
     public Secret generateSecret() {
         Map<String, String> data = new HashMap<>();
         data.put("cluster-ca.crt", Base64.getEncoder().encodeToString(clusterCA.cert()));
-        data.put("topic-operator.key", Base64.getEncoder().encodeToString(cert.key()));
-        data.put("topic-operator.crt", Base64.getEncoder().encodeToString(cert.cert()));
+        data.put("entity-operator.key", Base64.getEncoder().encodeToString(cert.key()));
+        data.put("entity-operator.crt", Base64.getEncoder().encodeToString(cert.cert()));
         return createSecret(TopicOperator.secretName(cluster), data);
     }
 
