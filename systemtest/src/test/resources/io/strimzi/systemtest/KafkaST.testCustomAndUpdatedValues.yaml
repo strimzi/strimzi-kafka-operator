@@ -34,5 +34,5 @@ spec:
       timeTick: 2000
       initLimit: 5
       syncLimit: 2
-  topicOperator: {}
-
+  entityOperator:
+    topicOperator: {}

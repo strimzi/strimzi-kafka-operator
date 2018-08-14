@@ -66,11 +66,12 @@ public class AbstractST {
     protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
     protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
+    protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
-    protected static final String TLS_SIDECAR_TO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
+    protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
 
     @Rule
     public Stopwatch stopwatch = new Stopwatch() {
@@ -337,10 +338,11 @@ public class AbstractST {
         images.put(CONNECT_IMAGE, getImageNameFromJSON(configJson, CONNECT_IMAGE));
         images.put(S2I_IMAGE, getImageNameFromJSON(configJson, S2I_IMAGE));
         images.put(TO_IMAGE, getImageNameFromJSON(configJson, TO_IMAGE));
+        images.put(UO_IMAGE, getImageNameFromJSON(configJson, UO_IMAGE));
         images.put(KAFKA_INIT_IMAGE, getImageNameFromJSON(configJson, KAFKA_INIT_IMAGE));
         images.put(TLS_SIDECAR_ZOOKEEPER_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_ZOOKEEPER_IMAGE));
         images.put(TLS_SIDECAR_KAFKA_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_KAFKA_IMAGE));
-        images.put(TLS_SIDECAR_TO_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_TO_IMAGE));
+        images.put(TLS_SIDECAR_EO_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_EO_IMAGE));
         return images;
     }
 

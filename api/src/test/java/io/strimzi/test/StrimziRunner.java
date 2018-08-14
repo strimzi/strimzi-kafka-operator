@@ -562,7 +562,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 Kafka kafkaAssembly = TestUtils.fromYamlString(yaml, Kafka.class);
                 final String kafkaStatefulSetName = kafkaAssembly.getMetadata().getName() + "-kafka";
                 final String zookeeperStatefulSetName = kafkaAssembly.getMetadata().getName() + "-zookeeper";
-                final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
+                final String eoDeploymentName = kafkaAssembly.getMetadata().getName() + "-entity-operator";
                 last = new Bracket(last, new ResourceAction()
                     .getPo(CO_DEPLOYMENT_NAME + ".*")
                     .logs(CO_DEPLOYMENT_NAME + ".*", "strimzi-cluster-operator")
@@ -574,8 +574,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     .getSs(zookeeperStatefulSetName)
                     .getPo(zookeeperStatefulSetName)
                     .logs(zookeeperStatefulSetName + ".*", "zookeeper")
-                    .getDep(tcDeploymentName)
-                    .logs(tcDeploymentName + ".*", "topic-operator")) {
+                    .getDep(eoDeploymentName)
+                    .logs(eoDeploymentName + ".*", "entity-operator")) {
 
                     @Override
                     protected void before() {
@@ -588,9 +588,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         // wait for ss
                         LOGGER.info("Waiting for Kafka SS");
                         kubeClient().waitForStatefulSet(kafkaStatefulSetName, kafkaAssembly.getSpec().getKafka().getReplicas());
-                        // wait for TOs
-                        LOGGER.info("Waiting for TC Deployment");
-                        kubeClient().waitForDeployment(tcDeploymentName, 1);
+                        // wait for EO
+                        LOGGER.info("Waiting for Entity Operator Deployment");
+                        kubeClient().waitForDeployment(eoDeploymentName, 1);
                     }
 
                     @Override

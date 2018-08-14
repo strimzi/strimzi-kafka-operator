@@ -386,13 +386,15 @@ public class KafkaST extends AbstractST {
             }
         }
 
-        //Verifying docker image for topic-operator
-        String topicOperatorPodName = kubeClient.listResourcesByLabel("pod",
-                "strimzi.io/name=" + clusterName + "-topic-operator").get(0);
-        String imgFromPod = getContainerImageNameFromPod(topicOperatorPodName, "topic-operator");
+        //Verifying docker image for entity-operator
+        String entityOperatorPodName = kubeClient.listResourcesByLabel("pod",
+                "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
+        String imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "entity-topic-operator");
         assertEquals(imgFromDeplConf.get(TO_IMAGE), imgFromPod);
-        imgFromPod = getContainerImageNameFromPod(topicOperatorPodName, "tls-sidecar");
-        assertEquals(imgFromDeplConf.get(TLS_SIDECAR_TO_IMAGE), imgFromPod);
+        imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "entity-user-operator");
+        assertEquals(imgFromDeplConf.get(UO_IMAGE), imgFromPod);
+        imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "tls-sidecar");
+        assertEquals(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE), imgFromPod);
 
         LOGGER.info("Docker images verified");
     }
