@@ -1,0 +1,160 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-user-operator.adoc
+
+[id='ref-kafka-user-{context}']
+= Kafka User resource
+
+The Kafka User resource is used to declare a user with its authentication mechanism, authorization mechanism and access rights.
+
+== Authentication
+
+Authentication is configured using the `authentication` property in `KafkaUser.spec`.
+The authentication mechanism enabled for this user will be specified using the `type` field.
+Currently, the only support authentication mechanism is the TLS Client Authentication mechanism.
+
+When no authentication mechanism is specified, User Operator will not create the user and its credentials.
+
+=== TLS Client Authentication
+
+To use TLS client authentication, set the `type` field to `tls`.
+
+.An example of `KafkaUser` with enabled TLS Client Authentication
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  # ...
+----
+
+When the user is created by the User Operator, it will create a new secret with the same name as the `KafkaUser` resource.
+The secret will contain a public and private key which should be used for the TLS Client Authentication.
+Together with them it will also bundle the public key of the client certification authority which was used to sign the user certificate.
+All keys will be in X509 format.
+
+.An example of the `Secret` with user credentials
+[source,yaml,subs="attributes+"]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/kind: KafkaUser
+    strimzi.io/cluster: my-cluster
+type: Opaque
+data:
+  ca.crt: # Public key of the Clients CA
+  user.crt: # Public key of the user
+  user.key: # Private key of the user
+----
+
+== Authorization
+
+Authorization is configured using the `authorization` property in `KafkaUser.spec`.
+The authorization type enabled for this user will be specified using the `type` field.
+Currently, the only supported authorization type is the Simple authorization.
+
+When no authorization is specified, User Operator will not provision any access rights for the user.
+
+=== Simple Authorization
+
+To use Simple Authorization, set the `type` property to `simple`.
+Simple authorization is using the `SimpleAclAuthorizer` plugin.
+`SimpleAclAuthorizer` is the default authorization plugin which is part of Apache Kafka.
+Simple Authorization allows you to specify list of ACL rules in the `acls` property.
+
+The `acls` property should contain a list of `AclRule` objects.
+`AclRule` specifies the access rights whcih will be granted to the user.
+The `AclRule` object contains following properties:
+
+`type`::
+Specifies the type of the ACL rule.
+The type can be either `allow` or `deny.
+The `type` field is optional and when not specified, the ACL rule will be treated as `allow` rule.
+
+`operation`:: Specifies the operation which will be allowed or denied.
+Following operations are supported:
++
+* Read
+* Write
+* Delete
+* Alter
+* Describe
+* All
+* IdempotentWrite
+* ClusterAction
+* Create
+* AlterConfigs
+* DescribeConfigs
++
+NOTE: Not every operation can be combined with every resource.
+
+`host`:: Specifies a remote host from which is the rule allowed or denied.
+Use `\*` to allow or deny the operation from all hosts.
+The `host` field is optional and when not specified, the value `*` will be used as default.
+
+`resource`:: Specifies the resource for which does the rule apply.
+Simple Authorization supports 3 different resource types:
++
+* Topics
+* Consumer Groups
+* Clusters
++
+The resource type can be specified in the `type` property.
+Use `topic` for Topics, `group` for Consumer Groups and `cluster` for clusters.
++
+Topic and Group resources additionally allow to specify the name of the resource for which the rule applies.
+The name can be specified in the `name` property.
+The name can be either specified as literal or as a prefix.
+To specify the name as literal, set the `patternType` property to the value `literal`.
+Literal names will be taken exactly as they are specified in the `name` field.
+To specify the name as a prefix, set the `patternType` property to the value `prefix`.
+Prefix type names will use the value from the `name` only a prefix and will apply the rule to all resources with names starting with the value.
+The cluster type resources have no name.
+
+For more details about `SimpleAclAuthorizer`, its ACL rules and the allowed combinations of resources and operations, visit link:http://kafka.apache.org/documentation/#security_authz[Authorization and ACLs^].
+
+For more information about the `AclRule` object, see xref:type-AclRule-reference[`AclRule` schema reference].
+
+.An example `KafkaUser`
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Read
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Describe
+      - resource:
+          type: group
+          name: my-group
+          patternType: prefix
+        operation: Read
+----
+
+== Additional resources
+
+* For more information about the `KafkaUser` object, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].

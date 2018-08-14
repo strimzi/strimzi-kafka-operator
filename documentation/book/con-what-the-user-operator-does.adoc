@@ -1,0 +1,30 @@
+// Module included in the following assemblies:
+//
+// assembly-getting-started-user-operator.adoc
+
+[id='con-what-the-user-operator-does-{context}']
+= What the User Operator does
+
+The User Operator provides a way of managing Kafka users for a Kafka cluster via {ProductPlatformName} resources.
+
+The role of the User Operator is to watch for `KafkaUser` {ProductPlatformName} resources describing Kafka users and make sure they are configured inside the Kafka cluster as declared in the `KafkaUser` resource.
+
+Specifically:
+
+* if a `KafkaUser` is created, the operator will create the user it describes
+* if a `KafkaUser` is deleted, the operator will delete the user it describes
+* if a `KafkaUser` is changed, the operator will update the user it describes
+
+Unlike the xref:what-the-topic-operator-does-str[Topic Operator], the User Operator does not sync any changes back from the Kafka cluster into the {ProductPlatformName} resources.
+Unlike the Kafka topics which might be created by applications directly in Kafka, it is not expected that the users will be managed directly in the Kafka cluster in parallel with the User Operator, so this should not be needed.
+
+User Operator allows you to declare a `KafkaUser` as part of your application's deployment and the User Operator will take care of creating the user for you.
+When the user is created, the credentials will be created in a secret.
+Your application just needs to use the user and its credentials for authentication and produce or consume messages.
+
+The User Operator does not manage only credentials for authentication.
+It can also manage authorization rules.
+The `KafkaUser` declaration can contain a description of the rights which should be granted to this user and these rules will be created, updated or deleted together with the user.
+
+
+

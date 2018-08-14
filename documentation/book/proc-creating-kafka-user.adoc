@@ -1,0 +1,69 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-user-operator.adoc
+
+[id='proc-creating-kafka-user-{context}']
+= Creating a user
+
+.Prerequisites
+
+* A running Kafka cluster.
+* A running User Operator.
+
+.Procedure
+
+. Prepare a file containing the `KafkaUserq to be created.
++
+.An example `KafkaUser`
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Read
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Describe
+      - resource:
+          type: group
+          name: my-group
+          patternType: literal
+        operation: Read
+----
+
+. Create the `KafkaUser` resource in {ProductPlatformName}.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_
+
+. Use the credentials from the secret `my-user` in your application
+
+.Additional resources
+
+* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
+// TODO: Uncomment link after merging with the other PR
+//* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
+* For more information about the `KafkaUser` object, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].

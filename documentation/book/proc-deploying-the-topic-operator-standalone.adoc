@@ -15,7 +15,7 @@ For instance is can operate _with_ any Kafka cluster, not necessarily one deploy
 
 .Procedure
 
-. Edit the `examples/install/cluster-operator/05-Deployment-strimzi-topic-operator.yaml` resource. You will need to change the following
+. Edit the `examples/install/topic-operator/05-Deployment-strimzi-topic-operator.yaml` resource. You will need to change the following
 +
 .. The `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of bootstrap brokers in your Kafka cluster, given as a comma-separated list of `_<hostname>_:‍_<port>_` pairs.
 .. The `STRIMZI_ZOOKEEPER_CONNECT` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to a list of the Zookeeper nodes, given as a comma-separated list of `_<hostname>_:‍_<port>_` pairs. This should be the same Zookeeper cluster that your Kafka cluster is using.
@@ -27,13 +27,13 @@ ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 +
 [source,shell]
-kubectl apply -f examples/install/cluster-operator
+kubectl apply -f examples/install/user-operator
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell]
-oc apply -f examples/install/cluster-operator
+oc apply -f examples/install/user-operator
 
 . Verify that the Topic Operator has been deployed successfully. 
 ifdef::Kubernetes[]

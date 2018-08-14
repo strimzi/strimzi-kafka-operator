@@ -1,0 +1,13 @@
+// This assembly is included in the following assemblies:
+//
+// getting-started.adoc
+
+[id='assembly-getting-started-user-operator-{context}']
+= User Operator
+
+User Operator provides a way of managing Kafka users via {ProductPlatformName} resources.
+
+include::con-what-the-user-operator-does.adoc[leveloffset=+1]
+
+include::proc-deploying-the-user-operator-using-the-cluster-operator.adoc[leveloffset=+1]
+
