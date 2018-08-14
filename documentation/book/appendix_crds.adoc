@@ -141,7 +141,39 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 [options="header"]
 |====
-|Field|Description
+|Field                  |Description
+|authentication  1.2+<.<|Authentication configuration for this listener. Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|====
+
+[id='type-KafkaListenerAuthenticationTls-{context}']
+### `KafkaListenerAuthenticationTls` schema reference
+
+Used in: xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationTls` from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`].
+It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `tls`.
+|string
+|====
+
+[id='type-KafkaListenerAuthenticationScramSha512-{context}']
+### `KafkaListenerAuthenticationScramSha512` schema reference
+
+Used in: xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationScramSha512` from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`].
+It must have the value `scram-sha-512` for the type `KafkaListenerAuthenticationScramSha512`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `scram-sha-512`.
+|string
 |====
 
 [id='type-KafkaListenerTls-{context}']
@@ -153,23 +185,8 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 [options="header"]
 |====
 |Field                  |Description
-|authentication  1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`]
-|====
-
-[id='type-KafkaListenerAuthenticationTls-{context}']
-### `KafkaListenerAuthenticationTls` schema reference
-
-Used in: xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
-
-
-The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationTls` from other subtypes which may be added in the future.
-It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
-[options="header"]
-|====
-|Field        |Description
-|type  1.2+<.<|Must be `tls`.
-|string
+|authentication  1.2+<.<|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
 |====
 
 [id='type-KafkaAuthorizationSimple-{context}']

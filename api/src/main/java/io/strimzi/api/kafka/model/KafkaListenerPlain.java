@@ -4,14 +4,15 @@
  */
 package io.strimzi.api.kafka.model;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
@@ -28,6 +29,18 @@ public class KafkaListenerPlain implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Map<String, Object> additionalProperties;
+
+    private KafkaListenerAuthentication authentication;
+
+    @Description("Authentication configuration for this listener. " +
+            "Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`.")
+    public KafkaListenerAuthentication getAuthentication() {
+        return authentication;
+    }
+
+    public void setAuthentication(KafkaListenerAuthentication authentication) {
+        this.authentication = authentication;
+    }
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {

@@ -14,7 +14,9 @@ spec:
       size: "500Gi"
       deleteClaim: false
     listeners:
-      plain: {}
+      plain:
+        authentication:
+          type: "scram-sha-512"
       tls:
         authentication:
           type: "tls"
