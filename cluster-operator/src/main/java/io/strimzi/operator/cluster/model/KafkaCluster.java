@@ -71,8 +71,13 @@ public class KafkaCluster extends AbstractModel {
     protected static final String RACK_VOLUME_MOUNT = "/opt/kafka/rack";
     private static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
+    /** {@code TRUE} when the CLIENT listener (PLAIN transport) should be enabled*/
     private static final String ENV_VAR_KAFKA_CLIENT_ENABLED = "KAFKA_CLIENT_ENABLED";
+    /** The authentication to configure for the CLIENT listener (PLAIN transport). */
+    private static final String ENV_VAR_KAFKA_CLIENT_AUTHENTICATION = "KAFKA_CLIENT_AUTHENTICATION";
+    /** {@code TRUE} when the CLIENTTLS listener (TLS transport) should be enabled*/
     private static final String ENV_VAR_KAFKA_CLIENTTLS_ENABLED = "KAFKA_CLIENTTLS_ENABLED";
+    /** The authentication to configure for the CLIENTTLS listener (TLS transport) . */
     private static final String ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION = "KAFKA_CLIENTTLS_AUTHENTICATION";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
@@ -243,7 +248,14 @@ public class KafkaCluster extends AbstractModel {
         result.generateCertificates(certManager, secrets);
         result.setTlsSidecar(kafkaClusterSpec.getTlsSidecar());
 
-        result.setListeners(kafkaClusterSpec.getListeners());
+        KafkaListeners listeners = kafkaClusterSpec.getListeners();
+        if (listeners != null) {
+            if (listeners.getPlain() != null
+                && listeners.getPlain().getAuthentication() instanceof KafkaListenerAuthenticationTls) {
+                throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
+            }
+        }
+        result.setListeners(listeners);
         result.setAuthorization(kafkaClusterSpec.getAuthorization());
 
         return result;
@@ -619,13 +631,17 @@ public class KafkaCluster extends AbstractModel {
         if (listeners != null)  {
             if (listeners.getPlain() != null)   {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_ENABLED, "TRUE"));
+
+                if (listeners.getPlain().getAuthentication() != null) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENT_AUTHENTICATION, listeners.getPlain().getAuthentication().getType()));
+                }
             }
 
             if (listeners.getTls() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_ENABLED, "TRUE"));
 
-                if (listeners.getTls().getAuthentication() != null && KafkaListenerAuthenticationTls.TYPE_TLS.equals(listeners.getTls().getAuthentication().getType())) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS));
+                if (listeners.getTls().getAuthentication() != null) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, listeners.getTls().getAuthentication().getType()));
                 }
             }
         }
