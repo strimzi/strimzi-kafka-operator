@@ -1,0 +1,20 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-operators.adoc
+
+:parent-context-deploying-uo: {context}
+
+[id='assembly-user-operator-{context}']
+= User Operator
+
+:context: deploying-uo
+
+The User Operator provides a way of managing Kafka users via {ProductPlatformName} resources.
+
+include::con-what-the-user-operator-does.adoc[leveloffset=+1]
+
+include::proc-deploying-the-user-operator-using-the-cluster-operator.adoc[leveloffset=+1]
+
+include::proc-deploying-the-user-operator-standalone.adoc[leveloffset=+1]
+
+:context: {parent-context-deploying-uo}
