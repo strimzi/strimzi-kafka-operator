@@ -10,6 +10,9 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -115,6 +118,8 @@ public class OpenSslCertManagerTest {
     @Test
     public void testGenerateSignedCert() throws Exception {
 
+        Path path = Paths.get("/tmp");
+        long fileCount = Files.list(path).count();
         File caKey = File.createTempFile("ca-key-", ".key");
         File caCert = File.createTempFile("ca-crt-", ".crt");
 
@@ -127,7 +132,6 @@ public class OpenSslCertManagerTest {
         Subject sbj = new Subject();
         sbj.setCommonName("MyCommonName");
         sbj.setOrganizationName("MyOrganization");
-
         File cert = File.createTempFile("crt-", ".crt");
 
         testGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, sbj);
@@ -137,6 +141,8 @@ public class OpenSslCertManagerTest {
         key.delete();
         csr.delete();
         cert.delete();
+
+        assertEquals(Files.list(path).count(), fileCount);
     }
 
     @Test

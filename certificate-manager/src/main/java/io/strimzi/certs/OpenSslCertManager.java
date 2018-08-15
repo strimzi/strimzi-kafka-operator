@@ -16,6 +16,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -191,6 +192,9 @@ public class OpenSslCertManager implements CertManager {
                 log.warn("{} cannot be deleted", openSslConf.getName());
             }
         }
+
+        // We need to remove CA serial file
+        Files.deleteIfExists(Paths.get(caCert.getPath().replace(".crt", ".srl")));
     }
 
     @Override

@@ -20,6 +20,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -195,5 +196,10 @@ public class TopicOperatorTest {
         assertEquals("topic-operator-metrics-and-logging", volumeMount.getName());
         assertEquals("topic-operator-metrics-and-logging", volume.getName());
         assertEquals("foo-topic-operator-config", volume.getConfigMap().getName());
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 }
