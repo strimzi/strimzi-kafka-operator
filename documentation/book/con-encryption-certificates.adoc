@@ -1,0 +1,55 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='encryption-{context}']
+// * Title: = Encryption
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
+[id='certificates-{context}']
+= Certification Authority
+
+Each component needs its own private and public keys in order to support encryption.
+The public key has to be signed by a certificate authority (CA) in order to have a related X.509 certificate for providing server authentication and encrypting the communication channel with the client. The client could be another broker as well.
+All component certificates are signed by a Certification Authority (CA) called _cluster CA_.
+Another CA is used for authentication of Kafka clients connecting to Kafka broker and is called _clients CA_.
+The CAs themselves use self-signed certificates.
+
+The following table lists all the certificates that are generated and saved as Secrets in the {ProductPlatformName} cluster:
+
+.Security Certificates
+[cols="30%,50%",options="header"]
+|===
+|Certificate
+|Description
+
+|`_cluster-name_-cluster-ca`
+|Contains the private and public keys of the cluster CA which is used for signing server certificates for the Kafka and Strimzi components like Kafka brokers, Zookeeper nodes, and so on.
+
+|`_cluster-name_-cluster-ca-cert`
+|Contains only the public key of the cluster CA. The public key used by Kafka clients to verify the identity of the Kafka brokers they are connecting to (TLS server authentication).
+
+|`_cluster-name_-clients-ca`
+|Contains the private and public keys of the clients CA. The clients CA is used for TLS client authentication of Kafka clients when connecting to Kafka brokers.
+
+|`_cluster-name_-clients-ca-cert`
+|Contains only the public key of the client CA. The public key is used by the Kafka brokers to verify the identity of Kafka clients when TLS client authentication is used.
+
+|`_cluster-name_-kafka-brokers`
+|Contains all the Kafka broker private and public keys. These certificates are signed with the cluster CA.
+
+|`_cluster-name_-zookeeper-nodes`
+|Contains all the Zookeeper node private and public keys. These certificates are signed with the cluster CA.
+
+|`_cluster-name_-topic-operator-certs`
+|Contains the private and public keys used for encrypting communication between the Topic Operator and Kafka or Zookeeper. These certificates are signed with the cluster CA.
+|===
+
+All the keys are 2048 bits in size and are valid for 365 days from initial generation.
+
+NOTE: `certificates rotation` for generating new ones on their expiration will be supported in future releases.

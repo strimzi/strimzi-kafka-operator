@@ -1,0 +1,19 @@
+// Module included in the following assemblies:
+//
+// <List assemblies here, each on a new line>
+
+// Base the file name and the ID on the module title. For example:
+// * file name: assembly-cluster-operator.adoc
+// * ID: [id='encryption-{context}']
+// * Title: = Encryption
+
+// The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
+
+include::common/attributes.adoc[]
+
+[id='zookeeper-communication-{context}']
+= Zookeeper communication
+
+By deploying a `stunnel` sidecar within every Zookeeper pod, the Cluster Operator is able to provide data encryption and authentication between Zookeeper nodes in a cluster.
+The `stunnel` sidecar proxies all Zookeeper traffic, TLS decrypts data upon entry into a Zookeeper pod, and then TLS encrypts data upon departure from a Zookeeper pod.
+This TLS encrypting `stunnel` proxy is instantiated from the `spec.zookeeper.stunnelImage` specified in the Kafka resource.
