@@ -19,7 +19,7 @@ helm_lint:
 helm_template:
 	# Generating rendered template files to: $(CHART_RENDERED_TEMPLATES_TMP)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_TMP)
-	helm template --namespace myproject --output-dir $(CHART_RENDERED_TEMPLATES_TMP) --set imageTagOverride=$(RELEASE_VERSION) $(CHART_PATH)
+	helm template --namespace myproject --output-dir $(CHART_RENDERED_TEMPLATES_TMP) $(CHART_PATH)
 
 helm_examples: helm_template
 	# Remove Helm-related labels
