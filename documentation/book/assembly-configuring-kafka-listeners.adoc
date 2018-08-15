@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// cluster-operator.adoc
+// assembly-deployment-configuration-kafka.adoc
 
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.

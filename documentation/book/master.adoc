@@ -14,8 +14,6 @@ include::assembly-operators.adoc[leveloffset=+1]
 
 include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
 
-include::assembly-user-operator.adoc[leveloffset=+1]
-
 include::assembly-using-the-user-operator.adoc[leveloffset=+1]
 
 include::security.adoc[]
