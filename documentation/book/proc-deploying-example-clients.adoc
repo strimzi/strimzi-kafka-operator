@@ -13,13 +13,13 @@
 . Deploy the producer
 +
 [source,shell,subs="+quotes"]
-`oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-producer.sh --broker-list _<my-producer>_:_<my-port>_ --topic _<my-topic>_`
+`oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-producer.sh --broker-list __<my-producer>__:__<my-port>__ --topic _<my-topic>_`
 
 . Send messages by writing into the console where you run the producer and hit the enter.
 
 . Deploy the consumer
 +
 [source,shell,subs="+quotes"]
-`oc run kafka-consumer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-consumer.sh --bootstrap-server _<my-consumer>_:_<my-port>_ --topic _<my-topic>_ --from-beginning`
+`oc run kafka-consumer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-consumer.sh --bootstrap-server __<my-consumer>__:__<my-port>__ --topic _<my-topic>_ --from-beginning`
 
 . Confirm that you see the incoming messages in the consumer console.
