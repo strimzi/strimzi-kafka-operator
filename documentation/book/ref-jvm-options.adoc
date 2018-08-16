@@ -34,8 +34,8 @@ Setting `-Xmx` explicitly requires some care:
 
 * The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
 * If `-Xmx` is set without also setting an appropriate {ProductPlatformName} memory limit, it is possible that the container will be killed should the {ProductPlatformName} node experience memory pressure (from other Pods running on it).
-* If `-Xmx` is set without also setting an appropriate {ProductPlatformName} memory request, it is possible that the container will scheduled to a node with insufficient memory.
-In this case the container will start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
+* If `-Xmx` is set without also setting an appropriate {ProductPlatformName} memory request, it is possible that the container will be scheduled to a node with insufficient memory.
+In this case, the container will not start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
 ====
 
 When setting `-Xmx` explicitly, it is recommended to:
@@ -70,7 +70,7 @@ This is in contrast to the units used for xref:assembly-resource-limits-and-requ
 
 Setting the same value for initial and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
 For Kafka and Zookeeper pods such allocation could cause unwanted latency.
-For Kafka Connect avoiding over allocation may be the more important concern, especially in distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
+For Kafka Connect avoiding over allocation may be the most important concern, especially in distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
 
 .Example fragment configuring `-Xms`
 [source,yaml,subs=attributes+]

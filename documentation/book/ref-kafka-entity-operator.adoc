@@ -115,14 +115,14 @@ The Zookeeper session timeout in seconds. Default is 6 seconds.
 
 `image`::
 The `image` property can be used to configure the container image which will be used.
-For more details about configuring custom container images, vseesit xref:assembly-configuring-container-images-{context}[].
+For more details about configuring custom container images, see xref:assembly-configuring-container-images-{context}[].
 
 `resources`::
-The `resources` property configures the amount of resources allocated to the User Operator
+The `resources` property configures the amount of resources allocated to the User Operator.
 For more details about resource request and limit configuration, see xref:assembly-resource-limits-and-requests-{context}[].
 
 `logging`::
-The `logging` property configures the logging of the User Operator
+The `logging` property configures the logging of the User Operator.
 For more details about logging configuration, see xref:assembly-logging-{context}[].
 
 .Example of Topic Operator configuration

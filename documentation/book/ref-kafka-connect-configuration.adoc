@@ -13,7 +13,7 @@ The values could be in one of the following JSON types:
 * Number
 * Boolean
 
-Users can specify and configure the options listed in {ApachaKafkaConnectConfig} with the exception of those options which are managed directly by {ProductName}.
+Users can specify and configure the options listed in the {ApachaKafkaConnectConfig} with the exception of those options which are managed directly by {ProductName}.
 Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
 
 * `ssl.`
@@ -28,7 +28,7 @@ When one of the forbidden options is present in the `config` property, it will b
 All other options will be passed to Kafka Connect.
 
 IMPORTANT:: The Cluster Operator does not validate keys or values in the provided `config` object.
-When invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable.
+When an invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable.
 In such cases, the configuration in the `KafkaConnect.spec.config` or `KafkaConnectS2I.spec.config` object should be fixed and the cluster operator will roll out the new configuration to all Kafka Connect nodes.
 
 Selected options have default values:

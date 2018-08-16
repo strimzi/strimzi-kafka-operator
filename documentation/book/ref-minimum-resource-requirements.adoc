@@ -6,7 +6,7 @@
 
 Testing has shown that the Cluster Operator functions adequately with 256Mi of memory and 200m CPU when watching two clusters.
 It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower limits than these.
-Configuring more generous limits is recommended, especially when the Cluster Operator is controlling multiple clusters.
+Configuring more generous limits is recommended only in special situations, when the Cluster Operator is controlling multiple clusters.
 
 [id='topic-operator-resource-requirements-{context}']
 == Topic Operator resource requirements
