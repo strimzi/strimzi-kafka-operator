@@ -8,8 +8,8 @@
 
 .Prerequisites
 
-* A running Cluster Operator.
-* A `Kafka` resource to be created or updated.
+* A running Cluster Operator
+* A `Kafka` resource to be created or updated
 
 .Procedure
 

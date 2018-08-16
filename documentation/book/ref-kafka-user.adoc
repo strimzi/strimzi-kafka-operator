@@ -77,7 +77,7 @@ The `AclRule` object contains following properties:
 
 `type`::
 Specifies the type of the ACL rule.
-The type can be either `allow` or `deny.
+The type can be either `allow` or `deny`.
 The `type` field is optional and when not specified, the ACL rule will be treated as `allow` rule.
 
 `operation`:: Specifies the operation which will be allowed or denied.

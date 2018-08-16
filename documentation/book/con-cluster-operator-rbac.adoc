@@ -27,11 +27,11 @@ When the Cluster Operator deploys resources for a desired `Kafka` resource it al
 * The Kafka broker pods use a `ServiceAccount` called `_<cluster-name>_-kafka`
   - When the rack feature is used, the `strimzi-_<cluster-name>_-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`
   - When the rack feature is not used no binding is created.
-* The Zookeeper pods use the default `ServiceAccount` as they have no need to access {ProductPlatformName} resources
+* The Zookeeper pods use the default `ServiceAccount`, as they do not need access to the {ProductPlatformName} resources.
 * The Topic Operator pod uses a `ServiceAccount` called `_<cluster-name>_-topic-operator`
     - The Topic Operator produces {ProductPlatformName} events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-topic-operator` which grants this access via the `strimzi-topic-operator-role-binding` `RoleBinding`.
 
-The pods for `KafkaConnect` and `KafkaConnectS2I` resources use the default `ServiceAccount`, since they require no access to {ProductPlatformName} resources.
+The pods for `KafkaConnect` and `KafkaConnectS2I` resources use the default `ServiceAccount`, as they do not require access to the {ProductPlatformName} resources.
 
 == `ServiceAccount`
 
@@ -46,7 +46,7 @@ include::examples/install/cluster-operator/01-ServiceAccount-strimzi-cluster-ope
 The `Deployment` of the operator then needs to specify this in its `spec.template.spec.serviceAccountName`:
 
 [source,yaml,numbered,options="nowrap",highlight='12']
-.Partial example `Deployment` for the Cluster Operator
+.Partial example of `Deployment` for the Cluster Operator
 ----
 include::examples/install/cluster-operator/05-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
       # ...
@@ -56,7 +56,7 @@ Note line 12, where the the `strimzi-cluster-operator` `ServiceAccount` is speci
 
 == `ClusterRoles`
 
-The Cluster Operator needs to operate using `ClusterRoles` that give it access to the necessary resources.
+The Cluster Operator needs to operate using `ClusterRoles` that gives access to the necessary resources.
 Depending on the {ProductPlatformName} cluster setup, a cluster administrator might be needed to create the `ClusterRoles`.
 
 NOTE: Cluster administrator rights are only needed for the creation of the `ClusterRoles`.

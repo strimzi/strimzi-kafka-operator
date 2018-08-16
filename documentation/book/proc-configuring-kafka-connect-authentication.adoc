@@ -8,7 +8,7 @@
 .Prerequisites
 
 * An {ProductPlatformName} cluster
-* A running Cluster Operator.
+* A running Cluster Operator
 
 .Procedure
 
