@@ -1,0 +1,45 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-rack.adoc
+
+[id='proc-configuring-kafka-rack-awareness-{context}']
+= Configuring rack awareness in Kafka brokers
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Find out which node labels represent the zone / rack into which the node is deployed.
+. Edit the `rack` property in the `Kafka` resource.
+Use the label as the topology key.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    rack:
+      topologyKey: failure-domain.beta.kubernetes.io/zone
+    # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

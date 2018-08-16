@@ -8,13 +8,11 @@ include::assembly-overview.adoc[leveloffset=+1]
 
 include::getting-started.adoc[leveloffset=+1]
 
-include::cluster-operator.adoc[]
+include::assembly-deployment-configuration.adoc[leveloffset=+1]
 
-include::assembly-deploying-the-topic-operator.adoc[leveloffset=+1]
+include::assembly-operators.adoc[leveloffset=+1]
 
 include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
-
-include::assembly-user-operator.adoc[leveloffset=+1]
 
 include::assembly-using-the-user-operator.adoc[leveloffset=+1]
 
@@ -33,9 +31,6 @@ endif::InstallationAppendix[]
 ## Custom Resource API Reference
 include::appendix_crds.adoc[]
 :context: {parent-context}
-
-//[appendix]
-//include::ref-minimum-resource-requirements.adoc[leveloffset=+1]
 
 ifdef::MetricsAppendix[]
 include::appendix_metrics.adoc[]

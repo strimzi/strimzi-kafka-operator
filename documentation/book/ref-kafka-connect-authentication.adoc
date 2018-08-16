@@ -1,0 +1,39 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect-tls.adoc
+
+[id='ref-kafka-connect-authentication-{context}']
+= Authentication support in Kafka Connect
+
+Authentication can be configured in the `authentication` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
+The `authentication` property specifies the type of the authentication mechanisms which should be used and additional configuration details depending on the mechanism.
+Currently, the only supported authentication type is TLS client authentication.
+
+== TLS Client Authentication
+
+To use the TLS client authentication, set the `type` property to the value `tls`.
+TLS client authentication is using TLS certificate to authenticate.
+The certificate has to be specified in the `certificateAndKey` property.
+It is always loaded from an {ProductPlatformName} secret.
+Inside the secret, it has to be stored in the X509 format under two different keys: for public and private keys.
+
+NOTE: TLS client authentication can be used only with TLS connections.
+For more details about TLS configuration in Kafka Connect see xref:assembly-kafka-connect-tls-{context}[].
+
+.An example showing TLS client authentication configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-secret
+      certificate: public.crt
+      key: private.key
+  # ...
+----

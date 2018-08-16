@@ -1,0 +1,29 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+// assembly-deployment-configuration-kafka-connect.adoc
+// assembly-deployment-configuration-kafka-connect-s2i.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='assembly-healthchecks-{context}']
+
+= Healthchecks
+
+Healthchecks are periodical tests which verify that the application's health.
+When the Healthcheck fails, {ProductPlatformName} can assume that the application is not healthy and attempt to fix it.
+{ProductPlatformName} supports two types of Healthcheck probes:
+
+* Liveness probes
+* Readiness probes
+
+For more details about the probes, see {K8sLivenessReadinessProbes}.
+Both types of probes are used in {ProductName} components.
+
+Users can configure selected options for liveness and readiness probes
+
+include::ref-healthchecks.adoc[leveloffset=+1]
+
+include::proc-configuring-healthchecks.adoc[leveloffset=+1]

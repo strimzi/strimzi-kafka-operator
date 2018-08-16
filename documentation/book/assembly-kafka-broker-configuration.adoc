@@ -1,0 +1,29 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='assembly-kafka-broker-configuration-{context}']
+
+= Kafka broker configuration
+
+{ProductName} allows you to customize the configuration of Apache Kafka brokers.
+You can specify and configure most of the options listed in {ApachaKafkaBrokerConfig}.
+
+The only options which cannot be configured are those related to the following areas:
+
+* Security (Encryption, Authentication, and Authorization)
+* Listener configuration
+* Broker ID configuration
+* Configuration of log data directories
+* Inter-broker communication
+* Zookeeper connectivity
+
+These options are automatically configured by {ProductName}.
+
+include::ref-kafka-broker-configuration.adoc[leveloffset=+1]
+
+include::proc-configuring-kafka-brokers.adoc[leveloffset=+1]

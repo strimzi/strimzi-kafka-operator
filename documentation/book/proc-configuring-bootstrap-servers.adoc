@@ -1,0 +1,41 @@
+// Module included in the following assemblies:
+//
+// assembly-bootstrap-servers.adoc
+
+[id='proc-configuring-bootstrap-servers-{context}']
+= Configuring bootstrap servers
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `bootstrapServers` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

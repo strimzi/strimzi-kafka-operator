@@ -8,12 +8,13 @@
 
 .Prerequisites
 
-* A running Cluster Operator.
-* A `Kafka` resource to be created or updated.
+* A running Cluster Operator
+* A `Kafka` resource to be created or updated
 
 .Procedure
 
-. Edit the `Kafka` resource ensuring it has a `Kafka.spec.topicOperator` object that configures the Topic Operator how you want.
+. Topic Operator can be included in the Entity Operator.
+Edit the `Kafka` resource ensuring it has a `Kafka.spec.entityOperator` object that configures the Entity Operator.
 
 . Create or update the Kafka resource in {ProductPlatformName}.
 +
@@ -31,4 +32,5 @@ oc apply -f _<your-file>_
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about the `Kafka.spec.topicOperator` object used to configure the Topic Operator when deployed by the Cluster Operator, see xref:type-TopicOperatorSpec-reference[].
+* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
+* For more information about the `Kafka.spec.entityOperator` object used to configure the Topic Operator when deployed by the Cluster Operator, see xref:type-EntityOperatorSpec-reference[].

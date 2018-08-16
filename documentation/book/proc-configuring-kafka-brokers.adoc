@@ -1,0 +1,46 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-broker-configuration.adoc
+
+[id='proc-configuring-kafka-brokers-{context}']
+= Configuring Kafka brokers
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `config` property in the `Kafka` resource specifying the cluster deployment.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    config:
+      default.replication.factor: 3
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 1
+    # ...
+  zookeeper:
+    # ...
+----
+
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

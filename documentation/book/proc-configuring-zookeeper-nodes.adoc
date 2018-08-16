@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-zookeeper-node-configuration.adoc
+
+[id='proc-configuring-zookeeper-nodes-{context}']
+= Configuring Zookeeper
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `config` property in the `Kafka` resource specifying the cluster deployment.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+    config:
+      autopurge.snapRetainCount: 3
+      autopurge.purgeInterval: 1
+    # ...
+----
+
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

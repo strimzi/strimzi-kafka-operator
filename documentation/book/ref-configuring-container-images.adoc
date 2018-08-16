@@ -1,0 +1,70 @@
+// Module included in the following assemblies:
+//
+// assembly-configuring-container-images.adoc
+
+[id='ref-configuring-container-images-{context}']
+= Configuring container images
+
+Container image which should be used for given components can be specified using the `image` property in:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.kafka.tlsSidecar`
+* `Kafka.spec.zookeeper`
+* `Kafka.spec.zookeeper.tlsSidecar`
+* `Kafka.spec.entityOperator.topicOperator`
+* `Kafka.spec.entityOperator.userOperator`
+* `Kafka.spec.entityOperator.tlsSidecar`
+* `KafkaConnect.spec`
+* `KafkaConnectS2I.spec`
+
+The `image` property can be used to configure the container image which will be used.
+When the `image` field is missing, the following images will be used (in the order of priority):
+
+* For Kafka brokers:
+** Container image specified in the `STRIMZI_DEFAULT_KAFKA_IMAGE` environment variable from the Cluster Operator configuration.
+** `strimzi/kafka:latest` container image.
+* For Kafka broker TLS sidecar:
+** Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE` environment variable from the Cluster Operator configuration.
+** `strimzi/kafka-stunnel:latest` container image.
+* For Zookeeper nodes:
+** Container image specified in the `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE` environment variable from the Cluster Operator configuration.
+** `strimzi/zookeeper:latest` container image.
+* For Zookeeper node TLS sidecar:
+** Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE` environment variable from the Cluster Operator configuration.
+** `strimzi/zookeeper-stunnel:latest` container image.
+* For Topic Operator:
+** Container image specified in the `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
+** `strimzi/topic-operator:latest` container image.
+* For User Operator:
+** Container image specified in the `STRIMZI_DEFAULT_USER_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
+** `strimzi/user-operator:latest` container image.
+* For Entity Operator TLS sidecar:
+** Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
+** `strimzi/entity-operator-stunnel:latest` container image.
+* For Kafka Connect:
+** Container image specified in the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` environment variable from the Cluster Operator configuration.
+** `strimzi/kafka-connect:latest` container image.
+* For Kafka Connect with Source2image support:
+** Container image specified in the `STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE` environment variable from the Cluster Operator configuration.
+** `strimzi/kafka-connect-s2i:latest` container image.
+
+WARNING: Overriding container images is recommended only in special situations, where you need to use a different container registry.
+For example, because your network does not allow access to the container repository used by {ProductName}.
+In such case, you should either copy the {ProductName} images or build them from source.
+In case the configured image is not compatible with {ProductName} images, it might not work properly.
+
+.Example of TLS sidecar configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    image: my-org/my-image:latest
+    # ...
+  zookeeper:
+    # ...
+----

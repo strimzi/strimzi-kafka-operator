@@ -10,7 +10,7 @@ Affinity can be configured using the `affinity` property in following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
-* `Kafka.spec.topicOperator`
+* `Kafka.spec.entityOperator`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 
@@ -20,4 +20,4 @@ The affinity configuration can include different types of affinity:
 * Node affinity
 
 The format of the `affinity` property follows the {ProductPlatformName} specification.
-For more details visit the {K8sAffinity}.
+For more details, see the {K8sAffinity}.

@@ -1,0 +1,124 @@
+// Module included in the following assemblies:
+//
+// assembly-jvm-options.adoc
+
+[id='ref-jvm-options-{context}']
+= JVM configuration
+
+JVM options can be configured using the `jvmOptions` property in following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.zookeeper`
+* `KafkaConnect.spec`
+* `KafkaConnectS2I.spec`
+
+Only a selected subset of available JVM options can be configured.
+The following options are supported:
+
+== `-Xmx`
+
+`-Xmx` configures the maximum heap size.
+
+NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
+Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
+This is in contrast to the units used for xref:assembly-resource-limits-and-requests-{context}[memory requests and limits], which follow the {ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+
+The default value used for `-Xmx` depends on whether there is a xref:assembly-resource-limits-and-requests-{context}[memory request] configured for the container:
+
+* If there is a memory request, the JVM's maximum memory will be set to a value corresponding to the limit.
+* When there is no memory request, the JVM's maximum memory will be set according to the RAM available to the container.
+
+[IMPORTANT]
+====
+Setting `-Xmx` explicitly requires some care:
+
+* The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
+* If `-Xmx` is set without also setting an appropriate {ProductPlatformName} memory limit, it is possible that the container will be killed should the {ProductPlatformName} node experience memory pressure (from other Pods running on it).
+* If `-Xmx` is set without also setting an appropriate {ProductPlatformName} memory request, it is possible that the container will be scheduled to a node with insufficient memory.
+In this case, the container will not start but crash (immediately if `-Xms` is set to `-Xmx`, or some later time if not).
+====
+
+When setting `-Xmx` explicitly, it is recommended to:
+
+* set the memory request and the memory limit to the same value,
+* use a memory request that is at least 4.5 × the `-Xmx`,
+* consider setting `-Xms` to the same value as `-Xms`.
+
+IMPORTANT: Containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as operating system page cache.
+On such containers, the requested memory should be significantly higher than the memory used by the JVM.
+
+.Example fragment configuring `-Xmx`
+[source,yaml,subs=attributes+]
+----
+# ...
+jvmOptions:
+  "-Xmx": "2g"
+  "-Xms": "2g"
+# ...
+----
+
+In the above example, the JVM will use 2 GiB (=2,147,483,648 bytes) for its heap.
+Its total memory usage will be approximately 8GiB.
+
+== `-Xms`
+
+`-Xms` configures the initial heap size.
+
+NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
+Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
+This is in contrast to the units used for xref:assembly-resource-limits-and-requests-{context}[memory requests and limits], which follow the {ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+
+Setting the same value for initial and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
+For Kafka and Zookeeper pods such allocation could cause unwanted latency.
+For Kafka Connect avoiding over allocation may be the most important concern, especially in distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
+
+.Example fragment configuring `-Xms`
+[source,yaml,subs=attributes+]
+----
+# ...
+jvmOptions:
+  "-Xmx": "2g"
+  "-Xms": "2g"
+# ...
+----
+
+== `-server`
+
+`-server` enables the server JVM. This option can be set to true or false.
+
+.Example fragment configuring `-server`
+[source,yaml,subs=attributes+]
+----
+# ...
+jvmOptions:
+  "-server": true
+# ...
+----
+
+NOTE: When neither of the two options (`-server` and `-XX`) is specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` will be used.
+
+== `-XX`
+
+`-XX` object can be used for configuring advanced runtime options of a JVM.
+The `-server` and `-XX` options are used to configure the `KAFKA_JVM_PERFORMANCE_OPTS` option of Apache Kafka.
+
+.Example showing the use of the `-XX` object
+[source,yaml,subs=attributes+]
+----
+jvmOptions:
+  "-XX":
+    "UseG1GC": true,
+    "MaxGCPauseMillis": 20,
+    "InitiatingHeapOccupancyPercent": 35,
+    "ExplicitGCInvokesConcurrent": true,
+    "UseParNewGC": false
+----
+
+The example configuration above will result in the following JVM options:
+
+[source]
+----
+-XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+ExplicitGCInvokesConcurrent -XX:-UseParNewGC
+----
+
+NOTE: When neither of the two options (`-server` and `-XX`) is specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` will be used.

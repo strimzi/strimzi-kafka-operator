@@ -1,0 +1,11 @@
+// This assembly is included in the following assemblies:
+//
+// getting-started.adoc
+
+[id='assembly-getting-started-topic-operator-{context}']
+
+= Topic Operator
+
+include::con-what-the-topic-operator-does.adoc[leveloffset=+1]
+
+include::proc-deploying-the-topic-operator-using-the-cluster-operator.adoc[leveloffset=+1]

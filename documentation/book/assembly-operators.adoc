@@ -1,0 +1,13 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='assembly-operators-{context}']
+
+= Operators
+
+include::assembly-operators-cluster-operator.adoc[leveloffset=+1]
+
+include::assembly-deploying-the-topic-operator.adoc[leveloffset=+1]
+
+include::assembly-user-operator.adoc[leveloffset=+1]

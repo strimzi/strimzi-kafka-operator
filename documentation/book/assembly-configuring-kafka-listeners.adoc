@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// cluster-operator.adoc
+// assembly-deployment-configuration-kafka.adoc
 
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.
@@ -8,7 +8,7 @@
 :parent-context: {context}
 
 [id='assembly-configuring-kafka-broker-listeners-{context}']
-= Configuring Kafka broker listeners
+= Kafka broker listeners
 
 {ProductName} allows users to configure the listeners which will be enabled in Kafka brokers.
 Two types of listeners are supported:

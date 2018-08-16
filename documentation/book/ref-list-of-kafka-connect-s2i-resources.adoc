@@ -1,0 +1,15 @@
+// Module included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka-connect-s2i.adoc
+
+[id='ref-list-of-kafka-cluster-resources-{context}']
+= List of resources created as part of Kafka Connect cluster with Source2Image support
+
+The following resources will created by the Cluster Operator in the {ProductPlatformName} cluster:
+
+_<connect-cluster-name>_-connect-source:: ImageStream which is used as the base image for the newly-built Docker images.
+_<connect-cluster-name>_-connect:: BuildConfig which is responsible for building the new Kafka Connect Docker images.
+_<connect-cluster-name>_-connect:: ImageStream where the newly built Docker images will be pushed.
+_<connect-cluster-name>_-connect:: DeploymentConfig which is in charge of creating the Kafka Connect worker node pods.
+_<connect-cluster-name>_-connect-api:: Service which exposes the REST interface for managing the Kafka Connect cluster.
+_<connect-cluster-name>_-config:: ConfigMap which contains the Kafka Connect ancillary configuration and is mounted as a volume by the Kafka broker pods.

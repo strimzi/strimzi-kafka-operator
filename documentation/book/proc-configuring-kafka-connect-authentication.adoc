@@ -1,0 +1,59 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect-authentication.adoc
+
+[id='proc-configuring-kafka-connect-authentication-{context}']
+= Configuring TLS client authentication in Kafka Connect
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Find out the name of the secret with the public and private keys which should be used for TLS Client Authentication and the keys under which they are stored in the secret.
+If such secret does not exist yet, prepare the keys in a file and create the secret.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl create`:
+[source,shell,subs=+quotes]
+kubectl create secret generic _<my-secret>_ --from-file=_<my-public.crt>_ --from-file=_<my-private.key>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc create`:
++
+[source,shell,subs=+quotes]
+oc create secret generic _<my-secret>_ --from-file=_<my-public.crt>_ --from-file=_<my-private.key>_
+. Edit the `tls` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-secret
+      certificate: my-public.crt
+      key: my-private.key
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

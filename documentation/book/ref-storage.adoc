@@ -120,6 +120,6 @@ Persistent Volume Claim for the volume used for storing data for the Zookeeper n
 
 == Additional resources
 
-* For more information about ephemeral storage, visit xref:type-EphemeralStorage-reference[ephemeral storage schema reference].
-* For more information about persistent storage, visit xref:type-PersistentClaimStorage-reference[persistent storage schema reference].
+* For more information about ephemeral storage, see xref:type-EphemeralStorage-reference[ephemeral storage schema reference].
+* For more information about persistent storage, see xref:type-PersistentClaimStorage-reference[persistent storage schema reference].
 * For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].

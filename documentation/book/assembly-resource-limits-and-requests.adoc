@@ -1,0 +1,25 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+// assembly-deployment-configuration-kafka-connect.adoc
+// assembly-deployment-configuration-kafka-connect-s2i.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='assembly-resource-limits-and-requests-{context}']
+
+= CPU and memory resources
+
+For every deployed container, {ProductName} allows you to specify the resources which should be reserved for it and the maximum resources that can be consumed by it.
+{ProductName} supports two types of resources:
+
+* Memory
+* CPU
+
+{ProductName} is using the {ProductPlatformName} syntax for specifying CPU and memory resources.
+
+include::ref-resource-limits-and-requests.adoc[leveloffset=+1]
+
+include::proc-configuring-resource-limits-and-requests.adoc[leveloffset=+1]
