@@ -1,8 +1,8 @@
 == Security
 
-The Strimzi project supports data encryption of communication between the different Kafka and Strimzi components (Kafka brokers, Zookeeper nodes, Kafka Connect and Strimzi Topic Operator) by means of the SSL/TLS protocol.
+The {ProductName} project supports data encryption of communication between the different Kafka and {ProductName} components by means of the SSL/TLS protocol.
 This makes it possible to encrypt data transferred between Kafka brokers (interbroker communication), between Zookeeper nodes (internodal communication), and between clients and Kafka brokers.
-For the Kafka and Strimzi components, TLS certificates are also used for authentication.
+For the Kafka and {ProductName} components, TLS certificates are also used for authentication.
 
 The Cluster Operator sets up the SSL/TLS certificates to provide this encryption and authentication.
 
@@ -25,7 +25,7 @@ The CAs themselves use self-signed certificates.
 All of the generated certificates are saved as Secrets in the {ProductPlatformName} cluster, named as follows:
 
 `<cluster-name>-cluster-ca`::
-Contains the private and public keys of the cluster CA which is used for signing server certificates for the Kafka and Strimzi components (Kafka brokers, Zookeeper nodes, and so on).
+Contains the private and public keys of the cluster CA which is used for signing server certificates for the Kafka and {ProductName} components (Kafka brokers, Zookeeper nodes, and so on).
 `<cluster-name>-cluster-ca-cert`::
 Contains only the public key of the cluster CA.
 The public key used by Kafka clients to verify the identity of the Kafka brokers they are connecting to (TLS server authentication).
