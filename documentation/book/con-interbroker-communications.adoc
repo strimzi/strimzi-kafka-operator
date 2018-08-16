@@ -1,7 +1,5 @@
 // Module included in the following assemblies:
-//
-// <List assemblies here, each on a new line>
-
+// assembly-encryption.adoc
 // Base the file name and the ID on the module title. For example:
 // * file name: assembly-cluster-operator.adoc
 // * ID: [id='encryption-{context}']
