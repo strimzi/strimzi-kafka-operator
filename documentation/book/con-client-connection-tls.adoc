@@ -2,14 +2,15 @@
 //
 // <List assemblies here, each on a new line>
 
+// assembly-encryption.adoc
+
 // Base the file name and the ID on the module title. For example:
 // * file name: assembly-cluster-operator.adoc
 // * ID: [id='encryption-{context}']
 // * Title: = Encryption
 
 // The ID is used as an anchor for linking to the module. Avoid changing it after the module has been published to ensure existing links are not broken.
-
-include::common/attributes.adoc[]
+:parent-context: {context}
 
 [id='client-connection-tls-{context}']
 = Kafka Client connections through TLS
@@ -18,21 +19,21 @@ Encrypted communication between Kafka brokers and clients is provided through th
 
 NOTE: You can use the `CLIENT` listener on port 9092 for unencrypted communication with brokers.
 
-If a Kafka client wants to connect to the encrypted listener (`CLIENTTLS`) on port 9093, it needs to trust the cluster CA certificate in order to verify the broker certificate received during the SSL/TLS handshake.
-The cluster CA certificate can be extracted from the generated `_cluster-name_-cluster-ca-cert` `Secret`.
+If a Kafka client wants to connect to the encrypted listener (`CLIENTTLS`) on port 9093, it needs to trust the cluster certificate authority (CA) certificate in order to verify the broker certificate received during the SSL/TLS handshake.
+The cluster CA certificate can be extracted from the generated `_<cluster-name>_-cluster-ca-cert` `Secret`.
 
 ifdef::Kubernetes[]
 On {KubernetesName}, extract the certificate using the following command:
 
 [source,shell]
-kubectl get secret <cluster-name>-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 
 endif::Kubernetes[]
 
 On {OpenShiftName}, extract the certificate using the following command:
 
 [source,shell]
-oc get secret <cluster-name>-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+oc get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 
 The Kafka client has to be configured to trust certificates signed by this CA.
 For the Java-based Kafka Producer, Consumer and Streams APIs, you can do this by importing the CA certificate into the JVM's truststore using the following keytool command:
