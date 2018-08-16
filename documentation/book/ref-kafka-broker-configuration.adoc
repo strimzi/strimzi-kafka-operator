@@ -38,7 +38,7 @@ Specifically, all configuration options with keys equal to or starting with one 
 When one of the forbidden options is present in the `config` property, it will be ignored and a warning message will be printed to the Cluster Operator log file.
 All other options will be passed to Kafka.
 
-IMPORTANT:: The Cluster Operator does not validate keys or values in the provided `config` object.
+IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
 When invalid configuration is provided, the Kafka cluster might not start or might become unstable.
 In such cases, the configuration in the `Kafka.spec.kafka.config` object should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
 

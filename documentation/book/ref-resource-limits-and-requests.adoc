@@ -19,10 +19,10 @@ Resource limits and requests can be configured using the `resources` property in
 
 == Resource requests
 
-Requests specify the amount of resource which will be reserved for given container.
-Since the amount will be reserved it will be always available.
+Requests specify the resources that will be reserved for a given container.
+Reserving the resources will ensure that they are always available.
 
-IMPORTANT: If the resource request is bigger than the amount of available free resources in {ProductPlatformName} cluster, the Pod which includes given container will not be scheduled.
+IMPORTANT: If the resource request is for more than the available free resources in the {ProductPlatformName} cluster, the pod will not be scheduled.
 
 Resource requests can be specified in the `request` property.
 The resource requests currently supported by {ProductName} are memory and CPU.
@@ -40,7 +40,7 @@ resources:
 # ...
 ----
 
-It is also possible to specify resource request just for one of the resources:
+It is also possible to specify a resource request just for one of the resources:
 
 .An example showing resource request configuration with memory request only
 [source,yaml,subs="attributes+"]
@@ -66,7 +66,7 @@ resources:
 
 == Resource limits
 
-Limits specify the maximum amount of resource which can be consumed by given container.
+Limits specify the maximum resources that can be consumed by a given container.
 The limit is not reserved and might not be always available.
 The container can use the resources up to the limit only when they are available.
 The resource limits should be always higher than the resource requests.
@@ -87,7 +87,7 @@ resources:
 # ...
 ----
 
-It is also possible to specify resource limit just for one of the resources:
+It is also possible to specify the resource limit just for one of the resources:
 
 .An example showing resource limit configuration with memory request only
 [source,yaml,subs="attributes+"]
@@ -113,12 +113,12 @@ resources:
 
 == Supported CPU formats
 
-CPU requests and limits are supported in following formats:
+CPU requests and limits are supported in the following formats:
 
-* Amount of CPU cores as integer (`5` CPU core) or decimal (`2.5` CPU core).
-* Amounf or _millicpus_ / _millicores_ (`100m`) where 1000 _millicores_ is the same `1` CPU core.
+* Number of CPU cores as integer (`5` CPU core) or decimal (`2.5` CPU core).
+* Number or _millicpus_ / _millicores_ (`100m`) where 1000 _millicores_ is the same `1` CPU core.
 
-.An example of using different cpu units
+.An example of using different CPU units
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -136,7 +136,7 @@ For more details about the CPU specification, see the {K8sMeaningOfCpu} website.
 
 == Supported memory formats
 
-Memory requests and limits are usually specified in megabytes, gigabytes, mebibytes and gibibytes.
+Memory requests and limits are specified in megabytes, gigabytes, mebibytes, and gibibytes.
 
 * To specify memory in megabytes, use the `M` suffix. For example `1000M`.
 * To specify memory in gigabytes, use the `G` suffix. For example `1G`.

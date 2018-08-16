@@ -27,7 +27,7 @@ Specifically, all configuration options with keys equal to or starting with one 
 When one of the forbidden options is present in the `config` property, it will be ignored and a warning message will be printed to the Custer Operator log file.
 All other options will be passed to Zookeeper.
 
-IMPORTANT:: The Cluster Operator does not validate keys or values in the provided `config` object.
+IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
 When invalid configuration is provided, the Zookeeper cluster might not start or might become unstable.
 In such cases, the configuration in the `Kafka.spec.zookeeper.config` object should be fixed and the cluster operator will roll out the new configuration to all Zookeeper nodes.
 
@@ -38,7 +38,7 @@ Selected options have default values:
 * `syncLimit` with default value `2`
 * `autopurge.purgeInterval` with default value `1`
 
-These options will be automatically configured in case they are not present in the `Kafka.spec.zookeeper.config` property.
+These options will be automatically configured when they are not present in the `Kafka.spec.zookeeper.config` property.
 
 .An example showing Zookeeper configuration
 [source,yaml,subs="attributes+"]

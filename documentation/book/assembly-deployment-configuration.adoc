@@ -14,7 +14,7 @@ This chapter describes how to configure different aspects of the supported deplo
 
 * Kafka clusters
 * Kafka Connect clusters
-* Kafka Connect clusters with _Source 2 Image_ support
+* Kafka Connect clusters with _Source2Image_ support
 
 include::assembly-deployment-configuration-kafka.adoc[leveloffset=+1]
 

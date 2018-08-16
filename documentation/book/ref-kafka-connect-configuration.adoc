@@ -27,7 +27,7 @@ Specifically, all configuration options with keys equal to or starting with one 
 When one of the forbidden options is present in the `config` property, it will be ignored and a warning message will be printed to the Custer Operator log file.
 All other options will be passed to Kafka Connect.
 
-IMPORTANT:: The Cluster Operator does not validate keys or values in the provided `config` object.
+IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
 When an invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable.
 In such cases, the configuration in the `KafkaConnect.spec.config` or `KafkaConnectS2I.spec.config` object should be fixed and the cluster operator will roll out the new configuration to all Kafka Connect nodes.
 
