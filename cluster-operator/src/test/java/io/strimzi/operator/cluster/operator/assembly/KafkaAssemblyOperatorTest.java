@@ -1008,4 +1008,9 @@ public class KafkaAssemblyOperatorTest {
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
         return supplier;
     }
+
+    @AfterClass
+    public static void cleanUp() {
+        ResourceUtils.cleanUpTemporaryTLSFiles();
+    }
 }

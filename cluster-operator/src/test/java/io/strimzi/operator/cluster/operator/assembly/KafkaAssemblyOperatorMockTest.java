@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.ResourcesBuilder;
 import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.TopicOperator;
@@ -42,6 +43,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunnerWithParametersFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
@@ -206,6 +208,11 @@ public class KafkaAssemblyOperatorMockTest {
     @After
     public void after() {
         this.vertx.close();
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {

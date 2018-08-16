@@ -32,6 +32,9 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -328,4 +331,16 @@ public class ResourceUtils {
                 .build();
     }
 
+    public static void cleanUpTemporaryTLSFiles() {
+        String tmpString = "/tmp";
+        try {
+            Files.list(Paths.get(tmpString)).filter(path -> path.toString().startsWith(tmpString + "/tls")).forEach(delPath -> {
+                try {
+                    Files.deleteIfExists(delPath);
+                } catch (IOException e) {
+                }
+            });
+        } catch (IOException e) {
+        }
+    }
 }

@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
+import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -105,5 +106,10 @@ public class EntityOperatorTest {
     @Test
     public void withAffinity() throws IOException {
         helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment().getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 }
