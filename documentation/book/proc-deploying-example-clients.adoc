@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-hello-world.adoc
+// getting-started.adoc
 
 [id='deploying-example-clients-{context}']
 = Deploying example clients
@@ -10,17 +10,16 @@
 
 .Procedure
 
-You can deploy the client in a single command.
-This is an example command you should substitute _test_ for your topic and _my-cluster-kafka-bootstrap:9092_ by your server address for both producer and consumer.
-
 . Deploy the producer
 +
-`oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-producer.sh --broker-list _my-cluster-kafka-bootstrap:9092_ --topic _test_`
+[source,shell,subs="+quotes"]
+`oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-producer.sh --broker-list _<my-producer>_:_<my-port>_ --topic _<my-topic>_`
 
 . Send messages by writing into the console where you run the producer and hit the enter.
 
 . Deploy the consumer
 +
-`oc run kafka-consumer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-consumer.sh --bootstrap-server _my-cluster-kafka-bootstrap:9092_ --topic _test_ --from-beginning`
+[source,shell,subs="+quotes"]
+`oc run kafka-consumer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-consumer.sh --bootstrap-server _<my-consumer>_:_<my-port>_ --topic _<my-topic>_ --from-beginning`
 
-You can now see the incoming messages in the consumer console.
+. Confirm that you see the incoming messages in the consumer console.
