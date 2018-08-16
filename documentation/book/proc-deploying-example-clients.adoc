@@ -17,7 +17,7 @@ oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-co
 
 . Type your message into the console where the producer is running
 
-. Hit *Enter* on your keyboard to send the message.
+. Press *Enter* to send the message.
 
 . Deploy the consumer
 +
