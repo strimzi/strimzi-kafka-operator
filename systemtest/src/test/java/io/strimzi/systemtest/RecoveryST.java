@@ -33,16 +33,16 @@ public class RecoveryST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
     @Test
-    public void testRecoveryFromTopicOperatorDeletion() {
+    public void testRecoveryFromEntityOperatorDeletion() {
         // kafka cluster already deployed via annotation
-        String topicOperatorDeploymentName = topicOperatorDeploymentName(CLUSTER_NAME);
-        LOGGER.info("Running deleteTopicOperatorDeployment with cluster {}", CLUSTER_NAME);
+        String entityOperatorDeploymentName = entityOperatorDeploymentName(CLUSTER_NAME);
+        LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", CLUSTER_NAME);
 
-        kubeClient.deleteByName(DEPLOYMENT, topicOperatorDeploymentName);
-        kubeClient.waitForResourceDeletion(DEPLOYMENT, topicOperatorDeploymentName);
+        kubeClient.deleteByName(DEPLOYMENT, entityOperatorDeploymentName);
+        kubeClient.waitForResourceDeletion(DEPLOYMENT, entityOperatorDeploymentName);
 
-        LOGGER.info("Waiting for recovery {}", topicOperatorDeploymentName);
-        kubeClient.waitForDeployment(topicOperatorDeploymentName, 1);
+        LOGGER.info("Waiting for recovery {}", entityOperatorDeploymentName);
+        kubeClient.waitForDeployment(entityOperatorDeploymentName, 1);
 
         //Test that CO doesn't have any exceptions in log
         assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
