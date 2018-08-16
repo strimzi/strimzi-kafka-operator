@@ -7,7 +7,7 @@
 
 When deployed standalone the Topic Operator can be configured using environment variables.
 
-NOTE: The Topic Operator should be configured using the `Kafka.spec.topicOperator` property when deployed by the Cluster Operator.
+NOTE: The Topic Operator should be configured using the `Kafka.spec.entityOperator.topicOperator` property when deployed by the Cluster Operator.
 
 `STRIMZI_RESOURCE_LABELS`::
 The label selector used to identify `KafkaTopics` to be managed by the operator.

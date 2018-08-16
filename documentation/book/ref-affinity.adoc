@@ -10,7 +10,7 @@ Affinity can be configured using the `affinity` property in following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
-* `Kafka.spec.topicOperator`
+* `Kafka.spec.entityOperator`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
 
