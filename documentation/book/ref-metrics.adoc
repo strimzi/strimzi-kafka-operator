@@ -1,0 +1,58 @@
+// Module included in the following assemblies:
+//
+// assembly-metrics.adoc
+
+[id='ref-metrics-{context}']
+= Metrics configuration
+
+Prometheus metrics can be enabled by configuring the `metrics` property in following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.zookeeper`
+* `KafkaConnect.spec`
+* `KafkaConnectS2I.spec`
+
+When the `metrics` property is not defined in the resource, the Prometheus metrics will be disabled.
+To enable Prometheus metrics export without any further configuration, you can set it to an empty object (`{}`).
+
+.Example of enabling metrics without any further configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    metrics: {}
+    # ...
+  zookeeper:
+    # ...
+----
+
+The `metrics` property might contain additional configuration for the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX exporter^].
+
+.Example of enabling metrics with additional Prometheus JMX Exporter configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    metrics:
+      lowercaseOutputName: true
+      rules:
+        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count"
+          name: "kafka_server_$1_$2_total"
+        - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*, topic=(.+)><>Count"
+          name: "kafka_server_$1_$2_total"
+          labels:
+            topic: "$3"
+    # ...
+  zookeeper:
+    # ...
+----

@@ -1,0 +1,48 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect-tls.adoc
+
+[id='ref-kafka-connect-tls-{context}']
+= TLS support in Kafka Connect
+
+TLS support is configured in the `tls` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
+The `tls` property contains a list of secrets with key names under which the certificates are stored.
+The certificates should be stored in X509 format.
+
+.An example showing TLS configuration with multiple certificates
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  tls:
+    trustedCertificates:
+      - secretName: my-secret
+        certificate: ca.crt
+      - secretName: my-other-secret
+        certificate: certificate.crt
+  # ...
+----
+
+When multiple certificates are stored in the same secret, it can be listed multiple times.
+
+.An example showing TLS configuration with multiple certificates from the same secret
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnectS2I
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  tls:
+    trustedCertificates:
+      - secretName: my-secret
+        certificate: ca.crt
+      - secretName: my-secret
+        certificate: ca2.crt
+  # ...
+----

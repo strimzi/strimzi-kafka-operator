@@ -1,0 +1,72 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-broker-configuration.adoc
+
+[id='ref-kafka-broker-configuration-{context}']
+= Kafka broker configuration
+
+Kafka broker can be configured using the `config` property in `Kafka.spec.kafka`.
+
+This property should contain the Kafka broker configuration options as keys.
+The values could be in one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+Users can specify and configure the options listed in {ApachaKafkaBrokerConfig} with the exception of those options which are managed directly by {ProductName}.
+Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
+
+* `listeners`
+* `advertised.`
+* `broker.`
+* `listener.`
+* `host.name`
+* `port`
+* `inter.broker.listener.name`
+* `sasl.`
+* `ssl.`
+* `security.`
+* `password.`
+* `principal.builder.class`
+* `log.dir`
+* `zookeeper.connect`
+* `zookeeper.set.acl`
+* `authorizer.`
+* `super.user`
+
+When one of the forbidden options is present in the `config` property, it will be ignored and a warning message will be printed to the Cluster Operator log file.
+All other options will be passed to Kafka.
+
+IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
+When invalid configuration is provided, the Kafka cluster might not start or might become unstable.
+In such cases, the configuration in the `Kafka.spec.kafka.config` object should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
+
+.An example showing Kafka broker configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    config:
+      num.partitions: 1
+      num.recovery.threads.per.data.dir: 1
+      default.replication.factor: 3
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 1
+      log.retention.hours: 168
+      log.segment.bytes: 1073741824
+      log.retention.check.interval.ms: 300000
+      num.network.threads: 3
+      num.io.threads: 8
+      socket.send.buffer.bytes: 102400
+      socket.receive.buffer.bytes: 102400
+      socket.request.max.bytes: 104857600
+      group.initial.rebalance.delay.ms: 0
+    # ...
+----

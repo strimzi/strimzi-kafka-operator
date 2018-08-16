@@ -3,7 +3,7 @@
 // assembly-hello-world.adoc
 
 [id='deploying-example-clients-{context}']
-== Deploying example clients
+= Deploying example clients
 
 .Prerequisites
 * An existing Kafka cluster for the client to connect to.

@@ -1,0 +1,37 @@
+// Module included in the following assemblies:
+//
+// assembly-healthchecks.adoc
+
+[id='ref-healthchecks-{context}']
+= Healthcheck configurations
+
+Liveness and readiness probes can be configured using the `livenessProbe` and `readinessProbe` properties in following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.zookeeper`
+* `KafkaConnect.spec`
+* `KafkaConnectS2I.spec`
+
+Both `livenessProbe` and `readinessProbe` support two additional options:
+
+* `initialDelaySeconds`
+* `timeoutSeconds`
+
+The `initialDelaySeconds` property defines the initial delay before the probe is tried for the first time.
+Default is 15 seconds.
+
+The `timeoutSeconds` property defines timeout of the probe.
+Default is 5 seconds.
+
+.An example of liveness and readiness probe configuration
+[source,yaml,subs="attributes+"]
+----
+# ...
+readinessProbe:
+  initialDelaySeconds: 15
+  timeoutSeconds: 5
+livenessProbe:
+  initialDelaySeconds: 15
+  timeoutSeconds: 5
+# ...
+----

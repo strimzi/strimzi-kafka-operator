@@ -1,0 +1,56 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+:parent-context-deployment-configuration-kafka: {context}
+
+[id='assembly-deployment-configuration-kafka-{context}']
+= Kafka cluster configuration
+
+:context: deployment-configuration-kafka
+
+The full schema of the `Kafka` resource is described in the xref:type-Kafka-reference[].
+All labels that are applied to the desired `Kafka` resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
+This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
+
+include::assembly-storage.adoc[leveloffset=+1]
+
+include::assembly-kafka-broker-replicas.adoc[leveloffset=+1]
+
+include::assembly-kafka-broker-configuration.adoc[leveloffset=+1]
+
+include::assembly-configuring-kafka-listeners.adoc[leveloffset=+1]
+
+include::assembly-kafka-authentication-and-authorization.adoc[leveloffset=+1]
+
+include::assembly-zookeeper-replicas.adoc[leveloffset=+1]
+
+include::assembly-zookeeper-node-configuration.adoc[leveloffset=+1]
+
+include::assembly-kafka-entity-operator.adoc[leveloffset=+1]
+
+include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
+
+include::assembly-logging.adoc[leveloffset=+1]
+
+include::assembly-kafka-rack.adoc[leveloffset=+1]
+
+include::assembly-healthchecks.adoc[leveloffset=+1]
+
+include::assembly-metrics.adoc[leveloffset=+1]
+
+include::assembly-jvm-options.adoc[leveloffset=+1]
+
+include::assembly-configuring-container-images.adoc[leveloffset=+1]
+
+include::assembly-tls-sidecar.adoc[leveloffset=+1]
+
+include::assembly-scheduling.adoc[leveloffset=+1]
+
+include::ref-list-of-kafka-cluster-resources.adoc[leveloffset=+1]
+
+// Restore the context to what it was before this assembly.
+:context: {parent-context-deployment-configuration-kafka}

@@ -1,0 +1,23 @@
+// Module included in the following assemblies:
+//
+// assembly-bootstrap-servers.adoc
+
+[id='ref-bootstrap servers-{context}']
+= Bootstrap servers
+
+List of bootstrap servers can be configured in the `bootstrapServers` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
+`bootstrapServers` should be a comma separated list containing one or mode Kafka brokers or a service pointing to Kafka brokers.
+The bootstrap servers should be specified as a `<hostname>:<port>` pairs.
+
+.An example showing bootstrap servers configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
+  # ...
+----

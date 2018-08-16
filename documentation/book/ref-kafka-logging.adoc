@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-kafka-logging.adoc
+// assembly-logging.adoc
 
 [id='kafka-logging-loggers-{context}']
 = Loggers

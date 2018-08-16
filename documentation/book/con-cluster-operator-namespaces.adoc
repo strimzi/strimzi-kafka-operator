@@ -1,0 +1,14 @@
+// Module included in the following assemblies:
+//
+// assembly-operators-cluster-operator.adoc
+
+[id='con-cluster-operator-namespaces-{context}']
+= Watching multiple namespaces
+
+The Cluster Operator is able to watch for `Kafka`, `KafkaConnect`, and `KafkaConnectS2I` resources in multiple namespaces without being installed on each namespace individually.
+
+NOTE: The only reason to run multiple Cluster Operators in a single cluster is to use different versions of {ProductName}.
+
+The `STRIMZI_NAMESPACE` environment variable can be used to configure a single operator instance to operate in multiple namespaces.
+For each namespace given, the operator will watch for the `Kafka`, `KafkaConnect`, and `KafkaConnectS2I` and perform periodic reconciliation.
+For more details about the `STIRMZI_NAMESPACE` environment variable, see xref:ref-operators-cluster-operator-configuration-{context}[].

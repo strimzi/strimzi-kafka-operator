@@ -1,0 +1,45 @@
+// Module included in the following assemblies:
+//
+// assembly-metrics.adoc
+
+[id='proc-configuring-metrics-{context}']
+= Configuring Prometheus metrics
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `metrics` property in the `Kafka`, `KafkaConnect` or `KafkaConnectS2I` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+    metrics:
+      lowercaseOutputName: true
+    # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

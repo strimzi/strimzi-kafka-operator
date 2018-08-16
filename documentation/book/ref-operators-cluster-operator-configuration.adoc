@@ -1,0 +1,68 @@
+// Module included in the following assemblies:
+//
+// assembly-operators-cluster-operator.adoc
+
+[id='ref-operators-cluster-operator-configuration-{context}']
+= Cluster Operator Configuration
+
+The Cluster Operator can be configured through the following supported environment variables:
+
+`STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should
+operate in. The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API^]
+to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+----
+
+[[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default: 120000 ms. The interval between periodic reconciliations, in milliseconds.
+
+`STRIMZI_LOG_LEVEL`:: Optional, default `INFO`.
+The level for printing logging messages. The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG`, and `TRACE`.
+
+`STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 300000 ms. The timeout for internal operations, in milliseconds. This value should be
+increased when using {ProductName} on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
+
+`STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
+The image name to use as the default when deploying Kafka, if
+no image is specified as the `Kafka.spec.kafka.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+`STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `strimzi/kafka-init:latest`.
+The image name to use as default for the init container started before the broker for initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+`STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE`:: Optional, default `strimzi/kafka-stunnel:latest`.
+The image name to use as the default when deploying the sidecar container which provides TLS support for Kafka,
+if no image is specified as the `Kafka.spec.kafka.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+`STRIMZI_DEFAULT_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper:latest`.
+The image name to use as the default when deploying Zookeeper, if
+no image is specified as the `Kafka.spec.zookeeper.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+`STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE`:: Optional, default `strimzi/zookeeper-stunnel:latest`.
+The image name to use as the default when deploying the sidecar container which provides TLS support for Zookeeper, if
+no image is specified as the `Kafka.spec.zookeeper.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+`STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE`:: Optional, default `strimzi/kafka-connect:latest`.
+The image name to use as the default when deploying Kafka Connect,
+if no image is specified as the `image` in the Kafka Connect cluster ConfigMap
+
+`STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE`:: Optional, default `strimzi/kafka-connect-s2i:latest`.
+The image name to use as the default when deploying Kafka Connect S2I,
+if no image is specified as the `image` in the cluster ConfigMap.
+
+`STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `strimzi/topic-operator:latest`.
+The image name to use as the default when deploying the topic operator,
+if no image is specified as the `Kafka.spec.entityOperator.topicOperator.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[] of the `Kafka` resource.
+
+`STRIMZI_DEFAULT_USER_OPERATOR_IMAGE`:: Optional, default `strimzi/user-operator:latest`.
+The image name to use as the default when deploying the user operator,
+if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[] of the `Kafka` resource.
+
+`STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional, default `strimzi/entity-operator-stunnel:latest`.
+The image name to use as the default when deploying the sidecar container which provides TLS support for the Entity Operator, if
+no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].

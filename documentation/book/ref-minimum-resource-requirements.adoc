@@ -6,11 +6,11 @@
 
 Testing has shown that the Cluster Operator functions adequately with 256Mi of memory and 200m CPU when watching two clusters.
 It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower limits than these.
-Configuring more generous limits is recommended, especially when the Cluster Operator is controlling multiple clusters.
+Configuring more generous limits is recommended only in special situations, when the Cluster Operator is controlling multiple clusters.
 
 [id='topic-operator-resource-requirements-{context}']
 == Topic Operator resource requirements
 
-Testing has shown that the topic operator functions adequately with 96Mi of memory and 100m CPU when watching two topics.
+Testing has shown that the Topic Operator requires a minimum of 96Mi of memory and 100m CPU.
 It is therefore recommended to use these as a minimum when configuring resource requests and not to run it with lower limits than these. 
-If the Kafka cluster has more than a handful of topics more generous requests and limits will be necessary.
+If the Kafka cluster has a large amount of topics, the resource request and limits should be increased as necessary.

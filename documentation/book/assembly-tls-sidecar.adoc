@@ -1,0 +1,26 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='assembly-tls-sidecar-{context}']
+
+= TLS sidecar
+
+Sidecar is a container which is running in a pod and serves an auxiliary purpose.
+The purpose of the TLS sidecar is to encrypt or decrypt the communication between {ProductName} components and Zookeeper since Zookeeper does not support TLS encryption natively.
+Zookeeper does not support TLS encryption natively.
+Therefore {ProductName} uses the sidecar to add the TLS support.
+
+The TLS sidecar is currrently being used in:
+
+* Kafka brokers
+* Zookeeper
+* Entity Operator
+
+include::ref-tls-sidecar.adoc[leveloffset=+1]
+
+include::proc-configuring-tls-sidecar.adoc[leveloffset=+1]

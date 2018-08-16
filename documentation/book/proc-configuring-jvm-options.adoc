@@ -1,0 +1,46 @@
+// Module included in the following assemblies:
+//
+// assembly-jvm-options.adoc
+
+[id='proc-configuring-jvm-options-{context}']
+= Configuring JVM options
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `jvmOptions` property in the `Kafka`, `KafkaConnect` or `KafkaConnectS2I` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    jvmOptions:
+      "-Xmx": "8g"
+      "-Xms": "8g"
+    # ...
+  zookeeper:
+    # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

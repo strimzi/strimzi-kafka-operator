@@ -1,0 +1,26 @@
+// Module included in the following assemblies:
+//
+// assembly-operators-cluster-operator.adoc
+// assembnly-cluster-operator.adoc
+
+[id='con-what-the-cluster-operator-does-{context}']
+= What the Cluster Operator does
+
+The Cluster Operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble.
+As part of the Kafka cluster, it can also deploy the topic operator which provides operator-style topic management via `KafkaTopic` custom resources.
+The Cluster Operator is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
+On {OpenShiftName} such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
+
+.Example Architecture diagram of the Cluster Operator.
+image::cluster_operator.png[Cluster Operator]
+
+When the Cluster Operator is up, it starts to _watch_ for certain {ProductPlatformName} resources containing the desired Kafka or Kafka Connect cluster configuration.
+A `Kafka` resource is used for Kafka cluster configuration, and a `KafkaConnect` resource is used for Kafka Connect cluster configuration.
+
+When a new desired resource (that is, a `Kafka` or `KafkaConnect` resource) is created in the {ProductPlatformName} cluster, the operator gets the cluster configuration from the desired resource and starts creating a new Kafka or Kafka Connect cluster by creating the necessary other {ProductPlatformName} resources, such as StatefulSets, Services, ConfigMaps, and so on.
+
+Every time the desired resource is updated by the user, the operator performs corresponding updates on the {ProductPlatformName} resources which make up the Kafka or Kafka Connect cluster.
+Resources are either patched or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the desired cluster resource.
+This might cause a rolling update which might lead to service disruption.
+
+Finally, when the desired resource is deleted, the operator starts to undeploy the cluster and delete all the related {ProductPlatformName} resources.

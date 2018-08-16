@@ -1,0 +1,29 @@
+// Module included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+[id='ref-list-of-kafka-cluster-resources-{context}']
+= List of resources created as part of Kafka cluster
+
+The following resources will created by the Cluster Operator in the {ProductPlatformName} cluster:
+
+`_<cluster-name>_-kafka`:: StatefulSet which is in charge of managing the Kafka broker pods.
+`_<cluster-name>_-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly.
+`_<cluster-name>_-kafka-bootstrap`:: Service can be used as bootstrap servers for Kafka clients.
+`_<cluster-name>_-kafka-config`:: ConfigMap which contains the Kafka ancillary configuration and is mounted as a volume by the Kafka broker pods.
+`_<cluster-name>_-kafka-brokers`:: Secret with Kafka broker keys.
+`_<cluster-name>_-zookeeper`:: StatefulSet which is in charge of managing the Zookeeper node pods.
+`_<cluster-name>_-zookeeper-nodes`:: Service needed to have DNS resolve the Zookeeper pods IP addresses directly.
+`_<cluster-name>_-zookeeper-client`:: Service used by Kafka brokers to connect to Zookeeper nodes as clients.
+`_<cluster-name>_-zookeeper-config`:: ConfigMap which contains the Zookeeper ancillary configuration and is mounted as a volume by the Zookeeper node pods.
+`_<cluster-name>_-zookeeper-nodes`:: Secret with Zookeeper node keys.
+`_<cluster-name>_-entity-operator`:: Deployment with Topic and User Operators. This resource will be created only if Cluster Operator deployed Entity Operator.
+`_<cluster-name>_-entity-topic-operator-config`:: Configmap with ancillary configuration for Topic Operators. This resource will be created only if Cluster Operator deployed Entity Operator.
+`_<cluster-name>_-entity-user-operator-config`:: Configmap with ancillary configuration for User Operators. This resource will be created only if Cluster Operator deployed Entity Operator.
+`_<cluster-name>_-entity-operator-certs`:: Secret with Entitiy operators keys for communication with Kafka and Zookeeper. This resource will be created only if Cluster Operator deployed Entity Operator.
+`_<cluster-name>_-cluster-ca`:: Secret with the Cluster CA used to encrypt the cluster communication.
+`_<cluster-name>_-cluster-ca-cert`:: Secret with the Cluster CA public key. This key can be used to verify the identity of the Kafka brokers.
+`_<cluster-name>_-clients-ca`::  Secret with the Clients CA used to encrypt the communication between Kafka brokers and Kafka clients.
+`_<cluster-name>_-clients-ca-cert`:: Secret with the Clients CA public key. This key can be used to verify the identity of the Kafka brokers.
+`data-_<cluster-name>_-kafka-_<idx>_`:: Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `<idx>`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
+`data-_<cluster-name>_-zookeeper-_<idx>_`:: Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `<idx>`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.

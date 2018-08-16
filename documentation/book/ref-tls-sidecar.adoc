@@ -1,0 +1,46 @@
+// Module included in the following assemblies:
+//
+// assembly-tls-sidecar.adoc
+
+[id='ref-tls-sidecar-{context}']
+= TLS sidecar configuration
+
+The TLS sidecar can be configured using the `tlsSidecar` property in:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.zookeeper`
+* `Kafka.spec.entityOperator`
+
+The TLS sidecar supports two additional options:
+
+* `image`
+* `resources`
+
+The `resources` property can be used to specify the xref:assembly-resource-limits-and-requests-{context}[memory and CPU resources] allocated for the TLS sidecar.
+
+The `image` property can be used to configure the container image which will be used.
+For more details about configuring custom container images, see xref:assembly-configuring-container-images-{context}[].
+
+.Example of TLS sidecar configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    tlsSidecar:
+      image: my-org/my-image:latest
+      resources:
+        requests:
+          cpu: 200m
+          memory: 64Mi
+        limits:
+          cpu: 500m
+          memory: 128Mi
+    # ...
+  zookeeper:
+    # ...
+----

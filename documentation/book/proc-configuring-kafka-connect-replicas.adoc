@@ -1,0 +1,41 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect-replicas.adoc
+
+[id='proc-configuring-kafka-connect-replicas-{context}']
+= Changing number of replicas
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `replicas` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnectS2I
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  replicas: 3
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

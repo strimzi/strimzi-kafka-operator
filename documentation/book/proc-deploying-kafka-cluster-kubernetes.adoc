@@ -27,4 +27,4 @@ kubectl apply -f examples/kafka/kafka-persistent.yaml
 
 .Additional resources
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[]
-* Example resources and details about the `Kafka` resource format are in xref:kafka_assembly_details[].
+* For more information about the different configuration options supported by the `Kafka` resource, see xref:assembly-deployment-configuration-kafka-str[]

@@ -1,0 +1,162 @@
+// Module included in the following assemblies:
+//
+// assembly-resource-limits-and-requests.adoc
+
+[id='ref-resource-limits-and-requests-{context}']
+= Resource limits and requests
+
+Resource limits and requests can be configured using the `resources` property in following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.kafka.tlsSidecar`
+* `Kafka.spec.zookeeper`
+* `Kafka.spec.zookeeper.tlsSidecar`
+* `Kafka.spec.entityOperator.topicOperator`
+* `Kafka.spec.entityOperator.userOperator`
+* `Kafka.spec.entityOperator.tlsSidecar`
+* `KafkaConnect.spec`
+* `KafkaConnectS2I.spec`
+
+== Resource requests
+
+Requests specify the resources that will be reserved for a given container.
+Reserving the resources will ensure that they are always available.
+
+IMPORTANT: If the resource request is for more than the available free resources in the {ProductPlatformName} cluster, the pod will not be scheduled.
+
+Resource requests can be specified in the `request` property.
+The resource requests currently supported by {ProductName} are memory and CPU.
+Memory is specified under the property `memory`.
+CPU is specified under the property `cpu`.
+
+.An example showing resource request configuration
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    cpu: 12
+    memory: 64Gi
+# ...
+----
+
+It is also possible to specify a resource request just for one of the resources:
+
+.An example showing resource request configuration with memory request only
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    memory: 64Gi
+# ...
+----
+
+Or:
+
+.An example showing resource request configuration with CPU request only
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    cpu: 12
+# ...
+----
+
+== Resource limits
+
+Limits specify the maximum resources that can be consumed by a given container.
+The limit is not reserved and might not be always available.
+The container can use the resources up to the limit only when they are available.
+The resource limits should be always higher than the resource requests.
+
+Resource limits can be specified in the `limits` property.
+The resource limits currently supported by {ProductName} are memory and CPU.
+Memory is specified under the property `memory`.
+CPU is specified under the property `cpu`.
+
+.An example showing resource limits configuration
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  limits:
+    cpu: 12
+    memory: 64Gi
+# ...
+----
+
+It is also possible to specify the resource limit just for one of the resources:
+
+.An example showing resource limit configuration with memory request only
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  limits:
+    memory: 64Gi
+# ...
+----
+
+Or:
+
+.An example showing resource limits configuration with CPU request only
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    cpu: 12
+# ...
+----
+
+== Supported CPU formats
+
+CPU requests and limits are supported in the following formats:
+
+* Number of CPU cores as integer (`5` CPU core) or decimal (`2.5` CPU core).
+* Number or _millicpus_ / _millicores_ (`100m`) where 1000 _millicores_ is the same `1` CPU core.
+
+.An example of using different CPU units
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    cpu: 500m
+  limits:
+    cpu: 2.5
+# ...
+----
+
+NOTE: The amount of computing power of 1 CPU core might differ depending on the platform where the {ProductPlatformName} is deployed.
+
+For more details about the CPU specification, see the {K8sMeaningOfCpu} website.
+
+== Supported memory formats
+
+Memory requests and limits are specified in megabytes, gigabytes, mebibytes, and gibibytes.
+
+* To specify memory in megabytes, use the `M` suffix. For example `1000M`.
+* To specify memory in gigabytes, use the `G` suffix. For example `1G`.
+* To specify memory in mebibytes, use the `Mi` suffix. For example `1000Mi`.
+* To specify memory in gibibytes, use the `Gi` suffix. For example `1Gi`.
+
+.An example of using different memory units
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    memory: 512Mi
+  limits:
+    memory: 2Gi
+# ...
+----
+
+For more details about the memory specification and additional supported units, see the {K8sMeaningOfMemory} website.
+
+== Additional resources
+
+* For more information about managing computing resources on {ProductPlatformName}, see {K8sManagingComputingResources}.

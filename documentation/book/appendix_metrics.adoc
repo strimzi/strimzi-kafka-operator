@@ -1,5 +1,5 @@
 [appendix]
-[id="metrics-{context}"]
+[id='metrics-{context}']
 == Metrics
 
 This section describes how to deploy a Prometheus server for scraping metrics from the Kafka cluster and showing them using a Grafana dashboard. The resources provided are examples to show how Kafka metrics can be stored in Prometheus: They are not a recommended configuration, and further support should be available from the Prometheus and Grafana communities.

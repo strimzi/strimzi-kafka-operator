@@ -1,0 +1,21 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect-replicas.adoc
+
+[id='ref-kafka-connect-replicas-{context}']
+= Number of Kafka Connect nodes
+
+Number of Kafka broker nodes can be configured using the `replicas` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
+
+.An example showing replicas configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnectS2I
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  replicas: 3
+  # ...
+----

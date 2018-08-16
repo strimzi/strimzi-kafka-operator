@@ -8,7 +8,7 @@
 :parent-context: {context}
 
 [id='hello-world-{context}']
-== Hello world example
+= Hello world example
 
 This Hello World example provides instructions to deploy a client and communicate with the Kafka cluster.
 This example consists of producer and consumer which are communicating via Kafka cluster.

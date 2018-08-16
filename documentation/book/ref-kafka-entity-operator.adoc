@@ -1,0 +1,146 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-entity-operator.adoc
+
+[id='ref-kafka-entity-operator-{context}']
+= Configuration
+
+The Entity Operator can be configured using the `entityOperator` property in `Kafka.spec`
+
+The `entityOperator` property supports several sub-properties:
+
+* `tlsSidecar`
+* `affinity`
+* `tolerations`
+* `topicOperator`
+* `userOperator`
+
+The `tlsSidecar` property can be used to configure the TLS sidecar container which is used to communicate with Zookeeper.
+For more details about configuring the TLS sidecar, see xref:assembly-tls-sidecar-{context}[].
+
+The `affinity` and `tolerations` properties can be used to configure how {ProductPlatformName} schedules the Entity Operator pod.
+For more details about pod scheduling, see xref:assembly-scheduling-{context}[].
+
+The `topicOperator` property contains the configuration of the Topic Operator.
+When this option is missing, the Entity Operator will be deployed without the Topic Operator.
+
+The `userOperator` property contains the configuration of the User Operator.
+When this option is missing, the Entity Operator will be deployed without the User Operator.
+
+.Example of basic configuration enabling both operators
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+----
+
+When both `topicOperator` and `userOperator` properties are missing, the Entity Operator will be not deployed.
+
+== Topic Operator
+
+Topic Operator deployment can be configured using additional options inside the `topicOperator` object.
+Following options are supported:
+
+`watchedNamespace`::
+The {ProductPlatformName} namespace in which the topic operator watches for `KafkaTopics`.
+Default is the namespace where the Kafka cluster is deployed.
+
+`reconciliationIntervalSeconds`::
+The interval between periodic reconciliations in seconds. Default is 90.
+
+`zookeeperSessionTimeoutSeconds`::
+The Zookeeper session timeout in seconds. Default is 20 seconds.
+
+`topicMetadataMaxAttempts`::
+The number of attempts for getting topics metadata from Kafka.
+The time between each attempt is defined as an exponential back-off.
+You might want to increase this value when topic creation could take more time due to its many partitions or replicas. Default is `6`.
+
+`image`::
+The `image` property can be used to configure the container image which will be used.
+For more details about configuring custom container images, see xref:assembly-configuring-container-images-{context}[].
+
+`resources`::
+The `resources` property configures the amount of resources allocated to the Topic Operator
+For more details about resource request and limit configuration, see xref:assembly-resource-limits-and-requests-{context}[].
+
+`logging`::
+The `logging` property configures the logging of the Topic Operator
+For more details about logging configuration, see xref:assembly-logging-{context}[].
+
+.Example of Topic Operator configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+  entityOperator:
+    # ...
+    topicOperator:
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalSeconds: 60
+    # ...
+----
+
+== User Operator
+
+User Operator deployment can be configured using additional options inside the `userOperator` object.
+Following options are supported:
+
+`watchedNamespace`::
+The {ProductPlatformName} namespace in which the topic operator watches for `KafkaUsers`.
+Default is the namespace where the Kafka cluster is deployed.
+
+`reconciliationIntervalSeconds`::
+The interval between periodic reconciliations in seconds. Default is 120.
+
+`zookeeperSessionTimeoutSeconds`::
+The Zookeeper session timeout in seconds. Default is 6 seconds.
+
+`image`::
+The `image` property can be used to configure the container image which will be used.
+For more details about configuring custom container images, see xref:assembly-configuring-container-images-{context}[].
+
+`resources`::
+The `resources` property configures the amount of resources allocated to the User Operator.
+For more details about resource request and limit configuration, see xref:assembly-resource-limits-and-requests-{context}[].
+
+`logging`::
+The `logging` property configures the logging of the User Operator.
+For more details about logging configuration, see xref:assembly-logging-{context}[].
+
+.Example of Topic Operator configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+  entityOperator:
+    # ...
+    userOperator:
+      watchedNamespace: my-user-namespace
+      reconciliationIntervalSeconds: 60
+    # ...
+----

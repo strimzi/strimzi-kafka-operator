@@ -1,0 +1,24 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-broker-replicas.adoc
+
+[id='ref-kafka-broker-replicas-{context}']
+= Number of Kafka broker nodes
+
+Number of Kafka broker nodes can be configured using the `replicas` property in `Kafka.spec.kafka`.
+
+.An example showing replicas configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    replicas: 3
+    # ...
+  zookeeper:
+    # ...
+----

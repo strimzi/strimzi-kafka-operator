@@ -1,0 +1,57 @@
+// Module included in the following assemblies:
+//
+// assembly-zookeeper-node-configuration.adoc
+
+[id='ref-zookeeper-node-configuration-{context}']
+= Zookeeper configuration
+
+Zookeeper nodes can be configured using the `config` property in `Kafka.spec.zookeeper`.
+This property should contain the Zookeeper configuration options as keys.
+The values could be in one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+Users can specify and configure the options listed in {ApacheZookeeperConfig} with the exception of those options which are managed directly by {ProductName}.
+Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
+
+* `server.`
+* `dataDir`
+* `dataLogDir`
+* `clientPort`
+* `authProvider`
+* `quorum.auth`
+* `requireClientAuthScheme`
+
+When one of the forbidden options is present in the `config` property, it will be ignored and a warning message will be printed to the Custer Operator log file.
+All other options will be passed to Zookeeper.
+
+IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
+When invalid configuration is provided, the Zookeeper cluster might not start or might become unstable.
+In such cases, the configuration in the `Kafka.spec.zookeeper.config` object should be fixed and the cluster operator will roll out the new configuration to all Zookeeper nodes.
+
+Selected options have default values:
+
+* `timeTick` with default value `2000`
+* `initLimit` with default value `5`
+* `syncLimit` with default value `2`
+* `autopurge.purgeInterval` with default value `1`
+
+These options will be automatically configured when they are not present in the `Kafka.spec.zookeeper.config` property.
+
+.An example showing Zookeeper configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+    config:
+      autopurge.snapRetainCount: 3
+      autopurge.purgeInterval: 1
+    # ...
+----

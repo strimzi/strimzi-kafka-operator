@@ -27,3 +27,5 @@ This allows you to declare a `KafkaTopic` as part of your application's deployme
 Your application just needs to deal with producing or consuming from the necessary topics.
 
 If the topic be reconfigured or reassigned to different Kafka nodes, the `KafkaTopic` will always be up to date.
+
+For more details about creating, modifying and deleting topics, see xref:using-the-topic-operator-str[].

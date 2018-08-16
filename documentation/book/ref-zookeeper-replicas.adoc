@@ -1,0 +1,24 @@
+// Module included in the following assemblies:
+//
+// assembly-zookeeper-replicas.adoc
+
+[id='ref-zookeeper-replicas-{context}']
+= Number of Zookeeper nodes
+
+The number of Zookeeper nodes can be configured using the `replicas` property in `Kafka.spec.zookeeper`.
+
+.An example showing replicas configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+    replicas: 3
+    # ...
+----

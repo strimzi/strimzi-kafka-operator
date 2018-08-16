@@ -1,0 +1,34 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='assembly-kafka-entity-operator-{context}']
+
+= Entity Operator
+
+The Entity Operator is responsible for managing different entities in a running Kafka cluster.
+The currently supported entities are:
+
+Kafka topics:: managed by the Topic Operator.
+Kafka users:: managed by the User Operator
+
+Both Topic and User Operators can be deployed on their own.
+But the easiest way to deploy them is together with the Kafka cluster as part of the Entity Operator.
+The Entity Operator can include either one or both of them depending on the configuration.
+They will be automatically configured to manage the topics and users of the Kafka cluster with which they are deployed.
+
+For more information about Topic Operator, see xref:deploying-the-topic-operator-str[].
+For more information about how to use Topic Operator to create or delete topics, see xref:using-the-topic-operator-str[].
+
+// TODO:
+// Fix the links, add UO links
+// For more information about Topic Operator, visit xref:deploying-the-topic-operator-str[].
+// For more information about how to use Topic Operator to create or delete topics, visit xref:using-the-topic-operator-str[].
+
+include::ref-kafka-entity-operator.adoc[leveloffset=+1]
+
+include::proc-configuring-kafka-entity-operator.adoc[leveloffset=+1]

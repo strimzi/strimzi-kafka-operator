@@ -1,0 +1,61 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-rack.adoc
+
+[id='ref-kafka-rack-{context}']
+= Kafka rack awareness
+
+Kafka rack awareness can be configured in the `rack` property of `Kafka.spec.kafka`.
+The `rack` object has one mandatory field named `topologyKey`.
+This key needs to match one of the labels assigned to the {ProductPlatformName} cluster nodes.
+The label is used by {ProductPlatformName} when scheduling the Kafka broker pods to nodes.
+If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
+If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
+Usually, the nodes are labelled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as the `topologyKey` value.
+This will have the effect of spreading the broker pods across zones, and also setting the brokers' `broker.rack` configuration parameter inside Kafka broker.
+
+.Example of a `Kafka` resource with the `rack` feature enabled
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    rack:
+      topologyKey: failure-domain.beta.kubernetes.io/zone
+    # ...
+----
+
+In the above example, the `failure-domain.beta.kubernetes.io/zone` node label will be used for scheduling Kafka broker Pods.
+Consult your {ProductPlatformName} administrator about the label which should be used.
+
+== Configuring init container image
+
+When the Kafka rack feature is enabled, Kafka broker pods will use init container which will collect the labels from the {ProductPlatformName} cluster nodes.
+The container image which will be used for this container can be configured using the `brokerRackInitImage` property in `Kafka.spec.kafka`.
+When the `brokerRackInitImage` field is missing, the following images will be used (in the order of priority):
+
+. Container image specified in `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable in Cluster Operator configuration.
+. `strimzi/kafka-init:latest` container image.
+
+WARNING: Overriding container images is recommended only in situations where you need to use a different container registry.
+For example, because your network does not allow access to the container repository used by {ProductName}.
+In such case, you should either copy the {ProductName} images or build them from source.
+In case the configured image is not compatible with {ProductName} images, it might not work properly.
+
+.Example of `brokerRackInitImage` configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    brokerRackInitImage: my-org/my-image:latest
+    # ...
+----

@@ -1,0 +1,32 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-operators.adoc
+
+[id='assembly-operators-cluster-operator-{context}']
+
+= Cluster Operator
+
+:parent-context-deploying-co: {context}
+:context: deploying-co
+
+include::con-what-the-cluster-operator-does.adoc[leveloffset=+1]
+
+ifdef::Kubernetes[]
+include::proc-deploying-cluster-operator-kubernetes.adoc[leveloffset=+1]
+endif::Kubernetes[]
+
+include::proc-deploying-cluster-operator-openshift.adoc[leveloffset=+1]
+
+ifdef::Helm[]
+include::proc-deploying-cluster-operator-helm-chart.adoc[leveloffset=+1]
+endif::Helm[]
+
+include::con-cluster-operator-reconciliation.adoc[leveloffset=+1]
+
+include::con-cluster-operator-namespaces.adoc[leveloffset=+1]
+
+include::ref-operators-cluster-operator-configuration.adoc[leveloffset=+1]
+
+include::con-cluster-operator-rbac.adoc[leveloffset=+1]
+
+:context: {parent-context-deploying-co}
