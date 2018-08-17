@@ -411,7 +411,7 @@ public class KafkaST extends AbstractST {
      */
     private Job waitForJobSuccess(Job job) {
         // Wait for the job to succeed
-        waitFor("Job completion", 1000, 90000, () -> {
+        waitFor("Job completion", 1000, 300000, () -> {
             Job jobs = client.extensions().jobs().withName(job.getMetadata().getName()).get();
             JobStatus status;
             if (jobs == null || (status = jobs.getStatus()) == null) {
