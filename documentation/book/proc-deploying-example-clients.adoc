@@ -10,16 +10,16 @@
 
 .Procedure
 
-. Deploy the producer
+. Deploy the producer.
 +
 [source,subs="+quotes,attributes"]
 oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-producer.sh --broker-list __<cluster-name>__-kafka-bootstrap:9092 --topic _<my-topic>_
 
-. Type your message into the console where the producer is running
+. Type your message into the console where the producer is running.
 
-. Press *Enter* to send the message.
+. Press Enter to send the message.
 
-. Deploy the consumer
+. Deploy the consumer.
 +
 [source,subs="+quotes,attributes"]
 oc run kafka-consumer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-consumer.sh --bootstrap-server __<cluster-name>__-kafka-bootstrap:9092 --topic _<my-topic>_ --from-beginning
