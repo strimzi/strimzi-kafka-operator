@@ -2,7 +2,7 @@
 //
 // assembly-bootstrap-servers.adoc
 
-[id='ref-bootstrap servers-{context}']
+[id='ref-bootstrap-servers-{context}']
 = Bootstrap servers
 
 List of bootstrap servers can be configured in the `bootstrapServers` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
