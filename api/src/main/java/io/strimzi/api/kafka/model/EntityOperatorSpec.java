@@ -80,7 +80,7 @@ public class EntityOperatorSpec implements Serializable {
 
     @Description("Pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "tolerations")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<Toleration> getTolerations() {
         return tolerations;
     }

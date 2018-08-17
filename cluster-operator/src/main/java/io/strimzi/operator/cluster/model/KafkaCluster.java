@@ -23,12 +23,14 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaListeners;
+import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Resources;
@@ -216,7 +218,8 @@ public class KafkaCluster extends AbstractModel {
             initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
         }
         result.setInitImage(initImage);
-        result.setLogging(kafkaClusterSpec.getLogging());
+        Logging logging = kafkaClusterSpec.getLogging();
+        result.setLogging(logging == null ? new InlineLogging() : logging);
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
         result.setConfiguration(new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet()));
         Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
