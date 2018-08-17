@@ -42,9 +42,9 @@ release_pkg: helm_pkg
 release_helm_version:
 	echo "Updating default image tags in Helm Chart to $(RELEASE_VERSION)"
 	# Update default image tag in chart values.yaml to RELEASE_VERSION
-	sed -i 's/\(tag: \)latest/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
+	sed -i 's/\(tag: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
 	# Update default image tag in chart README.md config grid with RELEASE_VERSION
-	sed -i 's/\(image\.tag[^\n]*\| \)`latest`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
+	sed -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
 
 helm_pkg:
 	# Copying unarchived Helm Chart to release directory
