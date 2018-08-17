@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
