@@ -9,14 +9,29 @@
 [id='getting-started-{context}']
 = Getting started
 
-{ProductName} runs on
-ifdef::Kubernetes[{KubernetesLongName} {KubernetesVersion} and]
-{OpenShiftLongName} {OpenShiftVersion}.
-
 {ProductName} works on all kinds of clusters - from public and private clouds down to local deployments intended for development.
 This guide expects that an {ProductPlatformName} cluster is available and the
 ifdef::Kubernetes[`kubectl` and]
 `oc` command-line tools are installed and configured to connect to the running cluster.
+
+.Supported Versions
+[cols="50%,50%",options="header"]
+|====
+|Product 
+|Version
+
+ifdef::Kubernetes[]
+|{KubernetesLongName}
+|{KubernetesVersion}
+endif::Kubernetes[]
+
+|{OpenShiftLongName}
+|{OpenShiftVersion}
+
+|Apache Kafka
+|2.0.0
+
+|====
 
 ifdef::InstallationAppendix[]
 When no existing {ProductPlatformName} cluster is available, `Minikube` or `Minishift` can be used to create a local
