@@ -132,8 +132,8 @@ public class AbstractST {
         return "data-" + zookeeperClusterName(clusterName) + "-" + podId;
     }
 
-    static String topicOperatorDeploymentName(String clusterName) {
-        return clusterName + "-topic-operator";
+    static String entityOperatorDeploymentName(String clusterName) {
+        return clusterName + "-entity-operator";
     }
 
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>>
