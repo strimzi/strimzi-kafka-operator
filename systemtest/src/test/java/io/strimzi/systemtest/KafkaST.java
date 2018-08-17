@@ -411,30 +411,33 @@ public class KafkaST extends AbstractST {
      */
     private Job waitForJobSuccess(Job job) {
         // Wait for the job to succeed
-        waitFor("Job completion", 1000, 300000, () -> {
-            Job jobs = client.extensions().jobs().withName(job.getMetadata().getName()).get();
-            JobStatus status;
-            if (jobs == null || (status = jobs.getStatus()) == null) {
-                return false;
-            } else {
-                if (status.getFailed() != null && status.getFailed() > 0) {
-                    fail();
-                } else if (status.getSucceeded() != null && status.getSucceeded() == 1) {
-                    return true;
-                } else if (status.getActive() > 0) {
+        try {
+            waitFor("Job completion", 1000, 300000, () -> {
+                Job jobs = client.extensions().jobs().withName(job.getMetadata().getName()).get();
+                JobStatus status;
+                if (jobs == null || (status = jobs.getStatus()) == null) {
                     return false;
+                } else {
+                    if (status.getFailed() != null && status.getFailed() > 0) {
+                        fail();
+                    } else if (status.getSucceeded() != null && status.getSucceeded() == 1) {
+                        return true;
+                    } else if (status.getActive() > 0) {
+                        return false;
+                    }
                 }
-            }
-            throw new RuntimeException("Unexpected state");
-        },
-            () -> {
-                try {
-                    LOGGER.info("Job timeout: Pod logs\n----\n{}\n----", podLog(jobPodName(job)));
-                } catch (Exception | AssertionError t) {
-                    LOGGER.info("Pod logs not available: {}", t.getMessage());
-                }
+                throw new RuntimeException("Unexpected state");
             });
-        return job;
+            return job;
+        } catch (TimeoutException e) {
+            try {
+                LOGGER.info("Job timeout: Pod logs\n----\n{}\n----", podLog(jobPodName(job)));
+            } catch (Exception | AssertionError t) {
+                LOGGER.info("Pod logs not available: {}", t.getMessage());
+                LOGGER.info("Pod: {}", TestUtils.toYamlString(client().pods().withName(jobPodName(job)).get()));
+            }
+            throw e;
+        }
     }
 
     /**
