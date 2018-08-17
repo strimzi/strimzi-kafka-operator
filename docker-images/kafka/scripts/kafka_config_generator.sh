@@ -17,7 +17,6 @@ if [ "$KAFKA_CLIENT_ENABLED" = "TRUE" ]; then
     SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
     CLIENT_LISTENER=$(cat <<EOF
 # CLIENT listener authentication
-sasl.mechanism=SCRAM-SHA-512
 listener.name.client.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
 EOF
 )
@@ -49,7 +48,6 @@ EOF
     SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
     CLIENTTLS_LISTENER=$(cat <<EOF
 $CLIENTTLS_LISTENER
-sasl.mechanism=SCRAM-SHA-512
 listener.name.clienttls.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
 EOF
 )
