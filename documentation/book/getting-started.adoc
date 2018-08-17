@@ -38,7 +38,7 @@ include::assembly-kafka-cluster.adoc[leveloffset=+1]
 
 include::assembly-kafka-connect.adoc[leveloffset=+1]
 
-include::assembly-hello-world.adoc[leveloffset=+1]
+include::proc-deploying-example-clients.adoc[leveloffset=+1]
 
 include::assembly-getting-started-topic-operator.adoc[leveloffset=+1]
 
