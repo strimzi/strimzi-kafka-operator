@@ -63,15 +63,11 @@ spec:
         name: "kafka_server_$1_$2_total"
         labels:
           topic: "$3"
-    logging:
-      type: "inline"
-      loggers: {}
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"
     storage:
       type: "ephemeral"
-    config: {}
     tolerations:
     - effect: "NoSchedule"
       key: "key1"
@@ -93,10 +89,6 @@ spec:
     resources:
       limits:
         memory: "512Mi"
-    metrics: {}
-    logging:
-      type: "inline"
-      loggers: {}
   topicOperator:
     watchedNamespace: "my-ns"
     image: "strimzi/topic-operator:latest"
