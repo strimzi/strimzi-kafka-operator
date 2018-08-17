@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.DoneableKafkaAssembly;
@@ -32,6 +32,8 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.Stopwatch;
@@ -81,8 +83,13 @@ public class AbstractST {
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
 
-    static KubernetesClient client = new DefaultKubernetesClient();
+    static DefaultKubernetesClient client = new DefaultKubernetesClient();
     KubeClient<?> kubeClient = cluster.client();
+    private Resources resources;
+
+    protected NamespacedKubernetesClient client() {
+        return client.inNamespace(kubeClient.namespace());
+    }
 
     static String kafkaClusterName(String clusterName) {
         return clusterName + "-kafka";
@@ -363,5 +370,21 @@ public class AbstractST {
     public String  getInitContainerImageName(String podName) {
         String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
         return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
+    }
+
+    @Before
+    public void createResources() {
+        resources = new Resources(client());
+    }
+
+    @After
+    public void deleteResources() {
+        LOGGER.info("Deleting resources after the test");
+        resources.deleteResources();
+        resources = null;
+    }
+
+    Resources resources() {
+        return resources;
     }
 }

@@ -687,8 +687,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
             // Change the docker org of the images in the 04-deployment.yaml
             if ("05-Deployment-strimzi-cluster-operator.yaml".equals(f.getName())) {
-                String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", STRIMZI_ORG);
-                String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", STRIMZI_TAG);
+
                 ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
                 containerNode.put("imagePullPolicy", IMAGE_PULL_POLICY);
                 JsonNodeFactory factory = new JsonNodeFactory(false);
@@ -702,13 +701,13 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 containerNode.replace("resources", resources);
                 containerNode.remove("resources");
                 JsonNode ccImageNode = containerNode.get("image");
-                ((ObjectNode) containerNode).put("image", TestUtils.changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
+                ((ObjectNode) containerNode).put("image", TestUtils.changeOrgAndTag(ccImageNode.asText()));
                 for (JsonNode envVar : containerNode.get("env")) {
                     String varName = envVar.get("name").textValue();
                     // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
                     if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
                         String value = envVar.get("value").textValue();
-                        ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTag(value, dockerOrg, dockerTag));
+                        ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTag(value));
                     }
                     // Set log level
                     if (varName.equals("STRIMZI_LOG_LEVEL")) {

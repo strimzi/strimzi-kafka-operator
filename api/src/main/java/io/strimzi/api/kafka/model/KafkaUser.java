@@ -47,7 +47,8 @@ import static java.util.Collections.unmodifiableList;
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = true,
-        builderPackage = "io.strimzi.api.kafka.model"
+        builderPackage = "io.strimzi.api.kafka.model",
+        inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})

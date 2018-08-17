@@ -124,6 +124,14 @@ public final class TestUtils {
         return image.replaceFirst("^strimzi/", newOrg + "/").replaceFirst(":[^:]+$", ":" + newTag);
     }
 
+    public static String changeOrgAndTag(String image) {
+        String strimziOrg = "strimzi";
+        String strimziTag = "latest";
+        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", strimziOrg);
+        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", strimziTag);
+        return changeOrgAndTag(image, dockerOrg, dockerTag);
+    }
+
     /**
      * Read the classpath resource with the given resourceName and return the content as a String
      * @param cls The class relative to which the resource will be loaded.
