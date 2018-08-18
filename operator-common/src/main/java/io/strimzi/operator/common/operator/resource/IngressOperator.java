@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
 /**
- * Operations for {@code Secret}s.
+ * Operations for {@code Ingress}es.
  */
 public class IngressOperator extends AbstractResourceOperator<KubernetesClient, Ingress, IngressList, DoneableIngress, Resource<Ingress, DoneableIngress>> {
 
