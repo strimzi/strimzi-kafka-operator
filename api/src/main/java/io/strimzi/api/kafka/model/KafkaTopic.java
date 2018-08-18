@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -99,7 +98,6 @@ public class KafkaTopic extends CustomResource {
     }
 
     @Description("The specification of the topic.")
-    @JsonProperty(required = true)
     public KafkaTopicSpec getSpec() {
         return spec;
     }
