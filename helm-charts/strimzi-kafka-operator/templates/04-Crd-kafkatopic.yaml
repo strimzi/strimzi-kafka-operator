@@ -37,5 +37,3 @@ spec:
               type: object
             topicName:
               type: string
-      required:
-      - spec

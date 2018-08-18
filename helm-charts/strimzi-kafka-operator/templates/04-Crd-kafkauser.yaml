@@ -81,5 +81,3 @@ spec:
               - acls
           required:
           - authentication
-      required:
-      - spec
