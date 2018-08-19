@@ -3,7 +3,7 @@
 image:
   repository: strimzi
   name: cluster-operator
-  tag: 0.6.0-rc2
+  tag: 0.6.0-rc3
   imagePullPolicy: IfNotPresent
 logLevel: INFO
 fullReconciliationIntervalMs: 120000
@@ -15,52 +15,52 @@ zookeeper:
   image:
     repository: strimzi
     name: zookeeper
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 kafka:
   image:
     repository: strimzi
     name: kafka
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 kafkaConnect:
   image:
     repository: strimzi
     name: kafka-connect
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 kafkaConnects2i:
   image:
     repository: strimzi
     name: kafka-connect-s2i
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 topicOperator:
   image:
     repository: strimzi
     name: topic-operator
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 userOperator:
   image:
     repository: strimzi
     name: user-operator
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 kafkaInit:
   image:
     repository: strimzi
     name: kafka-init
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 tlsSidecarZookeeper:
   image:
     repository: strimzi
     name: zookeeper-stunnel
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 tlsSidecarKafka:
   image:
     repository: strimzi
     name: kafka-stunnel
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 tlsSidecarEntityOperator:
   image:
     repository: strimzi
     name: entity-operator-stunnel
-    tag: 0.6.0-rc2
+    tag: 0.6.0-rc3
 resources:
   limits:
     memory: 256Mi
