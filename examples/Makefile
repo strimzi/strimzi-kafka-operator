@@ -9,6 +9,8 @@ release:
 	cp -r ./templates $(RELEASE_PATH)/
 	cp -r ./kafka $(RELEASE_PATH)/
 	cp -r ./kafka-connect $(RELEASE_PATH)/
+	cp -r ./user $(RELEASE_PATH)/
+	cp -r ./topic $(RELEASE_PATH)/
 
 
 .PHONY: all build clean docker_build docker_push docker_tag
