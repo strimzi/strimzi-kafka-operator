@@ -1,7 +1,7 @@
 TOPDIR=$(dir $(lastword $(MAKEFILE_LIST)))
 RELEASE_VERSION ?= latest
 CHART_PATH ?= ./helm-charts/strimzi-kafka-operator/
-CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | sed 's/\([0-9.]*\).*/\1/')
+CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | tr A-Z a-z)
 
 SUBDIRS=docker-images crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init helm-charts examples
 DOCKER_TARGETS=docker_build docker_push docker_tag

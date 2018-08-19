@@ -1,7 +1,7 @@
 PROJECT_NAME=helm-charts
 
 RELEASE_VERSION ?= latest
-CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ../release.version | sed 's/\([0-9.]*\).*/\1/')
+CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ../release.version | tr A-Z a-z)
 CHART_NAME=strimzi-kafka-operator
 CHART_PATH=./$(CHART_NAME)/
 CHART_RENDERED_TEMPLATES_TMP=../target/charts
