@@ -34,7 +34,7 @@ spec:
                   values:
                     - postgresql
                     - mongodb
-          topologyKey: "kubernetes.io/hostname"
+            topologyKey: "kubernetes.io/hostname"
     # ...
   zookeeper:
     # ...
