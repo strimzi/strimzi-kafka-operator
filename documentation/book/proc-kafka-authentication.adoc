@@ -5,6 +5,12 @@
 [id='proc-kafka-authentication-{context}']
 = Configuring authentication in Kafka brokers
 
+Authentication is configured as part of the xref:assembly-configuring-kafka-broker-listeners-{context}[listener configuration] in the `authentication` property.
+When the `authentication` property is missing, no authentication will be enabled on a given listener.
+The authentication mechanism that will be used is defined by the `type` field.
+
+NOTE: Currently, the only supported authentication mechanism is the TLS client authentication.
+
 .Prerequisites
 
 * An {ProductPlatformName} cluster
@@ -14,7 +20,7 @@
 
 . Edit the `listeners` property in the `Kafka.spec.kafka` resource.
 Add the `authentication` field to the listeners where you want to enable authentication.
-For example:
+For example, to enable TLS client authentication on the `tls listener`:
 +
 [source,yaml,subs=attributes+]
 ----
