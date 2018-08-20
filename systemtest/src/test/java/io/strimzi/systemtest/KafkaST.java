@@ -414,7 +414,7 @@ public class KafkaST extends AbstractST {
         try {
             LOGGER.info("Waiting for Job completion: {}", job);
             waitFor("Job completion", 10000, 150000, () -> {
-                Job jobs = client.extensions().jobs().withName(job.getMetadata().getName()).get();
+                Job jobs = client().extensions().jobs().withName(job.getMetadata().getName()).get();
                 JobStatus status;
                 if (jobs == null || (status = jobs.getStatus()) == null) {
                     LOGGER.info("Poll job is null");
@@ -437,7 +437,7 @@ public class KafkaST extends AbstractST {
         } catch (TimeoutException e) {
             LOGGER.info("Original Job: {}", job);
             try {
-                LOGGER.info("Job: {}", client.extensions().jobs().withName(job.getMetadata().getName()).get());
+                LOGGER.info("Job: {}", client().extensions().jobs().withName(job.getMetadata().getName()).get());
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Job not available: {}", t.getMessage());
             }
@@ -535,16 +535,16 @@ public class KafkaST extends AbstractST {
 
         Job job = resources().deleteLater(client().extensions().jobs().create(new JobBuilder()
                 .withNewMetadata()
-                .withName(name)
+                    .withName(name)
                 .endMetadata()
                 .withNewSpec()
-                .withNewTemplate()
-                .withNewMetadata()
-                .withName(name)
-                .addToLabels("job", name)
-                .endMetadata()
-                .withSpec(podSpecBuilder.withContainers(cb.build()).build())
-                .endTemplate()
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .withName(name)
+                            .addToLabels("job", name)
+                        .endMetadata()
+                        .withSpec(podSpecBuilder.withContainers(cb.build()).build())
+                    .endTemplate()
                 .endSpec()
                 .build()));
         LOGGER.info("Created Job {}", job);
