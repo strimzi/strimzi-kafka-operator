@@ -361,13 +361,13 @@ public class KafkaST extends AbstractST {
 
     /** Get the log of the pod with the given name */
     private String podLog(String podName) {
-        return client.pods().withName(podName).getLog();
+        return namespacedClient().pods().withName(podName).getLog();
     }
 
     /** Get the name of the pod for a job */
     private String jobPodName(Job job) {
         Map<String, String> labels = job.getSpec().getTemplate().getMetadata().getLabels();
-        List<Pod> pods = client.pods().withLabels(labels).list().getItems();
+        List<Pod> pods = namespacedClient().pods().withLabels(labels).list().getItems();
         if (pods.size() != 1) {
             fail("There are " + pods.size() +  " pods with labels " + labels);
         }
@@ -414,7 +414,7 @@ public class KafkaST extends AbstractST {
         try {
             LOGGER.info("Waiting for Job completion: {}", job);
             waitFor("Job completion", 10000, 150000, () -> {
-                Job jobs = client().extensions().jobs().withName(job.getMetadata().getName()).get();
+                Job jobs = namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get();
                 JobStatus status;
                 if (jobs == null || (status = jobs.getStatus()) == null) {
                     LOGGER.info("Poll job is null");
@@ -437,12 +437,12 @@ public class KafkaST extends AbstractST {
         } catch (TimeoutException e) {
             LOGGER.info("Original Job: {}", job);
             try {
-                LOGGER.info("Job: {}", client().extensions().jobs().withName(job.getMetadata().getName()).get());
+                LOGGER.info("Job: {}", namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get());
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Job not available: {}", t.getMessage());
             }
             try {
-                LOGGER.info("Pod: {}", TestUtils.toYamlString(client().pods().withName(jobPodName(job)).get()));
+                LOGGER.info("Pod: {}", TestUtils.toYamlString(namespacedClient().pods().withName(jobPodName(job)).get()));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Pod not available: {}", t.getMessage());
             }
@@ -533,7 +533,7 @@ public class KafkaST extends AbstractST {
                 .endVolume();
         }
 
-        Job job = resources().deleteLater(client().extensions().jobs().create(new JobBuilder()
+        Job job = resources().deleteLater(namespacedClient().extensions().jobs().create(new JobBuilder()
                 .withNewMetadata()
                     .withName(name)
                 .endMetadata()

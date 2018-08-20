@@ -87,7 +87,7 @@ public class AbstractST {
     KubeClient<?> kubeClient = cluster.client();
     private Resources resources;
 
-    protected NamespacedKubernetesClient client() {
+    protected NamespacedKubernetesClient namespacedClient() {
         return client.inNamespace(kubeClient.namespace());
     }
 
@@ -374,7 +374,7 @@ public class AbstractST {
 
     @Before
     public void createResources() {
-        resources = new Resources(client());
+        resources = new Resources(namespacedClient());
     }
 
     @After
