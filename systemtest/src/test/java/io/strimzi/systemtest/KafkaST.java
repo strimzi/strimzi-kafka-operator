@@ -412,17 +412,22 @@ public class KafkaST extends AbstractST {
     private Job waitForJobSuccess(Job job) {
         // Wait for the job to succeed
         try {
-            waitFor("Job completion", 1000, 300000, () -> {
+            LOGGER.info("Waiting for Job completion: {}", job);
+            waitFor("Job completion", 10000, 150000, () -> {
                 Job jobs = client.extensions().jobs().withName(job.getMetadata().getName()).get();
                 JobStatus status;
                 if (jobs == null || (status = jobs.getStatus()) == null) {
+                    LOGGER.info("Poll job is null");
                     return false;
                 } else {
                     if (status.getFailed() != null && status.getFailed() > 0) {
+                        LOGGER.info("Poll job failed");
                         fail();
                     } else if (status.getSucceeded() != null && status.getSucceeded() == 1) {
+                        LOGGER.info("Poll job succeeded");
                         return true;
                     } else if (status.getActive() > 0) {
+                        LOGGER.info("Poll job has active");
                         return false;
                     }
                 }
@@ -430,6 +435,7 @@ public class KafkaST extends AbstractST {
             });
             return job;
         } catch (TimeoutException e) {
+            LOGGER.info("Original Job: {}", job);
             try {
                 LOGGER.info("Job: {}", client.extensions().jobs().withName(job.getMetadata().getName()).get());
             } catch (Exception | AssertionError t) {
@@ -527,20 +533,22 @@ public class KafkaST extends AbstractST {
                 .endVolume();
         }
 
-        return resources().deleteLater(client().extensions().jobs().create(new JobBuilder()
-                    .withNewMetadata()
-                        .withName(name)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withNewTemplate()
-                            .withNewMetadata()
-                                .withName(name)
-                                .addToLabels("job", name)
-                            .endMetadata()
-                            .withSpec(podSpecBuilder.withContainers(cb.build()).build())
-                        .endTemplate()
-                    .endSpec()
-                    .build()));
+        Job job = resources().deleteLater(client().extensions().jobs().create(new JobBuilder()
+                .withNewMetadata()
+                .withName(name)
+                .endMetadata()
+                .withNewSpec()
+                .withNewTemplate()
+                .withNewMetadata()
+                .withName(name)
+                .addToLabels("job", name)
+                .endMetadata()
+                .withSpec(podSpecBuilder.withContainers(cb.build()).build())
+                .endTemplate()
+                .endSpec()
+                .build()));
+        LOGGER.info("Created Job {}", job);
+        return job;
     }
 
     /**
