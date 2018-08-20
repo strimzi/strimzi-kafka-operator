@@ -14,6 +14,8 @@ import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.KafkaListenerTls;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.test.ClusterOperator;
@@ -323,12 +325,18 @@ public class KafkaST extends AbstractST {
         String name = "send-messages-tls-auth";
         int messagesCount = 20;
 
+        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
+        KafkaListenerTls listenerTls = new KafkaListenerTls();
+        listenerTls.setAuthentication(auth);
+
         // Use a Kafka with plain listener disabled
         resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withNewTls().endTls()
+                            .withTls(listenerTls)
+                            .withNewTls()
+                            .endTls()
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
