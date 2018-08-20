@@ -14,7 +14,7 @@ spec:
       serviceAccountName: strimzi-cluster-operator
       containers:
       - name: strimzi-cluster-operator
-        image: strimzi/cluster-operator:latest
+        image: 172.30.1.1:5000/myproject/cluster-operator:latest
         imagePullPolicy: IfNotPresent
         env:
         - name: STRIMZI_NAMESPACE
@@ -26,25 +26,25 @@ spec:
         - name: STRIMZI_OPERATION_TIMEOUT_MS
           value: "300000"
         - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
-          value: strimzi/zookeeper:latest
+          value: 172.30.1.1:5000/myproject/zookeeper:latest
         - name: STRIMZI_DEFAULT_KAFKA_IMAGE
-          value: strimzi/kafka:latest
+          value: 172.30.1.1:5000/myproject/kafka:latest
         - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
-          value: strimzi/kafka-connect:latest
+          value: 172.30.1.1:5000/myproject/kafka-connect:latest
         - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
-          value: strimzi/kafka-connect-s2i:latest
+          value: 172.30.1.1:5000/myproject/kafka-connect-s2i:latest
         - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-          value: strimzi/topic-operator:latest
+          value: 172.30.1.1:5000/myproject/topic-operator:latest
         - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-          value: strimzi/user-operator:latest
+          value: 172.30.1.1:5000/myproject/user-operator:latest
         - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-          value: strimzi/kafka-init:latest
+          value: 172.30.1.1:5000/myproject/kafka-init:latest
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
-          value: strimzi/zookeeper-stunnel:latest
+          value: 172.30.1.1:5000/myproject/zookeeper-stunnel:latest
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
-          value: strimzi/kafka-stunnel:latest
+          value: 172.30.1.1:5000/myproject/kafka-stunnel:latest
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-          value: strimzi/entity-operator-stunnel:latest
+          value: 172.30.1.1:5000/myproject/entity-operator-stunnel:latest
         - name: STRIMZI_LOG_LEVEL
           value: INFO
         livenessProbe:

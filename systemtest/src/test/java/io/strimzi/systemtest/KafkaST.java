@@ -25,7 +25,6 @@ import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.TimeoutException;
-import io.strimzi.test.Topic;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -295,26 +294,11 @@ public class KafkaST extends AbstractST {
         }
     }
 
-    @Test
-    @JUnitGroup(name = "regression")
-    @KafkaFromClasspathYaml()
-    @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
-    public void testSendMessages() {
-        int messagesCount = 20;
-        sendMessages(kafkaPodName(CLUSTER_NAME, 1), CLUSTER_NAME, TOPIC_NAME, messagesCount);
-        String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 30, 2);
-
-        assertThat(consumedMessages, hasJsonPath("$[*].count", hasItem(messagesCount)));
-        assertThat(consumedMessages, hasJsonPath("$[*].partitions[*].topic", hasItem(TOPIC_NAME)));
-
-    }
-
     /**
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @JUnitGroup(name = "acceptance")
-    //@KafkaFromClasspathYaml()
+    @JUnitGroup(name = "regression")
     public void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
         int messagesCount = 20;
@@ -334,7 +318,6 @@ public class KafkaST extends AbstractST {
      */
     @Test
     @JUnitGroup(name = "acceptance")
-    //@KafkaFromClasspathYaml()
     public void testSendMessagesTlsAuthenticated() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-auth";
@@ -412,22 +395,22 @@ public class KafkaST extends AbstractST {
     private Job waitForJobSuccess(Job job) {
         // Wait for the job to succeed
         try {
-            LOGGER.info("Waiting for Job completion: {}", job);
-            waitFor("Job completion", 10000, 150000, () -> {
+            LOGGER.debug("Waiting for Job completion: {}", job);
+            waitFor("Job completion", 5000, 150000, () -> {
                 Job jobs = namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get();
                 JobStatus status;
                 if (jobs == null || (status = jobs.getStatus()) == null) {
-                    LOGGER.info("Poll job is null");
+                    LOGGER.debug("Poll job is null");
                     return false;
                 } else {
                     if (status.getFailed() != null && status.getFailed() > 0) {
-                        LOGGER.info("Poll job failed");
+                        LOGGER.debug("Poll job failed");
                         fail();
                     } else if (status.getSucceeded() != null && status.getSucceeded() == 1) {
-                        LOGGER.info("Poll job succeeded");
+                        LOGGER.debug("Poll job succeeded");
                         return true;
                     } else if (status.getActive() > 0) {
-                        LOGGER.info("Poll job has active");
+                        LOGGER.debug("Poll job has active");
                         return false;
                     }
                 }

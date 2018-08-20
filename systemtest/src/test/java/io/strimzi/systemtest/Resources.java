@@ -11,11 +11,10 @@ import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.KafkaUserList;
-import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.Kafka;
@@ -45,22 +44,22 @@ public class Resources {
         return client;
     }
 
-    private MixedOperation<Kafka, KafkaAssemblyList, DoneableKafkaAssembly, Resource<Kafka, DoneableKafkaAssembly>> kafka() {
+    private MixedOperation<Kafka, KafkaAssemblyList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafka() {
         return client()
                 .customResources(Crds.kafka(),
-                        Kafka.class, KafkaAssemblyList.class, io.strimzi.api.kafka.DoneableKafkaAssembly.class);
+                        Kafka.class, KafkaAssemblyList.class, DoneableKafka.class);
     }
 
-    private MixedOperation<KafkaTopic, KafkaTopicList, io.strimzi.api.kafka.DoneableKafkaTopic, Resource<KafkaTopic, io.strimzi.api.kafka.DoneableKafkaTopic>> kafkaTopic() {
+    private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> kafkaTopic() {
         return client()
                 .customResources(Crds.topic(),
-                        KafkaTopic.class, KafkaTopicList.class, io.strimzi.api.kafka.DoneableKafkaTopic.class);
+                        KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
-    private MixedOperation<KafkaUser, KafkaUserList, io.strimzi.api.kafka.DoneableKafkaUser, Resource<KafkaUser, io.strimzi.api.kafka.DoneableKafkaUser>> kafkaUser() {
+    private MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUser() {
         return client()
                 .customResources(Crds.kafkaUser(),
-                        KafkaUser.class, KafkaUserList.class, io.strimzi.api.kafka.DoneableKafkaUser.class);
+                        KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
     }
 
     private List<Runnable> resources = new ArrayList<>();
@@ -95,7 +94,7 @@ public class Resources {
         }
     }
 
-    DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
+    io.strimzi.api.kafka.model.DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
         return kafka(defaultKafka(name, kafkaReplicas).build());
     }
 
@@ -141,8 +140,8 @@ public class Resources {
                     .endSpec();
     }
 
-    DoneableKafka kafka(Kafka kafka) {
-        return new DoneableKafka(kafka, k -> waitFor(deleteLater(kafka().create(k))));
+    io.strimzi.api.kafka.model.DoneableKafka kafka(Kafka kafka) {
+        return new io.strimzi.api.kafka.model.DoneableKafka(kafka, k -> waitFor(deleteLater(kafka().create(k))));
     }
 
     Kafka waitFor(Kafka kafka) {

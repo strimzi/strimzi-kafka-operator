@@ -6,22 +6,22 @@ package io.strimzi.systemtest;
 
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
-import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
-import io.strimzi.api.kafka.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -143,7 +143,7 @@ public class AbstractST {
         return clusterName + "-topic-operator";
     }
 
-    private <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>>
+    private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
         void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
         Resource<T, D> namedResource = Crds.operation(client, crdClass, listClass, doneableClass).inNamespace(kubeClient.namespace()).withName(resourceName);
         T resource = namedResource.get();
@@ -152,11 +152,11 @@ public class AbstractST {
     }
 
     void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
-        replaceCrdResource(Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class, resourceName, editor);
+        replaceCrdResource(Kafka.class, KafkaAssemblyList.class, DoneableKafka.class, resourceName, editor);
     }
 
     void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnect> editor) {
-        replaceCrdResource(KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class, resourceName, editor);
+        replaceCrdResource(KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class, resourceName, editor);
     }
 
     void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {
