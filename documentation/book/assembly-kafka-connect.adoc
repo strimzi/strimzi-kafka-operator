@@ -25,4 +25,4 @@ endif::Kubernetes[]
 
 include::proc-deploying-kafka-connect-openshift.adoc[leveloffset=+1]
 
-include::assembly-using-kafka-connect-with-plugins.adoc[leveloffset=+2]
+include::assembly-using-kafka-connect-with-plugins.adoc[leveloffset=+1]
