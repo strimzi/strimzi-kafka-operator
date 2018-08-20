@@ -15,9 +15,14 @@ This procedure describes how to change the configuration of an existing Kafka us
 
 .Procedure
 
-. Prepare a YAML file containing the desired `KafkaUser`.
+. Edit the user either by preparing a YAML file containing the desired KafkaUser or by using {ProductPlatformName} tools.
+
+Using YAML file::
+
+.. Prepare a YAML file containing the desired `KafkaUser`.
 +
-.An example `KafkaUser`
+An example `KafkaUser`
++
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -49,37 +54,41 @@ spec:
         operation: Read
 ----
 +
-Or edit the `KafkaUser` resource using {ProductPlatformName} tools.
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl edit`:
-[source,shell,subs=+quotes]
-kubectl edit kafkauser _<your-user-name>_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc edit`:
-+
-[source,shell,subs=+quotes]
-oc edit kafkauser _<your-user-name>_
-
-. Update the `KafkaUser` resource in {ProductPlatformName}.
+.. Update the `KafkaUser` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
-+
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
-+
 endif::Kubernetes[]
++
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _<your-file>_
++
+
+Editing the `KafkaUser` resource using {ProductPlatformName} tools::
+
+.. Run the following command to edit the `KafkaUser` resource in the command line.
+
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl edit`:
+[source,shell,subs=+quotes]
+kubectl edit kafkauser _<your-user-name>_
+endif::Kubernetes[]
+
+On {OpenShiftName} this can be done using `oc edit`:
+[source,shell,subs=+quotes]
+oc edit kafkauser _<your-user-name>_
+
+.. Save the changes to the file.
 
 . Use the updated credentials from the secret `my-user` in your application
+
 
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-// TODO: Uncomment link after merging with the other PR
-//* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
+* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
 * For more information about the `KafkaUser` object, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].
