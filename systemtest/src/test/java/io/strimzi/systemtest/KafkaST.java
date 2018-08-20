@@ -314,12 +314,12 @@ public class KafkaST extends AbstractST {
      */
     @Test
     @JUnitGroup(name = "acceptance")
-    @KafkaFromClasspathYaml()
+    //@KafkaFromClasspathYaml()
     public void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
         int messagesCount = 20;
 
-        //resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
 
         // Create ping job
@@ -334,21 +334,21 @@ public class KafkaST extends AbstractST {
      */
     @Test
     @JUnitGroup(name = "acceptance")
-    @KafkaFromClasspathYaml()
+    //@KafkaFromClasspathYaml()
     public void testSendMessagesTlsAuthenticated() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-auth";
         int messagesCount = 20;
 
         // Use a Kafka with plain listener disabled
-        /*resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
                             .withNewTls().endTls()
                         .endListeners()
                     .endKafka()
-                .endSpec().build()).done();*/
+                .endSpec().build()).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
         resources().tlsUser(kafkaUser).done();
 

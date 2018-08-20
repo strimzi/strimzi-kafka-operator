@@ -156,13 +156,13 @@ public class Resources {
     private void waitForStatefulSet(String namespace, String name) {
         LOGGER.info("Waiting for StatefulSet {}", name);
         TestUtils.waitFor("statefulset " + name, 1000, 300000,
-            () -> client.apps().statefulSets().inNamespace(namespace).withName(name).isReady());
-        int replicas = client.apps().statefulSets().inNamespace(namespace).withName(name).get().getSpec().getReplicas();
+            () -> client().apps().statefulSets().inNamespace(namespace).withName(name).isReady());
+        int replicas = client().apps().statefulSets().inNamespace(namespace).withName(name).get().getSpec().getReplicas();
         for (int pod = 0; pod < replicas; pod++) {
             String podName = name + "-" + pod;
             LOGGER.info("Waiting for Pod {}", podName);
             TestUtils.waitFor("pod " + name, 1000, 300000,
-                () -> client.pods().inNamespace(namespace).withName(podName).isReady());
+                () -> client().pods().inNamespace(namespace).withName(podName).isReady());
             LOGGER.info("Pod {} is ready", podName);
         }
         LOGGER.info("StatefulSet {} is ready", name);
@@ -171,7 +171,7 @@ public class Resources {
     private void waitForDeployment(String namespace, String name) {
         LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, 1000, 300000,
-            () -> client.extensions().deployments().inNamespace(namespace).withName(name).isReady());
+            () -> client().extensions().deployments().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment {} is ready", name);
     }
 
