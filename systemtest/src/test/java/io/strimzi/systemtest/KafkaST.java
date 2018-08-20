@@ -431,10 +431,19 @@ public class KafkaST extends AbstractST {
             return job;
         } catch (TimeoutException e) {
             try {
+                LOGGER.info("Job: {}", client.extensions().jobs().withName(job.getMetadata().getName()).get());
+            } catch (Exception | AssertionError t) {
+                LOGGER.info("Job not available: {}", t.getMessage());
+            }
+            try {
+                LOGGER.info("Pod: {}", TestUtils.toYamlString(client().pods().withName(jobPodName(job)).get()));
+            } catch (Exception | AssertionError t) {
+                LOGGER.info("Pod not available: {}", t.getMessage());
+            }
+            try {
                 LOGGER.info("Job timeout: Pod logs\n----\n{}\n----", podLog(jobPodName(job)));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Pod logs not available: {}", t.getMessage());
-                LOGGER.info("Pod: {}", TestUtils.toYamlString(client().pods().withName(jobPodName(job)).get()));
             }
             throw e;
         }
