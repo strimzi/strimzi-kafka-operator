@@ -27,7 +27,53 @@ spec:
               properties:
                 type:
                   type: string
+            authorization:
+              type: object
+              properties:
+                acls:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                      operation:
+                        type: string
+                        enum:
+                        - Read
+                        - Write
+                        - Create
+                        - Delete
+                        - Alter
+                        - Describe
+                        - ClusterAction
+                        - AlterConfigs
+                        - DescribeConfigs
+                        - IdempotentWrite
+                        - All
+                      resource:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          patternType:
+                            type: string
+                            enum:
+                            - literal
+                            - prefix
+                          type:
+                            type: string
+                      type:
+                        type: string
+                        enum:
+                        - allow
+                        - deny
+                    required:
+                    - operation
+                    - resource
+                type:
+                  type: string
+              required:
+              - acls
           required:
           - authentication
-      required:
-      - spec
