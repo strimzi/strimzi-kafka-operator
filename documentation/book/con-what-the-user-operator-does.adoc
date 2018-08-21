@@ -3,7 +3,7 @@
 // assembly-getting-started-user-operator.adoc
 
 [id='con-what-the-user-operator-does-{context}']
-= What the User Operator does
+= Overview of the User Operator component
 
 The User Operator manages Kafka users for a Kafka cluster by watching for `KafkaUser` {ProductPlatformName} resources that describe Kafka users and ensuring that they are configured properly in the Kafka cluster.
 For example:

@@ -3,7 +3,7 @@
 // topic-operator.adoc
 
 [id='what-the-topic-operator-does-{context}']
-= What the Topic Operator does
+= Overview of the Topic Operator component
 
 The Topic Operator provides a way of managing topics in a Kafka cluster via {ProductPlatformName} resources.
 
