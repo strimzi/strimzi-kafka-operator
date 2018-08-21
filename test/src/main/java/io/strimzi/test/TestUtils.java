@@ -41,19 +41,19 @@ public final class TestUtils {
 
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-    public static final String CRD_TOPIC = "../examples/install/topic-operator/04-Crd-kafkatopic.yaml";
+    public static final String CRD_TOPIC = "../examples/install/cluster-operator/043-Crd-kafkatopic.yaml";
 
-    public static final String CRD_KAFKA = "../examples/install/cluster-operator/04-Crd-kafka.yaml";
+    public static final String CRD_KAFKA = "../examples/install/cluster-operator/040-Crd-kafka.yaml";
 
-    public static final String CRD_KAFKA_CONNECT = "../examples/install/cluster-operator/04-Crd-kafkaconnect.yaml";
+    public static final String CRD_KAFKA_CONNECT = "../examples/install/cluster-operator/041-Crd-kafkaconnect.yaml";
 
-    public static final String CRD_KAFKA_CONNECT_S2I = "../examples/install/cluster-operator/04-Crd-kafkaconnects2i.yaml";
+    public static final String CRD_KAFKA_CONNECT_S2I = "../examples/install/cluster-operator/042-Crd-kafkaconnects2i.yaml";
 
     private TestUtils() {
         // All static methods
     }
 
-    public static final String KAFKA_USER_CRD = "../examples/install/cluster-operator/04-Crd-kafkauser.yaml";
+    public static final String KAFKA_USER_CRD = "../examples/install/cluster-operator/044-Crd-kafkauser.yaml";
 
     /** Returns a Map of the given sequence of key, value pairs. */
     public static <T> Map<T, T> map(T... pairs) {

@@ -2,4 +2,4 @@ Thank you for installing {{ .Chart.Name }}-{{ .Chart.Version }}
 
 To create a Kafka cluster refer to the following documentation.
 
-http://strimzi.io/docs/{{ .Chart.Version }}/#kafka_broker
+http://strimzi.io/docs/{{ .Chart.Version }}/#kafka-cluster-str

@@ -686,7 +686,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     private Statement installOperatorFromExamples(Annotatable element, Statement last, ClusterOperator cc) {
         Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
             // Change the docker org of the images in the 04-deployment.yaml
-            if ("05-Deployment-strimzi-cluster-operator.yaml".equals(f.getName())) {
+            if ("050-Deployment-strimzi-cluster-operator.yaml".equals(f.getName())) {
 
                 ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
                 containerNode.put("imagePullPolicy", IMAGE_PULL_POLICY);
@@ -723,7 +723,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 }
             }
 
-            if (f.getName().matches(".*ClusterRoleBinding.*")) {
+            if (f.getName().matches(".*RoleBinding.*")) {
                 String ns = annotations(element, Namespace.class).get(0).value();
                 ArrayNode subjects = (ArrayNode) node.get("subjects");
                 ObjectNode subject = (ObjectNode) subjects.get(0);
