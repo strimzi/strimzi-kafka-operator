@@ -15,13 +15,14 @@ This procedure describes how to change the configuration of an existing Kafka us
 
 .Procedure
 
-. Edit the user either by preparing a YAML file containing the desired KafkaUser or by using {ProductPlatformName} tools.
+You can edit the user either by preparing a YAML file containing the desired KafkaUser or by using {ProductPlatformName} tools.
+
+
+.Using YAML file
+
+. Prepare a YAML file containing the desired `KafkaUser`.
 +
-Using YAML file::
-+
-.. Prepare a YAML file containing the desired `KafkaUser`.
-+
-An example `KafkaUser`
+.An example `KafkaUser`
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -54,15 +55,13 @@ spec:
         operation: Read
 ----
 +
-.. Update the `KafkaUser` resource in {ProductPlatformName}.
+. Update the `KafkaUser` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 +
 [source,shell,subs=+quotes]
-+
 kubectl apply -f _<your-file>_
-+
 endif::Kubernetes[]
 +
 On {OpenShiftName} this can be done using `oc apply`:
@@ -70,10 +69,13 @@ On {OpenShiftName} this can be done using `oc apply`:
 [source,shell,subs=+quotes]
 oc apply -f _<your-file>_
 +
-//-
-Editing the `KafkaUser` resource using {ProductPlatformName} tools::
+. Use the updated credentials from the `my-user` secret in your application.
 
-.. Run the following command to edit the `KafkaUser` resource in the command line.
+[start=1]
+
+.Editing the `KafkaUser` resource using {ProductPlatformName} tools
+
+. Run the following command to edit the `KafkaUser` resource in the command line.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl edit`:
@@ -86,7 +88,7 @@ On {OpenShiftName} this can be done using `oc edit`:
 [source,shell,subs=+quotes]
 oc edit kafkauser _<your-user-name>_
 +
-.. Save the changes to the file.
+. Save the changes to the file.
 
 . Use the updated credentials from the `my-user` secret in your application.
 
