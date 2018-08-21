@@ -3,7 +3,7 @@
 // assembly-configuring-container-images.adoc
 
 [id='ref-configuring-container-images-{context}']
-= Configuring container images
+= Container image configurations
 
 Container image which should be used for given components can be specified using the `image` property in:
 
