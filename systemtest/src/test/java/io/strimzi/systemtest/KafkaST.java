@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.JobBuilder;
 import io.fabric8.kubernetes.api.model.JobStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
@@ -305,7 +306,7 @@ public class KafkaST extends AbstractST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @JUnitGroup(name = "regression")
+    @JUnitGroup(name = "acceptance")
     public void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
         int messagesCount = 20;
@@ -359,7 +360,7 @@ public class KafkaST extends AbstractST {
      * Test sending messages over tls transport using mutual tls auth
      */
     //@Test
-    //@JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "acceptance")
     public void testSendMessagesPlainScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-plain-scram-sha";
@@ -394,7 +395,7 @@ public class KafkaST extends AbstractST {
      * Test sending messages over tls transport using mutual tls auth
      */
     //@Test
-    //@JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "acceptance")
     public void testSendMessagesTlsScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-scram-sha";
@@ -564,6 +565,8 @@ public class KafkaST extends AbstractST {
             if (scramShaUser) {
                 consumerConfiguration += "security.protocol=SASL_SSL\n";
                 producerConfiguration += "security.protocol=SASL_SSL\n";
+                consumerConfiguration += saslConfigs(kafkaUser);
+                producerConfiguration += saslConfigs(kafkaUser);
             } else {
                 consumerConfiguration += "security.protocol=SSL\n";
                 producerConfiguration += "security.protocol=SSL\n";
@@ -580,6 +583,8 @@ public class KafkaST extends AbstractST {
             if (scramShaUser) {
                 consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
                 producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                consumerConfiguration += saslConfigs(kafkaUser);
+                producerConfiguration += saslConfigs(kafkaUser);
             } else {
                 consumerConfiguration += "security.protocol=PLAINTEXT\n";
                 producerConfiguration += "security.protocol=PLAINTEXT\n";
@@ -606,8 +611,6 @@ public class KafkaST extends AbstractST {
                     .withSecretName(kafkaUserName)
                     .endSecret()
                     .endVolume();
-        } else if (scramShaUser) {
-            // TODO DO SOMETHING HERE
         }
 
         if (kafkaUserName != null) {
@@ -652,6 +655,16 @@ public class KafkaST extends AbstractST {
                 .build()));
         LOGGER.info("Created Job {}", job);
         return job;
+    }
+
+
+    String saslConfigs(KafkaUser kafkaUser) {
+        Secret secret = namespacedClient().secrets().withName(kafkaUser.getMetadata().getName()).get();
+        String password = secret.getData().get("password");
+        return "sasl.mechanism=SCRAM-SHA-512\n" +
+                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
+                "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
+                "password=\"" + password + "\";\n";
     }
 
     /**
