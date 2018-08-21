@@ -15,7 +15,7 @@ This procedure describes how to change the configuration of an existing Kafka us
 
 .Procedure
 
-You can edit the user either by preparing a YAML file containing the desired KafkaUser or by using {ProductPlatformName} tools.
+You can edit the user either by preparing a YAML file containing the desired `KafkaUser` or by using {ProductPlatformName} tools.
 
 
 .Using YAML file
