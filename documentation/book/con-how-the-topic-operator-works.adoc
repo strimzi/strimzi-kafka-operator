@@ -3,7 +3,7 @@
 // topic-operator.adoc
 
 [id='how-the-topic-operator-works-{context}']
-= How the Topic Operator works
+= Understanding the Topic Operator
 
 A fundamental problem that the operator has to solve is that there is no single source of truth:
 Both the `KafkaTopic` resource and the topic within Kafka can be modified independently of the operator.

@@ -4,7 +4,7 @@
 // assembnly-cluster-operator.adoc
 
 [id='con-what-the-cluster-operator-does-{context}']
-= What the Cluster Operator does
+= Overview of the Cluster Operator component
 
 The Cluster Operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble.
 As part of the Kafka cluster, it can also deploy the topic operator which provides operator-style topic management via `KafkaTopic` custom resources.
