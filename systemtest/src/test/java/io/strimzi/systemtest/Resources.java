@@ -141,10 +141,7 @@ public class Resources {
     }
 
     DoneableKafka kafka(Kafka kafka) {
-        return new DoneableKafka(kafka, k -> {
-            LOGGER.info("Creating Kafka\n{}", TestUtils.toYamlString(k));
-            return waitFor(deleteLater(kafka().create(k)));
-        });
+        return new DoneableKafka(kafka, k -> waitFor(deleteLater(kafka().create(k))));
     }
 
     Kafka waitFor(Kafka kafka) {

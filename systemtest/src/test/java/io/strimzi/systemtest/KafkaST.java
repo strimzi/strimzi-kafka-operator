@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,7 @@ import static io.strimzi.test.StrimziRunner.TOPIC_CM;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
+import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.assertTrue;
@@ -325,7 +327,7 @@ public class KafkaST extends AbstractST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testSendMessagesTlsAuthenticated() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-auth";
@@ -400,17 +402,14 @@ public class KafkaST extends AbstractST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @JUnitGroup(name = "acceptance")
+    @JUnitGroup(name = "regression")
     public void testSendMessagesTlsScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-scram-sha";
         int messagesCount = 20;
 
-
         KafkaListenerTls listenerTls = new KafkaListenerTls();
         listenerTls.setAuth(new KafkaListenerAuthenticationScramSha512());
-
-        LOGGER.info("Here's the listener: {}", TestUtils.toYamlString(listenerTls));
 
         // Use a Kafka with plain listener disabled
         resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
@@ -437,9 +436,20 @@ public class KafkaST extends AbstractST {
         return namespacedClient().pods().withName(podName).getLog();
     }
 
+    private String podLog(String podName, String containerId) {
+        return namespacedClient().pods().withName(podName).inContainer(containerId).getLog();
+    }
+
     /** Get the name of the pod for a job */
     private String jobPodName(Job job) {
-        Map<String, String> labels = job.getSpec().getTemplate().getMetadata().getLabels();
+        return podNameWithLabels(job.getSpec().getTemplate().getMetadata().getLabels());
+    }
+
+    private String userOperatorPodName() {
+        return podNameWithLabels(Collections.singletonMap("strimzi.io/name", CLUSTER_NAME + "-entity-operator"));
+    }
+
+    private String podNameWithLabels(Map<String, String> labels) {
         List<Pod> pods = namespacedClient().pods().withLabels(labels).list().getItems();
         if (pods.size() != 1) {
             fail("There are " + pods.size() +  " pods with labels " + labels);
@@ -511,17 +521,22 @@ public class KafkaST extends AbstractST {
         } catch (TimeoutException e) {
             LOGGER.info("Original Job: {}", job);
             try {
-                LOGGER.info("Job: {}", namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get());
+                LOGGER.info("Job: {}", indent(toYamlString(namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get())));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Job not available: {}", t.getMessage());
             }
             try {
-                LOGGER.info("Pod: {}", TestUtils.toYamlString(namespacedClient().pods().withName(jobPodName(job)).get()));
+                LOGGER.info("Pod: {}", indent(TestUtils.toYamlString(namespacedClient().pods().withName(jobPodName(job)).get())));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Pod not available: {}", t.getMessage());
             }
             try {
-                LOGGER.info("Job timeout: Pod logs\n----\n{}\n----", podLog(jobPodName(job)));
+                LOGGER.info("Job timeout: Job Pod logs\n----\n{}\n----", indent(podLog(jobPodName(job))));
+            } catch (Exception | AssertionError t) {
+                LOGGER.info("Pod logs not available: {}", t.getMessage());
+            }
+            try {
+                LOGGER.info("Job timeout: User Operator Pod logs\n----\n{}\n----", indent(podLog(userOperatorPodName(), "user-operator")));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Pod logs not available: {}", t.getMessage());
             }
@@ -674,7 +689,12 @@ public class KafkaST extends AbstractST {
 
     String saslConfigs(KafkaUser kafkaUser) {
         Secret secret = namespacedClient().secrets().withName(kafkaUser.getMetadata().getName()).get();
+
         String password = secret.getData().get("password");
+        if (password == null) {
+            LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), TestUtils.toYamlString(secret));
+            throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");
+        }
         return "sasl.mechanism=SCRAM-SHA-512\n" +
                 "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
                 "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
