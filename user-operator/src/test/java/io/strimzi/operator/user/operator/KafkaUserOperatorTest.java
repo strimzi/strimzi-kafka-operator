@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -591,7 +592,187 @@ public class KafkaUserOperatorTest {
         context.assertEquals(new HashSet(asList("deleted-user", "second-deleted-user", "deleted-scram-sha-user")), deleted);
     }
 
-    // TODO create scram user
-    // TODO update scram user
-    // TODO delete scram user
+    @Test
+    public void testReconcileNewScramShaUser(TestContext context)    {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        KafkaUser user = ResourceUtils.createKafkaUserScramSha();
+
+        ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> scramUserCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> scramPasswordCaptor = ArgumentCaptor.forClass(String.class);
+        when(scramOps.reconcile(scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(null);
+
+        when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
+
+        Async async = context.async();
+        op.reconcile(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), res -> {
+            context.assertTrue(res.succeeded());
+
+            List<String> capturedNames = secretNameCaptor.getAllValues();
+            context.assertEquals(1, capturedNames.size());
+            context.assertEquals(ResourceUtils.NAME, capturedNames.get(0));
+
+            List<String> capturedNamespaces = secretNamespaceCaptor.getAllValues();
+            context.assertEquals(1, capturedNamespaces.size());
+            context.assertEquals(ResourceUtils.NAMESPACE, capturedNamespaces.get(0));
+
+            List<Secret> capturedSecrets = secretCaptor.getAllValues();
+
+            context.assertEquals(1, capturedSecrets.size());
+
+            Secret captured = capturedSecrets.get(0);
+            context.assertEquals(user.getMetadata().getName(), captured.getMetadata().getName());
+            context.assertEquals(user.getMetadata().getNamespace(), captured.getMetadata().getNamespace());
+            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
+
+            context.assertEquals(scramPasswordCaptor.getValue(), captured.getData().get(KafkaUserModel.KEY_PASSWORD));
+            context.assertTrue(captured.getData().get(KafkaUserModel.KEY_PASSWORD).matches("[a-zA-Z0-9]{12}"));
+
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
+
+            context.assertEquals(1, capturedAcls.size());
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+
+            async.complete();
+        });
+    }
+
+    @Test
+    public void testReconcileExistingScramShaUser(TestContext context)    {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        KafkaUser user = ResourceUtils.createKafkaUserScramSha();
+        Secret userCert = ResourceUtils.createUserSecretScramSha();
+        String password = userCert.getData().get(KafkaUserModel.KEY_PASSWORD);
+
+        ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> scramUserCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> scramPasswordCaptor = ArgumentCaptor.forClass(String.class);
+        when(scramOps.reconcile(scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(userCert);
+
+        when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
+
+        Async async = context.async();
+        op.reconcile(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), res -> {
+            context.assertTrue(res.succeeded());
+
+            List<String> capturedNames = secretNameCaptor.getAllValues();
+            context.assertEquals(1, capturedNames.size());
+            context.assertEquals(ResourceUtils.NAME, capturedNames.get(0));
+
+            List<String> capturedNamespaces = secretNamespaceCaptor.getAllValues();
+            context.assertEquals(1, capturedNamespaces.size());
+            context.assertEquals(ResourceUtils.NAMESPACE, capturedNamespaces.get(0));
+
+            List<Secret> capturedSecrets = secretCaptor.getAllValues();
+
+            context.assertEquals(1, capturedSecrets.size());
+
+            Secret captured = capturedSecrets.get(0);
+            context.assertEquals(user.getMetadata().getName(), captured.getMetadata().getName());
+            context.assertEquals(user.getMetadata().getNamespace(), captured.getMetadata().getNamespace());
+            context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
+            context.assertEquals(password, captured.getData().get(KafkaUserModel.KEY_PASSWORD));
+            context.assertEquals(password, scramPasswordCaptor.getValue());
+
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
+            List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
+
+            context.assertEquals(1, capturedAcls.size());
+            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
+            context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+
+            async.complete();
+        });
+    }
+
+    @Test
+    public void testReconcileDeleteScramShaUser(TestContext context)    {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
+        KafkaUser user = ResourceUtils.createKafkaUserScramSha();
+        Secret userCert = ResourceUtils.createUserSecretTls();
+
+        ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockSecretOps.reconcile(secretNamespaceCaptor.capture(), secretNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> scramUserCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> scramPasswordCaptor = ArgumentCaptor.forClass(String.class);
+        when(scramOps.reconcile(scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        when(aclOps.reconcile(aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(userCert);
+
+        when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(null);
+
+        Async async = context.async();
+        op.reconcile(new Reconciliation("test-trigger", ResourceType.USER, ResourceUtils.NAMESPACE, ResourceUtils.NAME), res -> {
+            context.assertTrue(res.succeeded());
+
+            List<String> capturedNames = secretNameCaptor.getAllValues();
+            context.assertEquals(1, capturedNames.size());
+            context.assertEquals(ResourceUtils.NAME, capturedNames.get(0));
+
+            List<String> capturedNamespaces = secretNamespaceCaptor.getAllValues();
+            context.assertEquals(1, capturedNamespaces.size());
+            context.assertEquals(ResourceUtils.NAMESPACE, capturedNamespaces.get(0));
+
+            List<String> capturedAclNames = aclNameCaptor.getAllValues();
+            context.assertEquals(1, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+
+            context.assertEquals(singletonList("CN=" + ResourceUtils.NAME), scramUserCaptor.getAllValues());
+            context.assertEquals(singletonList(null), scramPasswordCaptor.getAllValues());
+
+            async.complete();
+        });
+    }
 }

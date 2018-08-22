@@ -112,14 +112,14 @@ public class KafkaUserModelTest {
         assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
         assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
 
-        assertEquals(singleton("password"), generated.getData().keySet());
-        assertEquals("aaaaaaaaaa", generated.getData().get("password"));
+        assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
+        assertEquals("aaaaaaaaaa", generated.getData().get(KafkaUserModel.KEY_PASSWORD));
     }
 
     @Test
     public void testGeneratePasswordKeepExistingScramSha()    {
         Secret userCert = ResourceUtils.createUserSecretScramSha();
-        String existing = userCert.getData().get("password");
+        String existing = userCert.getData().get(KafkaUserModel.KEY_PASSWORD);
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, scramShaUser, clientsCa, userCert);
         Secret generated = model.generateSecret();
 
@@ -127,8 +127,8 @@ public class KafkaUserModelTest {
         assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
         assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
 
-        assertEquals(singleton("password"), generated.getData().keySet());
-        assertEquals(existing, generated.getData().get("password"));
+        assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
+        assertEquals(existing, generated.getData().get(KafkaUserModel.KEY_PASSWORD));
     }
 
     @Test
@@ -142,7 +142,7 @@ public class KafkaUserModelTest {
         assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
 
         assertEquals(singleton("password"), generated.getData().keySet());
-        assertEquals("aaaaaaaaaa", generated.getData().get("password"));
+        assertEquals("aaaaaaaaaa", generated.getData().get(KafkaUserModel.KEY_PASSWORD));
     }
 
     @Test

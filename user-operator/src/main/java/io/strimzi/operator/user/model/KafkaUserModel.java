@@ -38,6 +38,7 @@ public class KafkaUserModel {
     private static final Logger log = LogManager.getLogger(KafkaUserModel.class.getName());
 
     private final static int CERTS_EXPIRATION_DAYS = 356;
+    public static final String KEY_PASSWORD = "password";
 
     protected final String namespace;
     protected final String name;
@@ -110,7 +111,7 @@ public class KafkaUserModel {
             return createSecret(data);
         } else if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
             Map<String, String> data = new HashMap<>();
-            data.put("password", scramSha512Password);
+            data.put(KafkaUserModel.KEY_PASSWORD, scramSha512Password);
             return createSecret(data);
         } else {
             return null;
@@ -191,7 +192,7 @@ public class KafkaUserModel {
     public void maybeGeneratePassword(PasswordGenerator generator, Secret userSecret) {
         if (userSecret != null) {
             // Secret already exists -> lets verify if it has a password
-            String password = userSecret.getData().get("password");
+            String password = userSecret.getData().get(KEY_PASSWORD);
             if (password != null && !password.isEmpty()) {
                 this.scramSha512Password = password;
                 return;
