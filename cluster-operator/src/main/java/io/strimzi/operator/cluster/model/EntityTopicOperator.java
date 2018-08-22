@@ -26,7 +26,7 @@ import static java.util.Collections.singletonList;
  */
 public class EntityTopicOperator extends AbstractModel {
 
-    protected static final String TOPIC_OPERATOR_NAME = "entity-topic-operator";
+    protected static final String TOPIC_OPERATOR_CONTAINER_NAME = "topic-operator";
     private static final String NAME_SUFFIX = "-entity-topic-operator";
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
@@ -209,7 +209,7 @@ public class EntityTopicOperator extends AbstractModel {
     protected List<Container> getContainers() {
 
         return Collections.singletonList(new ContainerBuilder()
-                .withName(TOPIC_OPERATOR_NAME)
+                .withName(TOPIC_OPERATOR_CONTAINER_NAME)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
