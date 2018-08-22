@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
@@ -201,7 +201,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(TestUtils.CRD_KAFKA, CustomResourceDefinition.class);
 
-        mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+        mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
     }
 
@@ -601,9 +601,9 @@ public class KafkaAssemblyOperatorMockTest {
         });
     }
 
-    private Resource<Kafka, DoneableKafkaAssembly> kafkaAssembly(String namespace, String name) {
+    private Resource<Kafka, DoneableKafka> kafkaAssembly(String namespace, String name) {
         CustomResourceDefinition crd = mockClient.customResourceDefinitions().withName(Kafka.CRD_NAME).get();
-        return mockClient.customResources(crd, Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+        return mockClient.customResources(crd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
                 .inNamespace(namespace).withName(name);
     }
 

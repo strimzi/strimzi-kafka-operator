@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public abstract class AbstractCrdTest<R extends CustomResource, T extends VisitableBuilder<R, T>> {
+public abstract class AbstractCrdTest<R extends CustomResource, T> {
 
     private final Class<R> crdClass;
     private final String kind;

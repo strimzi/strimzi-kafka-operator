@@ -26,8 +26,8 @@ import java.util.Map;
  */
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = true,
-        builderPackage = "io.strimzi.api.kafka.model"
+        generateBuilderPackage = false,
+        builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -67,6 +67,7 @@ public class ZookeeperClusterSpec implements Serializable {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
     }
@@ -86,9 +87,9 @@ public class ZookeeperClusterSpec implements Serializable {
     }
 
     @Description("Logging configuration for Zookeeper")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Logging getLogging() {
-        return logging == null ? new InlineLogging() : logging;
+        return logging;
     }
 
     public void setLogging(Logging logging) {
@@ -146,7 +147,7 @@ public class ZookeeperClusterSpec implements Serializable {
         this.livenessProbe = livenessProbe;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod readiness checking.")
     public Probe getReadinessProbe() {
         return readinessProbe;
@@ -166,7 +167,7 @@ public class ZookeeperClusterSpec implements Serializable {
         this.jvmOptions = jvmOptions;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Prometheus JMX Exporter configuration. " +
             "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
     public Map<String, Object> getMetrics() {
@@ -190,7 +191,7 @@ public class ZookeeperClusterSpec implements Serializable {
 
     @Description("Pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "tolerations")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<Toleration> getTolerations() {
         return tolerations;
     }

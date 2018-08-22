@@ -4,10 +4,18 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.JobBuilder;
+import io.fabric8.kubernetes.api.model.JobStatus;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.KafkaListenerTls;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.test.ClusterOperator;
@@ -18,7 +26,7 @@ import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.Topic;
+import io.strimzi.test.TimeoutException;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +38,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -46,7 +56,9 @@ import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.StrimziRunner.TOPIC_CM;
 import static io.strimzi.test.TestUtils.fromYamlString;
+import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
+import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.hasItem;
@@ -55,6 +67,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @RunWith(StrimziRunner.class)
@@ -66,6 +79,8 @@ public class KafkaST extends AbstractST {
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
+
+    static KubernetesClient client = new DefaultKubernetesClient();
 
     @Test
     @JUnitGroup(name = "regression")
@@ -281,20 +296,255 @@ public class KafkaST extends AbstractST {
         }
     }
 
+    /**
+     * Test sending messages over plain transport, without auth
+     */
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaFromClasspathYaml()
-    @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
-    public void testSendMessages() {
+    public void testSendMessagesPlainAnonymous() throws InterruptedException {
+        String name = "send-messages-plain-anon";
         int messagesCount = 20;
-        sendMessages(kafkaPodName(CLUSTER_NAME, 1), CLUSTER_NAME, TOPIC_NAME, messagesCount);
-        String consumedMessages = consumeMessages(CLUSTER_NAME, TOPIC_NAME, 1, 30, 2);
 
-        assertThat(consumedMessages, hasJsonPath("$[*].count", hasItem(messagesCount)));
-        assertThat(consumedMessages, hasJsonPath("$[*].partitions[*].topic", hasItem(TOPIC_NAME)));
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
 
+        // Create ping job
+        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, null, false));
+
+        // Now get the pod logs (which will be both producer and consumer logs)
+        checkPings(messagesCount, job);
     }
 
+    /**
+     * Test sending messages over tls transport using mutual tls auth
+     */
+    @Test
+    @JUnitGroup(name = "acceptance")
+    public void testSendMessagesTlsAuthenticated() {
+        String kafkaUser = "my-user";
+        String name = "send-messages-tls-auth";
+        int messagesCount = 20;
+
+        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
+        KafkaListenerTls listenerTls = new KafkaListenerTls();
+        listenerTls.setAuthentication(auth);
+
+        // Use a Kafka with plain listener disabled
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withTls(listenerTls)
+                            .withNewTls()
+                            .endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().build()).done();
+        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        resources().tlsUser(kafkaUser).done();
+
+        // Create ping job
+        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, kafkaUser, true));
+
+        // Now check the pod logs the messages were produced and consumed
+        checkPings(messagesCount, job);
+    }
+
+    /** Get the log of the pod with the given name */
+    private String podLog(String podName) {
+        return namespacedClient().pods().withName(podName).getLog();
+    }
+
+    /** Get the name of the pod for a job */
+    private String jobPodName(Job job) {
+        Map<String, String> labels = job.getSpec().getTemplate().getMetadata().getLabels();
+        List<Pod> pods = namespacedClient().pods().withLabels(labels).list().getItems();
+        if (pods.size() != 1) {
+            fail("There are " + pods.size() +  " pods with labels " + labels);
+        }
+        return pods.get(0).getMetadata().getName();
+    }
+
+    /**
+     * Greps logs from a pod which ran kafka-verifiable-producer.sh and
+     * kafka-verifiable-consumer.sh
+     */
+    private void checkPings(int messagesCount, Job job) {
+        String podName = jobPodName(job);
+        String log = podLog(podName);
+        Pattern p = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
+        Matcher m = p.matcher(log);
+        boolean producerSuccess = false;
+        boolean consumerSuccess = false;
+        while (m.find()) {
+            String json = m.group();
+            String name2 = getValueFromJson(json, "$.name");
+            if ("tooldata".equals(name2)) {
+                assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.sent"));
+                assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.acked"));
+                producerSuccess = true;
+            } else if ("recordsconsumed".equals(name2)) {
+                assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.count"));
+                consumerSuccess = true;
+            }
+        }
+        if (!producerSuccess || !consumerSuccess) {
+            LOGGER.info("log from pod {}:\n----\n{}\n----", podName, indent(log));
+        }
+        assertTrue("The producer didn't send any messages (no tool_data message)", producerSuccess);
+        assertTrue("The consumer didn't consume any messages (no records_consumed message)", consumerSuccess);
+    }
+
+    /**
+     * Waits for a job to complete successfully, {@link org.junit.Assert#fail()}ing
+     * if it completes with any failed pods.
+     * @throws TimeoutException if the job doesn't complete quickly enough.
+     */
+    private Job waitForJobSuccess(Job job) {
+        // Wait for the job to succeed
+        try {
+            LOGGER.debug("Waiting for Job completion: {}", job);
+            waitFor("Job completion", 5000, 150000, () -> {
+                Job jobs = namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get();
+                JobStatus status;
+                if (jobs == null || (status = jobs.getStatus()) == null) {
+                    LOGGER.debug("Poll job is null");
+                    return false;
+                } else {
+                    if (status.getFailed() != null && status.getFailed() > 0) {
+                        LOGGER.debug("Poll job failed");
+                        fail();
+                    } else if (status.getSucceeded() != null && status.getSucceeded() == 1) {
+                        LOGGER.debug("Poll job succeeded");
+                        return true;
+                    } else if (status.getActive() > 0) {
+                        LOGGER.debug("Poll job has active");
+                        return false;
+                    }
+                }
+                throw new RuntimeException("Unexpected state");
+            });
+            return job;
+        } catch (TimeoutException e) {
+            LOGGER.info("Original Job: {}", job);
+            try {
+                LOGGER.info("Job: {}", namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get());
+            } catch (Exception | AssertionError t) {
+                LOGGER.info("Job not available: {}", t.getMessage());
+            }
+            try {
+                LOGGER.info("Pod: {}", TestUtils.toYamlString(namespacedClient().pods().withName(jobPodName(job)).get()));
+            } catch (Exception | AssertionError t) {
+                LOGGER.info("Pod not available: {}", t.getMessage());
+            }
+            try {
+                LOGGER.info("Job timeout: Pod logs\n----\n{}\n----", podLog(jobPodName(job)));
+            } catch (Exception | AssertionError t) {
+                LOGGER.info("Pod logs not available: {}", t.getMessage());
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Create a Job which which produce and then consume messages to a given topic.
+     * The job will be deleted from the kubernetes cluster at the end of the test.
+     * @param name The name of the {@code Job} and also the consumer group id.
+     *             The Job's pod will also use this in a {@code job=<name>} selector.
+     * @param messagesCount The number of messages to produce & consume
+     * @return The job
+     */
+    private Job pingJob(String name, String topic, int messagesCount, String kafkaUser, boolean tls) {
+
+        String connect = tls ? CLUSTER_NAME + "-kafka-bootstrap:9093" : CLUSTER_NAME + "-kafka-bootstrap:9092";
+        ContainerBuilder cb = new ContainerBuilder()
+                .withName("ping")
+                .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))
+                .addNewEnv().withName("PRODUCER_OPTS").withValue(
+                        "--broker-list " + connect + " " +
+                        "--topic " + topic + " " +
+                        "--max-messages " + messagesCount).endEnv()
+                .addNewEnv().withName("CONSUMER_OPTS").withValue(
+                        "--broker-list " + connect + " " +
+                        "--group-id " + name + "-" + new Random().nextInt() + " " +
+                        "--verbose " +
+                        "--topic " + topic + " " +
+                        "--max-messages " + messagesCount).endEnv()
+                .withCommand("/opt/kafka/ping.sh");
+
+        PodSpecBuilder podSpecBuilder = new PodSpecBuilder()
+                .withRestartPolicy("OnFailure");
+
+        if (tls) {
+            String clusterCaSecretName = CLUSTER_NAME + "-cluster-ca-cert";
+            String clusterCaSecretVolumeName = "ca-cert";
+
+            String userSecretVolumeName = "tls-cert";
+            String userSecretMountPoint = "/opt/kafka/user-secret";
+            String caSecretMountPoint = "/opt/kafka/cluster-ca";
+            cb.addNewVolumeMount()
+                    .withName(userSecretVolumeName)
+                    .withMountPath(userSecretMountPoint)
+                .endVolumeMount()
+                .addNewVolumeMount()
+                    .withName(clusterCaSecretVolumeName)
+                    .withMountPath(caSecretMountPoint)
+                .endVolumeMount()
+                .addNewEnv().withName("PRODUCER_CONFIGURATION").withValue("\n" +
+                    "security.protocol=SSL\n" +
+                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                    "ssl.truststore.location=/tmp/truststore.p12\n" +
+                    "ssl.keystore.type=pkcs12").endEnv()
+                .addNewEnv().withName("CONSUMER_CONFIGURATION").withValue("\n" +
+                    "auto.offset.reset=earliest\n" +
+                    "security.protocol=SSL\n" +
+                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                    "ssl.truststore.location=/tmp/truststore.p12\n" +
+                    "ssl.keystore.type=pkcs12").endEnv()
+                .addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
+                .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv()
+                .addNewEnv().withName("KAFKA_USER").withValue(kafkaUser).endEnv()
+                .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv()
+                .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
+                .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv()
+                .addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
+
+            podSpecBuilder
+                .addNewVolume()
+                    .withName(userSecretVolumeName)
+                    .withNewSecret()
+                        .withSecretName(kafkaUser)
+                    .endSecret()
+                .endVolume()
+                .addNewVolume()
+                    .withName(clusterCaSecretVolumeName)
+                    .withNewSecret()
+                        .withSecretName(clusterCaSecretName)
+                    .endSecret()
+                .endVolume();
+        }
+
+        Job job = resources().deleteLater(namespacedClient().extensions().jobs().create(new JobBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .withName(name)
+                            .addToLabels("job", name)
+                        .endMetadata()
+                        .withSpec(podSpecBuilder.withContainers(cb.build()).build())
+                    .endTemplate()
+                .endSpec()
+                .build()));
+        LOGGER.info("Created Job {}", job);
+        return job;
+    }
+
+    /**
+     *
+     */
     @KafkaFromClasspathYaml
     @Test
     @JUnitGroup(name = "regression")

@@ -8,10 +8,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
-import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
-import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
-import io.strimzi.api.kafka.DoneableKafkaTopic;
+import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
@@ -67,15 +67,15 @@ public class OpenShiftTemplatesST {
     private KubernetesClient client = new DefaultKubernetesClient();
 
     private Kafka getKafkaWithName(String clusterName) {
-        return client.customResources(Crds.kafka(), Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return client.customResources(Crds.kafka(), Kafka.class, KafkaAssemblyList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     private KafkaConnect getKafkaConnectWithName(String clusterName) {
-        return client.customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return client.customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     private KafkaConnectS2I getKafkaConnectS2IWithName(String clusterName) {
-        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2IAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     @Test

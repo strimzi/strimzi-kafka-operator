@@ -16,7 +16,9 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Sidecar;
@@ -161,7 +163,8 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setLivenessInitialDelay(zookeeperClusterSpec.getLivenessProbe().getInitialDelaySeconds());
             zk.setLivenessTimeout(zookeeperClusterSpec.getLivenessProbe().getTimeoutSeconds());
         }
-        zk.setLogging(zookeeperClusterSpec.getLogging());
+        Logging logging = zookeeperClusterSpec.getLogging();
+        zk.setLogging(logging == null ? new InlineLogging() : logging);
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null && !metrics.isEmpty()) {
             zk.setMetricsEnabled(true);

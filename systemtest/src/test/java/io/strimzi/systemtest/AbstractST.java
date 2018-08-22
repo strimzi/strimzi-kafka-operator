@@ -6,22 +6,22 @@ package io.strimzi.systemtest;
 
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
-import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
-import io.strimzi.api.kafka.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -32,6 +32,8 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.Stopwatch;
@@ -81,8 +83,13 @@ public class AbstractST {
     @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
 
-    static KubernetesClient client = new DefaultKubernetesClient();
+    static DefaultKubernetesClient client = new DefaultKubernetesClient();
     KubeClient<?> kubeClient = cluster.client();
+    private Resources resources;
+
+    protected NamespacedKubernetesClient namespacedClient() {
+        return client.inNamespace(kubeClient.namespace());
+    }
 
     static String kafkaClusterName(String clusterName) {
         return clusterName + "-kafka";
@@ -136,7 +143,7 @@ public class AbstractST {
         return clusterName + "-entity-operator";
     }
 
-    private <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>>
+    private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
         void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
         Resource<T, D> namedResource = Crds.operation(client, crdClass, listClass, doneableClass).inNamespace(kubeClient.namespace()).withName(resourceName);
         T resource = namedResource.get();
@@ -145,11 +152,11 @@ public class AbstractST {
     }
 
     void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
-        replaceCrdResource(Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class, resourceName, editor);
+        replaceCrdResource(Kafka.class, KafkaAssemblyList.class, DoneableKafka.class, resourceName, editor);
     }
 
     void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnect> editor) {
-        replaceCrdResource(KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnectAssembly.class, resourceName, editor);
+        replaceCrdResource(KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class, resourceName, editor);
     }
 
     void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {
@@ -363,5 +370,21 @@ public class AbstractST {
     public String  getInitContainerImageName(String podName) {
         String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
         return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
+    }
+
+    @Before
+    public void createResources() {
+        resources = new Resources(namespacedClient());
+    }
+
+    @After
+    public void deleteResources() {
+        LOGGER.info("Deleting resources after the test");
+        resources.deleteResources();
+        resources = null;
+    }
+
+    Resources resources() {
+        return resources;
     }
 }

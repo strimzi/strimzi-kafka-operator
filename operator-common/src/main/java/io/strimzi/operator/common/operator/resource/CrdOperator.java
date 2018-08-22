@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceDoneable;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
             L extends CustomResourceList<T>,
-            D extends CustomResourceDoneable<T>>
+            D extends Doneable<T>>
         extends AbstractWatchableResourceOperator<C, T, L, D, Resource<T, D>> {
 
     private final Class<T> cls;

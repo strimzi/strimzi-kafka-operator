@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -97,7 +97,7 @@ public class PartialRollingUpdateTest {
         CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(KAFKA_CRD_FILE, CustomResourceDefinition.class);
 
         KubernetesClient bootstrapClient = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
                 .withInitialInstances(Collections.singleton(cluster))
                 .end()
                 .build();
@@ -132,7 +132,7 @@ public class PartialRollingUpdateTest {
         CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(KAFKA_CRD_FILE, CustomResourceDefinition.class);
 
         this.mockClient = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
                 .withInitialInstances(Collections.singleton(cluster))
                 .end()
                 .withInitialStatefulSets(set(zkSs, kafkaSs))

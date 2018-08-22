@@ -24,8 +24,8 @@ import java.util.Map;
  */
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = true,
-        builderPackage = "io.strimzi.api.kafka.model"
+        generateBuilderPackage = false,
+        builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -80,7 +80,7 @@ public class EntityOperatorSpec implements Serializable {
 
     @Description("Pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "tolerations")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<Toleration> getTolerations() {
         return tolerations;
     }
