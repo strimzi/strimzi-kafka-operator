@@ -2,7 +2,7 @@
  * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.topic;
+package io.strimzi.test;
 
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
@@ -20,7 +20,9 @@ public class EmbeddedZooKeeper {
 
     public EmbeddedZooKeeper() throws IOException, InterruptedException {
         dir = Files.createTempDirectory("strimzi").toFile();
-        dir.mkdirs();
+        //if (!dir.mkdirs()) {
+            // ignore
+        //}
         zk = new ZooKeeperServer(dir, dir, 1000);
         start(new InetSocketAddress(0));
     }
@@ -49,18 +51,23 @@ public class EmbeddedZooKeeper {
         if (factory != null) {
             factory.shutdown();
         }
-        //delete(dir);
+        delete(dir);
     }
 
     private static void delete(File file) {
-        if (file.isFile()) {
-            file.delete();
-        } else {
-            for (File child : file.listFiles()) {
+        File[] children = file.listFiles();
+        if (children != null) {
+            for (File child : children) {
                 delete(child);
             }
-            file.delete();
         }
+        if (!file.delete()) {
+            noop();
+        }
+    }
+
+    private static void noop() {
+        // Here merely to please findbugs
     }
 
     public int getZkPort() {

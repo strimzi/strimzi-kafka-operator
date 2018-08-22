@@ -39,6 +39,7 @@
     </properties>
 
     <modules>
+        <module>test</module>
         <module>crd-generator</module>
         <module>api</module>
         <module>operator-common</module>
@@ -52,6 +53,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>test</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>api</artifactId>

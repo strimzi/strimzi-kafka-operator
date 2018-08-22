@@ -4,11 +4,16 @@
  */
 package io.strimzi.operator.user;
 
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaUserAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
@@ -19,17 +24,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-
 public class ResourceUtils {
     public static final Map LABELS = Collections.singletonMap("foo", "bar");
     public static final String NAMESPACE = "namespace";
     public static final String NAME = "user";
     public static final String CA_NAME = "somename";
 
-    public static KafkaUser createKafkaUser() {
+    public static KafkaUser createKafkaUser(KafkaUserAuthentication authentication) {
         return new KafkaUserBuilder()
                 .withMetadata(
                         new ObjectMetaBuilder()
@@ -39,7 +40,7 @@ public class ResourceUtils {
                                 .build()
                 )
                 .withNewSpec()
-                .withAuthentication(new KafkaUserTlsClientAuthentication())
+                .withAuthentication(authentication)
                 .withNewKafkaUserAuthorizationSimpleAuthorization()
                     .addNewAcl()
                         .withNewAclRuleTopicResourceResource()
@@ -64,6 +65,14 @@ public class ResourceUtils {
                 .build();
     }
 
+    public static KafkaUser createKafkaUserTls() {
+        return createKafkaUser(new KafkaUserTlsClientAuthentication());
+    }
+
+    public static KafkaUser createKafkaUserScramSha() {
+        return createKafkaUser(new KafkaUserScramSha512ClientAuthentication());
+    }
+
     public static Secret createClientsCa()  {
         return new SecretBuilder()
                 .withNewMetadata()
@@ -75,7 +84,7 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static Secret createUserCert()  {
+    public static Secret createUserSecretTls()  {
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName(NAME)
@@ -85,6 +94,17 @@ public class ResourceUtils {
                 .addToData("ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
                 .addToData("user.key", Base64.getEncoder().encodeToString("expected-key".getBytes()))
                 .addToData("user.crt", Base64.getEncoder().encodeToString("expected-crt".getBytes()))
+                .build();
+    }
+
+    public static Secret createUserSecretScramSha()  {
+        return new SecretBuilder()
+                .withNewMetadata()
+                .withName(NAME)
+                .withNamespace(NAMESPACE)
+                .withLabels(Labels.userLabels(LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap())
+                .endMetadata()
+                .addToData("password", "my-password")
                 .build();
     }
 

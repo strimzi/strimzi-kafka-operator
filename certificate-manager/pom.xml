@@ -32,10 +32,7 @@
     </dependency>
     <dependency>
       <groupId>io.strimzi</groupId>
-      <artifactId>api</artifactId>
-      <classifier>tests</classifier>
-      <type>test-jar</type>
-      <scope>test</scope>
+      <artifactId>test</artifactId>
     </dependency>
   </dependencies>
 

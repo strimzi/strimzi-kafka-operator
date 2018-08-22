@@ -4,16 +4,22 @@
  */
 package io.strimzi.operator.user.model;
 
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
+import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
+import io.strimzi.operator.user.operator.PasswordGenerator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -28,11 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class KafkaUserModel {
     private static final Logger log = LogManager.getLogger(KafkaUserModel.class.getName());
 
@@ -45,6 +46,7 @@ public class KafkaUserModel {
     protected KafkaUserAuthentication authentication;
     protected CertAndKey caCertAndKey;
     protected CertAndKey userCertAndKey;
+    protected String scramSha512Password;
 
     protected Set<SimpleAclRule> simpleAclRules = null;
 
@@ -70,14 +72,19 @@ public class KafkaUserModel {
      * @param userSecret    ubernetes secret with existing user certificate
      * @return
      */
-    public static KafkaUserModel fromCrd(CertManager certManager, KafkaUser kafkaUser, Secret clientsCa, Secret userSecret) {
+    public static KafkaUserModel fromCrd(CertManager certManager,
+                                         PasswordGenerator passwordGenerator,
+                                         KafkaUser kafkaUser,
+                                         Secret clientsCa, Secret userSecret) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
                 Labels.fromResource(kafkaUser).withKind(kafkaUser.getKind()));
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
 
-        if (kafkaUser.getSpec().getAuthentication() != null && kafkaUser.getSpec().getAuthentication().getType().equals(KafkaUserTlsClientAuthentication.TYPE_TLS)) {
+        if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
             result.maybeGenerateCertificates(certManager, clientsCa, userSecret);
+        } else if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
+            result.maybeGeneratePassword(passwordGenerator, userSecret);
         }
 
         if (kafkaUser.getSpec().getAuthorization() != null && kafkaUser.getSpec().getAuthorization().getType().equals(KafkaUserAuthorizationSimple.TYPE_SIMPLE)) {
@@ -95,11 +102,15 @@ public class KafkaUserModel {
      * @return
      */
     public Secret generateSecret()  {
-        if (authentication != null && authentication.getType().equals(KafkaUserTlsClientAuthentication.TYPE_TLS)) {
+        if (authentication instanceof KafkaUserTlsClientAuthentication) {
             Map<String, String> data = new HashMap<>();
             data.put("ca.crt", Base64.getEncoder().encodeToString(caCertAndKey.cert()));
             data.put("user.key", Base64.getEncoder().encodeToString(userCertAndKey.key()));
             data.put("user.crt", Base64.getEncoder().encodeToString(userCertAndKey.cert()));
+            return createSecret(data);
+        } else if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
+            Map<String, String> data = new HashMap<>();
+            data.put("password", scramSha512Password);
             return createSecret(data);
         } else {
             return null;
@@ -175,6 +186,20 @@ public class KafkaUserModel {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void maybeGeneratePassword(PasswordGenerator generator, Secret userSecret) {
+        if (userSecret != null) {
+            // Secret already exists -> lets verify if it has a password
+            String password = userSecret.getData().get("password");
+            if (password != null && !password.isEmpty()) {
+                this.scramSha512Password = password;
+                return;
+            }
+        }
+        log.debug("Generating user password");
+        this.scramSha512Password = generator.generate();
+
     }
 
     /**
@@ -270,6 +295,10 @@ public class KafkaUserModel {
         this.authentication = authentication;
     }
 
+    public KafkaUserAuthentication getAuthentication() {
+        return this.authentication;
+    }
+
     /**
      * Get list of ACL rules for Simple Authorization which should apply to this user
      *
@@ -282,7 +311,7 @@ public class KafkaUserModel {
     /**
      * Sets list of ACL rules for Simple authorization
      *
-     * @param simpleAclRules List of ACL rules which should be applied to this user
+     * @param rules List of ACL rules which should be applied to this user
      */
     public void setSimpleAclRules(List<AclRule> rules) {
         Set<SimpleAclRule> simpleAclRules = new HashSet<SimpleAclRule>();

@@ -76,6 +76,23 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.debezium</groupId>
+            <artifactId>debezium-core</artifactId>
+            <version>0.8.1.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.debezium</groupId>
+            <artifactId>debezium-core</artifactId>
+            <version>0.8.1.Final</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>test</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>operator-common</artifactId>
             <classifier>tests</classifier>
