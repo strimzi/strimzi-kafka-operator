@@ -269,6 +269,10 @@ public class KafkaUserModel {
         return getUserName(name);
     }
 
+    public String getName() {
+        return name;
+    }
+
     /**
      * Generates the name of the USer secret based on the username
      *

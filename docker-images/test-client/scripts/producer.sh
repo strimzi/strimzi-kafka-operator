@@ -18,13 +18,19 @@ if [ "$PRODUCER_TLS"="TRUE" ]; then
   if [ -z "$CERTS_STORE_PASSWORD" ]; then
     export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
   fi
+  if [ -n "${KEYSTORE_LOCATION}" ]; then
+    PRODUCER_CONFIGURATION="${PRODUCER_CONFIGURATION}
+ssl.keystore.password=${CERTS_STORE_PASSWORD}"
+  fi
+  if [ -n "${TRUSTSTORE_LOCATION}" ]; then
+    PRODUCER_CONFIGURATION="${PRODUCER_CONFIGURATION}
+ssl.truststore.password=${CERTS_STORE_PASSWORD}"
+  fi
   ./kafka_tls_prepare_certificates.sh
 fi
 
 echo "Starting Producer with configuration:"
-./producer_config_generator.sh | tee /tmp/producer.properties
-
-cat /tmp/producer.properties
+echo "${PRODUCER_CONFIGURATION}" | tee /tmp/producer.properties
 
 # starting Kafka server with final configuration
 $KAFKA_HOME/bin/kafka-verifiable-producer.sh --producer.config /tmp/producer.properties $PRODUCER_OPTS

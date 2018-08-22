@@ -2,9 +2,6 @@
 
 set -x
 
-ls -l "${CA_LOCATION}"
-ls -l "${USER_LOCATION}"
-
 # Parameters:
 # $1: Path to the new truststore
 # $2: Truststore password
@@ -14,10 +11,12 @@ function create_truststore {
    keytool -keystore "$1" -storepass "$2" -noprompt -alias "$4" -import -file "$3" -storetype PKCS12
 }
 
-rm "${TRUSTSTORE_LOCATION}"
+if [ -n "${TRUSTSTORE_LOCATION}" ]; then
+  rm "${TRUSTSTORE_LOCATION}"
 
-create_truststore "$TRUSTSTORE_LOCATION" "$CERTS_STORE_PASSWORD" \
-  "${CA_LOCATION}/ca.crt" "clients-ca"
+  create_truststore "$TRUSTSTORE_LOCATION" "${CERTS_STORE_PASSWORD}" \
+    "${CA_LOCATION}/ca.crt" "clients-ca"
+fi
 
 # Parameters:
 # $1: Path to the new keystore
@@ -30,8 +29,10 @@ function create_keystore {
    RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -chain -CAfile "$5" -name "$6" -password pass:"$2" -out "$1"
 }
 
-rm "${KEYSTORE_LOCATION}"
+if [ -n "${KEYSTORE_LOCATION}" ]; then
+  rm "${KEYSTORE_LOCATION}"
 
-create_keystore "$KEYSTORE_LOCATION" "$CERTS_STORE_PASSWORD" \
-   "${USER_LOCATION}/user.crt" "${USER_LOCATION}/user.key" \
-   "${USER_LOCATION}/ca.crt" "$KAFKA_USER"
+  create_keystore "$KEYSTORE_LOCATION" "${CERTS_STORE_PASSWORD}" \
+    "${USER_LOCATION}/user.crt" "${USER_LOCATION}/user.key" \
+    "${USER_LOCATION}/ca.crt" "$KAFKA_USER"
+fi

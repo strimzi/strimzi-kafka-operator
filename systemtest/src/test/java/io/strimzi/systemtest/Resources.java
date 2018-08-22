@@ -94,7 +94,7 @@ public class Resources {
         }
     }
 
-    io.strimzi.api.kafka.model.DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
+    DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
         return kafka(defaultKafka(name, kafkaReplicas).build());
     }
 
@@ -140,8 +140,11 @@ public class Resources {
                     .endSpec();
     }
 
-    io.strimzi.api.kafka.model.DoneableKafka kafka(Kafka kafka) {
-        return new io.strimzi.api.kafka.model.DoneableKafka(kafka, k -> waitFor(deleteLater(kafka().create(k))));
+    DoneableKafka kafka(Kafka kafka) {
+        return new DoneableKafka(kafka, k -> {
+            LOGGER.info("Creating Kafka\n{}", TestUtils.toYamlString(k));
+            return waitFor(deleteLater(kafka().create(k)));
+        });
     }
 
     Kafka waitFor(Kafka kafka) {

@@ -6,6 +6,5 @@ cat <<EOF
 ${PRODUCER_CONFIGURATION}
 
 # Fixed configuration
-ssl.keystore.password=${CERTS_STORE_PASSWORD}
-ssl.truststore.password=${CERTS_STORE_PASSWORD}
+
 EOF

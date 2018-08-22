@@ -115,7 +115,7 @@ public class KafkaUserOperator {
         log.debug("{}: Updating User", reconciliation, userName, namespace);
         Secret desired = user.generateSecret();
         CompositeFuture.join(
-                scramShaCredentialOperator.reconcile(user.getUserName(), desired != null ? desired.getData().get("password") : null),
+                scramShaCredentialOperator.reconcile(user.getName(), desired != null ? desired.getData().get("password") : null),
                 secretOperations.reconcile(namespace, user.getSecretName(), desired),
                 aclOperations.reconcile(user.getUserName(), user.getSimpleAclRules()))
                 .map((Void) null).setHandler(handler);

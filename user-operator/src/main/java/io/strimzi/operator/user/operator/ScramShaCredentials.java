@@ -39,9 +39,10 @@ public class ScramShaCredentials {
 
     /**
      * Create or update the SCRAM-SHA credentials for the given user.
+     * @param iterations If <= 0 the default number of iterations will be used.
      */
     public void createOrUpdate(String username, String password, int iterations) {
-        if (iterations < mechanism.minIterations()) {
+        if (0 < iterations && iterations < mechanism.minIterations()) {
             throw new RuntimeException("Given number of iterations (" + iterations + ") " +
                     "is less than minimum iterations for mechanism (" + mechanism.minIterations() + ")");
         }

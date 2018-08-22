@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
@@ -28,17 +29,18 @@ import static java.util.Collections.emptyMap;
 public class KafkaListenerTls implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private KafkaListenerAuthentication serverAuthentication;
+    private KafkaListenerAuthentication auth;
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication configuration for this listener.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaListenerAuthentication getAuthentication() {
-        return serverAuthentication;
+    @JsonProperty("authentication")
+    public KafkaListenerAuthentication getAuth() {
+        return auth;
     }
 
-    public void setAuthentication(KafkaListenerAuthentication serverAuthentication) {
-        this.serverAuthentication = serverAuthentication;
+    public void setAuth(KafkaListenerAuthentication auth) {
+        this.auth = auth;
     }
 
     @JsonAnyGetter

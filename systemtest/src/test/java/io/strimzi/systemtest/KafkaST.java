@@ -333,7 +333,7 @@ public class KafkaST extends AbstractST {
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
         KafkaListenerTls listenerTls = new KafkaListenerTls();
-        listenerTls.setAuthentication(auth);
+        listenerTls.setAuth(auth);
 
         // Use a Kafka with plain listener disabled
         resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
@@ -348,6 +348,7 @@ public class KafkaST extends AbstractST {
                 .endSpec().build()).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaUser user = resources().tlsUser(kafkaUser).done();
+        waitTillSecretExists(kafkaUser);
 
         // Create ping job
         Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, user, true));
@@ -359,7 +360,7 @@ public class KafkaST extends AbstractST {
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
-    //@Test
+    @Test
     @JUnitGroup(name = "acceptance")
     public void testSendMessagesPlainScramSha() {
         String kafkaUser = "my-user";
@@ -376,13 +377,12 @@ public class KafkaST extends AbstractST {
                     .editKafka()
                         .withNewListeners()
                             .withPlain(listenerTls)
-                            .withNewTls()
-                            .endTls()
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaUser user = resources().scramShaUser(kafkaUser).done();
+        waitTillSecretExists(kafkaUser);
 
         // Create ping job
         Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, user, false));
@@ -391,33 +391,39 @@ public class KafkaST extends AbstractST {
         checkPings(messagesCount, job);
     }
 
+    private void waitTillSecretExists(String secretName) {
+        waitFor("secret " + secretName + " exists", 5000, 300000,
+            () -> namespacedClient().secrets().withName(secretName).get() != null);
+    }
+
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
-    //@Test
+    @Test
     @JUnitGroup(name = "acceptance")
     public void testSendMessagesTlsScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-scram-sha";
         int messagesCount = 20;
 
-        KafkaListenerAuthenticationScramSha512 auth = new KafkaListenerAuthenticationScramSha512();
+
         KafkaListenerTls listenerTls = new KafkaListenerTls();
-        listenerTls.setAuthentication(auth);
+        listenerTls.setAuth(new KafkaListenerAuthenticationScramSha512());
+
+        LOGGER.info("Here's the listener: {}", TestUtils.toYamlString(listenerTls));
 
         // Use a Kafka with plain listener disabled
         resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withTls(listenerTls)
-                            .withNewTls()
-                            .endTls()
+                            .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
         KafkaUser user = resources().scramShaUser(kafkaUser).done();
+        waitTillSecretExists(kafkaUser);
 
         // Create ping job
         Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, user, true));
@@ -493,12 +499,13 @@ public class KafkaST extends AbstractST {
                     } else if (status.getSucceeded() != null && status.getSucceeded() == 1) {
                         LOGGER.debug("Poll job succeeded");
                         return true;
-                    } else if (status.getActive() > 0) {
+                    } else if (status.getActive() != null && status.getActive() > 0) {
                         LOGGER.debug("Poll job has active");
                         return false;
                     }
                 }
-                throw new RuntimeException("Unexpected state");
+                LOGGER.debug("Poll job in indeterminate state");
+                return false;
             });
             return job;
         } catch (TimeoutException e) {
@@ -559,7 +566,7 @@ public class KafkaST extends AbstractST {
         String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
         boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
         boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
-        String producerConfiguration = "\n";
+        String producerConfiguration = "";
         String consumerConfiguration = "auto.offset.reset=earliest\n";
         if (tlsListener) {
             if (scramShaUser) {
@@ -572,13 +579,11 @@ public class KafkaST extends AbstractST {
                 producerConfiguration += "security.protocol=SSL\n";
             }
             producerConfiguration +=
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
                     "ssl.truststore.location=/tmp/truststore.p12\n" +
-                    "ssl.keystore.type=pkcs12";
+                    "ssl.truststore.type=pkcs12\n";
             consumerConfiguration += "auto.offset.reset=earliest\n" +
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
                     "ssl.truststore.location=/tmp/truststore.p12\n" +
-                    "ssl.keystore.type=pkcs12";
+                    "ssl.truststore.type=pkcs12\n";
         } else {
             if (scramShaUser) {
                 consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
@@ -590,10 +595,14 @@ public class KafkaST extends AbstractST {
                 producerConfiguration += "security.protocol=PLAINTEXT\n";
             }
         }
-        cb.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv()
-                .addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
 
         if (tlsUser) {
+            producerConfiguration +=
+                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                    "ssl.keystore.type=pkcs12\n";
+            consumerConfiguration += "auto.offset.reset=earliest\n" +
+                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                    "ssl.keystore.type=pkcs12\n";
             cb.addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
                     .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv();
 
@@ -613,6 +622,9 @@ public class KafkaST extends AbstractST {
                     .endVolume();
         }
 
+        cb.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv()
+                .addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
+
         if (kafkaUserName != null) {
             cb.addNewEnv().withName("KAFKA_USER").withValue(kafkaUserName).endEnv();
         }
@@ -628,8 +640,10 @@ public class KafkaST extends AbstractST {
                 .addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
                 .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv()
                 .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
-                .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv()
-                .addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
+                .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv();
+            if (tlsUser) {
+                cb.addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
+            }
             podSpecBuilder
                 .addNewVolume()
                     .withName(clusterCaSecretVolumeName)
