@@ -37,7 +37,10 @@ import io.fabric8.kubernetes.api.model.apiextensions.DoneableCustomResourceDefin
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
 import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.extensions.DoneableNetworkPolicy;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -99,6 +102,7 @@ public class MockKube {
     private final Map<String, Deployment> depDb = db(emptySet(), Deployment.class, DoneableDeployment.class);
     private final Map<String, Secret> secretDb = db(emptySet(), Secret.class, DoneableSecret.class);
     private final Map<String, ServiceAccount> serviceAccountDb = db(emptySet(), ServiceAccount.class, DoneableServiceAccount.class);
+    private final Map<String, NetworkPolicy> policyDb = db(emptySet(), NetworkPolicy.class, DoneableNetworkPolicy.class);
 
     public MockKube withInitialCms(Set<ConfigMap> initialCms) {
         this.cmDb.putAll(db(initialCms, ConfigMap.class, DoneableConfigMap.class));
@@ -117,6 +121,11 @@ public class MockKube {
 
     public MockKube withInitialSecrets(Set<Secret> initial) {
         this.secretDb.putAll(db(initial, Secret.class, DoneableSecret.class));
+        return this;
+    }
+
+    public MockKube withInitialNetworkPolicy(Set<NetworkPolicy> initial) {
+        this.policyDb.putAll(db(initial, NetworkPolicy.class, DoneableNetworkPolicy.class));
         return this;
     }
 
@@ -163,6 +172,7 @@ public class MockKube {
         MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> mockDep = buildDeployments();
         MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> mockSecrets = buildSecrets();
         MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> mockServiceAccounts = buildServiceAccount();
+        MixedOperation<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> mockNetworkPolicy = buildNetworkPolicy();
 
         when(mockClient.configMaps()).thenReturn(mockCms);
 
@@ -200,6 +210,7 @@ public class MockKube {
 
         when(mockClient.secrets()).thenReturn(mockSecrets);
         when(mockClient.serviceAccounts()).thenReturn(mockServiceAccounts);
+        when(mockClient.extensions().networkPolicies()).thenReturn(mockNetworkPolicy);
 
         mockHttpClientForWorkaroundRbac(mockClient);
         return mockClient;
@@ -507,6 +518,21 @@ public class MockKube {
             }
         }.build();
     }
+
+    private MixedOperation<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> buildNetworkPolicy() {
+        return new AbstractMockBuilder<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>>(
+                NetworkPolicy.class, NetworkPolicyList.class, DoneableNetworkPolicy.class, castClass(Resource.class), policyDb) {
+            @Override
+            protected void nameScopedMocks(Resource<NetworkPolicy, DoneableNetworkPolicy> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
+    }
+
 
     private <T extends CustomResource,
             L extends KubernetesResource & KubernetesResourceList<T>,

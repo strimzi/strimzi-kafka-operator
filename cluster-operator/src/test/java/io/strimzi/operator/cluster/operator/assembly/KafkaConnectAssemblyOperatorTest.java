@@ -20,6 +20,7 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -91,6 +92,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -110,7 +112,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
 
@@ -151,6 +153,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -182,7 +185,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
@@ -211,6 +214,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -270,7 +274,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
@@ -311,6 +315,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -349,7 +354,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
@@ -368,6 +373,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -396,7 +402,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
@@ -417,6 +423,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -445,7 +452,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
@@ -464,6 +471,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -485,7 +493,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
         ops.delete(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), createResult -> {
@@ -512,6 +520,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
+        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
 
 
         String clusterCmNamespace = "test";
@@ -550,7 +559,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps) {
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps) {
 
             @Override
             public void createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {

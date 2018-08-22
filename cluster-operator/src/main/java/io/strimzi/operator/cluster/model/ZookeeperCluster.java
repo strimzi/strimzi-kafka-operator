@@ -8,12 +8,18 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyBuilder;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyIngressRuleBuilder;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -226,6 +232,35 @@ public class ZookeeperCluster extends AbstractModel {
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
 
         return createService("ClusterIP", ports, getPrometheusAnnotations());
+    }
+
+    public NetworkPolicy generateNetworkPolicy() {
+        NetworkPolicyPort p1 = new NetworkPolicyPort();
+        p1.setPort(new IntOrString(CLIENT_PORT));
+
+        NetworkPolicyPort p2 = new NetworkPolicyPort();
+        p2.setPort(new IntOrString(CLUSTERING_PORT));
+
+        NetworkPolicyPort p3 = new NetworkPolicyPort();
+        p3.setPort(new IntOrString(LEADER_ELECTION_PORT));
+
+        NetworkPolicyIngressRule networkPolicyIngressRule = new NetworkPolicyIngressRuleBuilder()
+                .withPorts(p1, p2, p3)
+                .build();
+
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+                .withNewMetadata()
+                .withName(policyName(cluster))
+                .withNamespace(namespace)
+                .withLabels(labels.toMap())
+                .endMetadata()
+                .withNewSpec()
+                .withIngress(networkPolicyIngressRule)
+                .endSpec()
+                .build();
+
+        log.trace("Created network policy {}", networkPolicy);
+        return networkPolicy;
     }
 
     public Service generateHeadlessService() {

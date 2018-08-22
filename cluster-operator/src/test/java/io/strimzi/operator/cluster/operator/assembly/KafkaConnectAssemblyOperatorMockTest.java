@@ -19,6 +19,7 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
@@ -83,10 +84,11 @@ public class KafkaConnectAssemblyOperatorMockTest {
         ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
         DeploymentOperator depops = new DeploymentOperator(vertx, mockClient);
         SecretOperator secretops = new SecretOperator(vertx, mockClient);
+        NetworkPolicyOperator policyops = new NetworkPolicyOperator(vertx, mockClient);
         KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 connectOperator,
-                cmops, depops, svcops, secretops);
+                cmops, depops, svcops, secretops, policyops);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();

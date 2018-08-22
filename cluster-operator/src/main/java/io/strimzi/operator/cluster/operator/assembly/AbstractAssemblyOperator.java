@@ -23,6 +23,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 
 import io.vertx.core.AsyncResult;
@@ -63,6 +64,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
+    protected final NetworkPolicyOperator networkPolicyOperator;
     private final String kind;
 
     /**
@@ -74,7 +76,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, ResourceType assemblyType,
                                        CertManager certManager,
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
-                                       SecretOperator secretOperations) {
+                                       SecretOperator secretOperations,
+                                       NetworkPolicyOperator networkPolicyOperator) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
@@ -82,6 +85,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.resourceOperator = resourceOperator;
         this.certManager = certManager;
         this.secretOperations = secretOperations;
+        this.networkPolicyOperator = networkPolicyOperator;
     }
 
     /**
