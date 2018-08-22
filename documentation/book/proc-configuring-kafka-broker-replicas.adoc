@@ -3,7 +3,7 @@
 // assembly-kafka-broker-replicas.adoc
 
 [id='proc-configuring-kafka-broker-replicas-{context}']
-= Configuring number of broker nodes
+= Configuring the number of broker nodes
 
 Number of Kafka broker nodes is configured using the `replicas` property in `Kafka.spec.kafka`.
 
