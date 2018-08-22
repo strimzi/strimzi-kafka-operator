@@ -49,9 +49,9 @@ spec:
           patternType: literal
         operation: Read
 ----
-+
+
 . Update the `KafkaUser` resource in {ProductPlatformName}.
-+
+
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
@@ -61,7 +61,7 @@ endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 [source,shell,subs=+quotes]
 oc apply -f _<your-file>_
-+
+
 . Use the updated credentials from the `my-user` secret in your application.
 
 
