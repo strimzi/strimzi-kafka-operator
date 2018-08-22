@@ -15,11 +15,6 @@ This procedure describes how to change the configuration of an existing Kafka us
 
 .Procedure
 
-You can edit the user either by preparing a YAML file containing the desired `KafkaUser` or by using {ProductPlatformName} tools.
-
-
-.Using YAML file
-
 . Prepare a YAML file containing the desired `KafkaUser`.
 +
 .An example `KafkaUser`
@@ -69,27 +64,6 @@ On {OpenShiftName} this can be done using `oc apply`:
 [source,shell,subs=+quotes]
 oc apply -f _<your-file>_
 +
-. Use the updated credentials from the `my-user` secret in your application.
-
-[start=1]
-
-.Editing the `KafkaUser` resource using {ProductPlatformName} tools
-
-. Run the following command to edit the `KafkaUser` resource in the command line.
-+
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl edit`:
-+
-[source,shell,subs=+quotes]
-kubectl edit kafkauser _<your-user-name>_
-endif::Kubernetes[]
-+
-On {OpenShiftName} this can be done using `oc edit`:
-[source,shell,subs=+quotes]
-oc edit kafkauser _<your-user-name>_
-+
-. Save the changes to the file.
-
 . Use the updated credentials from the `my-user` secret in your application.
 
 
