@@ -14,9 +14,14 @@ import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.KafkaListenerTls;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
+import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
@@ -341,10 +346,80 @@ public class KafkaST extends AbstractST {
                     .endKafka()
                 .endSpec().build()).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
-        resources().tlsUser(kafkaUser).done();
+        KafkaUser user = resources().tlsUser(kafkaUser).done();
 
         // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, kafkaUser, true));
+        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, user, true));
+
+        // Now check the pod logs the messages were produced and consumed
+        checkPings(messagesCount, job);
+    }
+
+    /**
+     * Test sending messages over tls transport using mutual tls auth
+     */
+    //@Test
+    //@JUnitGroup(name = "acceptance")
+    public void testSendMessagesPlainScramSha() {
+        String kafkaUser = "my-user";
+        String name = "send-messages-plain-scram-sha";
+        int messagesCount = 20;
+
+        KafkaListenerAuthenticationScramSha512 auth = new KafkaListenerAuthenticationScramSha512();
+        KafkaListenerPlain listenerTls = new KafkaListenerPlain();
+        listenerTls.setAuthentication(auth);
+
+        // Use a Kafka with plain listener disabled
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withPlain(listenerTls)
+                            .withNewTls()
+                            .endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().build()).done();
+        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaUser user = resources().scramShaUser(kafkaUser).done();
+
+        // Create ping job
+        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, user, false));
+
+        // Now check the pod logs the messages were produced and consumed
+        checkPings(messagesCount, job);
+    }
+
+    /**
+     * Test sending messages over tls transport using mutual tls auth
+     */
+    //@Test
+    //@JUnitGroup(name = "acceptance")
+    public void testSendMessagesTlsScramSha() {
+        String kafkaUser = "my-user";
+        String name = "send-messages-tls-scram-sha";
+        int messagesCount = 20;
+
+        KafkaListenerAuthenticationScramSha512 auth = new KafkaListenerAuthenticationScramSha512();
+        KafkaListenerTls listenerTls = new KafkaListenerTls();
+        listenerTls.setAuthentication(auth);
+
+        // Use a Kafka with plain listener disabled
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withTls(listenerTls)
+                            .withNewTls()
+                            .endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().build()).done();
+        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        KafkaUser user = resources().scramShaUser(kafkaUser).done();
+
+        // Create ping job
+        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, user, true));
 
         // Now check the pod logs the messages were produced and consumed
         checkPings(messagesCount, job);
@@ -451,12 +526,17 @@ public class KafkaST extends AbstractST {
      * The job will be deleted from the kubernetes cluster at the end of the test.
      * @param name The name of the {@code Job} and also the consumer group id.
      *             The Job's pod will also use this in a {@code job=<name>} selector.
+     * @param topic The topic to send messages over
+     * @param messagesCount The number of messages to send and receive.
+     * @param kafkaUser The user to send and receive the messages as.
+     * @param tlsListener true if the clients should connect over the TLS listener,
+     *                    otherwise the plaintext listener will be used.
      * @param messagesCount The number of messages to produce & consume
      * @return The job
      */
-    private Job pingJob(String name, String topic, int messagesCount, String kafkaUser, boolean tls) {
+    private Job pingJob(String name, String topic, int messagesCount, KafkaUser kafkaUser, boolean tlsListener) {
 
-        String connect = tls ? CLUSTER_NAME + "-kafka-bootstrap:9093" : CLUSTER_NAME + "-kafka-bootstrap:9092";
+        String connect = tlsListener ? CLUSTER_NAME + "-kafka-bootstrap:9093" : CLUSTER_NAME + "-kafka-bootstrap:9092";
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("ping")
                 .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))
@@ -475,47 +555,79 @@ public class KafkaST extends AbstractST {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder()
                 .withRestartPolicy("OnFailure");
 
-        if (tls) {
-            String clusterCaSecretName = CLUSTER_NAME + "-cluster-ca-cert";
-            String clusterCaSecretVolumeName = "ca-cert";
+        String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
+        boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
+        boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
+        String producerConfiguration = "\n";
+        String consumerConfiguration = "auto.offset.reset=earliest\n";
+        if (tlsListener) {
+            if (scramShaUser) {
+                consumerConfiguration += "security.protocol=SASL_SSL\n";
+                producerConfiguration += "security.protocol=SASL_SSL\n";
+            } else {
+                consumerConfiguration += "security.protocol=SSL\n";
+                producerConfiguration += "security.protocol=SSL\n";
+            }
+            producerConfiguration +=
+                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                    "ssl.truststore.location=/tmp/truststore.p12\n" +
+                    "ssl.keystore.type=pkcs12";
+            consumerConfiguration += "auto.offset.reset=earliest\n" +
+                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                    "ssl.truststore.location=/tmp/truststore.p12\n" +
+                    "ssl.keystore.type=pkcs12";
+        } else {
+            if (scramShaUser) {
+                consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+            } else {
+                consumerConfiguration += "security.protocol=PLAINTEXT\n";
+                producerConfiguration += "security.protocol=PLAINTEXT\n";
+            }
+        }
+        cb.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv()
+                .addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
+
+        if (tlsUser) {
+            cb.addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
+                    .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv();
 
             String userSecretVolumeName = "tls-cert";
             String userSecretMountPoint = "/opt/kafka/user-secret";
-            String caSecretMountPoint = "/opt/kafka/cluster-ca";
             cb.addNewVolumeMount()
                     .withName(userSecretVolumeName)
                     .withMountPath(userSecretMountPoint)
-                .endVolumeMount()
-                .addNewVolumeMount()
+                    .endVolumeMount()
+                    .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv();
+            podSpecBuilder
+                    .addNewVolume()
+                    .withName(userSecretVolumeName)
+                    .withNewSecret()
+                    .withSecretName(kafkaUserName)
+                    .endSecret()
+                    .endVolume();
+        } else if (scramShaUser) {
+            // TODO DO SOMETHING HERE
+        }
+
+        if (kafkaUserName != null) {
+            cb.addNewEnv().withName("KAFKA_USER").withValue(kafkaUserName).endEnv();
+        }
+
+        if (tlsListener) {
+            String clusterCaSecretName = CLUSTER_NAME + "-cluster-ca-cert";
+            String clusterCaSecretVolumeName = "ca-cert";
+            String caSecretMountPoint = "/opt/kafka/cluster-ca";
+            cb.addNewVolumeMount()
                     .withName(clusterCaSecretVolumeName)
                     .withMountPath(caSecretMountPoint)
                 .endVolumeMount()
-                .addNewEnv().withName("PRODUCER_CONFIGURATION").withValue("\n" +
-                    "security.protocol=SSL\n" +
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
-                    "ssl.truststore.location=/tmp/truststore.p12\n" +
-                    "ssl.keystore.type=pkcs12").endEnv()
-                .addNewEnv().withName("CONSUMER_CONFIGURATION").withValue("\n" +
-                    "auto.offset.reset=earliest\n" +
-                    "security.protocol=SSL\n" +
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
-                    "ssl.truststore.location=/tmp/truststore.p12\n" +
-                    "ssl.keystore.type=pkcs12").endEnv()
                 .addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
                 .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv()
-                .addNewEnv().withName("KAFKA_USER").withValue(kafkaUser).endEnv()
-                .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv()
                 .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
                 .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv()
                 .addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
-
             podSpecBuilder
-                .addNewVolume()
-                    .withName(userSecretVolumeName)
-                    .withNewSecret()
-                        .withSecretName(kafkaUser)
-                    .endSecret()
-                .endVolume()
                 .addNewVolume()
                     .withName(clusterCaSecretVolumeName)
                     .withNewSecret()

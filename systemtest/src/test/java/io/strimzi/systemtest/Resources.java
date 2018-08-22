@@ -213,6 +213,19 @@ public class Resources {
                 .build());
     }
 
+    DoneableKafkaUser scramShaUser(String name) {
+        return user(new KafkaUserBuilder().withMetadata(
+                new ObjectMetaBuilder()
+                        .withName(name)
+                        .withNamespace(client().getNamespace())
+                        .build())
+                .withNewSpec()
+                    .withNewKafkaUserScramSha512ClientAuthenticationAuthentication()
+                    .endKafkaUserScramSha512ClientAuthenticationAuthentication()
+                .endSpec()
+                .build());
+    }
+
     private DoneableKafkaUser user(KafkaUser user) {
         return new DoneableKafkaUser(user, ku -> {
             KafkaUser resource = kafkaUser().create(ku);
