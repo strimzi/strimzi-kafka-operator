@@ -31,6 +31,6 @@ grep_check '\<a {ProductPlatformName}' "The article should be 'an' {ProductPlatf
 grep_check '\<a {ProductPlatformLongName}' "The article should be 'an' {ProductPlatformLongName}"
 
 if [ $fatal -gt 0 ]; then
-  echo "${fatal} docs problems found."
+  echo "ERROR: ${fatal} docs problems found."
   exit 1
 fi

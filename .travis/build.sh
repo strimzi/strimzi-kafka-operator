@@ -15,7 +15,7 @@ if [ ! -e  documentation/book/appendix_crds.adoc ] ; then
 fi
 CHANGED_DERIVED=$(git diff --name-status -- examples/ helm-charts/ documentation/book/appendix_crds.adoc)
 if [ -n "$CHANGED_DERIVED" ] ; then
-  echo "Uncommitted changes in derived resources:"
+  echo "ERROR: Uncommitted changes in derived resources:"
   echo "$CHANGED_DERIVED"
   echo "Run the following to add up-to-date resources:"
   echo "  mvn clean verify -DskipTests -DskipITs \\"
