@@ -10,9 +10,8 @@ The `rack` object has one mandatory field named `topologyKey`.
 This key needs to match one of the labels assigned to the {ProductPlatformName} cluster nodes.
 The label is used by {ProductPlatformName} when scheduling the Kafka broker pods to nodes.
 If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
-If the {ProductPlatformName} cluster is running on a cloud provider platform, that label should represent the availability zone where the node is running.
-Usually, the nodes are labelled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as the `topologyKey` value.
-This will have the effect of spreading the broker pods across zones, and also setting the brokers' `broker.rack` configuration parameter inside Kafka broker.
+Usually, the nodes are labeled with `failure-domain.beta.kubernetes.io/zone` that can be easily used as the `topologyKey` value.
+This has the effect of spreading the broker pods across zones, and also setting the brokers' `broker.rack` configuration parameter inside Kafka broker.
 
 .Prerequisites
 
@@ -22,9 +21,7 @@ This will have the effect of spreading the broker pods across zones, and also se
 .Procedure
 
 . Consult your {ProductPlatformName} administrator regarding the node label that represent the zone / rack into which the node is deployed.
-. Edit the `rack` property in the `Kafka` resource.
-Use the label as the topology key.
-For example:
+. Edit the `rack` property in the `Kafka` resource using the label as the topology key.
 +
 [source,yaml,subs=attributes+]
 ----
