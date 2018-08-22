@@ -26,7 +26,7 @@ import static java.util.Collections.singletonList;
  */
 public class EntityUserOperator extends AbstractModel {
 
-    protected static final String USER_OPERATOR_NAME = "entity-user-operator";
+    protected static final String USER_OPERATOR_CONTAINER_NAME = "user-operator";
     private static final String NAME_SUFFIX = "-entity-user-operator";
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
@@ -164,7 +164,7 @@ public class EntityUserOperator extends AbstractModel {
     protected List<Container> getContainers() {
 
         return Collections.singletonList(new ContainerBuilder()
-                .withName(USER_OPERATOR_NAME)
+                .withName(USER_OPERATOR_CONTAINER_NAME)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))

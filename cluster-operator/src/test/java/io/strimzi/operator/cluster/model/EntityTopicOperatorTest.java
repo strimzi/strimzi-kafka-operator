@@ -157,7 +157,7 @@ public class EntityTopicOperatorTest {
         assertEquals(1, containers.size());
 
         Container container = containers.get(0);
-        assertEquals(EntityTopicOperator.TOPIC_OPERATOR_NAME, container.getName());
+        assertEquals(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME, container.getName());
         assertEquals(entityTopicOperator.getImage(), container.getImage());
         assertEquals(getExpectedEnvVars(), container.getEnv());
         assertEquals(new Integer(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), container.getLivenessProbe().getInitialDelaySeconds());

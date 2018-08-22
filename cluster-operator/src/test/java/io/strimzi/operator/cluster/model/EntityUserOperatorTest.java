@@ -146,7 +146,7 @@ public class EntityUserOperatorTest {
         assertEquals(1, containers.size());
 
         Container container = containers.get(0);
-        assertEquals(EntityUserOperator.USER_OPERATOR_NAME, container.getName());
+        assertEquals(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME, container.getName());
         assertEquals(entityUserOperator.getImage(), container.getImage());
         assertEquals(getExpectedEnvVars(), container.getEnv());
         assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), container.getLivenessProbe().getInitialDelaySeconds());

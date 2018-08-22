@@ -68,8 +68,8 @@ public class EntityOperatorTest {
 
         assertEquals(3, containers.size());
         // just check names of topic and user operators (their containers are tested in the related unit test classes)
-        assertEquals(EntityTopicOperator.TOPIC_OPERATOR_NAME, containers.get(0).getName());
-        assertEquals(EntityUserOperator.USER_OPERATOR_NAME, containers.get(1).getName());
+        assertEquals(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME, containers.get(0).getName());
+        assertEquals(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME, containers.get(1).getName());
         // checks on the TLS sidecar container
         assertEquals(EntityOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(2).getImage());
         assertEquals(EntityOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(containers.get(2)).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT));
