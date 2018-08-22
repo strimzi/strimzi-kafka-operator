@@ -15,9 +15,21 @@ They need to store data on disks.
 {ProductName} allows you to configure the type of storage, which they want to use for Kafka and Zookeeper.
 Storage configuration is mandatory and has to be specified in every `Kafka` resource.
 
+Storage can be configured using the `storage` property in following resources:
+
+* `Kafka.spec.kafka`
+* `Kafka.spec.zookeeper`
+
+{ProductName} supports two types of storage:
+
+* Ephemeral
+* Persistent
+
+The type of storage is specified in the `type` field.
+
 IMPORTANT: Once the Kafka cluster is deployed, the storage cannot be changed.
 
-include::ref-storage.adoc[leveloffset=+1]
+//include::ref-storage.adoc[leveloffset=+1]
 
 include::ref-storage-ephemeral.adoc[leveloffset=+1]
 
