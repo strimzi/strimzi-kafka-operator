@@ -18,6 +18,7 @@ This procedure describes how to change the configuration of an existing Kafka us
 . Prepare a YAML file containing the desired `KafkaUser`.
 +
 .An example `KafkaUser`
++
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -48,38 +49,24 @@ spec:
           patternType: literal
         operation: Read
 ----
-+
-Or edit the `KafkaUser` resource using {ProductPlatformName} tools.
-ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl edit`:
-[source,shell,subs=+quotes]
-kubectl edit kafkauser _<your-user-name>_
-+
-endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc edit`:
-+
-[source,shell,subs=+quotes]
-oc edit kafkauser _<your-user-name>_
 
 . Update the `KafkaUser` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
-+
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
-+
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
 +
+On {OpenShiftName} this can be done using `oc apply`:
 [source,shell,subs=+quotes]
 oc apply -f _<your-file>_
++
+. Use the updated credentials from the `my-user` secret in your application.
 
-. Use the updated credentials from the secret `my-user` in your application
 
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-// TODO: Uncomment link after merging with the other PR
-//* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
+* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
 * For more information about the `KafkaUser` object, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].
