@@ -5,6 +5,13 @@
 [id='proc-kafka-authorization-{context}']
 = Configuring authorization in Kafka brokers
 
+Authorization can be configured using the `authorization` property in the `Kafka.spec.kafka` resource.
+When the `authorization` property is missing, no authorization will be enabled.
+When authorization is enabled it will be applied for all enabled xref:assembly-configuring-kafka-broker-listeners-{context}[listeners].
+The authorization method is defined by the `type` field.
+
+NOTE: Currently, the only supported authorization method is the Simple authorization. Simple authorization is using the `SimpleAclAuthorizer` plugin, the default authorization plugin in Apache Kafka.
+
 .Prerequisites
 
 * An {ProductPlatformName} cluster
@@ -43,5 +50,5 @@ On {OpenShiftName} this can be done using `oc apply`:
 oc apply -f _<your-file>_
 
 .Additional resources
-* For more information about the supported authorization methods, see xref:ref-kafka-authorization-{context}[authorization reference].
+//* For more information about the supported authorization methods, see xref:ref-kafka-authorization-{context}[authorization reference].
 * For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].

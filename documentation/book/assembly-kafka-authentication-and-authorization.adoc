@@ -8,17 +8,16 @@
 :parent-context: {context}
 
 [id='assembly-kafka-authentication-and-authorization-{context}']
-= Authentication and Authorization
+= Authentication and authorization in Kafka brokers
 
-{ProductName} supports authentication and authorization.
-Authentication can be configured independently for each xref:assembly-configuring-kafka-broker-listeners-{context}[listener].
+In {ProductName} authentication can be configured independently for each xref:assembly-configuring-kafka-broker-listeners-{context}[listener].
 Authorization is always configured for the whole Kafka cluster.
 
-include::ref-kafka-authentication.adoc[leveloffset=+1]
+//include::ref-kafka-authentication.adoc[leveloffset=+1]
 
 include::proc-kafka-authentication.adoc[leveloffset=+1]
 
-include::ref-kafka-authorization.adoc[leveloffset=+1]
+//include::ref-kafka-authorization.adoc[leveloffset=+1]
 
 include::proc-kafka-authorization.adoc[leveloffset=+1]
 
