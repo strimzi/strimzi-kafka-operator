@@ -1,0 +1,52 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-rack.adoc
+
+[id='proc-configuring-init-container-image-{context}']
+= Configuring init container image for Kafka rack awareness
+
+When the Kafka rack feature is enabled, Kafka broker pods will use init container which will collect the labels from the {ProductPlatformName} cluster nodes.
+The container image which will be used for this container can be configured using the `brokerRackInitImage` property in `Kafka.spec.kafka`.
+When the `brokerRackInitImage` field is missing, the following images will be used (in the order of priority):
+
+. Container image specified in `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable in Cluster Operator configuration.
+. `strimzi/kafka-init:latest` container image.
+
+WARNING: Overriding container images is recommended only in situations where you need to use a different container registry.
+For example, if your network does not allow access to the container repository used by {ProductName}, you should either copy the {ProductName} images or build them from source.
+In situations where the configured image is not compatible with {ProductName} images, this might not work properly.
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `brokerRackInitImage` property in `Kafka.spec.kafka`.
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    brokerRackInitImage: my-org/my-image:latest
+    # ...
+----
+
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_
