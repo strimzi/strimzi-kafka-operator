@@ -947,6 +947,17 @@ spec:
                       type: string
                     type:
                       type: string
+            tlsCertificates:
+              type: object
+              properties:
+                generateCertificateAuthority:
+                  type: boolean
+                validityDays:
+                  type: integer
+                  minimum: 1
+                renewalDays:
+                  type: integer
+                  minimum: 1
             entityOperator:
               type: object
               properties:

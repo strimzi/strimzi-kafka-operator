@@ -107,9 +107,9 @@ public class KafkaUserModel {
     public Secret generateSecret()  {
         if (authentication instanceof KafkaUserTlsClientAuthentication) {
             Map<String, String> data = new HashMap<>();
-            data.put("ca.crt", Base64.getEncoder().encodeToString(caCertAndKey.cert()));
-            data.put("user.key", Base64.getEncoder().encodeToString(userCertAndKey.key()));
-            data.put("user.crt", Base64.getEncoder().encodeToString(userCertAndKey.cert()));
+            data.put("ca.crt", caCertAndKey.certAsBase64String());
+            data.put("user.key", userCertAndKey.keyAsBase64String());
+            data.put("user.crt", userCertAndKey.certAsBase64String());
             return createSecret(data);
         } else if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
             Map<String, String> data = new HashMap<>();
@@ -168,7 +168,8 @@ public class KafkaUserModel {
                 userSubject.setCommonName(name);
 
                 certManager.generateCsr(userKeyFile, userCsrFile, userSubject);
-                certManager.generateCert(userCsrFile, caCertAndKey.key(), caCertAndKey.cert(), userCrtFile, userSubject, CERTS_EXPIRATION_DAYS);
+                certManager.generateCert(userCsrFile, caCertAndKey.key(), caCertAndKey.cert(), userCrtFile,
+                        userSubject, CERTS_EXPIRATION_DAYS);
                 this.userCertAndKey = new CertAndKey(Files.readAllBytes(userKeyFile.toPath()), Files.readAllBytes(userCrtFile.toPath()));
 
                 if (!userCsrFile.delete()) {

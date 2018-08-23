@@ -20,14 +20,16 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 [options="header"]
 |====
-|Field                  |Description
-|kafka           1.2+<.<|Configuration of the Kafka cluster.
+|Field                   |Description
+|kafka            1.2+<.<|Configuration of the Kafka cluster.
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
-|zookeeper       1.2+<.<|Configuration of the Zookeeper cluster.
+|zookeeper        1.2+<.<|Configuration of the Zookeeper cluster.
 |xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-|topicOperator   1.2+<.<|Configuration of the Topic Operator.
+|topicOperator    1.2+<.<|Configuration of the Topic Operator.
 |xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
-|entityOperator  1.2+<.<|Configuration of the Entity Operator.
+|tlsCertificates  1.2+<.<|Configuration of how TLS certificates are handled.
+|xref:type-TlsCertificates-{context}[`TlsCertificates`]
+|entityOperator   1.2+<.<|Configuration of the Entity Operator.
 |xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |====
 
@@ -453,6 +455,24 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Sidecar-{context}[`Sidecar`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|====
+
+[id='type-TlsCertificates-{context}']
+### `TlsCertificates` schema reference
+
+Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
+
+Configuration of how TLS certificates are used within the cluster.This applies to certificates used for both internal communication within the cluster and to certificates used for client access via `Kafka.spec.kafka.listeners.tls`.
+
+[options="header"]
+|====
+|Field                                |Description
+|generateCertificateAuthority  1.2+<.<|If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
+|boolean
+|validityDays                  1.2+<.<|The number of days generated certificates should be valid for. Default is 365.
+|integer
+|renewalDays                   1.2+<.<|The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed.When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30.
+|integer
 |====
 
 [id='type-EntityOperatorSpec-{context}']

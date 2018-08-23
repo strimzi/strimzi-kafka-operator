@@ -4,6 +4,8 @@
  */
 package io.strimzi.certs;
 
+import java.util.Base64;
+
 public class CertAndKey {
 
     private final byte[] key;
@@ -18,7 +20,15 @@ public class CertAndKey {
         return key;
     }
 
+    public String keyAsBase64String() {
+        return Base64.getEncoder().encodeToString(key());
+    }
+
     public byte[] cert() {
         return cert;
+    }
+
+    public String certAsBase64String() {
+        return Base64.getEncoder().encodeToString(cert());
     }
 }

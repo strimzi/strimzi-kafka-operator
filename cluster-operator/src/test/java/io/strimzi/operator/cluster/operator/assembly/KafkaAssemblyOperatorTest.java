@@ -275,7 +275,7 @@ public class KafkaAssemblyOperatorTest {
 
     private void createCluster(TestContext context, Kafka clusterCm, List<Secret> secrets) {
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm);
-        kafkaCluster.generateCertificates(certManager, secrets,  null, Collections.EMPTY_MAP);
+        kafkaCluster.generateCertificates(certManager, clusterCm, secrets,  null, Collections.EMPTY_MAP);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(certManager, clusterCm, secrets);
         TopicOperator topicOperator = TopicOperator.fromCrd(certManager, clusterCm, secrets);
         EntityOperator entityOperator = EntityOperator.fromCrd(certManager, clusterCm, secrets);
@@ -612,9 +612,9 @@ public class KafkaAssemblyOperatorTest {
 
     private void updateCluster(TestContext context, Kafka originalAssembly, Kafka updatedAssembly, List<Secret> secrets) {
         KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(originalAssembly);
-        originalKafkaCluster.generateCertificates(certManager, secrets,  null, Collections.EMPTY_MAP);
+        originalKafkaCluster.generateCertificates(certManager, originalAssembly, secrets,  null, Collections.EMPTY_MAP);
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(updatedAssembly);
-        updatedKafkaCluster.generateCertificates(certManager, secrets,  null, Collections.EMPTY_MAP);
+        updatedKafkaCluster.generateCertificates(certManager, updatedAssembly, secrets,  null, Collections.EMPTY_MAP);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(certManager, originalAssembly, secrets);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(certManager, updatedAssembly, secrets);
         TopicOperator originalTopicOperator = TopicOperator.fromCrd(certManager, originalAssembly, secrets);
@@ -868,7 +868,7 @@ public class KafkaAssemblyOperatorTest {
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(bar);
-        barCluster.generateCertificates(certManager, barSecrets,  null, Collections.EMPTY_MAP);
+        barCluster.generateCertificates(certManager, bar, barSecrets,  null, Collections.EMPTY_MAP);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(barCluster.generateStatefulSet(openShift))
         );

@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -242,7 +241,7 @@ public class TopicOperator extends AbstractModel {
             result.setLogging(tcConfig.getLogging());
             result.setResources(tcConfig.getResources());
             result.setUserAffinity(tcConfig.getAffinity());
-            result.generateCertificates(certManager, secrets);
+            result.generateCertificates(certManager, kafkaAssembly, secrets);
             result.setTlsSidecar(tcConfig.getTlsSidecar());
         } else {
             result = null;
@@ -252,11 +251,11 @@ public class TopicOperator extends AbstractModel {
 
     /**
      * Manage certificates generation based on those already present in the Secrets
-     *
      * @param certManager CertManager instance for handling certificates creation
+     * @param kafka The kafka CR
      * @param secrets The Secrets storing certificates
      */
-    public void generateCertificates(CertManager certManager, List<Secret> secrets) {
+    public void generateCertificates(CertManager certManager, Kafka kafka, List<Secret> secrets) {
         log.debug("Generating certificates");
 
         try {
@@ -280,7 +279,8 @@ public class TopicOperator extends AbstractModel {
                     sbj.setCommonName(TopicOperator.topicOperatorName(cluster));
 
                     certManager.generateCsr(keyFile, csrFile, sbj);
-                    certManager.generateCert(csrFile, clusterCA.key(), clusterCA.cert(), certFile, CERTS_EXPIRATION_DAYS);
+                    certManager.generateCert(csrFile, clusterCA.key(), clusterCA.cert(),
+                            certFile, ModelUtils.getCertificateValidity(kafka));
 
                     cert = new CertAndKey(Files.readAllBytes(keyFile.toPath()), Files.readAllBytes(certFile.toPath()));
                 } else {
@@ -421,9 +421,9 @@ public class TopicOperator extends AbstractModel {
      */
     public Secret generateSecret() {
         Map<String, String> data = new HashMap<>();
-        data.put("cluster-ca.crt", Base64.getEncoder().encodeToString(clusterCA.cert()));
-        data.put("entity-operator.key", Base64.getEncoder().encodeToString(cert.key()));
-        data.put("entity-operator.crt", Base64.getEncoder().encodeToString(cert.cert()));
+        data.put("cluster-ca.crt", clusterCA.certAsBase64String());
+        data.put("entity-operator.key", cert.keyAsBase64String());
+        data.put("entity-operator.crt", cert.certAsBase64String());
         return createSecret(TopicOperator.secretName(cluster), data);
     }
 

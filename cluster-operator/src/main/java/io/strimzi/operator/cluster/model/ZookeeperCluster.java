@@ -37,7 +37,6 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -185,7 +184,7 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setJvmOptions(zookeeperClusterSpec.getJvmOptions());
         zk.setUserAffinity(zookeeperClusterSpec.getAffinity());
         zk.setTolerations(zookeeperClusterSpec.getTolerations());
-        zk.generateCertificates(certManager, secrets);
+        zk.generateCertificates(certManager, kafkaAssembly, secrets);
         zk.setTlsSidecar(zookeeperClusterSpec.getTlsSidecar());
         return zk;
     }
@@ -194,9 +193,10 @@ public class ZookeeperCluster extends AbstractModel {
      * Manage certificates generation based on those already present in the Secrets
      *
      * @param certManager CertManager instance for handling certificates creation
+     * @param kafka The Kafka CR.
      * @param secrets The Secrets storing certificates
      */
-    public void generateCertificates(CertManager certManager, List<Secret> secrets) {
+    public void generateCertificates(CertManager certManager, Kafka kafka, List<Secret> secrets) {
         log.debug("Generating certificates");
 
         try {
@@ -214,7 +214,7 @@ public class ZookeeperCluster extends AbstractModel {
                 int replicasSecret = nodesSecret == null ? 0 : (nodesSecret.getData().size() - 1) / 2;
 
                 log.debug("Cluster communication certificates");
-                certs = maybeCopyOrGenerateCerts(certManager, nodesSecret, replicasSecret, clusterCA, ZookeeperCluster::zookeeperPodName);
+                certs = maybeCopyOrGenerateCerts(certManager, kafka, nodesSecret, replicasSecret, clusterCA, ZookeeperCluster::zookeeperPodName);
             } else {
                 throw new NoCertificateSecretException("The cluster CA certificate Secret is missing");
             }
@@ -316,15 +316,14 @@ public class ZookeeperCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateNodesSecret() {
-        Base64.Encoder encoder = Base64.getEncoder();
 
         Map<String, String> data = new HashMap<>();
-        data.put("cluster-ca.crt", encoder.encodeToString(clusterCA.cert()));
+        data.put("cluster-ca.crt", clusterCA.certAsBase64String());
 
         for (int i = 0; i < replicas; i++) {
             CertAndKey cert = certs.get(ZookeeperCluster.zookeeperPodName(cluster, i));
-            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
-            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
+            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
+            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
         }
         return createSecret(ZookeeperCluster.nodesSecretName(cluster), data);
     }

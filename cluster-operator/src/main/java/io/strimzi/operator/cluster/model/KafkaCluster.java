@@ -296,13 +296,13 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Manage certificates generation based on those already present in the Secrets
-     *
      * @param certManager CertManager instance for handling certificates creation
+     * @param kafka The kafka CR
      * @param secrets The Secrets storing certificates
      * @param externalBootstrapAddress External address to the bootstrap service
      * @param externalAddresses Map with external addresses under which the individual pods are available
      */
-    public void generateCertificates(CertManager certManager, List<Secret> secrets, String externalBootstrapAddress, Map<Integer, String> externalAddresses) {
+    public void generateCertificates(CertManager certManager, Kafka kafka, List<Secret> secrets, String externalBootstrapAddress, Map<Integer, String> externalAddresses) {
         log.debug("Generating certificates");
 
         try {
@@ -324,7 +324,7 @@ public class KafkaCluster extends AbstractModel {
                     sbj.setOrganizationName("io.strimzi");
                     sbj.setCommonName("kafka-clients-ca");
 
-                    certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
+                    certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, sbj, ModelUtils.getCertificateValidity(kafka));
                     clientsCA =
                             new CertAndKey(Files.readAllBytes(clientsCAkeyFile.toPath()), Files.readAllBytes(clientsCAcertFile.toPath()));
                     if (!clientsCAkeyFile.delete()) {
@@ -346,7 +346,9 @@ public class KafkaCluster extends AbstractModel {
                 int replicasInternalSecret = clusterSecret == null ? 0 : (clusterSecret.getData().size() - 1) / 2;
 
                 log.debug("Internal communication certificates");
-                brokerCerts = maybeCopyOrGenerateCerts(certManager, clusterSecret, replicasInternalSecret, clusterCA, KafkaCluster::kafkaPodName, externalBootstrapAddress, externalAddresses);
+                brokerCerts = maybeCopyOrGenerateCerts(certManager, kafka, clusterSecret, replicasInternalSecret,
+                        clusterCA, KafkaCluster::kafkaPodName, externalBootstrapAddress, externalAddresses);
+
             } else {
                 throw new NoCertificateSecretException("The cluster CA certificate Secret is missing");
             }
@@ -571,8 +573,8 @@ public class KafkaCluster extends AbstractModel {
      */
     public Secret generateClientsCASecret() {
         Map<String, String> data = new HashMap<>();
-        data.put("clients-ca.key", Base64.getEncoder().encodeToString(clientsCA.key()));
-        data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
+        data.put("clients-ca.key", clientsCA.keyAsBase64String());
+        data.put("clients-ca.crt", clientsCA.certAsBase64String());
         return createSecret(KafkaCluster.clientsCASecretName(cluster), data);
     }
 
@@ -607,15 +609,14 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateBrokersSecret() {
-        Base64.Encoder encoder = Base64.getEncoder();
 
         Map<String, String> data = new HashMap<>();
-        data.put("cluster-ca.crt", encoder.encodeToString(clusterCA.cert()));
+        data.put("cluster-ca.crt", clusterCA.certAsBase64String());
 
         for (int i = 0; i < replicas; i++) {
             CertAndKey cert = brokerCerts.get(KafkaCluster.kafkaPodName(cluster, i));
-            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
-            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", cert.keyAsBase64String());
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", cert.certAsBase64String());
         }
         return createSecret(KafkaCluster.brokersSecretName(cluster), data);
     }

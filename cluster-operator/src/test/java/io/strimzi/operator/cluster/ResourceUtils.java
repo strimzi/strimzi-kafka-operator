@@ -30,6 +30,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.TestUtils;
 
 import java.io.IOException;
@@ -102,30 +103,28 @@ public class ResourceUtils {
         List<Secret> secrets = new ArrayList<>();
 
         secrets.add(
-                new SecretBuilder()
-                .withNewMetadata()
-                    .withName(AbstractModel.getClusterCaName(clusterName))
-                    .withNamespace(clusterCmNamespace)
-                .endMetadata()
-                .addToData("cluster-ca.key", Base64.getEncoder().encodeToString("cluster-ca-base64key".getBytes()))
-                .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()))
-                .build()
+                createInitialClusterCaSecret(clusterCmNamespace, clusterName, MockCertManager.clusterCaKey(), MockCertManager.clusterCaCert())
         );
         return secrets;
+    }
+
+    public static Secret createInitialClusterCaSecret(String clusterCmNamespace, String clusterName, String caKey, String caCert) {
+        return new SecretBuilder()
+        .withNewMetadata()
+            .withName(AbstractModel.getClusterCaName(clusterName))
+            .withNamespace(clusterCmNamespace)
+            .withLabels(Labels.forCluster(clusterName).withKind("Kafka").toMap())
+        .endMetadata()
+        .addToData("cluster-ca.key", caKey)
+        .addToData("cluster-ca.crt", caCert)
+        .build();
     }
 
     public static List<Secret> createKafkaClusterSecretsWithReplicas(String clusterCmNamespace, String clusterName, int kafkaReplicas, int zkReplicas) {
         List<Secret> secrets = new ArrayList<>();
 
         secrets.add(
-                new SecretBuilder()
-                        .withNewMetadata()
-                        .withName(AbstractModel.getClusterCaName(clusterName))
-                        .withNamespace(clusterCmNamespace)
-                        .endMetadata()
-                        .addToData("cluster-ca.key", Base64.getEncoder().encodeToString("cluster-ca-base64key".getBytes()))
-                        .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()))
-                        .build()
+                createInitialClusterCaSecret(clusterCmNamespace, clusterName, MockCertManager.clusterCaKey(), MockCertManager.clusterCaCert())
         );
 
         secrets.add(
@@ -135,8 +134,8 @@ public class ResourceUtils {
                         .withNamespace(clusterCmNamespace)
                         .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
-                        .addToData("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-base64key".getBytes()))
-                        .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()))
+                        .addToData("clients-ca.key", MockCertManager.clientsCaKey())
+                        .addToData("clients-ca.crt", MockCertManager.clientsCaCert())
                         .build()
         );
 
@@ -147,7 +146,7 @@ public class ResourceUtils {
                         .withNamespace(clusterCmNamespace)
                         .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
-                        .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-base64crt".getBytes()))
+                        .addToData("clients-ca.crt", MockCertManager.clientsCaCert())
                         .build()
         );
 
@@ -158,7 +157,7 @@ public class ResourceUtils {
                         .withNamespace(clusterCmNamespace)
                         .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
-                        .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
+                        .addToData("cluster-ca.crt", MockCertManager.clusterCaCert());
 
         for (int i = 0; i < kafkaReplicas; i++) {
             builder.addToData(KafkaCluster.kafkaPodName(clusterName, i) + ".key", Base64.getEncoder().encodeToString("brokers-internal-base64key".getBytes()))

@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.TlsCertificates;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
@@ -26,6 +27,7 @@ import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
@@ -51,15 +53,32 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
+import static java.util.Collections.emptyMap;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -176,7 +195,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     /**
      * Hold the mutable state during a reconciliation
      */
-    private class ReconciliationState {
+    class ReconciliationState {
 
         private final String namespace;
         private final String name;
@@ -217,70 +236,171 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.name = kafkaAssembly.getMetadata().getName();
         }
 
-        Future<ReconciliationState> reconcileClusterCa() {
+        /**
+         * Asynchronously reconciles the cluster CA secret.
+         * The secret has have the name determined by {@link AbstractModel#getClusterCaName(String)}.
+         * Within the secret the current certificate is stored under the key {@code cluster-ca.crt}
+         * and the current key is stored under the key {@code cluster-ca.crt}.
+         * Old certificates which are still within their validity are stored under keys named like {@code cluster-ca-<not-after-date>.crt}, where
+         * {@code <not-after-date>} is the ISO 8601-formatted date of the certificates "notAfter" attribute.
+         * Likewise, the corresponding keys are stored under keys named like {@code cluster-ca-<not-after-date>.key}.
+         */
+        Future<ReconciliationState>  reconcileClusterCa() {
+            TlsCertificates tlsCertificates = kafkaAssembly.getSpec().getTlsCertificates();
             Labels caLabels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
             Future<ReconciliationState> result = Future.future();
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
-                    String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
-                    List<Secret> clusterSecrets = secretOperations.list(reconciliation.namespace(), Labels.forCluster(reconciliation.name()));
-                    Secret clusterCa = findSecretWithName(clusterSecrets, clusterCaName);
-                    SecretCertProvider secretCertProvider = new SecretCertProvider();
-
-                    OwnerReference ownerRef = new OwnerReferenceBuilder()
-                            .withApiVersion(kafkaAssembly.getApiVersion())
-                            .withKind(kafkaAssembly.getKind())
-                            .withName(kafkaAssembly.getMetadata().getName())
-                            .withUid(kafkaAssembly.getMetadata().getUid())
-                            .withBlockOwnerDeletion(false)
-                            .withController(false)
-                            .build();
-
-                    final Secret secret;
-
-                    if (clusterCa == null) {
-                        log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
-                        File clusterCAkeyFile = null;
-                        File clusterCAcertFile = null;
-                        try {
-                            clusterCAkeyFile = File.createTempFile("tls", "cluster-ca-key");
-                            clusterCAcertFile = File.createTempFile("tls", "cluster-ca-cert");
-
-                            Subject sbj = new Subject();
-                            sbj.setOrganizationName("io.strimzi");
-                            sbj.setCommonName("cluster-ca");
-
-                            certManager.generateSelfSignedCert(clusterCAkeyFile, clusterCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
-
-                            secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
-                                    "cluster-ca.key", "cluster-ca.crt",
-                                    clusterCAkeyFile, clusterCAcertFile, caLabels.toMap(), ownerRef);
-                        } catch (Throwable e) {
-                            future.fail(e);
-                            return;
-                        } finally {
-                            if (clusterCAkeyFile != null)
-                                clusterCAkeyFile.delete();
-                            if (clusterCAcertFile != null)
-                                clusterCAcertFile.delete();
+                    try {
+                        String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
+                        List<Secret> clusterSecrets = secretOperations.list(reconciliation.namespace(), caLabels);
+                        Secret clusterCa = findSecretWithName(clusterSecrets, clusterCaName);
+                        SecretCertProvider secretCertProvider = new SecretCertProvider();
+                        Secret secret;
+                        X509Certificate currentCert = cert(clusterCa, CLUSTER_CA_CRT);
+                        boolean needsRenewal = currentCert != null && certNeedsRenewal(tlsCertificates, currentCert);
+                        final Map<String, String> newData;
+                        if (tlsCertificates != null && !tlsCertificates.isGenerateCertificateAuthority()) {
+                            newData = checkProvidedCert(reconciliation, clusterCaName, clusterCa, currentCert, needsRenewal);
+                        } else {
+                            if (clusterCa == null || needsRenewal) {
+                                newData = createOrRenewCert(reconciliation, tlsCertificates, clusterCaName, clusterCa, currentCert);
+                            } else {
+                                log.debug("{}: The cluster CA {} already exists and does not need renewing", reconciliation, clusterCaName);
+                                newData = clusterCa.getData();
+                            }
+                            removeExpiredCerts(newData);
                         }
-                        log.debug("{}: End generating cluster CA {}", reconciliation, clusterCaName);
-                    } else {
-                        log.debug("{}: The cluster CA {} already exists", reconciliation, clusterCaName);
+                        OwnerReference ownerRef = new OwnerReferenceBuilder()
+                                .withApiVersion(kafkaAssembly.getApiVersion())
+                                .withKind(kafkaAssembly.getKind())
+                                .withName(kafkaAssembly.getMetadata().getName())
+                                .withUid(kafkaAssembly.getMetadata().getUid())
+                                .withBlockOwnerDeletion(false)
+                                .withController(false)
+                                .build();
                         secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
-                                clusterCa.getData(), caLabels.toMap(), ownerRef);
-                    }
+                                newData, caLabels.toMap(), ownerRef);
 
-                    secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
-                            .compose(x -> {
-                                clusterSecrets.add(secret);
-                                this.assemblySecrets = clusterSecrets;
-                                future.complete(this);
-                            }, future);
+                        secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
+                                .compose(x -> {
+                                    clusterSecrets.add(secret);
+                                    this.assemblySecrets = clusterSecrets;
+                                    future.complete(this);
+                                }, future);
+                    } catch (Throwable e) {
+                        future.fail(e);
+                    }
                 }, true,
-                result.completer()
+                    result.completer()
             );
             return result;
+        }
+
+        private void removeExpiredCerts(Map<String, String> newData) {
+            Iterator<String> iter = newData.keySet().iterator();
+            while (iter.hasNext()) {
+                Pattern pattern = Pattern.compile("cluster-ca-" + "([0-9T:-]{19}).(crt|key)");
+                String key = iter.next();
+                Matcher matcher = pattern.matcher(key);
+
+                if (matcher.matches()) {
+                    String date = matcher.group(1) + "Z";
+                    Instant parse = DateTimeFormatter.ISO_DATE_TIME.parse(date, Instant::from);
+                    if (parse.isBefore(Instant.now())) {
+                        iter.remove();
+                    }
+                }
+            }
+        }
+
+        private Map<String, String> createOrRenewCert(Reconciliation reconciliation, TlsCertificates tlsCertificates, String clusterCaName, Secret clusterCa, X509Certificate currentCert) throws IOException {
+            Map<String, String> newData;
+            log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
+            File clusterCaKeyFile = null;
+            File clusterCaCertFile = null;
+            Map<String, String> data;
+            try {
+                clusterCaKeyFile = File.createTempFile("tls", "cluster-ca-key");
+                clusterCaCertFile = File.createTempFile("tls", "cluster-ca-currentCert");
+
+                Subject sbj = new Subject();
+                sbj.setOrganizationName("io.strimzi");
+                sbj.setCommonName("cluster-ca");
+                certManager.generateSelfSignedCert(clusterCaKeyFile, clusterCaCertFile, sbj, ModelUtils.getCertificateValidity(tlsCertificates));
+
+                data = new HashMap<>();
+                if (currentCert != null) {
+                    // Add the current certificate as an old certificate (with date in UTC)
+                    String notAfterDate = DateTimeFormatter.ISO_DATE_TIME.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
+                    data.put("cluster-ca-" + notAfterDate + ".crt", clusterCa.getData().get(CLUSTER_CA_CRT));
+                    data.put("cluster-ca-" + notAfterDate + ".key", clusterCa.getData().get(CLUSTER_CA_KEY));
+                }
+                // Add the generated certificate as the current certificate
+                data.put(CLUSTER_CA_CRT, base64Contents(clusterCaCertFile));
+                data.put(CLUSTER_CA_KEY, base64Contents(clusterCaKeyFile));
+            } finally {
+                if (clusterCaKeyFile != null && !clusterCaKeyFile.delete()) {
+                    log.debug("Unable to delete temporary file {}", clusterCaKeyFile);
+                }
+                if (clusterCaCertFile != null && !clusterCaCertFile.delete()) {
+                    log.debug("Unable to delete temporary file {}", clusterCaKeyFile);
+                }
+            }
+            newData = data;
+            log.debug("{}: End generating cluster CA {}", reconciliation, clusterCaName);
+            return newData;
+        }
+
+        private Map<String, String> checkProvidedCert(Reconciliation reconciliation, String clusterCaName, Secret clusterCa, X509Certificate currentCert, boolean needsRenewal) {
+            Map<String, String> newData;
+            if (needsRenewal) {
+                log.warn("The {} certificate in Secret {} in namespace {} will expire on {} " +
+                                "and it is not configured to automatically renew.",
+                        CLUSTER_CA_CRT, clusterCaName, reconciliation.namespace(), currentCert.getNotAfter());
+            } else if (clusterCa == null) {
+                log.warn("The certificate (data.{}) and key (data.{}) in Secret {} in namespace {} " +
+                                "need to be configured with a Base64 encoded PEM-format certificate. " +
+                                "Alternatively, configure the Kafka resource with name {} in namespace {} for certificate renewal.",
+                        CLUSTER_CA_CRT, CLUSTER_CA_KEY, clusterCaName, reconciliation.namespace(),
+                        reconciliation.name(), reconciliation.namespace());
+            }
+            newData = clusterCa != null ? clusterCa.getData() : emptyMap();
+            return newData;
+        }
+
+        /** The contents of the given file, base64 encoded */
+        private String base64Contents(File file) throws IOException {
+            return Base64.getEncoder().encodeToString(Files.readAllBytes(file.toPath()));
+        }
+
+        private boolean certNeedsRenewal(TlsCertificates tlsCertificates, X509Certificate cert)  {
+            long msTillExpired = cert.getNotAfter().getTime() - System.currentTimeMillis();
+            return msTillExpired / (24L * 60L * 60L * 1000L) < ModelUtils.getRenewalDays(tlsCertificates);
+        }
+
+        private X509Certificate cert(Secret secret, String key)  {
+            if (secret == null || secret.getData().get(key) == null) {
+                return null;
+            }
+            Base64.Decoder decoder = Base64.getDecoder();
+            byte[] bytes = decoder.decode(secret.getData().get(key));
+            CertificateFactory factory = null;
+            try {
+                factory = CertificateFactory.getInstance("X.509");
+            } catch (CertificateException e) {
+                throw new RuntimeException("No security provider with support for X.509 certificates", e);
+            }
+            try {
+                Certificate certificate = factory.generateCertificate(new ByteArrayInputStream(bytes));
+                if (certificate instanceof X509Certificate) {
+                    return (X509Certificate) certificate;
+                } else {
+                    throw new RuntimeException("Certificate in key " + key + " of Secret " + secret.getMetadata().getName() + " is not an X509Certificate");
+                }
+            } catch (CertificateException e) {
+                throw new RuntimeException("Certificate in key " + key + " of Secret " + secret.getMetadata().getName() + " could not be parsed");
+            }
         }
 
         Future<ReconciliationState> getZookeeperState() {
@@ -765,11 +885,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaGenerateCertificates() {
             if (kafkaCluster.isExposedWithNodePort()) {
-                kafkaCluster.generateCertificates(certManager, assemblySecrets, null, Collections.EMPTY_MAP);
+                kafkaCluster.generateCertificates(certManager, kafkaAssembly, assemblySecrets, null, Collections.EMPTY_MAP);
             } else  {
-                kafkaCluster.generateCertificates(certManager, assemblySecrets, kafkaExternalBootstrapAddress, kafkaExternalAddresses);
+                kafkaCluster.generateCertificates(certManager, kafkaAssembly, assemblySecrets, kafkaExternalBootstrapAddress, kafkaExternalAddresses);
             }
-
             return withVoid(Future.succeededFuture());
         }
 
@@ -954,7 +1073,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     EntityUserOperator.roleBindingName(name),
                     eoDeployment != null && entityOperator.getUserOperator() != null ?
                             entityOperator.getUserOperator().generateRoleBinding(namespace) : null));
-
         }
 
         Future<ReconciliationState> entityOperatorTopicOpAncillaryCm() {
