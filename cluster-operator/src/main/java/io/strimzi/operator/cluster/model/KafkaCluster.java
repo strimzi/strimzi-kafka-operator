@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -26,6 +27,7 @@ import io.fabric8.kubernetes.api.model.extensions.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyIngressRuleBuilder;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
@@ -701,12 +703,32 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
+    public static String policyName(String cluster) {
+        return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
+    }
+
     public NetworkPolicy generateNetworkPolicy() {
-        NetworkPolicyPort p1 = new NetworkPolicyPort();
-        p1.setPort(new IntOrString(REPLICATION_PORT));
+        NetworkPolicyPort port = new NetworkPolicyPort();
+        port.setPort(new IntOrString(REPLICATION_PORT));
+
+        NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector = new LabelSelector();
+        Map<String, String> expressions = new HashMap<>();
+        expressions.put(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster));
+        labelSelector.setMatchLabels(expressions);
+        kafkaClusterPeer.setPodSelector(labelSelector);
+
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector2 = new LabelSelector();
+        Map<String, String> expressions2 = new HashMap<>();
+        expressions2.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
+        labelSelector2.setMatchLabels(expressions2);
+        entityOperatorPeer.setPodSelector(labelSelector2);
+
 
         NetworkPolicyIngressRule networkPolicyIngressRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(p1)
+                .withPorts(port)
+                .withFrom(kafkaClusterPeer, entityOperatorPeer)
                 .build();
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
@@ -716,6 +738,7 @@ public class KafkaCluster extends AbstractModel {
                 .withLabels(labels.toMap())
                 .endMetadata()
                 .withNewSpec()
+                .withPodSelector(labelSelector)
                 .withIngress(networkPolicyIngressRule)
                 .endSpec()
                 .build();

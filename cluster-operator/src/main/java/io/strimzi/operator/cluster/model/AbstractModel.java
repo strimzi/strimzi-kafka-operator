@@ -109,7 +109,7 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
-    private static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
+    public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
 
     private static final String DELETE_CLAIM_ANNOTATION =
             ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
@@ -539,10 +539,6 @@ public abstract class AbstractModel {
      * @return a list of containers to add to the StatefulSet/Deployment
      */
     protected abstract List<Container> getContainers();
-
-    public static String policyName(String cluster) {
-        return cluster + NETWORK_POLICY_KEY_SUFFIX;
-    }
 
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
