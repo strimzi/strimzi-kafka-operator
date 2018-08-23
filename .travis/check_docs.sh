@@ -6,7 +6,7 @@ function grep_check {
   local pattern=$1
   local description=$2
   local fatalness=${3:-1}
-  x=$(grep -i -E -r -n "$pattern" documentation/book/)
+  x=$(grep -i -E -r -Hn "$pattern" documentation/book/)
   if [ -n "$x" ]; then
     echo "$description:"
     echo "$x"
