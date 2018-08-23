@@ -17,6 +17,6 @@ NOTE: "Rack" might represent an availability zone, data center, or an actual rac
 
 //include::ref-kafka-rack.adoc[leveloffset=+1]
 
-include::proc-configuring-init-container-image.adoc[leveloffset=+1]
+//include::proc-configuring-init-container-image.adoc[leveloffset=+1]
 
 include::proc-configuring-kafka-rack-awareness.adoc[leveloffset=+1]

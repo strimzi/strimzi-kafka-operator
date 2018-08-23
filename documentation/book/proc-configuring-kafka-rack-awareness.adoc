@@ -49,3 +49,6 @@ On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _<your-file>_
+
+.Additional Resources
+* For information about Configuring init container image for Kafka rack awareness, see xref:assembly-configuring-container-images-deployment-configuration-kafka[].
