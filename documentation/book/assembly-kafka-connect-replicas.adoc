@@ -18,6 +18,4 @@ However, when running Kafka Connect on {ProductPlatformName} it is not absolutel
 When the node where Kafka Connect is deployed to crashes, {ProductPlatformName} will automatically take care of rescheduling the Kafka Connect pod to a different node.
 However, running Kafka Connect with multiple nodes can provide faster failover times, because the other nodes will be already up and running.
 
-include::ref-kafka-connect-replicas.adoc[leveloffset=+1]
-
 include::proc-configuring-kafka-connect-replicas.adoc[leveloffset=+1]
