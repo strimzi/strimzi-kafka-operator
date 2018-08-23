@@ -12,17 +12,20 @@
 
 .Procedure
 
+. Add the Strimzi Helm Chart repository:
++
+[source,shell,subs=attributes+]
+helm repo add strimzi {ChartRepositoryUrl}
+
 . Deploy the Cluster Operator using the Helm command line tool:
 +
 [source,shell,subs=attributes+]
-helm install {ChartReleaseDownload}
+helm install {ChartReleaseCoordinate}
 
 . Verify whether the Cluster Operator has been deployed successfully using the Helm command line tool:
 +
-[source]
-----
+[source,shell]
 helm ls
-----
 
 .Additional resources
 * For more information about Helm, see the https://helm.sh/[Helm website^].
