@@ -609,7 +609,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return desc.withVoid(roleBindingOperator.reconcile(
                             watchedNamespace != null && !watchedNamespace.isEmpty() ?
                                     watchedNamespace : namespace,
-                            TopicOperator.TO_ROLE_BINDING_NAME,
+                            TopicOperator.roleBindingName(name),
                             desc != TopicOperatorDescription.EMPTY ? desc.topicOperator().generateRoleBinding(namespace) : null));
                 })
                 .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace,
@@ -631,7 +631,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         result.add(configMapOperations.reconcile(namespace, TopicOperator.metricAndLogConfigsName(name), null));
         result.add(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), null));
         result.add(secretOperations.reconcile(namespace, TopicOperator.secretName(name), null));
-        result.add(roleBindingOperator.reconcile(namespace, TopicOperator.TO_ROLE_BINDING_NAME, null));
+        result.add(roleBindingOperator.reconcile(namespace, TopicOperator.roleBindingName(name), null));
         result.add(serviceAccountOperator.reconcile(namespace, TopicOperator.topicOperatorServiceAccountName(name), null));
         return CompositeFuture.join(result);
     }
@@ -697,7 +697,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return desc.withVoid(roleBindingOperator.reconcile(
                             watchedNamespace != null && !watchedNamespace.isEmpty() ?
                                     watchedNamespace : namespace,
-                            EntityTopicOperator.TO_ROLE_BINDING_NAME,
+                            EntityTopicOperator.roleBindingName(name),
                             desc != EntityOperatorDescription.EMPTY && desc.entityOperator().getTopicOperator() != null ?
                                     desc.entityOperator().getTopicOperator().generateRoleBinding(namespace) : null));
                 })
@@ -707,7 +707,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return desc.withVoid(roleBindingOperator.reconcile(
                             watchedNamespace != null && !watchedNamespace.isEmpty() ?
                                     watchedNamespace : namespace,
-                            EntityUserOperator.UO_ROLE_BINDING_NAME,
+                            EntityUserOperator.roleBindingName(name),
                             desc != EntityOperatorDescription.EMPTY && desc.entityOperator().getUserOperator() != null ?
                                     desc.entityOperator().getUserOperator().generateRoleBinding(namespace) : null));
                 })
@@ -736,8 +736,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         result.add(configMapOperations.reconcile(namespace, EntityUserOperator.metricAndLogConfigsName(name), null));
         result.add(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), null));
         result.add(secretOperations.reconcile(namespace, EntityOperator.secretName(name), null));
-        result.add(roleBindingOperator.reconcile(namespace, EntityTopicOperator.TO_ROLE_BINDING_NAME, null));
-        result.add(roleBindingOperator.reconcile(namespace, EntityUserOperator.UO_ROLE_BINDING_NAME, null));
+        result.add(roleBindingOperator.reconcile(namespace, EntityTopicOperator.roleBindingName(name), null));
+        result.add(roleBindingOperator.reconcile(namespace, EntityUserOperator.roleBindingName(name), null));
         result.add(serviceAccountOperator.reconcile(namespace, EntityOperator.entityOperatorServiceAccountName(name), null));
         return CompositeFuture.join(result);
     }

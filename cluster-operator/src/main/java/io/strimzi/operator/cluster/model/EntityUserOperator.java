@@ -40,7 +40,6 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_CLIENTS_CA_NAME = "STRIMZI_CA_NAME";
-    public static final String UO_ROLE_BINDING_NAME = "strimzi-entity-user-operator-role-binding";
 
     private String zookeeperConnect;
     private String watchedNamespace;
@@ -119,6 +118,13 @@ public class EntityUserOperator extends AbstractModel {
         return cluster + METRICS_AND_LOG_CONFIG_SUFFIX;
     }
 
+    /**
+     * Get the name of the UO role binding given the name of the {@code kafkaResourceName}.
+     */
+    public static String roleBindingName(String kafkaResourceName) {
+        return "strimzi-" + kafkaResourceName + "-user-operator";
+    }
+
     @Override
     protected String getDefaultLogConfigFileName() {
         return "entityUserOperatorDefaultLoggingProperties";
@@ -195,7 +201,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(UO_ROLE_BINDING_NAME, EntityOperator.EO_CLUSTER_ROLE_NAME,
+        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), EntityOperator.EO_CLUSTER_ROLE_NAME,
                 namespace, EntityOperator.entityOperatorServiceAccountName(cluster));
     }
 }
