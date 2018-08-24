@@ -1,7 +1,7 @@
 TOPDIR=$(dir $(lastword $(MAKEFILE_LIST)))
 RELEASE_VERSION ?= latest
 CHART_PATH ?= ./helm-charts/strimzi-kafka-operator/
-CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | sed 's/\([0-9.]*\).*/\1/')
+CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | tr A-Z a-z)
 
 SUBDIRS=docker-images crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init helm-charts examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
@@ -9,7 +9,7 @@ DOCKER_TARGETS=docker_build docker_push docker_tag
 all: $(SUBDIRS)
 clean: $(SUBDIRS) docu_clean
 $(DOCKER_TARGETS): $(SUBDIRS)
-release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_pkg docu_clean
+release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_pkg release_helm_repo docu_clean
 
 next_version:
 	echo $(shell echo $(NEXT_VERSION) | tr a-z A-Z) > release.version
@@ -45,6 +45,11 @@ release_helm_version:
 	sed -i 's/\(tag: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
 	# Update default image tag in chart README.md config grid with RELEASE_VERSION
 	sed -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
+
+release_helm_repo:
+	echo "Updating Helm Repository index.yaml"
+	helm repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./helm-charts/index.yaml
+	mv ./index.yaml ./helm-charts/index.yaml
 
 helm_pkg:
 	# Copying unarchived Helm Chart to release directory

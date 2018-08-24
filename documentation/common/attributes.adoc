@@ -31,7 +31,8 @@
 
 // Helm Chart
 :ChartName: strimzi-kafka-operator
-:ChartReleaseDownload: {ChartName}-{ProductVersion}.tgz
+:ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
+:ChartRepositoryUrl: http://strimzi.io/charts/
 
 // External links
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]

@@ -134,7 +134,7 @@ The chart is also available in the release artifact as a tarball.
 version. The `release` target will:
 * Update all tags of Docker images to `RELEASE_VERSION`
 * Update documentation version to `RELEASE_VERSION`
-* Set version of the main Maven projects (`topic-operator` and `clutser-operator`) to `RELEASE_VERSION` 
+* Set version of the main Maven projects (`topic-operator` and `cluster-operator`) to `RELEASE_VERSION` 
 * Create TAR.GZ and ZIP archives with the Kubernetes and OpenShift YAML files which can be used for deployment
 and documentation in HTML format.
  
@@ -152,8 +152,15 @@ The release process should normally look like this:
 tag name has to be the same as the `RELEASE_VERSION`,
 7. Once the CI build for the tag is finished and the Docker images are pushed to Docker Hub, Create a GitHub release and tag based on the release branch. 
 Attach the TAR.GZ/ZIP archives and the Helm Chart to the release
-8. On the `master` git branch, update the versions to the next SNAPSHOT version using the `next_version` `make` target. 
-For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
+8. On the `master` git branch
+  * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. 
+  For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
+  * Copy the `helm-charts/index.yaml` from the `release` branch to `master`.
+9. Update the website
+  * Add release documentation to `strimzi.github.io/docs/`.  Update references to docs in 
+  `strimzi.github.io/documentation/index.md`.
+  * Update the Helm Chart repository file by copying `strimzi-kafka-operator/helm-charts/index.yaml` to 
+  `strimzi.github.io/charts/index.yaml`. 
 
 ## Running system tests
 

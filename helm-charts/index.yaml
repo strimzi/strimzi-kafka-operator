@@ -1,0 +1,54 @@
+apiVersion: v1
+entries:
+  strimzi-kafka-operator:
+  - apiVersion: v1
+    appVersion: 0.6.0
+    created: 2018-08-23T14:25:34.526805221-04:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: 684868a46604411a151d90579f15e065320ba636c2afd25702b508fe11b30c64
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
+    version: 0.6.0
+  - apiVersion: v1
+    appVersion: 0.6.0-rc3
+    created: 2018-08-23T14:22:34.723706021-04:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: f21f51f0611da940d987911f760ed4ed8bf3d6aaa6de0ba2207630cee7d97b19
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0-rc3/strimzi-kafka-operator-0.6.0-rc3.tgz
+    version: 0.6.0-rc3
+generated: 2018-08-23T14:25:34.526112491-04:00

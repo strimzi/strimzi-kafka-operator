@@ -17,10 +17,16 @@ cluster using the [Helm](https://helm.sh) package manager.
 
 ## Installing the Chart
 
+Add the Strimzi Helm Chart repository:
+
+```bash
+$ helm repo add strimzi http://strimzi.io/charts/
+```
+
 To install the chart with the release name `my-release`:
 
 ```bash
-$ helm install --name my-release incubator/strimzi-kafka-operator
+$ helm install --name my-release strimzi/strimzi-kafka-operator
 ```
 
 The command deploys the Strimzi Cluster Operator on the Kubernetes cluster with the default configuration. 
@@ -91,5 +97,5 @@ the documentation for more details.
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
 ```bash
-$ helm install --name my-release --set logLevel=DEBUG,fullReconciliationIntervalMs=240000 incubator/strimzi-kafka-operator
+$ helm install --name my-release --set logLevel=DEBUG,fullReconciliationIntervalMs=240000 strimzi/strimzi-kafka-operator
 ```
