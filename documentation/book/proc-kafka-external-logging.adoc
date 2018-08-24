@@ -8,10 +8,17 @@
 
 . Edit the YAML file to specify the name of the `ConfigMap` which should be used for the required components. For example:
 +
+[source,yaml,subs=+quotes]
 ----
-  logging:
-    type: external
-    name: customConfigMap
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    logging:
+      type: external
+      name: customConfigMap
+    # ...
 ----
 +
 Remember to place your custom ConfigMap under `log4j.properties` eventually `log4j2.properties` key.
