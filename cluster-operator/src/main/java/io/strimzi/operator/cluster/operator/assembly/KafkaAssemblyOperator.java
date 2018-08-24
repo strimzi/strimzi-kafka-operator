@@ -427,7 +427,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         KafkaCluster.initContainerServiceAccountName(desc.kafka().getCluster()),
                         desc.kafka.generateInitContainerServiceAccount())))
                 .compose(desc -> desc.withVoid(clusterRoleBindingOperator.reconcile(
-                        KafkaCluster.initContainerClusterRoleBindingName(desc.kafka().getCluster()),
+                        KafkaCluster.initContainerClusterRoleBindingName(namespace, name),
                         desc.kafka.generateClusterRoleBinding(namespace))))
                 .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.service())))
@@ -473,7 +473,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         KafkaCluster.getPersistentVolumeClaimName(kafkaSsName, i), null));
             }
         }
-        result.add(clusterRoleBindingOperator.reconcile(KafkaCluster.initContainerClusterRoleBindingName(name), null));
+        result.add(clusterRoleBindingOperator.reconcile(KafkaCluster.initContainerClusterRoleBindingName(namespace, name), null));
         result.add(serviceAccountOperator.reconcile(namespace, KafkaCluster.initContainerServiceAccountName(name), null));
         return CompositeFuture.join(result);
     }

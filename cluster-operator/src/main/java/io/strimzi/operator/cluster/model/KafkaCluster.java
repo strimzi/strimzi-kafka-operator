@@ -676,8 +676,8 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Get the name of the kafka kafkaResourceName role binding given the name of the {@code kafkaResourceName}.
      */
-    public static String initContainerClusterRoleBindingName(String kafkaResourceName) {
-        return "strimzi-" + kafkaResourceName + "-kafka-init";
+    public static String initContainerClusterRoleBindingName(String namespace, String kafkaResourceName) {
+        return "strimzi-" + namespace + "-" + kafkaResourceName + "-kafka-init";
     }
 
     /**
@@ -687,7 +687,7 @@ public class KafkaCluster extends AbstractModel {
     public ClusterRoleBindingOperator.ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
         if (rack != null) {
             return new ClusterRoleBindingOperator.ClusterRoleBinding(
-                    initContainerClusterRoleBindingName(cluster),
+                    initContainerClusterRoleBindingName(namespace, cluster),
                     "strimzi-kafka-broker",
                     assemblyNamespace, initContainerServiceAccountName(cluster));
         } else {
