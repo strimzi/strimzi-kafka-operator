@@ -374,7 +374,7 @@ public class KafkaST extends AbstractST {
         listenerTls.setAuthentication(auth);
 
         // Use a Kafka with plain listener disabled
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
