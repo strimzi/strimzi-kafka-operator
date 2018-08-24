@@ -24,10 +24,10 @@ spec:
     # ...
     resources:
       requests:
-        cpu: 8
+        cpu: "8"
         memory: 64Gi
       limits:
-        cpu: 12
+        cpu: "12"
         memory: 128Gi
     # ...
   zookeeper:
@@ -46,3 +46,6 @@ On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _<your-file>_
+
+.Additional resources
+* For more information about the schema, see xref:type-Resources-reference[`Resources` schema reference].
