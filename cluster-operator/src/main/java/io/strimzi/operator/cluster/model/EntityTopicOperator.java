@@ -163,10 +163,10 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     /**
-     * Get the name of the TO role binding given the name of the {@code kafkaResourceName}.
+     * Get the name of the TO role binding given the name of the {@code cluster}.
      */
-    public static String roleBindingName(String kafkaResourceName) {
-        return "strimzi-" + kafkaResourceName + "-topic-operator";
+    public static String roleBindingName(String cluster) {
+        return "strimzi-" + cluster + "-topic-operator";
     }
 
     @Override

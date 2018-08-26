@@ -119,10 +119,10 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     /**
-     * Get the name of the UO role binding given the name of the {@code kafkaResourceName}.
+     * Get the name of the UO role binding given the name of the {@code cluster}.
      */
-    public static String roleBindingName(String kafkaResourceName) {
-        return "strimzi-" + kafkaResourceName + "-user-operator";
+    public static String roleBindingName(String cluster) {
+        return "strimzi-" + cluster + "-user-operator";
     }
 
     @Override
