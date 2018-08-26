@@ -28,11 +28,14 @@ Components and their loggers are listed below.
 * Zookeeper
 ** `zookeeper.root.logger`
 
-* Kafka Connect
+* Kafka Connect and Kafka Connect with Source2Image support
 ** `connect.root.logger.level`
 ** `log4j.logger.org.apache.zookeeper`
 ** `log4j.logger.org.I0Itec.zkclient`
 ** `log4j.logger.org.reflections`
 
 * Topic Operator
+** `rootLogger.level`
+
+* User Operator
 ** `rootLogger.level`
