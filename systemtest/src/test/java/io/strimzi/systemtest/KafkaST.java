@@ -675,7 +675,7 @@ public class KafkaST extends AbstractST {
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */
     @Test
-    //@JUnitGroup(name = "regression")
+    @JUnitGroup(name = "regression")
     @KafkaFromClasspathYaml
     @Namespace(value = "topic-operator-namespace", use = false)
     public void testWatchingOtherNamespace() throws InterruptedException {
