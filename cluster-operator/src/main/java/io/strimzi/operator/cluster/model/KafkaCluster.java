@@ -674,10 +674,10 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Get the name of the kafka kafkaResourceName role binding given the name of the {@code kafkaResourceName}.
+     * Get the name of the kafka kafkaResourceName role binding given the name of the {@code namespace} and {@code cluster}.
      */
-    public static String initContainerClusterRoleBindingName(String namespace, String kafkaResourceName) {
-        return "strimzi-" + namespace + "-" + kafkaResourceName + "-kafka-init";
+    public static String initContainerClusterRoleBindingName(String namespace, String cluster) {
+        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
     }
 
     /**
