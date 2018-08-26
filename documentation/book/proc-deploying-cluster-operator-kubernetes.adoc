@@ -20,7 +20,7 @@ sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-
 +
 [source]
 ----
-kubectl create -f examples/install/cluster-operator
+kubectl apply -f examples/install/cluster-operator
 ----
 
 . Verify whether the Cluster Operator has been deployed successfully, the {KubernetesName} Dashboard or the command line:
