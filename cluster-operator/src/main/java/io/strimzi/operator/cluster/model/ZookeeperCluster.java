@@ -8,12 +8,20 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyBuilder;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyIngressRuleBuilder;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -226,6 +234,62 @@ public class ZookeeperCluster extends AbstractModel {
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
 
         return createService("ClusterIP", ports, getPrometheusAnnotations());
+    }
+
+    public static String policyName(String cluster) {
+        return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
+    }
+
+    public NetworkPolicy generateNetworkPolicy() {
+        NetworkPolicyPort port1 = new NetworkPolicyPort();
+        port1.setPort(new IntOrString(CLIENT_PORT));
+
+        NetworkPolicyPort port2 = new NetworkPolicyPort();
+        port2.setPort(new IntOrString(CLUSTERING_PORT));
+
+        NetworkPolicyPort port3 = new NetworkPolicyPort();
+        port3.setPort(new IntOrString(LEADER_ELECTION_PORT));
+
+        NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector = new LabelSelector();
+        Map<String, String> expressions = new HashMap<>();
+        expressions.put(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster));
+        labelSelector.setMatchLabels(expressions);
+        kafkaClusterPeer.setPodSelector(labelSelector);
+
+        NetworkPolicyPeer zookeeperClusterPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector2 = new LabelSelector();
+        Map<String, String> expressions2 = new HashMap<>();
+        expressions2.put(Labels.STRIMZI_NAME_LABEL, zookeeperClusterName(cluster));
+        labelSelector2.setMatchLabels(expressions2);
+        zookeeperClusterPeer.setPodSelector(labelSelector2);
+
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector3 = new LabelSelector();
+        Map<String, String> expressions3 = new HashMap<>();
+        expressions3.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
+        labelSelector3.setMatchLabels(expressions3);
+        entityOperatorPeer.setPodSelector(labelSelector3);
+
+        NetworkPolicyIngressRule networkPolicyIngressRule = new NetworkPolicyIngressRuleBuilder()
+                .withPorts(port1, port2, port3)
+                .withFrom(kafkaClusterPeer, zookeeperClusterPeer, entityOperatorPeer)
+                .build();
+
+        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
+                .withNewMetadata()
+                .withName(policyName(cluster))
+                .withNamespace(namespace)
+                .withLabels(labels.toMap())
+                .endMetadata()
+                .withNewSpec()
+                .withPodSelector(labelSelector2)
+                .withIngress(networkPolicyIngressRule)
+                .endSpec()
+                .build();
+
+        log.trace("Created network policy {}", networkPolicy);
+        return networkPolicy;
     }
 
     public Service generateHeadlessService() {

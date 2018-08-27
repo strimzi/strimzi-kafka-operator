@@ -14,6 +14,7 @@ import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -45,6 +46,7 @@ public class ResourceOperatorSupplier {
     public final RoleBindingOperator roleBindingOperator;
     public final ClusterRoleBindingOperator clusterRoleBindingOperator;
     public final CrdOperator<KubernetesClient, Kafka, KafkaAssemblyList, DoneableKafka> kafkaOperator;
+    public final NetworkPolicyOperator networkPolicyOperator;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
@@ -57,6 +59,7 @@ public class ResourceOperatorSupplier {
             new ServiceAccountOperator(vertx, client),
             new RoleBindingOperator(vertx, client),
             new ClusterRoleBindingOperator(vertx, client),
+            new NetworkPolicyOperator(vertx, client),
             new CrdOperator<>(vertx, client, Kafka.class, KafkaAssemblyList .class, DoneableKafka.class));
     }
 
@@ -70,6 +73,7 @@ public class ResourceOperatorSupplier {
                                     ServiceAccountOperator serviceAccountOperator,
                                     RoleBindingOperator roleBindingOperator,
                                     ClusterRoleBindingOperator clusterRoleBindingOperator,
+                                    NetworkPolicyOperator networkPolicyOperator,
                                     CrdOperator<KubernetesClient, Kafka, KafkaAssemblyList, DoneableKafka> kafkaOperator) {
         this.serviceOperations = serviceOperations;
         this.zkSetOperations = zkSetOperations;
@@ -81,6 +85,7 @@ public class ResourceOperatorSupplier {
         this.serviceAccountOperator = serviceAccountOperator;
         this.roleBindingOperator = roleBindingOperator;
         this.clusterRoleBindingOperator = clusterRoleBindingOperator;
+        this.networkPolicyOperator = networkPolicyOperator;
         this.kafkaOperator = kafkaOperator;
     }
 

@@ -21,6 +21,7 @@ import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 
@@ -64,8 +65,9 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                                         ConfigMapOperator configMapOperations,
                                         DeploymentOperator deploymentOperations,
                                         ServiceOperator serviceOperations,
-                                        SecretOperator secretOperations) {
-        super(vertx, isOpenShift, ResourceType.CONNECT, certManager, connectOperator, secretOperations);
+                                        SecretOperator secretOperations,
+                                        NetworkPolicyOperator networkPolicyOperator) {
+        super(vertx, isOpenShift, ResourceType.CONNECT, certManager, connectOperator, secretOperations, networkPolicyOperator);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;

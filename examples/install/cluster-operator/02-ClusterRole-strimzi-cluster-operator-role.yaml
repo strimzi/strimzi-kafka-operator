@@ -192,3 +192,15 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - extensions
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
