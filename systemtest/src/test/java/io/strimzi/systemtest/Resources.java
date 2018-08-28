@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Job;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -141,7 +142,24 @@ public class Resources {
     }
 
     DoneableKafka kafka(Kafka kafka) {
-        return new DoneableKafka(kafka, k -> waitFor(deleteLater(kafka().create(k))));
+        return new DoneableKafka(kafka, k -> {
+            TestUtils.waitFor("Kafka creation", 60000, 5000,
+                () -> {
+                    try {
+                        kafka().create(k);
+                        return true;
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().contains("object is being deleted")) {
+                            return false;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            );
+            return waitFor(deleteLater(
+                    k));
+        });
     }
 
     Kafka waitFor(Kafka kafka) {
