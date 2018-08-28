@@ -76,7 +76,6 @@ public class TopicOperator extends AbstractModel {
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
     public static final String TO_CLUSTER_ROLE_NAME = "strimzi-topic-operator";
-    public static final String TO_ROLE_BINDING_NAME = "strimzi-topic-operator-role-binding";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -190,6 +189,13 @@ public class TopicOperator extends AbstractModel {
 
     public static String metricAndLogConfigsName(String cluster) {
         return cluster + METRICS_AND_LOG_CONFIG_SUFFIX;
+    }
+
+    /**
+     * Get the name of the TO role binding given the name of the {@code cluster}.
+     */
+    public static String roleBindingName(String cluster) {
+        return "strimzi-" + cluster + "-topic-operator";
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
@@ -379,7 +385,7 @@ public class TopicOperator extends AbstractModel {
     }
 
     public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(TO_ROLE_BINDING_NAME, TO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName());
+        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), TO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName());
     }
 
     @Override
