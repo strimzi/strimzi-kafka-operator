@@ -362,8 +362,8 @@ public class KafkaST extends AbstractST {
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
-    @Test
-    @JUnitGroup(name = "acceptance")
+    //@Test
+    //@JUnitGroup(name = "acceptance")
     public void testSendMessagesPlainScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-plain-scram-sha";
