@@ -24,6 +24,8 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import kafka.security.auth.Acl;
 import kafka.security.auth.Allow$;
+import kafka.security.auth.Cluster$;
+import kafka.security.auth.Describe$;
 import kafka.security.auth.Group$;
 import kafka.security.auth.Read$;
 import kafka.security.auth.Resource;
@@ -37,6 +39,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import scala.collection.Iterator;
 
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.doNothing;
@@ -94,9 +97,11 @@ public class SimpleAclOperatorTest {
         ArgumentCaptor<Resource> resourceCaptor = ArgumentCaptor.forClass(Resource.class);
         doNothing().when(mockAuthorizer).addAcls(aclCaptor.capture(), resourceCaptor.capture());
 
+        SimpleAclRuleResource resource1 = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.CLUSTER, AclResourcePatternType.LITERAL);
         SimpleAclRuleResource resource = new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
         SimpleAclRule rule1 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.READ);
         SimpleAclRule rule2 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.WRITE);
+        SimpleAclRule rule3 = new SimpleAclRule(AclRuleType.ALLOW, resource1, "*", AclOperation.DESCRIBE);
 
         KafkaPrincipal foo = new KafkaPrincipal("User", "CN=foo");
         Acl acl1 = new Acl(foo, Allow$.MODULE$, "*", Read$.MODULE$);
@@ -104,9 +109,12 @@ public class SimpleAclOperatorTest {
         Acl acl2 = new Acl(foo, Allow$.MODULE$, "*", Write$.MODULE$);
         scala.collection.immutable.Set<Acl> set2 = new scala.collection.immutable.Set.Set1<>(acl2);
         Resource res1 = new Resource(Topic$.MODULE$, "my-topic", PatternType.LITERAL);
+        Acl acl3 = new Acl(foo, Allow$.MODULE$, "*", Describe$.MODULE$);
+        scala.collection.immutable.Set<Acl> set3 = new scala.collection.immutable.Set.Set1<>(acl3);
+        Resource res2 = new Resource(Cluster$.MODULE$, "kafka-cluster", PatternType.LITERAL);
 
         Async async = context.async();
-        Future<ReconcileResult<Set<SimpleAclRule>>> fut = aclOp.reconcile("CN=foo", new LinkedHashSet<>(asList(rule1, rule2)));
+        Future<ReconcileResult<Set<SimpleAclRule>>> fut = aclOp.reconcile("CN=foo", new LinkedHashSet<>(asList(rule1, rule2, rule3)));
         fut.setHandler(res -> {
             context.assertTrue(res.succeeded());
 
@@ -116,12 +124,45 @@ public class SimpleAclOperatorTest {
             context.assertEquals(2, capturedAcls.size());
             context.assertEquals(2, capturedResource.size());
 
-            context.assertEquals(res1, capturedResource.get(0));
-            context.assertEquals(res1, capturedResource.get(1));
+            boolean option1 = res1.equals(capturedResource.get(0)) && res2.equals(capturedResource.get(1));
+            boolean option2 = res1.equals(capturedResource.get(1)) && res2.equals(capturedResource.get(0));
+            context.assertTrue(option1 || option2);
 
-            context.assertEquals(set1, capturedAcls.get(0));
-            context.assertEquals(set2, capturedAcls.get(1));
+            if (capturedAcls.get(0).size() == 1) {
+                context.assertEquals(capturedAcls.get(0), set3);
+            } else {
+                // the order can be changed
+                if (capturedAcls.get(0).size() == 2) {
+                    Iterator<Acl> iter = capturedAcls.get(0).iterator();
+                    Acl aclFromSet1 = set1.head();
+                    Acl aclFromSet2 = set2.head();
 
+                    Acl capturedAcl1 = iter.next();
+                    Acl capturedAcl2 = iter.next();
+
+                    option1 = aclFromSet1.equals(capturedAcl1) && aclFromSet2.equals(capturedAcl2);
+                    option2 = aclFromSet1.equals(capturedAcl2) && aclFromSet1.equals(capturedAcl2);
+                    context.assertTrue(option1 || option2);
+                }
+            }
+
+            if (capturedAcls.get(1).size() == 1) {
+                context.assertEquals(capturedAcls.get(1), set3);
+            } else {
+                // the order can be changed
+                if (capturedAcls.get(1).size() == 2) {
+                    Iterator<Acl> iter = capturedAcls.get(1).iterator();
+                    Acl aclFromSet1 = set1.head();
+                    Acl aclFromSet2 = set2.head();
+
+                    Acl capturedAcl1 = iter.next();
+                    Acl capturedAcl2 = iter.next();
+
+                    option1 = aclFromSet1.equals(capturedAcl1) && aclFromSet2.equals(capturedAcl2);
+                    option2 = aclFromSet1.equals(capturedAcl2) && aclFromSet1.equals(capturedAcl2);
+                    context.assertTrue(option1 || option2);
+                }
+            }
             async.complete();
         });
     }
