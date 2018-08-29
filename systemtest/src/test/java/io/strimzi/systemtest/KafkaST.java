@@ -572,8 +572,7 @@ public class KafkaST extends AbstractST {
                 .addNewEnv().withName("PRODUCER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                         "--topic " + topic + " " +
-                        "--max-messages " + messagesCount + " " +
-                        "--acks all").endEnv()
+                        "--max-messages " + messagesCount).endEnv()
                 .addNewEnv().withName("CONSUMER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                         "--group-id " + name + "-" + rng.nextInt(Integer.MAX_VALUE) + " " +
@@ -588,7 +587,7 @@ public class KafkaST extends AbstractST {
         String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
         boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
         boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
-        String producerConfiguration = "";
+        String producerConfiguration = "acks=all\n";
         String consumerConfiguration = "auto.offset.reset=earliest\n";
         if (tlsListener) {
             if (scramShaUser) {
