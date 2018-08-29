@@ -90,6 +90,8 @@ public class KafkaST extends AbstractST {
 
     static KubernetesClient client = new DefaultKubernetesClient();
 
+    private Random rng = new Random();
+
     @Test
     @JUnitGroup(name = "regression")
     @OpenShiftOnly
@@ -312,12 +314,13 @@ public class KafkaST extends AbstractST {
     public void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
         int messagesCount = 20;
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        resources().topic(CLUSTER_NAME, topicName).done();
 
         // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, null, false));
+        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, null, false));
 
         // Now get the pod logs (which will be both producer and consumer logs)
         checkPings(messagesCount, job);
@@ -332,6 +335,7 @@ public class KafkaST extends AbstractST {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-auth";
         int messagesCount = 20;
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
         KafkaListenerTls listenerTls = new KafkaListenerTls();
@@ -348,12 +352,12 @@ public class KafkaST extends AbstractST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        resources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = resources().tlsUser(kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
         // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, user, true));
+        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, true));
 
         // Now check the pod logs the messages were produced and consumed
         checkPings(messagesCount, job);
@@ -368,6 +372,7 @@ public class KafkaST extends AbstractST {
         String kafkaUser = "my-user";
         String name = "send-messages-plain-scram-sha";
         int messagesCount = 20;
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerAuthenticationScramSha512 auth = new KafkaListenerAuthenticationScramSha512();
         KafkaListenerPlain listenerTls = new KafkaListenerPlain();
@@ -382,12 +387,12 @@ public class KafkaST extends AbstractST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        resources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = resources().scramShaUser(kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
         // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, user, false));
+        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, false));
 
         // Now check the pod logs the messages were produced and consumed
         checkPings(messagesCount, job);
@@ -407,6 +412,7 @@ public class KafkaST extends AbstractST {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-scram-sha";
         int messagesCount = 20;
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerTls listenerTls = new KafkaListenerTls();
         listenerTls.setAuth(new KafkaListenerAuthenticationScramSha512());
@@ -420,12 +426,12 @@ public class KafkaST extends AbstractST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        resources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = resources().scramShaUser(kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
         // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, TOPIC_NAME, messagesCount, user, true));
+        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, true));
 
         // Now check the pod logs the messages were produced and consumed
         checkPings(messagesCount, job);
@@ -566,14 +572,14 @@ public class KafkaST extends AbstractST {
                 .addNewEnv().withName("PRODUCER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                         "--topic " + topic + " " +
-                        "--max-messages " + messagesCount).endEnv()
-                .addNewEnv().withName("CONSUMER_OPTS").withValue(
-                        "--broker-list " + connect + " " +
-                        "--group-id " + name + "-" + new Random().nextInt() + " " +
-                        "--verbose " +
-                        "--topic " + topic + " " +
                         "--max-messages " + messagesCount + " " +
                         "--acks all").endEnv()
+                .addNewEnv().withName("CONSUMER_OPTS").withValue(
+                        "--broker-list " + connect + " " +
+                        "--group-id " + name + "-" + rng.nextInt(Integer.MAX_VALUE) + " " +
+                        "--verbose " +
+                        "--topic " + topic + " " +
+                        "--max-messages " + messagesCount).endEnv()
                 .withCommand("/opt/kafka/ping.sh");
 
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder()
