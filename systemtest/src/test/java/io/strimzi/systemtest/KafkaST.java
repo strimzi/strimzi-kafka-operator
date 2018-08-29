@@ -390,6 +390,18 @@ public class KafkaST extends AbstractST {
         resources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = resources().scramShaUser(kafkaUser).done();
         waitTillSecretExists(kafkaUser);
+        String brokerPodLog = podLog(CLUSTER_NAME + "-kafka-0", "kafka");
+        Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUser) + ".*$", Pattern.MULTILINE);
+        Matcher m = p.matcher(brokerPodLog);
+        boolean found = false;
+        while (m.find()) {
+            found = true;
+            LOGGER.info("Broker pod log line about user {}: {}", kafkaUser, m.group());
+        }
+        if (!found) {
+            LOGGER.warn("No broker pod log lines about user {}", kafkaUser);
+            LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
+        }
 
         // Create ping job
         Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, false));
