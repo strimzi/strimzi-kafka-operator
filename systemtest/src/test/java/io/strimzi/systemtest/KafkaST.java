@@ -401,6 +401,11 @@ public class KafkaST extends AbstractST {
     private void waitTillSecretExists(String secretName) {
         waitFor("secret " + secretName + " exists", 5000, 300000,
             () -> namespacedClient().secrets().withName(secretName).get() != null);
+        try {
+            Thread.sleep(60000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
