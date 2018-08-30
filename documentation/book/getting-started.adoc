@@ -44,9 +44,7 @@ ifdef::Kubernetes[]
 endif::Kubernetes[]
 {OpenShiftLongName} user must have the rights to manage role-based access control (RBAC).
 
-ifdef::Downloading[]
 include::con-product-downloads.adoc[leveloffset=+1]
-endif::Downloading[]
 
 include::assembly-cluster-operator.adoc[leveloffset=+1]
 
