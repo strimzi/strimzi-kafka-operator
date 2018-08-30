@@ -6,6 +6,13 @@
 = {ProductName} Downloads
 
 {ProductName} releases are available for download from {ReleaseDownload}.
-The release artifacts contain documentation, example YAML files for deployment on {ProductPlatformName}, and a Helm Chart for deployment using link:https://helm.sh/[Helm^].
+ifdef::Downloading[]
+The release artifacts contain documentation,
+a Helm Chart for deployment using link:https://helm.sh/[Helm^],
+and example YAML files for deployment on {ProductPlatformName}.
 The example files are used throughout this documentation and can be used to install {ProductName}.
+endif::Downloading[]
+ifndef::Downloading[]
+{ExampleYAMLURL} for deployment on {ProductPlatformName} are used throughout this documentation.
+endif::Downloading[]
 The container images are available on {DockerRepository}.
