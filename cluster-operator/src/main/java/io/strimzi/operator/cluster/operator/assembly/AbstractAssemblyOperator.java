@@ -131,7 +131,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         return null;
     }
 
-    private final void reconcileClusterCa(Reconciliation reconciliation, Labels labels, Handler<AsyncResult<List<Secret>>> handler) {
+    protected final Future<List<Secret>> reconcileClusterCa(Reconciliation reconciliation, Labels labels) {
+        Future<List<Secret>> result = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<List<Secret>>executeBlocking(
             future -> {
                 String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
@@ -179,13 +180,9 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                             future.complete(clusterSecrets);
                         }, future);
             }, true,
-            res -> {
-                if (res.succeeded())
-                    handler.handle(Future.succeededFuture(res.result()));
-                else
-                    handler.handle(Future.failedFuture(res.cause()));
-            }
+            result.completer()
         );
+        return result;
     }
 
     private final void deleteClusterCa(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
@@ -237,25 +234,22 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                     if (cr != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
                         Labels caLabels = Labels.userLabels(cr.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
-                        reconcileClusterCa(reconciliation, caLabels, certResult -> {
-                            if (certResult.succeeded()) {
-                                List<Secret> secrets = certResult.result();
-                                createOrUpdate(reconciliation, cr, secrets, createResult -> {
-                                    lock.release();
-                                    log.debug("{}: Lock {} released", reconciliation, lockName);
-                                    if (createResult.failed()) {
-                                        if (createResult.cause() instanceof InvalidConfigParameterException) {
-                                            log.error(createResult.cause().getMessage());
-                                        } else {
-                                            log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());
-                                        }
-                                    } else {
-                                        handler.handle(createResult);
-                                    }
-                                });
+                        Future<Void> f = Future.future();
+                        reconcileClusterCa(reconciliation, caLabels)
+                            .compose(secrets -> createOrUpdate(reconciliation, cr, secrets, createResult -> {
+                                f.complete();
+                            }), f);
+                        f.setHandler(createResult -> {
+                            lock.release();
+                            log.debug("{}: Lock {} released", reconciliation, lockName);
+                            if (createResult.failed()) {
+                                if (createResult.cause() instanceof InvalidConfigParameterException) {
+                                    log.error(createResult.cause().getMessage());
+                                } else {
+                                    log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());
+                                }
                             } else {
-                                log.error("{}: reconcileClusterCa failed", reconciliation, certResult.cause());
-                                lock.release();
+                                handler.handle(createResult);
                             }
                         });
                     } else {
