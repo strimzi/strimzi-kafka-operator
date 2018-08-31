@@ -130,13 +130,21 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         return null;
     }
 
-    private final void reconcileClusterCa(Reconciliation reconciliation, Labels labels, Handler<AsyncResult<Void>> handler) {
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+    /**
+     * Find the first secret in the given secrets with the given name
+     */
+    static Secret findSecretWithName(List<Secret> secrets, String sname) {
+        return secrets.stream().filter(s -> s.getMetadata().getName().equals(sname)).findFirst().orElse(null);
+    }
+
+    private final void reconcileClusterCa(Reconciliation reconciliation, Labels labels, Handler<AsyncResult<List<Secret>>> handler) {
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<List<Secret>>executeBlocking(
             future -> {
                 String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
-                Secret clusterCa = secretOperations.get(reconciliation.namespace(), clusterCaName);
+                List<Secret> clusterSecrets = secretOperations.list(reconciliation.namespace(), Labels.forCluster(reconciliation.name()));
+                Secret clusterCa = findSecretWithName(clusterSecrets, clusterCaName);
                 SecretCertProvider secretCertProvider = new SecretCertProvider();
-                Secret secret = null;
+                final Secret secret;
 
                 if (clusterCa == null) {
                     log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
@@ -157,6 +165,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                 clusterCAkeyFile, clusterCAcertFile, labels.toMap());
                     } catch (Throwable e) {
                         future.fail(e);
+                        return;
                     } finally {
                         if (clusterCAkeyFile != null)
                             clusterCAkeyFile.delete();
@@ -171,11 +180,14 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                 }
 
                 secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
-                        .compose(future::complete, future);
+                        .compose(x -> {
+                            clusterSecrets.add(secret);
+                            future.complete(clusterSecrets);
+                        }, future);
             }, true,
             res -> {
                 if (res.succeeded())
-                    handler.handle(Future.succeededFuture());
+                    handler.handle(Future.succeededFuture(res.result()));
                 else
                     handler.handle(Future.failedFuture(res.cause()));
             }
@@ -232,12 +244,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
                         Labels caLabels = Labels.userLabels(cr.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
                         reconcileClusterCa(reconciliation, caLabels, certResult -> {
-
-                            Labels labels = Labels.forCluster(assemblyName);
-                            List<Secret> secrets = secretOperations.list(namespace, labels);
-                            secrets.add(secretOperations.get(namespace, AbstractModel.getClusterCaName(assemblyName)));
-
                             if (certResult.succeeded()) {
+                                List<Secret> secrets = certResult.result();
                                 createOrUpdate(reconciliation, cr, secrets, createResult -> {
                                     lock.release();
                                     log.debug("{}: Lock {} released", reconciliation, lockName);
