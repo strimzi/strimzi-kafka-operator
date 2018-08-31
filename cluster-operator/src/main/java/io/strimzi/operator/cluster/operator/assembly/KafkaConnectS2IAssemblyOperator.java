@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.certs.CertManager;
@@ -26,11 +26,8 @@ import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -85,17 +82,15 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I, List<Secret> assemblySecrets) {
         String namespace = reconciliation.namespace();
         if (isOpenShift) {
             KafkaConnectS2ICluster connect;
             try {
                 connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2I);
             } catch (Exception e) {
-                handler.handle(Future.failedFuture(e));
-                return;
+                return Future.failedFuture(e);
             }
-            Future<Void> chainFuture = Future.future();
             connect.generateBuildConfig();
             ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
                     configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
@@ -104,37 +99,35 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
             HashMap<String, String> annotations = new HashMap();
             annotations.put("strimzi.io/logging", logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
-            deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
+            return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                     .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
                     .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations)))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))
                     .compose(i -> buildConfigOperations.reconcile(namespace, connect.getName(), connect.generateBuildConfig()))
-                    .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
-                    .compose(chainFuture::complete, chainFuture);
-            chainFuture.setHandler(handler);
+                    .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null));
         } else {
-            handler.handle(Future.failedFuture("S2I only available on OpenShift"));
+            return Future.failedFuture("S2I only available on OpenShift");
         }
     }
 
     @Override
-    protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+    protected Future<Void> delete(Reconciliation reconciliation) {
         if (isOpenShift) {
             String namespace = reconciliation.namespace();
             String assemblyName = reconciliation.name();
             String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
 
-            CompositeFuture.join(serviceOperations.reconcile(namespace, KafkaConnectS2ICluster.serviceName(assemblyName), null),
+            return CompositeFuture.join(serviceOperations.reconcile(namespace, KafkaConnectS2ICluster.serviceName(assemblyName), null),
                 configMapOperations.reconcile(namespace, KafkaConnectS2ICluster.logAndMetricsConfigName(assemblyName), null),
                 deploymentConfigOperations.reconcile(namespace, clusterName, null),
                 imagesStreamOperations.reconcile(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(clusterName), null),
                 imagesStreamOperations.reconcile(namespace, clusterName, null),
                 buildConfigOperations.reconcile(namespace, clusterName, null))
-            .map((Void) null).setHandler(handler);
+            .map((Void) null);
         } else {
-            handler.handle(Future.failedFuture("S2I only available on OpenShift"));
+            return Future.failedFuture("S2I only available on OpenShift");
         }
     }
 

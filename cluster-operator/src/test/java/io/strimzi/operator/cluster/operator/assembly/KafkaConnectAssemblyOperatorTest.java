@@ -25,9 +25,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -117,7 +115,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList()).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // No metrics config  => no CMs created
@@ -188,7 +186,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList()).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Vertify service
@@ -277,7 +275,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList()).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             KafkaConnectCluster compareTo = KafkaConnectCluster.fromCrd(clusterCm);
@@ -357,7 +355,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList()).setHandler(createResult -> {
             context.assertFalse(createResult.succeeded());
 
             async.complete();
@@ -405,7 +403,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList()).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
@@ -455,7 +453,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList(), createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm, Collections.emptyList()).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
@@ -496,7 +494,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
 
         Async async = context.async();
-        ops.delete(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), createResult -> {
+        ops.delete(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName)).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Vertify service
@@ -562,16 +560,16 @@ public class KafkaConnectAssemblyOperatorTest {
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps) {
 
             @Override
-            public void createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> h) {
+            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly, List<Secret> assemblySecrets) {
                 createdOrUpdated.add(kafkaConnectAssembly.getMetadata().getName());
                 async.countDown();
-                h.handle(Future.succeededFuture());
+                return Future.succeededFuture();
             }
             @Override
-            public void delete(Reconciliation reconciliation, Handler h) {
+            public Future<Void> delete(Reconciliation reconciliation) {
                 deleted.add(reconciliation.name());
                 async.countDown();
-                h.handle(Future.succeededFuture());
+                return Future.succeededFuture();
             }
         };
 
