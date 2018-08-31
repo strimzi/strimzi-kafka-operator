@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 0.6.0 (Work in Progress)
+## 0.6.0
 
 * Helm chart for Strimzi Cluster Operator
 * Topic Operator moving to Custom Resources instead of Config Maps
