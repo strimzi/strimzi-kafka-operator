@@ -25,7 +25,6 @@ import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
-
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -40,6 +39,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 
 /**
  * <p>Abstract assembly creation, update, read, deletion, etc.</p>
@@ -128,13 +129,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
             }
         }
         return null;
-    }
-
-    /**
-     * Find the first secret in the given secrets with the given name
-     */
-    static Secret findSecretWithName(List<Secret> secrets, String sname) {
-        return secrets.stream().filter(s -> s.getMetadata().getName().equals(sname)).findFirst().orElse(null);
     }
 
     private final void reconcileClusterCa(Reconciliation reconciliation, Labels labels, Handler<AsyncResult<List<Secret>>> handler) {

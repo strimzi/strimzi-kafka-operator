@@ -8,11 +8,11 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
@@ -35,8 +35,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 import static java.util.Collections.singletonList;
 
 /**
@@ -258,16 +258,15 @@ public class TopicOperator extends AbstractModel {
         log.debug("Generating certificates");
 
         try {
-            Optional<Secret> clusterCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(getClusterCaName(cluster)))
-                    .findFirst();
-            if (clusterCAsecret.isPresent()) {
+            Secret clusterCaSecret = findSecretWithName(secrets, getClusterCaName(cluster));
+            if (clusterCaSecret != null) {
                 // get the generated CA private key + self-signed certificate for each broker
                 clusterCA = new CertAndKey(
-                        decodeFromSecret(clusterCAsecret.get(), "cluster-ca.key"),
-                        decodeFromSecret(clusterCAsecret.get(), "cluster-ca.crt"));
+                        decodeFromSecret(clusterCaSecret, "cluster-ca.key"),
+                        decodeFromSecret(clusterCaSecret, "cluster-ca.crt"));
 
-                Optional<Secret> topicOperatorSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(TopicOperator.secretName(cluster))).findFirst();
-                if (!topicOperatorSecret.isPresent()) {
+                Secret topicOperatorSecret = findSecretWithName(secrets, TopicOperator.secretName(cluster));
+                if (topicOperatorSecret == null) {
                     log.debug("Topic Operator certificate to generate");
 
                     File csrFile = File.createTempFile("tls", "csr");
@@ -285,8 +284,8 @@ public class TopicOperator extends AbstractModel {
                 } else {
                     log.debug("Topic Operator certificate already exists");
                     cert = new CertAndKey(
-                            decodeFromSecret(topicOperatorSecret.get(), "entity-operator.key"),
-                            decodeFromSecret(topicOperatorSecret.get(), "entity-operator.crt"));
+                            decodeFromSecret(topicOperatorSecret, "entity-operator.key"),
+                            decodeFromSecret(topicOperatorSecret, "entity-operator.crt"));
                 }
             } else {
                 throw new NoCertificateSecretException("The cluster CA certificate Secret is missing");

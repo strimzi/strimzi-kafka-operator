@@ -32,10 +32,10 @@ import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaListeners;
 import io.strimzi.api.kafka.model.Logging;
@@ -59,9 +59,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 import static java.util.Collections.singletonList;
 
 public class KafkaCluster extends AbstractModel {
@@ -271,17 +271,16 @@ public class KafkaCluster extends AbstractModel {
         log.debug("Generating certificates");
 
         try {
-            Optional<Secret> clusterCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(getClusterCaName(cluster)))
-                    .findFirst();
-            if (clusterCAsecret.isPresent()) {
+            Secret clusterCaSecret = findSecretWithName(secrets, getClusterCaName(cluster));
+            if (clusterCaSecret != null) {
                 // get the generated CA private key + self-signed certificate for each broker
                 clusterCA = new CertAndKey(
-                        decodeFromSecret(clusterCAsecret.get(), "cluster-ca.key"),
-                        decodeFromSecret(clusterCAsecret.get(), "cluster-ca.crt"));
+                        decodeFromSecret(clusterCaSecret, "cluster-ca.key"),
+                        decodeFromSecret(clusterCaSecret, "cluster-ca.crt"));
 
                 // CA private key + self-signed certificate for clients communications
-                Optional<Secret> clientsCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(KafkaCluster.clientsCASecretName(cluster))).findFirst();
-                if (!clientsCAsecret.isPresent()) {
+                Secret clientsCaSecret = findSecretWithName(secrets, KafkaCluster.clientsCASecretName(cluster));
+                if (clientsCaSecret == null) {
                     log.debug("Clients CA to generate");
                     File clientsCAkeyFile = File.createTempFile("tls", "clients-ca-key");
                     File clientsCAcertFile = File.createTempFile("tls", "clients-ca-cert");
@@ -302,15 +301,14 @@ public class KafkaCluster extends AbstractModel {
                 } else {
                     log.debug("Clients CA already exists");
                     clientsCA = new CertAndKey(
-                            decodeFromSecret(clientsCAsecret.get(), "clients-ca.key"),
-                            decodeFromSecret(clientsCAsecret.get(), "clients-ca.crt"));
+                            decodeFromSecret(clientsCaSecret, "clients-ca.key"),
+                            decodeFromSecret(clientsCaSecret, "clients-ca.crt"));
                 }
 
                 // recover or generates the private key + certificate for each broker for internal and clients communication
-                Optional<Secret> clusterSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(KafkaCluster.brokersSecretName(cluster)))
-                        .findFirst();
+                Secret clusterSecret = findSecretWithName(secrets, KafkaCluster.brokersSecretName(cluster));
 
-                int replicasInternalSecret = !clusterSecret.isPresent() ? 0 : (clusterSecret.get().getData().size() - 1) / 2;
+                int replicasInternalSecret = clusterSecret == null ? 0 : (clusterSecret.getData().size() - 1) / 2;
 
                 log.debug("Internal communication certificates");
                 brokerCerts = maybeCopyOrGenerateCerts(certManager, clusterSecret, replicasInternalSecret, clusterCA, KafkaCluster::kafkaPodName);

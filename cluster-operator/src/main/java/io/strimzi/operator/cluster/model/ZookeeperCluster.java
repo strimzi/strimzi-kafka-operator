@@ -42,8 +42,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -199,20 +199,18 @@ public class ZookeeperCluster extends AbstractModel {
         log.debug("Generating certificates");
 
         try {
-            Optional<Secret> internalCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(getClusterCaName(cluster)))
-                    .findFirst();
-            if (internalCAsecret.isPresent()) {
+            Secret internalCaSecret = findSecretWithName(secrets, getClusterCaName(cluster));
+            if (internalCaSecret != null) {
 
                 // get the generated CA private key + self-signed certificate for internal communications
                 clusterCA = new CertAndKey(
-                        decodeFromSecret(internalCAsecret.get(), "cluster-ca.key"),
-                        decodeFromSecret(internalCAsecret.get(), "cluster-ca.crt"));
+                        decodeFromSecret(internalCaSecret, "cluster-ca.key"),
+                        decodeFromSecret(internalCaSecret, "cluster-ca.crt"));
 
                 // recover or generates the private key + certificate for each node
-                Optional<Secret> nodesSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(ZookeeperCluster.nodesSecretName(cluster)))
-                        .findFirst();
+                Secret nodesSecret = findSecretWithName(secrets, ZookeeperCluster.nodesSecretName(cluster));
 
-                int replicasSecret = !nodesSecret.isPresent() ? 0 : (nodesSecret.get().getData().size() - 1) / 2;
+                int replicasSecret = nodesSecret == null ? 0 : (nodesSecret.getData().size() - 1) / 2;
 
                 log.debug("Cluster communication certificates");
                 certs = maybeCopyOrGenerateCerts(certManager, nodesSecret, replicasSecret, clusterCA, ZookeeperCluster::zookeeperPodName);

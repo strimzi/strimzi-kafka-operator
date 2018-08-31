@@ -60,7 +60,6 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.model.Labels;
-
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,7 +76,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
@@ -1028,7 +1026,7 @@ public abstract class AbstractModel {
      * @return Collection with certificates
      * @throws IOException
      */
-    protected Map<String, CertAndKey> maybeCopyOrGenerateCerts(CertManager certManager, Optional<Secret> secret, int replicasInSecret, CertAndKey caCert, BiFunction<String, Integer, String> podName) throws IOException {
+    protected Map<String, CertAndKey> maybeCopyOrGenerateCerts(CertManager certManager, Secret secret, int replicasInSecret, CertAndKey caCert, BiFunction<String, Integer, String> podName) throws IOException {
 
         Map<String, CertAndKey> certs = new HashMap<>();
 
@@ -1040,8 +1038,8 @@ public abstract class AbstractModel {
             certs.put(
                     podName.apply(cluster, i),
                     new CertAndKey(
-                            decodeFromSecret(secret.get(), podName.apply(cluster, i) + ".key"),
-                            decodeFromSecret(secret.get(), podName.apply(cluster, i) + ".crt")));
+                            decodeFromSecret(secret, podName.apply(cluster, i) + ".key"),
+                            decodeFromSecret(secret, podName.apply(cluster, i) + ".crt")));
         }
 
         File brokerCsrFile = File.createTempFile("tls", "broker-csr");
