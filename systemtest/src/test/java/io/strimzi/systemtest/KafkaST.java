@@ -683,9 +683,10 @@ public class KafkaST extends AbstractST {
         assertThat(topics, not(hasItems("my-topic")));
         String origNamespace = kubeClient.namespace("topic-operator-namespace");
         kubeClient.create(new File("../examples/topic/kafka-topic.yaml"));
-        Thread.sleep(10_000);
-        kubeClient.namespace(origNamespace);
-        topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
-        assertThat(topics, hasItems("my-topic"));
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 120000, 5000, () -> {
+            kubeClient.namespace(origNamespace);
+            List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+            return topics2.contains("my-topic");
+        });
     }
 }
