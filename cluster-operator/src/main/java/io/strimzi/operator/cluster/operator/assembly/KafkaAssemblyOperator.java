@@ -109,25 +109,25 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private static class ZookeeperClusterDescription {
 
         private final ZookeeperCluster zookeeper;
-        private final Service service;
-        private final Service headlessService;
-        private final ConfigMap metricsAndLogsConfigMap;
-        private final StatefulSet statefulSet;
-        private final Secret nodesSecret;
-        private final NetworkPolicy networkPolicy;
+        private final Service zkService;
+        private final Service zkHeadlessService;
+        private final ConfigMap zkMetricsAndLogsConfigMap;
+        private final StatefulSet zkStatefulSet;
+        private final Secret zkNodesSecret;
+        private final NetworkPolicy zkNetworkPolicy;
         private ReconcileResult<StatefulSet> diffs;
         private boolean forceRestart;
 
-        ZookeeperClusterDescription(ZookeeperCluster zookeeper, Service service, Service headlessService,
-                                    ConfigMap metricsAndLogsConfigMap, StatefulSet statefulSet, Secret nodesSecret,
-                                    NetworkPolicy networkPolicy) {
+        ZookeeperClusterDescription(ZookeeperCluster zookeeper, Service zkService, Service zkHeadlessService,
+                                    ConfigMap zkMetricsAndLogsConfigMap, StatefulSet zkStatefulSet, Secret zkNodesSecret,
+                                    NetworkPolicy zkNetworkPolicy) {
             this.zookeeper = zookeeper;
-            this.service = service;
-            this.headlessService = headlessService;
-            this.metricsAndLogsConfigMap = metricsAndLogsConfigMap;
-            this.statefulSet = statefulSet;
-            this.nodesSecret = nodesSecret;
-            this.networkPolicy = networkPolicy;
+            this.zkService = zkService;
+            this.zkHeadlessService = zkHeadlessService;
+            this.zkMetricsAndLogsConfigMap = zkMetricsAndLogsConfigMap;
+            this.zkStatefulSet = zkStatefulSet;
+            this.zkNodesSecret = zkNodesSecret;
+            this.zkNetworkPolicy = zkNetworkPolicy;
         }
 
         ZookeeperCluster zookeeper() {
@@ -135,27 +135,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Service service() {
-            return this.service;
+            return this.zkService;
         }
 
         Service headlessService() {
-            return this.headlessService;
+            return this.zkHeadlessService;
         }
 
         ConfigMap metricsAndLogsConfigMap() {
-            return this.metricsAndLogsConfigMap;
+            return this.zkMetricsAndLogsConfigMap;
         }
 
         StatefulSet statefulSet() {
-            return this.statefulSet;
+            return this.zkStatefulSet;
         }
 
         Secret nodesSecret() {
-            return this.nodesSecret;
+            return this.zkNodesSecret;
         }
 
         NetworkPolicy networkPolicy() {
-            return this.networkPolicy;
+            return this.zkNetworkPolicy;
         }
 
         private boolean isForceRestart() {
@@ -194,33 +194,33 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private static class KafkaClusterDescription {
 
         private final KafkaCluster kafka;
-        private final Service service;
-        private final Service headlessService;
-        private final ConfigMap metricsAndLogsConfigMap;
-        private final StatefulSet statefulSet;
-        private final Secret clientsCASecret;
-        private final Secret clientsPublicKeySecret;
-        private final Secret clusterPublicKeySecret;
-        private final Secret brokersInternalSecret;
-        private final NetworkPolicy networkPolicy;
+        private final Service kafkaService;
+        private final Service kafkaHeadlessService;
+        private final ConfigMap kafkaMetricsAndLogsConfigMap;
+        private final StatefulSet kafkaStatefulSet;
+        private final Secret kafkaClientsCaSecret;
+        private final Secret kafkaClientsPublicKeySecret;
+        private final Secret kafkaClusterPublicKeySecret;
+        private final Secret kafkaBrokersInternalSecret;
+        private final NetworkPolicy kafkaNetworkPolicy;
         private ReconcileResult<StatefulSet> diffs;
         private boolean forceRestart;
 
-        KafkaClusterDescription(KafkaCluster kafka, Service service, Service headlessService,
-                                ConfigMap metricsAndLogsConfigMap, StatefulSet statefulSet,
-                                Secret clientsCASecret, Secret clientsPublicKeySecret,
-                                Secret clusterPublicKeySecret, Secret brokersInternalSecret,
-                                NetworkPolicy networkPolicy) {
+        KafkaClusterDescription(KafkaCluster kafka, Service kafkaService, Service kafkaHeadlessService,
+                                ConfigMap kafkaMetricsAndLogsConfigMap, StatefulSet kafkaStatefulSet,
+                                Secret kafkaClientsCaSecret, Secret kafkaClientsPublicKeySecret,
+                                Secret kafkaClusterPublicKeySecret, Secret kafkaBrokersInternalSecret,
+                                NetworkPolicy kafkaNetworkPolicy) {
             this.kafka = kafka;
-            this.service = service;
-            this.headlessService = headlessService;
-            this.metricsAndLogsConfigMap = metricsAndLogsConfigMap;
-            this.statefulSet = statefulSet;
-            this.clientsCASecret = clientsCASecret;
-            this.clientsPublicKeySecret = clientsPublicKeySecret;
-            this.clusterPublicKeySecret = clusterPublicKeySecret;
-            this.brokersInternalSecret = brokersInternalSecret;
-            this.networkPolicy = networkPolicy;
+            this.kafkaService = kafkaService;
+            this.kafkaHeadlessService = kafkaHeadlessService;
+            this.kafkaMetricsAndLogsConfigMap = kafkaMetricsAndLogsConfigMap;
+            this.kafkaStatefulSet = kafkaStatefulSet;
+            this.kafkaClientsCaSecret = kafkaClientsCaSecret;
+            this.kafkaClientsPublicKeySecret = kafkaClientsPublicKeySecret;
+            this.kafkaClusterPublicKeySecret = kafkaClusterPublicKeySecret;
+            this.kafkaBrokersInternalSecret = kafkaBrokersInternalSecret;
+            this.kafkaNetworkPolicy = kafkaNetworkPolicy;
         }
 
         KafkaCluster kafka() {
@@ -228,35 +228,35 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Service service() {
-            return this.service;
+            return this.kafkaService;
         }
 
         Service headlessService() {
-            return this.headlessService;
+            return this.kafkaHeadlessService;
         }
 
         ConfigMap metricsAndLogsConfigMap() {
-            return this.metricsAndLogsConfigMap;
+            return this.kafkaMetricsAndLogsConfigMap;
         }
 
         StatefulSet statefulSet() {
-            return this.statefulSet;
+            return this.kafkaStatefulSet;
         }
 
         Secret clientsCASecret() {
-            return this.clientsCASecret;
+            return this.kafkaClientsCaSecret;
         }
 
         Secret clientsPublicKeySecret() {
-            return this.clientsPublicKeySecret;
+            return this.kafkaClientsPublicKeySecret;
         }
 
         Secret clusterPublicKeySecret() {
-            return this.clusterPublicKeySecret;
+            return this.kafkaClusterPublicKeySecret;
         }
 
         Secret brokersInternalSecret() {
-            return this.brokersInternalSecret;
+            return this.kafkaBrokersInternalSecret;
         }
 
         ReconcileResult<StatefulSet> diffs() {
@@ -268,7 +268,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         NetworkPolicy networkPolicy() {
-            return this.networkPolicy;
+            return this.kafkaNetworkPolicy;
         }
 
         Future<KafkaClusterDescription> withDiff(Future<ReconcileResult<StatefulSet>> r) {
