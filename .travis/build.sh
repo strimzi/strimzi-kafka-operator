@@ -8,6 +8,8 @@ export DOCKER_ORG=${DOCKER_ORG:-strimzici}
 export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
 
+./.travis/check_docs.sh
+
 make docker_build
 
 if [ ! -e  documentation/book/appendix_crds.adoc ] ; then
@@ -38,7 +40,7 @@ make docker_push
 OLD_DOCKER_ORG=$DOCKER_ORG
 export DOCKER_ORG="localhost:5000/strimzici"
 
-./.travis/check_docs.sh
+
 
 echo "Running systemtests"
 ./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}
