@@ -32,14 +32,17 @@ listeners:
 # ...
 ----
 
-The listener sub-properties might also contain additional configuration.
-Currently, the only supported configuration is authentication on the `tls` listener.
+The listener sub-properties can also contain additional configuration.
+Both listeners support the `authentication` property
 
-.An example of `tls` listener with TLS client authentication enabled
+.An example where the plain listener is configured for SCRAM-SHA authentication and the `tls` listener with mutual TLS authentication
 [source,yaml,subs="attributes+"]
 ----
 # ...
 listeners:
+  plain:
+    authentication:
+      type: scram-sha-512
   tls:
     authentication:
       type: tls
