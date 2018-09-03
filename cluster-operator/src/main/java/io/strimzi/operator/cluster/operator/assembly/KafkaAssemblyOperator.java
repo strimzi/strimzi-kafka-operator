@@ -36,6 +36,7 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.CompositeFuture;
@@ -105,6 +106,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      */
     private static class ReconciliationState {
 
+        private final String namespace;
+        private final String name;
         private final ZookeeperCluster zookeeper;
         private final Service zkService;
         private final Service zkHeadlessService;
@@ -115,7 +118,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ReconcileResult<StatefulSet> zkDiffs;
         private boolean forceZkRestart;
 
-        ReconciliationState(KZookeeperCluster zookeeper, Service zkService, Service zkHeadlessService,
+        ReconciliationState(Kafka kafkaAssembly, ZookeeperCluster zookeeper, Service zkService, Service zkHeadlessService,
                             ConfigMap zkMetricsAndLogsConfigMap, StatefulSet zkStatefulSet, Secret zkNodesSecret,
                             NetworkPolicy zkNetworkPolicy) {
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
@@ -176,8 +179,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return r.map(this);
         }
 
-        Future<ReconciliationState> zkScaleDown(ZookeeperSetOperator zkSetOperations, String namespace) {
+        Future<ReconciliationState> zkScaleDown(ZookeeperSetOperator zkSetOperations) {
             return withVoid(zkSetOperations.scaleDown(namespace, zookeeper().getName(), zookeeper().getReplicas()));
+        }
+
+        Future<ReconciliationState> zkService(ServiceOperator serviceOperations) {
+            return withVoid(serviceOperations.reconcile(namespace, zookeeper().getServiceName(), zkService()));
+        }
+
+        Future<ReconciliationState> zkHeadlessService(ServiceOperator serviceOperations) {
+            return withVoid(serviceOperations.reconcile(namespace, zookeeper().getHeadlessServiceName(), zkHeadlessService()));
+        }
+
+        Future<ReconciliationState> zkAncillaryCm(ConfigMapOperator configMapOperations) {
+            return withZkAncillaryCmChanged(configMapOperations.reconcile(namespace, zookeeper().getAncillaryConfigName(), zkMetricsAndLogsConfigMap()));
+        }
+
+        Future<ReconciliationState> zkNodesSecret(SecretOperator secretOperations) {
+            return withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), zkNodesSecret()));
         }
 
         Future<ReconciliationState> withZkAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
@@ -434,7 +453,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     NetworkPolicy networkPolicy = zk.generateNetworkPolicy();
                     ReconciliationState desc =
-                            new ReconciliationState(zk, zk.generateService(), zk.generateHeadlessService(),
+                            new ReconciliationState(kafkaAssembly, zk, zk.generateService(), zk.generateHeadlessService(),
                                     logAndMetricsConfigMap, zk.generateStatefulSet(isOpenShift), zk.generateNodesSecret(), networkPolicy);
 
                     future.complete(desc);
@@ -460,11 +479,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         log.debug("{}: create/update zookeeper {}", reconciliation, name);
         Future<Void> chainFuture = Future.future();
         getReconciliationState(kafkaAssembly, assemblySecrets)
-                .compose(desc -> desc.zkScaleDown(zkSetOperations, namespace))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getServiceName(), desc.zkService())))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getHeadlessServiceName(), desc.zkHeadlessService())))
-                .compose(desc -> desc.withZkAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.zookeeper().getAncillaryConfigName(), desc.zkMetricsAndLogsConfigMap())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), desc.zkNodesSecret())))
+                .compose(desc -> desc.zkScaleDown(zkSetOperations))
+                .compose(desc -> desc.zkService(serviceOperations))
+                .compose(desc -> desc.zkHeadlessService(serviceOperations))
+                .compose(desc -> desc.zkAncillaryCm(configMapOperations))
+                .compose(desc -> desc.zkNodesSecret(secretOperations))
                 .compose(desc -> desc.withVoid(networkPolicyOperator.reconcile(namespace, desc.zookeeper().policyName(name), desc.zkNetworkPolicy())))
                 .compose(desc -> desc.withZkDiff(zkSetOperations.reconcile(namespace, desc.zookeeper().getName(), desc.zkStatefulSet())))
                 .compose(desc -> desc.withVoid(zkSetOperations.maybeRollingUpdate(desc.zkDiffs().resource(), desc.isForceZkRestart())))
