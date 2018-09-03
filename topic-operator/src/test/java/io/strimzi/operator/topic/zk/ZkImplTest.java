@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.topic.zk;
 
-import io.strimzi.operator.topic.EmbeddedZooKeeper;
+import io.strimzi.test.EmbeddedZooKeeper;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;

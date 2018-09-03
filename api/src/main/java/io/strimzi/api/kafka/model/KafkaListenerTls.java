@@ -4,16 +4,16 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import io.sundr.builder.annotations.Buildable;
 
 import static java.util.Collections.emptyMap;
 
@@ -29,17 +29,18 @@ import static java.util.Collections.emptyMap;
 public class KafkaListenerTls implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private KafkaListenerAuthentication serverAuthentication;
+    private KafkaListenerAuthentication auth;
     private Map<String, Object> additionalProperties;
 
-    @Description("Authorization configuration for Kafka brokers")
+    @Description("Authentication configuration for this listener.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaListenerAuthentication getAuthentication() {
-        return serverAuthentication;
+    @JsonProperty("authentication")
+    public KafkaListenerAuthentication getAuth() {
+        return auth;
     }
 
-    public void setAuthentication(KafkaListenerAuthentication serverAuthentication) {
-        this.serverAuthentication = serverAuthentication;
+    public void setAuth(KafkaListenerAuthentication auth) {
+        this.auth = auth;
     }
 
     @JsonAnyGetter

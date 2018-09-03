@@ -46,7 +46,12 @@ spec:
                   properties:
                     plain:
                       type: object
-                      properties: {}
+                      properties:
+                        authentication:
+                          type: object
+                          properties:
+                            type:
+                              type: string
                     tls:
                       type: object
                       properties:

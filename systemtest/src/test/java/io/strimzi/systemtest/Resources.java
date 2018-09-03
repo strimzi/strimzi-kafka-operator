@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Job;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -94,7 +95,7 @@ public class Resources {
         }
     }
 
-    io.strimzi.api.kafka.model.DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
+    DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
         return kafka(defaultKafka(name, kafkaReplicas).build());
     }
 
@@ -140,8 +141,25 @@ public class Resources {
                     .endSpec();
     }
 
-    io.strimzi.api.kafka.model.DoneableKafka kafka(Kafka kafka) {
-        return new io.strimzi.api.kafka.model.DoneableKafka(kafka, k -> waitFor(deleteLater(kafka().create(k))));
+    DoneableKafka kafka(Kafka kafka) {
+        return new DoneableKafka(kafka, k -> {
+            TestUtils.waitFor("Kafka creation", 60000, 5000,
+                () -> {
+                    try {
+                        kafka().create(k);
+                        return true;
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().contains("object is being deleted")) {
+                            return false;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            );
+            return waitFor(deleteLater(
+                    k));
+        });
     }
 
     Kafka waitFor(Kafka kafka) {
@@ -209,6 +227,19 @@ public class Resources {
                 .withNewSpec()
                     .withNewKafkaUserTlsClientAuthenticationAuthentication()
                     .endKafkaUserTlsClientAuthenticationAuthentication()
+                .endSpec()
+                .build());
+    }
+
+    DoneableKafkaUser scramShaUser(String name) {
+        return user(new KafkaUserBuilder().withMetadata(
+                new ObjectMetaBuilder()
+                        .withName(name)
+                        .withNamespace(client().getNamespace())
+                        .build())
+                .withNewSpec()
+                    .withNewKafkaUserScramSha512ClientAuthenticationAuthentication()
+                    .endKafkaUserScramSha512ClientAuthenticationAuthentication()
                 .endSpec()
                 .build());
     }

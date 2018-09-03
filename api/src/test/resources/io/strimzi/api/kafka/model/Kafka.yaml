@@ -37,7 +37,9 @@ spec:
     config:
       min.insync.replicas: 3
     listeners:
-      plain: {}
+      plain:
+        authentication:
+          type: scram-sha-512
       tls:
         authentication:
           type: tls

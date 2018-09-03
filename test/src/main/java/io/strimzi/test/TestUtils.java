@@ -157,16 +157,14 @@ public final class TestUtils {
 
     public static String readFile(File file) {
         try {
-            URL url = file.toURI().toURL();
-            if (url == null) {
+            if (file == null) {
                 return null;
             } else {
                 return new String(
-                        Files.readAllBytes(Paths.get(
-                                url.toURI())),
+                        Files.readAllBytes(file.toPath()),
                         StandardCharsets.UTF_8);
             }
-        } catch (IOException | URISyntaxException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

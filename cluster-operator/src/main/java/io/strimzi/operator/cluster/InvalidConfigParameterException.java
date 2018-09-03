@@ -5,7 +5,9 @@
 
 package io.strimzi.operator.cluster;
 
-public class InvalidConfigParameterException extends RuntimeException {
+import io.strimzi.operator.cluster.model.InvalidResourceException;
+
+public class InvalidConfigParameterException extends InvalidResourceException {
 
     private String key;
     public InvalidConfigParameterException(String key, String message) {

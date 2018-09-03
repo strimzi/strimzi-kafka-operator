@@ -6,17 +6,29 @@
 LISTENERS="REPLICATION://0.0.0.0:9091"
 ADVERTISED_LISTENERS="REPLICATION://$(hostname -f):9091"
 LISTENER_SECURITY_PROTOCOL_MAP="REPLICATION:SSL"
+SASL_ENABLED_MECHANISMS=""
 
 if [ "$KAFKA_CLIENT_ENABLED" = "TRUE" ]; then
   LISTENERS="${LISTENERS},CLIENT://0.0.0.0:9092"
   ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},CLIENT://$(hostname -f):9092"
-  LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENT:PLAINTEXT"
+
+  if [ "$KAFKA_CLIENT_AUTHENTICATION" = "scram-sha-512" ]; then
+    SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
+    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENT:SASL_PLAINTEXT"
+    CLIENT_LISTENER=$(cat <<EOF
+# CLIENT listener authentication
+listener.name.client.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
+EOF
+)
+  else
+    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENT:PLAINTEXT"
+  fi
 fi
 
 if [ "$KAFKA_CLIENTTLS_ENABLED" = "TRUE" ]; then
   LISTENERS="${LISTENERS},CLIENTTLS://0.0.0.0:9093"
   ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},CLIENTTLS://$(hostname -f):9093"
-  LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SSL"
+
 
   # Configuring TLS client authentication for clienttls interface
   if [ "$KAFKA_CLIENTTLS_AUTHENTICATION" = "tls" ]; then
@@ -29,9 +41,22 @@ if [ "$KAFKA_CLIENTTLS_ENABLED" = "TRUE" ]; then
 # TLS interface configuration
 listener.name.clienttls.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.clienttls.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
+# CLIENTTLS listener authentication
 listener.name.clienttls.ssl.client.auth=${LISTENER_NAME_CLIENTTLS_SSL_CLIENT_AUTH}
 EOF
 )
+
+  if [ "$KAFKA_CLIENTTLS_AUTHENTICATION" = "scram-sha-512" ]; then
+    SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
+    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SASL_SSL"
+    CLIENTTLS_LISTENER=$(cat <<EOF
+$CLIENTTLS_LISTENER
+listener.name.clienttls.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
+EOF
+)
+  else
+    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SSL"
+  fi
 fi
 
 #####
@@ -82,6 +107,9 @@ listener.name.replication.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.replication.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 listener.name.replication.ssl.client.auth=required
 
+sasl.enabled.mechanisms=$(echo -e "$SASL_ENABLED_MECHANISMS" | uniq | awk -vORS=, '/.+/{ print $1 }' | sed 's/,$/\n/')
+
+${CLIENT_LISTENER}
 ${CLIENTTLS_LISTENER}
 
 # Authorization configuration
