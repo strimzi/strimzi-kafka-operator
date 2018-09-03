@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.7.0
+
+* Use less wide RBAC permissions (`ClusterRoleBindings` where converted to `RoleBindings` where possible)
+
 ## 0.6.0
 
 * Helm chart for Strimzi Cluster Operator
