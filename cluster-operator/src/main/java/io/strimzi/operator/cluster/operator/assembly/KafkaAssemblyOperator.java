@@ -115,9 +115,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ReconcileResult<StatefulSet> zkDiffs;
         private boolean forceZkRestart;
 
-        ReconciliationState(ZookeeperCluster zookeeper, Service zkService, Service zkHeadlessService,
+        ReconciliationState(KZookeeperCluster zookeeper, Service zkService, Service zkHeadlessService,
                             ConfigMap zkMetricsAndLogsConfigMap, StatefulSet zkStatefulSet, Secret zkNodesSecret,
                             NetworkPolicy zkNetworkPolicy) {
+            this.namespace = kafkaAssembly.getMetadata().getNamespace();
+            this.name = kafkaAssembly.getMetadata().getName();
             this.zookeeper = zookeeper;
             this.zkService = zkService;
             this.zkHeadlessService = zkHeadlessService;
@@ -172,6 +174,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> withVoid(Future<?> r) {
             return r.map(this);
+        }
+
+        Future<ReconciliationState> zkScaleDown(ZookeeperSetOperator zkSetOperations, String namespace) {
+            return withVoid(zkSetOperations.scaleDown(namespace, zookeeper().getName(), zookeeper().getReplicas()));
         }
 
         Future<ReconciliationState> withZkAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
@@ -414,7 +420,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return CompositeFuture.join(result);
     }
 
-    private final Future<ReconciliationState> getZookeeperClusterDescription(Kafka kafkaAssembly, List<Secret> assemblySecrets) {
+    private final Future<ReconciliationState> getReconciliationState(Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         Future<ReconciliationState> fut = Future.future();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -453,8 +459,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update zookeeper {}", reconciliation, name);
         Future<Void> chainFuture = Future.future();
-        getZookeeperClusterDescription(kafkaAssembly, assemblySecrets)
-                .compose(desc -> desc.withVoid(zkSetOperations.scaleDown(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
+        getReconciliationState(kafkaAssembly, assemblySecrets)
+                .compose(desc -> desc.zkScaleDown(zkSetOperations, namespace))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getServiceName(), desc.zkService())))
                 .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.zookeeper().getHeadlessServiceName(), desc.zkHeadlessService())))
                 .compose(desc -> desc.withZkAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.zookeeper().getAncillaryConfigName(), desc.zkMetricsAndLogsConfigMap())))
