@@ -194,11 +194,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ReconcileResult<StatefulSet> kafkaDiffs;
         private boolean forceKafkaRestart;
 
-        ReconciliationState KafkaClusterDescription(KafkaCluster kafka, Service kafkaService, Service kafkaHeadlessService,
-                                ConfigMap kafkaMetricsAndLogsConfigMap, StatefulSet kafkaStatefulSet,
-                                Secret kafkaClientsCaSecret, Secret kafkaClientsPublicKeySecret,
-                                Secret kafkaClusterPublicKeySecret, Secret kafkaBrokersInternalSecret,
-                                NetworkPolicy kafkaNetworkPolicy) {
+        ReconciliationState initKafkaClusterDescription(KafkaCluster kafka, Service kafkaService, Service kafkaHeadlessService,
+                                                        ConfigMap kafkaMetricsAndLogsConfigMap, StatefulSet kafkaStatefulSet,
+                                                        Secret kafkaClientsCaSecret, Secret kafkaClientsPublicKeySecret,
+                                                        Secret kafkaClusterPublicKeySecret, Secret kafkaBrokersInternalSecret,
+                                                        NetworkPolicy kafkaNetworkPolicy) {
             this.kafka = kafka;
             this.kafkaService = kafkaService;
             this.kafkaHeadlessService = kafkaHeadlessService;
@@ -275,12 +275,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         private TopicOperator topicOperator;
-        private Deployment toDeployment;
+        private Deployment toDeployment = null;
         private Secret topicOperatorSecret;
-        private ConfigMap toMetricsAndLogsConfigMap;
+        private ConfigMap toMetricsAndLogsConfigMap = null;
 
-        ReconciliationState TopicOperatorDescription(TopicOperator topicOperator, Deployment toDeployment,
-                                 Secret topicOperatorSecret, ConfigMap toMetricsAndLogsConfigMap) {
+        ReconciliationState initTopicOperatorDescription(TopicOperator topicOperator, Deployment toDeployment,
+                                                         Secret topicOperatorSecret, ConfigMap toMetricsAndLogsConfigMap) {
             this.topicOperator = topicOperator;
             this.toDeployment = toDeployment;
             this.topicOperatorSecret = topicOperatorSecret;
@@ -310,13 +310,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         private EntityOperator entityOperator;
-        private Deployment eoDeployment;
+        private Deployment eoDeployment = null;
         private Secret entityOperatorSecret;
-        private ConfigMap topicOperatorMetricsAndLogsConfigMap;
+        private ConfigMap topicOperatorMetricsAndLogsConfigMap = null;
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
 
-        ReconciliationState EntityOperatorDescription(EntityOperator entityOperator, Deployment eoDeployment, Secret entityOperatorSecret,
-                                  ConfigMap topicOperatorMetricsAndLogsConfigMap, ConfigMap userOperatorMetricsAndLogsConfigMap) {
+        ReconciliationState initEntityOperatorDescription(EntityOperator entityOperator, Deployment eoDeployment, Secret entityOperatorSecret,
+                                                          ConfigMap topicOperatorMetricsAndLogsConfigMap, ConfigMap userOperatorMetricsAndLogsConfigMap) {
             this.entityOperator = entityOperator;
             this.eoDeployment = eoDeployment;
             this.entityOperatorSecret = entityOperatorSecret;
@@ -360,7 +360,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafka.getLogging() instanceof ExternalLogging ?
                                     configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) kafka.getLogging()).getName()) :
                                     null);
-                    rs.KafkaClusterDescription(kafka, kafka.generateService(), kafka.generateHeadlessService(),
+                    rs.initKafkaClusterDescription(kafka, kafka.generateService(), kafka.generateHeadlessService(),
                                     logAndMetricsConfigMap, kafka.generateStatefulSet(isOpenShift),
                                     kafka.generateClientsCASecret(), kafka.generateClientsPublicKeySecret(),
                                     kafka.generateClusterPublicKeySecret(), kafka.generateBrokersSecret(),
@@ -581,7 +581,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
                                         null);
 
-                        rs.TopicOperatorDescription(topicOperator, topicOperator.generateDeployment(),
+                        rs.initTopicOperatorDescription(topicOperator, topicOperator.generateDeployment(),
                                 topicOperator.generateSecret(), logAndMetricsConfigMap);
                     } else {
                         //rs.TopicOperatorDescription.EMPTY_TO;
@@ -639,7 +639,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName()) :
                                         null) : null;
 
-                        rs.EntityOperatorDescription(entityOperator, entityOperator.generateDeployment(),
+                        rs.initEntityOperatorDescription(entityOperator, entityOperator.generateDeployment(),
                                 entityOperator.generateSecret(), topicOperatorLogAndMetricsConfigMap, userOperatorLogAndMetricsConfigMap);
                     }
 
