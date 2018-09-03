@@ -7,6 +7,7 @@ package io.strimzi.operator.topic;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import io.strimzi.operator.common.process.ProcessHelper;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -19,7 +20,6 @@ import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -91,7 +91,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                 LOGGER.debug("Generating reassignment json for topic {}", topic.getTopicName());
                 String reassignment = generateReassignment(topic, zookeeper);
                 LOGGER.debug("Reassignment json for topic {}: {}", topic.getTopicName(), reassignment);
-                File reassignmentJsonFile = createTmpFile("-reassignment.json");
+                File reassignmentJsonFile = ProcessHelper.createTmpFile("-reassignment.json");
                 try (Writer w = new OutputStreamWriter(new FileOutputStream(reassignmentJsonFile), StandardCharsets.UTF_8)) {
                     w.write(reassignment);
                 }
@@ -146,13 +146,13 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
                         if (ar.succeeded()) {
                             if (ar.result()) {
                                 LOGGER.info("Reassignment complete");
-                                delete(reassignmentJsonFile);
+                                ProcessHelper.delete(reassignmentJsonFile);
                                 LOGGER.debug("Cancelling timer " + timerId);
                                 vertx.cancelTimer(timerId);
                                 reassignmentFinishedFuture.complete();
                             } else if (System.currentTimeMillis() - first > timeout) {
                                 LOGGER.error("Reassignment timed out");
-                                delete(reassignmentJsonFile);
+                                ProcessHelper.delete(reassignmentJsonFile);
                                 LOGGER.debug("Cancelling timer " + timerId);
                                 vertx.cancelTimer(timerId);
                                 reassignmentFinishedFuture.fail("Timeout");
@@ -183,20 +183,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         // though we aren't relieved of the statefullness wrt removing throttles :-(
     }
 
-    private static void delete(File file) {
-        /*if (!file.delete()) {
-            logger.warn("Unable to delete temporary file {}", file);
-        }*/
-    }
 
-    private static File createTmpFile(String suffix) throws IOException {
-        File tmpFile = File.createTempFile(OperatorAssignedKafkaImpl.class.getName(), suffix);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Created temporary file {}", tmpFile);
-        }
-        /*tmpFile.deleteOnExit();*/
-        return tmpFile;
-    }
 
     private static class VerifyLineParser implements Function<String, Void> {
         int complete = 0;
@@ -216,6 +203,24 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         }
     }
 
+    private <T> T forEachLineStdout(ProcessHelper.ProcessResult pr, Function<String, T> fn) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                // Use platform default charset, on assumption that
+                // the ReassignPartitionsCommand will output in that
+                new FileInputStream(pr.standardOutput()), Charset.defaultCharset()))) {
+            String line = reader.readLine();
+            while (line != null) {
+                LOGGER.debug("Process {}: stdout: {}", pr, line);
+                T result = fn.apply(line);
+                if (result != null) {
+                    return result;
+                }
+                line = reader.readLine();
+            }
+            return null;
+        }
+    }
+
     private boolean verifyReassignment(File reassignmentJsonFile, String zookeeper, Long throttle) throws IOException, InterruptedException {
         List<String> verifyArgs = new ArrayList<>();
         addJavaArgs(verifyArgs);
@@ -230,7 +235,8 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         verifyArgs.add(reassignmentJsonFile.toString());
         verifyArgs.add("--verify");
         VerifyLineParser verifyLineParser = new VerifyLineParser();
-        executeSubprocess(verifyArgs).forEachLineStdout(verifyLineParser);
+        forEachLineStdout(ProcessHelper.executeSubprocess(verifyArgs),
+                verifyLineParser);
         return verifyLineParser.inProgress == 0;
     }
 
@@ -247,7 +253,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         executeArgs.add(reassignmentJsonFile.toString());
         executeArgs.add("--execute");
 
-        if (!executeSubprocess(executeArgs).forEachLineStdout(line -> {
+        if (!forEachLineStdout(ProcessHelper.executeSubprocess(executeArgs), line -> {
             if (line.contains("Partitions reassignment failed due to")
                     || line.contains("There is an existing assignment running")
                     || line.contains("Failed to reassign partitions")) {
@@ -265,7 +271,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
     private String generateReassignment(Topic topic, String zookeeper) throws IOException, InterruptedException, ExecutionException {
         JsonFactory factory = new JsonFactory();
 
-        File topicsToMove = createTmpFile("-topics-to-move.json");
+        File topicsToMove = ProcessHelper.createTmpFile("-topics-to-move.json");
 
         try (JsonGenerator gen = factory.createGenerator(topicsToMove, JsonEncoding.UTF8)) {
             gen.writeStartObject();
@@ -288,9 +294,9 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         executeArgs.add(brokerList());
         executeArgs.add("--generate");
 
-        final ProcessResult processResult = executeSubprocess(executeArgs);
-        delete(topicsToMove);
-        String json = processResult.forEachLineStdout(new ReassignmentLineParser());
+        final ProcessHelper.ProcessResult processResult = ProcessHelper.executeSubprocess(executeArgs);
+        ProcessHelper.delete(topicsToMove);
+        String json = forEachLineStdout(processResult, new ReassignmentLineParser());
         return json;
 
     }
@@ -319,75 +325,7 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         verifyArgs.add("kafka.admin.ReassignPartitionsCommand");
     }
 
-    private ProcessResult executeSubprocess(List<String> verifyArgs) throws IOException, InterruptedException {
-        // We choose to run the reassignment as an external process because the Scala class:
-        //  a) doesn't throw on errors, but
-        //  b) writes them to stdout
-        // so we need to parse its output, but we can't do that in an isolated way if we run it in our process
-        // (System.setOut being global to the VM).
 
-        if (verifyArgs.isEmpty() || !new File(verifyArgs.get(0)).canExecute()) {
-            throw new OperatorException("Command " + verifyArgs + " lacks an executable arg[0]");
-        }
-
-        ProcessBuilder pb = new ProcessBuilder(verifyArgs);
-        // If we redirect stderr to stdout we could break the predicates because the
-        // characters will be jumbled.
-        // Reading two pipes without deadlocking on the blocking is difficult, so let's just write stderr to a file.
-        File stdout = createTmpFile(".out");
-        File stderr = createTmpFile(".err");
-        pb.redirectError(stderr);
-        pb.redirectOutput(stdout);
-        Process p = pb.start();
-        LOGGER.info("Started process {} with command line {}", p, verifyArgs);
-        p.getOutputStream().close();
-        int exitCode = p.waitFor();
-        // TODO timeout on wait
-        LOGGER.info("Process {}: exited with status {}", p, exitCode);
-        return new ProcessResult(p, stdout, stderr);
-    }
-
-
-
-    private static class ProcessResult implements AutoCloseable {
-        private final File stdout;
-        private final File stderr;
-        private final Object pid;
-
-        ProcessResult(Object pid, File stdout, File stderr) {
-            this.pid = pid;
-            this.stdout = stdout;
-            this.stderr = stderr;
-        }
-
-        public <T> T forEachLineStdout(Function<String, T> fn) throws IOException {
-            return forEachLine(this.stdout, fn);
-        }
-
-        private <T> T forEachLine(File file, Function<String, T> fn) throws IOException {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    // Use platform default charset, on assumption that
-                    // the ReassignPartitionsCommand will output in that
-                    new FileInputStream(file), Charset.defaultCharset()))) {
-                String line = reader.readLine();
-                while (line != null) {
-                    LOGGER.debug("Process {}: stdout: {}", pid, line);
-                    T result = fn.apply(line);
-                    if (result != null) {
-                        return result;
-                    }
-                    line = reader.readLine();
-                }
-                return null;
-            }
-        }
-
-        @Override
-        public void close() throws Exception {
-            delete(stdout);
-            delete(stderr);
-        }
-    }
 
     private static class ReassignmentLineParser implements Function<String, String> {
         boolean returnLine = false;

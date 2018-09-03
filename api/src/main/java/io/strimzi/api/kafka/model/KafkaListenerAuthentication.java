@@ -31,7 +31,7 @@ public abstract class KafkaListenerAuthentication implements Serializable {
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
-            "Currently the only supported type is `tls`. " +
+            "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
             "`tls` type uses TLS Client Authentication. " +
             "`tls` type is supported only on TLS listeners.")
     @JsonIgnore

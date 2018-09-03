@@ -4,22 +4,22 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.crdgenerator.annotations.Description;
-
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.strimzi.crdgenerator.annotations.Description;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaUserTlsClientAuthentication.TYPE_TLS, value = KafkaUserTlsClientAuthentication.class),
+        @JsonSubTypes.Type(name = KafkaUserScramSha512ClientAuthentication.TYPE_SCRAM_SHA_512, value = KafkaUserScramSha512ClientAuthentication.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class KafkaUserAuthentication implements Serializable {
@@ -27,8 +27,7 @@ public abstract class KafkaUserAuthentication implements Serializable {
 
     private Map<String, Object> additionalProperties;
 
-    @Description("Authentication type. " +
-            "Currently the only supported type is `tls` for TLS Client Authentication.")
+    @Description("Authentication type.")
     @JsonIgnore
     public abstract String getType();
 

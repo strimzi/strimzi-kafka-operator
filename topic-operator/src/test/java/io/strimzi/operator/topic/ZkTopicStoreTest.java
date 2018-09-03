@@ -5,6 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.strimzi.operator.topic.zk.ZkImpl;
+import io.strimzi.test.EmbeddedZooKeeper;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;

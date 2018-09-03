@@ -697,8 +697,8 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 [options="header"]
 |====
 |Field                  |Description
-|authentication  1.2+<.<|Authentication mechanism enabled for this Kafka user. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls].
-|xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`]
+|authentication  1.2+<.<|Authentication mechanism enabled for this Kafka user. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
+|xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
 |authorization   1.2+<.<|Authorization rules for this Kafka user. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple].
 |xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
 |====
@@ -709,12 +709,27 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaUserTlsClientAuthentication` from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserTlsClientAuthentication` from xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
 It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 [options="header"]
 |====
 |Field        |Description
 |type  1.2+<.<|Must be `tls`.
+|string
+|====
+
+[id='type-KafkaUserScramSha512ClientAuthentication-{context}']
+### `KafkaUserScramSha512ClientAuthentication` schema reference
+
+Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaUserScramSha512ClientAuthentication` from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`].
+It must have the value `scram-sha-512` for the type `KafkaUserScramSha512ClientAuthentication`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `scram-sha-512`.
 |string
 |====
 

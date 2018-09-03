@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -26,6 +25,9 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.shareddata.Lock;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,10 +37,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import io.vertx.core.shareddata.Lock;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Operator for a Kafka Users.
@@ -54,20 +52,32 @@ public class KafkaUserOperator {
     private final CertManager certManager;
     private final String caName;
     private final String caNamespace;
+    private final ScramShaCredentialsOperator scramShaCredentialOperator;
+    private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+            "abcdefghijklmnopqrstuvwxyz" +
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                    "0123456789");
 
     /**
      * @param vertx The Vertx instance
      * @param certManager For managing certificates
      * @param crdOperator For operating on Custom Resources
      * @param secretOperations For operating on Secrets
+     * @param scramShaCredentialOperator For operating on SCRAM SHA credentials
+     * @param aclOperations For operating on ACLs
+     * @param caName The name of the Secret containing the clients CA certificate and private key
+     * @param caNamespace The namespace of the Secret containing the clients CA certificate and private key
      */
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,
                              CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperator,
-                             SecretOperator secretOperations, SimpleAclOperator aclOperations, String caName, String caNamespace) {
+                             SecretOperator secretOperations,
+                             ScramShaCredentialsOperator scramShaCredentialOperator,
+                             SimpleAclOperator aclOperations, String caName, String caNamespace) {
         this.vertx = vertx;
         this.certManager = certManager;
         this.secretOperations = secretOperations;
+        this.scramShaCredentialOperator = scramShaCredentialOperator;
         this.crdOperator = crdOperator;
         this.aclOperations = aclOperations;
         this.caName = caName;
@@ -100,14 +110,17 @@ public class KafkaUserOperator {
         String userName = reconciliation.name();
         KafkaUserModel user;
         try {
-            user = KafkaUserModel.fromCrd(certManager, kafkaUser, clientsCa, userSecret);
+            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCa, userSecret);
         } catch (Exception e) {
             handler.handle(Future.failedFuture(e));
             return;
         }
 
         log.debug("{}: Updating User", reconciliation, userName, namespace);
-        CompositeFuture.join(secretOperations.reconcile(namespace, user.getSecretName(), user.generateSecret()),
+        Secret desired = user.generateSecret();
+        CompositeFuture.join(
+                scramShaCredentialOperator.reconcile(user.getName(), desired != null ? desired.getData().get("password") : null),
+                secretOperations.reconcile(namespace, user.getSecretName(), desired),
                 aclOperations.reconcile(user.getUserName(), user.getSimpleAclRules()))
                 .map((Void) null).setHandler(handler);
     }
@@ -120,10 +133,10 @@ public class KafkaUserOperator {
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
-
         log.debug("{}: Deleting User", reconciliation, user, namespace);
         CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
-                aclOperations.reconcile(KafkaUserModel.getUserName(user), null))
+                aclOperations.reconcile(KafkaUserModel.getUserName(user), null),
+                scramShaCredentialOperator.reconcile(KafkaUserModel.getUserName(user), null))
             .map((Void) null).setHandler(handler);
     }
 
@@ -209,7 +222,6 @@ public class KafkaUserOperator {
 
         CountDownLatch outerLatch = new CountDownLatch(1);
 
-
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
@@ -223,6 +235,7 @@ public class KafkaUserOperator {
                     log.debug("reconcileAll({}, {}): User with ACLs: {}", RESOURCE_KIND, trigger, res.result());
                     desiredNames.addAll((Collection<? extends String>) res.result());
                     desiredNames.addAll(resourceNames);
+                    desiredNames.addAll(scramShaCredentialOperator.list());
 
                     // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
                     // Using futures would be more complex for no benefit

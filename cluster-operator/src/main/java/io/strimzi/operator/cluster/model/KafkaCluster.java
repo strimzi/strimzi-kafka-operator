@@ -640,8 +640,8 @@ public class KafkaCluster extends AbstractModel {
             if (listeners.getTls() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_ENABLED, "TRUE"));
 
-                if (listeners.getTls().getAuthentication() != null) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, listeners.getTls().getAuthentication().getType()));
+                if (listeners.getTls().getAuth() != null) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, listeners.getTls().getAuth().getType()));
                 }
             }
         }
