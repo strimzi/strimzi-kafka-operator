@@ -16,7 +16,7 @@ image::cluster_operator.png[Cluster Operator]
 
 When the Cluster Operator is up, it starts to _watch_ for certain {ProductPlatformName} resources containing the desired Kafka or Kafka Connect cluster configuration.
 By default it watches only in the same namespace or project where it is installed.
-Cluster operator can be configured to watch for more namespaces or projects.
+The Cluster Operator can be configured to watch for more namespaces or projects.
 The resources Cluster Operator is watching for are:
 
 * A `Kafka` resource for Kafka cluster.

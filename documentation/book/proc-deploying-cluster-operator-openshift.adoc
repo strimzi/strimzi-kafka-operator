@@ -24,10 +24,3 @@ sed -i 's/namespace: .\*/namespace: _<my-project>_/' examples/install/cluster-op
 oc apply -f examples/install/cluster-operator -n _<my-project>_
 oc apply -f examples/templates/cluster-operator -n _<my-project>_
 ----
-
-. Verify whether the Cluster Operator has been deployed successfully, the {OpenShiftName} console or the command line:
-+
-[source]
-----
-oc describe all
-----

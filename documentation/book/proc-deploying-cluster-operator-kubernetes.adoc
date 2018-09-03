@@ -22,10 +22,3 @@ sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-
 ----
 kubectl apply -f examples/install/cluster-operator -n _<my-namespace>_
 ----
-
-. Verify whether the Cluster Operator has been deployed successfully, the {KubernetesName} Dashboard or the command line:
-+
-[source]
-----
-kubectl describe all
-----

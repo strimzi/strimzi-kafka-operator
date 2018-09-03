@@ -66,10 +66,3 @@ On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f examples/install/cluster-operator -n _<my-project>_
-
-. Verify whether the Cluster Operator has been deployed successfully, the {KubernetesName} Dashboard or the command line:
-+
-[source]
-----
-kubectl describe all
-----

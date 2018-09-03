@@ -76,7 +76,7 @@ include::examples/install/cluster-operator/020-ClusterRole-strimzi-cluster-opera
 The second includes the permissions needed for cluster-scoped resources.
 
 [source,yaml,options="nowrap"]
-.`ClusterRole` with cluster-scoped resoruces for the Cluster Operator
+.`ClusterRole` with cluster-scoped resources for the Cluster Operator
 ----
 include::examples/install/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml[]
 ----
