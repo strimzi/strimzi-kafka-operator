@@ -364,7 +364,7 @@ public class KafkaST extends AbstractST {
     }
 
     /**
-     * Test sending messages over tls transport using mutual tls auth
+     * Test sending messages over plain transport using scram sha auth
      */
     @Test
     @JUnitGroup(name = "regression")
@@ -421,7 +421,7 @@ public class KafkaST extends AbstractST {
     }
 
     /**
-     * Test sending messages over tls transport using mutual tls auth
+     * Test sending messages over tls transport using scram sha auth
      */
     @Test
     @JUnitGroup(name = "regression")

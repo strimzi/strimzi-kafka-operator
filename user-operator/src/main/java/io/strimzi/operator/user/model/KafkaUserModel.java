@@ -68,9 +68,10 @@ public class KafkaUserModel {
      * Creates instance of KafkaUserModel from CRD definition
      *
      * @param certManager   CertManager instance for work with certificates
+     * @param passwordGenerator A password generator
      * @param kafkaUser     The Custom Resource based on which the model should be created
      * @param clientsCa     Kubernetes secret with the clients certification authority
-     * @param userSecret    ubernetes secret with existing user certificate
+     * @param userSecret    Kubernetes secret with existing user certificate
      * @return
      */
     public static KafkaUserModel fromCrd(CertManager certManager,

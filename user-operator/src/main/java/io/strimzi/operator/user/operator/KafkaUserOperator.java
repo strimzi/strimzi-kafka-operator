@@ -63,6 +63,10 @@ public class KafkaUserOperator {
      * @param certManager For managing certificates
      * @param crdOperator For operating on Custom Resources
      * @param secretOperations For operating on Secrets
+     * @param scramShaCredentialOperator For operating on SCRAM SHA credentials
+     * @param aclOperations For operating on ACLs
+     * @param caName The name of the Secret containing the clients CA certificate and private key
+     * @param caNamespace The namespace of the Secret containing the clients CA certificate and private key
      */
     public KafkaUserOperator(Vertx vertx,
                              CertManager certManager,
