@@ -20,9 +20,6 @@ public class EmbeddedZooKeeper {
 
     public EmbeddedZooKeeper() throws IOException, InterruptedException {
         dir = Files.createTempDirectory("strimzi").toFile();
-        //if (!dir.mkdirs()) {
-            // ignore
-        //}
         zk = new ZooKeeperServer(dir, dir, 1000);
         start(new InetSocketAddress(0));
     }

@@ -133,9 +133,6 @@ public class KafkaUserOperator {
     protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
-
-        // TODO delete the user config
-
         log.debug("{}: Deleting User", reconciliation, user, namespace);
         CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getUserName(user), null),
