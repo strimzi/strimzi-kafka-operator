@@ -22,6 +22,7 @@ import java.util.Map;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaConnectAuthenticationTls.TYPE_TLS, value = KafkaConnectAuthenticationTls.class),
+        @JsonSubTypes.Type(name = KafkaConnectAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaConnectAuthenticationScramSha512.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class KafkaConnectAuthentication implements Serializable {
@@ -30,8 +31,10 @@ public abstract class KafkaConnectAuthentication implements Serializable {
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
-            "Currently the only supported type is `tls`. " +
-            "`tls` type uses TLS Client Authentication. ")
+            "Currently the only supported types are `tls` and `scram-sha-512`. " +
+            "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
+            "`tls` type uses TLS Client Authentication. " +
+            "`tls` type is supported only over TLS connections.")
     @JsonIgnore
     public abstract String getType();
 
