@@ -25,6 +25,8 @@
 :KubernetesVersion: 1.9 and later
 :ProductPlatformName: {OpenShiftName} or {KubernetesName}
 :ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
+:Namespace: {OpenShiftName} project or {KubernetesName} namespace
+:Namespaces: {OpenShiftName} projects or {KubernetesName} namespaces
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]

@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* Modify the installation files according to the namespace the Cluster Operator is going to be installed in.
+* Modify the installation files according to the {Namespace} the Cluster Operator is going to be installed in.
 +
 [source, subs="+quotes"]
 ----
@@ -16,7 +16,7 @@ sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-
 
 .Procedure
 
-. Modify the file `examples/install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` and in the environment variable `STRIMZI_NAMESPACE` list all namespaces or projects where Cluster Operator should watch for resources.
+. Modify the file `examples/install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` and in the environment variable `STRIMZI_NAMESPACE` list all the {Namespaces} where Cluster Operator should watch for resources.
 For example:
 +
 [source,yaml]
@@ -37,7 +37,7 @@ spec:
 ----
 
 . For all namespaces or projects which should be watched by the Cluster Operator, install the `RoleBindings`.
-Replace the `_<my-namespace>_` or `_<my-project>_` with the namespaces or projects used in the previous step.
+Replace the `_<my-namespace>_` or `_<my-project>_` with the {Namespace} used in the previous step.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
