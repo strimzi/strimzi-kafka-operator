@@ -2,12 +2,12 @@
 //
 // assembly-using-the-user-operator.adoc
 
-[id='proc-creating-kafka-user-{context}']
-= Creating a Kafka user
+[id='proc-creating-kafka-user-scram-{context}']
+= Creating a Kafka user with SCRAM SHA authentication
 
 .Prerequisites
 
-* A running Kafka cluster.
+* A running Kafka cluster configured with a listener using SCRAM SHA authentication.
 * A running User Operator.
 
 .Procedure
@@ -25,7 +25,7 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   authentication:
-    type: tls
+    type: scram-sha-512
   authorization:
     type: simple
     acls:
@@ -65,6 +65,6 @@ oc apply -f _<your-file>_
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-// TODO: Uncomment link after merging with the other PR
-//* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
+* For more information about configuring a listener that authenticates using SCRAM SHA see TODO
+* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
 * For more information about the `KafkaUser` object, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].

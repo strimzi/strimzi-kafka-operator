@@ -1,0 +1,40 @@
+// Module included in the following assemblies:
+//
+// TODO
+
+[id='con-mutual-tls-authentication-{context}']
+= Mutual TLS Authentication
+
+== What is TLS Authentication?
+
+Kafka can be configured to use TLS (transport layer security) to provide encrypted communication with or without _mutual authentication_.
+
+NOTE: The TLS standards have replaced the earlier SSL (secure sockets layer) standards. The technical differences between these standards does not matter for the purpose of the following explanation of TLS authentication.
+
+Mutual authentication is when both parties to a communication get proof of the identity of the other party.
+
+NOTE: In many common uses of TLS (such as the HTTPS protocol used between a web browser and a web server) the authentication is not mutual: Only one party to the communication gets proof of the identity of the other party.
+
+When being used for authentication, TLS uses public key cryptography to provide proof of identity. Public key cryptography is based on having two keys, one of which is kept private (the _private key_ ) while the other is publicly available (the _public key_). Either of the keys can be used to encrypt a message, but only the other key can be used to decrpyt that encrpyted message.
+
+This can be used as a way to prove identity. For example Alice can encrpyt a message of her own choosing using Carol's public key. Alice can test whether someone really is Carol by getting them to decrypt this message. Only someone with Carol's private key would be able to do that, so anyone who can so that must be Carol.
+
+The public key is provided (along with the identity of the entity whose key it is) in a _certificate_ that is cryptographically signed by a _certificate authority_. 
+
+The cryptography behind TLS can prove:
+
+* that the peer to the communication knows the private key corresponding to the public key in the certificate they provided
+* the identity of the CA that signed the public key (in order to create the certificate)
+
+This is sufficient to further prove that the identity of the remote peer is the same as the identity in the certificate only if you trust the certificate authority.
+
+In {ProductName} the role of Certificate Authority is provided by the Cluster Operator. This alleviates the need to run a separate Public Key Infrastructure (PKI) for creating and signing certificates.
+
+== When to use mutual TLS authentication
+
+Mutual TLS authentication is a suitable choice for authenticating Kafka clients when:
+
+* The client supports authentication using mutual TLS authentication
+* It is necessary or desirable to use TLS certificates (rather than passwords)
+* You can secure the Secrets which are used to store private keys from access by untrusted parties.
+* You are able to reconfigure and restart client applications periodically (so they don't use certificate which have expired).
