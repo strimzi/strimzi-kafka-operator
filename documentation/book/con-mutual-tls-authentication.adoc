@@ -37,4 +37,4 @@ Mutual TLS authentication is a suitable choice for authenticating Kafka clients 
 * The client supports authentication using mutual TLS authentication
 * It is necessary or desirable to use TLS certificates (rather than passwords)
 * You can secure the Secrets which are used to store private keys from access by untrusted parties.
-* You are able to reconfigure and restart client applications periodically (so they don't use certificate which have expired).
+* You are able to reconfigure and restart client applications periodically (so they do not use certificate which have expired).
