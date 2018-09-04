@@ -107,6 +107,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      */
     private static class ReconciliationState {
 
+        private final long operationTimeoutMs;
         private final String namespace;
         private final String name;
         private final ZookeeperCluster zookeeper;
@@ -119,11 +120,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ReconcileResult<StatefulSet> zkDiffs;
         private boolean forceZkRestart;
 
-        ReconciliationState(Kafka kafkaAssembly, ZookeeperCluster zookeeper, Service zkService, Service zkHeadlessService,
+        ReconciliationState(Kafka kafkaAssembly, long operationTimeoutMs, ZookeeperCluster zookeeper, Service zkService, Service zkHeadlessService,
                             ConfigMap zkMetricsAndLogsConfigMap, StatefulSet zkStatefulSet, Secret zkNodesSecret,
                             NetworkPolicy zkNetworkPolicy) {
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
             this.name = kafkaAssembly.getMetadata().getName();
+            this.operationTimeoutMs = operationTimeoutMs;
             this.zookeeper = zookeeper;
             this.zkService = zkService;
             this.zkHeadlessService = zkHeadlessService;
@@ -201,7 +203,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNetPolicy(NetworkPolicyOperator networkPolicyOperator) {
-            return withVoid(networkPolicyOperator.reconcile(namespace, zookeeper().policyName(name), zkNetworkPolicy()));
+            return withVoid(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkNetworkPolicy()));
         }
 
         Future<ReconciliationState> zkStatefulSet(ZookeeperSetOperator zkSetOperations) {
@@ -222,6 +224,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkHeadlessServiceEndpointReadiness(ServiceOperator serviceOperations) {
             return withVoid(serviceOperations.endpointReadiness(namespace, zkHeadlessService(), 1_000, operationTimeoutMs));
+        }
+
+        Future<ReconciliationState> withZkAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
+            return r.map(rr -> {
+                this.forceZkRestart = rr instanceof ReconcileResult.Patched;
+                return this;
+            });
         }
 
         Future<ReconciliationState> kafkaInitServiceAccount(ServiceAccountOperator serviceAccountOperator) {
@@ -284,14 +293,97 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(kafkaSetOperations.scaleUp(namespace, kafka().getName(), kafka().getReplicas()));
         }
 
-        Future<ReconciliationState> withZkAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
-            return r.map(rr -> {
-                this.forceZkRestart = rr instanceof ReconcileResult.Patched;
-                return this;
-            });
+        Future<ReconciliationState> kafkaServiceEndpointReady(ServiceOperator serviceOperations) {
+            return withVoid(serviceOperations.endpointReadiness(namespace, kafkaService(), 1_000, operationTimeoutMs));
         }
 
-        private KafkaCluster kafka;
+        Future<ReconciliationState> kafkaHeadlessServiceEndpointReady(ServiceOperator serviceOperations) {
+            return withVoid(serviceOperations.endpointReadiness(namespace, kafkaHeadlessService(), 1_000, operationTimeoutMs));
+        }
+
+        Future<ReconciliationState> topicOperatorServiceAccount(ServiceAccountOperator serviceAccountOperator) {
+            return withVoid(serviceAccountOperator.reconcile(namespace,
+                    TopicOperator.topicOperatorServiceAccountName(name),
+                    toDeployment != null ? topicOperator().generateServiceAccount() : null));
+        }
+
+        Future<ReconciliationState> topicOperatorRoleBinding(RoleBindingOperator roleBindingOperator) {
+            String watchedNamespace = topicOperator() != null ? topicOperator().getWatchedNamespace() : null;
+            return withVoid(roleBindingOperator.reconcile(
+                    watchedNamespace != null && !watchedNamespace.isEmpty() ?
+                            watchedNamespace : namespace,
+                    TopicOperator.roleBindingName(name),
+                    toDeployment != null ? topicOperator().generateRoleBinding(namespace) : null));
+
+        }
+
+        Future<ReconciliationState> topicOperatorAncillaryCm(ConfigMapOperator configMapOperations) {
+            return withVoid(configMapOperations.reconcile(namespace,
+                    toDeployment != null ? topicOperator().getAncillaryConfigName() : TopicOperator.metricAndLogConfigsName(name),
+                    toMetricsAndLogsConfigMap()));
+        }
+
+        Future<ReconciliationState> topicOperatorDeployment(DeploymentOperator deploymentOperations) {
+            return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment()));
+        }
+
+        Future<ReconciliationState> topicOperatorSecret(SecretOperator secretOperations) {
+            return withVoid(secretOperations.reconcile(namespace, TopicOperator.secretName(name), topicOperatorSecret()));
+        }
+
+        Future<ReconciliationState> entityOperatorServiceAccount(ServiceAccountOperator serviceAccountOperator) {
+            return withVoid(serviceAccountOperator.reconcile(namespace,
+                    EntityOperator.entityOperatorServiceAccountName(name),
+                    eoDeployment != null ? entityOperator().generateServiceAccount() : null));
+        }
+
+        Future<ReconciliationState> entityOperatorRoleBinding(RoleBindingOperator roleBindingOperator) {
+            String watchedNamespace = entityOperator() != null && entityOperator().getTopicOperator() != null ?
+                    entityOperator().getTopicOperator().getWatchedNamespace() : null;
+            return withVoid(roleBindingOperator.reconcile(
+                    watchedNamespace != null && !watchedNamespace.isEmpty() ?
+                            watchedNamespace : namespace,
+                    EntityTopicOperator.roleBindingName(name),
+                    eoDeployment != null && entityOperator().getTopicOperator() != null ?
+                            entityOperator().getTopicOperator().generateRoleBinding(namespace) : null));
+
+        }
+
+        Future<ReconciliationState> entityOperatorUserRoleBinding(RoleBindingOperator roleBindingOperator) {
+            String watchedNamespace = entityOperator() != null && entityOperator().getUserOperator() != null ?
+                    entityOperator().getUserOperator().getWatchedNamespace() : null;
+            return withVoid(roleBindingOperator.reconcile(
+                    watchedNamespace != null && !watchedNamespace.isEmpty() ?
+                            watchedNamespace : namespace,
+                    EntityUserOperator.roleBindingName(name),
+                    eoDeployment != null && entityOperator().getUserOperator() != null ?
+                            entityOperator().getUserOperator().generateRoleBinding(namespace) : null));
+
+        }
+
+        Future<ReconciliationState> entityOperatorTopicOperatorAncillaryCm(ConfigMapOperator configMapOperations) {
+            return withVoid(configMapOperations.reconcile(namespace,
+                    eoDeployment != null && entityOperator().getTopicOperator() != null ?
+                            entityOperator().getTopicOperator().getAncillaryConfigName() : EntityTopicOperator.metricAndLogConfigsName(name),
+                    topicOperatorMetricsAndLogsConfigMap()));
+        }
+
+        Future<ReconciliationState> entityOperatorUserOperatorAncillaryCm(ConfigMapOperator configMapOperations) {
+            return withVoid(configMapOperations.reconcile(namespace,
+                    eoDeployment != null && entityOperator().getUserOperator() != null ?
+                            entityOperator().getUserOperator().getAncillaryConfigName() : EntityUserOperator.metricAndLogConfigsName(name),
+                    userOperatorMetricsAndLogsConfigMap()));
+        }
+
+        Future<ReconciliationState> entityOperatorDeployment(DeploymentOperator deploymentOperations) {
+            return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment()));
+        }
+
+        Future<ReconciliationState> entityOperatorSecret(SecretOperator secretOperations) {
+            return withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name), entityOperatorSecret()));
+        }
+
+        private KafkaCluster kafka = null;
         private Service kafkaService;
         private Service kafkaHeadlessService;
         private ConfigMap kafkaMetricsAndLogsConfigMap;
@@ -538,7 +630,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     NetworkPolicy networkPolicy = zk.generateNetworkPolicy();
                     ReconciliationState desc =
-                            new ReconciliationState(kafkaAssembly, zk, zk.generateService(), zk.generateHeadlessService(),
+                            new ReconciliationState(kafkaAssembly, operationTimeoutMs, zk, zk.generateService(), zk.generateHeadlessService(),
                                     logAndMetricsConfigMap, zk.generateStatefulSet(isOpenShift), zk.generateNodesSecret(), networkPolicy);
 
                     future.complete(desc);
@@ -558,8 +650,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return fut;
     }
 
-    private final Future<Void> createOrUpdateZk(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
-        String namespace = kafkaAssembly.getMetadata().getNamespace();
+    private Future<Void> createOrUpdateZk(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
         String name = kafkaAssembly.getMetadata().getName();
         log.debug("{}: create/update zookeeper {}", reconciliation, name);
         Future<Void> chainFuture = Future.future();
@@ -569,80 +660,46 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(desc -> desc.zkHeadlessService(serviceOperations))
                 .compose(desc -> desc.zkAncillaryCm(configMapOperations))
                 .compose(desc -> desc.zkNodesSecret(secretOperations))
-                .compose(desc -> desc.zkNetPolicy(networkPolicyOperator))//withVoid(networkPolicyOperator.reconcile(namespace, desc.zookeeper().policyName(name), desc.zkNetworkPolicy())))
-                .compose(desc -> desc.zkStatefulSet(zkSetOperations))//.reconcile(namespace, desc.zookeeper().getName(), desc.zkStatefulSet())))
-                .compose(desc -> desc.zkRollingUpdate(zkSetOperations))//desc.withVoid(zkSetOperations.maybeRollingUpdate(desc.zkDiffs().resource(), desc.isForceZkRestart())))
-                .compose(desc -> desc.zkScaleUp(zkSetOperations))//desc.withVoid(zkSetOperations.scaleUp(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
-                .compose(desc -> desc.zkServiceEndpointReadiness(serviceOperations))//withVoid(serviceOperations.endpointReadiness(namespace, desc.zkService(), 1_000, operationTimeoutMs)))
-                .compose(desc -> desc.zkHeadlessServiceEndpointReadiness(serviceOperations))//withVoid(serviceOperations.endpointReadiness(namespace, desc.zkHeadlessService(), 1_000, operationTimeoutMs)))
+                .compose(desc -> desc.zkNetPolicy(networkPolicyOperator))
+                .compose(desc -> desc.zkStatefulSet(zkSetOperations))
+                .compose(desc -> desc.zkRollingUpdate(zkSetOperations))
+                .compose(desc -> desc.zkScaleUp(zkSetOperations))
+                .compose(desc -> desc.zkServiceEndpointReadiness(serviceOperations))
+                .compose(desc -> desc.zkHeadlessServiceEndpointReadiness(serviceOperations))
+
                 .compose(desc -> getKafkaClusterDescription(desc, kafkaAssembly, assemblySecrets))
                 .compose(desc -> desc.kafkaInitServiceAccount(serviceAccountOperator))
                 .compose(desc -> desc.kafkaInitClusterRoleBinding(clusterRoleBindingOperator))
                 .compose(desc -> desc.kafkaScaleDown(kafkaSetOperations))
-                .compose(desc -> desc.kafkaService(serviceOperations))//withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.kafkaService())))
-                .compose(desc -> desc.kafkaHeadlessService(serviceOperations))//withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessServiceName(), desc.kafkaHeadlessService())))
-                .compose(desc -> desc.kafkaAncillaryCm(configMapOperations))//desc.withKafkaAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.kafkaMetricsAndLogsConfigMap())))
-                .compose(desc -> desc.kafkaClientsCaSecret(secretOperations))//withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.kafkaClientsCaSecret())))
-                .compose(desc -> desc.kafkaClientsPublicKeySecret(secretOperations))//withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.kafkaClientsPublicKeySecret())))
-                .compose(desc -> desc.kafkaClusterPublicKeySecret(secretOperations))//desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), desc.kafkaClusterPublicKeySecret())))
-                .compose(desc -> desc.kafkaBrokersSecret(secretOperations))//withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), desc.kafkaBrokersInternalSecret())))
-                .compose(desc -> desc.kafkaNetPolicy(networkPolicyOperator))//withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), desc.kafkaNetworkPolicy())))
-                .compose(desc -> desc.kafkaStatefulSet2(kafkaSetOperations))//withKafkaDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.kafkaStatefulSet())))
-                .compose(desc -> desc.kafkaRollingUpdate(kafkaSetOperations))//withVoid(kafkaSetOperations.maybeRollingUpdate(desc.kafkaDiffs().resource(), desc.isForceKafkaRestart())))
-                .compose(desc -> desc.kafkaScaleUp(kafkaSetOperations))//withVoid(kafkaSetOperations.scaleUp(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
-                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.kafkaService(), 1_000, operationTimeoutMs)))
-                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.kafkaHeadlessService(), 1_000, operationTimeoutMs)))
+                .compose(desc -> desc.kafkaService(serviceOperations))
+                .compose(desc -> desc.kafkaHeadlessService(serviceOperations))
+                .compose(desc -> desc.kafkaAncillaryCm(configMapOperations))
+                .compose(desc -> desc.kafkaClientsCaSecret(secretOperations))
+                .compose(desc -> desc.kafkaClientsPublicKeySecret(secretOperations))
+                .compose(desc -> desc.kafkaClusterPublicKeySecret(secretOperations))
+                .compose(desc -> desc.kafkaBrokersSecret(secretOperations))
+                .compose(desc -> desc.kafkaNetPolicy(networkPolicyOperator))
+                .compose(desc -> desc.kafkaStatefulSet2(kafkaSetOperations))
+                .compose(desc -> desc.kafkaRollingUpdate(kafkaSetOperations))
+                .compose(desc -> desc.kafkaScaleUp(kafkaSetOperations))
+                .compose(desc -> desc.kafkaServiceEndpointReady(serviceOperations))
+                .compose(desc -> desc.kafkaHeadlessServiceEndpointReady(serviceOperations))
+
                 .compose(desc -> getTopicOperatorDescription(desc, kafkaAssembly, assemblySecrets))
-                .compose(desc -> desc.withVoid(serviceAccountOperator.reconcile(namespace,
-                        TopicOperator.topicOperatorServiceAccountName(name),
-                        desc.toDeployment != null ? desc.topicOperator().generateServiceAccount() : null)))
-                .compose(desc -> {
-                    String watchedNamespace = desc.topicOperator() != null ? desc.topicOperator().getWatchedNamespace() : null;
-                    return desc.withVoid(roleBindingOperator.reconcile(
-                            watchedNamespace != null && !watchedNamespace.isEmpty() ?
-                                    watchedNamespace : namespace,
-                            TopicOperator.roleBindingName(name),
-                            desc.toDeployment != null ? desc.topicOperator().generateRoleBinding(namespace) : null));
-                })
-                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace,
-                        desc.toDeployment != null ? desc.topicOperator().getAncillaryConfigName() : TopicOperator.metricAndLogConfigsName(name),
-                        desc.toMetricsAndLogsConfigMap())))
-                .compose(desc -> desc.withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), desc.toDeployment())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, TopicOperator.secretName(name), desc.topicOperatorSecret())))
+                .compose(desc -> desc.topicOperatorServiceAccount(serviceAccountOperator))
+                .compose(desc -> desc.topicOperatorRoleBinding(roleBindingOperator))
+                .compose(desc -> desc.topicOperatorAncillaryCm(configMapOperations))
+                .compose(desc -> desc.topicOperatorDeployment(deploymentOperations))
+                .compose(desc -> desc.topicOperatorSecret(secretOperations))
+
                 .compose(desc -> getEntityOperatorDescription(desc, kafkaAssembly, assemblySecrets))
-                .compose(desc -> desc.withVoid(serviceAccountOperator.reconcile(namespace,
-                        EntityOperator.entityOperatorServiceAccountName(name),
-                        desc.eoDeployment != null ? desc.entityOperator().generateServiceAccount() : null)))
-                .compose(desc -> {
-                    String watchedNamespace = desc.entityOperator() != null && desc.entityOperator().getTopicOperator() != null ?
-                            desc.entityOperator().getTopicOperator().getWatchedNamespace() : null;
-                    return desc.withVoid(roleBindingOperator.reconcile(
-                            watchedNamespace != null && !watchedNamespace.isEmpty() ?
-                                    watchedNamespace : namespace,
-                            EntityTopicOperator.roleBindingName(name),
-                            desc.eoDeployment != null && desc.entityOperator().getTopicOperator() != null ?
-                                    desc.entityOperator().getTopicOperator().generateRoleBinding(namespace) : null));
-                })
-                .compose(desc -> {
-                    String watchedNamespace = desc.entityOperator() != null && desc.entityOperator().getUserOperator() != null ?
-                            desc.entityOperator().getUserOperator().getWatchedNamespace() : null;
-                    return desc.withVoid(roleBindingOperator.reconcile(
-                            watchedNamespace != null && !watchedNamespace.isEmpty() ?
-                                    watchedNamespace : namespace,
-                            EntityUserOperator.roleBindingName(name),
-                            desc.eoDeployment != null && desc.entityOperator().getUserOperator() != null ?
-                                    desc.entityOperator().getUserOperator().generateRoleBinding(namespace) : null));
-                })
-                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace,
-                        desc.eoDeployment != null && desc.entityOperator().getTopicOperator() != null ?
-                                desc.entityOperator().getTopicOperator().getAncillaryConfigName() : EntityTopicOperator.metricAndLogConfigsName(name),
-                        desc.topicOperatorMetricsAndLogsConfigMap())))
-                .compose(desc -> desc.withVoid(configMapOperations.reconcile(namespace,
-                        desc.eoDeployment != null && desc.entityOperator().getUserOperator() != null ?
-                                desc.entityOperator().getUserOperator().getAncillaryConfigName() : EntityUserOperator.metricAndLogConfigsName(name),
-                        desc.userOperatorMetricsAndLogsConfigMap())))
-                .compose(desc -> desc.withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), desc.eoDeployment())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name), desc.entityOperatorSecret())))
+                .compose(desc -> desc.entityOperatorServiceAccount(serviceAccountOperator))
+                .compose(desc -> desc.entityOperatorRoleBinding(roleBindingOperator))
+                .compose(desc -> desc.entityOperatorUserRoleBinding(roleBindingOperator))
+                .compose(desc -> desc.entityOperatorTopicOperatorAncillaryCm(configMapOperations))
+                .compose(desc -> desc.entityOperatorUserOperatorAncillaryCm(configMapOperations))
+                .compose(desc -> desc.entityOperatorDeployment(deploymentOperations))
+                .compose(desc -> desc.entityOperatorSecret(secretOperations))
                 .compose(desc -> chainFuture.complete(), chainFuture);
 
         return chainFuture;
