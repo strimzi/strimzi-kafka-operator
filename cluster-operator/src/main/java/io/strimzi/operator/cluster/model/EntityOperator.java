@@ -31,8 +31,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 import static java.util.Collections.singletonList;
 
 /**
@@ -164,16 +164,15 @@ public class EntityOperator extends AbstractModel {
         log.debug("Generating certificates");
 
         try {
-            Optional<Secret> clusterCAsecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(getClusterCaName(cluster)))
-                    .findFirst();
-            if (clusterCAsecret.isPresent()) {
+            Secret clusterCaSecret = findSecretWithName(secrets, getClusterCaName(cluster));
+            if (clusterCaSecret != null) {
                 // get the generated CA private key + self-signed certificate for each broker
                 clusterCA = new CertAndKey(
-                        decodeFromSecret(clusterCAsecret.get(), "cluster-ca.key"),
-                        decodeFromSecret(clusterCAsecret.get(), "cluster-ca.crt"));
+                        decodeFromSecret(clusterCaSecret, "cluster-ca.key"),
+                        decodeFromSecret(clusterCaSecret, "cluster-ca.crt"));
 
-                Optional<Secret> entityOperatorSecret = secrets.stream().filter(s -> s.getMetadata().getName().equals(EntityOperator.secretName(cluster))).findFirst();
-                if (!entityOperatorSecret.isPresent()) {
+                Secret entityOperatorSecret = findSecretWithName(secrets, EntityOperator.secretName(cluster));
+                if (entityOperatorSecret == null) {
                     log.debug("Entity Operator certificate to generate");
 
                     File csrFile = File.createTempFile("tls", "csr");
@@ -191,8 +190,8 @@ public class EntityOperator extends AbstractModel {
                 } else {
                     log.debug("Entity Operator certificate already exists");
                     cert = new CertAndKey(
-                            decodeFromSecret(entityOperatorSecret.get(), "entity-operator.key"),
-                            decodeFromSecret(entityOperatorSecret.get(), "entity-operator.crt"));
+                            decodeFromSecret(entityOperatorSecret, "entity-operator.key"),
+                            decodeFromSecret(entityOperatorSecret, "entity-operator.crt"));
                 }
             } else {
                 throw new NoCertificateSecretException("The cluster CA certificate Secret is missing");
