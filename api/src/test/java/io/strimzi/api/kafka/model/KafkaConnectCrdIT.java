@@ -78,4 +78,9 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
             assertTrue(e.getMessage().contains("spec.authentication.certificateAndKey.key in body is required"));
         }
     }
+
+    @Test
+    public void testKafkaWithScramSha512Auth() {
+        createDelete(KafkaConnect.class, "KafkaConnect-with-scram-sha-512-auth.yaml");
+    }
 }

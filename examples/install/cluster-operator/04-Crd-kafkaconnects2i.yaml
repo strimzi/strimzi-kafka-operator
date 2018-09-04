@@ -253,10 +253,20 @@ spec:
                   - certificate
                   - key
                   - secretName
+                passwordSecret:
+                  type: object
+                  properties:
+                    password:
+                      type: string
+                    secretName:
+                      type: string
+                  required:
+                  - password
+                  - secretName
                 type:
                   type: string
-              required:
-              - certificateAndKey
+                username:
+                  type: string
             bootstrapServers:
               type: string
             config:
