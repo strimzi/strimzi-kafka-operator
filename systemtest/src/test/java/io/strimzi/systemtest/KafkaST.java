@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -713,7 +714,7 @@ public class KafkaST extends AbstractST {
     String saslConfigs(KafkaUser kafkaUser) {
         Secret secret = namespacedClient().secrets().withName(kafkaUser.getMetadata().getName()).get();
 
-        String password = secret.getData().get("password");
+        String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
         if (password == null) {
             LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), TestUtils.toYamlString(secret));
             throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");

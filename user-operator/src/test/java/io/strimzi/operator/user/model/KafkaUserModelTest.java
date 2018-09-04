@@ -113,14 +113,14 @@ public class KafkaUserModelTest {
         assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
 
         assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
-        assertEquals("aaaaaaaaaa", generated.getData().get(KafkaUserModel.KEY_PASSWORD));
+        assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
     }
 
     @Test
     public void testGeneratePasswordKeepExistingScramSha()    {
-        Secret userCert = ResourceUtils.createUserSecretScramSha();
-        String existing = userCert.getData().get(KafkaUserModel.KEY_PASSWORD);
-        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, scramShaUser, clientsCa, userCert);
+        Secret userPassword = ResourceUtils.createUserSecretScramSha();
+        String existing = userPassword.getData().get(KafkaUserModel.KEY_PASSWORD);
+        KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, scramShaUser, clientsCa, userPassword);
         Secret generated = model.generateSecret();
 
         assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
@@ -142,7 +142,7 @@ public class KafkaUserModelTest {
         assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
 
         assertEquals(singleton("password"), generated.getData().keySet());
-        assertEquals("aaaaaaaaaa", generated.getData().get(KafkaUserModel.KEY_PASSWORD));
+        assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
     }
 
     @Test

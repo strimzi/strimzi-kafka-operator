@@ -641,7 +641,7 @@ public class KafkaUserOperatorTest {
             context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
 
             context.assertEquals(scramPasswordCaptor.getValue(), captured.getData().get(KafkaUserModel.KEY_PASSWORD));
-            context.assertTrue(captured.getData().get(KafkaUserModel.KEY_PASSWORD).matches("[a-zA-Z0-9]{12}"));
+            context.assertTrue(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))).matches("[a-zA-Z0-9]{12}"));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
             context.assertEquals(1, capturedAclNames.size());
