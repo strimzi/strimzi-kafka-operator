@@ -33,6 +33,7 @@ import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -197,6 +198,90 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkNodesSecret(SecretOperator secretOperations) {
             return withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), zkNodesSecret()));
+        }
+
+        Future<ReconciliationState> zkNetPolicy(NetworkPolicyOperator networkPolicyOperator) {
+            return withVoid(networkPolicyOperator.reconcile(namespace, zookeeper().policyName(name), zkNetworkPolicy()));
+        }
+
+        Future<ReconciliationState> zkStatefulSet(ZookeeperSetOperator zkSetOperations) {
+            return withZkDiff(zkSetOperations.reconcile(namespace, zookeeper().getName(), zkStatefulSet()));
+        }
+
+        Future<ReconciliationState> zkRollingUpdate(ZookeeperSetOperator zkSetOperations) {
+            return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs().resource(), isForceZkRestart()));
+        }
+
+        Future<ReconciliationState> zkScaleUp(ZookeeperSetOperator zkSetOperations) {
+            return withVoid(zkSetOperations.scaleUp(namespace, zookeeper().getName(), zookeeper().getReplicas()));
+        }
+
+        Future<ReconciliationState> zkServiceEndpointReadiness(ServiceOperator serviceOperations) {
+            return withVoid(serviceOperations.endpointReadiness(namespace, zkService(), 1_000, operationTimeoutMs));
+        }
+
+        Future<ReconciliationState> zkHeadlessServiceEndpointReadiness(ServiceOperator serviceOperations) {
+            return withVoid(serviceOperations.endpointReadiness(namespace, zkHeadlessService(), 1_000, operationTimeoutMs));
+        }
+
+        Future<ReconciliationState> kafkaInitServiceAccount(ServiceAccountOperator serviceAccountOperator) {
+            return withVoid(serviceAccountOperator.reconcile(namespace,
+                    KafkaCluster.initContainerServiceAccountName(kafka().getCluster()),
+                    kafka.generateInitContainerServiceAccount()));
+        }
+
+        Future<ReconciliationState> kafkaInitClusterRoleBinding(ClusterRoleBindingOperator clusterRoleBindingOperator) {
+            return withVoid(clusterRoleBindingOperator.reconcile(
+                    KafkaCluster.initContainerClusterRoleBindingName(namespace, name),
+                    kafka.generateClusterRoleBinding(namespace)));
+        }
+
+        Future<ReconciliationState> kafkaScaleDown(KafkaSetOperator kafkaSetOperations) {
+            return withVoid(kafkaSetOperations.scaleDown(namespace, kafka().getName(), kafka().getReplicas()));
+        }
+
+        Future<ReconciliationState> kafkaService(ServiceOperator serviceOperations) {
+            return withVoid(serviceOperations.reconcile(namespace, kafka().getServiceName(), kafkaService()));
+        }
+
+        Future<ReconciliationState> kafkaHeadlessService(ServiceOperator serviceOperations) {
+            return withVoid(serviceOperations.reconcile(namespace, kafka().getHeadlessServiceName(), kafkaHeadlessService()));
+        }
+
+        Future<ReconciliationState> kafkaAncillaryCm(ConfigMapOperator configMapOperations) {
+            return withKafkaAncillaryCmChanged(configMapOperations.reconcile(namespace, kafka().getAncillaryConfigName(), kafkaMetricsAndLogsConfigMap()));
+        }
+
+        Future<ReconciliationState> kafkaClientsCaSecret(SecretOperator secretOperations) {
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), kafkaClientsCaSecret()));
+        }
+
+        Future<ReconciliationState> kafkaClientsPublicKeySecret(SecretOperator secretOperations) {
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), kafkaClientsPublicKeySecret()));
+        }
+
+        Future<ReconciliationState> kafkaClusterPublicKeySecret(SecretOperator secretOperations) {
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), kafkaClusterPublicKeySecret()));
+        }
+
+        Future<ReconciliationState> kafkaBrokersSecret(SecretOperator secretOperations) {
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaBrokersInternalSecret()));
+        }
+
+        Future<ReconciliationState> kafkaNetPolicy(NetworkPolicyOperator networkPolicyOperator) {
+            return withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), kafkaNetworkPolicy()));
+        }
+
+        Future<ReconciliationState> kafkaStatefulSet2(KafkaSetOperator kafkaSetOperations) {
+            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafka().getName(), kafkaStatefulSet()));
+        }
+
+        Future<ReconciliationState> kafkaRollingUpdate(KafkaSetOperator kafkaSetOperations) {
+            return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs().resource(), isForceKafkaRestart()));
+        }
+
+        Future<ReconciliationState> kafkaScaleUp(KafkaSetOperator kafkaSetOperations) {
+            return withVoid(kafkaSetOperations.scaleUp(namespace, kafka().getName(), kafka().getReplicas()));
         }
 
         Future<ReconciliationState> withZkAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
@@ -484,30 +569,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(desc -> desc.zkHeadlessService(serviceOperations))
                 .compose(desc -> desc.zkAncillaryCm(configMapOperations))
                 .compose(desc -> desc.zkNodesSecret(secretOperations))
-                .compose(desc -> desc.withVoid(networkPolicyOperator.reconcile(namespace, desc.zookeeper().policyName(name), desc.zkNetworkPolicy())))
-                .compose(desc -> desc.withZkDiff(zkSetOperations.reconcile(namespace, desc.zookeeper().getName(), desc.zkStatefulSet())))
-                .compose(desc -> desc.withVoid(zkSetOperations.maybeRollingUpdate(desc.zkDiffs().resource(), desc.isForceZkRestart())))
-                .compose(desc -> desc.withVoid(zkSetOperations.scaleUp(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
-                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.zkService(), 1_000, operationTimeoutMs)))
-                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.zkHeadlessService(), 1_000, operationTimeoutMs)))
+                .compose(desc -> desc.zkNetPolicy(networkPolicyOperator))//withVoid(networkPolicyOperator.reconcile(namespace, desc.zookeeper().policyName(name), desc.zkNetworkPolicy())))
+                .compose(desc -> desc.zkStatefulSet(zkSetOperations))//.reconcile(namespace, desc.zookeeper().getName(), desc.zkStatefulSet())))
+                .compose(desc -> desc.zkRollingUpdate(zkSetOperations))//desc.withVoid(zkSetOperations.maybeRollingUpdate(desc.zkDiffs().resource(), desc.isForceZkRestart())))
+                .compose(desc -> desc.zkScaleUp(zkSetOperations))//desc.withVoid(zkSetOperations.scaleUp(namespace, desc.zookeeper().getName(), desc.zookeeper().getReplicas())))
+                .compose(desc -> desc.zkServiceEndpointReadiness(serviceOperations))//withVoid(serviceOperations.endpointReadiness(namespace, desc.zkService(), 1_000, operationTimeoutMs)))
+                .compose(desc -> desc.zkHeadlessServiceEndpointReadiness(serviceOperations))//withVoid(serviceOperations.endpointReadiness(namespace, desc.zkHeadlessService(), 1_000, operationTimeoutMs)))
                 .compose(desc -> getKafkaClusterDescription(desc, kafkaAssembly, assemblySecrets))
-                .compose(desc -> desc.withVoid(serviceAccountOperator.reconcile(namespace,
-                                KafkaCluster.initContainerServiceAccountName(desc.kafka().getCluster()),
-                                desc.kafka.generateInitContainerServiceAccount())))
-                .compose(desc -> desc.withVoid(clusterRoleBindingOperator.reconcile(
-                        KafkaCluster.initContainerClusterRoleBindingName(namespace, name),
-                        desc.kafka.generateClusterRoleBinding(namespace))))
-                .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.kafkaService())))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessServiceName(), desc.kafkaHeadlessService())))
-                .compose(desc -> desc.withKafkaAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.kafkaMetricsAndLogsConfigMap())))                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.kafkaClientsCaSecret())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.kafkaClientsPublicKeySecret())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), desc.kafkaClusterPublicKeySecret())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), desc.kafkaBrokersInternalSecret())))
-                .compose(desc -> desc.withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), desc.kafkaNetworkPolicy())))
-                .compose(desc -> desc.withKafkaDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.kafkaStatefulSet())))
-                .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.kafkaDiffs().resource(), desc.isForceKafkaRestart())))
-                .compose(desc -> desc.withVoid(kafkaSetOperations.scaleUp(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
+                .compose(desc -> desc.kafkaInitServiceAccount(serviceAccountOperator))
+                .compose(desc -> desc.kafkaInitClusterRoleBinding(clusterRoleBindingOperator))
+                .compose(desc -> desc.kafkaScaleDown(kafkaSetOperations))
+                .compose(desc -> desc.kafkaService(serviceOperations))//withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.kafkaService())))
+                .compose(desc -> desc.kafkaHeadlessService(serviceOperations))//withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessServiceName(), desc.kafkaHeadlessService())))
+                .compose(desc -> desc.kafkaAncillaryCm(configMapOperations))//desc.withKafkaAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.kafkaMetricsAndLogsConfigMap())))
+                .compose(desc -> desc.kafkaClientsCaSecret(secretOperations))//withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.kafkaClientsCaSecret())))
+                .compose(desc -> desc.kafkaClientsPublicKeySecret(secretOperations))//withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.kafkaClientsPublicKeySecret())))
+                .compose(desc -> desc.kafkaClusterPublicKeySecret(secretOperations))//desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), desc.kafkaClusterPublicKeySecret())))
+                .compose(desc -> desc.kafkaBrokersSecret(secretOperations))//withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), desc.kafkaBrokersInternalSecret())))
+                .compose(desc -> desc.kafkaNetPolicy(networkPolicyOperator))//withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), desc.kafkaNetworkPolicy())))
+                .compose(desc -> desc.kafkaStatefulSet2(kafkaSetOperations))//withKafkaDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.kafkaStatefulSet())))
+                .compose(desc -> desc.kafkaRollingUpdate(kafkaSetOperations))//withVoid(kafkaSetOperations.maybeRollingUpdate(desc.kafkaDiffs().resource(), desc.isForceKafkaRestart())))
+                .compose(desc -> desc.kafkaScaleUp(kafkaSetOperations))//withVoid(kafkaSetOperations.scaleUp(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.kafkaService(), 1_000, operationTimeoutMs)))
                 .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.kafkaHeadlessService(), 1_000, operationTimeoutMs)))
                 .compose(desc -> getTopicOperatorDescription(desc, kafkaAssembly, assemblySecrets))
