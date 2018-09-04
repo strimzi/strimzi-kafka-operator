@@ -29,7 +29,9 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -119,7 +121,7 @@ public class KafkaUserOperator {
         log.debug("{}: Updating User", reconciliation, userName, namespace);
         Secret desired = user.generateSecret();
         CompositeFuture.join(
-                scramShaCredentialOperator.reconcile(user.getName(), desired != null ? desired.getData().get("password") : null),
+                scramShaCredentialOperator.reconcile(user.getName(), (desired != null && desired.getData().get("password") != null) ? new String(Base64.getDecoder().decode(desired.getData().get("password")), Charset.forName("US-ASCII")) : null),
                 secretOperations.reconcile(namespace, user.getSecretName(), desired),
                 aclOperations.reconcile(user.getUserName(), user.getSimpleAclRules()))
                 .map((Void) null).setHandler(handler);

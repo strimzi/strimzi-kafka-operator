@@ -640,7 +640,7 @@ public class KafkaUserOperatorTest {
             context.assertEquals(user.getMetadata().getNamespace(), captured.getMetadata().getNamespace());
             context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
 
-            context.assertEquals(scramPasswordCaptor.getValue(), captured.getData().get(KafkaUserModel.KEY_PASSWORD));
+            context.assertEquals(scramPasswordCaptor.getValue(), new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))));
             context.assertTrue(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))).matches("[a-zA-Z0-9]{12}"));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
@@ -669,7 +669,7 @@ public class KafkaUserOperatorTest {
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, aclOps, ResourceUtils.CA_NAME, ResourceUtils.NAMESPACE);
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
         Secret userCert = ResourceUtils.createUserSecretScramSha();
-        String password = userCert.getData().get(KafkaUserModel.KEY_PASSWORD);
+        String password = new String(Base64.getDecoder().decode(userCert.getData().get(KafkaUserModel.KEY_PASSWORD)));
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -708,7 +708,7 @@ public class KafkaUserOperatorTest {
             context.assertEquals(user.getMetadata().getName(), captured.getMetadata().getName());
             context.assertEquals(user.getMetadata().getNamespace(), captured.getMetadata().getNamespace());
             context.assertEquals(Labels.userLabels(user.getMetadata().getLabels()).withKind(KafkaUser.RESOURCE_KIND).toMap(), captured.getMetadata().getLabels());
-            context.assertEquals(password, captured.getData().get(KafkaUserModel.KEY_PASSWORD));
+            context.assertEquals(password, new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))));
             context.assertEquals(password, scramPasswordCaptor.getValue());
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
