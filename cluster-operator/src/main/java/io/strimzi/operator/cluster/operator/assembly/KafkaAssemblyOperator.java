@@ -135,42 +135,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.zkNetworkPolicy = zkNetworkPolicy;
         }
 
-        ZookeeperCluster zookeeper() {
-            return this.zookeeper;
-        }
-
-        Service zkService() {
-            return this.zkService;
-        }
-
-        Service zkHeadlessService() {
-            return this.zkHeadlessService;
-        }
-
-        ConfigMap zkMetricsAndLogsConfigMap() {
-            return this.zkMetricsAndLogsConfigMap;
-        }
-
-        StatefulSet zkStatefulSet() {
-            return this.zkStatefulSet;
-        }
-
-        Secret zkNodesSecret() {
-            return this.zkNodesSecret;
-        }
-
-        NetworkPolicy zkNetworkPolicy() {
-            return this.zkNetworkPolicy;
-        }
-
-        private boolean isForceZkRestart() {
-            return this.forceZkRestart;
-        }
-
-        ReconcileResult<StatefulSet> zkDiffs() {
-            return this.zkDiffs;
-        }
-
         Future<ReconciliationState> withZkDiff(Future<ReconcileResult<StatefulSet>> r) {
             return r.map(rr -> {
                 this.zkDiffs = rr;
@@ -183,47 +147,47 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkScaleDown(ZookeeperSetOperator zkSetOperations) {
-            return withVoid(zkSetOperations.scaleDown(namespace, zookeeper().getName(), zookeeper().getReplicas()));
+            return withVoid(zkSetOperations.scaleDown(namespace, this.zookeeper.getName(), this.zookeeper.getReplicas()));
         }
 
         Future<ReconciliationState> zkService(ServiceOperator serviceOperations) {
-            return withVoid(serviceOperations.reconcile(namespace, zookeeper().getServiceName(), zkService()));
+            return withVoid(serviceOperations.reconcile(namespace, this.zookeeper.getServiceName(), this.zkService));
         }
 
         Future<ReconciliationState> zkHeadlessService(ServiceOperator serviceOperations) {
-            return withVoid(serviceOperations.reconcile(namespace, zookeeper().getHeadlessServiceName(), zkHeadlessService()));
+            return withVoid(serviceOperations.reconcile(namespace, this.zookeeper.getHeadlessServiceName(), this.zkHeadlessService));
         }
 
         Future<ReconciliationState> zkAncillaryCm(ConfigMapOperator configMapOperations) {
-            return withZkAncillaryCmChanged(configMapOperations.reconcile(namespace, zookeeper().getAncillaryConfigName(), zkMetricsAndLogsConfigMap()));
+            return withZkAncillaryCmChanged(configMapOperations.reconcile(namespace, this.zookeeper.getAncillaryConfigName(), this.zkMetricsAndLogsConfigMap));
         }
 
         Future<ReconciliationState> zkNodesSecret(SecretOperator secretOperations) {
-            return withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), zkNodesSecret()));
+            return withVoid(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), this.zkNodesSecret));
         }
 
         Future<ReconciliationState> zkNetPolicy(NetworkPolicyOperator networkPolicyOperator) {
-            return withVoid(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkNetworkPolicy()));
+            return withVoid(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), this.zkNetworkPolicy));
         }
 
         Future<ReconciliationState> zkStatefulSet(ZookeeperSetOperator zkSetOperations) {
-            return withZkDiff(zkSetOperations.reconcile(namespace, zookeeper().getName(), zkStatefulSet()));
+            return withZkDiff(zkSetOperations.reconcile(namespace, this.zookeeper.getName(), this.zkStatefulSet));
         }
 
         Future<ReconciliationState> zkRollingUpdate(ZookeeperSetOperator zkSetOperations) {
-            return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs().resource(), isForceZkRestart()));
+            return withVoid(zkSetOperations.maybeRollingUpdate(this.zkDiffs.resource(), this.forceZkRestart));
         }
 
         Future<ReconciliationState> zkScaleUp(ZookeeperSetOperator zkSetOperations) {
-            return withVoid(zkSetOperations.scaleUp(namespace, zookeeper().getName(), zookeeper().getReplicas()));
+            return withVoid(zkSetOperations.scaleUp(namespace, this.zookeeper.getName(), this.zookeeper.getReplicas()));
         }
 
         Future<ReconciliationState> zkServiceEndpointReadiness(ServiceOperator serviceOperations) {
-            return withVoid(serviceOperations.endpointReadiness(namespace, zkService(), 1_000, operationTimeoutMs));
+            return withVoid(serviceOperations.endpointReadiness(namespace, this.zkService, 1_000, operationTimeoutMs));
         }
 
         Future<ReconciliationState> zkHeadlessServiceEndpointReadiness(ServiceOperator serviceOperations) {
-            return withVoid(serviceOperations.endpointReadiness(namespace, zkHeadlessService(), 1_000, operationTimeoutMs));
+            return withVoid(serviceOperations.endpointReadiness(namespace, this.zkHeadlessService, 1_000, operationTimeoutMs));
         }
 
         Future<ReconciliationState> withZkAncillaryCmChanged(Future<ReconcileResult<ConfigMap>> r) {
@@ -235,7 +199,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaInitServiceAccount(ServiceAccountOperator serviceAccountOperator) {
             return withVoid(serviceAccountOperator.reconcile(namespace,
-                    KafkaCluster.initContainerServiceAccountName(kafka().getCluster()),
+                    KafkaCluster.initContainerServiceAccountName(this.kafka.getCluster()),
                     kafka.generateInitContainerServiceAccount()));
         }
 
@@ -246,81 +210,81 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaScaleDown(KafkaSetOperator kafkaSetOperations) {
-            return withVoid(kafkaSetOperations.scaleDown(namespace, kafka().getName(), kafka().getReplicas()));
+            return withVoid(kafkaSetOperations.scaleDown(namespace, this.kafka.getName(), this.kafka.getReplicas()));
         }
 
         Future<ReconciliationState> kafkaService(ServiceOperator serviceOperations) {
-            return withVoid(serviceOperations.reconcile(namespace, kafka().getServiceName(), kafkaService()));
+            return withVoid(serviceOperations.reconcile(namespace, this.kafka.getServiceName(), this.kafkaService));
         }
 
         Future<ReconciliationState> kafkaHeadlessService(ServiceOperator serviceOperations) {
-            return withVoid(serviceOperations.reconcile(namespace, kafka().getHeadlessServiceName(), kafkaHeadlessService()));
+            return withVoid(serviceOperations.reconcile(namespace, this.kafka.getHeadlessServiceName(), this.kafkaHeadlessService));
         }
 
         Future<ReconciliationState> kafkaAncillaryCm(ConfigMapOperator configMapOperations) {
-            return withKafkaAncillaryCmChanged(configMapOperations.reconcile(namespace, kafka().getAncillaryConfigName(), kafkaMetricsAndLogsConfigMap()));
+            return withKafkaAncillaryCmChanged(configMapOperations.reconcile(namespace, this.kafka.getAncillaryConfigName(), this.kafkaMetricsAndLogsConfigMap));
         }
 
         Future<ReconciliationState> kafkaClientsCaSecret(SecretOperator secretOperations) {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), kafkaClientsCaSecret()));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), this.kafkaClientsCaSecret));
         }
 
         Future<ReconciliationState> kafkaClientsPublicKeySecret(SecretOperator secretOperations) {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), kafkaClientsPublicKeySecret()));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), this.kafkaClientsPublicKeySecret));
         }
 
         Future<ReconciliationState> kafkaClusterPublicKeySecret(SecretOperator secretOperations) {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), kafkaClusterPublicKeySecret()));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), this.kafkaClusterPublicKeySecret));
         }
 
         Future<ReconciliationState> kafkaBrokersSecret(SecretOperator secretOperations) {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaBrokersInternalSecret()));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), this.kafkaBrokersInternalSecret));
         }
 
         Future<ReconciliationState> kafkaNetPolicy(NetworkPolicyOperator networkPolicyOperator) {
-            return withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), kafkaNetworkPolicy()));
+            return withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), this.kafkaNetworkPolicy));
         }
 
         Future<ReconciliationState> kafkaStatefulSet2(KafkaSetOperator kafkaSetOperations) {
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafka().getName(), kafkaStatefulSet()));
+            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, this.kafka.getName(), this.kafkaStatefulSet));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate(KafkaSetOperator kafkaSetOperations) {
-            return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs().resource(), isForceKafkaRestart()));
+            return withVoid(kafkaSetOperations.maybeRollingUpdate(this.kafkaDiffs.resource(), this.forceKafkaRestart));
         }
 
         Future<ReconciliationState> kafkaScaleUp(KafkaSetOperator kafkaSetOperations) {
-            return withVoid(kafkaSetOperations.scaleUp(namespace, kafka().getName(), kafka().getReplicas()));
+            return withVoid(kafkaSetOperations.scaleUp(namespace, this.kafka.getName(), this.kafka.getReplicas()));
         }
 
         Future<ReconciliationState> kafkaServiceEndpointReady(ServiceOperator serviceOperations) {
-            return withVoid(serviceOperations.endpointReadiness(namespace, kafkaService(), 1_000, operationTimeoutMs));
+            return withVoid(serviceOperations.endpointReadiness(namespace, this.kafkaService, 1_000, operationTimeoutMs));
         }
 
         Future<ReconciliationState> kafkaHeadlessServiceEndpointReady(ServiceOperator serviceOperations) {
-            return withVoid(serviceOperations.endpointReadiness(namespace, kafkaHeadlessService(), 1_000, operationTimeoutMs));
+            return withVoid(serviceOperations.endpointReadiness(namespace, this.kafkaHeadlessService, 1_000, operationTimeoutMs));
         }
 
         Future<ReconciliationState> topicOperatorServiceAccount(ServiceAccountOperator serviceAccountOperator) {
             return withVoid(serviceAccountOperator.reconcile(namespace,
                     TopicOperator.topicOperatorServiceAccountName(name),
-                    toDeployment != null ? topicOperator().generateServiceAccount() : null));
+                    toDeployment != null ? this.topicOperator.generateServiceAccount() : null));
         }
 
         Future<ReconciliationState> topicOperatorRoleBinding(RoleBindingOperator roleBindingOperator) {
-            String watchedNamespace = topicOperator() != null ? topicOperator().getWatchedNamespace() : null;
+            String watchedNamespace = this.topicOperator != null ? this.topicOperator.getWatchedNamespace() : null;
             return withVoid(roleBindingOperator.reconcile(
                     watchedNamespace != null && !watchedNamespace.isEmpty() ?
                             watchedNamespace : namespace,
                     TopicOperator.roleBindingName(name),
-                    toDeployment != null ? topicOperator().generateRoleBinding(namespace) : null));
+                    toDeployment != null ? this.topicOperator.generateRoleBinding(namespace) : null));
 
         }
 
         Future<ReconciliationState> topicOperatorAncillaryCm(ConfigMapOperator configMapOperations) {
             return withVoid(configMapOperations.reconcile(namespace,
-                    toDeployment != null ? topicOperator().getAncillaryConfigName() : TopicOperator.metricAndLogConfigsName(name),
-                    toMetricsAndLogsConfigMap()));
+                    toDeployment != null ? this.topicOperator.getAncillaryConfigName() : TopicOperator.metricAndLogConfigsName(name),
+                    this.toMetricsAndLogsConfigMap));
         }
 
         Future<ReconciliationState> topicOperatorDeployment(DeploymentOperator deploymentOperations) {
@@ -328,59 +292,59 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> topicOperatorSecret(SecretOperator secretOperations) {
-            return withVoid(secretOperations.reconcile(namespace, TopicOperator.secretName(name), topicOperatorSecret()));
+            return withVoid(secretOperations.reconcile(namespace, TopicOperator.secretName(name), this.topicOperatorSecret));
         }
 
         Future<ReconciliationState> entityOperatorServiceAccount(ServiceAccountOperator serviceAccountOperator) {
             return withVoid(serviceAccountOperator.reconcile(namespace,
                     EntityOperator.entityOperatorServiceAccountName(name),
-                    eoDeployment != null ? entityOperator().generateServiceAccount() : null));
+                    eoDeployment != null ? this.entityOperator.generateServiceAccount() : null));
         }
 
         Future<ReconciliationState> entityOperatorRoleBinding(RoleBindingOperator roleBindingOperator) {
-            String watchedNamespace = entityOperator() != null && entityOperator().getTopicOperator() != null ?
-                    entityOperator().getTopicOperator().getWatchedNamespace() : null;
+            String watchedNamespace = this.entityOperator != null && this.entityOperator.getTopicOperator() != null ?
+                    this.entityOperator.getTopicOperator().getWatchedNamespace() : null;
             return withVoid(roleBindingOperator.reconcile(
                     watchedNamespace != null && !watchedNamespace.isEmpty() ?
                             watchedNamespace : namespace,
                     EntityTopicOperator.roleBindingName(name),
-                    eoDeployment != null && entityOperator().getTopicOperator() != null ?
-                            entityOperator().getTopicOperator().generateRoleBinding(namespace) : null));
+                    eoDeployment != null && this.entityOperator.getTopicOperator() != null ?
+                            this.entityOperator.getTopicOperator().generateRoleBinding(namespace) : null));
 
         }
 
         Future<ReconciliationState> entityOperatorUserRoleBinding(RoleBindingOperator roleBindingOperator) {
-            String watchedNamespace = entityOperator() != null && entityOperator().getUserOperator() != null ?
-                    entityOperator().getUserOperator().getWatchedNamespace() : null;
+            String watchedNamespace = this.entityOperator != null && this.entityOperator.getUserOperator() != null ?
+                    this.entityOperator.getUserOperator().getWatchedNamespace() : null;
             return withVoid(roleBindingOperator.reconcile(
                     watchedNamespace != null && !watchedNamespace.isEmpty() ?
                             watchedNamespace : namespace,
                     EntityUserOperator.roleBindingName(name),
-                    eoDeployment != null && entityOperator().getUserOperator() != null ?
-                            entityOperator().getUserOperator().generateRoleBinding(namespace) : null));
+                    eoDeployment != null && this.entityOperator.getUserOperator() != null ?
+                            this.entityOperator.getUserOperator().generateRoleBinding(namespace) : null));
 
         }
 
         Future<ReconciliationState> entityOperatorTopicOperatorAncillaryCm(ConfigMapOperator configMapOperations) {
             return withVoid(configMapOperations.reconcile(namespace,
-                    eoDeployment != null && entityOperator().getTopicOperator() != null ?
-                            entityOperator().getTopicOperator().getAncillaryConfigName() : EntityTopicOperator.metricAndLogConfigsName(name),
-                    topicOperatorMetricsAndLogsConfigMap()));
+                    eoDeployment != null && this.entityOperator.getTopicOperator() != null ?
+                            this.entityOperator.getTopicOperator().getAncillaryConfigName() : EntityTopicOperator.metricAndLogConfigsName(name),
+                    topicOperatorMetricsAndLogsConfigMap));
         }
 
         Future<ReconciliationState> entityOperatorUserOperatorAncillaryCm(ConfigMapOperator configMapOperations) {
             return withVoid(configMapOperations.reconcile(namespace,
-                    eoDeployment != null && entityOperator().getUserOperator() != null ?
-                            entityOperator().getUserOperator().getAncillaryConfigName() : EntityUserOperator.metricAndLogConfigsName(name),
-                    userOperatorMetricsAndLogsConfigMap()));
+                    eoDeployment != null && this.entityOperator.getUserOperator() != null ?
+                            this.entityOperator.getUserOperator().getAncillaryConfigName() : EntityUserOperator.metricAndLogConfigsName(name),
+                    userOperatorMetricsAndLogsConfigMap));
         }
 
         Future<ReconciliationState> entityOperatorDeployment(DeploymentOperator deploymentOperations) {
-            return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment()));
+            return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
         }
 
         Future<ReconciliationState> entityOperatorSecret(SecretOperator secretOperations) {
-            return withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name), entityOperatorSecret()));
+            return withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name), entityOperatorSecret));
         }
 
         private KafkaCluster kafka = null;
@@ -414,54 +378,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return this;
         }
 
-        KafkaCluster kafka() {
-            return this.kafka;
-        }
-
-        Service kafkaService() {
-            return this.kafkaService;
-        }
-
-        Service kafkaHeadlessService() {
-            return this.kafkaHeadlessService;
-        }
-
-        ConfigMap kafkaMetricsAndLogsConfigMap() {
-            return this.kafkaMetricsAndLogsConfigMap;
-        }
-
-        StatefulSet kafkaStatefulSet() {
-            return this.kafkaStatefulSet;
-        }
-
-        Secret kafkaClientsCaSecret() {
-            return this.kafkaClientsCaSecret;
-        }
-
-        Secret kafkaClientsPublicKeySecret() {
-            return this.kafkaClientsPublicKeySecret;
-        }
-
-        Secret kafkaClusterPublicKeySecret() {
-            return this.kafkaClusterPublicKeySecret;
-        }
-
-        Secret kafkaBrokersInternalSecret() {
-            return this.kafkaBrokersInternalSecret;
-        }
-
-        ReconcileResult<StatefulSet> kafkaDiffs() {
-            return this.kafkaDiffs;
-        }
-
-        private boolean isForceKafkaRestart() {
-            return this.forceKafkaRestart;
-        }
-
-        NetworkPolicy kafkaNetworkPolicy() {
-            return this.kafkaNetworkPolicy;
-        }
-
         Future<ReconciliationState> withKafkaDiff(Future<ReconcileResult<StatefulSet>> r) {
             return r.map(rr -> {
                 this.kafkaDiffs = rr;
@@ -490,10 +406,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return this;
         }
 
-        TopicOperator topicOperator() {
-            return this.topicOperator;
-        }
-
         Deployment toDeployment() {
             try {
                 this.toDeployment.getSpec().getTemplate().getMetadata().getAnnotations().put("strimzi.io/logging", this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
@@ -501,14 +413,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             }
             return this.toDeployment;
-        }
-
-        Secret topicOperatorSecret() {
-            return this.topicOperatorSecret;
-        }
-
-        ConfigMap toMetricsAndLogsConfigMap() {
-            return this.toMetricsAndLogsConfigMap;
         }
 
         private EntityOperator entityOperator;
@@ -526,27 +430,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.userOperatorMetricsAndLogsConfigMap = userOperatorMetricsAndLogsConfigMap;
             return this;
         }
-
-        EntityOperator entityOperator() {
-            return this.entityOperator;
-        }
-
-        ConfigMap topicOperatorMetricsAndLogsConfigMap() {
-            return topicOperatorMetricsAndLogsConfigMap;
-        }
-
-        ConfigMap userOperatorMetricsAndLogsConfigMap() {
-            return userOperatorMetricsAndLogsConfigMap;
-        }
-
-        Deployment eoDeployment() {
-            return eoDeployment;
-        }
-
-        Secret entityOperatorSecret() {
-            return entityOperatorSecret;
-        }
-
 
     }
 
