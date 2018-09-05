@@ -17,6 +17,9 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.certs.CertManager;
+import io.strimzi.certs.SecretCertProvider;
+import io.strimzi.certs.Subject;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
@@ -43,8 +46,11 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -91,9 +97,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
+    public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
         Future<Void> chainFuture = Future.future();
-        new ReconciliationState(kafkaAssembly).getZookeeperState(assemblySecrets)
+        new ReconciliationState(reconciliation, kafkaAssembly)
+                .reconcileClusterCa()
+                .compose(state -> state.getZookeeperState())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
@@ -106,7 +114,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
 
-                .compose(state -> state.getKafkaClusterDescription(assemblySecrets))
+                .compose(state -> state.getKafkaClusterDescription())
                 .compose(state -> state.kafkaInitServiceAccount())
                 .compose(state -> state.kafkaInitClusterRoleBinding())
                 .compose(state -> state.kafkaScaleDown())
@@ -124,15 +132,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaServiceEndpointReady())
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
 
-                .compose(state -> state.getTopicOperatorDescription(assemblySecrets))
+                .compose(state -> state.getTopicOperatorDescription())
                 .compose(state -> state.topicOperatorServiceAccount())
                 .compose(state -> state.topicOperatorRoleBinding())
                 .compose(state -> state.topicOperatorAncillaryCm())
                 .compose(state -> state.topicOperatorDeployment())
                 .compose(state -> state.topicOperatorSecret())
 
-                .compose(state -> state.getEntityOperatorDescription(assemblySecrets))
-                .compose(state -> state.entityOperatorServiceAccount(serviceAccountOperator))
+                .compose(state -> state.getEntityOperatorDescription())
+                .compose(state -> state.entityOperatorServiceAccount())
                 .compose(state -> state.entityOperatorTopicOpRoleBinding())
                 .compose(state -> state.entityOperatorUserOpRoleBinding())
                 .compose(state -> state.entityOperatorTopicOpAncillaryCm())
@@ -152,6 +160,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final String namespace;
         private final String name;
         private final Kafka kafkaAssembly;
+        private final Reconciliation reconciliation;
+
+        private List<Secret> assemblySecrets;
 
         private ZookeeperCluster zkCluster;
         private Service zkService;
@@ -176,13 +187,70 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap topicOperatorMetricsAndLogsConfigMap = null;
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
 
-        ReconciliationState(Kafka kafkaAssembly) {
+        ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
+            this.reconciliation = reconciliation;
             this.kafkaAssembly = kafkaAssembly;
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
             this.name = kafkaAssembly.getMetadata().getName();
         }
 
-        Future<ReconciliationState> getZookeeperState(List<Secret> assemblySecrets) {
+        Future<ReconciliationState> reconcileClusterCa() {
+            Labels caLabels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
+            Future<ReconciliationState> result = Future.future();
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
+                future -> {
+                    String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
+                    List<Secret> clusterSecrets = secretOperations.list(reconciliation.namespace(), Labels.forCluster(reconciliation.name()));
+                    Secret clusterCa = findSecretWithName(clusterSecrets, clusterCaName);
+                    SecretCertProvider secretCertProvider = new SecretCertProvider();
+                    final Secret secret;
+
+                    if (clusterCa == null) {
+                        log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
+                        File clusterCAkeyFile = null;
+                        File clusterCAcertFile = null;
+                        try {
+                            clusterCAkeyFile = File.createTempFile("tls", "cluster-ca-key");
+                            clusterCAcertFile = File.createTempFile("tls", "cluster-ca-cert");
+
+                            Subject sbj = new Subject();
+                            sbj.setOrganizationName("io.strimzi");
+                            sbj.setCommonName("cluster-ca");
+
+                            certManager.generateSelfSignedCert(clusterCAkeyFile, clusterCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
+
+                            secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
+                                    "cluster-ca.key", "cluster-ca.crt",
+                                    clusterCAkeyFile, clusterCAcertFile, caLabels.toMap());
+                        } catch (Throwable e) {
+                            future.fail(e);
+                            return;
+                        } finally {
+                            if (clusterCAkeyFile != null)
+                                clusterCAkeyFile.delete();
+                            if (clusterCAcertFile != null)
+                                clusterCAcertFile.delete();
+                        }
+                        log.debug("{}: End generating cluster CA {}", reconciliation, clusterCaName);
+                    } else {
+                        log.debug("{}: The cluster CA {} already exists", reconciliation, clusterCaName);
+                        secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
+                                clusterCa.getData(), caLabels.toMap());
+                    }
+
+                    secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
+                            .compose(x -> {
+                                clusterSecrets.add(secret);
+                                this.assemblySecrets = clusterSecrets;
+                                future.complete(this);
+                            }, future);
+                }, true,
+                result.completer()
+            );
+            return result;
+        }
+
+        Future<ReconciliationState> getZookeeperState() {
             Future<ReconciliationState> fut = Future.future();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -277,7 +345,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             });
         }
 
-        private Future<ReconciliationState> getKafkaClusterDescription(List<Secret> assemblySecrets) {
+        private Future<ReconciliationState> getKafkaClusterDescription() {
             Future<ReconciliationState> fut = Future.future();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
@@ -391,7 +459,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(serviceOperations.endpointReadiness(namespace, kafkaHeadlessService, 1_000, operationTimeoutMs));
         }
 
-        private final Future<ReconciliationState> getTopicOperatorDescription(List<Secret> assemblySecrets) {
+        private final Future<ReconciliationState> getTopicOperatorDescription() {
             Future<ReconciliationState> fut = Future.future();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
@@ -457,7 +525,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(secretOperations.reconcile(namespace, TopicOperator.secretName(name), topicOperator == null ? null : topicOperator.generateSecret()));
         }
 
-        private final Future<ReconciliationState> getEntityOperatorDescription(List<Secret> assemblySecrets) {
+        private final Future<ReconciliationState> getEntityOperatorDescription() {
             Future<ReconciliationState> fut = Future.future();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
@@ -501,7 +569,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return fut;
         }
 
-        Future<ReconciliationState> entityOperatorServiceAccount(ServiceAccountOperator serviceAccountOperator) {
+        Future<ReconciliationState> entityOperatorServiceAccount() {
             return withVoid(serviceAccountOperator.reconcile(namespace,
                     EntityOperator.entityOperatorServiceAccountName(name),
                     eoDeployment != null ? entityOperator.generateServiceAccount() : null));
@@ -650,7 +718,28 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(i -> deleteTopicOperator(reconciliation))
                 .compose(i -> deleteKafka(reconciliation))
                 .compose(i -> deleteZk(reconciliation))
-                .map((Void) null);
+                .compose(i -> deleteClusterCa(reconciliation));
+    }
+
+    private final Future<Void> deleteClusterCa(Reconciliation reconciliation) {
+        Future<Void> result = Future.future();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+            future -> {
+                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
+
+                if (secretOperations.get(reconciliation.namespace(), clusterCaName) != null) {
+                    log.debug("{}: Deleting cluster CA certificate {}", reconciliation, clusterCaName);
+                    secretOperations.reconcile(reconciliation.namespace(), clusterCaName, null)
+                            .compose(reconcileResult -> future.complete(), future);
+                    log.debug("{}: Cluster CA {} deleted", reconciliation, clusterCaName);
+                } else {
+                    log.debug("{}: The cluster CA {} doesn't exist", reconciliation, clusterCaName);
+                    future.complete();
+                }
+            }, true,
+            result.completer()
+        );
+        return result;
     }
 
     @Override

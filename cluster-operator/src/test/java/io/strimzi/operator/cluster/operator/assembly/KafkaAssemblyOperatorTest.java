@@ -269,6 +269,7 @@ public class KafkaAssemblyOperatorTest {
                 KafkaCluster.clusterPublicKeyName(clusterCmName),
                 KafkaCluster.brokersSecretName(clusterCmName),
                 ZookeeperCluster.nodesSecretName(clusterCmName));
+        expectedSecrets.addAll(secrets.stream().map(s -> s.getMetadata().getName()).collect(Collectors.toSet()));
         if (toConfig != null) {
             // it's expected only when the Topic Operator is deployed by the Cluster Operator
             expectedSecrets.add(TopicOperator.secretName(clusterCmName));
@@ -290,11 +291,14 @@ public class KafkaAssemblyOperatorTest {
             return Future.succeededFuture(ReconcileResult.created(desired));
         });
 
-        Set<String> existingSecrets = new HashSet<>();
+        when(mockSecretOps.list(anyString(), any())).thenReturn(
+                secrets
+        );
+        Set<String> createdOrUpdatedSecrets = new HashSet<>();
         when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
             Secret desired = invocation.getArgument(2);
             if (desired != null) {
-                existingSecrets.add(desired.getMetadata().getName());
+                createdOrUpdatedSecrets.add(desired.getMetadata().getName());
             }
             return Future.succeededFuture(ReconcileResult.created(null));
         });
@@ -314,7 +318,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, clusterCmNamespace, clusterCmName), clusterCm, secrets).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             if (createResult.failed()) {
                 createResult.cause().printStackTrace();
             }
@@ -339,7 +343,7 @@ public class KafkaAssemblyOperatorTest {
                     capturedSs.stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()));
 
             // expected Secrets with certificates
-            context.assertEquals(expectedSecrets, existingSecrets);
+            context.assertEquals(expectedSecrets, createdOrUpdatedSecrets);
 
             verifyNoMoreInteractions(mockPvcOps);
             async.complete();
@@ -790,6 +794,9 @@ public class KafkaAssemblyOperatorTest {
         );
 
         // Mock Secret gets
+        when(mockSecretOps.list(anyString(), any())).thenReturn(
+                secrets
+        );
         when(mockSecretOps.get(clusterNamespace, KafkaCluster.clientsCASecretName(clusterName))).thenReturn(
                 originalKafkaCluster.generateClientsCASecret()
         );
@@ -891,7 +898,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, clusterNamespace, clusterName), updatedAssembly, secrets).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, clusterNamespace, clusterName), updatedAssembly).setHandler(createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
             context.assertTrue(createResult.succeeded());
 
@@ -996,7 +1003,7 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 supplier) {
             @Override
-            public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
+            public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
                 async.countDown();
                 return Future.succeededFuture();
