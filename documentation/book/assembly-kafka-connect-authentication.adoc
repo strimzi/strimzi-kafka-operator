@@ -14,6 +14,8 @@
 By default, Kafka Connect will try to connect to Kafka brokers without any authentication.
 Authentication can be enabled in the `KafkaConnect` and `KafkaConnectS2I` resources.
 
-include::ref-kafka-connect-authentication.adoc[leveloffset=+1]
+include::con-kafka-connect-authentication.adoc[leveloffset=+1]
 
-include::proc-configuring-kafka-connect-authentication.adoc[leveloffset=+1]
+include::proc-configuring-kafka-connect-authentication-tls.adoc[leveloffset=+1]
+
+include::proc-configuring-kafka-connect-authentication-scram-sha-512.adoc[leveloffset=+1]
