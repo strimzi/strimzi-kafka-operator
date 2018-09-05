@@ -8,17 +8,13 @@ import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.certs.CertManager;
-import io.strimzi.certs.SecretCertProvider;
-import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -33,14 +29,11 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 
 /**
  * <p>Abstract assembly creation, update, read, deletion, etc.</p>
@@ -106,9 +99,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * one resource means that all resources need to be created).
      * @param reconciliation Unique identification for the reconciliation
      * @param assemblyResource Resources with the desired cluster configuration.
-     * @param assemblySecrets Secrets related to the cluster
      */
-    protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T assemblyResource, List<Secret> assemblySecrets);
+    protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T assemblyResource);
 
     /**
      * Subclasses implement this method to delete the cluster.
@@ -127,84 +119,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
             }
         }
         return null;
-    }
-
-    protected final Future<List<Secret>> reconcileClusterCa(Reconciliation reconciliation, Labels labels) {
-        Future<List<Secret>> result = Future.future();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<List<Secret>>executeBlocking(
-            future -> {
-                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
-                List<Secret> clusterSecrets = secretOperations.list(reconciliation.namespace(), Labels.forCluster(reconciliation.name()));
-                Secret clusterCa = findSecretWithName(clusterSecrets, clusterCaName);
-                SecretCertProvider secretCertProvider = new SecretCertProvider();
-                final Secret secret;
-
-                if (clusterCa == null) {
-                    log.debug("{}: Generating cluster CA certificate {}", reconciliation, clusterCaName);
-                    File clusterCAkeyFile = null;
-                    File clusterCAcertFile = null;
-                    try {
-                        clusterCAkeyFile = File.createTempFile("tls", "cluster-ca-key");
-                        clusterCAcertFile = File.createTempFile("tls", "cluster-ca-cert");
-
-                        Subject sbj = new Subject();
-                        sbj.setOrganizationName("io.strimzi");
-                        sbj.setCommonName("cluster-ca");
-
-                        certManager.generateSelfSignedCert(clusterCAkeyFile, clusterCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
-
-                        secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
-                                "cluster-ca.key", "cluster-ca.crt",
-                                clusterCAkeyFile, clusterCAcertFile, labels.toMap());
-                    } catch (Throwable e) {
-                        future.fail(e);
-                        return;
-                    } finally {
-                        if (clusterCAkeyFile != null)
-                            clusterCAkeyFile.delete();
-                        if (clusterCAcertFile != null)
-                            clusterCAcertFile.delete();
-                    }
-                    log.debug("{}: End generating cluster CA {}", reconciliation, clusterCaName);
-                } else {
-                    log.debug("{}: The cluster CA {} already exists", reconciliation, clusterCaName);
-                    secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
-                            clusterCa.getData(), labels.toMap());
-                }
-
-                secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
-                        .compose(x -> {
-                            clusterSecrets.add(secret);
-                            future.complete(clusterSecrets);
-                        }, future);
-            }, true,
-            result.completer()
-        );
-        return result;
-    }
-
-    private final void deleteClusterCa(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
-
-                if (secretOperations.get(reconciliation.namespace(), clusterCaName) != null) {
-                    log.debug("{}: Deleting cluster CA certificate {}", reconciliation, clusterCaName);
-                    secretOperations.reconcile(reconciliation.namespace(), clusterCaName, null)
-                            .compose(future::complete, future);
-                    log.debug("{}: Cluster CA {} deleted", reconciliation, clusterCaName);
-                } else {
-                    log.debug("{}: The cluster CA {} doesn't exist", reconciliation, clusterCaName);
-                    future.complete();
-                }
-            }, true,
-            res -> {
-                if (res.succeeded())
-                    handler.handle(Future.succeededFuture());
-                else
-                    handler.handle(Future.failedFuture(res.cause()));
-            }
-        );
     }
 
     /**
@@ -231,10 +145,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
                     if (cr != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
-                        Labels caLabels = Labels.userLabels(cr.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
 
-                        reconcileClusterCa(reconciliation, caLabels)
-                            .compose(secrets -> createOrUpdate(reconciliation, cr, secrets))
+                        createOrUpdate(reconciliation, cr)
                             .setHandler(createResult -> {
                                 lock.release();
                                 log.debug("{}: Lock {} released", reconciliation, lockName);
@@ -251,20 +163,14 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                     } else {
                         log.info("{}: Assembly {} should be deleted", reconciliation, assemblyName);
                         delete(reconciliation).setHandler(deleteResult -> {
+                            lock.release();
+                            log.debug("{}: Lock {} released", reconciliation, lockName);
                             if (deleteResult.succeeded())   {
                                 log.info("{}: Assembly {} deleted", reconciliation, assemblyName);
-
-                                deleteClusterCa(reconciliation, caDeleteResult -> {
-                                    lock.release();
-                                    log.debug("{}: Lock {} released", reconciliation, lockName);
-                                    handler.handle(caDeleteResult);
-                                });
                             } else {
                                 log.error("{}: Deletion of assembly {} failed", reconciliation, assemblyName, deleteResult.cause());
-                                lock.release();
-                                log.debug("{}: Lock {} released", reconciliation, lockName);
-                                handler.handle(deleteResult);
                             }
+                            handler.handle(deleteResult);
                         });
                     }
                 } catch (Throwable ex) {
