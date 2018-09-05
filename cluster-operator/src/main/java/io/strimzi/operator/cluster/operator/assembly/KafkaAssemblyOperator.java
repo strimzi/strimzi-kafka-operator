@@ -43,7 +43,6 @@ import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 
 import io.fabric8.openshift.api.model.Route;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -53,6 +52,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 
@@ -126,6 +127,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaScaleDown())
                 .compose(state -> state.kafkaService())
                 .compose(state -> state.kafkaHeadlessService())
+                .compose(state -> state.kafkaReplicaServices())
+                .compose(state -> state.kafkaBootstrapRoute())
+                .compose(state -> state.kafkaReplicaRoutes())
+                .compose(state -> state.kafkaBootstrapRouteReady())
+                .compose(state -> state.kafkaReplicaRoutesReady())
+                .compose(state -> state.kafkaBrokerCertificates())
                 .compose(state -> state.kafkaAncillaryCm())
                 .compose(state -> state.kafkaClientsCaSecret())
                 .compose(state -> state.kafkaClientsPublicKeySecret())
@@ -183,6 +190,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap kafkaMetricsAndLogsConfigMap;
         private ReconcileResult<StatefulSet> kafkaDiffs;
         private boolean kafkaForcedRestart;
+        private String kafkaExternalBootstrapAddress;
+        private Map<String, String> kafkaExternalAddresses = new TreeMap<>();
 
         private TopicOperator topicOperator;
         private Deployment toDeployment = null;
@@ -357,7 +366,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        this.kafkaCluster = KafkaCluster.fromCrd(certManager, kafkaAssembly, assemblySecrets);
+                        this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly);
 
                         ConfigMap logAndMetricsConfigMap = kafkaCluster.generateMetricsAndLogConfigMap(
                                 kafkaCluster.getLogging() instanceof ExternalLogging ?
@@ -421,6 +430,109 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(serviceOperations.reconcile(namespace, kafkaCluster.getHeadlessServiceName(), kafkaHeadlessService));
         }
 
+        Future<ReconciliationState> kafkaReplicaServices() {
+            int replicas = kafkaCluster.getReplicas();
+            List<Future> serviceFutures = new ArrayList<>(replicas);
+
+            for (int i = 0; i < replicas; i++) {
+                serviceFutures.add(serviceOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), kafkaCluster.generateExternalService(i)));
+            }
+
+            return withVoid(CompositeFuture.join(serviceFutures));
+        }
+
+        Future<ReconciliationState> kafkaBootstrapRoute() {
+            Future future = Future.succeededFuture();
+            Route route = kafkaCluster.generateExternalBootstrapRoute();
+
+            if (routeOperations != null) {
+                return withVoid(routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), route));
+            } else if (route != null)   {
+                log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
+                return withVoid(Future.failedFuture("Exposing Kafka cluster " + name + " using OpenShift Routes is available only on OpenShift"));
+            }
+
+            return withVoid(future);
+        }
+
+        Future<ReconciliationState> kafkaReplicaRoutes() {
+            int replicas = kafkaCluster.getReplicas();
+            List<Future> routeFutures = new ArrayList<>(replicas);
+
+            for (int i = 0; i < replicas; i++) {
+                Route route = kafkaCluster.generateExternalRoute(i);
+
+                if (routeOperations != null) {
+                    routeFutures.add(routeOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), route));
+                } else if (route != null)   {
+                    log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
+                    return withVoid(Future.failedFuture("Exposing Kafka cluster " + name + " using OpenShift Routes is available only on OpenShift"));
+                }
+            }
+
+            return withVoid(CompositeFuture.join(routeFutures));
+        }
+
+
+        Future<ReconciliationState> kafkaReplicaRoutesReady() {
+            if (routeOperations == null || !kafkaCluster.isExposedWithRoute()) {
+                return withVoid(Future.succeededFuture());
+            }
+
+            String routeName = KafkaCluster.serviceName(name);
+            Future future = Future.future();
+            Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
+
+            address.setHandler(res -> {
+                if (res.succeeded())    {
+                    this.kafkaExternalBootstrapAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
+                    log.warn("Found address {} for Route {}", routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                    future.complete();
+                } else {
+                    log.warn("{}: No address found for Route {}", reconciliation, routeName);
+                    future.fail("No address found for Route " + routeName);
+                }
+            });
+
+            return withVoid(future);
+        }
+
+        Future<ReconciliationState> kafkaBootstrapRouteReady() {
+            if (routeOperations == null || !kafkaCluster.isExposedWithRoute()) {
+                return withVoid(Future.succeededFuture());
+            }
+
+            int replicas = kafkaCluster.getReplicas();
+            List<Future> routeFutures = new ArrayList<>(replicas);
+
+            for (int i = 0; i < replicas; i++) {
+                String routeName = KafkaCluster.externalServiceName(name, i);
+                Future future = Future.future();
+                Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
+                int podNumber = i;
+
+                address.setHandler(res -> {
+                    if (res.succeeded()) {
+                        this.kafkaExternalAddresses.put(kafkaCluster.getPodName(podNumber), routeOperations.get(namespace, routeName).getSpec().getHost());
+                        log.warn("Found address {} for Route {}", routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                        future.complete();
+                    } else {
+                        log.warn("{}: No address found for Route {}", reconciliation, routeName);
+                        future.fail("No address found for Route " + routeName);
+                    }
+                });
+
+                routeFutures.add(future);
+            }
+
+            return withVoid(CompositeFuture.join(routeFutures));
+        }
+
+        Future<ReconciliationState> kafkaBrokerCertificates() {
+            kafkaCluster.generateCertificates(certManager, assemblySecrets, kafkaExternalBootstrapAddress, kafkaExternalAddresses);
+            return withVoid(Future.succeededFuture());
+        }
+
         Future<ReconciliationState> kafkaAncillaryCm() {
             return withKafkaAncillaryCmChanged(configMapOperations.reconcile(namespace, kafkaCluster.getAncillaryConfigName(), kafkaMetricsAndLogsConfigMap));
         }
@@ -446,7 +558,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generateStatefulSet(isOpenShift)));
+            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generateStatefulSet(isOpenShift, kafkaExternalAddresses)));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {

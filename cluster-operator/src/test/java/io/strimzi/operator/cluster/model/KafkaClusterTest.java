@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Probe;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -61,7 +62,7 @@ public class KafkaClusterTest {
     private final KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, kafkaAssembly.getMetadata().getName()));
 
     @Rule
-    public ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, KafkaCluster::fromCrd);
+    public ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, (ResourceTester.TriFunction<CertManager, Kafka, List<Secret>, KafkaCluster>) KafkaCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {

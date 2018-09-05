@@ -1031,6 +1031,22 @@ public abstract class AbstractModel {
      * @throws IOException
      */
     protected Map<String, CertAndKey> maybeCopyOrGenerateCerts(CertManager certManager, Secret secret, int replicasInSecret, CertAndKey caCert, BiFunction<String, Integer, String> podName) throws IOException {
+        return maybeCopyOrGenerateCerts(certManager, secret, replicasInSecret, caCert, podName, null, Collections.EMPTY_MAP);
+    }
+
+    /**
+     * Copy already existing certificates from provided Secret based on number of effective replicas
+     * and maybe generate new ones for new replicas (i.e. scale-up)
+     *
+     * @param certManager CertManager instance for handling certificates creation
+     * @param secret The Secret from which getting already existing certificates
+     * @param replicasInSecret How many certificates are in the Secret
+     * @param caCert CA certificate to use for signing new certificates
+     * @param podName A function for resolving the Pod name
+     * @return Collection with certificates
+     * @throws IOException
+     */
+    protected Map<String, CertAndKey> maybeCopyOrGenerateCerts(CertManager certManager, Secret secret, int replicasInSecret, CertAndKey caCert, BiFunction<String, Integer, String> podName, String externalBootstrapAddress, Map<String, String> externalAddresses) throws IOException {
 
         Map<String, CertAndKey> certs = new HashMap<>();
 
@@ -1064,6 +1080,19 @@ public abstract class AbstractModel {
             sbjAltNames.put("DNS.1", getServiceName());
             sbjAltNames.put("DNS.2", String.format("%s.%s.svc.%s", getServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
             sbjAltNames.put("DNS.3", String.format("%s.%s.%s.svc.%s", podName.apply(cluster, i), getHeadlessServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+
+            int nextDnsId = 4;
+
+            if (externalBootstrapAddress != null)   {
+                sbjAltNames.put("DNS." + nextDnsId, externalBootstrapAddress);
+                nextDnsId++;
+            }
+
+            if (externalAddresses.get(podName.apply(cluster, i)) != null)   {
+                sbjAltNames.put("DNS." + nextDnsId, externalAddresses.get(podName.apply(cluster, i)));
+                nextDnsId++;
+            }
+
             sbj.setSubjectAltNames(sbjAltNames);
 
             certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);

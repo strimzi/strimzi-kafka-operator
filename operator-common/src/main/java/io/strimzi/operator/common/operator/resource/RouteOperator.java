@@ -10,6 +10,7 @@ import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 /**
@@ -28,5 +29,26 @@ public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Rou
     @Override
     protected MixedOperation<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> operation() {
         return client.routes();
+    }
+
+    public Future<Void> hasAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isAddressReady);
+    }
+
+    /**
+     * Check if a resource is in the Ready state.
+     *
+     * @param namespace The namespace.
+     * @param name The resource name.
+     */
+    public boolean isAddressReady(String namespace, String name) {
+        Resource<Route, DoneableRoute> resourceOp = operation().inNamespace(namespace).withName(name);
+        Route resource = resourceOp.get();
+
+        if (resource != null && resource.getSpec().getHost() != null) {
+            return true;
+        }
+
+        return false;
     }
 }

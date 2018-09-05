@@ -57,7 +57,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -85,6 +84,7 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION = "KAFKA_CLIENTTLS_AUTHENTICATION";
     private static final String ENV_VAR_KAFKA_EXTERNAL_ENABLED = "KAFKA_EXTERNAL_ENABLED";
     private static final String ENV_VAR_KAFKA_EXTERNAL_TYPE = "KAFKA_EXTERNAL_TYPE";
+    private static final String ENV_VAR_KAFKA_EXTERNAL_ADDRESSES = "KAFKA_EXTERNAL_ADDRESSES";
     private static final String ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION = "KAFKA_EXTERNAL_AUTHENTICATION";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
@@ -128,6 +128,7 @@ public class KafkaCluster extends AbstractModel {
     private Sidecar tlsSidecar;
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
+    private Map<String, String> externalAddresses;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -219,7 +220,11 @@ public class KafkaCluster extends AbstractModel {
         return getClusterCaName(cluster) + KafkaCluster.SECRET_CLUSTER_PUBLIC_KEY_SUFFIX;
     }
 
-    public static KafkaCluster fromCrd(CertManager certManager, Kafka kafkaAssembly, List<Secret> secrets) {
+    public static KafkaCluster fromCrd(CertManager manager, Kafka kafkaAssembly, List<Secret> secrets) {
+        return fromCrd(kafkaAssembly);
+    }
+
+    public static KafkaCluster fromCrd(Kafka kafkaAssembly) {
         KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
                 kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
@@ -259,7 +264,6 @@ public class KafkaCluster extends AbstractModel {
         result.setResources(kafkaClusterSpec.getResources());
         result.setTolerations(kafkaClusterSpec.getTolerations());
 
-        result.generateCertificates(certManager, secrets);
         result.setTlsSidecar(kafkaClusterSpec.getTlsSidecar());
 
         KafkaListeners listeners = kafkaClusterSpec.getListeners();
@@ -281,7 +285,7 @@ public class KafkaCluster extends AbstractModel {
      * @param certManager CertManager instance for handling certificates creation
      * @param secrets The Secrets storing certificates
      */
-    public void generateCertificates(CertManager certManager, List<Secret> secrets) {
+    public void generateCertificates(CertManager certManager, List<Secret> secrets, String externalBootstrapAddress, Map<String, String> externalAddresses) {
         log.debug("Generating certificates");
 
         try {
@@ -325,7 +329,7 @@ public class KafkaCluster extends AbstractModel {
                 int replicasInternalSecret = clusterSecret == null ? 0 : (clusterSecret.getData().size() - 1) / 2;
 
                 log.debug("Internal communication certificates");
-                brokerCerts = maybeCopyOrGenerateCerts(certManager, clusterSecret, replicasInternalSecret, clusterCA, KafkaCluster::kafkaPodName);
+                brokerCerts = maybeCopyOrGenerateCerts(certManager, clusterSecret, replicasInternalSecret, clusterCA, KafkaCluster::kafkaPodName, externalBootstrapAddress, externalAddresses);
             } else {
                 throw new NoCertificateSecretException("The cluster CA certificate Secret is missing");
             }
@@ -412,7 +416,7 @@ public class KafkaCluster extends AbstractModel {
             List<ServicePort> ports = new ArrayList<>(1);
             ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
 
-            Labels selector = Labels.fromMap(getSelectorLabels()).withPod(kafkaPodName(cluster, pod));
+            Labels selector = Labels.fromMap(getSelectorLabels()).withStatefulSetPod(kafkaPodName(cluster, pod));
 
             return createService(perPodServiceName, "ClusterIP", ports, getLabelsWithName(perPodServiceName), selector.toMap(), Collections.emptyMap());
         }
@@ -491,96 +495,6 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generates list of External
-     * @return The generated Services
-     */
-    /*public List<Service> generateExternalServices() {
-        if (listeners != null && listeners.getExternal() != null) {
-            List<ServicePort> ports = new ArrayList<>(1);
-            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
-
-            List<Service> services = new ArrayList<>(replicas);
-
-            for (int i = 0; i < replicas; i++) {
-                String perPodServiceName = serviceName + "-" + i;
-                Labels selector = Labels.fromMap(getSelectorLabels()).withPod("kafka-" + i);
-                services.add(createService(perPodServiceName, "ClusterIP", ports, getLabelsWithName(perPodServiceName), selector.toMap(), Collections.emptyMap()));
-            }
-
-            return services;
-        }
-
-        return Collections.EMPTY_LIST;
-    }*/
-
-    /**
-     * Generates list of Routes per pod
-     * @return The generated Routes
-     */
-    /*public List<Route> generateExternalRoutes() {
-        if (listeners != null && listeners.getExternal() != null) {
-            List<ServicePort> ports = new ArrayList<>(1);
-            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
-
-            List<Route> routes = new ArrayList<>(replicas + 1);
-
-            // Bootstrap route
-            Route bootstrapRoute = new RouteBuilder()
-                    .withNewMetadata()
-                        .withName(serviceName)
-                        .withLabels(getLabelsWithName(serviceName))
-                        .withNamespace(namespace)
-                    .withO
-                    .endMetadata()
-                    .withNewSpec()
-                        .withNewTo()
-                            .withKind("Service")
-                            .withName(serviceName)
-                        .endTo()
-                        .withNewPort()
-                            .withNewTargetPort(EXTERNAL_PORT)
-                        .endPort()
-                        .withNewTls()
-                            .withTermination("passthrough")
-                        .endTls()
-                    .endSpec()
-                    .build();
-
-            routes.add(bootstrapRoute);
-
-            for (int i = 0; i < replicas; i++) {
-                String perPodServiceName = serviceName + "-" + i;
-
-                Route route = new RouteBuilder()
-                        .withNewMetadata()
-                            .withName(perPodServiceName)
-                            .withLabels(getLabelsWithName(perPodServiceName))
-                            .withNamespace(namespace)
-                        .endMetadata()
-                        .withNewSpec()
-                            .withNewTo()
-                                .withKind("Service")
-                                .withName(perPodServiceName)
-                            .endTo()
-                            .withNewPort()
-                                .withNewTargetPort(EXTERNAL_PORT)
-                            .endPort()
-                            .withNewTls()
-                                .withTermination("passthrough")
-                            .endTls()
-                        .endSpec()
-                        .build();
-
-                routes.add(route);
-            }
-
-            return routes;
-        }
-
-        return Collections.EMPTY_LIST;
-    }*/
-
-    /**
      * Generates a headless Service according to configured defaults
      * @return The generated Service
      */
@@ -595,6 +509,16 @@ public class KafkaCluster extends AbstractModel {
      * @return The generate StatefulSet
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
+        return generateStatefulSet(isOpenShift, Collections.EMPTY_MAP);
+    }
+
+    /**
+     * Generates a StatefulSet according to configured defaults
+     * @param isOpenShift True iff this operator is operating within OpenShift.
+     * @return The generate StatefulSet
+     */
+    public StatefulSet generateStatefulSet(boolean isOpenShift, Map<String, String> externalAddresses) {
+        this.externalAddresses = externalAddresses;
 
         return createStatefulSet(
                 getVolumes(),
@@ -754,8 +678,8 @@ public class KafkaCluster extends AbstractModel {
 
         List<Container> initContainers = new ArrayList<>();
 
-        if (rack != null || (listeners != null && listeners.getExternal() != null)) {
-
+        //if (rack != null || (listeners != null && listeners.getExternal() != null)) {
+        if (rack != null) {
             ResourceRequirements resources = new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
                     .addToRequests("memory", new Quantity("128Mi"))
@@ -765,15 +689,15 @@ public class KafkaCluster extends AbstractModel {
 
             List<EnvVar> varList = new ArrayList<>();
 
-            if (rack != null)   {
-                varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
-            }
+            //if (rack != null)   {
+            varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+            //}
 
-            if (listeners != null && listeners.getExternal() != null)   {
+            /*if (listeners != null && listeners.getExternal() != null)   {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE"));
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TYPE, listeners.getExternal().getType()));
-            }
+            }*/
 
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
@@ -860,10 +784,11 @@ public class KafkaCluster extends AbstractModel {
 
             if (listeners.getExternal() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE"));
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TYPE, listeners.getExternal().getType()));
+                //varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TYPE, listeners.getExternal().getType()));
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses.values())));
 
-                if (listeners.getExternal().getAuthentication() != null && KafkaListenerAuthenticationTls.TYPE_TLS.equals(listeners.getTls().getAuthentication().getType())) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS));
+                if (listeners.getExternal().getAuthentication() != null) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, listeners.getExternal().getAuthentication().getType()));
                 }
             }
         }
@@ -1000,5 +925,13 @@ public class KafkaCluster extends AbstractModel {
      */
     public void setAuthorization(KafkaAuthorization authorization) {
         this.authorization = authorization;
+    }
+
+    public boolean isExposed()  {
+        return listeners != null && listeners.getExternal() != null;
+    }
+
+    public boolean isExposedWithRoute()  {
+        return isExposed() && KafkaListenerExternalRoute.TYPE_ROUTE.equals(listeners.getExternal().getType());
     }
 }
