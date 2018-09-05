@@ -17,6 +17,7 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +39,7 @@ import static java.util.Arrays.asList;
 public class ResourceOperatorSupplier {
     public final SecretOperator secretOperations;
     public final ServiceOperator serviceOperations;
+    public final RouteOperator routeOperations;
     public final ZookeeperSetOperator zkSetOperations;
     public final KafkaSetOperator kafkaSetOperations;
     public final ConfigMapOperator configMapOperations;
@@ -48,8 +51,9 @@ public class ResourceOperatorSupplier {
     public final CrdOperator<KubernetesClient, Kafka, KafkaAssemblyList, DoneableKafka> kafkaOperator;
     public final NetworkPolicyOperator networkPolicyOperator;
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, boolean isOpenShift, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
+            isOpenShift ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
             new ZookeeperSetOperator(vertx, client, operationTimeoutMs),
             new KafkaSetOperator(vertx, client, operationTimeoutMs),
             new ConfigMapOperator(vertx, client),
@@ -64,6 +68,7 @@ public class ResourceOperatorSupplier {
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
+                                    RouteOperator routeOperations,
                                     ZookeeperSetOperator zkSetOperations,
                                     KafkaSetOperator kafkaSetOperations,
                                     ConfigMapOperator configMapOperations,
@@ -76,6 +81,7 @@ public class ResourceOperatorSupplier {
                                     NetworkPolicyOperator networkPolicyOperator,
                                     CrdOperator<KubernetesClient, Kafka, KafkaAssemblyList, DoneableKafka> kafkaOperator) {
         this.serviceOperations = serviceOperations;
+        this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
         this.kafkaSetOperations = kafkaSetOperations;
         this.configMapOperations = configMapOperations;

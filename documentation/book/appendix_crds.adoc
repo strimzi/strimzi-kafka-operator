@@ -126,11 +126,13 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 [options="header"]
 |====
-|Field         |Description
-|plain  1.2+<.<|Configures plain listener on port 9092.
+|Field            |Description
+|plain     1.2+<.<|Configures plain listener on port 9092.
 |xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`]
-|tls    1.2+<.<|Configures TLS listener on port 9093.
+|tls       1.2+<.<|Configures TLS listener on port 9093.
 |xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+|external  1.2+<.<|Configures external listener on port 9094. The type depends on the value of the `external.type` property within the given object, which must be one of [route].
+|xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`]
 |====
 
 [id='type-KafkaListenerPlain-{context}']
@@ -164,7 +166,11 @@ It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [id='type-KafkaListenerAuthenticationScramSha512-{context}']
 ### `KafkaListenerAuthenticationScramSha512` schema reference
 
+<<<<<<< HEAD
 Used in: xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+=======
+Used in: xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+>>>>>>> WIP
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationScramSha512` from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`].
@@ -176,17 +182,34 @@ It must have the value `scram-sha-512` for the type `KafkaListenerAuthentication
 |string
 |====
 
+<<<<<<< HEAD
 [id='type-KafkaListenerTls-{context}']
 ### `KafkaListenerTls` schema reference
+=======
+[id='type-KafkaListenerExternalRoute-{context}']
+### `KafkaListenerExternalRoute` schema reference
+>>>>>>> WIP
 
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 
+<<<<<<< HEAD
 [options="header"]
 |====
 |Field                  |Description
 |authentication  1.2+<.<|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+=======
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalRoute` from other subtypes which may be added in the future.
+It must have the value `route` for the type `KafkaListenerExternalRoute`.
+[options="header"]
+|====
+|Field                  |Description
+|authentication  1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`]
+|type            1.2+<.<|Must be `route`.
+|string
+>>>>>>> WIP
 |====
 
 [id='type-KafkaAuthorizationSimple-{context}']

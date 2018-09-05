@@ -48,6 +48,11 @@ public class Labels {
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
 
     /**
+     * Used to identify individual pods
+     */
+    public static final String STRIMZI_POD_LABEL = STRIMZI_DOMAIN + "pod";
+
+    /**
      * The empty set of labels.
      */
     public static final Labels EMPTY = new Labels(emptyMap());
@@ -178,6 +183,13 @@ public class Labels {
      */
     public Labels withName(String name) {
         return with(STRIMZI_NAME_LABEL, name);
+    }
+
+    /**
+     * The same labels as this instance, but with the given {@code name} for the {@code strimzi.io/name} key.
+     */
+    public Labels withPod(String name) {
+        return with(STRIMZI_POD_LABEL, name);
     }
 
     /**

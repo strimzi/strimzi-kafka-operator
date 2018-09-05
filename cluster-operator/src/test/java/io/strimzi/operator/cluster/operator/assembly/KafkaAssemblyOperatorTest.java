@@ -45,6 +45,7 @@ import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -1027,7 +1028,7 @@ public class KafkaAssemblyOperatorTest {
 
     private static ResourceOperatorSupplier supplierWithMocks() {
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
-                mock(ServiceOperator.class), mock(ZookeeperSetOperator.class),
+                mock(ServiceOperator.class), mock(RouteOperator.class), mock(ZookeeperSetOperator.class),
                 mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
                 mock(PvcOperator.class), mock(DeploymentOperator.class),
                 mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),

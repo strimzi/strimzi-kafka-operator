@@ -60,6 +60,16 @@ spec:
                           properties:
                             type:
                               type: string
+                    external:
+                      type: object
+                      properties:
+                        authentication:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                        type:
+                          type: string
                 authorization:
                   type: object
                   properties:

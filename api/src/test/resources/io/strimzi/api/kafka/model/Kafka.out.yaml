@@ -20,6 +20,10 @@ spec:
       tls:
         authentication:
           type: "tls"
+      external:
+        type: "route"
+        authentication:
+          type: "tls"
     authorization:
       type: "simple"
       superUsers:

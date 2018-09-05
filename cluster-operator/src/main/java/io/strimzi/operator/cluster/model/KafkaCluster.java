@@ -30,6 +30,9 @@ import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyIngressRuleBuilde
 import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.api.model.RouteBuilder;
+
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -37,6 +40,7 @@ import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.KafkaListenerExternalRoute;
 import io.strimzi.api.kafka.model.KafkaListeners;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
@@ -79,6 +83,9 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_CLIENTTLS_ENABLED = "KAFKA_CLIENTTLS_ENABLED";
     /** The authentication to configure for the CLIENTTLS listener (TLS transport) . */
     private static final String ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION = "KAFKA_CLIENTTLS_AUTHENTICATION";
+    private static final String ENV_VAR_KAFKA_EXTERNAL_ENABLED = "KAFKA_EXTERNAL_ENABLED";
+    private static final String ENV_VAR_KAFKA_EXTERNAL_TYPE = "KAFKA_EXTERNAL_TYPE";
+    private static final String ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION = "KAFKA_EXTERNAL_AUTHENTICATION";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
 
@@ -90,6 +97,9 @@ public class KafkaCluster extends AbstractModel {
 
     protected static final int CLIENT_TLS_PORT = 9093;
     protected static final String CLIENT_TLS_PORT_NAME = "clientstls";
+
+    protected static final int EXTERNAL_PORT = 9094;
+    protected static final String EXTERNAL_PORT_NAME = "external";
 
     protected static final String KAFKA_NAME = "kafka";
     protected static final String BROKER_CERTS_VOLUME = "broker-certs";
@@ -179,6 +189,10 @@ public class KafkaCluster extends AbstractModel {
 
     public static String serviceName(String cluster) {
         return cluster + KafkaCluster.SERVICE_NAME_SUFFIX;
+    }
+
+    public static String externalServiceName(String cluster, int pod) {
+        return kafkaClusterName(cluster) + "-" + pod;
     }
 
     public static String headlessServiceName(String cluster) {
@@ -342,6 +356,10 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
+        if (listeners != null && listeners.getExternal() != null) {
+            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+        }
+
         if (isMetricsEnabled()) {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
@@ -366,6 +384,10 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
+        if (listeners != null && listeners.getExternal() != null) {
+            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+        }
+
         return ports;
     }
 
@@ -376,6 +398,187 @@ public class KafkaCluster extends AbstractModel {
     public Service generateService() {
         return createService("ClusterIP", getServicePorts(), getPrometheusAnnotations());
     }
+
+    /**
+     * Generates service for pod {@pod}. This service is used for exposing it externally.
+     *
+     * @param pod   Number of the pod for which this service should be generated
+     * @return The generated Service
+     */
+    public Service generateExternalService(int pod) {
+        if (listeners != null && listeners.getExternal() != null) {
+            String perPodServiceName = externalServiceName(cluster, pod);
+
+            List<ServicePort> ports = new ArrayList<>(1);
+            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+
+            Labels selector = Labels.fromMap(getSelectorLabels()).withPod(kafkaPodName(cluster, pod));
+
+            return createService(perPodServiceName, "ClusterIP", ports, getLabelsWithName(perPodServiceName), selector.toMap(), Collections.emptyMap());
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates route for pod {@pod}. This route is used for exposing it externally using OpenShift Routes.
+     *
+     * @param pod   Number of the pod for which this route should be generated
+     * @return The generated Route
+     */
+    public Route generateExternalRoute(int pod) {
+        if (listeners != null && listeners.getExternal() != null && KafkaListenerExternalRoute.TYPE_ROUTE.equals(listeners.getExternal().getType())) {
+            String perPodServiceName = externalServiceName(cluster, pod);
+
+            Route route = new RouteBuilder()
+                    .withNewMetadata()
+                        .withName(perPodServiceName)
+                        .withLabels(getLabelsWithName(perPodServiceName))
+                        .withNamespace(namespace)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewTo()
+                            .withKind("Service")
+                            .withName(perPodServiceName)
+                        .endTo()
+                        .withNewPort()
+                            .withNewTargetPort(EXTERNAL_PORT)
+                        .endPort()
+                        .withNewTls()
+                            .withTermination("passthrough")
+                        .endTls()
+                    .endSpec()
+                    .build();
+
+            return route;
+
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates list of Bootstrap route which can be used to bootstrap clients.
+     * @return The generated Routes
+     */
+    public Route generateExternalBootstrapRoute() {
+        if (listeners != null && listeners.getExternal() != null && KafkaListenerExternalRoute.TYPE_ROUTE.equals(listeners.getExternal().getType())) {
+            Route route = new RouteBuilder()
+                    .withNewMetadata()
+                        .withName(serviceName)
+                        .withLabels(getLabelsWithName(serviceName))
+                        .withNamespace(namespace)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewTo()
+                            .withKind("Service")
+                            .withName(serviceName)
+                        .endTo()
+                        .withNewPort()
+                            .withNewTargetPort(EXTERNAL_PORT)
+                        .endPort()
+                        .withNewTls()
+                            .withTermination("passthrough")
+                        .endTls()
+                    .endSpec()
+                    .build();
+
+            return route;
+
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates list of External
+     * @return The generated Services
+     */
+    /*public List<Service> generateExternalServices() {
+        if (listeners != null && listeners.getExternal() != null) {
+            List<ServicePort> ports = new ArrayList<>(1);
+            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+
+            List<Service> services = new ArrayList<>(replicas);
+
+            for (int i = 0; i < replicas; i++) {
+                String perPodServiceName = serviceName + "-" + i;
+                Labels selector = Labels.fromMap(getSelectorLabels()).withPod("kafka-" + i);
+                services.add(createService(perPodServiceName, "ClusterIP", ports, getLabelsWithName(perPodServiceName), selector.toMap(), Collections.emptyMap()));
+            }
+
+            return services;
+        }
+
+        return Collections.EMPTY_LIST;
+    }*/
+
+    /**
+     * Generates list of Routes per pod
+     * @return The generated Routes
+     */
+    /*public List<Route> generateExternalRoutes() {
+        if (listeners != null && listeners.getExternal() != null) {
+            List<ServicePort> ports = new ArrayList<>(1);
+            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+
+            List<Route> routes = new ArrayList<>(replicas + 1);
+
+            // Bootstrap route
+            Route bootstrapRoute = new RouteBuilder()
+                    .withNewMetadata()
+                        .withName(serviceName)
+                        .withLabels(getLabelsWithName(serviceName))
+                        .withNamespace(namespace)
+                    .withO
+                    .endMetadata()
+                    .withNewSpec()
+                        .withNewTo()
+                            .withKind("Service")
+                            .withName(serviceName)
+                        .endTo()
+                        .withNewPort()
+                            .withNewTargetPort(EXTERNAL_PORT)
+                        .endPort()
+                        .withNewTls()
+                            .withTermination("passthrough")
+                        .endTls()
+                    .endSpec()
+                    .build();
+
+            routes.add(bootstrapRoute);
+
+            for (int i = 0; i < replicas; i++) {
+                String perPodServiceName = serviceName + "-" + i;
+
+                Route route = new RouteBuilder()
+                        .withNewMetadata()
+                            .withName(perPodServiceName)
+                            .withLabels(getLabelsWithName(perPodServiceName))
+                            .withNamespace(namespace)
+                        .endMetadata()
+                        .withNewSpec()
+                            .withNewTo()
+                                .withKind("Service")
+                                .withName(perPodServiceName)
+                            .endTo()
+                            .withNewPort()
+                                .withNewTargetPort(EXTERNAL_PORT)
+                            .endPort()
+                            .withNewTls()
+                                .withTermination("passthrough")
+                            .endTls()
+                        .endSpec()
+                        .build();
+
+                routes.add(route);
+            }
+
+            return routes;
+        }
+
+        return Collections.EMPTY_LIST;
+    }*/
 
     /**
      * Generates a headless Service according to configured defaults
@@ -459,7 +662,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     private List<ContainerPort> getContainerPortList() {
-        List<ContainerPort> portList = new ArrayList<>(3);
+        List<ContainerPort> portList = new ArrayList<>(5);
         portList.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
 
         if (listeners != null && listeners.getPlain() != null) {
@@ -468,6 +671,10 @@ public class KafkaCluster extends AbstractModel {
 
         if (listeners != null && listeners.getTls() != null) {
             portList.add(createContainerPort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, "TCP"));
+        }
+
+        if (listeners != null && listeners.getExternal() != null) {
+            portList.add(createContainerPort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, "TCP"));
         }
 
         if (isMetricsEnabled) {
@@ -547,7 +754,7 @@ public class KafkaCluster extends AbstractModel {
 
         List<Container> initContainers = new ArrayList<>();
 
-        if (rack != null) {
+        if (rack != null || (listeners != null && listeners.getExternal() != null)) {
 
             ResourceRequirements resources = new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
@@ -556,9 +763,17 @@ public class KafkaCluster extends AbstractModel {
                     .addToLimits("memory", new Quantity("256Mi"))
                     .build();
 
-            List<EnvVar> varList =
-                    Arrays.asList(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"),
-                            buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+            List<EnvVar> varList = new ArrayList<>();
+
+            if (rack != null)   {
+                varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+            }
+
+            if (listeners != null && listeners.getExternal() != null)   {
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE"));
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TYPE, listeners.getExternal().getType()));
+            }
 
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
@@ -640,6 +855,15 @@ public class KafkaCluster extends AbstractModel {
 
                 if (listeners.getTls().getAuth() != null) {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION, listeners.getTls().getAuth().getType()));
+                }
+            }
+
+            if (listeners.getExternal() != null) {
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE"));
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TYPE, listeners.getExternal().getType()));
+
+                if (listeners.getExternal().getAuthentication() != null && KafkaListenerAuthenticationTls.TYPE_TLS.equals(listeners.getTls().getAuthentication().getType())) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS));
                 }
             }
         }

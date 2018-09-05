@@ -695,22 +695,26 @@ public abstract class AbstractModel {
         return probe;
     }
 
-    protected Service createService(String name, List<ServicePort> ports) {
-        return createService(name, ports, Collections.emptyMap());
+    protected Service createService(String type, List<ServicePort> ports) {
+        return createService(type, ports, Collections.emptyMap());
     }
 
     protected Service createService(String type, List<ServicePort> ports,  Map<String, String> annotations) {
+        return createService(serviceName, type, ports, getLabelsWithName(serviceName), getSelectorLabels(), Collections.emptyMap());
+    }
+
+    protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
-                    .withName(serviceName)
-                    .withLabels(getLabelsWithName(serviceName))
-                    .withNamespace(namespace)
-                    .withAnnotations(annotations)
+                .withName(name)
+                .withLabels(labels)
+                .withNamespace(namespace)
+                .withAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
-                    .withType(type)
-                    .withSelector(getSelectorLabels())
-                    .withPorts(ports)
+                .withType(type)
+                .withSelector(selector)
+                .withPorts(ports)
                 .endSpec()
                 .build();
         log.trace("Created service {}", service);

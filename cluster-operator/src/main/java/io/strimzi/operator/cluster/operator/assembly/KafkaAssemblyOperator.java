@@ -38,8 +38,12 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
+
+import io.fabric8.openshift.api.model.Route;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -68,6 +72,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final ZookeeperSetOperator zkSetOperations;
     private final KafkaSetOperator kafkaSetOperations;
     private final ServiceOperator serviceOperations;
+    private final RouteOperator routeOperations;
     private final PvcOperator pvcOperations;
     private final DeploymentOperator deploymentOperations;
     private final ConfigMapOperator configMapOperations;
@@ -86,6 +91,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         super(vertx, isOpenShift, ResourceType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations, supplier.networkPolicyOperator);
         this.operationTimeoutMs = operationTimeoutMs;
         this.serviceOperations = supplier.serviceOperations;
+        this.routeOperations = supplier.routeOperations;
         this.zkSetOperations = supplier.zkSetOperations;
         this.kafkaSetOperations = supplier.kafkaSetOperations;
         this.configMapOperations = supplier.configMapOperations;
@@ -619,6 +625,69 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorSecret() {
             return withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name), entityOperator == null ? null : entityOperator.generateSecret()));
         }
+/*=======
+        getKafkaClusterDescription(kafkaAssembly, assemblySecrets)
+                .compose(desc -> desc.withVoid(
+                        serviceAccountOperator.reconcile(namespace,
+                        KafkaCluster.initContainerServiceAccountName(desc.kafka().getCluster()),
+                        desc.kafka.generateInitContainerServiceAccount())))
+                .compose(desc -> desc.withVoid(clusterRoleBindingOperator.reconcile(
+                        KafkaCluster.initContainerClusterRoleBindingName(desc.kafka().getCluster()),
+                        desc.kafka.generateClusterRoleBinding(namespace))))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.service())))
+                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessServiceName(), desc.headlessService())))
+                .compose(desc -> {
+                    int replicas = desc.kafka.getReplicas();
+                    List<Future> serviceFutures = new ArrayList<>(replicas);
+
+                    for (int i = 0; i < replicas; i++) {
+                        serviceFutures.add(serviceOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), desc.kafka().generateExternalService(i)));
+                    }
+
+                    return desc.withVoid(CompositeFuture.join(serviceFutures));
+                })
+                .compose(desc -> {
+                    Future future = Future.succeededFuture();
+                    Route route = desc.kafka().generateExternalBootstrapRoute();
+
+                    if (routeOperations != null) {
+                        future = routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), route);
+                    } else if (route != null)   {
+                        log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
+                    }
+
+                    return desc.withVoid(future);
+                })
+                .compose(desc -> {
+                    int replicas = desc.kafka.getReplicas();
+                    List<Future> routeFutures = new ArrayList<>(replicas);
+
+                    for (int i = 0; i < replicas; i++) {
+                        Route route = desc.kafka().generateExternalRoute(i);
+
+                        if (routeOperations != null) {
+                            routeFutures.add(routeOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), route));
+                        } else if (route != null)   {
+                            log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
+                            return desc.withVoid(Future.succeededFuture());
+                        }
+                    }
+
+                    return desc.withVoid(CompositeFuture.join(routeFutures));
+                })
+                .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
+                .compose(desc -> desc.withAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.clientsCASecret())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.clientsPublicKeySecret())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), desc.clusterPublicKeySecret())))
+                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), desc.brokersInternalSecret())))
+                .compose(desc -> desc.withDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.statefulSet())))
+                .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.diffs().resource(), desc.isForceRestart())))
+                .compose(desc -> desc.withVoid(kafkaSetOperations.scaleUp(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
+                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.service(), 1_000, operationTimeoutMs)))
+                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.headlessService(), 1_000, operationTimeoutMs)))
+                .compose(desc -> chainFuture.complete(), chainFuture);
+>>>>>>> WIP*/
 
     }
 
@@ -628,8 +697,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         log.debug("{}: delete kafka {}", reconciliation, name);
         String kafkaSsName = KafkaCluster.kafkaClusterName(name);
         StatefulSet ss = kafkaSetOperations.get(namespace, kafkaSsName);
+        int replicas = ss != null ? ss.getSpec().getReplicas() : 0;
         boolean deleteClaims = ss == null ? false : KafkaCluster.deleteClaim(ss);
-        List<Future> result = new ArrayList<>(8 + (deleteClaims ? ss.getSpec().getReplicas() : 0));
+        List<Future> result = new ArrayList<>(8 + (deleteClaims ? replicas : 0) + 2 * replicas);
 
         result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricAndLogConfigsName(name), null));
         result.add(serviceOperations.reconcile(namespace, KafkaCluster.serviceName(name), null));
@@ -641,10 +711,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         result.add(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), null));
         result.add(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), null));
 
+        for (int i = 0; i < replicas; i++) {
+            result.add(serviceOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), null));
+
+            if (routeOperations != null)    {
+                result.add(routeOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), null));
+            }
+        }
+
+        if (routeOperations != null)    {
+            result.add(routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), null));
+        }
+
         if (deleteClaims) {
             log.debug("{}: delete kafka {} PVCs", reconciliation, name);
 
-            for (int i = 0; i < ss.getSpec().getReplicas(); i++) {
+            for (int i = 0; i < replicas; i++) {
                 result.add(pvcOperations.reconcile(namespace,
                         KafkaCluster.getPersistentVolumeClaimName(kafkaSsName, i), null));
             }

@@ -89,7 +89,7 @@ public class Main {
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift,
-                config.getOperationTimeoutMs(), certManager, new ResourceOperatorSupplier(vertx, client, config.getOperationTimeoutMs()));
+                config.getOperationTimeoutMs(), certManager, new ResourceOperatorSupplier(vertx, client, isOpenShift, config.getOperationTimeoutMs()));
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations, networkPolicyOperator);
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
