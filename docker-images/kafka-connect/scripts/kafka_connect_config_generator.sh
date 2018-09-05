@@ -37,7 +37,7 @@ EOF
 fi
 
 if [ -n "$KAFKA_CONNECT_SASL_USERNAME" ] && [ -n "$KAFKA_CONNECT_SASL_PASSWORD_FILE" ]; then
-    if [ "$SECURITY_PROTOCOL" -eq "SSL" ]; then
+    if [ "$SECURITY_PROTOCOL" = "SSL" ]; then
         SECURITY_PROTOCOL="SASL_SSL"
     else
         SECURITY_PROTOCOL="SASL_PLAINTEXT"
