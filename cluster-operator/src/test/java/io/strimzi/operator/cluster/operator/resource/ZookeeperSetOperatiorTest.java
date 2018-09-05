@@ -5,18 +5,16 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.operator.MockCertManager;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.AbstractModel.containerEnvVars;
@@ -36,8 +34,8 @@ public class ZookeeperSetOperatiorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        a = ZookeeperCluster.fromCrd(certManager, getResource(), getInitialSecrets(getResource().getMetadata().getName())).generateStatefulSet(true);
-        b = ZookeeperCluster.fromCrd(certManager, getResource(), getInitialSecrets(getResource().getMetadata().getName())).generateStatefulSet(true);
+        a = ZookeeperCluster.fromCrd(getResource()).generateStatefulSet(true);
+        b = ZookeeperCluster.fromCrd(getResource()).generateStatefulSet(true);
     }
 
     private Kafka getResource() {
@@ -50,9 +48,9 @@ public class ZookeeperSetOperatiorTest {
         return ResourceUtils.createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay, healthTimeout);
     }
 
-    private List<Secret> getInitialSecrets(String clusterName) {
+    private ClusterCa getInitialSecrets(String clusterName) {
         String clusterCmNamespace = "test";
-        return ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace, clusterName);
+        return ResourceUtils.createInitialClusterCa(clusterCmNamespace, clusterName);
     }
 
     private StatefulSetDiff diff() {

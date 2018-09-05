@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -246,10 +247,9 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        volumeMountList.add(createVolumeMount(EntityOperator.TLS_SIDECAR_VOLUME_NAME, EntityOperator.TLS_SIDECAR_VOLUME_MOUNT));
-        return volumeMountList;
+        return asList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath),
+            createVolumeMount(EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
+            createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }
 
     public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {

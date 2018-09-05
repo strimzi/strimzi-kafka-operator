@@ -17,7 +17,8 @@ public class UserOperatorConfig {
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_LABELS = "STRIMZI_LABELS";
-    public static final String STRIMZI_CA_NAME = "STRIMZI_CA_NAME";
+    public static final String STRIMZI_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
+    public static final String STRIMZI_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
     public static final String STRIMZI_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
     public static final String STRIMZI_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
@@ -31,7 +32,8 @@ public class UserOperatorConfig {
     private final String zookeperConnect;
     private final long zookeeperSessionTimeoutMs;
     private Labels labels;
-    private final String caName;
+    private final String caCertSecretName;
+    private final String caKeySecretName;
     private final String caNamespace;
 
     /**
@@ -42,16 +44,17 @@ public class UserOperatorConfig {
      * @param zookeperConnect Connecton URL for Zookeeper
      * @param zookeeperSessionTimeoutMs Session timeout for Zookeeper connections
      * @param labels    Map with labels which should be used to find the KafkaUser resources
-     * @param caName    Name of the secret containing the Certification Authority
+     * @param caCertSecretName    Name of the secret containing the Certification Authority
      * @param caNamespace   Namespace with the CA secret
      */
-    public UserOperatorConfig(String namespace, long reconciliationIntervalMs, String zookeperConnect, long zookeeperSessionTimeoutMs, Labels labels, String caName, String caNamespace) {
+    public UserOperatorConfig(String namespace, long reconciliationIntervalMs, String zookeperConnect, long zookeeperSessionTimeoutMs, Labels labels, String caCertSecretName, String caKeySecretName, String caNamespace) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.zookeperConnect = zookeperConnect;
         this.zookeeperSessionTimeoutMs = zookeeperSessionTimeoutMs;
         this.labels = labels;
-        this.caName = caName;
+        this.caCertSecretName = caCertSecretName;
+        this.caKeySecretName = caKeySecretName;
         this.caNamespace = caNamespace;
     }
 
@@ -94,9 +97,14 @@ public class UserOperatorConfig {
             throw new InvalidConfigurationException("Failed to parse labels from " + STRIMZI_LABELS, e);
         }
 
-        String caName = map.get(UserOperatorConfig.STRIMZI_CA_NAME);
-        if (caName == null || caName.isEmpty()) {
-            throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_CA_NAME + " cannot be null");
+        String caCertSecretName = map.get(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME);
+        if (caCertSecretName == null || caCertSecretName.isEmpty()) {
+            throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME + " cannot be null");
+        }
+
+        String caKeySecretName = map.get(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME);
+        if (caKeySecretName == null || caKeySecretName.isEmpty()) {
+            throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME + " cannot be null");
         }
 
         String caNamespace = map.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE);
@@ -104,7 +112,7 @@ public class UserOperatorConfig {
             caNamespace = namespace;
         }
 
-        return new UserOperatorConfig(namespace, reconciliationInterval, zookeeperConnect, zookeeperSessionTimeoutMs, labels, caName, caNamespace);
+        return new UserOperatorConfig(namespace, reconciliationInterval, zookeeperConnect, zookeeperSessionTimeoutMs, labels, caCertSecretName, caKeySecretName, caNamespace);
     }
 
     /**
@@ -131,8 +139,15 @@ public class UserOperatorConfig {
     /**
      * @return  The name of the secret with the Client CA
      */
-    public String getCaName() {
-        return caName;
+    public String getCaCertSecretName() {
+        return caCertSecretName;
+    }
+
+    /**
+     * @return  The name of the secret with the Client CA
+     */
+    public String getCaKeySecretName() {
+        return caKeySecretName;
     }
 
     /**
@@ -164,7 +179,7 @@ public class UserOperatorConfig {
                 ",zookeperConnect=" + zookeperConnect +
                 ",zookeeperSessionTimeoutMs=" + zookeeperSessionTimeoutMs +
                 ",labels=" + labels +
-                ",caName=" + caName +
+                ",caName=" + caCertSecretName +
                 ",caNamespace=" + caNamespace +
                 ")";
     }

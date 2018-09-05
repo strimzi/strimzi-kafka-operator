@@ -55,9 +55,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
     protected static final int LOCK_TIMEOUT_MS = 10000;
-    protected static final int CERTS_EXPIRATION_DAYS = 365;
-    public static final String CLUSTER_CA_CRT = "cluster-ca.crt";
-    public static final String CLUSTER_CA_KEY = "cluster-ca.key";
+
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;

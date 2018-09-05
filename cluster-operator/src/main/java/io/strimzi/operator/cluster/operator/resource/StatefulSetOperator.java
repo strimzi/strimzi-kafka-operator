@@ -33,8 +33,7 @@ import java.util.List;
  * in addition to the usual operations.
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
-    public static final String STRIMZI_CLUSTER_OPERATOR_DOMAIN = "operator.strimzi.io";
-    public static final String ANNOTATION_GENERATION = STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/statefulset-generation";
+
     private static final int NO_GENERATION = -1;
     private static final String NO_UID = "NULL";
     private static final int INIT_GENERATION = 0;

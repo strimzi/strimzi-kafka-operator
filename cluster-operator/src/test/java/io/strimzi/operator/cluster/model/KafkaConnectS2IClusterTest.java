@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
-
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -84,7 +83,8 @@ public class KafkaConnectS2IClusterTest {
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
 
     @Rule
-    public ResourceTester<KafkaConnectS2I, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2I.class, KafkaConnectS2ICluster::fromCrd);
+    public ResourceTester<KafkaConnectS2I, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2I.class,
+        x -> KafkaConnectS2ICluster.fromCrd(x));
 
 
     @Test

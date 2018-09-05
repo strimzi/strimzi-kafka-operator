@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -15,6 +16,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.certs.CertManager;
+import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -23,11 +25,16 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
+import static io.strimzi.test.TestUtils.set;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
@@ -54,7 +61,7 @@ public class ZookeeperClusterTest {
 
     private final CertManager certManager = new MockCertManager();
     private final Kafka ka = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson);
-    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(certManager, ka, ResourceUtils.createKafkaClusterInitialSecrets(namespace, ka.getMetadata().getName()));
+    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka);
 
     @Rule
     public ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, ZookeeperCluster::fromCrd);
@@ -161,8 +168,10 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(ZookeeperCluster.LEADER_ELECTION_PORT), containers.get(1).getPorts().get(1).getContainerPort());
         assertEquals(ZookeeperCluster.CLIENT_PORT_NAME, containers.get(1).getPorts().get(2).getName());
         assertEquals(new Integer(ZookeeperCluster.CLIENT_PORT), containers.get(1).getPorts().get(2).getContainerPort());
-        assertEquals(ZookeeperCluster.TLS_SIDECAR_VOLUME_NAME, containers.get(1).getVolumeMounts().get(0).getName());
-        assertEquals(ZookeeperCluster.TLS_SIDECAR_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(0).getMountPath());
+        assertEquals(ZookeeperCluster.TLS_SIDECAR_NODES_VOLUME_NAME, containers.get(1).getVolumeMounts().get(0).getName());
+        assertEquals(ZookeeperCluster.TLS_SIDECAR_NODES_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(0).getMountPath());
+        assertEquals(ZookeeperCluster.TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, containers.get(1).getVolumeMounts().get(1).getName());
+        assertEquals(ZookeeperCluster.TLS_SIDECAR_CLUSTER_CA_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(1).getMountPath());
     }
 
     /**
@@ -177,7 +186,7 @@ public class ZookeeperClusterTest {
                     .endKafka()
                 .endSpec()
             .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(certManager, ka, ResourceUtils.createKafkaClusterInitialSecrets(namespace, ka.getMetadata().getName()));
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka);
         StatefulSet ss = zc.generateStatefulSet(true);
         assertFalse(ZookeeperCluster.deleteClaim(ss));
 
@@ -188,7 +197,7 @@ public class ZookeeperClusterTest {
                     .endKafka()
                 .endSpec()
             .build();
-        zc = ZookeeperCluster.fromCrd(certManager, ka, ResourceUtils.createKafkaClusterInitialSecrets(namespace, ka.getMetadata().getName()));
+        zc = ZookeeperCluster.fromCrd(ka);
         ss = zc.generateStatefulSet(true);
         assertFalse(ZookeeperCluster.deleteClaim(ss));
 
@@ -199,7 +208,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
             .build();
-        zc = ZookeeperCluster.fromCrd(certManager, ka, ResourceUtils.createKafkaClusterInitialSecrets(namespace, ka.getMetadata().getName()));
+        zc = ZookeeperCluster.fromCrd(ka);
         ss = zc.generateStatefulSet(true);
         assertTrue(ZookeeperCluster.deleteClaim(ss));
     }
@@ -230,5 +239,27 @@ public class ZookeeperClusterTest {
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
         assertEquals(1, resource.getMetadata().getOwnerReferences().size());
         assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
+    }
+
+    @Test
+    public void testGenerateBrokerSecret() throws CertificateParsingException {
+        ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
+        clusterCa.createOrRenew(namespace, cluster, emptyMap(), null);
+
+        Secret secret = zc.generateNodesSecret(clusterCa, ka);
+        assertEquals(set(
+                "foo-zookeeper-0.crt",  "foo-zookeeper-0.key",
+                "foo-zookeeper-1.crt", "foo-zookeeper-1.key",
+                "foo-zookeeper-2.crt", "foo-zookeeper-2.key"),
+                secret.getData().keySet());
+        X509Certificate cert = Ca.cert(secret, "foo-zookeeper-0.crt");
+        assertEquals("CN=foo-zookeeper, O=io.strimzi", cert.getSubjectDN().getName());
+        assertEquals(set(
+                asList(2, "foo-zookeeper-0.foo-zookeeper-nodes.test.svc.cluster.local"),
+                asList(2, "foo-zookeeper-client"),
+                asList(2, "foo-zookeeper-client.test"),
+                asList(2, "foo-zookeeper-client.test.svc.cluster.local")),
+                new HashSet<Object>(cert.getSubjectAlternativeNames()));
+
     }
 }

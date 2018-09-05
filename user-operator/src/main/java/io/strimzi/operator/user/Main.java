@@ -63,7 +63,7 @@ public class Main {
         ScramShaCredentialsOperator scramShaCredentialsOperator = new ScramShaCredentialsOperator(vertx, scramShaCredentials);
 
         KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
-                certManager, crdOperations, secretOperations, scramShaCredentialsOperator, aclOperations, config.getCaName(), config.getCaNamespace());
+                certManager, crdOperations, secretOperations, scramShaCredentialsOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace());
 
         Future<String> fut = Future.future();
         UserOperator operator = new UserOperator(config.getNamespace(),

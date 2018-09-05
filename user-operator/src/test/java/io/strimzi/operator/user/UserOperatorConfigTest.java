@@ -6,11 +6,10 @@ package io.strimzi.operator.user;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
@@ -22,7 +21,8 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, "label1=value1,label2=value2");
-        envVars.put(UserOperatorConfig.STRIMZI_CA_NAME, "ca-secret");
+        envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, "ca-secret-cert");
+        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, "ca-secret-key");
         envVars.put(UserOperatorConfig.STRIMZI_CA_NAMESPACE, "differentnamespace");
         envVars.put(UserOperatorConfig.STRIMZI_ZOOKEEPER_CONNECT, "somehost:2181");
         envVars.put(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS, "6000");
@@ -41,7 +41,7 @@ public class UserOperatorConfigTest {
         assertEquals(envVars.get(UserOperatorConfig.STRIMZI_NAMESPACE), config.getNamespace());
         assertEquals(Long.parseLong(envVars.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS)), config.getReconciliationIntervalMs());
         assertEquals(expectedLabels, config.getLabels());
-        assertEquals(envVars.get(UserOperatorConfig.STRIMZI_CA_NAME), config.getCaName());
+        assertEquals(envVars.get(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME), config.getCaCertSecretName());
         assertEquals(envVars.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE), config.getCaNamespace());
         assertEquals(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_CONNECT), config.getZookeperConnect());
         assertEquals(Long.parseLong(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS)), config.getZookeeperSessionTimeoutMs());
@@ -58,7 +58,7 @@ public class UserOperatorConfigTest {
     @Test(expected = InvalidConfigurationException.class)
     public void testMissingCaName()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-        envVars.remove(UserOperatorConfig.STRIMZI_CA_NAME);
+        envVars.remove(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME);
 
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
     }

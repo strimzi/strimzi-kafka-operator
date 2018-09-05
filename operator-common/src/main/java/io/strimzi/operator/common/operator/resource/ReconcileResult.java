@@ -11,11 +11,18 @@ public abstract class ReconcileResult<R> {
             return "DELETED";
         }
     };
-    private static final ReconcileResult NOOP = new ReconcileResult(null) {
+
+    public static class Noop<R> extends ReconcileResult<R> {
+        private Noop() {
+            super(null);
+        }
+
         public String toString() {
             return "NOOP";
         }
-    };
+    }
+
+    private static final ReconcileResult NOOP = new Noop();
 
     public static class Created<R> extends ReconcileResult<R> {
         private Created(R resource) {

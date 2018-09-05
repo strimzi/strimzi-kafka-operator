@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 # Parameters:
 # $1: Path to the new truststore
 # $2: Truststore password
@@ -21,6 +23,16 @@ function create_keystore {
 }
 
 echo "Preparing certificates for internal communication"
-create_truststore /tmp/topic-operator/replication.truststore.p12 $CERTS_STORE_PASSWORD /etc/tls-sidecar/certs/cluster-ca.crt cluster-ca
-create_keystore /tmp/topic-operator/replication.keystore.p12 $CERTS_STORE_PASSWORD /etc/tls-sidecar/certs/entity-operator.crt /etc/tls-sidecar/certs/entity-operator.key /etc/tls-sidecar/certs/cluster-ca.crt entity-operator
+STORE=/tmp/topic-operator/replication.truststore.p12
+for CRT in /etc/tls-sidecar/cluster-ca-certs/*.crt; do
+  ALIAS=$(basename "$CRT" .crt)
+  echo "Adding $CRT to truststore $STORE with alias $ALIAS"
+  create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
+done
+
+create_keystore /tmp/topic-operator/replication.keystore.p12 $CERTS_STORE_PASSWORD \
+    /etc/tls-sidecar/eo-certs/entity-operator.crt \
+    /etc/tls-sidecar/eo-certs/entity-operator.key \
+    /etc/tls-sidecar/cluster-ca-certs/ca.crt \
+    entity-operator
 echo "Preparing certificates for internal communication is complete"
