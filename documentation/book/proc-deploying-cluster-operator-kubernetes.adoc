@@ -11,7 +11,7 @@
 +
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-operator/*RoleBinding*.yaml
 ----
 
 .Procedure
@@ -20,12 +20,5 @@ sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-
 +
 [source]
 ----
-kubectl apply -f examples/install/cluster-operator
-----
-
-. Verify whether the Cluster Operator has been deployed successfully, the {KubernetesName} Dashboard or the command line:
-+
-[source]
-----
-kubectl describe all
+kubectl apply -f examples/install/cluster-operator -n _<my-namespace>_
 ----

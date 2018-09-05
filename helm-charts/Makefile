@@ -21,7 +21,7 @@ helm_template:
 	mkdir -p $(CHART_RENDERED_TEMPLATES_TMP)
 	helm template --namespace myproject --output-dir $(CHART_RENDERED_TEMPLATES_TMP) $(CHART_PATH)
 
-helm_examples: helm_template
+helm_examples: helm_clean helm_template
 	# Remove Helm-related labels
 	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.chart \;
 	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.component \;
@@ -51,5 +51,3 @@ all: docker_build
 clean: helm_clean
 
 .PHONY: build clean release
-
-

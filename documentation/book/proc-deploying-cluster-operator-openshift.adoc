@@ -12,7 +12,7 @@
 +
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-operator/*ClusterRoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _<my-project>_/' examples/install/cluster-operator/*RoleBinding*.yaml
 ----
 
 .Procedure
@@ -21,13 +21,6 @@ sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-
 +
 [source]
 ----
-oc apply -f examples/install/cluster-operator
-oc apply -f examples/templates/cluster-operator
-----
-
-. Verify whether the Cluster Operator has been deployed successfully, the {OpenShiftName} console or the command line:
-+
-[source]
-----
-oc describe all
+oc apply -f examples/install/cluster-operator -n _<my-project>_
+oc apply -f examples/templates/cluster-operator -n _<my-project>_
 ----
