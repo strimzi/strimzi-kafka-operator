@@ -92,9 +92,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     @Override
     public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
-
-        String name = kafkaAssembly.getMetadata().getName();
-        log.debug("{}: create/update zookeeper {}", reconciliation, name);
         Future<Void> chainFuture = Future.future();
         new ReconciliationState(kafkaAssembly).getZookeeperState(assemblySecrets)
                 .compose(desc -> desc.zkScaleDown())
