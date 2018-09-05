@@ -96,7 +96,58 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     @Override
     public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
 
-        return createOrUpdateZk(reconciliation, kafkaAssembly, assemblySecrets);
+        String name = kafkaAssembly.getMetadata().getName();
+        log.debug("{}: create/update zookeeper {}", reconciliation, name);
+        Future<Void> chainFuture = Future.future();
+        getReconciliationState(kafkaAssembly, assemblySecrets)
+                .compose(desc -> desc.zkScaleDown(zkSetOperations))
+                .compose(desc -> desc.zkService(serviceOperations))
+                .compose(desc -> desc.zkHeadlessService(serviceOperations))
+                .compose(desc -> desc.zkAncillaryCm(configMapOperations))
+                .compose(desc -> desc.zkNodesSecret(secretOperations))
+                .compose(desc -> desc.zkNetPolicy(networkPolicyOperator))
+                .compose(desc -> desc.zkStatefulSet(zkSetOperations))
+                .compose(desc -> desc.zkRollingUpdate(zkSetOperations))
+                .compose(desc -> desc.zkScaleUp(zkSetOperations))
+                .compose(desc -> desc.zkServiceEndpointReadiness(serviceOperations))
+                .compose(desc -> desc.zkHeadlessServiceEndpointReadiness(serviceOperations))
+
+                .compose(desc -> getKafkaClusterDescription(desc, kafkaAssembly, assemblySecrets))
+                .compose(desc -> desc.kafkaInitServiceAccount(serviceAccountOperator))
+                .compose(desc -> desc.kafkaInitClusterRoleBinding(clusterRoleBindingOperator))
+                .compose(desc -> desc.kafkaScaleDown(kafkaSetOperations))
+                .compose(desc -> desc.kafkaService(serviceOperations))
+                .compose(desc -> desc.kafkaHeadlessService(serviceOperations))
+                .compose(desc -> desc.kafkaAncillaryCm(configMapOperations))
+                .compose(desc -> desc.kafkaClientsCaSecret(secretOperations))
+                .compose(desc -> desc.kafkaClientsPublicKeySecret(secretOperations))
+                .compose(desc -> desc.kafkaClusterPublicKeySecret(secretOperations))
+                .compose(desc -> desc.kafkaBrokersSecret(secretOperations))
+                .compose(desc -> desc.kafkaNetPolicy(networkPolicyOperator))
+                .compose(desc -> desc.kafkaStatefulSet2(kafkaSetOperations))
+                .compose(desc -> desc.kafkaRollingUpdate(kafkaSetOperations))
+                .compose(desc -> desc.kafkaScaleUp(kafkaSetOperations))
+                .compose(desc -> desc.kafkaServiceEndpointReady(serviceOperations))
+                .compose(desc -> desc.kafkaHeadlessServiceEndpointReady(serviceOperations))
+
+                .compose(desc -> getTopicOperatorDescription(desc, kafkaAssembly, assemblySecrets))
+                .compose(desc -> desc.topicOperatorServiceAccount(serviceAccountOperator))
+                .compose(desc -> desc.topicOperatorRoleBinding(roleBindingOperator))
+                .compose(desc -> desc.topicOperatorAncillaryCm(configMapOperations))
+                .compose(desc -> desc.topicOperatorDeployment(deploymentOperations))
+                .compose(desc -> desc.topicOperatorSecret(secretOperations))
+
+                .compose(desc -> getEntityOperatorDescription(desc, kafkaAssembly, assemblySecrets))
+                .compose(desc -> desc.entityOperatorServiceAccount(serviceAccountOperator))
+                .compose(desc -> desc.entityOperatorRoleBinding(roleBindingOperator))
+                .compose(desc -> desc.entityOperatorUserRoleBinding(roleBindingOperator))
+                .compose(desc -> desc.entityOperatorTopicOperatorAncillaryCm(configMapOperations))
+                .compose(desc -> desc.entityOperatorUserOperatorAncillaryCm(configMapOperations))
+                .compose(desc -> desc.entityOperatorDeployment(deploymentOperations))
+                .compose(desc -> desc.entityOperatorSecret(secretOperations))
+                .compose(desc -> chainFuture.complete(), chainFuture);
+
+        return chainFuture;
     }
 
     /**
@@ -531,61 +582,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         );
 
         return fut;
-    }
-
-    private Future<Void> createOrUpdateZk(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
-        String name = kafkaAssembly.getMetadata().getName();
-        log.debug("{}: create/update zookeeper {}", reconciliation, name);
-        Future<Void> chainFuture = Future.future();
-        getReconciliationState(kafkaAssembly, assemblySecrets)
-                .compose(desc -> desc.zkScaleDown(zkSetOperations))
-                .compose(desc -> desc.zkService(serviceOperations))
-                .compose(desc -> desc.zkHeadlessService(serviceOperations))
-                .compose(desc -> desc.zkAncillaryCm(configMapOperations))
-                .compose(desc -> desc.zkNodesSecret(secretOperations))
-                .compose(desc -> desc.zkNetPolicy(networkPolicyOperator))
-                .compose(desc -> desc.zkStatefulSet(zkSetOperations))
-                .compose(desc -> desc.zkRollingUpdate(zkSetOperations))
-                .compose(desc -> desc.zkScaleUp(zkSetOperations))
-                .compose(desc -> desc.zkServiceEndpointReadiness(serviceOperations))
-                .compose(desc -> desc.zkHeadlessServiceEndpointReadiness(serviceOperations))
-
-                .compose(desc -> getKafkaClusterDescription(desc, kafkaAssembly, assemblySecrets))
-                .compose(desc -> desc.kafkaInitServiceAccount(serviceAccountOperator))
-                .compose(desc -> desc.kafkaInitClusterRoleBinding(clusterRoleBindingOperator))
-                .compose(desc -> desc.kafkaScaleDown(kafkaSetOperations))
-                .compose(desc -> desc.kafkaService(serviceOperations))
-                .compose(desc -> desc.kafkaHeadlessService(serviceOperations))
-                .compose(desc -> desc.kafkaAncillaryCm(configMapOperations))
-                .compose(desc -> desc.kafkaClientsCaSecret(secretOperations))
-                .compose(desc -> desc.kafkaClientsPublicKeySecret(secretOperations))
-                .compose(desc -> desc.kafkaClusterPublicKeySecret(secretOperations))
-                .compose(desc -> desc.kafkaBrokersSecret(secretOperations))
-                .compose(desc -> desc.kafkaNetPolicy(networkPolicyOperator))
-                .compose(desc -> desc.kafkaStatefulSet2(kafkaSetOperations))
-                .compose(desc -> desc.kafkaRollingUpdate(kafkaSetOperations))
-                .compose(desc -> desc.kafkaScaleUp(kafkaSetOperations))
-                .compose(desc -> desc.kafkaServiceEndpointReady(serviceOperations))
-                .compose(desc -> desc.kafkaHeadlessServiceEndpointReady(serviceOperations))
-
-                .compose(desc -> getTopicOperatorDescription(desc, kafkaAssembly, assemblySecrets))
-                .compose(desc -> desc.topicOperatorServiceAccount(serviceAccountOperator))
-                .compose(desc -> desc.topicOperatorRoleBinding(roleBindingOperator))
-                .compose(desc -> desc.topicOperatorAncillaryCm(configMapOperations))
-                .compose(desc -> desc.topicOperatorDeployment(deploymentOperations))
-                .compose(desc -> desc.topicOperatorSecret(secretOperations))
-
-                .compose(desc -> getEntityOperatorDescription(desc, kafkaAssembly, assemblySecrets))
-                .compose(desc -> desc.entityOperatorServiceAccount(serviceAccountOperator))
-                .compose(desc -> desc.entityOperatorRoleBinding(roleBindingOperator))
-                .compose(desc -> desc.entityOperatorUserRoleBinding(roleBindingOperator))
-                .compose(desc -> desc.entityOperatorTopicOperatorAncillaryCm(configMapOperations))
-                .compose(desc -> desc.entityOperatorUserOperatorAncillaryCm(configMapOperations))
-                .compose(desc -> desc.entityOperatorDeployment(deploymentOperations))
-                .compose(desc -> desc.entityOperatorSecret(secretOperations))
-                .compose(desc -> chainFuture.complete(), chainFuture);
-
-        return chainFuture;
     }
 
     private final Future<CompositeFuture> deleteZk(Reconciliation reconciliation) {
