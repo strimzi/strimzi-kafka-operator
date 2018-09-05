@@ -104,7 +104,7 @@ public class ResourceUtils {
                 .withNamespace(NAMESPACE)
                 .withLabels(Labels.userLabels(LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap())
                 .endMetadata()
-                .addToData("password", "my-password")
+                .addToData("password", Base64.getEncoder().encodeToString("my-password".getBytes()))
                 .build();
     }
 

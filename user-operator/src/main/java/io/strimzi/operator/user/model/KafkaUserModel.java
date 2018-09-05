@@ -25,6 +25,7 @@ import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.HashMap;
@@ -112,7 +113,7 @@ public class KafkaUserModel {
             return createSecret(data);
         } else if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
             Map<String, String> data = new HashMap<>();
-            data.put(KafkaUserModel.KEY_PASSWORD, scramSha512Password);
+            data.put(KafkaUserModel.KEY_PASSWORD, Base64.getEncoder().encodeToString(scramSha512Password.getBytes(Charset.forName("US-ASCII"))));
             return createSecret(data);
         } else {
             return null;
@@ -195,7 +196,7 @@ public class KafkaUserModel {
             // Secret already exists -> lets verify if it has a password
             String password = userSecret.getData().get(KEY_PASSWORD);
             if (password != null && !password.isEmpty()) {
-                this.scramSha512Password = password;
+                this.scramSha512Password = new String(Base64.getDecoder().decode(password), Charset.forName("US-ASCII"));
                 return;
             }
         }
