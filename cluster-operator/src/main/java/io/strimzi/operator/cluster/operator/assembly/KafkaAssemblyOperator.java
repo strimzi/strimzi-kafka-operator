@@ -136,10 +136,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 .compose(desc -> desc.getEntityOperatorDescription(assemblySecrets))
                 .compose(desc -> desc.entityOperatorServiceAccount(serviceAccountOperator))
-                .compose(desc -> desc.entityOperatorRoleBinding())
-                .compose(desc -> desc.entityOperatorUserRoleBinding())
-                .compose(desc -> desc.entityOperatorTopicOperatorAncillaryCm())
-                .compose(desc -> desc.entityOperatorUserOperatorAncillaryCm())
+                .compose(desc -> desc.entityOperatorTopicOpRoleBinding())
+                .compose(desc -> desc.entityOperatorUserOpRoleBinding())
+                .compose(desc -> desc.entityOperatorTopicOpAncillaryCm())
+                .compose(desc -> desc.entityOperatorUserOpAncillaryCm())
                 .compose(desc -> desc.entityOperatorDeployment())
                 .compose(desc -> desc.entityOperatorSecret())
                 .compose(desc -> chainFuture.complete(), chainFuture);
@@ -400,19 +400,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        TopicOperator topicOperator = TopicOperator.fromCrd(certManager, kafkaAssembly, assemblySecrets);
+                        this.topicOperator = TopicOperator.fromCrd(certManager, kafkaAssembly, assemblySecrets);
 
                         if (topicOperator != null) {
                             ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(
                                     topicOperator.getLogging() instanceof ExternalLogging ?
                                             configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
                                             null);
-
-                            this.topicOperator = topicOperator;
                             this.toDeployment = topicOperator.generateDeployment();
                             this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
+                            this.toDeployment.getSpec().getTemplate().getMetadata().getAnnotations().put("strimzi.io/logging", this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
                         } else {
-                            //rs.TopicOperatorDescription.EMPTY_TO;
+                            this.toDeployment = null;
+                            this.toMetricsAndLogsConfigMap = null;
                         }
 
                         future.complete(this);
@@ -429,15 +429,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
             );
             return fut;
-        }
-
-        Deployment toDeployment() {
-            try {
-                this.toDeployment.getSpec().getTemplate().getMetadata().getAnnotations().put("strimzi.io/logging", this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
-            } catch (NullPointerException ex) {
-
-            }
-            return this.toDeployment;
         }
 
         Future<ReconciliationState> topicOperatorServiceAccount() {
@@ -462,7 +453,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> topicOperatorDeployment() {
-            return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment()));
+            return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
         }
 
         Future<ReconciliationState> topicOperatorSecret() {
@@ -519,7 +510,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     eoDeployment != null ? entityOperator.generateServiceAccount() : null));
         }
 
-        Future<ReconciliationState> entityOperatorRoleBinding() {
+        Future<ReconciliationState> entityOperatorTopicOpRoleBinding() {
             String watchedNamespace = entityOperator != null && entityOperator.getTopicOperator() != null ?
                     entityOperator.getTopicOperator().getWatchedNamespace() : null;
             return withVoid(roleBindingOperator.reconcile(
@@ -530,7 +521,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             entityOperator.getTopicOperator().generateRoleBinding(namespace) : null));
         }
 
-        Future<ReconciliationState> entityOperatorUserRoleBinding() {
+        Future<ReconciliationState> entityOperatorUserOpRoleBinding() {
             String watchedNamespace = entityOperator != null && entityOperator.getUserOperator() != null ?
                     entityOperator.getUserOperator().getWatchedNamespace() : null;
             return withVoid(roleBindingOperator.reconcile(
@@ -542,14 +533,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         }
 
-        Future<ReconciliationState> entityOperatorTopicOperatorAncillaryCm() {
+        Future<ReconciliationState> entityOperatorTopicOpAncillaryCm() {
             return withVoid(configMapOperations.reconcile(namespace,
                     eoDeployment != null && entityOperator.getTopicOperator() != null ?
                             entityOperator.getTopicOperator().getAncillaryConfigName() : EntityTopicOperator.metricAndLogConfigsName(name),
                     topicOperatorMetricsAndLogsConfigMap));
         }
 
-        Future<ReconciliationState> entityOperatorUserOperatorAncillaryCm() {
+        Future<ReconciliationState> entityOperatorUserOpAncillaryCm() {
             return withVoid(configMapOperations.reconcile(namespace,
                     eoDeployment != null && entityOperator.getUserOperator() != null ?
                             entityOperator.getUserOperator().getAncillaryConfigName() : EntityUserOperator.metricAndLogConfigsName(name),
