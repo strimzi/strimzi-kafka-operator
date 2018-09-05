@@ -13,8 +13,8 @@ import io.fabric8.kubernetes.api.model.extensions.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.certs.CertManager;
@@ -38,11 +38,8 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -95,13 +92,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
-        Future<Void> f = Future.<Void>future().setHandler(handler);
-        createOrUpdateZk(reconciliation, kafkaAssembly, assemblySecrets)
+    public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly, List<Secret> assemblySecrets) {
+
+        return createOrUpdateZk(reconciliation, kafkaAssembly, assemblySecrets)
             .compose(i -> createOrUpdateKafka(reconciliation, kafkaAssembly, assemblySecrets))
             .compose(i -> createOrUpdateTopicOperator(reconciliation, kafkaAssembly, assemblySecrets))
-            .compose(i -> createOrUpdateEntityOperator(reconciliation, kafkaAssembly, assemblySecrets))
-            .compose(ar -> f.complete(), f);
+            .compose(i -> createOrUpdateEntityOperator(reconciliation, kafkaAssembly, assemblySecrets));
     }
 
     /**
@@ -764,13 +760,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
-        Future<Void> f = Future.<Void>future().setHandler(handler);
-        deleteEntityOperator(reconciliation)
+    protected Future<Void> delete(Reconciliation reconciliation) {
+        return deleteEntityOperator(reconciliation)
                 .compose(i -> deleteTopicOperator(reconciliation))
                 .compose(i -> deleteKafka(reconciliation))
                 .compose(i -> deleteZk(reconciliation))
-                .compose(ar -> f.complete(), f);
+                .map((Void) null);
     }
 
     @Override

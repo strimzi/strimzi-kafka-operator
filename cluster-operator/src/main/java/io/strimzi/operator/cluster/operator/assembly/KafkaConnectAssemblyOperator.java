@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.certs.CertManager;
@@ -24,11 +24,8 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -74,7 +71,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     }
 
     @Override
-    protected void createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnect, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnect, List<Secret> assemblySecrets) {
 
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
@@ -82,8 +79,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
         try {
             connect = KafkaConnectCluster.fromCrd(kafkaConnect);
         } catch (Exception e) {
-            handler.handle(Future.failedFuture(e));
-            return;
+            return Future.failedFuture(e);
         }
 
         ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
@@ -94,26 +90,23 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
         annotations.put("strimzi.io/logging", logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
-        Future<Void> chainFuture = Future.future();
-        deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
+        return deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
                 .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment(annotations)))
-                .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
-                .compose(chainFuture::complete, chainFuture);
-        chainFuture.setHandler(handler);
+                .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null));
     }
 
     @Override
-    protected void delete(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
+    protected Future<Void> delete(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String assemblyName = reconciliation.name();
         String clusterName = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
 
-        CompositeFuture.join(serviceOperations.reconcile(namespace, KafkaConnectCluster.serviceName(assemblyName), null),
+        return CompositeFuture.join(serviceOperations.reconcile(namespace, KafkaConnectCluster.serviceName(assemblyName), null),
             configMapOperations.reconcile(namespace, KafkaConnectCluster.logAndMetricsConfigName(assemblyName), null),
             deploymentOperations.reconcile(namespace, clusterName, null))
-            .map((Void) null).setHandler(handler);
+            .map((Void) null);
     }
 
     @Override
