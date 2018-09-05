@@ -32,8 +32,15 @@ listeners:
 # ...
 ----
 
+== Listener authentication
+
 The listener sub-properties can also contain additional configuration.
-Both listeners support the `authentication` property
+Both listeners support the `authentication` property. This be used to specify an authentication mechanism specific to that listener:
+
+* mutual TLS authentication
+* SCRAM-SHA authentication
+
+If no `authentication` property is specified then the listener does not authenticate clients which connect though that listener.
 
 .An example where the plain listener is configured for SCRAM-SHA authentication and the `tls` listener with mutual TLS authentication
 [source,yaml,subs="attributes+"]
@@ -48,3 +55,14 @@ listeners:
       type: tls
 # ...
 ----
+
+
+[width="15%"]
+|=======
+| 2+>|Listener
+| |`listener.tls`         |`listener.plain`
+|`tls`           |encrypted, authenticated |unencyrpted, unauthenticated
+|`scram-sha-512` |encrypted, authenticated |unencrypted, authenticated
+|=======
+
+Authentication must be configured when using the User Operator to manage `KafkaUsers`.
