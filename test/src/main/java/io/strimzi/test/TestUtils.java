@@ -49,11 +49,11 @@ public final class TestUtils {
 
     public static final String CRD_KAFKA_CONNECT_S2I = "../examples/install/cluster-operator/042-Crd-kafkaconnects2i.yaml";
 
+    public static final String CRD_KAFKA_USER = "../examples/install/cluster-operator/044-Crd-kafkauser.yaml";
+
     private TestUtils() {
         // All static methods
     }
-
-    public static final String KAFKA_USER_CRD = "../examples/install/cluster-operator/044-Crd-kafkauser.yaml";
 
     /** Returns a Map of the given sequence of key, value pairs. */
     public static <T> Map<T, T> map(T... pairs) {
