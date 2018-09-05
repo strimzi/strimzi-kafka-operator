@@ -120,8 +120,14 @@ public class KafkaUserOperator {
 
         log.debug("{}: Updating User", reconciliation, userName, namespace);
         Secret desired = user.generateSecret();
+        String password = null;
+
+        if (desired != null && desired.getData().get("password") != null)   {
+            password = new String(Base64.getDecoder().decode(desired.getData().get("password")), Charset.forName("US-ASCII"));
+        }
+
         CompositeFuture.join(
-                scramShaCredentialOperator.reconcile(user.getName(), (desired != null && desired.getData().get("password") != null) ? new String(Base64.getDecoder().decode(desired.getData().get("password")), Charset.forName("US-ASCII")) : null),
+                scramShaCredentialOperator.reconcile(user.getName(), password),
                 secretOperations.reconcile(namespace, user.getSecretName(), desired),
                 aclOperations.reconcile(user.getUserName(), user.getSimpleAclRules()))
                 .map((Void) null).setHandler(handler);
