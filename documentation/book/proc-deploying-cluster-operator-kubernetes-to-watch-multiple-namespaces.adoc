@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* Modify the installation files according to the {Namespace} the Cluster Operator is going to be installed in.
+* Edit the installation files according to the {Namespace} the Cluster Operator is going to be installed in.
 +
 [source, subs="+quotes"]
 ----
@@ -16,7 +16,7 @@ sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-
 
 .Procedure
 
-. Modify the file `examples/install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` and in the environment variable `STRIMZI_NAMESPACE` list all the {Namespaces} where Cluster Operator should watch for resources.
+. Edit the file `examples/install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` and in the environment variable `STRIMZI_NAMESPACE` list all the {Namespaces} where Cluster Operator should watch for resources.
 For example:
 +
 [source,yaml]

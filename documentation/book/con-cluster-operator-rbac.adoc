@@ -64,8 +64,7 @@ The Cluster Operator will not run under the cluster admin account.
 
 The `ClusterRoles` follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and Zookeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage {ProductPlatformName} resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
 
-Cluster Operator is using two different `ClusterRoles`.
-The first one includes the permissions needed for namespaced resources.
+Cluster Operator uses ClusterRoles to grant permission at the namespace-scoped resources level and cluster-scoped resources level:
 
 [source,yaml,options="nowrap"]
 .`ClusterRole` with namespaced resources for the Cluster Operator
