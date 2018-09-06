@@ -486,7 +486,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             address.setHandler(res -> {
                 if (res.succeeded())    {
                     this.kafkaExternalBootstrapAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
-                    log.warn("Found address {} for Route {}", routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+
+                    if (log.isTraceEnabled()) {
+                        log.trace("Found address {} for Route {}", routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                    }
+
                     future.complete();
                 } else {
                     log.warn("{}: No address found for Route {}", reconciliation, routeName);
@@ -514,7 +518,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 address.setHandler(res -> {
                     if (res.succeeded()) {
                         this.kafkaExternalAddresses.put(kafkaCluster.getPodName(podNumber), routeOperations.get(namespace, routeName).getSpec().getHost());
-                        log.warn("Found address {} for Route {}", routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+
+                        if (log.isTraceEnabled()) {
+                            log.trace("Found address {} for Route {}", routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                        }
+
                         future.complete();
                     } else {
                         log.warn("{}: No address found for Route {}", reconciliation, routeName);

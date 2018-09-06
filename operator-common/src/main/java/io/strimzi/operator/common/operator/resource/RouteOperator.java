@@ -31,15 +31,24 @@ public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Rou
         return client.routes();
     }
 
+    /**
+     * Succeeds when the Route has an assigned address
+     *
+     * @param namespace     Namespace
+     * @param name          Name of the route
+     * @param pollIntervalMs    Interval in which we poll
+     * @param timeoutMs     Timeout
+     * @return
+     */
     public Future<Void> hasAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isAddressReady);
     }
 
     /**
-     * Check if a resource is in the Ready state.
+     * Checks if the Route already has an assigned address.
      *
      * @param namespace The namespace.
-     * @param name The resource name.
+     * @param name The route name.
      */
     public boolean isAddressReady(String namespace, String name) {
         Resource<Route, DoneableRoute> resourceOp = operation().inNamespace(namespace).withName(name);
