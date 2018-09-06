@@ -136,8 +136,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.topicOperatorServiceAccount())
                 .compose(state -> state.topicOperatorRoleBinding())
                 .compose(state -> state.topicOperatorAncillaryCm())
-                .compose(state -> state.topicOperatorDeployment())
                 .compose(state -> state.topicOperatorSecret())
+                .compose(state -> state.topicOperatorDeployment())
 
                 .compose(state -> state.getEntityOperatorDescription())
                 .compose(state -> state.entityOperatorServiceAccount())
@@ -145,8 +145,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorUserOpRoleBinding())
                 .compose(state -> state.entityOperatorTopicOpAncillaryCm())
                 .compose(state -> state.entityOperatorUserOpAncillaryCm())
-                .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorSecret())
+                .compose(state -> state.entityOperatorDeployment())
+
                 .compose(state -> chainFuture.complete(), chainFuture);
 
         return chainFuture;
