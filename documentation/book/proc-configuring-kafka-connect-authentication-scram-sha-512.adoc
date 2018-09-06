@@ -9,10 +9,9 @@
 
 * An {ProductPlatformName} cluster
 * A running Cluster Operator
+* Username of the user which should be used for authentication
 
 .Procedure
-
-. Find out the username of the user which should be used for authentication.
 
 . Find out the name of the secret with the password which should be used for authentication and the key under which the password is stored in the secret.
 If such secret does not exist yet, prepare a file with the password and create the secret.

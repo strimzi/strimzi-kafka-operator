@@ -7,7 +7,7 @@
 
 Authentication can be configured in the `authentication` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
 The `authentication` property specifies the type of the authentication mechanisms which should be used and additional configuration details depending on the mechanism.
-Currently, the supported authentication types are:
+The currently supported authentication types are:
 
 * TLS client authentication
 * SASL based authentication using SCRAM-SHA-512 mechanism
@@ -45,10 +45,10 @@ spec:
 == SCRAM-SHA-512 authentication
 
 To use the authentication using the SCRAM-SHA-512 SASL mechanism, set the `type` property to the value `scram-sha-512`.
-SCRAM-SHA-512 authentication is using username and password to authenticate.
-The username has to be specified in the `username` property.
-The password has to be specified as a link to a `Secret` containing the password in the `passwordSecret` property.
-It has to specify the name of the `Secret` containing the password and the name of the key under which is the password stored inside the `Secret`.
+SCRAM-SHA-512 uses username and password to authenticate.
+Specify the username in the username property.
+Specify the password as a link to a Secret containing the password in the passwordSecret property.
+It has to specify the name of the `Secret` containing the password and the name of the key under which the password is stored inside the `Secret`.
 
 .An example showing SCRAM-SHA-512 client authentication configuration
 [source,yaml,subs=attributes+]
