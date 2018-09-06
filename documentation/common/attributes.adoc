@@ -28,7 +28,6 @@
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
-:ExampleYAMLURL: https://github.com/strimzi/strimzi-kafka-operator/tree/master/examples[Example YAML files^]
 
 // Helm Chart
 :ChartName: strimzi-kafka-operator

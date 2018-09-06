@@ -15,4 +15,4 @@ endif::Downloading[]
 ifndef::Downloading[]
 {ExampleYAMLURL} for deployment on {ProductPlatformName} are used throughout this documentation.
 endif::Downloading[]
-The container images are available on {DockerRepository}.
+The container images are available through the {DockerRepository}.
