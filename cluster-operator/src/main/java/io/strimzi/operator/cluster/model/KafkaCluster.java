@@ -572,16 +572,9 @@ public class KafkaCluster extends AbstractModel {
      * It also contains the private key-certificate (signed by cluster CA) for each brokers as well as for communicating
      * with Zookeeper as well
      *
-     * @param certManager CertManager instance for handling certificates creation
-     * @param secrets The Secrets storing certificates
-     * @param externalBootstrapAddress External address to the bootstrap service
-     * @param externalAddresses Map with external addresses under which the individual pods are available
-     *
      * @return The generated Secret
      */
-    public Secret generateBrokersSecret(CertManager certManager, List<Secret> assemblySecrets, String externalBootstrapAddress, Map<String, String> externalAddresses) {
-        generateCertificates(certManager, assemblySecrets, externalBootstrapAddress, externalAddresses);
-
+    public Secret generateBrokersSecret() {
         Base64.Encoder encoder = Base64.getEncoder();
 
         Map<String, String> data = new HashMap<>();
