@@ -3,7 +3,7 @@
 ## 0.7.0
 
 * Use less wide RBAC permissions (`ClusterRoleBindings` where converted to `RoleBindings` where possible)
-* Network policies for managing access to Zookeeper and Kafka replication ports
+* Network policies for managing access to Zookeeper ports and Kafka replication ports
 
 ## 0.6.0
 
