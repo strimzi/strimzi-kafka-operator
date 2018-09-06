@@ -2,6 +2,7 @@
 
 ## 0.7.0
 
+* Exposing Kafka to the outside of OpenShift using OpenShift Routes
 * Use less wide RBAC permissions (`ClusterRoleBindings` where converted to `RoleBindings` where possible)
 
 ## 0.6.0
