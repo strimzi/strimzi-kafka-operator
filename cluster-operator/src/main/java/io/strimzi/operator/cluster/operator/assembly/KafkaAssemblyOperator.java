@@ -745,70 +745,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorSecret() {
             return withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name), entityOperator == null ? null : entityOperator.generateSecret()));
         }
-/*=======
-        getKafkaClusterDescription(kafkaAssembly, assemblySecrets)
-                .compose(desc -> desc.withVoid(
-                        serviceAccountOperator.reconcile(namespace,
-                        KafkaCluster.initContainerServiceAccountName(desc.kafka().getCluster()),
-                        desc.kafka.generateInitContainerServiceAccount())))
-                .compose(desc -> desc.withVoid(clusterRoleBindingOperator.reconcile(
-                        KafkaCluster.initContainerClusterRoleBindingName(desc.kafka().getCluster()),
-                        desc.kafka.generateClusterRoleBinding(namespace))))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getServiceName(), desc.service())))
-                .compose(desc -> desc.withVoid(serviceOperations.reconcile(namespace, desc.kafka().getHeadlessServiceName(), desc.headlessService())))
-                .compose(desc -> {
-                    int replicas = desc.kafka.getReplicas();
-                    List<Future> serviceFutures = new ArrayList<>(replicas);
-
-                    for (int i = 0; i < replicas; i++) {
-                        serviceFutures.add(serviceOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), desc.kafka().generateExternalService(i)));
-                    }
-
-                    return desc.withVoid(CompositeFuture.join(serviceFutures));
-                })
-                .compose(desc -> {
-                    Future future = Future.succeededFuture();
-                    Route route = desc.kafka().generateExternalBootstrapRoute();
-
-                    if (routeOperations != null) {
-                        future = routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), route);
-                    } else if (route != null)   {
-                        log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
-                    }
-
-                    return desc.withVoid(future);
-                })
-                .compose(desc -> {
-                    int replicas = desc.kafka.getReplicas();
-                    List<Future> routeFutures = new ArrayList<>(replicas);
-
-                    for (int i = 0; i < replicas; i++) {
-                        Route route = desc.kafka().generateExternalRoute(i);
-
-                        if (routeOperations != null) {
-                            routeFutures.add(routeOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), route));
-                        } else if (route != null)   {
-                            log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
-                            return desc.withVoid(Future.succeededFuture());
-                        }
-                    }
-
-                    return desc.withVoid(CompositeFuture.join(routeFutures));
-                })
-                .compose(desc -> desc.withVoid(kafkaSetOperations.scaleDown(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
-                .compose(desc -> desc.withAncillaryCmChanged(configMapOperations.reconcile(namespace, desc.kafka().getAncillaryConfigName(), desc.metricsAndLogsConfigMap())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), desc.clientsCASecret())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), desc.clientsPublicKeySecret())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), desc.clusterPublicKeySecret())))
-                .compose(desc -> desc.withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), desc.brokersInternalSecret())))
-                .compose(desc -> desc.withDiff(kafkaSetOperations.reconcile(namespace, desc.kafka().getName(), desc.statefulSet())))
-                .compose(desc -> desc.withVoid(kafkaSetOperations.maybeRollingUpdate(desc.diffs().resource(), desc.isForceRestart())))
-                .compose(desc -> desc.withVoid(kafkaSetOperations.scaleUp(namespace, desc.kafka().getName(), desc.kafka().getReplicas())))
-                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.service(), 1_000, operationTimeoutMs)))
-                .compose(desc -> desc.withVoid(serviceOperations.endpointReadiness(namespace, desc.headlessService(), 1_000, operationTimeoutMs)))
-                .compose(desc -> chainFuture.complete(), chainFuture);
->>>>>>> WIP*/
-
     }
 
     private final Future<CompositeFuture> deleteKafka(Reconciliation reconciliation) {
@@ -952,6 +888,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         result.addAll(deploymentOperations.list(namespace, selector));
         result.addAll(serviceOperations.list(namespace, selector));
         result.addAll(resourceOperator.list(namespace, selector));
+
+        if (routeOperations != null) {
+            result.addAll(routeOperations.list(namespace, selector));
+        }
+
         return result;
     }
 }

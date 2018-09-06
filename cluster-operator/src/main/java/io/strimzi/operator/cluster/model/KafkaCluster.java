@@ -188,6 +188,13 @@ public class KafkaCluster extends AbstractModel {
         return cluster + KafkaCluster.SERVICE_NAME_SUFFIX;
     }
 
+    /**
+     * Generates the name of the service for exposing individual pods
+     *
+     * @param cluster Name of the cluster
+     * @param pod   Pod sequence number assign by StatefulSet
+     * @return
+     */
     public static String externalServiceName(String cluster, int pod) {
         return kafkaClusterName(cluster) + "-" + pod;
     }
@@ -214,10 +221,6 @@ public class KafkaCluster extends AbstractModel {
 
     public static String clusterPublicKeyName(String cluster) {
         return getClusterCaName(cluster) + KafkaCluster.SECRET_CLUSTER_PUBLIC_KEY_SUFFIX;
-    }
-
-    public static KafkaCluster fromCrd(CertManager manager, Kafka kafkaAssembly, List<Secret> secrets) {
-        return fromCrd(kafkaAssembly);
     }
 
     public static KafkaCluster fromCrd(Kafka kafkaAssembly) {
@@ -280,6 +283,8 @@ public class KafkaCluster extends AbstractModel {
      *
      * @param certManager CertManager instance for handling certificates creation
      * @param secrets The Secrets storing certificates
+     * @param externalBootstrapAddress External address to the bootstrap service
+     * @param externalAddresses Map with external addresses under which the individual pods are available
      */
     public void generateCertificates(CertManager certManager, List<Secret> secrets, String externalBootstrapAddress, Map<String, String> externalAddresses) {
         log.debug("Generating certificates");
@@ -458,7 +463,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generates list of Bootstrap route which can be used to bootstrap clients.
+     * Generates a bootstrap route which can be used to bootstrap clients outside of OpenShift.
      * @return The generated Routes
      */
     public Route generateExternalBootstrapRoute() {
@@ -505,6 +510,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generate StatefulSet
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
+        // TODO: Delete this?
         return generateStatefulSet(isOpenShift, Collections.EMPTY_MAP);
     }
 
@@ -514,7 +520,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generate StatefulSet
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift, Map<String, String> externalAddresses) {
-        this.externalAddresses = externalAddresses;
+        setExternalAddresses(externalAddresses);
 
         return createStatefulSet(
                 getVolumes(),
@@ -671,10 +677,8 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected List<Container> getInitContainers() {
-
         List<Container> initContainers = new ArrayList<>();
 
-        //if (rack != null || (listeners != null && listeners.getExternal() != null)) {
         if (rack != null) {
             ResourceRequirements resources = new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
@@ -684,16 +688,8 @@ public class KafkaCluster extends AbstractModel {
                     .build();
 
             List<EnvVar> varList = new ArrayList<>();
-
-            //if (rack != null)   {
             varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
             varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
-            //}
-
-            /*if (listeners != null && listeners.getExternal() != null)   {
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE"));
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TYPE, listeners.getExternal().getType()));
-            }*/
 
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
@@ -780,7 +776,6 @@ public class KafkaCluster extends AbstractModel {
 
             if (listeners.getExternal() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE"));
-                //varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TYPE, listeners.getExternal().getType()));
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses.values())));
 
                 if (listeners.getExternal().getAuthentication() != null) {
@@ -923,10 +918,29 @@ public class KafkaCluster extends AbstractModel {
         this.authorization = authorization;
     }
 
+    /**
+     * Sets the Map with Kafka pod's external addresses
+     *
+     * @param authorization
+     */
+    public void setExternalAddresses(Map<String, String> externalAddresses) {
+        this.externalAddresses = externalAddresses;
+    }
+
+    /**
+     * Returns true when the Kafka cluster is exposed to the outside of OpenShift / Kubernetes
+     *
+     * @return
+     */
     public boolean isExposed()  {
         return listeners != null && listeners.getExternal() != null;
     }
 
+    /**
+     * Returns true when the Kafka cluster is exposed to the outside of OpenShift using OpenShift routes
+     *
+     * @return
+     */
     public boolean isExposedWithRoute()  {
         return isExposed() && KafkaListenerExternalRoute.TYPE_ROUTE.equals(listeners.getExternal().getType());
     }

@@ -700,7 +700,7 @@ public abstract class AbstractModel {
     }
 
     protected Service createService(String type, List<ServicePort> ports,  Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithName(serviceName), getSelectorLabels(), Collections.emptyMap());
+        return createService(serviceName, type, ports, getLabelsWithName(serviceName), getSelectorLabels(), annotations);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
@@ -1043,6 +1043,8 @@ public abstract class AbstractModel {
      * @param replicasInSecret How many certificates are in the Secret
      * @param caCert CA certificate to use for signing new certificates
      * @param podName A function for resolving the Pod name
+     * @param externalBootstrapAddress External address to the bootstrap service
+     * @param externalAddresses Map with external addresses under which the individual pods are available
      * @return Collection with certificates
      * @throws IOException
      */
