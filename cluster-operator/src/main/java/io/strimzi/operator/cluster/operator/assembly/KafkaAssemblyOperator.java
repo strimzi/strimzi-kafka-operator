@@ -132,7 +132,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaReplicaRoutes())
                 .compose(state -> state.kafkaBootstrapRouteReady())
                 .compose(state -> state.kafkaReplicaRoutesReady())
-                .compose(state -> state.kafkaBrokerCertificates())
                 .compose(state -> state.kafkaAncillaryCm())
                 .compose(state -> state.kafkaClientsCaSecret())
                 .compose(state -> state.kafkaClientsPublicKeySecret())
@@ -536,11 +535,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(CompositeFuture.join(routeFutures));
         }
 
-        Future<ReconciliationState> kafkaBrokerCertificates() {
-            kafkaCluster.generateCertificates(certManager, assemblySecrets, kafkaExternalBootstrapAddress, kafkaExternalAddresses);
-            return withVoid(Future.succeededFuture());
-        }
-
         Future<ReconciliationState> kafkaAncillaryCm() {
             return withKafkaAncillaryCmChanged(configMapOperations.reconcile(namespace, kafkaCluster.getAncillaryConfigName(), kafkaMetricsAndLogsConfigMap));
         }
@@ -558,7 +552,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret()));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret(certManager, assemblySecrets, kafkaExternalBootstrapAddress, kafkaExternalAddresses)));
         }
 
         Future<ReconciliationState> kafkaNetPolicy() {
