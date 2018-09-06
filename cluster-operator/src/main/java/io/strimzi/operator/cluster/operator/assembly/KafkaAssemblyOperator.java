@@ -451,7 +451,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.failedFuture("Exposing Kafka cluster " + name + " using OpenShift Routes is available only on OpenShift"));
             }
 
-            return withVoid(Future.succeededFutre())
+            return withVoid(Future.succeededFuture());
         }
 
         Future<ReconciliationState> kafkaReplicaRoutes() {
