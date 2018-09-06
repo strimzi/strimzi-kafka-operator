@@ -361,7 +361,7 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
-        if (listeners != null && listeners.getExternal() != null) {
+        if (isExposed()) {
             ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
         }
 
@@ -389,7 +389,7 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
-        if (listeners != null && listeners.getExternal() != null) {
+        if (isExposed()) {
             ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
         }
 
@@ -411,7 +411,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateExternalService(int pod) {
-        if (listeners != null && listeners.getExternal() != null) {
+        if (isExposed()) {
             String perPodServiceName = externalServiceName(cluster, pod);
 
             List<ServicePort> ports = new ArrayList<>(1);
@@ -432,7 +432,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Route
      */
     public Route generateExternalRoute(int pod) {
-        if (listeners != null && listeners.getExternal() != null && KafkaListenerExternalRoute.TYPE_ROUTE.equals(listeners.getExternal().getType())) {
+        if (isExposedWithRoute()) {
             String perPodServiceName = externalServiceName(cluster, pod);
 
             Route route = new RouteBuilder()
@@ -467,7 +467,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Routes
      */
     public Route generateExternalBootstrapRoute() {
-        if (listeners != null && listeners.getExternal() != null && KafkaListenerExternalRoute.TYPE_ROUTE.equals(listeners.getExternal().getType())) {
+        if (isExposedWithRoute()) {
             Route route = new RouteBuilder()
                     .withNewMetadata()
                         .withName(serviceName)
@@ -600,7 +600,7 @@ public class KafkaCluster extends AbstractModel {
             portList.add(createContainerPort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, "TCP"));
         }
 
-        if (listeners != null && listeners.getExternal() != null) {
+        if (isExposed()) {
             portList.add(createContainerPort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, "TCP"));
         }
 
@@ -943,6 +943,6 @@ public class KafkaCluster extends AbstractModel {
      * @return
      */
     public boolean isExposedWithRoute()  {
-        return isExposed() && KafkaListenerExternalRoute.TYPE_ROUTE.equals(listeners.getExternal().getType());
+        return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalRoute;
     }
 }

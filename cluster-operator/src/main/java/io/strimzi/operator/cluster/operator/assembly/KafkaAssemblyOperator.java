@@ -442,7 +442,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaBootstrapRoute() {
-            Future future = Future.succeededFuture();
             Route route = kafkaCluster.generateExternalBootstrapRoute();
 
             if (routeOperations != null) {
@@ -452,7 +451,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.failedFuture("Exposing Kafka cluster " + name + " using OpenShift Routes is available only on OpenShift"));
             }
 
-            return withVoid(future);
+            return withVoid(Future.succeededFutre())
         }
 
         Future<ReconciliationState> kafkaReplicaRoutes() {
@@ -488,7 +487,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     this.kafkaExternalBootstrapAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
 
                     if (log.isTraceEnabled()) {
-                        log.trace("Found address {} for Route {}", routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                        log.trace("{}: Found address {} for Route {}", reconciliation, routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
                     }
 
                     future.complete();
@@ -520,7 +519,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.kafkaExternalAddresses.put(kafkaCluster.getPodName(podNumber), routeOperations.get(namespace, routeName).getSpec().getHost());
 
                         if (log.isTraceEnabled()) {
-                            log.trace("Found address {} for Route {}", routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                            log.trace("{}: Found address {} for Route {}", reconciliation, routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
                         }
 
                         future.complete();
