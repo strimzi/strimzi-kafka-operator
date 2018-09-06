@@ -59,10 +59,11 @@ public class KafkaClusterTest {
 
     private final CertManager certManager = new MockCertManager();
     private final Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog);
-    private final KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, kafkaAssembly.getMetadata().getName()));
+    private final List<Secret> assemblySecrets = ResourceUtils.createKafkaClusterInitialSecrets(namespace, kafkaAssembly.getMetadata().getName());
+    private final KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
 
     @Rule
-    public ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, (ResourceTester.TriFunction<CertManager, Kafka, List<Secret>, KafkaCluster>) KafkaCluster::fromCrd);
+    public ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, KafkaCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {
@@ -148,7 +149,7 @@ public class KafkaClusterTest {
                 .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, kafkaAssembly.getMetadata().getName()));
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
         StatefulSet ss = kc.generateStatefulSet(false);
         assertEquals(selector, ss.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector().getMatchLabels());
     }
@@ -163,7 +164,7 @@ public class KafkaClusterTest {
                 .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, kafkaAssembly.getMetadata().getName()));
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
         StatefulSet ss = kc.generateStatefulSet(false);
         assertEquals(null, ss.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector());
     }
@@ -178,7 +179,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, kafkaAssembly.getMetadata().getName()));
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
         StatefulSet ss = kc.generateStatefulSet(true);
         checkStatefulSet(ss, kafkaAssembly, true);
     }
@@ -194,7 +195,7 @@ public class KafkaClusterTest {
                                 .withNewRack().withTopologyKey("rack-key").endRack()
                             .endKafka()
                         .endSpec().build();
-        KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, kafkaAssembly.getMetadata().getName()));
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
         StatefulSet ss = kc.generateStatefulSet(false);
         checkStatefulSet(ss, kafkaAssembly, false);
     }
@@ -280,7 +281,7 @@ public class KafkaClusterTest {
     public void testDeleteClaim() {
         Kafka assembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
-        KafkaCluster kc = KafkaCluster.fromCrd(certManager, assembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, assembly.getMetadata().getName()));
+        KafkaCluster kc = KafkaCluster.fromCrd(assembly);
         StatefulSet ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
@@ -292,7 +293,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(certManager, assembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, assembly.getMetadata().getName()));
+        kc = KafkaCluster.fromCrd(assembly);
         ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
@@ -304,7 +305,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(certManager, assembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace, assembly.getMetadata().getName()));
+        kc = KafkaCluster.fromCrd(assembly);
         ss = kc.generateStatefulSet(true);
         assertTrue(KafkaCluster.deleteClaim(ss));
     }

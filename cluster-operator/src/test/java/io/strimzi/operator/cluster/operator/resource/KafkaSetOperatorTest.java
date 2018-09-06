@@ -43,8 +43,8 @@ public class KafkaSetOperatorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        a = KafkaCluster.fromCrd(certManager, getResource(), getInitialSecrets(getResource().getMetadata().getName())).generateStatefulSet(true);
-        b = KafkaCluster.fromCrd(certManager, getResource(), getInitialSecrets(getResource().getMetadata().getName())).generateStatefulSet(true);
+        a = KafkaCluster.fromCrd(getResource()).generateStatefulSet(true);
+        b = KafkaCluster.fromCrd(getResource()).generateStatefulSet(true);
     }
 
     private Kafka getResource() {

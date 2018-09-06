@@ -63,6 +63,7 @@ import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -228,7 +229,8 @@ public class KafkaAssemblyOperatorTest {
     }
 
     private void createCluster(TestContext context, Kafka clusterCm, List<Secret> secrets) {
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(certManager, clusterCm, secrets);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm);
+        kafkaCluster.generateCertificates(certManager, secrets,  null, Collections.EMPTY_MAP);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(certManager, clusterCm, secrets);
         TopicOperator topicOperator = TopicOperator.fromCrd(certManager, clusterCm, secrets);
         EntityOperator entityOperator = EntityOperator.fromCrd(certManager, clusterCm, secrets);
@@ -330,12 +332,23 @@ public class KafkaAssemblyOperatorTest {
             logsAndMetricsNames.add(KafkaCluster.metricAndLogConfigsName(clusterCmName));
 
             // We expect a headless and headful service
-            List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(4, capturedServices.size());
-            context.assertEquals(set(KafkaCluster.serviceName(clusterCmName),
-                    KafkaCluster.headlessServiceName(clusterCmName),
+            Set<String> expectedServices = set(
+                    ZookeeperCluster.headlessServiceName(clusterCmName),
                     ZookeeperCluster.serviceName(clusterCmName),
-                    ZookeeperCluster.headlessServiceName(clusterCmName)), capturedServices.stream().map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
+                    KafkaCluster.serviceName(clusterCmName),
+                    KafkaCluster.headlessServiceName(clusterCmName));
+
+            for (int i = 0; i < kafkaCluster.getReplicas(); i++)    {
+                expectedServices.add(KafkaCluster.externalServiceName(clusterCmName, i));
+            }
+
+            List<Service> capturedServices = serviceCaptor.getAllValues();
+            context.assertEquals(7, capturedServices.size());
+            context.assertEquals(set(
+                    ZookeeperCluster.headlessServiceName(clusterCmName),
+                    ZookeeperCluster.serviceName(clusterCmName),
+                    KafkaCluster.serviceName(clusterCmName),
+                    KafkaCluster.headlessServiceName(clusterCmName)), capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Assertions on the statefulset
             List<StatefulSet> capturedSs = ssCaptor.getAllValues();
@@ -354,7 +367,7 @@ public class KafkaAssemblyOperatorTest {
     private void deleteCluster(TestContext context, Kafka clusterCm, List<Secret> secrets) {
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(certManager, clusterCm, secrets);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(certManager, clusterCm, secrets);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm);
         TopicOperator topicOperator = TopicOperator.fromCrd(certManager, clusterCm, secrets);
         EntityOperator entityOperator = EntityOperator.fromCrd(certManager, clusterCm, secrets);
 
@@ -381,6 +394,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockKsOps.get(assemblyNamespace, KafkaCluster.kafkaClusterName(assemblyName))).thenReturn(kafkaSs);
         when(mockZsOps.get(assemblyNamespace, ZookeeperCluster.zookeeperClusterName(assemblyName))).thenReturn(zkSs);
 
+        kafkaCluster.generateCertificates(certManager, secrets,  null, Collections.EMPTY_MAP);
         Secret clientsCASecret = kafkaCluster.generateClientsCASecret();
         Secret clientsPublicKeySecret = kafkaCluster.generateClientsPublicKeySecret();
         Secret brokersInternalSecret = kafkaCluster.generateBrokersSecret();
@@ -488,12 +502,18 @@ public class KafkaAssemblyOperatorTest {
 
             verify(mockZsOps).reconcile(eq(assemblyNamespace), eq(ZookeeperCluster.zookeeperClusterName(assemblyName)), isNull());
 
-            //Verify deleted services
-            context.assertEquals(set(
+            Set<String> expectedServices = set(
                     ZookeeperCluster.headlessServiceName(assemblyName),
                     ZookeeperCluster.serviceName(assemblyName),
                     KafkaCluster.serviceName(assemblyName),
-                    KafkaCluster.headlessServiceName(assemblyName)),
+                    KafkaCluster.headlessServiceName(assemblyName));
+
+            for (int i = 0; i < kafkaCluster.getReplicas(); i++)    {
+                expectedServices.add(KafkaCluster.externalServiceName(assemblyName, i));
+            }
+
+            //Verify deleted services
+            context.assertEquals(expectedServices,
                     captured(serviceCaptor));
 
             // verify deleted Statefulsets
@@ -715,8 +735,10 @@ public class KafkaAssemblyOperatorTest {
 
 
     private void updateCluster(TestContext context, Kafka originalAssembly, Kafka updatedAssembly, List<Secret> secrets) {
-        KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(certManager, originalAssembly, secrets);
-        KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(certManager, updatedAssembly, secrets);
+        KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(originalAssembly);
+        originalKafkaCluster.generateCertificates(certManager, secrets,  null, Collections.EMPTY_MAP);
+        KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(updatedAssembly);
+        updatedKafkaCluster.generateCertificates(certManager, secrets,  null, Collections.EMPTY_MAP);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(certManager, originalAssembly, secrets);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(certManager, updatedAssembly, secrets);
         TopicOperator originalTopicOperator = TopicOperator.fromCrd(certManager, originalAssembly, secrets);
@@ -736,6 +758,7 @@ public class KafkaAssemblyOperatorTest {
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
         RoleBindingOperator mockRbo = supplier.roleBindingOperator;
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
+        RouteOperator mockRouteOps = supplier.routeOperations;
 
         String clusterName = updatedAssembly.getMetadata().getName();
         String clusterNamespace = updatedAssembly.getMetadata().getNamespace();
@@ -964,8 +987,8 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromCrd(certManager, bar, barSecrets).generateStatefulSet(openShift),
-                        KafkaCluster.fromCrd(certManager, baz, bazSecrets).generateStatefulSet(openShift))
+                asList(KafkaCluster.fromCrd(bar).generateStatefulSet(openShift),
+                        KafkaCluster.fromCrd(baz).generateStatefulSet(openShift))
         );
 
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(foo.getMetadata().getName())))).thenReturn(fooSecrets.get(0));
@@ -973,7 +996,8 @@ public class KafkaAssemblyOperatorTest {
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
-        KafkaCluster barCluster = KafkaCluster.fromCrd(certManager, bar, barSecrets);
+        KafkaCluster barCluster = KafkaCluster.fromCrd(bar);
+        barCluster.generateCertificates(certManager, barSecrets,  null, Collections.EMPTY_MAP);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(barCluster.generateStatefulSet(openShift))
         );
@@ -985,7 +1009,8 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         Labels bazLabels = Labels.forCluster("baz");
-        KafkaCluster bazCluster = KafkaCluster.fromCrd(certManager, baz, bazSecrets);
+        KafkaCluster bazCluster = KafkaCluster.fromCrd(baz);
+        bazCluster.generateCertificates(certManager, bazSecrets,  null, Collections.EMPTY_MAP);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
                 asList(bazCluster.generateStatefulSet(openShift))
         );
@@ -1036,6 +1061,7 @@ public class KafkaAssemblyOperatorTest {
         when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.routeOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         return supplier;
     }
 

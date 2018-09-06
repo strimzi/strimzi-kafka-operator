@@ -58,6 +58,11 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
+
+import io.fabric8.openshift.api.model.DoneableRoute;
+import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.api.model.RouteList;
+import io.fabric8.openshift.client.OpenShiftClient;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
@@ -103,6 +108,7 @@ public class MockKube {
     private final Map<String, Secret> secretDb = db(emptySet(), Secret.class, DoneableSecret.class);
     private final Map<String, ServiceAccount> serviceAccountDb = db(emptySet(), ServiceAccount.class, DoneableServiceAccount.class);
     private final Map<String, NetworkPolicy> policyDb = db(emptySet(), NetworkPolicy.class, DoneableNetworkPolicy.class);
+    private final Map<String, Route> routeDb = db(emptySet(), Route.class, DoneableRoute.class);
 
     public MockKube withInitialCms(Set<ConfigMap> initialCms) {
         this.cmDb.putAll(db(initialCms, ConfigMap.class, DoneableConfigMap.class));
@@ -126,6 +132,11 @@ public class MockKube {
 
     public MockKube withInitialNetworkPolicy(Set<NetworkPolicy> initial) {
         this.policyDb.putAll(db(initial, NetworkPolicy.class, DoneableNetworkPolicy.class));
+        return this;
+    }
+
+    public MockKube withInitialRoute(Set<Route> initial) {
+        this.routeDb.putAll(db(initial, Route.class, DoneableRoute.class));
         return this;
     }
 
@@ -163,6 +174,7 @@ public class MockKube {
 
     public KubernetesClient build() {
         KubernetesClient mockClient = mock(KubernetesClient.class);
+        OpenShiftClient mockOpenShiftClient = mock(OpenShiftClient.class);
         MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockCms = buildConfigMaps();
         MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs = buildPvcs();
         MixedOperation<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> mockEndpoints = buildEndpoints();
@@ -173,6 +185,7 @@ public class MockKube {
         MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> mockSecrets = buildSecrets();
         MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> mockServiceAccounts = buildServiceAccount();
         MixedOperation<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> mockNetworkPolicy = buildNetworkPolicy();
+        MixedOperation<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> mockRoute = buildRoute();
 
         when(mockClient.configMaps()).thenReturn(mockCms);
 
@@ -211,6 +224,8 @@ public class MockKube {
         when(mockClient.secrets()).thenReturn(mockSecrets);
         when(mockClient.serviceAccounts()).thenReturn(mockServiceAccounts);
         when(mockClient.extensions().networkPolicies()).thenReturn(mockNetworkPolicy);
+        when(mockClient.adapt(OpenShiftClient.class)).thenReturn(mockOpenShiftClient);
+        when(mockOpenShiftClient.routes()).thenReturn(mockRoute);
 
         mockHttpClientForWorkaroundRbac(mockClient);
         return mockClient;
@@ -533,6 +548,19 @@ public class MockKube {
         }.build();
     }
 
+    private MixedOperation<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> buildRoute() {
+        return new AbstractMockBuilder<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>>(
+                Route.class, RouteList.class, DoneableRoute.class, castClass(Resource.class), routeDb) {
+            @Override
+            protected void nameScopedMocks(Resource<Route, DoneableRoute> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
+    }
 
     private <T extends CustomResource,
             L extends KubernetesResource & KubernetesResourceList<T>,
