@@ -290,15 +290,13 @@ public class KafkaConnectClusterTest {
     public void testGenerateDeploymentWithScramSha512Auth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                .withAuthentication(
-                        new KafkaConnectAuthenticationScramSha512Builder()
-                                .withUsername("user1")
-                                .withNewPasswordSecret()
-                                    .withSecretName("user1-secret")
-                                    .withPassword("password")
-                                .endPasswordSecret()
-                        .build()
-                )
+                    .withNewKafkaConnectAuthenticationScramSha512Authentication()
+                        .withUsername("user1")
+                        .withNewPasswordSecret()
+                            .withSecretName("user1-secret")
+                            .withPassword("password")
+                        .endPasswordSecret()
+                    .endKafkaConnectAuthenticationScramSha512Authentication()
                 .endSpec()
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);

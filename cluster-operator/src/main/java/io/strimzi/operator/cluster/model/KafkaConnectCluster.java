@@ -154,7 +154,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
 
             if (spec.getAuthentication() != null)   {
-                if (spec.getAuthentication().getType().equals(KafkaConnectAuthenticationTls.TYPE_TLS)) {
+                if (spec.getAuthentication() instanceof KafkaConnectAuthenticationTls) {
                     KafkaConnectAuthenticationTls auth = (KafkaConnectAuthenticationTls) spec.getAuthentication();
                     if (auth.getCertificateAndKey() != null) {
                         kafkaConnect.setTlsAuthCertAndKey(auth.getCertificateAndKey());
@@ -165,7 +165,7 @@ public class KafkaConnectCluster extends AbstractModel {
                         log.warn("TLS Client authentication selected, but no certificate and key configured.");
                         throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
                     }
-                } else if (spec.getAuthentication().getType().equals(KafkaConnectAuthenticationScramSha512.TYPE_SCRAM_SHA_512))    {
+                } else if (spec.getAuthentication() instanceof KafkaConnectAuthenticationScramSha512)    {
                     KafkaConnectAuthenticationScramSha512 auth = (KafkaConnectAuthenticationScramSha512) spec.getAuthentication();
                     if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
                         kafkaConnect.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
