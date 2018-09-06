@@ -4,6 +4,7 @@
 
 * Use less wide RBAC permissions (`ClusterRoleBindings` where converted to `RoleBindings` where possible)
 * Support for SASL authentication using the SCRAM-SHA-512 mechanism added to Kafka Connect and Kafka Connect with S2I support 
+* Network policies for managing access to Zookeeper ports and Kafka replication ports
 
 ## 0.6.0
 
