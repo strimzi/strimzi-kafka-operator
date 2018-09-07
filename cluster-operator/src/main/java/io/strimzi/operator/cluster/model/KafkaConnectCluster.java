@@ -20,8 +20,10 @@ import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -42,6 +44,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/connect-certs/";
+    protected static final String PASSWORD_VOLUME_MOUNT = "/opt/kafka/connect-password/";
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 3;
@@ -56,11 +59,15 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS = "KAFKA_CONNECT_TRUSTED_CERTS";
     protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT = "KAFKA_CONNECT_TLS_AUTH_CERT";
     protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY = "KAFKA_CONNECT_TLS_AUTH_KEY";
+    protected static final String ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE = "KAFKA_CONNECT_SASL_PASSWORD_FILE";
+    protected static final String ENV_VAR_KAFKA_CONNECT_SASL_USERNAME = "KAFKA_CONNECT_SASL_USERNAME";
 
     protected String bootstrapServers;
 
     private List<CertSecretSource> trustedCertificates;
     private CertAndKeySecretSource tlsAuthCertAndKey;
+    private PasswordSecretSource passwordSecret;
+    private String username;
 
     /**
      * Constructor
@@ -146,10 +153,26 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.setTrustedCertificates(spec.getTls().getTrustedCertificates());
             }
 
-            if (spec.getAuthentication() != null && spec.getAuthentication().getType().equals(KafkaConnectAuthenticationTls.TYPE_TLS)) {
-                kafkaConnect.setTlsAuthCertAndKey(((KafkaConnectAuthenticationTls) spec.getAuthentication()).getCertificateAndKey());
-                if (spec.getTls() == null) {
-                    log.warn("TLS configuration missing: related TLS client authentication will not work properly");
+            if (spec.getAuthentication() != null)   {
+                if (spec.getAuthentication() instanceof KafkaConnectAuthenticationTls) {
+                    KafkaConnectAuthenticationTls auth = (KafkaConnectAuthenticationTls) spec.getAuthentication();
+                    if (auth.getCertificateAndKey() != null) {
+                        kafkaConnect.setTlsAuthCertAndKey(auth.getCertificateAndKey());
+                        if (spec.getTls() == null) {
+                            log.warn("TLS configuration missing: related TLS client authentication will not work properly");
+                        }
+                    } else {
+                        log.warn("TLS Client authentication selected, but no certificate and key configured.");
+                        throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
+                    }
+                } else if (spec.getAuthentication() instanceof KafkaConnectAuthenticationScramSha512)    {
+                    KafkaConnectAuthenticationScramSha512 auth = (KafkaConnectAuthenticationScramSha512) spec.getAuthentication();
+                    if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
+                        kafkaConnect.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
+                    } else  {
+                        log.warn("SCRAM-SHA-512 authentication selected, but no username and password configured.");
+                        throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but no username and password configured.");
+                    }
                 }
             }
         }
@@ -192,6 +215,8 @@ public class KafkaConnectCluster extends AbstractModel {
             if (!volumeList.stream().anyMatch(v -> v.getName().equals(tlsAuthCertAndKey.getSecretName()))) {
                 volumeList.add(createSecretVolume(tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getSecretName()));
             }
+        } else if (passwordSecret != null)  {
+            volumeList.add(createSecretVolume(passwordSecret.getSecretName(), passwordSecret.getSecretName()));
         }
 
         return volumeList;
@@ -215,6 +240,9 @@ public class KafkaConnectCluster extends AbstractModel {
                 volumeMountList.add(createVolumeMount(tlsAuthCertAndKey.getSecretName(),
                         TLS_CERTS_BASE_VOLUME_MOUNT + tlsAuthCertAndKey.getSecretName()));
             }
+        } else if (passwordSecret != null)  {
+            volumeMountList.add(createVolumeMount(passwordSecret.getSecretName(),
+                    PASSWORD_VOLUME_MOUNT + passwordSecret.getSecretName()));
         }
 
         return volumeMountList;
@@ -285,7 +313,12 @@ public class KafkaConnectCluster extends AbstractModel {
                     String.format("%s/%s", tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getCertificate())));
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY,
                     String.format("%s/%s", tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getKey())));
+        } else if (passwordSecret != null)  {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_USERNAME, username));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE,
+                    String.format("%s/%s", passwordSecret.getSecretName(), passwordSecret.getPassword())));
         }
+
         return varList;
     }
 
@@ -311,10 +344,21 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * Ste the certificate and related private key for TLS based authentication
+     * Set the certificate and related private key for TLS based authentication
      * @param tlsAuthCertAndKey certificate and private key bundle
      */
     protected void setTlsAuthCertAndKey(CertAndKeySecretSource tlsAuthCertAndKey) {
         this.tlsAuthCertAndKey = tlsAuthCertAndKey;
+    }
+
+    /**
+     * Set the username and password for SASL SCRAM-SHA-512 based authentication
+     *
+     * @param username          Username
+     * @param passwordSecret    Secret with password
+     */
+    protected void setUsernameAndPassword(String username, PasswordSecretSource passwordSecret) {
+        this.username = username;
+        this.passwordSecret = passwordSecret;
     }
 }

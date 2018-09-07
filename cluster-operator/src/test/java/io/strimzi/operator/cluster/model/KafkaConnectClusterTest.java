@@ -284,4 +284,33 @@ public class KafkaConnectClusterTest {
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getVolumes().size());
         assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
     }
+
+    @Test
+    public void testGenerateDeploymentWithScramSha512Auth() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewKafkaConnectAuthenticationScramSha512Authentication()
+                        .withUsername("user1")
+                        .withNewPasswordSecret()
+                            .withSecretName("user1-secret")
+                            .withPassword("password")
+                        .endPasswordSecret()
+                    .endKafkaConnectAuthenticationScramSha512Authentication()
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
+        Deployment dep = kc.generateDeployment(Collections.emptyMap());
+
+        assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertEquals(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "user1-secret",
+                containers.get(0).getVolumeMounts().get(1).getMountPath());
+
+        assertEquals("user1-secret/password",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE));
+        assertEquals("user1",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME));
+    }
 }

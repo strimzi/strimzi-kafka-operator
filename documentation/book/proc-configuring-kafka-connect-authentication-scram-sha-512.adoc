@@ -1,0 +1,62 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-connect-authentication.adoc
+
+[id='proc-configuring-kafka-connect-authentication-scram-sha-512-{context}']
+= Configuring SCRAM-SHA-512 authentication in Kafka Connect
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+* Username of the user which should be used for authentication
+
+.Procedure
+
+. Find out the name of the `Secret` with the password which should be used for authentication and the key under which the password is stored in the `Secret`.
+If such a `Secret` does not exist yet, prepare a file with the password and create the `Secret`.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl create`:
+[source,shell,subs=+quotes]
+echo -n '_<password>_' > _<my-password.txt>_
+kubectl create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc create`:
++
+[source,shell,subs=+quotes]
+echo -n '1f2d1e2e67df' > _<my-password.txt>_
+oc create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
+. Edit the `authentication` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  authentication:
+    type: scram-sha-512
+    username: _<my-username>_
+    passwordSecret:
+      secretName: _<my-secret>_
+      password: _<my-password.txt>_
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_
