@@ -399,9 +399,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaInitClusterRoleBinding() {
-            return withVoid(clusterRoleBindingOperator.reconcile(
+            ClusterRoleBindingOperator.ClusterRoleBinding desired = kafkaCluster.generateClusterRoleBinding(namespace);
+            Future<Void> fut = clusterRoleBindingOperator.reconcile(
                     KafkaCluster.initContainerClusterRoleBindingName(namespace, name),
-                    kafkaCluster.generateClusterRoleBinding(namespace)));
+                    desired);
+
+            Future replacementFut = Future.future();
+
+            fut.setHandler(res -> {
+                if (res.failed())    {
+                    if (desired == null && res.cause().getMessage().contains("403: Forbidden")) {
+                        log.debug("Ignoring forbidden access to ClusterRoleBindings which seems not needed while Kafka rack awareness is disabled.");
+                        replacementFut.complete();
+                    } else {
+                        replacementFut.fail(res.cause());
+                    }
+                } else {
+                    replacementFut.complete();
+                }
+            });
+
+            return withVoid(replacementFut);
         }
 
         Future<ReconciliationState> kafkaScaleDown() {
