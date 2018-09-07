@@ -52,7 +52,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
@@ -191,7 +191,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ReconcileResult<StatefulSet> kafkaDiffs;
         private boolean kafkaForcedRestart;
         private String kafkaExternalBootstrapAddress;
-        private Map<String, String> kafkaExternalAddresses = new TreeMap<>();
+        private SortedMap<Integer, String> kafkaExternalAddresses = new TreeMap<>();
 
         private TopicOperator topicOperator;
         private Deployment toDeployment = null;
@@ -473,7 +473,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
 
-        Future<ReconciliationState> kafkaReplicaRoutesReady() {
+        Future<ReconciliationState> kafkaBootstrapRouteReady() {
             if (routeOperations == null || !kafkaCluster.isExposedWithRoute()) {
                 return withVoid(Future.succeededFuture());
             }
@@ -500,7 +500,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(future);
         }
 
-        Future<ReconciliationState> kafkaBootstrapRouteReady() {
+        Future<ReconciliationState> kafkaReplicaRoutesReady() {
             if (routeOperations == null || !kafkaCluster.isExposedWithRoute()) {
                 return withVoid(Future.succeededFuture());
             }
@@ -516,7 +516,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 address.setHandler(res -> {
                     if (res.succeeded()) {
-                        this.kafkaExternalAddresses.put(kafkaCluster.getPodName(podNumber), routeOperations.get(namespace, routeName).getSpec().getHost());
+                        this.kafkaExternalAddresses.put(podNumber, routeOperations.get(namespace, routeName).getSpec().getHost());
 
                         if (log.isTraceEnabled()) {
                             log.trace("{}: Found address {} for Route {}", reconciliation, routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
@@ -565,7 +565,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generateStatefulSet(isOpenShift, kafkaExternalAddresses)));
+            kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
+            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generateStatefulSet(isOpenShift)));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {

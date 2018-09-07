@@ -62,6 +62,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
@@ -130,7 +132,7 @@ public class KafkaCluster extends AbstractModel {
     private Sidecar tlsSidecar;
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
-    private Map<String, String> externalAddresses;
+    private SortedMap<Integer, String> externalAddresses = new TreeMap<>();
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -286,7 +288,7 @@ public class KafkaCluster extends AbstractModel {
      * @param externalBootstrapAddress External address to the bootstrap service
      * @param externalAddresses Map with external addresses under which the individual pods are available
      */
-    public void generateCertificates(CertManager certManager, List<Secret> secrets, String externalBootstrapAddress, Map<String, String> externalAddresses) {
+    public void generateCertificates(CertManager certManager, List<Secret> secrets, String externalBootstrapAddress, Map<Integer, String> externalAddresses) {
         log.debug("Generating certificates");
 
         try {
@@ -510,18 +512,6 @@ public class KafkaCluster extends AbstractModel {
      * @return The generate StatefulSet
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
-        // TODO: Delete this?
-        return generateStatefulSet(isOpenShift, Collections.EMPTY_MAP);
-    }
-
-    /**
-     * Generates a StatefulSet according to configured defaults
-     * @param isOpenShift True iff this operator is operating within OpenShift.
-     * @return The generate StatefulSet
-     */
-    public StatefulSet generateStatefulSet(boolean isOpenShift, Map<String, String> externalAddresses) {
-        setExternalAddresses(externalAddresses);
-
         return createStatefulSet(
                 getVolumes(),
                 getVolumeClaims(),
@@ -779,8 +769,8 @@ public class KafkaCluster extends AbstractModel {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE"));
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses.values())));
 
-                if (listeners.getExternal().getAuthentication() != null) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, listeners.getExternal().getAuthentication().getType()));
+                if (listeners.getExternal().getAuth() != null) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, listeners.getExternal().getAuth().getType()));
                 }
             }
         }
@@ -922,9 +912,9 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Sets the Map with Kafka pod's external addresses
      *
-     * @param authorization
+     * @param externalAddresses Map with external addresses
      */
-    public void setExternalAddresses(Map<String, String> externalAddresses) {
+    public void setExternalAddresses(SortedMap<Integer, String> externalAddresses) {
         this.externalAddresses = externalAddresses;
     }
 

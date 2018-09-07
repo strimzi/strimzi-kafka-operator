@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import io.strimzi.crdgenerator.annotations.Description;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.sundr.builder.annotations.Buildable;
 
 /**
@@ -23,9 +24,22 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
 
     public static final String TYPE_ROUTE = "route";
 
+    private KafkaListenerAuthentication auth;
+
     @Description("Must be `" + TYPE_ROUTE + "`")
     @Override
     public String getType() {
         return TYPE_ROUTE;
+    }
+
+    @Description("Authorization configuration for Kafka brokers")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("authentication")
+    public KafkaListenerAuthentication getAuth() {
+        return auth;
+    }
+
+    public void setAuth(KafkaListenerAuthentication auth) {
+        this.auth = auth;
     }
 }

@@ -1048,7 +1048,7 @@ public abstract class AbstractModel {
      * @return Collection with certificates
      * @throws IOException
      */
-    protected Map<String, CertAndKey> maybeCopyOrGenerateCerts(CertManager certManager, Secret secret, int replicasInSecret, CertAndKey caCert, BiFunction<String, Integer, String> podName, String externalBootstrapAddress, Map<String, String> externalAddresses) throws IOException {
+    protected Map<String, CertAndKey> maybeCopyOrGenerateCerts(CertManager certManager, Secret secret, int replicasInSecret, CertAndKey caCert, BiFunction<String, Integer, String> podName, String externalBootstrapAddress, Map<Integer, String> externalAddresses) throws IOException {
 
         Map<String, CertAndKey> certs = new HashMap<>();
 
@@ -1091,8 +1091,8 @@ public abstract class AbstractModel {
                 nextDnsId++;
             }
 
-            if (externalAddresses.get(podName.apply(cluster, i)) != null)   {
-                sbjAltNames.put("DNS." + nextDnsId, externalAddresses.get(podName.apply(cluster, i)));
+            if (externalAddresses.get(i) != null)   {
+                sbjAltNames.put("DNS." + nextDnsId, externalAddresses.get(i));
                 nextDnsId++;
             }
 

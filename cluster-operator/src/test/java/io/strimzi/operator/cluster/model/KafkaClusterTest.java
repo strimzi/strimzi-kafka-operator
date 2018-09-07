@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
@@ -375,6 +377,8 @@ public class KafkaClusterTest {
                 .editKafka()
                 .withNewListeners()
                     .withNewKafkaListenerExternalRouteExternal()
+                        .withNewKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerAuthenticationTlsAuth()
                     .endKafkaListenerExternalRouteExternal()
                 .endListeners()
                 .endKafka()
@@ -383,17 +387,19 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
 
-        Map<String, String> addresses = new TreeMap<>();
-        addresses.put(kc.getPodName(0), "my-address-0");
-        addresses.put(kc.getPodName(1), "my-address-1");
-        addresses.put(kc.getPodName(2), "my-address-2");
+        SortedMap<Integer, String> addresses = new TreeMap<>();
+        addresses.put(0, "my-address-0");
+        addresses.put(1, "my-address-1");
+        addresses.put(2, "my-address-2");
+        kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
-        StatefulSet ss = kc.generateStatefulSet(true, addresses);
+        StatefulSet ss = kc.generateStatefulSet(true);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
 
         List<ContainerPort> ports = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
         assertTrue(ports.contains(kc.createContainerPort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, "TCP")));

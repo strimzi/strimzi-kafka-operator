@@ -19,6 +19,8 @@ import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaListeners;
+import io.strimzi.api.kafka.model.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
@@ -50,6 +52,9 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
+
+import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.api.model.RouteBuilder;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -105,6 +110,7 @@ public class KafkaAssemblyOperatorTest {
     }
     private final boolean openShift;
     private final boolean metrics;
+    private final KafkaListeners kafkaListeners;
     private final Map<String, Object> kafkaConfig;
     private final Map<String, Object> zooConfig;
     private final Storage storage;
@@ -116,16 +122,18 @@ public class KafkaAssemblyOperatorTest {
     public static class Params {
         private final boolean openShift;
         private final boolean metrics;
+        private final KafkaListeners kafkaListeners;
         private final Map<String, Object> kafkaConfig;
         private final Map<String, Object> zooConfig;
         private final Storage storage;
         private final TopicOperatorSpec toConfig;
         private final EntityOperatorSpec eoConfig;
 
-        public Params(boolean openShift, boolean metrics, Map<String, Object> kafkaConfig, Map<String, Object> zooConfig, Storage storage, TopicOperatorSpec toConfig, EntityOperatorSpec eoConfig) {
+        public Params(boolean openShift, boolean metrics, KafkaListeners kafkaListeners, Map<String, Object> kafkaConfig, Map<String, Object> zooConfig, Storage storage, TopicOperatorSpec toConfig, EntityOperatorSpec eoConfig) {
             this.openShift = openShift;
             this.metrics = metrics;
             this.kafkaConfig = kafkaConfig;
+            this.kafkaListeners = kafkaListeners;
             this.zooConfig = zooConfig;
             this.storage = storage;
             this.toConfig = toConfig;
@@ -135,6 +143,7 @@ public class KafkaAssemblyOperatorTest {
         public String toString() {
             return "openShift=" + openShift +
                     ",metrics=" + metrics +
+                    ",kafkaListeners=" + kafkaListeners +
                     ",kafkaConfig=" + kafkaConfig +
                     ",zooConfig=" + zooConfig +
                     ",storage=" + storage +
@@ -181,14 +190,43 @@ public class KafkaAssemblyOperatorTest {
         List<Params> result = new ArrayList();
         for (boolean shift: shiftiness) {
             for (boolean metric: metrics) {
-                for (Map kafkaConfig: kafkaConfigs) {
-                    for (Map zooConfig: zooConfigs) {
+                for (Map kafkaConfig : kafkaConfigs) {
+                    for (Map zooConfig : zooConfigs) {
                         for (Storage storage : storageConfigs) {
                             for (TopicOperatorSpec toConfig : toConfigs) {
-                                for (EntityOperatorSpec eoConfig: eoConfigs) {
+                                for (EntityOperatorSpec eoConfig : eoConfigs) {
+                                    KafkaListeners listeners;
+                                    if (shift)   {
+                                        listeners = new KafkaListenersBuilder()
+                                                .withNewPlain()
+                                                    .withNewKafkaListenerAuthenticationScramSha512Authentication()
+                                                    .endKafkaListenerAuthenticationScramSha512Authentication()
+                                                .endPlain()
+                                                .withNewTls()
+                                                    .withNewKafkaListenerAuthenticationTlsAuth()
+                                                    .endKafkaListenerAuthenticationTlsAuth()
+                                                .endTls()
+                                                .withNewKafkaListenerExternalRouteExternal()
+                                                    .withNewKafkaListenerAuthenticationTlsAuth()
+                                                    .endKafkaListenerAuthenticationTlsAuth()
+                                                .endKafkaListenerExternalRouteExternal()
+                                                .build();
+                                    } else {
+                                        listeners = new KafkaListenersBuilder()
+                                                .withNewPlain()
+                                                .withNewKafkaListenerAuthenticationScramSha512Authentication()
+                                                    .endKafkaListenerAuthenticationScramSha512Authentication()
+                                                    .endPlain()
+                                                .withNewTls()
+                                                    .withNewKafkaListenerAuthenticationTlsAuth()
+                                                    .endKafkaListenerAuthenticationTlsAuth()
+                                                .endTls()
+                                                .build();
+                                    }
+
                                     // TO and EO cannot be deployed together so no need for testing this case
                                     if (!(toConfig != null && eoConfig != null)) {
-                                        result.add(new Params(shift, metric, kafkaConfig, zooConfig, storage, toConfig, eoConfig));
+                                        result.add(new Params(shift, metric, listeners, kafkaConfig, zooConfig, storage, toConfig, eoConfig));
                                     }
                                 }
                             }
@@ -203,6 +241,7 @@ public class KafkaAssemblyOperatorTest {
     public KafkaAssemblyOperatorTest(Params params) {
         this.openShift = params.openShift;
         this.metrics = params.metrics;
+        this.kafkaListeners = params.kafkaListeners;
         this.kafkaConfig = params.kafkaConfig;
         this.zooConfig = params.zooConfig;
         this.storage = params.storage;
@@ -246,6 +285,7 @@ public class KafkaAssemblyOperatorTest {
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
+        RouteOperator mockRotueOps = supplier.routeOperations;
 
         // Create a CM
         String clusterCmName = clusterCm.getMetadata().getName();
@@ -314,6 +354,12 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> logNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
+        ArgumentCaptor<Route> routeCaptor = ArgumentCaptor.forClass(Route.class);
+        ArgumentCaptor<String> routeNameCaptor = ArgumentCaptor.forClass(String.class);
+        if (openShift) {
+            when(mockRotueOps.reconcile(eq(clusterCmNamespace), routeNameCaptor.capture(), routeCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+        }
+
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
@@ -338,17 +384,15 @@ public class KafkaAssemblyOperatorTest {
                     KafkaCluster.serviceName(clusterCmName),
                     KafkaCluster.headlessServiceName(clusterCmName));
 
-            for (int i = 0; i < kafkaCluster.getReplicas(); i++)    {
-                expectedServices.add(KafkaCluster.externalServiceName(clusterCmName, i));
+            if (openShift && kafkaListeners != null && kafkaListeners.getExternal() != null) {
+                for (int i = 0; i < kafkaCluster.getReplicas(); i++) {
+                    expectedServices.add(KafkaCluster.externalServiceName(clusterCmName, i));
+                }
             }
 
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(7, capturedServices.size());
-            context.assertEquals(set(
-                    ZookeeperCluster.headlessServiceName(clusterCmName),
-                    ZookeeperCluster.serviceName(clusterCmName),
-                    KafkaCluster.serviceName(clusterCmName),
-                    KafkaCluster.headlessServiceName(clusterCmName)), capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
+            context.assertEquals(expectedServices, capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Assertions on the statefulset
             List<StatefulSet> capturedSs = ssCaptor.getAllValues();
@@ -358,6 +402,20 @@ public class KafkaAssemblyOperatorTest {
 
             // expected Secrets with certificates
             context.assertEquals(expectedSecrets, createdOrUpdatedSecrets);
+
+            // Verify deleted routes
+            if (openShift) {
+                Set<String> expectedRoutes = set(KafkaCluster.serviceName(clusterCmName));
+
+                for (int i = 0; i < kafkaCluster.getReplicas(); i++)    {
+                    expectedRoutes.add(KafkaCluster.externalServiceName(clusterCmName, i));
+                }
+
+                context.assertEquals(expectedRoutes,
+                        captured(routeNameCaptor));
+            } else {
+                context.assertEquals(0, routeNameCaptor.getAllValues().size());
+            }
 
             verifyNoMoreInteractions(mockPvcOps);
             async.complete();
@@ -385,6 +443,7 @@ public class KafkaAssemblyOperatorTest {
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
         RoleBindingOperator mockRbo = supplier.roleBindingOperator;
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
+        RouteOperator mockRouteOps = supplier.routeOperations;
 
         String assemblyName = clusterCm.getMetadata().getName();
         String assemblyNamespace = clusterCm.getMetadata().getNamespace();
@@ -466,6 +525,11 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> pvcCaptor = ArgumentCaptor.forClass(String.class);
         when(mockPvcOps.reconcile(eq(assemblyNamespace), pvcCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
+        ArgumentCaptor<String> routeCaptor = ArgumentCaptor.forClass(String.class);
+        if (openShift) {
+            when(mockRouteOps.reconcile(eq(assemblyNamespace), routeCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+        }
+
         Set<String> existingDepNames = new HashSet<>();
         when(mockDepOps.reconcile(eq(assemblyNamespace), anyString(), isNull())).thenAnswer(invocation -> {
             String name = invocation.getArgument(1);
@@ -502,6 +566,7 @@ public class KafkaAssemblyOperatorTest {
 
             verify(mockZsOps).reconcile(eq(assemblyNamespace), eq(ZookeeperCluster.zookeeperClusterName(assemblyName)), isNull());
 
+            //Verify deleted services
             Set<String> expectedServices = set(
                     ZookeeperCluster.headlessServiceName(assemblyName),
                     ZookeeperCluster.serviceName(assemblyName),
@@ -512,7 +577,6 @@ public class KafkaAssemblyOperatorTest {
                 expectedServices.add(KafkaCluster.externalServiceName(assemblyName, i));
             }
 
-            //Verify deleted services
             context.assertEquals(expectedServices,
                     captured(serviceCaptor));
 
@@ -544,6 +608,18 @@ public class KafkaAssemblyOperatorTest {
                 context.assertEquals(existingDepNames, existingDepNames);
             }
 
+            // Verify deleted routes
+            if (openShift) {
+                Set<String> expectedRoutes = set(KafkaCluster.serviceName(assemblyName));
+
+                for (int i = 0; i < kafkaCluster.getReplicas(); i++)    {
+                    expectedRoutes.add(KafkaCluster.externalServiceName(assemblyName, i));
+                }
+
+                context.assertEquals(expectedRoutes,
+                        captured(routeCaptor));
+            }
+
             async.complete();
         });
     }
@@ -560,6 +636,9 @@ public class KafkaAssemblyOperatorTest {
 
         Kafka kafka = new KafkaBuilder(resource)
                 .editSpec()
+                    .editKafka()
+                        .withListeners(kafkaListeners)
+                    .endKafka()
                     .withTopicOperator(toConfig)
                     .withEntityOperator(eoConfig)
                 .endSpec()
@@ -1051,9 +1130,11 @@ public class KafkaAssemblyOperatorTest {
         context.assertEquals(singleton("baz"), deleted);
     }
 
-    private static ResourceOperatorSupplier supplierWithMocks() {
+    private ResourceOperatorSupplier supplierWithMocks() {
+        RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
+
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
-                mock(ServiceOperator.class), mock(RouteOperator.class), mock(ZookeeperSetOperator.class),
+                mock(ServiceOperator.class), routeOps, mock(ZookeeperSetOperator.class),
                 mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
                 mock(PvcOperator.class), mock(DeploymentOperator.class),
                 mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
@@ -1061,7 +1142,19 @@ public class KafkaAssemblyOperatorTest {
         when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.routeOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        if (openShift) {
+            when(supplier.routeOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.hasAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
+                return new RouteBuilder()
+                        .withNewSpec()
+                        .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
+                        .endSpec()
+                        .build();
+            });
+        }
+
         return supplier;
     }
 

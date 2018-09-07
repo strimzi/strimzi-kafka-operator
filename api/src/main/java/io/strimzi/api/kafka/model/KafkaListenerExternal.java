@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -28,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 public abstract class KafkaListenerExternal implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private KafkaListenerAuthentication serverAuthentication;
+    //private KafkaListenerAuthentication serverAuthentication;
     private Map<String, Object> additionalProperties;
 
     @Description("Type of the external listener. " +
@@ -37,15 +38,23 @@ public abstract class KafkaListenerExternal implements Serializable {
     @JsonIgnore
     public abstract String getType();
 
-    @Description("Authorization configuration for Kafka brokers")
+    /*@Description("Authorization configuration for Kafka brokers")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("authentication")
     public KafkaListenerAuthentication getAuthentication() {
         return serverAuthentication;
     }
 
     public void setAuthentication(KafkaListenerAuthentication serverAuthentication) {
         this.serverAuthentication = serverAuthentication;
-    }
+    }*/
+
+    @Description("Authorization configuration for Kafka brokers")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("authentication")
+    public abstract KafkaListenerAuthentication getAuth();
+
+    public abstract void setAuth(KafkaListenerAuthentication auth);
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
