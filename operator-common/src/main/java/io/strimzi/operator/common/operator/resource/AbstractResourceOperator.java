@@ -12,12 +12,14 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -179,5 +181,63 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
                     .list()
                     .getItems();
         }
+    }
+
+    /**
+     * Returns a future that completes when the resource identified by the given {@code namespace} and {@code name}
+     * is ready.
+     *
+     * @param namespace The namespace.
+     * @param name The resource name.
+     * @param pollIntervalMs The poll interval in milliseconds.
+     * @param timeoutMs The timeout, in milliseconds.
+     * @param predicate The predicate.
+     */
+    public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+        Future<Void> fut = Future.future();
+        log.debug("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        Handler<Long> handler = new Handler<Long>() {
+            @Override
+            public void handle(Long timerId) {
+                vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                    future -> {
+                        try {
+                            if (predicate.test(namespace, name))   {
+                                future.complete();
+                            } else {
+                                log.trace("{} {} in namespace {} is not ready", resourceKind, name, namespace);
+                                future.fail("Not ready yet");
+                            }
+                        } catch (Throwable e) {
+                            log.warn("Caught exception while waiting for {} {} in namespace {} to get ready", resourceKind, name, namespace, e);
+                            future.fail(e);
+                        }
+                    },
+                    true,
+                    res -> {
+                        if (res.succeeded()) {
+                            log.debug("{} {} in namespace {} is ready", resourceKind, name, namespace);
+                            fut.complete();
+                        } else {
+                            long timeLeft = deadline - System.currentTimeMillis();
+                            if (timeLeft <= 0) {
+                                String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s %s in namespace %s to be ready", timeoutMs, resourceKind, name, namespace);
+                                log.error(exceptionMessage);
+                                fut.fail(new TimeoutException(exceptionMessage));
+                            } else {
+                                // Schedule ourselves to run again
+                                vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
+                            }
+                        }
+                    }
+                );
+            }
+        };
+
+        // Call the handler ourselves the first time
+        handler.handle(null);
+
+        return fut;
     }
 }

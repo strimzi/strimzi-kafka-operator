@@ -203,3 +203,14 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+  - patch
+  - update

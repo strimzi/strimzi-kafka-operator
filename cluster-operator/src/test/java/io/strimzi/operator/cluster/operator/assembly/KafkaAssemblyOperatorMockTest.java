@@ -216,7 +216,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {
-        return new ResourceOperatorSupplier(vertx, mockClient, 2_000);
+        return new ResourceOperatorSupplier(vertx, mockClient, true, 2_000);
     }
 
     private KafkaAssemblyOperator createCluster(TestContext context) {

@@ -27,12 +27,13 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"plain", "tls"})
+@JsonPropertyOrder({"plain", "tls", "external"})
 public class KafkaListeners implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private KafkaListenerTls tls;
     private KafkaListenerPlain plain;
+    private KafkaListenerExternal external;
     private Map<String, Object> additionalProperties;
 
     @Description("Configures TLS listener on port 9093.")
@@ -53,6 +54,16 @@ public class KafkaListeners implements Serializable {
 
     public void setPlain(KafkaListenerPlain plain) {
         this.plain = plain;
+    }
+
+    @Description("Configures external listener on port 9094.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KafkaListenerExternal getExternal() {
+        return external;
+    }
+
+    public void setExternal(KafkaListenerExternal external) {
+        this.external = external;
     }
 
     @JsonAnyGetter

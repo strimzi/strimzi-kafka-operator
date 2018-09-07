@@ -102,7 +102,7 @@ public class PartialRollingUpdateTest {
                 .end()
                 .build();
 
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, bootstrapClient, 60_000L);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, bootstrapClient, true, 60_000L);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 new MockCertManager(), supplier);
 
@@ -139,7 +139,7 @@ public class PartialRollingUpdateTest {
                 .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
                 .build();
 
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, mockClient, 60_000L);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, mockClient, true, 60_000L);
 
         this.kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 new MockCertManager(), supplier);

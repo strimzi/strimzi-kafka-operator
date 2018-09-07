@@ -48,6 +48,11 @@ public class Labels {
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
 
     /**
+     * Used to identify individual pods
+     */
+    public static final String KUBERNETES_STATEFULSET_POD_LABEL = "statefulset.kubernetes.io/pod-name";
+
+    /**
      * The empty set of labels.
      */
     public static final Labels EMPTY = new Labels(emptyMap());
@@ -178,6 +183,13 @@ public class Labels {
      */
     public Labels withName(String name) {
         return with(STRIMZI_NAME_LABEL, name);
+    }
+
+    /**
+     * The same labels as this instance, but with the given {@code name} for the {@code strimzi.io/name} key.
+     */
+    public Labels withStatefulSetPod(String name) {
+        return with(KUBERNETES_STATEFULSET_POD_LABEL, name);
     }
 
     /**

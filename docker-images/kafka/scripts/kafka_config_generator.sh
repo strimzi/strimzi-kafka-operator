@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #####
-# Configuring listeners
+# PLAIN listener
 #####
 LISTENERS="REPLICATION://0.0.0.0:9091"
 ADVERTISED_LISTENERS="REPLICATION://$(hostname -f):9091"
@@ -25,10 +25,12 @@ EOF
   fi
 fi
 
+#####
+# TLS listener
+#####
 if [ "$KAFKA_CLIENTTLS_ENABLED" = "TRUE" ]; then
   LISTENERS="${LISTENERS},CLIENTTLS://0.0.0.0:9093"
   ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},CLIENTTLS://$(hostname -f):9093"
-
 
   # Configuring TLS client authentication for clienttls interface
   if [ "$KAFKA_CLIENTTLS_AUTHENTICATION" = "tls" ]; then
@@ -56,6 +58,44 @@ EOF
 )
   else
     LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SSL"
+  fi
+fi
+
+#####
+# EXTERNAL listener
+#####
+if [ "$KAFKA_EXTERNAL_ENABLED" = "TRUE" ]; then
+  LISTENERS="${LISTENERS},EXTERNAL://0.0.0.0:9094"
+
+  ADDRESSES=($KAFKA_EXTERNAL_ADDRESSES)
+  ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${ADDRESSES[$KAFKA_BROKER_ID]}:443"
+
+  # Configuring TLS client authentication for clienttls interface
+  if [ "$KAFKA_EXTERNAL_AUTHENTICATION" = "tls" ]; then
+    LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH="required"
+  else
+    LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH="none"
+  fi
+
+  EXTERNAL_LISTENER=$(cat <<EOF
+# EXTERNAL interface configuration
+listener.name.external.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
+listener.name.external.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
+# EXTERNAL listener authentication
+listener.name.external.ssl.client.auth=${LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH}
+EOF
+)
+
+  if [ "$KAFKA_EXTERNAL_AUTHENTICATION" = "scram-sha-512" ]; then
+    SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
+    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SASL_SSL"
+    EXTERNAL_LISTENER=$(cat <<EOF
+$EXTERNAL_LISTENER
+listener.name.external.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
+EOF
+)
+  else
+    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SSL"
   fi
 fi
 
@@ -111,6 +151,7 @@ sasl.enabled.mechanisms=$(echo -e "$SASL_ENABLED_MECHANISMS" | uniq | awk -vORS=
 
 ${CLIENT_LISTENER}
 ${CLIENTTLS_LISTENER}
+${EXTERNAL_LISTENER}
 
 # Authorization configuration
 authorizer.class.name=${AUTHORIZER_CLASS_NAME}

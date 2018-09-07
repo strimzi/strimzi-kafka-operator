@@ -695,22 +695,26 @@ public abstract class AbstractModel {
         return probe;
     }
 
-    protected Service createService(String name, List<ServicePort> ports) {
-        return createService(name, ports, Collections.emptyMap());
+    protected Service createService(String type, List<ServicePort> ports) {
+        return createService(type, ports, Collections.emptyMap());
     }
 
     protected Service createService(String type, List<ServicePort> ports,  Map<String, String> annotations) {
+        return createService(serviceName, type, ports, getLabelsWithName(serviceName), getSelectorLabels(), annotations);
+    }
+
+    protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
-                    .withName(serviceName)
-                    .withLabels(getLabelsWithName(serviceName))
-                    .withNamespace(namespace)
-                    .withAnnotations(annotations)
+                .withName(name)
+                .withLabels(labels)
+                .withNamespace(namespace)
+                .withAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
-                    .withType(type)
-                    .withSelector(getSelectorLabels())
-                    .withPorts(ports)
+                .withType(type)
+                .withSelector(selector)
+                .withPorts(ports)
                 .endSpec()
                 .build();
         log.trace("Created service {}", service);
@@ -1027,6 +1031,24 @@ public abstract class AbstractModel {
      * @throws IOException
      */
     protected Map<String, CertAndKey> maybeCopyOrGenerateCerts(CertManager certManager, Secret secret, int replicasInSecret, CertAndKey caCert, BiFunction<String, Integer, String> podName) throws IOException {
+        return maybeCopyOrGenerateCerts(certManager, secret, replicasInSecret, caCert, podName, null, Collections.EMPTY_MAP);
+    }
+
+    /**
+     * Copy already existing certificates from provided Secret based on number of effective replicas
+     * and maybe generate new ones for new replicas (i.e. scale-up)
+     *
+     * @param certManager CertManager instance for handling certificates creation
+     * @param secret The Secret from which getting already existing certificates
+     * @param replicasInSecret How many certificates are in the Secret
+     * @param caCert CA certificate to use for signing new certificates
+     * @param podName A function for resolving the Pod name
+     * @param externalBootstrapAddress External address to the bootstrap service
+     * @param externalAddresses Map with external addresses under which the individual pods are available
+     * @return Collection with certificates
+     * @throws IOException
+     */
+    protected Map<String, CertAndKey> maybeCopyOrGenerateCerts(CertManager certManager, Secret secret, int replicasInSecret, CertAndKey caCert, BiFunction<String, Integer, String> podName, String externalBootstrapAddress, Map<Integer, String> externalAddresses) throws IOException {
 
         Map<String, CertAndKey> certs = new HashMap<>();
 
@@ -1060,6 +1082,19 @@ public abstract class AbstractModel {
             sbjAltNames.put("DNS.1", getServiceName());
             sbjAltNames.put("DNS.2", String.format("%s.%s.svc.%s", getServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
             sbjAltNames.put("DNS.3", String.format("%s.%s.%s.svc.%s", podName.apply(cluster, i), getHeadlessServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+
+            int nextDnsId = 4;
+
+            if (externalBootstrapAddress != null)   {
+                sbjAltNames.put("DNS." + nextDnsId, externalBootstrapAddress);
+                nextDnsId++;
+            }
+
+            if (externalAddresses.get(i) != null)   {
+                sbjAltNames.put("DNS." + nextDnsId, externalAddresses.get(i));
+                nextDnsId++;
+            }
+
             sbj.setSubjectAltNames(sbjAltNames);
 
             certManager.generateCsr(brokerKeyFile, brokerCsrFile, sbj);
