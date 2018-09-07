@@ -1085,7 +1085,6 @@ public abstract class AbstractModel {
 
             int nextDnsId = 4;
 
-            // TODO: We need to refresh the certificates when the external addresses change!
             if (externalBootstrapAddress != null)   {
                 sbjAltNames.put("DNS." + nextDnsId, externalBootstrapAddress);
                 nextDnsId++;
