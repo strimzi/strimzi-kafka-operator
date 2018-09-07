@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.sundr.builder.annotations.Buildable;
 
 /**
- * Configures the external listener which exposes Kafka outside of OpenShift using Routes
+ * Configures the external listener which exposes Kafka outside of Kubernetes using NodePorts
  */
 @Buildable(
         editableEnabled = false,
@@ -19,17 +19,17 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class KafkaListenerExternalRoute extends KafkaListenerExternal {
+public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_ROUTE = "route";
+    public static final String TYPE_NODEPORT = "nodeport";
 
     private KafkaListenerAuthentication auth;
 
-    @Description("Must be `" + TYPE_ROUTE + "`")
+    @Description("Must be `" + TYPE_NODEPORT + "`")
     @Override
     public String getType() {
-        return TYPE_ROUTE;
+        return TYPE_NODEPORT;
     }
 
     @Description("Authentication configuration for Kafka brokers")

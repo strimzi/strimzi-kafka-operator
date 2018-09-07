@@ -127,9 +127,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaScaleDown())
                 .compose(state -> state.kafkaService())
                 .compose(state -> state.kafkaHeadlessService())
+                .compose(state -> state.kafkaExternalBootstrapService())
                 .compose(state -> state.kafkaReplicaServices())
                 .compose(state -> state.kafkaBootstrapRoute())
                 .compose(state -> state.kafkaReplicaRoutes())
+                .compose(state -> state.kafkaExternalBootstrapServiceReady())
+                .compose(state -> state.kafkaReplicaServicesReady())
                 .compose(state -> state.kafkaBootstrapRouteReady())
                 .compose(state -> state.kafkaReplicaRoutesReady())
                 .compose(state -> state.kafkaGenerateCertificates())
@@ -449,6 +452,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(serviceOperations.reconcile(namespace, kafkaCluster.getHeadlessServiceName(), kafkaHeadlessService));
         }
 
+        Future<ReconciliationState> kafkaExternalBootstrapService() {
+            return withVoid(serviceOperations.reconcile(namespace, KafkaCluster.externalBootstrapServiceName(name), kafkaCluster.generateExternalBootstrapService()));
+        }
+
         Future<ReconciliationState> kafkaReplicaServices() {
             int replicas = kafkaCluster.getReplicas();
             List<Future> serviceFutures = new ArrayList<>(replicas);
@@ -491,6 +498,96 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(CompositeFuture.join(routeFutures));
         }
 
+        Future<ReconciliationState> kafkaExternalBootstrapServiceReady() {
+            if (!kafkaCluster.isExposedWithLoadBalancer() && !kafkaCluster.isExposedWithNodePort()) {
+                return withVoid(Future.succeededFuture());
+            }
+
+            String serviceName = KafkaCluster.externalBootstrapServiceName(name);
+            Future future = Future.future();
+            Future<Void> address = null;
+
+            if (kafkaCluster.isExposedWithNodePort()) {
+                address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
+            } else  {
+                address = serviceOperations.hasIngresAddress(namespace, serviceName, 1_000, operationTimeoutMs);
+            }
+
+            address.setHandler(res -> {
+                if (res.succeeded())    {
+                    if (kafkaCluster.isExposedWithLoadBalancer()) {
+                        if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
+                            this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                        } else {
+                            this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                        }
+                    } else if (kafkaCluster.isExposedWithNodePort())    {
+                        this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
+                    }
+
+                    if (log.isTraceEnabled()) {
+                        log.trace("{}: Found address {} for Service {}", reconciliation, this.kafkaExternalBootstrapAddress, serviceName);
+                    }
+
+                    future.complete();
+                } else {
+                    log.warn("{}: No address found for Service {}", reconciliation, serviceName);
+                    future.fail("No address found for Service " + serviceName);
+                }
+            });
+
+            return withVoid(future);
+        }
+
+        Future<ReconciliationState> kafkaReplicaServicesReady() {
+            if (!kafkaCluster.isExposedWithLoadBalancer() && !kafkaCluster.isExposedWithNodePort()) {
+                return withVoid(Future.succeededFuture());
+            }
+
+            int replicas = kafkaCluster.getReplicas();
+            List<Future> routeFutures = new ArrayList<>(replicas);
+
+            for (int i = 0; i < replicas; i++) {
+                String serviceName = KafkaCluster.externalServiceName(name, i);
+                Future future = Future.future();
+
+                Future<Void> address = null;
+
+                if (kafkaCluster.isExposedWithNodePort()) {
+                    address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
+                } else  {
+                    address = serviceOperations.hasIngresAddress(namespace, serviceName, 1_000, operationTimeoutMs);
+                }
+
+                int podNumber = i;
+
+                address.setHandler(res -> {
+                    if (res.succeeded()) {
+                        String serviceAddress = null;
+                        if (kafkaCluster.isExposedWithLoadBalancer()) {
+                            serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                        } else if (kafkaCluster.isExposedWithNodePort())    {
+                            serviceAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
+                        }
+
+                        this.kafkaExternalAddresses.put(podNumber, serviceAddress);
+
+                        if (log.isTraceEnabled()) {
+                            log.trace("{}: Found address {} for Service {}", reconciliation, serviceAddress, serviceName);
+                        }
+
+                        future.complete();
+                    } else {
+                        log.warn("{}: No address found for Service {}", reconciliation, serviceName);
+                        future.fail("No address found for Service " + serviceName);
+                    }
+                });
+
+                routeFutures.add(future);
+            }
+
+            return withVoid(CompositeFuture.join(routeFutures));
+        }
 
         Future<ReconciliationState> kafkaBootstrapRouteReady() {
             if (routeOperations == null || !kafkaCluster.isExposedWithRoute()) {

@@ -40,6 +40,8 @@ import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.KafkaListenerExternalLoadBalancer;
+import io.strimzi.api.kafka.model.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.KafkaListenerExternalRoute;
 import io.strimzi.api.kafka.model.KafkaListeners;
 import io.strimzi.api.kafka.model.Logging;
@@ -86,6 +88,7 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION = "KAFKA_CLIENTTLS_AUTHENTICATION";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_ENABLED = "KAFKA_EXTERNAL_ENABLED";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_ADDRESSES = "KAFKA_EXTERNAL_ADDRESSES";
+    protected static final String ENV_VAR_KAFKA_EXTERNAL_IP = "KAFKA_EXTERNAL_IP";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION = "KAFKA_EXTERNAL_AUTHENTICATION";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
@@ -188,6 +191,16 @@ public class KafkaCluster extends AbstractModel {
 
     public static String serviceName(String cluster) {
         return cluster + KafkaCluster.SERVICE_NAME_SUFFIX;
+    }
+
+    /**
+     * Generates the name of the service used as bootstrap service for external clients
+     *
+     * @param cluster Name of the cluster
+     * @return
+     */
+    public static String externalBootstrapServiceName(String cluster) {
+        return kafkaClusterName(cluster) + "-external-bootstrap";
     }
 
     /**
@@ -363,10 +376,6 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
-        if (isExposed()) {
-            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
-        }
-
         if (isMetricsEnabled()) {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
@@ -391,10 +400,6 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         }
 
-        if (isExposed()) {
-            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
-        }
-
         return ports;
     }
 
@@ -404,6 +409,40 @@ public class KafkaCluster extends AbstractModel {
      */
     public Service generateService() {
         return createService("ClusterIP", getServicePorts(), getPrometheusAnnotations());
+    }
+
+    /**
+     * Utility function to help to determine the type of service based on external listener configuration
+     *
+     * @return  Service type
+     */
+    private String getExternalServiceType() {
+        if (isExposedWithNodePort()) {
+            return "NodePort";
+        } else if (isExposedWithLoadBalancer()) {
+            return "LoadBalancer";
+        } else  {
+            return "ClusterIP";
+        }
+    }
+
+    /**
+     * Generates external bootstrap service. This service is used for exposing it externally.
+     * It exposes only the external port 9094.
+     * Separate service is sued to make sure that we do not expose the internal ports to the outside of the cluster
+     *
+     * @return The generated Service
+     */
+    public Service generateExternalBootstrapService() {
+        if (isExposed()) {
+            String externalBootstrapServiceName = externalBootstrapServiceName(cluster);
+
+            List<ServicePort> ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+
+            return createService(externalBootstrapServiceName, getExternalServiceType(), ports, getLabelsWithName(externalBootstrapServiceName), getSelectorLabels(), Collections.emptyMap());
+        }
+
+        return null;
     }
 
     /**
@@ -421,7 +460,7 @@ public class KafkaCluster extends AbstractModel {
 
             Labels selector = Labels.fromMap(getSelectorLabels()).withStatefulSetPod(kafkaPodName(cluster, pod));
 
-            return createService(perPodServiceName, "ClusterIP", ports, getLabelsWithName(perPodServiceName), selector.toMap(), Collections.emptyMap());
+            return createService(perPodServiceName, getExternalServiceType(), ports, getLabelsWithName(perPodServiceName), selector.toMap(), Collections.emptyMap());
         }
 
         return null;
@@ -479,7 +518,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewSpec()
                         .withNewTo()
                             .withKind("Service")
-                            .withName(serviceName)
+                            .withName(externalBootstrapServiceName(cluster))
                         .endTo()
                         .withNewPort()
                             .withNewTargetPort(EXTERNAL_PORT)
@@ -766,8 +805,12 @@ public class KafkaCluster extends AbstractModel {
             }
 
             if (listeners.getExternal() != null) {
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE"));
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, listeners.getExternal().getType()));
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses.values())));
+
+                if (isExposedWithNodePort()) {
+                    varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_EXTERNAL_IP, "status.hostIP"));
+                }
 
                 if (listeners.getExternal().getAuth() != null) {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, listeners.getExternal().getAuth().getType()));
@@ -934,5 +977,23 @@ public class KafkaCluster extends AbstractModel {
      */
     public boolean isExposedWithRoute()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalRoute;
+    }
+
+    /**
+     * Returns true when the Kafka cluster is exposed to the outside using LoadBalancers
+     *
+     * @return
+     */
+    public boolean isExposedWithLoadBalancer()  {
+        return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer;
+    }
+
+    /**
+     * Returns true when the Kafka cluster is exposed to the outside using NodePort type services
+     *
+     * @return
+     */
+    public boolean isExposedWithNodePort()  {
+        return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalNodePort;
     }
 }
