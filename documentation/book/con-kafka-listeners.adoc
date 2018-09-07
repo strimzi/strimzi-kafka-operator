@@ -2,7 +2,7 @@
 //
 // assembly-configuring-kafka-listeners.adoc
 
-[id='ref-kafka-listeners-{context}']
+[id='con-kafka-listeners-{context}']
 = Kafka listeners
 
 Kafka broker listeners can be configured using the `listeners` property in the `Kafka.spec.kafka` resource.
@@ -56,13 +56,5 @@ listeners:
 # ...
 ----
 
-
-[width="15%"]
-|=======
-| 2+>|Listener
-| |`listener.tls`         |`listener.plain`
-|`tls`           |encrypted, authenticated |unencyrpted, unauthenticated
-|`scram-sha-512` |encrypted, authenticated |unencrypted, authenticated
-|=======
 
 Authentication must be configured when using the User Operator to manage `KafkaUsers`.

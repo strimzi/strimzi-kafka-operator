@@ -1,24 +1,25 @@
 // Module included in the following assemblies:
 //
-// assembly-scheduling.adoc
+// assembly-using-the-user-operator.adoc
 
 [id='con-scram-sha-authentication-{context}']
 = SCRAM-SHA authentication
 
-Kafka can be configured to use SASL SCRAM-SHA to provide authentication over a TCP connection.
+Kafka can be configured to use SASL SCRAM-SHA to provide authentication on both unencrypted and TLS connections. 
+When used with a TLS connection, the TLS protocol is providing encryption, but not authentication.
 
-* SASL (Simple Authentication and Security Layer) specifies a way to use different authentication mechanisms within an application protocol without the application protocol having to know the details of the mechanism used.
+SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords. SCRAM has some useful properties which mean it is considered safe to use SCRAM-SHA even on unencrypted connections:
 
-* SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords, but without transmitting those passwords in the clear over the communication channel.
-Instead the client and the server are each challenged by the other to offer proof that they know the password of the authenticating user. The proofs require use of a hash function.
+* The passwords are not sent in the clear over the communication channel.
+Instead the client and the server are each challenged by the other to offer proof that they know the password of the authenticating user.
 
-* SHA (Secure Hash Algorithm) is the name for a family of hash functions.
+* The server and client each generate a new challenge one each authentication exchange. 
+This means that the exchange is resilient against replay attacks.
 
-{ProductName} supports SCRAM-SHA authentication using the SHA-512 algorithm.
-
-== When to use SCRAM-SHA authentication
+== When to use SCRAM-SHA authentication for clients
 
 SCRAM-SHA is a suitable choice for authenticating Kafka clients when:
 
 * The client supports authentication using SCRAM-SHA-512
 * It is necessary or desirable to use passwords (rather than TLS certificates)
+* It is necessary or desirable to have unencrypted communication, while still having authentication.

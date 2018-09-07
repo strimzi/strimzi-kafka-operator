@@ -16,7 +16,7 @@ Two types of listeners are supported:
 * Plain listener on port 9092 (without encryption)
 * TLS listener on port 9093 (with encryption)
 
-include::ref-kafka-listeners.adoc[leveloffset=+1]
+include::con-kafka-listeners.adoc[leveloffset=+1]
 
 include::proc-configuring-kafka-listeners.adoc[leveloffset=+1]
 

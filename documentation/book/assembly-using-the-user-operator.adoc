@@ -13,7 +13,11 @@ The User Operator provides a way of managing Kafka users via {ProductPlatformNam
 
 include::con-what-the-user-operator-does.adoc[leveloffset=+1]
 
+include::con-mutual-tls-authentication.adoc[leveloffset=+1]
+
 include::proc-creating-kafka-user-tls.adoc[leveloffset=+1]
+
+include::con-scram-sha-authentication.adoc[leveloffset=+1]
 
 include::proc-creating-kafka-user-scram-sha.adoc[leveloffset=+1]
 
