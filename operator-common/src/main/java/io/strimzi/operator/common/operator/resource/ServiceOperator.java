@@ -48,7 +48,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @param timeoutMs     Timeout
      * @return
      */
-    public Future<Void> hasIngresAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public Future<Void> hasIngressAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isIngressAddressReady);
     }
 

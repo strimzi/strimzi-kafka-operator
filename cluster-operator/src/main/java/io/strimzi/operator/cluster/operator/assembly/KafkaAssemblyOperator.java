@@ -510,7 +510,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (kafkaCluster.isExposedWithNodePort()) {
                 address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
             } else  {
-                address = serviceOperations.hasIngresAddress(namespace, serviceName, 1_000, operationTimeoutMs);
+                address = serviceOperations.hasIngressAddress(namespace, serviceName, 1_000, operationTimeoutMs);
             }
 
             address.setHandler(res -> {
@@ -556,7 +556,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 if (kafkaCluster.isExposedWithNodePort()) {
                     address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
                 } else  {
-                    address = serviceOperations.hasIngresAddress(namespace, serviceName, 1_000, operationTimeoutMs);
+                    address = serviceOperations.hasIngressAddress(namespace, serviceName, 1_000, operationTimeoutMs);
                 }
 
                 int podNumber = i;
