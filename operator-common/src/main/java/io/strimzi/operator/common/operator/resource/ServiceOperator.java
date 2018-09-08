@@ -39,8 +39,8 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * Patches the resource with the given namespace and name to match the given desired resource
      * and completes the given future accordingly.
      *
-     * ServiceOperator needs its own version of this method to patch the NodePorts for NodePort type Services.
-     * Patching NodePort service with service definition without the NodePort would cause regenerating the node port
+     * ServiceOperator needs its own version of this method to patch the NodePorts for NodePort and LoadBalancer type Services.
+     * Patching the service with service definition without the NodePort would cause regenerating the node port
      * which triggers rolling update.
      *
      * @param namespace Namespace of the service
@@ -52,8 +52,9 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      */
     protected Future<ReconcileResult<Service>> internalPatch(String namespace, String name, Service current, Service desired) {
         try {
-            if (current.getSpec() != null && "NodePort".equals(current.getSpec().getType())
-                    && desired.getSpec() != null && "NodePort".equals(desired.getSpec().getType()))   {
+            if (current.getSpec() != null && desired.getSpec() != null
+                    && (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
+                    || ("LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType()))))   {
                 patchNodePorts(current, desired);
             }
 
@@ -113,7 +114,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
         Resource<Service, DoneableService> resourceOp = operation().inNamespace(namespace).withName(name);
         Service resource = resourceOp.get();
 
-        if (resource != null && resource.getStatus() != null && resource.getStatus().getLoadBalancer() != null && resource.getStatus().getLoadBalancer().getIngress() != null && resource.getStatus().getLoadBalancer().getIngress().get(0) != null) {
+        if (resource != null && resource.getStatus() != null && resource.getStatus().getLoadBalancer() != null && resource.getStatus().getLoadBalancer().getIngress() != null && resource.getStatus().getLoadBalancer().getIngress().size() > 0) {
             if (resource.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null || resource.getStatus().getLoadBalancer().getIngress().get(0).getIp() != null) {
                 return true;
             }
