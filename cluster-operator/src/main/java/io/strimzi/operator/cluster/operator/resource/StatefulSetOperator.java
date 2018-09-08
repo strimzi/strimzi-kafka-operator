@@ -252,7 +252,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param current Current StatefulSet
      * @param desired New StatefulSet
      *
-     * @return Updated StatefulSetDiff after the storage patching
+     * @return Updated ResourceOperatorSupplier.StatefulSetDiff after the storage patching
      */
     protected ResourceOperatorSupplier.StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
         desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
