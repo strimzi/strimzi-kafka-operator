@@ -215,13 +215,17 @@ public class KafkaAssemblyOperatorTest {
                                     } else {
                                         listeners = new KafkaListenersBuilder()
                                                 .withNewPlain()
-                                                .withNewKafkaListenerAuthenticationScramSha512Authentication()
+                                                    .withNewKafkaListenerAuthenticationScramSha512Authentication()
                                                     .endKafkaListenerAuthenticationScramSha512Authentication()
-                                                    .endPlain()
+                                                .endPlain()
                                                 .withNewTls()
                                                     .withNewKafkaListenerAuthenticationTlsAuth()
                                                     .endKafkaListenerAuthenticationTlsAuth()
                                                 .endTls()
+                                                .withNewKafkaListenerExternalNodePortExternal()
+                                                    .withNewKafkaListenerAuthenticationTlsAuth()
+                                                    .endKafkaListenerAuthenticationTlsAuth()
+                                                .endKafkaListenerExternalNodePortExternal()
                                                 .build();
                                     }
 

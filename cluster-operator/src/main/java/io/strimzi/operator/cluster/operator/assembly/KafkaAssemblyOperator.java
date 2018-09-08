@@ -51,6 +51,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -652,7 +653,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaGenerateCertificates() {
-            kafkaCluster.generateCertificates(certManager, assemblySecrets, kafkaExternalBootstrapAddress, kafkaExternalAddresses);
+            if (kafkaCluster.isExposedWithNodePort()) {
+                kafkaCluster.generateCertificates(certManager, assemblySecrets, null, Collections.EMPTY_MAP);
+            } else  {
+                kafkaCluster.generateCertificates(certManager, assemblySecrets, kafkaExternalBootstrapAddress, kafkaExternalAddresses);
+            }
+
             return withVoid(Future.succeededFuture());
         }
 

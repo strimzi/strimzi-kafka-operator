@@ -35,6 +35,57 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
         return client.services();
     }
 
+    /**
+     * Patches the resource with the given namespace and name to match the given desired resource
+     * and completes the given future accordingly.
+     *
+     * ServiceOperator needs its own version of this method to patch the NodePorts for NodePort type Services.
+     * Patching NodePort service with service definition without the NodePort would cause regenerating the node port
+     * which triggers rolling update.
+     *
+     * @param namespace Namespace of the service
+     * @param name      Name of the service
+     * @param current   Current servicve
+     * @param desired   Desired Service
+     *
+     * @return  Future with reconciliation result
+     */
+    protected Future<ReconcileResult<Service>> internalPatch(String namespace, String name, Service current, Service desired) {
+        try {
+            if (current.getSpec() != null && "NodePort".equals(current.getSpec().getType())
+                    && desired.getSpec() != null && "NodePort".equals(desired.getSpec().getType()))   {
+                patchNodePorts(current, desired);
+            }
+
+            ReconcileResult.Patched<Service> result = ReconcileResult.patched(operation().inNamespace(namespace).withName(name).cascading(true).patch(desired));
+            log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+            return Future.succeededFuture(result);
+        } catch (Exception e) {
+            log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            return Future.failedFuture(e);
+        }
+    }
+
+    /**
+     * Finds out if corresponding port from desired service also exists in current service.
+     * If it exists, it will copy the node port.
+     * That will make sure the node port doesn't change with every reconciliation.
+     *
+     * @param current   Current Service
+     * @param desired   Desired Service
+     */
+    protected void patchNodePorts(Service current, Service desired) {
+        for (ServicePort desiredPort : desired.getSpec().getPorts())    {
+            String portName = desiredPort.getName();
+
+            for (ServicePort currentPort : current.getSpec().getPorts())    {
+                if (desiredPort.getNodePort() == null && portName.equals(currentPort.getName()) && currentPort.getNodePort() != null) {
+                    desiredPort.setNodePort(currentPort.getNodePort());
+                }
+            }
+        }
+    }
+
     public Future<Void> endpointReadiness(String namespace, Service desired, long pollInterval, long operationTimeoutMs) {
         return endpointOperations.readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs);
     }
