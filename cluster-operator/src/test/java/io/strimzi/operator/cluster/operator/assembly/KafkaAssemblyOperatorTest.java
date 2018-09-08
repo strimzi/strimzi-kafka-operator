@@ -6,8 +6,11 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -389,14 +392,16 @@ public class KafkaAssemblyOperatorTest {
                     KafkaCluster.serviceName(clusterCmName),
                     KafkaCluster.headlessServiceName(clusterCmName));
 
-            if (openShift && kafkaListeners != null && kafkaListeners.getExternal() != null) {
+            if (kafkaListeners != null && kafkaListeners.getExternal() != null) {
+                expectedServices.add(KafkaCluster.externalBootstrapServiceName(clusterCmName));
+
                 for (int i = 0; i < kafkaCluster.getReplicas(); i++) {
                     expectedServices.add(KafkaCluster.externalServiceName(clusterCmName, i));
                 }
             }
 
             List<Service> capturedServices = serviceCaptor.getAllValues();
-            context.assertEquals(7, capturedServices.size());
+            context.assertEquals(expectedServices.size(), capturedServices.size());
             context.assertEquals(expectedServices, capturedServices.stream().filter(svc -> svc != null).map(svc -> svc.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Assertions on the statefulset
@@ -1159,6 +1164,21 @@ public class KafkaAssemblyOperatorTest {
                         .build();
             });
         }
+
+        when(supplier.serviceOperations.hasIngressAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.hasNodePort(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i -> {
+            return new ServiceBuilder()
+                    .withNewStatus()
+                        .withNewLoadBalancer()
+                            .withIngress(new LoadBalancerIngressBuilder().withHostname(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com").build())
+                        .endLoadBalancer()
+                    .endStatus()
+                    .withNewSpec()
+                        .withPorts(new ServicePortBuilder().withNodePort(31245).build())
+                    .endSpec()
+                    .build();
+        });
 
         return supplier;
     }
