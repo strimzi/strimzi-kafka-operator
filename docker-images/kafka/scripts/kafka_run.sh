@@ -33,8 +33,8 @@ fi
 export LOG_DIR="$KAFKA_HOME"
 
 # get broker rack if it's enabled
-if [ -e $KAFKA_HOME/rack/rack.id ]; then
-  export KAFKA_RACK=$(cat $KAFKA_HOME/rack/rack.id)
+if [ -e $KAFKA_HOME/init/rack.id ]; then
+  export KAFKA_RACK=$(cat $KAFKA_HOME/init/rack.id)
 fi
 
 # Generate temporary keystore password

@@ -74,10 +74,11 @@ import static java.util.Collections.singletonList;
 public class KafkaCluster extends AbstractModel {
 
     protected static final String INIT_NAME = "kafka-init";
-    protected static final String RACK_VOLUME_NAME = "rack-volume";
-    protected static final String RACK_VOLUME_MOUNT = "/opt/kafka/rack";
+    protected static final String INIT_VOLUME_NAME = "rack-volume";
+    protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
     private static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
+    private static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     /** {@code TRUE} when the CLIENT listener (PLAIN transport) should be enabled*/
     private static final String ENV_VAR_KAFKA_CLIENT_ENABLED = "KAFKA_CLIENT_ENABLED";
     /** The authentication to configure for the CLIENT listener (PLAIN transport). */
@@ -88,7 +89,6 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_CLIENTTLS_AUTHENTICATION = "KAFKA_CLIENTTLS_AUTHENTICATION";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_ENABLED = "KAFKA_EXTERNAL_ENABLED";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_ADDRESSES = "KAFKA_EXTERNAL_ADDRESSES";
-    protected static final String ENV_VAR_KAFKA_EXTERNAL_IP = "KAFKA_EXTERNAL_IP";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION = "KAFKA_EXTERNAL_AUTHENTICATION";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
@@ -646,8 +646,8 @@ public class KafkaCluster extends AbstractModel {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
 
-        if (rack != null) {
-            volumeList.add(createEmptyDirVolume(RACK_VOLUME_NAME));
+        if (rack != null || isExposedWithNodePort()) {
+            volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME));
         }
         volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster)));
         volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsPublicKeyName(cluster)));
@@ -672,8 +672,8 @@ public class KafkaCluster extends AbstractModel {
         volumeMountList.add(createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
-        if (rack != null) {
-            volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
+        if (rack != null || isExposedWithNodePort()) {
+            volumeMountList.add(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
         return volumeMountList;
@@ -709,7 +709,7 @@ public class KafkaCluster extends AbstractModel {
     protected List<Container> getInitContainers() {
         List<Container> initContainers = new ArrayList<>();
 
-        if (rack != null) {
+        if (rack != null || isExposedWithNodePort()) {
             ResourceRequirements resources = new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
                     .addToRequests("memory", new Quantity("128Mi"))
@@ -719,14 +719,21 @@ public class KafkaCluster extends AbstractModel {
 
             List<EnvVar> varList = new ArrayList<>();
             varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+
+            if (rack != null) {
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+            }
+
+            if (isExposedWithNodePort()) {
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
+            }
 
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
                     .withImage(initImage)
                     .withResources(resources)
                     .withEnv(varList)
-                    .withVolumeMounts(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT))
+                    .withVolumeMounts(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .build();
 
             initContainers.add(initContainer);
@@ -808,10 +815,6 @@ public class KafkaCluster extends AbstractModel {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, listeners.getExternal().getType()));
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses.values())));
 
-                if (isExposedWithNodePort()) {
-                    varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_EXTERNAL_IP, "status.hostIP"));
-                }
-
                 if (listeners.getExternal().getAuth() != null) {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, listeners.getExternal().getAuth().getType()));
                 }
@@ -881,7 +884,7 @@ public class KafkaCluster extends AbstractModel {
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
      */
     public ClusterRoleBindingOperator.ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
-        if (rack != null) {
+        if (rack != null || isExposedWithNodePort()) {
             return new ClusterRoleBindingOperator.ClusterRoleBinding(
                     initContainerClusterRoleBindingName(namespace, cluster),
                     "strimzi-kafka-broker",
