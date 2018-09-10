@@ -5,9 +5,9 @@
 [id='con-mutual-tls-authentication-{context}']
 = Mutual TLS authentication for clients
 
-== What is mutual TLS authentication?
+== Mutual TLS authentication
 
-Kafka can be configured to use TLS (transport layer security) to provide encrypted communication between Kafka brokers and clients either with or without _mutual authentication_.
+Kafka can be configured to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without _mutual authentication_.
 
 Mutual authentication is when both parties to a communication get proof of the identity of the other party: The broker authenticates the client and the client authenticates the broker.
 
