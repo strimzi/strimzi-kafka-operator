@@ -429,7 +429,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates external bootstrap service. This service is used for exposing it externally.
      * It exposes only the external port 9094.
-     * Separate service is sued to make sure that we do not expose the internal ports to the outside of the cluster
+     * Separate service is used to make sure that we do not expose the internal ports to the outside of the cluster
      *
      * @return The generated Service
      */

@@ -40,13 +40,13 @@ public class InitWriterConfig {
 
         boolean externalAddress = map.containsKey(InitWriterConfig.EXTERNAL_ADDRESS);
 
-        String rackFolder = DEFAULT_INIT_FOLDER;
-        String rackFolderEnvVar = map.get(InitWriterConfig.INIT_FOLDER);
-        if (rackFolderEnvVar != null) {
-            rackFolder = rackFolderEnvVar;
+        String initFolder = DEFAULT_INIT_FOLDER;
+        String initFolderEnvVar = map.get(InitWriterConfig.INIT_FOLDER);
+        if (initFolderEnvVar != null) {
+            initFolder = initFolderEnvVar;
         }
 
-        return new InitWriterConfig(nodeName, rackTopologyKey, externalAddress, rackFolder);
+        return new InitWriterConfig(nodeName, rackTopologyKey, externalAddress, initFolder);
     }
 
     public InitWriterConfig(String nodeName, String rackTopologyKey, boolean externalAddress, String initFolder) {
