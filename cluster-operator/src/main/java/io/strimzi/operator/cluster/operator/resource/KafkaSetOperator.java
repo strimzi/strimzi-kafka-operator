@@ -30,7 +30,7 @@ public class KafkaSetOperator extends StatefulSetOperator {
 
     @Override
     protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
-        ResourceOperatorSupplier.StatefulSetDiff diff = new ResourceOperatorSupplier.StatefulSetDiff(current, desired);
+        StatefulSetDiff diff = new StatefulSetDiff(current, desired);
         if (diff.changesVolumeClaimTemplates()) {
             log.warn("Changing Kafka storage type or size is not possible. The changes will be ignored.");
             diff = revertStorageChanges(current, desired);
@@ -38,7 +38,7 @@ public class KafkaSetOperator extends StatefulSetOperator {
         return !diff.isEmpty() && needsRollingUpdate(diff);
     }
 
-    public static boolean needsRollingUpdate(ResourceOperatorSupplier.StatefulSetDiff diff) {
+    public static boolean needsRollingUpdate(StatefulSetDiff diff) {
         if (diff.changesLabels()) {
             log.debug("Changed labels => needs rolling update");
             return true;

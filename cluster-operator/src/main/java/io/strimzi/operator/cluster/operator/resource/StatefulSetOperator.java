@@ -254,7 +254,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      *
      * @return Updated StatefulSetDiff after the storage patching
      */
-    protected ResourceOperatorSupplier.StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
+    protected StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
         desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
         desired.getSpec().getTemplate().getSpec().setInitContainers(current.getSpec().getTemplate().getSpec().getInitContainers());
         desired.getSpec().getTemplate().getSpec().setSecurityContext(current.getSpec().getTemplate().getSpec().getSecurityContext());
@@ -281,7 +281,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             }
         }
 
-        return new ResourceOperatorSupplier.StatefulSetDiff(current, desired);
+        return new StatefulSetDiff(current, desired);
     }
 
     protected Future<String> getUid(String namespace, String podName) {

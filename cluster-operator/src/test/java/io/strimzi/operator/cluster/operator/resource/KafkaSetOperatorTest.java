@@ -77,8 +77,8 @@ public class KafkaSetOperatorTest {
         return ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace, clusterName);
     }
 
-    private ResourceOperatorSupplier.StatefulSetDiff diff() {
-        return new ResourceOperatorSupplier.StatefulSetDiff(a, b);
+    private StatefulSetDiff diff() {
+        return new StatefulSetDiff(a, b);
     }
 
     @Test
