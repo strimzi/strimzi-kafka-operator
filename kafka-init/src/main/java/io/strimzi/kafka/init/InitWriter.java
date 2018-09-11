@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class InitWriter {
 
@@ -79,19 +80,21 @@ public class InitWriter {
      * @return              true if write succeeded, false otherwise
      */
     private boolean write(String file, String information) {
-        PrintWriter writer = null;
         boolean isWritten;
-        try {
-            writer = new PrintWriter(config.getInitFolder() + "/" + file, "UTF-8");
+
+        try (PrintWriter writer = new PrintWriter(config.getInitFolder() + "/" + file, "UTF-8")) {
             writer.write(information);
-            log.info("Information {} written successfully to file {}", information, file);
-            isWritten = true;
+
+            if (writer.checkError())    {
+                log.error("Failed to write the information {} to file {}", information, file);
+                isWritten = false;
+            } else {
+                log.info("Information {} written successfully to file {}", information, file);
+                isWritten = true;
+            }
         } catch (IOException e) {
             log.error("Error writing the information {} to file {}", information, file, e);
             isWritten = false;
-        } finally {
-            if (writer != null)
-                writer.close();
         }
 
         return isWritten;
@@ -113,48 +116,18 @@ public class InitWriter {
             return null;
         }
 
-        NodeAddress found = null;
+        Map<String, String> addressMap = addresses.stream().collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress));
 
-        found = findAddressType(addresses, "ExternalDNS");
-        if (found != null)  {
-            return found.getAddress();
-        }
-
-        found = findAddressType(addresses, "ExternalIP");
-        if (found != null)  {
-            return found.getAddress();
-        }
-
-        found = findAddressType(addresses, "Hostname");
-        if (found != null)  {
-            return found.getAddress();
-        }
-
-        found = findAddressType(addresses, "InternalDNS");
-        if (found != null)  {
-            return found.getAddress();
-        }
-
-        found = findAddressType(addresses, "InternalIP");
-        if (found != null)  {
-            return found.getAddress();
-        }
-
-        return null;
-    }
-
-    /**
-     * Find if address of given type exists
-     *
-     * @param addresses     List of node addresses
-     * @param type          Type of address we are looking fine
-     * @return
-     */
-    protected NodeAddress findAddressType(List<NodeAddress> addresses, String type)   {
-        for (NodeAddress address : addresses) {
-            if (type.equals(address.getType())) {
-                return address;
-            }
+        if (addressMap.containsKey("ExternalDNS"))  {
+            return addressMap.get("ExternalDNS");
+        } else if (addressMap.containsKey("ExternalIP"))  {
+            return addressMap.get("ExternalIP");
+        } else if (addressMap.containsKey("InternalDNS"))  {
+            return addressMap.get("InternalDNS");
+        } else if (addressMap.containsKey("InternalIP"))  {
+            return addressMap.get("InternalIP");
+        } else if (addressMap.containsKey("Hostname")) {
+            return addressMap.get("Hostname");
         }
 
         return null;

@@ -504,40 +504,50 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.succeededFuture());
             }
 
-            String serviceName = KafkaCluster.externalBootstrapServiceName(name);
-            Future future = Future.future();
-            Future<Void> address = null;
+            Future blockingFuture = Future.future();
 
-            if (kafkaCluster.isExposedWithNodePort()) {
-                address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
-            } else  {
-                address = serviceOperations.hasIngressAddress(namespace, serviceName, 1_000, operationTimeoutMs);
-            }
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                future -> {
+                    String serviceName = KafkaCluster.externalBootstrapServiceName(name);
+                    Future<Void> address = null;
 
-            address.setHandler(res -> {
-                if (res.succeeded())    {
-                    if (kafkaCluster.isExposedWithLoadBalancer()) {
-                        if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
-                            this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                    if (kafkaCluster.isExposedWithNodePort()) {
+                        address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
+                    } else {
+                        address = serviceOperations.hasIngressAddress(namespace, serviceName, 1_000, operationTimeoutMs);
+                    }
+
+                    address.setHandler(res -> {
+                        if (res.succeeded()) {
+                            if (kafkaCluster.isExposedWithLoadBalancer()) {
+                                if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
+                                    this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                                } else {
+                                    this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                                }
+                            } else if (kafkaCluster.isExposedWithNodePort()) {
+                                this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
+                            }
+
+                            if (log.isTraceEnabled()) {
+                                log.trace("{}: Found address {} for Service {}", reconciliation, this.kafkaExternalBootstrapAddress, serviceName);
+                            }
+
+                            future.complete();
                         } else {
-                            this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                            log.warn("{}: No address found for Service {}", reconciliation, serviceName);
+                            future.fail("No address found for Service " + serviceName);
                         }
-                    } else if (kafkaCluster.isExposedWithNodePort())    {
-                        this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
+                    });
+                }, res -> {
+                    if (res.succeeded())    {
+                        blockingFuture.complete();
+                    } else  {
+                        blockingFuture.fail(res.cause());
                     }
+                });
 
-                    if (log.isTraceEnabled()) {
-                        log.trace("{}: Found address {} for Service {}", reconciliation, this.kafkaExternalBootstrapAddress, serviceName);
-                    }
-
-                    future.complete();
-                } else {
-                    log.warn("{}: No address found for Service {}", reconciliation, serviceName);
-                    future.fail("No address found for Service " + serviceName);
-                }
-            });
-
-            return withVoid(future);
+            return withVoid(blockingFuture);
         }
 
         Future<ReconciliationState> kafkaReplicaServicesReady() {
@@ -545,53 +555,72 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.succeededFuture());
             }
 
-            int replicas = kafkaCluster.getReplicas();
-            List<Future> routeFutures = new ArrayList<>(replicas);
+            Future blockingFuture = Future.future();
 
-            for (int i = 0; i < replicas; i++) {
-                String serviceName = KafkaCluster.externalServiceName(name, i);
-                Future future = Future.future();
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                future -> {
+                    int replicas = kafkaCluster.getReplicas();
+                    List<Future> routeFutures = new ArrayList<>(replicas);
 
-                Future<Void> address = null;
+                    for (int i = 0; i < replicas; i++) {
+                        String serviceName = KafkaCluster.externalServiceName(name, i);
+                        Future routeFuture = Future.future();
 
-                if (kafkaCluster.isExposedWithNodePort()) {
-                    address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
-                } else  {
-                    address = serviceOperations.hasIngressAddress(namespace, serviceName, 1_000, operationTimeoutMs);
-                }
+                        Future<Void> address = null;
 
-                int podNumber = i;
+                        if (kafkaCluster.isExposedWithNodePort()) {
+                            address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
+                        } else {
+                            address = serviceOperations.hasIngressAddress(namespace, serviceName, 1_000, operationTimeoutMs);
+                        }
 
-                address.setHandler(res -> {
-                    if (res.succeeded()) {
-                        String serviceAddress = null;
-                        if (kafkaCluster.isExposedWithLoadBalancer()) {
-                            if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
-                                serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                        int podNumber = i;
+
+                        address.setHandler(res -> {
+                            if (res.succeeded()) {
+                                String serviceAddress = null;
+                                if (kafkaCluster.isExposedWithLoadBalancer()) {
+                                    if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
+                                        serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                                    } else {
+                                        serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                                    }
+                                } else if (kafkaCluster.isExposedWithNodePort()) {
+                                    serviceAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
+                                }
+
+                                this.kafkaExternalAddresses.put(podNumber, serviceAddress);
+
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{}: Found address {} for Service {}", reconciliation, serviceAddress, serviceName);
+                                }
+
+                                routeFuture.complete();
                             } else {
-                                serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                                log.warn("{}: No address found for Service {}", reconciliation, serviceName);
+                                routeFuture.fail("No address found for Service " + serviceName);
                             }
-                        } else if (kafkaCluster.isExposedWithNodePort())    {
-                            serviceAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
+                        });
+
+                        routeFutures.add(routeFuture);
+                    }
+
+                    CompositeFuture.join(routeFutures).setHandler(res -> {
+                        if (res.succeeded()) {
+                            future.complete();
+                        } else  {
+                            future.fail(res.cause());
                         }
-
-                        this.kafkaExternalAddresses.put(podNumber, serviceAddress);
-
-                        if (log.isTraceEnabled()) {
-                            log.trace("{}: Found address {} for Service {}", reconciliation, serviceAddress, serviceName);
-                        }
-
-                        future.complete();
-                    } else {
-                        log.warn("{}: No address found for Service {}", reconciliation, serviceName);
-                        future.fail("No address found for Service " + serviceName);
+                    });
+                }, res -> {
+                    if (res.succeeded())    {
+                        blockingFuture.complete();
+                    } else  {
+                        blockingFuture.fail(res.cause());
                     }
                 });
 
-                routeFutures.add(future);
-            }
-
-            return withVoid(CompositeFuture.join(routeFutures));
+            return withVoid(blockingFuture);
         }
 
         Future<ReconciliationState> kafkaBootstrapRouteReady() {
@@ -599,26 +628,37 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.succeededFuture());
             }
 
-            String routeName = KafkaCluster.serviceName(name);
-            Future future = Future.future();
-            Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
+            Future blockingFuture = Future.future();
 
-            address.setHandler(res -> {
-                if (res.succeeded())    {
-                    this.kafkaExternalBootstrapAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                future -> {
+                    String routeName = KafkaCluster.serviceName(name);
+                    //Future future = Future.future();
+                    Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
 
-                    if (log.isTraceEnabled()) {
-                        log.trace("{}: Found address {} for Route {}", reconciliation, routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                    address.setHandler(res -> {
+                        if (res.succeeded()) {
+                            this.kafkaExternalBootstrapAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
+
+                            if (log.isTraceEnabled()) {
+                                log.trace("{}: Found address {} for Route {}", reconciliation, routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                            }
+
+                            future.complete();
+                        } else {
+                            log.warn("{}: No address found for Route {}", reconciliation, routeName);
+                            future.fail("No address found for Route " + routeName);
+                        }
+                    });
+                }, res -> {
+                    if (res.succeeded())    {
+                        blockingFuture.complete();
+                    } else  {
+                        blockingFuture.fail(res.cause());
                     }
+                });
 
-                    future.complete();
-                } else {
-                    log.warn("{}: No address found for Route {}", reconciliation, routeName);
-                    future.fail("No address found for Route " + routeName);
-                }
-            });
-
-            return withVoid(future);
+            return withVoid(blockingFuture);
         }
 
         Future<ReconciliationState> kafkaReplicaRoutesReady() {
@@ -626,34 +666,53 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.succeededFuture());
             }
 
-            int replicas = kafkaCluster.getReplicas();
-            List<Future> routeFutures = new ArrayList<>(replicas);
+            Future blockingFuture = Future.future();
 
-            for (int i = 0; i < replicas; i++) {
-                String routeName = KafkaCluster.externalServiceName(name, i);
-                Future future = Future.future();
-                Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
-                int podNumber = i;
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                future -> {
+                    int replicas = kafkaCluster.getReplicas();
+                    List<Future> routeFutures = new ArrayList<>(replicas);
 
-                address.setHandler(res -> {
-                    if (res.succeeded()) {
-                        this.kafkaExternalAddresses.put(podNumber, routeOperations.get(namespace, routeName).getSpec().getHost());
+                    for (int i = 0; i < replicas; i++) {
+                        String routeName = KafkaCluster.externalServiceName(name, i);
+                        Future routeFuture = Future.future();
+                        Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
+                        int podNumber = i;
 
-                        if (log.isTraceEnabled()) {
-                            log.trace("{}: Found address {} for Route {}", reconciliation, routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                        address.setHandler(res -> {
+                            if (res.succeeded()) {
+                                this.kafkaExternalAddresses.put(podNumber, routeOperations.get(namespace, routeName).getSpec().getHost());
+
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{}: Found address {} for Route {}", reconciliation, routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                                }
+
+                                routeFuture.complete();
+                            } else {
+                                log.warn("{}: No address found for Route {}", reconciliation, routeName);
+                                routeFuture.fail("No address found for Route " + routeName);
+                            }
+                        });
+
+                        routeFutures.add(routeFuture);
+                    }
+
+                    CompositeFuture.join(routeFutures).setHandler(res -> {
+                        if (res.succeeded()) {
+                            future.complete();
+                        } else  {
+                            future.fail(res.cause());
                         }
-
-                        future.complete();
-                    } else {
-                        log.warn("{}: No address found for Route {}", reconciliation, routeName);
-                        future.fail("No address found for Route " + routeName);
+                    });
+                }, res -> {
+                    if (res.succeeded())    {
+                        blockingFuture.complete();
+                    } else  {
+                        blockingFuture.fail(res.cause());
                     }
                 });
 
-                routeFutures.add(future);
-            }
-
-            return withVoid(CompositeFuture.join(routeFutures));
+            return withVoid(blockingFuture);
         }
 
         Future<ReconciliationState> kafkaGenerateCertificates() {

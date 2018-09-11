@@ -34,10 +34,10 @@ public abstract class KafkaListenerExternal implements Serializable {
     private Map<String, Object> additionalProperties;
 
     @Description("Type of the external listener. " +
-            "Currently the supported types are `route`, `loadbalancer`, and `nodeport`. " +
-            "`route` type uses OpenShift Routes to expose Kafka." +
-            "`loadbalancer` type uses LoadBalancer type services to expose Kafka." +
-            "`nodeport` type uses NodePort type services to expose Kafka.")
+            "Currently the supported types are `route`, `loadbalancer`, and `nodeport`. \n\n" +
+            "* `route` type uses OpenShift Routes to expose Kafka." +
+            "* `loadbalancer` type uses LoadBalancer type services to expose Kafka." +
+            "* `nodeport` type uses NodePort type services to expose Kafka.")
     @JsonIgnore
     public abstract String getType();
 
