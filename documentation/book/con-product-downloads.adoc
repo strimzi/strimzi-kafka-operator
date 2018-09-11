@@ -7,10 +7,10 @@
 
 {ProductName} releases are available for download from {ReleaseDownload}.
 ifdef::Downloading[]
-The release artifacts contain documentation,
-a Helm Chart for deployment using link:https://helm.sh/[Helm^],
+The release artifacts contain documentation
 and example YAML files for deployment on {ProductPlatformName}.
 The example files are used throughout this documentation and can be used to install {ProductName}.
+There is a Helm Chart for deployment the Cluster Operator, using link:https://helm.sh/[Helm^], as well.
 endif::Downloading[]
 ifndef::Downloading[]
 {ExampleYAMLURL} for deployment on {ProductPlatformName} are used throughout this documentation.
