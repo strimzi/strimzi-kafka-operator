@@ -64,11 +64,24 @@ fi
 #####
 # EXTERNAL listener
 #####
-if [ "$KAFKA_EXTERNAL_ENABLED" = "TRUE" ]; then
+if [ "$KAFKA_EXTERNAL_ENABLED" ]; then
   LISTENERS="${LISTENERS},EXTERNAL://0.0.0.0:9094"
-
   ADDRESSES=($KAFKA_EXTERNAL_ADDRESSES)
-  ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${ADDRESSES[$KAFKA_BROKER_ID]}:443"
+
+  if [ "$KAFKA_EXTERNAL_ENABLED" = "route" ]; then
+    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${ADDRESSES[$KAFKA_BROKER_ID]}:443"
+  elif [ "$KAFKA_EXTERNAL_ENABLED" = "loadbalancer" ]; then
+    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${ADDRESSES[$KAFKA_BROKER_ID]}:9094"
+  elif [ "$KAFKA_EXTERNAL_ENABLED" = "nodeport" ]; then
+    if [ -e $KAFKA_HOME/init/external.address ]; then
+      EXTERNAL_ADDRESS=$(cat $KAFKA_HOME/init/external.address)
+    else
+      echo "-E- External address not found"
+      exit 1
+    fi
+
+    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${EXTERNAL_ADDRESS}:${ADDRESSES[$KAFKA_BROKER_ID]}"
+  fi
 
   # Configuring TLS client authentication for clienttls interface
   if [ "$KAFKA_EXTERNAL_AUTHENTICATION" = "tls" ]; then

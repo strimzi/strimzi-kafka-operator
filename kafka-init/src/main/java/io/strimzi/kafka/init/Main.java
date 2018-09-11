@@ -15,14 +15,23 @@ public class Main {
 
     public static void main(String[] args) {
 
-        RackWriterConfig config = RackWriterConfig.fromMap(System.getenv());
+        InitWriterConfig config = InitWriterConfig.fromMap(System.getenv());
         KubernetesClient client = new DefaultKubernetesClient();
 
         log.info("Init-kafka started with config: {}", config);
 
-        RackWriter writer = new RackWriter(client);
-        if (!writer.write(config)) {
-            System.exit(1);
+        InitWriter writer = new InitWriter(client, config);
+
+        if (config.getRackTopologyKey() != null) {
+            if (!writer.writeRack()) {
+                System.exit(1);
+            }
+        }
+
+        if (config.isExternalAddress()) {
+            if (!writer.writeExternalAddress()) {
+                System.exit(1);
+            }
         }
 
         client.close();

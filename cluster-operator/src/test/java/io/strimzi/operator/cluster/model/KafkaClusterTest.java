@@ -397,12 +397,19 @@ public class KafkaClusterTest {
         StatefulSet ss = kc.generateStatefulSet(true);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "TRUE")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "route")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
 
         List<ContainerPort> ports = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
         assertTrue(ports.contains(kc.createContainerPort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, "TCP")));
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapService();
+        assertEquals(KafkaCluster.externalBootstrapServiceName(cluster), ext.getMetadata().getName());
+        assertEquals("ClusterIP", ext.getSpec().getType());
+        assertEquals(kc.getSelectorLabels(), ext.getSpec().getSelector());
+        assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), ext.getSpec().getPorts());
 
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
@@ -418,7 +425,7 @@ public class KafkaClusterTest {
         assertEquals(KafkaCluster.serviceName(cluster), brt.getMetadata().getName());
         assertEquals("passthrough", brt.getSpec().getTls().getTermination());
         assertEquals("Service", brt.getSpec().getTo().getKind());
-        assertEquals(KafkaCluster.serviceName(cluster), brt.getSpec().getTo().getName());
+        assertEquals(KafkaCluster.externalBootstrapServiceName(cluster), brt.getSpec().getTo().getName());
         assertEquals(new IntOrString(KafkaCluster.EXTERNAL_PORT), brt.getSpec().getPort().getTargetPort());
 
         // Check per pod router
@@ -429,6 +436,110 @@ public class KafkaClusterTest {
             assertEquals("Service", rt.getSpec().getTo().getKind());
             assertEquals(KafkaCluster.externalServiceName(cluster, i), rt.getSpec().getTo().getName());
             assertEquals(new IntOrString(KafkaCluster.EXTERNAL_PORT), rt.getSpec().getPort().getTargetPort());
+        }
+    }
+
+    @Test
+    public void testExternalLoadBalancers() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalLoadBalancerExternal()
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerExternalLoadBalancerExternal()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+
+        SortedMap<Integer, String> addresses = new TreeMap<>();
+        addresses.put(0, "my-address-0");
+        addresses.put(1, "my-address-1");
+        addresses.put(2, "my-address-2");
+        kc.setExternalAddresses(addresses);
+
+        // Check StatefulSet changes
+        StatefulSet ss = kc.generateStatefulSet(true);
+
+        List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "loadbalancer")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
+
+        List<ContainerPort> ports = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
+        assertTrue(ports.contains(kc.createContainerPort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, "TCP")));
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapService();
+        assertEquals(KafkaCluster.externalBootstrapServiceName(cluster), ext.getMetadata().getName());
+        assertEquals("LoadBalancer", ext.getSpec().getType());
+        assertEquals(kc.getSelectorLabels(), ext.getSpec().getSelector());
+        assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), ext.getSpec().getPorts());
+
+        // Check per pod services
+        for (int i = 0; i < replicas; i++)  {
+            Service srv = kc.generateExternalService(i);
+            assertEquals(KafkaCluster.externalServiceName(cluster, i), srv.getMetadata().getName());
+            assertEquals("LoadBalancer", srv.getSpec().getType());
+            assertEquals(KafkaCluster.kafkaPodName(cluster, i), srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL));
+            assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
+        }
+    }
+
+    @Test
+    public void testExternalNodePorts() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePortExternal()
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerExternalNodePortExternal()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+
+        SortedMap<Integer, String> addresses = new TreeMap<>();
+        addresses.put(0, "32123");
+        addresses.put(1, "32456");
+        addresses.put(2, "32789");
+        kc.setExternalAddresses(addresses);
+
+        // Check StatefulSet changes
+        StatefulSet ss = kc.generateStatefulSet(true);
+
+        List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
+
+        List<ContainerPort> ports = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
+        assertTrue(ports.contains(kc.createContainerPort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, "TCP")));
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapService();
+        assertEquals(KafkaCluster.externalBootstrapServiceName(cluster), ext.getMetadata().getName());
+        assertEquals("NodePort", ext.getSpec().getType());
+        assertEquals(kc.getSelectorLabels(), ext.getSpec().getSelector());
+        assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), ext.getSpec().getPorts());
+
+        // Check per pod services
+        for (int i = 0; i < replicas; i++)  {
+            Service srv = kc.generateExternalService(i);
+            assertEquals(KafkaCluster.externalServiceName(cluster, i), srv.getMetadata().getName());
+            assertEquals("NodePort", srv.getSpec().getType());
+            assertEquals(KafkaCluster.kafkaPodName(cluster, i), srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL));
+            assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
         }
     }
 }

@@ -19,37 +19,29 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * Configures the external listener which exposes Kafka outside of OpenShift
+ * Configures the external listener which exposes Kafka outside of Kubernetes / OpenShift
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaListenerExternalRoute.TYPE_ROUTE, value = KafkaListenerExternalRoute.class),
+        @JsonSubTypes.Type(name = KafkaListenerExternalLoadBalancer.TYPE_LOADBALANCER, value = KafkaListenerExternalLoadBalancer.class),
+        @JsonSubTypes.Type(name = KafkaListenerExternalNodePort.TYPE_NODEPORT, value = KafkaListenerExternalNodePort.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class KafkaListenerExternal implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    //private KafkaListenerAuthentication serverAuthentication;
     private Map<String, Object> additionalProperties;
 
     @Description("Type of the external listener. " +
-            "Currently the only supported type is `route`. " +
-            "`route` type uses OpenShift Route for exposing Kafka to the outside.")
+            "Currently the supported types are `route`, `loadbalancer`, and `nodeport`. \n\n" +
+            "* `route` type uses OpenShift Routes to expose Kafka." +
+            "* `loadbalancer` type uses LoadBalancer type services to expose Kafka." +
+            "* `nodeport` type uses NodePort type services to expose Kafka.")
     @JsonIgnore
     public abstract String getType();
 
-    /*@Description("Authorization configuration for Kafka brokers")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("authentication")
-    public KafkaListenerAuthentication getAuthentication() {
-        return serverAuthentication;
-    }
-
-    public void setAuthentication(KafkaListenerAuthentication serverAuthentication) {
-        this.serverAuthentication = serverAuthentication;
-    }*/
-
-    @Description("Authorization configuration for Kafka brokers")
+    @Description("Authentication configuration for Kafka brokers")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("authentication")
     public abstract KafkaListenerAuthentication getAuth();
