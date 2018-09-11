@@ -1,12 +1,14 @@
 // Module included in the following assemblies:
 //
 // assembly-using-the-user-operator.adoc
+// assembly-configuring-kafka-listeners.adoc
 
 [id='con-scram-sha-authentication-{context}']
 = SCRAM-SHA authentication
 
-Kafka can be configured to use SASL SCRAM-SHA to provide authentication on both unencrypted and TLS connections. 
-When used with a TLS connection, the TLS protocol is providing encryption, but not authentication.
+{ProductName} can configure Kafka to use SASL SCRAM-SHA to provide authentication on both unencrypted and TLS-encrypted _client connections_.
+(TLS authentication is always used internally between Kafka brokers and Zookeeper nodes).  
+When used with a TLS client connection, the TLS protocol is providing encryption, but is not used for authentication.
 
 SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords. SCRAM has some useful properties which mean it is considered safe to use SCRAM-SHA even on unencrypted connections:
 
@@ -15,6 +17,11 @@ Instead the client and the server are each challenged by the other to offer proo
 
 * The server and client each generate a new challenge one each authentication exchange. 
 This means that the exchange is resilient against replay attacks.
+
+== Supported SCRAM credentials
+
+{ProductName} supports SCRMA-SHA-512 only. 
+When a `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12 character password consisting of upper and lowercase ASCII letters and numbers. 
 
 == When to use SCRAM-SHA authentication for clients
 

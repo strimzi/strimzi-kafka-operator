@@ -1,13 +1,15 @@
 // Module included in the following assemblies:
 //
 // assembly-using-the-user-operator.adoc
+// assembly-configuring-kafka-listeners.adoc
 
 [id='con-mutual-tls-authentication-{context}']
 = Mutual TLS authentication for clients
 
 == Mutual TLS authentication
 
-Kafka can be configured to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without _mutual authentication_.
+{ProductName} can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without _mutual authentication_. 
+(Mutual TLS authentication is always used for the communication between Kafka brokers and zookeeper pods).
 
 Mutual authentication is when both parties to a communication get proof of the identity of the other party: The broker authenticates the client and the client authenticates the broker.
 
