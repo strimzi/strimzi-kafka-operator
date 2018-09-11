@@ -1,7 +1,7 @@
 apiVersion: v1
 appVersion: "0.1.0"
 description: "Strimzi: Kafka as a Service"
-name: strimzi-kafka-operator
+name: strimzi-cluster-operator
 version: 0.1.0
 icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
 keywords:
