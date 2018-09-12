@@ -232,6 +232,8 @@ public class TopicOperator extends AbstractModel {
                     kafkaAssembly.getMetadata().getName(),
                     Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
             TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
+
+            result.setOwnerReference(kafkaAssembly.getApiVersion(), kafkaAssembly.getKind(), kafkaAssembly.getMetadata().getUid());
             result.setImage(tcConfig.getImage());
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
             result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds() * 1_000);
@@ -379,6 +381,7 @@ public class TopicOperator extends AbstractModel {
                 .withNewMetadata()
                     .withName(getServiceAccountName())
                     .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
             .build();
     }

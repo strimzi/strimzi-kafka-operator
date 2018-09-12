@@ -53,7 +53,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -571,81 +570,6 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
             // Verify ScaleDown
             verify(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
-
-            async.complete();
-        });
-    }
-
-    @Test
-    public void testDeleteCluster(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        DeploymentConfigOperator mockDcOps = mock(DeploymentConfigOperator.class);
-        BuildConfigOperator mockBcOps = mock(BuildConfigOperator.class);
-        ImageStreamOperator mockIsOps = mock(ImageStreamOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        NetworkPolicyOperator networkPolicyOperator = mock(NetworkPolicyOperator.class);
-
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
-
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName));
-
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(new HashMap<String, String>()));
-        when(mockIsOps.get(clusterCmNamespace, connect.getSourceImageStreamName())).thenReturn(connect.generateSourceImageStream());
-
-        ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockServiceOps.reconcile(serviceNamespaceCaptor.capture(), serviceNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
-
-        ArgumentCaptor<String> dcNamespaceCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockDcOps.reconcile(dcNamespaceCaptor.capture(), dcNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
-
-        ArgumentCaptor<String> isNamespaceCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> isNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockIsOps.reconcile(isNamespaceCaptor.capture(), isNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
-
-        ArgumentCaptor<String> bcNamespaceCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> bcNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockBcOps.reconcile(bcNamespaceCaptor.capture(), bcNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
-
-        when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
-        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
-        KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
-                new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator);
-
-        Async async = context.async();
-        ops.delete(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName)).setHandler(createResult -> {
-            context.assertTrue(createResult.succeeded());
-
-            // Verify service
-            context.assertEquals(1, serviceNameCaptor.getAllValues().size());
-            context.assertEquals(clusterCmNamespace, serviceNamespaceCaptor.getValue());
-            context.assertEquals(connect.getServiceName(), serviceNameCaptor.getValue());
-
-            // Vertify deployment Config
-            context.assertEquals(1, dcNameCaptor.getAllValues().size());
-            context.assertEquals(clusterCmNamespace, dcNamespaceCaptor.getValue());
-            context.assertEquals(connect.getName(), dcNameCaptor.getValue());
-
-            // Vertify BuildConfig
-            context.assertEquals(1, bcNameCaptor.getAllValues().size());
-            context.assertEquals(clusterCmNamespace, bcNamespaceCaptor.getValue());
-            context.assertEquals(connect.getName(), bcNameCaptor.getValue());
-
-            // Vertify ImageStreams
-            int sisIndex = (connect.getSourceImageStreamName()).equals(isNameCaptor.getAllValues().get(0)) ? 0 : 1;
-            int tisIndex = (connect.getName()).equals(isNameCaptor.getAllValues().get(0)) ? 0 : 1;
-            context.assertEquals(2, isNameCaptor.getAllValues().size());
-            context.assertEquals(clusterCmNamespace, isNamespaceCaptor.getAllValues().get(sisIndex));
-            context.assertEquals(connect.getSourceImageStreamName(), isNameCaptor.getAllValues().get(sisIndex));
-            context.assertEquals(clusterCmNamespace, isNamespaceCaptor.getAllValues().get(tisIndex));
-            context.assertEquals(connect.getName(), isNameCaptor.getAllValues().get(tisIndex));
-
 
             async.complete();
         });

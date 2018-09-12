@@ -242,6 +242,7 @@ public class KafkaCluster extends AbstractModel {
         KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
                 kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+        result.setOwnerReference(kafkaAssembly.getApiVersion(), kafkaAssembly.getKind(), kafkaAssembly.getMetadata().getUid());
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
         result.setReplicas(kafkaClusterSpec.getReplicas());
         String image = kafkaClusterSpec.getImage();
@@ -481,6 +482,7 @@ public class KafkaCluster extends AbstractModel {
                         .withName(perPodServiceName)
                         .withLabels(getLabelsWithName(perPodServiceName))
                         .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
                     .endMetadata()
                     .withNewSpec()
                         .withNewTo()
@@ -514,6 +516,7 @@ public class KafkaCluster extends AbstractModel {
                         .withName(serviceName)
                         .withLabels(getLabelsWithName(serviceName))
                         .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
                     .endMetadata()
                     .withNewSpec()
                         .withNewTo()
@@ -860,6 +863,7 @@ public class KafkaCluster extends AbstractModel {
                 .withNewMetadata()
                     .withName(initContainerServiceAccountName(cluster))
                     .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
             .build();
     }
@@ -949,13 +953,14 @@ public class KafkaCluster extends AbstractModel {
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()
-                .withName(policyName(cluster))
-                .withNamespace(namespace)
-                .withLabels(labels.toMap())
+                    .withName(policyName(cluster))
+                    .withNamespace(namespace)
+                    .withLabels(labels.toMap())
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                .withPodSelector(labelSelector)
-                .withIngress(replicationRule, plainRule, tlsRule, externalRule)
+                    .withPodSelector(labelSelector)
+                    .withIngress(replicationRule, plainRule, tlsRule, externalRule)
                 .endSpec()
                 .build();
 

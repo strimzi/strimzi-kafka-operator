@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
@@ -157,6 +159,7 @@ public class KafkaConnectClusterTest {
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
         assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
         assertEquals(kc.getPrometheusAnnotations(), svc.getMetadata().getAnnotations());
+        checkOwnerReference(kc.createOwnerReference(), svc);
     }
 
     @Test
@@ -185,6 +188,7 @@ public class KafkaConnectClusterTest {
         assertEquals("RollingUpdate", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal());
         assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal());
+        checkOwnerReference(kc.createOwnerReference(), dep);
     }
 
     @Test
@@ -312,5 +316,10 @@ public class KafkaConnectClusterTest {
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE));
         assertEquals("user1",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME));
+    }
+
+    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
+        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
     }
 }

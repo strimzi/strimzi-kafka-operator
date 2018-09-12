@@ -152,6 +152,7 @@ public class ZookeeperCluster extends AbstractModel {
     public static ZookeeperCluster fromCrd(CertManager certManager, Kafka kafkaAssembly, List<Secret> secrets) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+        zk.setOwnerReference(kafkaAssembly.getApiVersion(), kafkaAssembly.getKind(), kafkaAssembly.getMetadata().getUid());
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
         int replicas = zookeeperClusterSpec.getReplicas();
         if (replicas <= 0) {
@@ -276,13 +277,14 @@ public class ZookeeperCluster extends AbstractModel {
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()
-                .withName(policyName(cluster))
-                .withNamespace(namespace)
-                .withLabels(labels.toMap())
+                    .withName(policyName(cluster))
+                    .withNamespace(namespace)
+                    .withLabels(labels.toMap())
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                .withPodSelector(labelSelector2)
-                .withIngress(networkPolicyIngressRule)
+                    .withPodSelector(labelSelector2)
+                    .withIngress(networkPolicyIngressRule)
                 .endSpec()
                 .build();
 

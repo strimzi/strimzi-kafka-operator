@@ -56,7 +56,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(kafkaConnectS2I.getMetadata().getNamespace(),
                 kafkaConnectS2I.getMetadata().getName(),
                 Labels.fromResource(kafkaConnectS2I).withKind(kafkaConnectS2I.getKind())));
+
+        cluster.setOwnerReference(kafkaConnectS2I.getApiVersion(), kafkaConnectS2I.getKind(), kafkaConnectS2I.getMetadata().getUid());
         cluster.setInsecureSourceRepository(spec != null ? spec.isInsecureSourceRepository() : false);
+
         return cluster;
     }
 
@@ -106,6 +109,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withName(name)
                     .withLabels(getLabelsWithName())
                     .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(replicas)
@@ -153,6 +157,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withName(getSourceImageStreamName())
                     .withNamespace(namespace)
                     .withLabels(getLabelsWithName(getSourceImageStreamName()))
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(false).build())
@@ -174,6 +179,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withName(name)
                     .withNamespace(namespace)
                     .withLabels(getLabelsWithName())
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withLookupPolicy(new ImageLookupPolicyBuilder().withLocal(true).build())
@@ -201,6 +207,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                     .withName(name)
                     .withLabels(getLabelsWithName())
                     .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withFailedBuildsHistoryLimit(5)

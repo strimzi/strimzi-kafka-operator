@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -61,6 +63,7 @@ public class ZookeeperClusterTest {
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = zc.generateMetricsAndLogConfigMap(null);
         checkMetricsConfigMap(metricsCm);
+        checkOwnerReference(zc.createOwnerReference(), metricsCm);
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
@@ -79,6 +82,7 @@ public class ZookeeperClusterTest {
     public void testGenerateService() {
         Service headful = zc.generateService();
         checkService(headful);
+        checkOwnerReference(zc.createOwnerReference(), headful);
     }
 
     private void checkService(Service headful) {
@@ -97,6 +101,7 @@ public class ZookeeperClusterTest {
     public void testGenerateHeadlessService() {
         Service headless = zc.generateHeadlessService();
         checkHeadlessService(headless);
+        checkOwnerReference(zc.createOwnerReference(), headless);
     }
 
     private void checkHeadlessService(Service headless) {
@@ -119,6 +124,7 @@ public class ZookeeperClusterTest {
         // We expect a single statefulSet ...
         StatefulSet ss = zc.generateStatefulSet(true);
         checkStatefulSet(ss);
+        checkOwnerReference(zc.createOwnerReference(), ss);
     }
 
     private void checkStatefulSet(StatefulSet ss) {
@@ -221,4 +227,8 @@ public class ZookeeperClusterTest {
         resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 
+    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
+        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
+    }
 }

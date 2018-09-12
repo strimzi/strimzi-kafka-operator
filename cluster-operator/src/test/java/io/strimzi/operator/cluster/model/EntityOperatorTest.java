@@ -66,6 +66,8 @@ public class EntityOperatorTest {
         assertEquals(entityOperator.entityOperatorName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
         assertEquals(new Integer(EntityOperatorSpec.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
+        assertEquals(1, dep.getMetadata().getOwnerReferences().size());
+        assertEquals(entityOperator.createOwnerReference(), dep.getMetadata().getOwnerReferences().get(0));
 
         assertEquals(3, containers.size());
         // just check names of topic and user operators (their containers are tested in the related unit test classes)

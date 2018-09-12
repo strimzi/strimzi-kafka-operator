@@ -254,7 +254,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     /** Create a cluster from a Kafka Cluster CM */
     @Test
-    public void testCreateUpdateDelete(TestContext context) {
+    public void testCreateUpdate(TestContext context) {
         Set<String> expectedClaims = resilientPvcs();
 
         KafkaAssemblyOperator kco = createCluster(context);
@@ -266,21 +266,6 @@ public class KafkaAssemblyOperatorMockTest {
             updateAsync.complete();
         });
         updateAsync.await();
-        LOGGER.info("Reconciling again -> delete");
-        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
-        Async deleteAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
-            if (ar.failed()) ar.cause().printStackTrace();
-            context.assertTrue(ar.succeeded());
-            assertPvcs(context, expectedClaims);
-            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsCASecretName(CLUSTER_NAME)).get());
-            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsPublicKeyName(CLUSTER_NAME)).get());
-            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clusterPublicKeyName(CLUSTER_NAME)).get());
-            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get());
-            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(ZookeeperCluster.nodesSecretName(CLUSTER_NAME)).get());
-            context.assertNull(mockClient.secrets().inNamespace(NAMESPACE).withName(TopicOperator.secretName(CLUSTER_NAME)).get());
-            deleteAsync.complete();
-        });
     }
 
     private void assertPvcs(TestContext context, Set<String> expectedClaims) {
@@ -435,141 +420,6 @@ public class KafkaAssemblyOperatorMockTest {
 
             updateAsync.complete();
         });
-    }
-
-    private void deleteClusterWithoutServices(TestContext context, String... services) {
-        KafkaAssemblyOperator kco = createCluster(context);
-        Set<String> ssNames = mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> deploymentNames = mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> cmNames = new HashSet<>(mockClient.configMaps().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet()));
-        cmNames.remove(CLUSTER_NAME);
-        Set<String> pvcNames = mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
-        for (String service: services) {
-            mockClient.services().inNamespace(NAMESPACE).withName(service).delete();
-            assertNull("Expected service " + service + " to be not exist",
-                    mockClient.services().inNamespace(NAMESPACE).withName(service).get());
-        }
-        LOGGER.info("Deleting");
-        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
-        Async updateAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
-            if (ar.failed()) ar.cause().printStackTrace();
-            context.assertTrue(ar.succeeded());
-            for (String service: services) {
-                assertNull(
-                        "Expected service " + service + " to still not exist",
-                        mockClient.services().inNamespace(NAMESPACE).withName(service).get());
-            }
-            for (String ss: ssNames) {
-                assertNull(
-                        "Expected ss " + ss + " to still not exist",
-                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).get());
-            }
-            // assert other resources do not exist either
-            for (String r: ssNames) {
-                assertNull(
-                        "Expected r " + r + " to still not exist",
-                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(r).get());
-            }
-            for (String r: deploymentNames) {
-                assertNull(
-                        "Expected r " + r + " to still not exist",
-                        mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(r).get());
-            }
-            for (String r: cmNames) {
-                assertNull(
-                        "Expected r " + r + " to still not exist",
-                        mockClient.configMaps().inNamespace(NAMESPACE).withName(r).get());
-            }
-            for (String r: pvcNames) {
-                assertNull(
-                        "Expected r " + r + " to still not exist",
-                        mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withName(r).get());
-            }
-            updateAsync.complete();
-        });
-    }
-
-    @Test
-    public void testDeleteClusterWithoutZkServices(TestContext context) {
-        deleteClusterWithoutServices(context,
-                ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME),
-                ZookeeperCluster.headlessServiceName(CLUSTER_NAME));
-    }
-
-    @Test
-    public void testDeleteClusterWithoutKafkaServices(TestContext context) {
-        deleteClusterWithoutServices(context,
-                KafkaCluster.kafkaClusterName(CLUSTER_NAME),
-                KafkaCluster.headlessServiceName(CLUSTER_NAME));
-    }
-
-    private void deleteClusterWithoutStatefulSet(TestContext context, String... statefulSets) {
-
-        KafkaAssemblyOperator kco = createCluster(context);
-        Set<String> ssNames = mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> serviceNames = mockClient.services().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> deploymentNames = mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
-        Set<String> cmNames = new HashSet<>(mockClient.configMaps().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet()));
-        cmNames.remove(CLUSTER_NAME);
-        Set<String> pvcNames = mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().stream().map(r -> r.getMetadata().getName()).collect(Collectors.toSet());
-
-        for (String ss: statefulSets) {
-            mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).delete();
-            assertNull("Expected ss " + ss + " to be not exist",
-                    mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).get());
-        }
-        LOGGER.info("Deleting");
-        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
-        Async updateAsync = context.async();
-        kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
-            if (ar.failed()) ar.cause().printStackTrace();
-            context.assertTrue(ar.succeeded());
-            for (String ss: statefulSets) {
-                assertNull(
-                        "Expected ss " + ss + " to still not exist",
-                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).get());
-            }
-            // assert other resources do not exist either
-            for (String r: ssNames) {
-                assertNull(
-                        "Expected r " + r + " to still not exist",
-                        mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(r).get());
-            }
-            for (String r: serviceNames) {
-                assertNull(
-                        "Expected r " + r + " to still not exist",
-                        mockClient.services().inNamespace(NAMESPACE).withName(r).get());
-            }
-            for (String r: deploymentNames) {
-                assertNull(
-                        "Expected r " + r + " to still not exist",
-                        mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(r).get());
-            }
-            for (String r: cmNames) {
-                assertNull(
-                        "Expected r " + r + " to still not exist",
-                        mockClient.configMaps().inNamespace(NAMESPACE).withName(r).get());
-            }
-            for (String r: pvcNames) {
-                assertNull(
-                        "Expected r " + r + " to still not exist",
-                        mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withName(r).get());
-            }
-            updateAsync.complete();
-        });
-    }
-
-    @Test
-    public void testDeleteClusterWithoutZkStatefulSet(TestContext context) {
-        deleteClusterWithoutStatefulSet(context,
-                ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME));
-    }
-
-    @Test
-    public void testDeleteClusterWithoutKafkaStatefulSet(TestContext context) {
-        deleteClusterWithoutStatefulSet(context,
-                KafkaCluster.kafkaClusterName(CLUSTER_NAME));
     }
 
     @Test
@@ -815,25 +665,6 @@ public class KafkaAssemblyOperatorMockTest {
             updateAsync.complete();
         });
         updateAsync.await();
-    }
-
-    @Test
-    public void testReconcileAllDeleteCase(TestContext context) throws InterruptedException {
-        KafkaAssemblyOperator kco = createCluster(context);
-        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
-
-        LOGGER.info("reconcileAll after KafkaAssembly deletion -> All resources should be deleted");
-        kco.reconcileAll("test-trigger", NAMESPACE).await();
-
-        // TODO: Should verify that all resources were removed from MockKube
-        // Assert no CMs, Services, StatefulSets, Deployments, Secrets are left
-        context.assertTrue(mockClient.configMaps().inNamespace(NAMESPACE).list().getItems().isEmpty());
-        context.assertTrue(mockClient.services().inNamespace(NAMESPACE).list().getItems().isEmpty());
-        context.assertTrue(mockClient.apps().statefulSets().inNamespace(NAMESPACE).list().getItems().isEmpty());
-        context.assertTrue(mockClient.extensions().deployments().inNamespace(NAMESPACE).list().getItems().isEmpty());
-        // just the "internal-ca" certs is left because it's global (not cluster specific)
-        // JAKUB
-        context.assertEquals(0, mockClient.secrets().inNamespace(NAMESPACE).list().getItems().size());
     }
 
     @Test

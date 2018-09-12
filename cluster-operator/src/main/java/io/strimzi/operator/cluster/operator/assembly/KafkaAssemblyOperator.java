@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
@@ -223,6 +225,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     List<Secret> clusterSecrets = secretOperations.list(reconciliation.namespace(), Labels.forCluster(reconciliation.name()));
                     Secret clusterCa = findSecretWithName(clusterSecrets, clusterCaName);
                     SecretCertProvider secretCertProvider = new SecretCertProvider();
+
+                    OwnerReference ownerRef = new OwnerReferenceBuilder()
+                            .withApiVersion(kafkaAssembly.getApiVersion())
+                            .withKind(kafkaAssembly.getKind())
+                            .withName(kafkaAssembly.getMetadata().getName())
+                            .withUid(kafkaAssembly.getMetadata().getUid())
+                            .withBlockOwnerDeletion(false)
+                            .withController(false)
+                            .build();
+
                     final Secret secret;
 
                     if (clusterCa == null) {
@@ -241,7 +253,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                             secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
                                     "cluster-ca.key", "cluster-ca.crt",
-                                    clusterCAkeyFile, clusterCAcertFile, caLabels.toMap());
+                                    clusterCAkeyFile, clusterCAcertFile, caLabels.toMap(), ownerRef);
                         } catch (Throwable e) {
                             future.fail(e);
                             return;
@@ -255,7 +267,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     } else {
                         log.debug("{}: The cluster CA {} already exists", reconciliation, clusterCaName);
                         secret = secretCertProvider.createSecret(reconciliation.namespace(), clusterCaName,
-                                clusterCa.getData(), caLabels.toMap());
+                                clusterCa.getData(), caLabels.toMap(), ownerRef);
                     }
 
                     secretOperations.reconcile(reconciliation.namespace(), clusterCaName, secret)
@@ -942,28 +954,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         boolean deleteClaims = ss == null ? false : KafkaCluster.deleteClaim(ss);
         List<Future> result = new ArrayList<>(8 + (deleteClaims ? replicas : 0) + 2 * replicas);
 
-        result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricAndLogConfigsName(name), null));
-        result.add(serviceOperations.reconcile(namespace, KafkaCluster.serviceName(name), null));
-        result.add(serviceOperations.reconcile(namespace, KafkaCluster.headlessServiceName(name), null));
-        result.add(kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
-        result.add(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), null));
-        result.add(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), null));
-        result.add(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), null));
-        result.add(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), null));
-        result.add(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), null));
-
-        for (int i = 0; i < replicas; i++) {
-            result.add(serviceOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), null));
-
-            if (routeOperations != null)    {
-                result.add(routeOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), null));
-            }
-        }
-
-        if (routeOperations != null)    {
-            result.add(routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), null));
-        }
-
         if (deleteClaims) {
             log.debug("{}: delete kafka {} PVCs", reconciliation, name);
 
@@ -972,8 +962,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         KafkaCluster.getPersistentVolumeClaimName(kafkaSsName, i), null));
             }
         }
+
         result.add(clusterRoleBindingOperator.reconcile(KafkaCluster.initContainerClusterRoleBindingName(namespace, name), null));
-        result.add(serviceAccountOperator.reconcile(namespace, KafkaCluster.initContainerServiceAccountName(name), null));
         return CompositeFuture.join(result);
     }
 
@@ -986,13 +976,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         boolean deleteClaims = ss == null ? false : ZookeeperCluster.deleteClaim(ss);
         List<Future> result = new ArrayList<>(4 + (deleteClaims ? ss.getSpec().getReplicas() : 0));
 
-        result.add(configMapOperations.reconcile(namespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(name), null));
-        result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.serviceName(name), null));
-        result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.headlessServiceName(name), null));
-        result.add(zkSetOperations.reconcile(namespace, zkSsName, null));
-        result.add(secretOperations.reconcile(namespace, ZookeeperCluster.nodesSecretName(name), null));
-        result.add(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), null));
-
         if (deleteClaims) {
             log.debug("{}: delete zookeeper {} PVCs", reconciliation, name);
             for (int i = 0; i < ss.getSpec().getReplicas(); i++) {
@@ -1003,19 +986,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return CompositeFuture.join(result);
     }
 
-
-
     private final Future<CompositeFuture> deleteTopicOperator(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         log.debug("{}: delete topic operator {}", reconciliation, name);
 
         List<Future> result = new ArrayList<>(3);
-        result.add(configMapOperations.reconcile(namespace, TopicOperator.metricAndLogConfigsName(name), null));
-        result.add(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), null));
-        result.add(secretOperations.reconcile(namespace, TopicOperator.secretName(name), null));
         result.add(roleBindingOperator.reconcile(namespace, TopicOperator.roleBindingName(name), null));
-        result.add(serviceAccountOperator.reconcile(namespace, TopicOperator.topicOperatorServiceAccountName(name), null));
         return CompositeFuture.join(result);
     }
 
@@ -1025,13 +1002,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         log.debug("{}: delete entity operator {}", reconciliation, name);
 
         List<Future> result = new ArrayList<>(3);
-        result.add(configMapOperations.reconcile(namespace, EntityTopicOperator.metricAndLogConfigsName(name), null));
-        result.add(configMapOperations.reconcile(namespace, EntityUserOperator.metricAndLogConfigsName(name), null));
-        result.add(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), null));
-        result.add(secretOperations.reconcile(namespace, EntityOperator.secretName(name), null));
         result.add(roleBindingOperator.reconcile(namespace, EntityTopicOperator.roleBindingName(name), null));
         result.add(roleBindingOperator.reconcile(namespace, EntityUserOperator.roleBindingName(name), null));
-        result.add(serviceAccountOperator.reconcile(namespace, EntityOperator.entityOperatorServiceAccountName(name), null));
         return CompositeFuture.join(result);
     }
 
@@ -1045,24 +1017,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     private final Future<Void> deleteClusterCa(Reconciliation reconciliation) {
-        Future<Void> result = Future.future();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                String clusterCaName = AbstractModel.getClusterCaName(reconciliation.name());
-
-                if (secretOperations.get(reconciliation.namespace(), clusterCaName) != null) {
-                    log.debug("{}: Deleting cluster CA certificate {}", reconciliation, clusterCaName);
-                    secretOperations.reconcile(reconciliation.namespace(), clusterCaName, null)
-                            .compose(reconcileResult -> future.complete(), future);
-                    log.debug("{}: Cluster CA {} deleted", reconciliation, clusterCaName);
-                } else {
-                    log.debug("{}: The cluster CA {} doesn't exist", reconciliation, clusterCaName);
-                    future.complete();
-                }
-            }, true,
-            result.completer()
-        );
-        return result;
+        return Future.succeededFuture();
     }
 
     @Override

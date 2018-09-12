@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
@@ -162,6 +164,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(KafkaConnectCluster.REST_API_PORT_NAME, svc.getSpec().getPorts().get(0).getName());
         assertEquals("TCP", svc.getSpec().getPorts().get(0).getProtocol());
         assertEquals(kc.getPrometheusAnnotations(), svc.getMetadata().getAnnotations());
+        checkOwnerReference(kc.createOwnerReference(), svc);
     }
 
     @Test
@@ -198,6 +201,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals("Rolling", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingParams().getMaxSurge().getIntVal());
         assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingParams().getMaxUnavailable().getIntVal());
+        checkOwnerReference(kc.createOwnerReference(), dep);
     }
 
     @Test
@@ -219,6 +223,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals("ConfigChange", bc.getSpec().getTriggers().get(0).getType());
         assertEquals("ImageChange", bc.getSpec().getTriggers().get(1).getType());
         assertEquals(new ImageChangeTrigger(), bc.getSpec().getTriggers().get(1).getImageChange());
+        checkOwnerReference(kc.createOwnerReference(), bc);
     }
 
     @Test
@@ -235,6 +240,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(image, is.getSpec().getTags().get(0).getFrom().getName());
         assertNull(is.getSpec().getTags().get(0).getImportPolicy());
         assertNull(is.getSpec().getTags().get(0).getReferencePolicy());
+        checkOwnerReference(kc.createOwnerReference(), is);
     }
 
     @Test
@@ -266,6 +272,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(namespace, is.getMetadata().getNamespace());
         assertEquals(expectedLabels(kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
         assertEquals(true, is.getSpec().getLookupPolicy().getLocal());
+        checkOwnerReference(kc.createOwnerReference(), is);
     }
 
     @Test
@@ -395,5 +402,10 @@ public class KafkaConnectS2IClusterTest {
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectS2ICluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE));
         assertEquals("user1",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectS2ICluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME));
+    }
+
+    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
+        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
     }
 }

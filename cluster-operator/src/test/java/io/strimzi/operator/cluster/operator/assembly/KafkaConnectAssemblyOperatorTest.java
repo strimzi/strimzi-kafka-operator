@@ -49,7 +49,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -456,55 +455,6 @@ public class KafkaConnectAssemblyOperatorTest {
             context.assertTrue(createResult.succeeded());
 
             verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
-
-            async.complete();
-        });
-    }
-
-    @Test
-    public void testDeleteCluster(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
-
-        String clusterCmName = "foo";
-        String clusterCmNamespace = "test";
-
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName));
-
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
-
-        ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockServiceOps.reconcile(serviceNamespaceCaptor.capture(), serviceNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
-
-        ArgumentCaptor<String> dcNamespaceCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockDcOps.reconcile(dcNamespaceCaptor.capture(), dcNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
-
-        when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
-        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
-                new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
-
-        Async async = context.async();
-        ops.delete(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName)).setHandler(createResult -> {
-            context.assertTrue(createResult.succeeded());
-
-            // Vertify service
-            context.assertEquals(1, serviceNameCaptor.getAllValues().size());
-            context.assertEquals(clusterCmNamespace, serviceNamespaceCaptor.getValue());
-            context.assertEquals(connect.getServiceName(), serviceNameCaptor.getValue());
-
-            // Vertify Deployment
-            context.assertEquals(1, dcNameCaptor.getAllValues().size());
-            context.assertEquals(clusterCmNamespace, dcNamespaceCaptor.getValue());
-            context.assertEquals(connect.getName(), dcNameCaptor.getValue());
 
             async.complete();
         });

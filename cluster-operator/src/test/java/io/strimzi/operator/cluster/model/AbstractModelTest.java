@@ -7,9 +7,13 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
+
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -154,5 +158,35 @@ public class AbstractModelTest {
         };
         abstractModel.setResources(opts);
         Assert.assertEquals("1", abstractModel.resources(opts).getLimits().get("cpu").getAmount());
+    }
+
+    @Test
+    public void testOwnerReference()    {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        AbstractModel am = new AbstractModel(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(), Labels.forCluster("foo")) {
+            @Override
+            protected String getDefaultLogConfigFileName() {
+                return "";
+            }
+
+            @Override
+            protected List<Container> getContainers() {
+                return emptyList();
+            }
+        };
+        am.setOwnerReference(kafka.getApiVersion(), kafka.getKind(), kafka.getMetadata().getUid());
+
+        OwnerReference ref = am.createOwnerReference();
+
+        assertEquals(kafka.getApiVersion(), ref.getApiVersion());
+        assertEquals(kafka.getKind(), ref.getKind());
+        assertEquals(kafka.getMetadata().getName(), ref.getName());
+        assertEquals(kafka.getMetadata().getUid(), ref.getUid());
     }
 }

@@ -19,6 +19,8 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
@@ -160,6 +162,11 @@ public abstract class AbstractModel {
     private Logging logging;
 
     protected CertAndKey clusterCA;
+
+    // Owner Reference information
+    private String ownerApiVersion;
+    private String ownerKind;
+    private String ownerUid;
 
     /**
      * Constructor
@@ -569,7 +576,6 @@ public abstract class AbstractModel {
     }
 
     protected PersistentVolumeClaim createPersistentVolumeClaim(String name) {
-
         PersistentClaimStorage storage = (PersistentClaimStorage) this.storage;
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", new Quantity(storage.getSize(), null));
@@ -580,7 +586,7 @@ public abstract class AbstractModel {
 
         PersistentVolumeClaimBuilder pvcb = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
-                .withName(name)
+                    .withName(name)
                 .endMetadata()
                 .withNewSpec()
                 .withAccessModes("ReadWriteOnce")
@@ -625,6 +631,7 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withData(data)
                 .build();
@@ -651,6 +658,7 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withData(data)
                 .build();
@@ -706,15 +714,16 @@ public abstract class AbstractModel {
     protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
-                .withName(name)
-                .withLabels(labels)
-                .withNamespace(namespace)
-                .withAnnotations(annotations)
+                    .withName(name)
+                    .withLabels(labels)
+                    .withNamespace(namespace)
+                    .withAnnotations(annotations)
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                .withType(type)
-                .withSelector(selector)
-                .withPorts(ports)
+                    .withType(type)
+                    .withSelector(selector)
+                    .withPorts(ports)
                 .endSpec()
                 .build();
         log.trace("Created service {}", service);
@@ -732,6 +741,7 @@ public abstract class AbstractModel {
                     .withLabels(getLabelsWithName(headlessServiceName))
                     .withNamespace(namespace)
                     .withAnnotations(annotations)
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withType("ClusterIP")
@@ -795,6 +805,7 @@ public abstract class AbstractModel {
                     .withLabels(getLabelsWithName())
                     .withNamespace(namespace)
                     .withAnnotations(annotations)
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withPodManagementPolicy("Parallel")
@@ -839,6 +850,7 @@ public abstract class AbstractModel {
                     .withLabels(getLabelsWithName())
                     .withNamespace(namespace)
                     .withAnnotations(deploymentAnnotations)
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withStrategy(updateStrategy)
@@ -1115,6 +1127,35 @@ public abstract class AbstractModel {
         }
 
         return certs;
+    }
+
+    /**
+     * Generate the OwnerReference object to link newly created objects to their parent (the custom resource)
+     *
+     * @return
+     */
+    protected OwnerReference createOwnerReference() {
+        return new OwnerReferenceBuilder()
+                .withApiVersion(ownerApiVersion)
+                .withKind(ownerKind)
+                .withName(cluster)
+                .withUid(ownerUid)
+                .withBlockOwnerDeletion(false)
+                .withController(false)
+                .build();
+    }
+
+    /**
+     * Set fields needed to generate the OwnerReference object
+     *
+     * @param apiVersion    API version of the parent object
+     * @param kind          Kind of the parent object
+     * @param uid           UID of the parent object
+     */
+    protected void setOwnerReference(String apiVersion, String kind, String uid)  {
+        this.ownerApiVersion = apiVersion;
+        this.ownerKind = kind;
+        this.ownerUid = uid;
     }
 
     public static boolean deleteClaim(StatefulSet ss) {
