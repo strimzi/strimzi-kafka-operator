@@ -30,7 +30,7 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -117,13 +117,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
 
     @Override
     protected List<HasMetadata> getResources(String namespace, Labels selector) {
-        List<HasMetadata> result = new ArrayList<>();
-        result.addAll(serviceOperations.list(namespace, selector));
-        result.addAll(deploymentConfigOperations.list(namespace, selector));
-        result.addAll(imagesStreamOperations.list(namespace, selector));
-        result.addAll(buildConfigOperations.list(namespace, selector));
-        result.addAll(resourceOperator.list(namespace, selector));
-        return result;
+        return Collections.EMPTY_LIST;
     }
 
 }

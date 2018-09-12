@@ -963,7 +963,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
-        result.add(clusterRoleBindingOperator.reconcile(KafkaCluster.initContainerClusterRoleBindingName(namespace, name), null));
         return CompositeFuture.join(result);
     }
 
@@ -987,24 +986,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     private final Future<CompositeFuture> deleteTopicOperator(Reconciliation reconciliation) {
-        String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
-        log.debug("{}: delete topic operator {}", reconciliation, name);
-
-        List<Future> result = new ArrayList<>(3);
-        result.add(roleBindingOperator.reconcile(namespace, TopicOperator.roleBindingName(name), null));
-        return CompositeFuture.join(result);
+        return Future.succeededFuture();
     }
 
     private final Future<CompositeFuture> deleteEntityOperator(Reconciliation reconciliation) {
-        String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
-        log.debug("{}: delete entity operator {}", reconciliation, name);
-
-        List<Future> result = new ArrayList<>(3);
-        result.add(roleBindingOperator.reconcile(namespace, EntityTopicOperator.roleBindingName(name), null));
-        result.add(roleBindingOperator.reconcile(namespace, EntityUserOperator.roleBindingName(name), null));
-        return CompositeFuture.join(result);
+        return Future.succeededFuture();
     }
 
     @Override
@@ -1022,17 +1008,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     @Override
     protected List<HasMetadata> getResources(String namespace, Labels selector) {
-        List<HasMetadata> result = new ArrayList<>();
-        result.addAll(kafkaSetOperations.list(namespace, selector));
-        result.addAll(zkSetOperations.list(namespace, selector));
-        result.addAll(deploymentOperations.list(namespace, selector));
-        result.addAll(serviceOperations.list(namespace, selector));
-        result.addAll(resourceOperator.list(namespace, selector));
-
-        if (routeOperations != null) {
-            result.addAll(routeOperations.list(namespace, selector));
-        }
-
-        return result;
+        // TODO: Search for PVCs!
+        return Collections.EMPTY_LIST;
     }
 }

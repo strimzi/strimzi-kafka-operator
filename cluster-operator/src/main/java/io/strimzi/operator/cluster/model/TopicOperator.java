@@ -387,7 +387,7 @@ public class TopicOperator extends AbstractModel {
     }
 
     public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), TO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName());
+        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), TO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName(), createOwnerReference());
     }
 
     @Override

@@ -203,6 +203,6 @@ public class EntityUserOperator extends AbstractModel {
 
     public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
         return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), EntityOperator.EO_CLUSTER_ROLE_NAME,
-                namespace, EntityOperator.entityOperatorServiceAccountName(cluster));
+                namespace, EntityOperator.entityOperatorServiceAccountName(cluster), createOwnerReference());
     }
 }
