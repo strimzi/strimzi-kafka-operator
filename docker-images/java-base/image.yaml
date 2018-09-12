@@ -1,0 +1,33 @@
+schema_version: 1
+
+name: strimzi/java-base
+description: "Strimzi base image for operator and kafka init images"
+version: "latest"
+from: centos:7
+
+envs:
+  - name: "HOME"
+    value: "/home/strimzi"
+  - name: "USER"
+    value: "strimzi"
+  - name: "JAVA_HOME"
+    value: "/usr/lib/jvm/java"
+
+modules:
+  repositories:
+    - name: modules
+      path: modules
+  install:
+    - name: common
+    - name: java-base
+
+run:
+  workdir: "$HOME"
+
+packages:
+  repositories:
+  - name: scl
+    rpm: centos-release-scl
+  install:
+    - java-1.8.0-openjdk-headless 
+    - openssl

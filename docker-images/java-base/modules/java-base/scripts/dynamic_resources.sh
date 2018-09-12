@@ -1,4 +1,11 @@
 #!/bin/sh
+# There are TWO different dynamic_resources.sh scripts,
+# 
+# 1) The dynamic_resources.sh script used by docker (this script)
+# 2) The dynamic_resources.sh script used by cekit
+#    https://github.com/jboss-openshift/cct_module/blob/master/dynamic-resources/dynamic_resources.sh
+#
+# The script used depends on how the containers are built
 
 function get_heap_size {
   CONTAINER_MEMORY_IN_BYTES=`cat /sys/fs/cgroup/memory/memory.limit_in_bytes`

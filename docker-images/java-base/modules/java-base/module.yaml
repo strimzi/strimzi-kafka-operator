@@ -1,0 +1,5 @@
+schema_version: 1
+
+name: java-base
+execute:
+  - script: install.sh

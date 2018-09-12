@@ -1,0 +1,5 @@
+schema_version: 1
+
+name: common
+execute:
+    - script: add_user.sh
