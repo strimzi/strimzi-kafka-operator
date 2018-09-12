@@ -14,4 +14,4 @@ log4j.logger.kafka.network.RequestChannel$=WARN
 log4j.logger.kafka.controller=TRACE
 log4j.logger.kafka.log.LogCleaner=INFO
 log4j.logger.state.change.logger=TRACE
-log4j.logger.kafka.authorizer.logger=WARN
+log4j.logger.kafka.authorizer.logger=INFO
