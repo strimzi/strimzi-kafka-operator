@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -13,6 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.strimzi.operator.common.Reconciliation;
@@ -34,6 +37,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 /**
  * <p>Abstract assembly creation, update, read, deletion, etc.</p>
@@ -291,5 +296,25 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                 log.warn("{}: Failed to reconcile", reconciliation, cause);
             }
         }
+    }
+
+    /**
+     * @param current Previsous ConfigMap
+     * @param desired Desired ConfigMap
+     * @return Returns true if only metrics settings has been changed
+     */
+    public boolean onlyMetricsSettingChanged(ConfigMap current, ConfigMap desired) {
+        if ((current == null && desired != null) || (current != null && desired == null)) {
+            // Metrics were added or deleted. We want rolling update
+            return false;
+        }
+        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(desired));
+        boolean onlyMetricsSettingChanged = false;
+        for (JsonNode d : diff) {
+            if (d.get("path").asText().equals("/data/metrics-config.yml") && d.get("op").asText().equals("replace")) {
+                onlyMetricsSettingChanged = true;
+            }
+        }
+        return onlyMetricsSettingChanged && diff.size() == 1;
     }
 }
