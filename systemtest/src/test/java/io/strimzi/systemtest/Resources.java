@@ -146,7 +146,7 @@ public class Resources {
             TestUtils.waitFor("Kafka creation", 60000, 5000,
                 () -> {
                     try {
-                        kafka().create(k);
+                        kafka().inNamespace(client().getNamespace()).createOrReplace(k);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
@@ -244,9 +244,9 @@ public class Resources {
                 .build());
     }
 
-    private DoneableKafkaUser user(KafkaUser user) {
+    DoneableKafkaUser user(KafkaUser user) {
         return new DoneableKafkaUser(user, ku -> {
-            KafkaUser resource = kafkaUser().create(ku);
+            KafkaUser resource = kafkaUser().inNamespace(client().getNamespace()).createOrReplace(ku);
             LOGGER.info("Created KafkaUser {}", resource.getMetadata().getName());
             return deleteLater(resource);
         });
