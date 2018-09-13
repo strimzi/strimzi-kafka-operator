@@ -8,17 +8,16 @@
 
 == Mutual TLS authentication
 
-{ProductName} can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without _mutual authentication_. 
-(Mutual TLS authentication is always used for the communication between Kafka brokers and zookeeper pods).
-
-Mutual authentication is when both parties to a communication get proof of the identity of the other party: The broker authenticates the client and the client authenticates the broker.
+Mutual authentication or two-way authentication is when both the server and the client present certificates. {ProductName} can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without mutual authentication. When you configure mutual authentication, the broker authenticates the client and the client authenticates the broker. Mutual TLS authentication is always used for the communication between Kafka brokers and Zookeeper pods.
 
 NOTE: In many common uses of TLS (such as the HTTPS protocol used between a web browser and a web server) the authentication is not mutual: Only one party to the communication gets proof of the identity of the other party.
 
+TLS authentication is more commonly one-way, where only one party authenticates to another. For example, when the HTTPS protocol is used between a web browser and a web server, the authentication is not usually mutual and only the server  gets proof of the identity of the browser.
+
 == When to use mutual TLS authentication for clients
 
-Mutual TLS authentication is a suitable choice for authenticating Kafka clients when:
+Mutual TLS authentication is recommended for authenticating Kafka clients when:
 
 * The client supports authentication using mutual TLS authentication
-* It is necessary or desirable to use TLS certificates (rather than passwords)
-* You are able to reconfigure and restart client applications periodically (so they do not use certificate which have expired).
+* It is necessary to use the TLS certificates rather than passwords
+* You can reconfigure and restart client applications periodically so that they do not use expired certificates.

@@ -6,11 +6,9 @@
 [id='con-scram-sha-authentication-{context}']
 = SCRAM-SHA authentication
 
-{ProductName} can configure Kafka to use SASL SCRAM-SHA to provide authentication on both unencrypted and TLS-encrypted _client connections_.
-(TLS authentication is always used internally between Kafka brokers and Zookeeper nodes).  
-When used with a TLS client connection, the TLS protocol is providing encryption, but is not used for authentication.
+SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords. {ProductName} can configure Kafka to use SASL SCRMA-SHA-512 to provide authentication on both unencrypted and TLS-encrypted client connections. TLS authentication is always used internally between Kafka brokers and Zookeeper nodes. When used with a TLS client connection, the TLS protocol provides encryption, but is not used for authentication.
 
-SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords. SCRAM has some useful properties which mean it is considered safe to use SCRAM-SHA even on unencrypted connections:
+SCRAM has some useful properties which mean it is considered safe to use SCRAM-SHA even on unencrypted connections:
 
 * The passwords are not sent in the clear over the communication channel.
 Instead the client and the server are each challenged by the other to offer proof that they know the password of the authenticating user.
@@ -25,8 +23,9 @@ When a `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` t
 
 == When to use SCRAM-SHA authentication for clients
 
-SCRAM-SHA is a suitable choice for authenticating Kafka clients when:
+SCRAM-SHA is recommended for authenticating Kafka clients when:
 
 * The client supports authentication using SCRAM-SHA-512
-* It is necessary or desirable to use passwords (rather than TLS certificates)
-* It is necessary or desirable to have unencrypted communication, while still having authentication.
+* It is necessary to use passwords rather than the TLS certificates
+* When you want to have authentication for unencrypted communication
+

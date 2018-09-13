@@ -35,7 +35,7 @@ listeners:
 == Listener authentication
 
 The listener sub-properties can also contain additional configuration.
-Both listeners support the `authentication` property. This be used to specify an authentication mechanism specific to that listener:
+Both listeners support the `authentication` property. This is used to specify an authentication mechanism specific to that listener:
 
 * mutual TLS authentication (only on the `tls` listener)
 * SCRAM-SHA authentication
