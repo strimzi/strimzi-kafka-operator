@@ -2,7 +2,7 @@
 //
 // assembly-configuring-kafka-listeners.adoc
 
-[id='ref-kafka-listeners-{context}']
+[id='con-kafka-listeners-{context}']
 = Kafka listeners
 
 Kafka broker listeners can be configured using the `listeners` property in the `Kafka.spec.kafka` resource.
@@ -32,16 +32,29 @@ listeners:
 # ...
 ----
 
-The listener sub-properties might also contain additional configuration.
-Currently, the only supported configuration is authentication on the `tls` listener.
+== Listener authentication
 
-.An example of `tls` listener with TLS client authentication enabled
+The listener sub-properties can also contain additional configuration.
+Both listeners support the `authentication` property. This is used to specify an authentication mechanism specific to that listener:
+
+* mutual TLS authentication (only on the `tls` listener)
+* SCRAM-SHA authentication
+
+If no `authentication` property is specified then the listener does not authenticate clients which connect though that listener.
+
+.An example where the plain listener is configured for SCRAM-SHA authentication and the `tls` listener with mutual TLS authentication
 [source,yaml,subs="attributes+"]
 ----
 # ...
 listeners:
+  plain:
+    authentication:
+      type: scram-sha-512
   tls:
     authentication:
       type: tls
 # ...
 ----
+
+
+Authentication must be configured when using the User Operator to manage `KafkaUsers`.

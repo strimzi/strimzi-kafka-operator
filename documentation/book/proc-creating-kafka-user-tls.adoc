@@ -2,12 +2,12 @@
 //
 // assembly-using-the-user-operator.adoc
 
-[id='proc-creating-kafka-user-{context}']
-= Creating a Kafka user
+[id='proc-creating-kafka-user-tls-{context}']
+= Creating a Kafka user with mutual TLS authentication
 
 .Prerequisites
 
-* A running Kafka cluster.
+* A running Kafka cluster configured with a listener using TLS authentication.
 * A running User Operator.
 
 .Procedure
@@ -65,6 +65,6 @@ oc apply -f _<your-file>_
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-// TODO: Uncomment link after merging with the other PR
-//* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
+* For more information about configuring a listener that authenticates using TLS see xref:assembly-configuring-kafka-broker-listeners-deployment-configuration-kafka[].
+* For more information about deploying the Entity Operator, see xref:assembly-kafka-entity-operator-deployment-configuration-kafka[].
 * For more information about the `KafkaUser` object, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].
