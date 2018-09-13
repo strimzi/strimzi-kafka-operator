@@ -83,7 +83,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -91,7 +90,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -826,7 +824,7 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testReconcile(TestContext context) throws InterruptedException {
-        Async async = context.async(3);
+        Async async = context.async(2);
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = supplierWithMocks();
@@ -845,7 +843,6 @@ public class KafkaAssemblyOperatorTest {
 
         Kafka foo = getKafkaAssembly("foo");
         Kafka bar = getKafkaAssembly("bar");
-        Kafka baz = getKafkaAssembly("baz");
         when(mockKafkaOps.list(eq(clusterCmNamespace), any())).thenReturn(
             asList(foo, bar)
         );
@@ -858,15 +855,11 @@ public class KafkaAssemblyOperatorTest {
         List<Secret> barSecrets = ResourceUtils.createKafkaClusterSecretsWithReplicas(clusterCmNamespace, "bar",
                 bar.getSpec().getKafka().getReplicas(),
                 bar.getSpec().getZookeeper().getReplicas());
-        List<Secret> bazSecrets = ResourceUtils.createKafkaClusterSecretsWithReplicas(clusterCmNamespace, "baz",
-                baz.getSpec().getKafka().getReplicas(),
-                baz.getSpec().getZookeeper().getReplicas());
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromCrd(bar).generateStatefulSet(openShift),
-                        KafkaCluster.fromCrd(baz).generateStatefulSet(openShift))
+                asList(KafkaCluster.fromCrd(bar).generateStatefulSet(openShift))
         );
 
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(foo.getMetadata().getName())))).thenReturn(fooSecrets.get(0));
@@ -886,19 +879,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
-        Labels bazLabels = Labels.forCluster("baz");
-        KafkaCluster bazCluster = KafkaCluster.fromCrd(baz);
-        bazCluster.generateCertificates(certManager, bazSecrets,  null, Collections.EMPTY_MAP);
-        when(mockKsOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
-                asList(bazCluster.generateStatefulSet(openShift))
-        );
-        when(mockSecretOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
-                new ArrayList<>(asList(bazCluster.generateClientsCASecret(), bazCluster.generateClientsPublicKeySecret(),
-                        bazCluster.generateBrokersSecret(), bazCluster.generateClusterPublicKeySecret()))
-        );
-        when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(baz.getMetadata().getName())))).thenReturn(bazSecrets.get(0));
-        when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(baz.getMetadata().getName())), isNull())).thenReturn(Future.succeededFuture(null));
-
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
@@ -912,12 +892,6 @@ public class KafkaAssemblyOperatorTest {
                 async.countDown();
                 return Future.succeededFuture();
             }
-            @Override
-            public Future<Void> delete(Reconciliation reconciliation) {
-                deleted.add(reconciliation.name());
-                async.countDown();
-                return Future.succeededFuture();
-            }
         };
 
         // Now try to reconcile all the Kafka clusters
@@ -926,7 +900,6 @@ public class KafkaAssemblyOperatorTest {
         async.await();
 
         context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
-        context.assertEquals(singleton("baz"), deleted);
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {

@@ -44,7 +44,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singleton;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -469,12 +468,10 @@ public class KafkaConnectAssemblyOperatorTest {
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
 
-
         String clusterCmNamespace = "test";
 
         KafkaConnect foo = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "foo");
         KafkaConnect bar = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "bar");
-        KafkaConnect baz = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "baz");
         when(mockConnectOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
         // when requested ConfigMap for a specific Kafka Connect cluster
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
@@ -483,8 +480,7 @@ public class KafkaConnectAssemblyOperatorTest {
         // providing the list of ALL Deployments for all the Kafka Connect clusters
         Labels newLabels = Labels.forKind(KafkaConnect.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>()),
-                        KafkaConnectCluster.fromCrd(baz).generateDeployment(new HashMap<String, String>())));
+                asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>())));
 
         // providing the list Deployments for already "existing" Kafka Connect clusters
         Labels barLabels = Labels.forCluster("bar");
@@ -492,17 +488,12 @@ public class KafkaConnectAssemblyOperatorTest {
                 asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>()))
         );
 
-        Labels bazLabels = Labels.forCluster("baz");
-        when(mockDcOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(baz).generateDeployment(new HashMap<String, String>()))
-        );
-
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
-        Async async = context.async(3);
+        Async async = context.async(2);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
@@ -514,12 +505,6 @@ public class KafkaConnectAssemblyOperatorTest {
                 async.countDown();
                 return Future.succeededFuture();
             }
-            @Override
-            public Future<Void> delete(Reconciliation reconciliation) {
-                deleted.add(reconciliation.name());
-                async.countDown();
-                return Future.succeededFuture();
-            }
         };
 
         // Now try to reconcile all the Kafka Connect clusters
@@ -528,7 +513,6 @@ public class KafkaConnectAssemblyOperatorTest {
         async.await();
 
         context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
-        context.assertEquals(singleton("baz"), deleted);
     }
 
 }

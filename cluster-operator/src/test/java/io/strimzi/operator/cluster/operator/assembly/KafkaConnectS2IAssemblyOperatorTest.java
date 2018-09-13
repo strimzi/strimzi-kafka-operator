@@ -48,7 +48,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singleton;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -591,7 +590,6 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         KafkaConnectS2I foo = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "foo");
         KafkaConnectS2I bar = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "bar");
-        KafkaConnectS2I baz = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, "baz");
         when(mockConnectOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
         // when requested ConfigMap for a specific Kafka Connect S2I cluster
         when(mockConnectOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
@@ -600,8 +598,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
         Labels newLabels = Labels.forKind(KafkaConnectS2I.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaConnectS2ICluster.fromCrd(bar).generateDeploymentConfig(new HashMap<String, String>()),
-                        KafkaConnectS2ICluster.fromCrd(baz).generateDeploymentConfig(new HashMap<String, String>())));
+                asList(KafkaConnectS2ICluster.fromCrd(bar).generateDeploymentConfig(new HashMap<String, String>())));
 
         // providing the list DeploymentConfigs for already "existing" Kafka Connect S2I clusters
         Labels barLabels = Labels.forCluster("bar");
@@ -609,17 +606,12 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 asList(KafkaConnectS2ICluster.fromCrd(bar).generateDeploymentConfig(new HashMap<String, String>()))
         );
 
-        Labels bazLabels = Labels.forCluster("baz");
-        when(mockDcOps.list(eq(clusterCmNamespace), eq(bazLabels))).thenReturn(
-                asList(KafkaConnectS2ICluster.fromCrd(baz).generateDeploymentConfig(new HashMap<String, String>()))
-        );
-
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
-        Async async = context.async(3);
+        Async async = context.async(2);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
@@ -631,12 +623,6 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 async.countDown();
                 return Future.succeededFuture();
             }
-            @Override
-            public Future<Void> delete(Reconciliation reconciliation) {
-                deleted.add(reconciliation.name());
-                async.countDown();
-                return Future.succeededFuture();
-            }
         };
 
         // Now try to reconcile all the Kafka Connect S2I clusters
@@ -645,7 +631,6 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         async.await();
 
         context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
-        context.assertEquals(singleton("baz"), deleted);
     }
 
 }
