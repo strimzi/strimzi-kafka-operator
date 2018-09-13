@@ -952,7 +952,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         StatefulSet ss = kafkaSetOperations.get(namespace, kafkaSsName);
         int replicas = ss != null ? ss.getSpec().getReplicas() : 0;
         boolean deleteClaims = ss == null ? false : KafkaCluster.deleteClaim(ss);
-        List<Future> result = new ArrayList<>(8 + (deleteClaims ? replicas : 0) + 2 * replicas);
+        List<Future> result = new ArrayList<>(deleteClaims ? replicas : 0);
 
         if (deleteClaims) {
             log.debug("{}: delete kafka {} PVCs", reconciliation, name);
@@ -973,7 +973,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String zkSsName = ZookeeperCluster.zookeeperClusterName(name);
         StatefulSet ss = zkSetOperations.get(namespace, zkSsName);
         boolean deleteClaims = ss == null ? false : ZookeeperCluster.deleteClaim(ss);
-        List<Future> result = new ArrayList<>(4 + (deleteClaims ? ss.getSpec().getReplicas() : 0));
+        List<Future> result = new ArrayList<>(deleteClaims ? ss.getSpec().getReplicas() : 0);
 
         if (deleteClaims) {
             log.debug("{}: delete zookeeper {} PVCs", reconciliation, name);
@@ -985,25 +985,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return CompositeFuture.join(result);
     }
 
-    private final Future<CompositeFuture> deleteTopicOperator(Reconciliation reconciliation) {
-        return Future.succeededFuture();
-    }
-
-    private final Future<CompositeFuture> deleteEntityOperator(Reconciliation reconciliation) {
-        return Future.succeededFuture();
-    }
-
     @Override
     protected Future<Void> delete(Reconciliation reconciliation) {
-        return deleteEntityOperator(reconciliation)
-                .compose(i -> deleteTopicOperator(reconciliation))
-                .compose(i -> deleteKafka(reconciliation))
+        return deleteKafka(reconciliation)
                 .compose(i -> deleteZk(reconciliation))
-                .compose(i -> deleteClusterCa(reconciliation));
-    }
-
-    private final Future<Void> deleteClusterCa(Reconciliation reconciliation) {
-        return Future.succeededFuture();
+                .map((Void) null);
     }
 
     @Override
