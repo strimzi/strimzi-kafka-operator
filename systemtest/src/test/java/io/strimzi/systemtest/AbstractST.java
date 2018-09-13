@@ -208,13 +208,11 @@ public class AbstractST {
     }
 
     String getValueFromJson(String json, String jsonPath) {
-        String value = JsonPath.parse(json).read(jsonPath).toString().replaceAll("\\p{P}", "");
-        return value;
+        return JsonPath.parse(json).read(jsonPath).toString();
     }
 
     String globalVariableJsonPathBuilder(String variable) {
-        String path = "$.spec.containers[*].env[?(@.name=='" + variable + "')].value";
-        return path;
+        return "$.spec.containers[*].env[?(@.name=='" + variable + "')].value";
     }
 
     List<Event> getEvents(String resourceType, String resourceName) {
