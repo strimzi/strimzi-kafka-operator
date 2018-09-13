@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* Helm has to be installed on the local machine.
+* Helm client has to be installed on the local machine.
 * Helm has to be installed in the {ProductPlatformName} cluster.
 
 .Procedure
