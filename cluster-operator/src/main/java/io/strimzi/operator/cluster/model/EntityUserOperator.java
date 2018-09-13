@@ -155,7 +155,7 @@ public class EntityUserOperator extends AbstractModel {
                         kafkaAssembly.getMetadata().getName(),
                         Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
-                result.setOwnerReference(kafkaAssembly.getApiVersion(), kafkaAssembly.getKind(), kafkaAssembly.getMetadata().getUid());
+                result.setOwnerReference(kafkaAssembly);
                 result.setImage(userOperatorSpec.getImage());
                 result.setWatchedNamespace(userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : namespace);
                 result.setReconciliationIntervalMs(userOperatorSpec.getReconciliationIntervalSeconds() * 1_000);

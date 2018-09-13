@@ -112,7 +112,7 @@ public class KafkaConnectCluster extends AbstractModel {
         KafkaConnectCluster cluster = fromSpec(kafkaConnect.getSpec(), new KafkaConnectCluster(kafkaConnect.getMetadata().getNamespace(),
                 kafkaConnect.getMetadata().getName(), Labels.fromResource(kafkaConnect).withKind(kafkaConnect.getKind())));
 
-        cluster.setOwnerReference(kafkaConnect.getApiVersion(), kafkaConnect.getKind(), kafkaConnect.getMetadata().getUid());
+        cluster.setOwnerReference(kafkaConnect);
 
         return cluster;
     }

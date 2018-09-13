@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -1148,14 +1149,12 @@ public abstract class AbstractModel {
     /**
      * Set fields needed to generate the OwnerReference object
      *
-     * @param apiVersion    API version of the parent object
-     * @param kind          Kind of the parent object
-     * @param uid           UID of the parent object
+     * @param parent The resource which should be used as parent. IT will be used to gather the date needed for generating OwnerReferences.
      */
-    protected void setOwnerReference(String apiVersion, String kind, String uid)  {
-        this.ownerApiVersion = apiVersion;
-        this.ownerKind = kind;
-        this.ownerUid = uid;
+    protected void setOwnerReference(HasMetadata parent)  {
+        this.ownerApiVersion = parent.getApiVersion();
+        this.ownerKind = parent.getKind();
+        this.ownerUid = parent.getMetadata().getUid();
     }
 
     public static boolean deleteClaim(StatefulSet ss) {

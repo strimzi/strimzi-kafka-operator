@@ -233,7 +233,7 @@ public class TopicOperator extends AbstractModel {
                     Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
             TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
 
-            result.setOwnerReference(kafkaAssembly.getApiVersion(), kafkaAssembly.getKind(), kafkaAssembly.getMetadata().getUid());
+            result.setOwnerReference(kafkaAssembly);
             result.setImage(tcConfig.getImage());
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
             result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds() * 1_000);

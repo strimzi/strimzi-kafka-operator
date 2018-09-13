@@ -141,7 +141,7 @@ public class EntityOperator extends AbstractModel {
                     kafkaAssembly.getMetadata().getName(),
                     Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
-            result.setOwnerReference(kafkaAssembly.getApiVersion(), kafkaAssembly.getKind(), kafkaAssembly.getMetadata().getUid());
+            result.setOwnerReference(kafkaAssembly);
             result.setUserAffinity(entityOperatorSpec.getAffinity());
             result.setTolerations(entityOperatorSpec.getTolerations());
             result.setTlsSidecar(entityOperatorSpec.getTlsSidecar());

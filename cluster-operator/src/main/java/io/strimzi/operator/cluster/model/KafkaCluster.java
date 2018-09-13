@@ -242,7 +242,7 @@ public class KafkaCluster extends AbstractModel {
         KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
                 kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
-        result.setOwnerReference(kafkaAssembly.getApiVersion(), kafkaAssembly.getKind(), kafkaAssembly.getMetadata().getUid());
+        result.setOwnerReference(kafkaAssembly);
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
         result.setReplicas(kafkaClusterSpec.getReplicas());
         String image = kafkaClusterSpec.getImage();

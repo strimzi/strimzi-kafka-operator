@@ -180,7 +180,7 @@ public class AbstractModelTest {
                 return emptyList();
             }
         };
-        am.setOwnerReference(kafka.getApiVersion(), kafka.getKind(), kafka.getMetadata().getUid());
+        am.setOwnerReference(kafka);
 
         OwnerReference ref = am.createOwnerReference();
 

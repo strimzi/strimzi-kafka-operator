@@ -199,7 +199,7 @@ public class EntityTopicOperator extends AbstractModel {
                         kafkaAssembly.getMetadata().getName(),
                         Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
-                result.setOwnerReference(kafkaAssembly.getApiVersion(), kafkaAssembly.getKind(), kafkaAssembly.getMetadata().getUid());
+                result.setOwnerReference(kafkaAssembly);
                 result.setImage(topicOperatorSpec.getImage());
                 result.setWatchedNamespace(topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace);
                 result.setReconciliationIntervalMs(topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
