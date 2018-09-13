@@ -1,0 +1,56 @@
+// Module included in the following assemblies:
+//
+// assembly-configuring-kafka-listeners.adoc
+
+[id='proc-accessing-kafka-using-routes-{context}']
+= Accessing Kafka using {OpenShiftName} routes
+
+.Prerequisites
+
+* An {OpenShiftName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Deploy Kafka cluster with external listener enabled and configured to the type `route`.
++
+An example configuration with an external listener configured to use `Routes`:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    listeners:
+      external:
+        type: route
+        # ...
+    # ...
+  zookeeper:
+    # ...
+----
+
+. Create or update the resource.
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_
+
+. Find the address of the bootstrap `Route`.
++
+[source,shell]
+oc get routes _<cluster-name>_-kafka-bootstrap -o=jsonpath='{.status.ingress[0].host}{"\n"}'
++
+Use the address together with the port 443 in your Kafka client as the _bootstrap_ address.
+
+. Extract the public certificate of the broker certification authority
++
+[source,shell]
+oc extract secret/_<cluster-name>_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt
++
+Use the extracted certificate in your Kafka client to configure TLS connection.
+If you enabled any authentication, you will also need to configure SASL or TLS authentication.
+
+.Additional resources
+* For more information about the schema, see xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
