@@ -35,14 +35,14 @@ listeners:
 
 == External listener
 
-The external listener is used to connect to Kafka cluster from outside of an {ProductPlatformName} environment.
+The external listener is used to connect to a Kafka cluster from outside of an {ProductPlatformName} environment.
 {ProductName} supports three types of external listeners:
 
 * `route`
 * `loadbalancer`
 * `nodeport`
 
-All types of the external listener are using TLS encryption.
+Each type of external listener uses TLS encryption.
 
 .Exposing Kafka using {OpenShiftName} routes
 
