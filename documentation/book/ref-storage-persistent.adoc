@@ -26,6 +26,9 @@ It contains a `matchLabels` field which contains key:value pairs representing la
 Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
 Default is `false`.
 
+WARNING: Resizing persistent storage for existing {ProductName} clusters is currently not supported.
+The desired storage size has to be be carefully decided before deploying the cluster.
+
 .Example fragment of persistent storage configuration with 1000Gi `size`
 [source,yaml]
 ----
