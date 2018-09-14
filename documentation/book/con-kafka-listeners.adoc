@@ -5,14 +5,14 @@
 [id='con-kafka-listeners-{context}']
 = Kafka listeners
 
-Kafka broker listeners can be configured using the `listeners` property in the `Kafka.spec.kafka` resource.
+You can configure Kafka broker listeners using the `listeners` property in the `Kafka.spec.kafka` resource.
 The `listeners` property contains three sub-properties:
 
 * `plain`
 * `tls`
 * `external`
 
-When these sub-properties are not defined, the listener will be disabled.
+If these sub-properties are not defined, the listener is disabled.
 
 .An example of `listeners` property with all listeners enabled
 [source,yaml,subs="attributes+"]
@@ -44,38 +44,39 @@ The external listener is used to connect to a Kafka cluster from outside of an {
 
 Each type of external listener uses TLS encryption.
 
-.Exposing Kafka using {OpenShiftName} routes
+.Exposing Kafka using {OpenShiftName} Routes
 
-The external listener with type `route` is using {OpenShiftName} `Routes` and HAProxy to expose Kafka.
-For every Kafka broker `Pod`, a dedicated `Route` will be created.
-Additional `Route` will be created to serve as a Kafka _bootstrap_ address.
-All `Routes` use port 443.
-Kafka clients can use these `Routes` to connect to Kafka.
+
+An external listener of type `route` exposes Kafka by using {OpenShiftName} `Routes` and the HAProxy router.
+A dedicated `Route` is created for every Kafka broker pod.
+An additional `Route` is created to serve as a Kafka bootstrap address.
+Kafka clients can use these `Routes` to connect to Kafka on port 443.
 
 ifdef::Kubernetes[]
-NOTE: `Routes` are available only on {OpenShiftName}. The external listener of type `route` cannot be used on {KubernetesName}.
+NOTE: `Routes` are available only on {OpenShiftName}. External listeners of type `route` cannot be used on {KubernetesName}.
 endif::Kubernetes[]
 
-For more information about using `Routes` to access Kafka see xref:proc-accessing-kafka-using-routes-{context}[].
+For more information on using `Routes` to access Kafka, see xref:proc-accessing-kafka-using-routes-{context}[].
 
 .Exposing Kafka using loadbalancers
 
-The external listener with type `loadbalancer` is using `Loadbalancer` type `Services` to expose Kafka.
-A loadbalancer service will be created for every Kafka broker `Pod`.
-Additional loadbalancer will be created to serve as a Kafka _bootstrap_ address.
-The loadbalancers will listen to connections on port 9094.
-For more information about using loadbalancers to access Kafka see xref:proc-accessing-kafka-using-loadbalancers-{context}[].
+External listeners of type `loadbalancer` expose Kafka by using `Loadbalancer` type `Services`.
+A new loadbalancer service is created for every Kafka broker pod.
+An additional loadbalancer is created to serve as a Kafka _bootstrap_ address.
+Loadbalancers listen to connections on port 9094.
+
+For more information on using loadbalancers to access Kafka, see xref:proc-accessing-kafka-using-loadbalancers-{context}[].
 
 .Exposing Kafka using node ports
 
-The external listener with type `nodeport` is using `NodePort` type `Services` to expose Kafka.
-When exposing Kafka using node ports, the Kafka clients will be connecting directly to the nodes of the {ProductPlatformName}.
-The access to the ports on the {ProductPlatformName} nodes needs to be enabled for the clients (for example in firewalls or security groups).
-Each Kafka broker `Pod` will be accessible on a different port.
-Additional `NodePort` type `Services` will be created to serve as a Kafka _bootstrap_ address.
+External listeners of type `nodeport` expose Kafka by using `NodePort` type `Services`.
+When exposing Kafka in this way, Kafka clients connect directly to the nodes of {ProductPlatformName}.
+You must enable access to the ports on the {ProductPlatformName} nodes for each client (for example, in firewalls or security groups).
+Each Kafka broker Pod is then accessible on a separate port.
+Additional `NodePort` type `Service` is created to serve as a Kafka bootstrap address.
 
-When configuring the advertised addresses for the Kafka broker `Pods`, {ProductName} will use the address of the node on which given pod is running.
-When selecting the node address, the different address types will be used with following priority:
+When configuring the advertised addresses for the Kafka broker `Pods`, {ProductName} uses the address of the node on which given pod is running.
+When selecting the node address, the different address types are used with the following priority:
 
 . ExternalDNS
 . ExternalIP
@@ -83,9 +84,9 @@ When selecting the node address, the different address types will be used with f
 . InternalDNS
 . InternalIP
 
-NOTE: Exposing Kafka cluster using node ports currently does not support TLS hostname verification.
+NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
-For more information about using node ports to access Kafka see xref:proc-accessing-kafka-using-nodeports-{context}[].
+For more information on using node ports to access Kafka, see xref:proc-accessing-kafka-using-nodeports-{context}[].
 
 == Listener authentication
 
