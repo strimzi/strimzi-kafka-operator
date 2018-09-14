@@ -9,7 +9,10 @@ Authentication is configured as part of the xref:assembly-configuring-kafka-brok
 When the `authentication` property is missing, no authentication will be enabled on given listener.
 The authentication mechanism which will be used is defined by the `type` field.
 
-Currently, the only supported authentication mechanism is the TLS client authentication.
+The supported authentication mechanisms are: 
+
+* TLS client authentication
+* SASL SCRAM-SHA-512
 
 == TLS Client Authentication
 
