@@ -1,34 +1,35 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
 = Configuring clients to trust the Cluster CA 
 
-If a Kafka client wants to connect to the encrypted listener (`CLIENTTLS`) on port 9093, it needs to trust the cluster CA certificate in order to verify the broker certificate received during the SSL/TLS handshake.
-The cluster CA certificate can be extracted from the generated `<cluster-name>-cluster-ca-cert` `Secret`.
+If a Kafka client wants to connect to the `tls` listener on port 9093, it needs to trust the cluster CA certificate in order to verify the broker certificate received during the SSL/TLS handshake.
 
+.Procedure
 
-
+. The cluster CA certificate can be extracted from the generated `<cluster-name>-cluster-ca-cert` `Secret`.
++
 ifdef::Kubernetes[]
 On {KubernetesName}, the certificate can be extracted with the following command:
-
++
 [source,shell]
 kubectl get secret <cluster-name>-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
-
 endif::Kubernetes[]
-
 On {OpenShiftName}, the certificate can be extracted with the following command:
-
++
 [source,shell]
 oc get secret <cluster-name>-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 
-The Kafka client has to be configured to trust certificates signed by this CA.
-For the Java-based Kafka Producer, Consumer and Streams APIs, you can do this by importing the CA certificate into the JVM's truststore using the following keytool command:
-
+. The Kafka client has to be configured to trust certificates signed by this CA.
+For the Java-based Kafka Producer, Consumer and Streams APIs, you can do this by importing the CA certificate into the JVM's truststore using the following `keytool` command:
++
 [source,shell]
 keytool -keystore client.truststore.jks -alias CARoot -import -file ca.crt
 
-Finally, in order to configure the Kafka client, following properties should be specified:
+. In order to configure the Kafka client, following properties should be specified:
 
-* `security.protocol`: SSL is the value for using encryption.
+* `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication), or `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS. 
 * `ssl.truststore.location`: the truststore location where the certificates were imported.
-* `ssl.truststore.password`: password for accessing the truststore. This property can be omitted if it is not needed by the truststore.
+* `ssl.truststore.password`: the password for accessing the truststore. This property can be omitted if it is not needed by the truststore.
 
-The current implementation does not support Subject Alternative Names (SAN) so the hostname verification should be disabled on the client side.
-For doing so the `ssl.endpoint.identification.algorithm` property needs to be set as empty.
