@@ -1149,7 +1149,7 @@ public abstract class AbstractModel {
     /**
      * Set fields needed to generate the OwnerReference object
      *
-     * @param parent The resource which should be used as parent. IT will be used to gather the date needed for generating OwnerReferences.
+     * @param parent The resource which should be used as parent. It will be used to gather the date needed for generating OwnerReferences.
      */
     protected void setOwnerReference(HasMetadata parent)  {
         this.ownerApiVersion = parent.getApiVersion();
