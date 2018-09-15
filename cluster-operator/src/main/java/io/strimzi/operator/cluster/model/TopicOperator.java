@@ -232,6 +232,8 @@ public class TopicOperator extends AbstractModel {
                     kafkaAssembly.getMetadata().getName(),
                     Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
             TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
+
+            result.setOwnerReference(kafkaAssembly);
             result.setImage(tcConfig.getImage());
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
             result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds() * 1_000);
@@ -379,12 +381,13 @@ public class TopicOperator extends AbstractModel {
                 .withNewMetadata()
                     .withName(getServiceAccountName())
                     .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
             .build();
     }
 
     public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), TO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName());
+        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), TO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName(), createOwnerReference());
     }
 
     @Override

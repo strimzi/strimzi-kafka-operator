@@ -4,6 +4,7 @@
  */
 package io.strimzi.certs;
 
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 
@@ -35,8 +36,8 @@ public class SecretCertProvider {
      * @return the Secret
      * @throws IOException
      */
-    public Secret createSecret(String namespace, String name, File keyFile, File certFile, Map<String, String> labels) throws IOException {
-        return createSecret(namespace, name, DEFAULT_KEY_KEY, DEFAULT_KEY_CERT, keyFile, certFile, labels);
+    public Secret createSecret(String namespace, String name, File keyFile, File certFile, Map<String, String> labels, OwnerReference ownerReference) throws IOException {
+        return createSecret(namespace, name, DEFAULT_KEY_KEY, DEFAULT_KEY_CERT, keyFile, certFile, labels, ownerReference);
     }
 
     /**
@@ -52,11 +53,11 @@ public class SecretCertProvider {
      * @return the Secret
      * @throws IOException
      */
-    public Secret createSecret(String namespace, String name, String keyKey, String certKey, File keyFile, File certFile, Map<String, String> labels) throws IOException {
+    public Secret createSecret(String namespace, String name, String keyKey, String certKey, File keyFile, File certFile, Map<String, String> labels, OwnerReference ownerReference) throws IOException {
         byte[] key = Files.readAllBytes(keyFile.toPath());
         byte[] cert = Files.readAllBytes(certFile.toPath());
 
-        return createSecret(namespace, name, keyKey, certKey, key, cert, labels);
+        return createSecret(namespace, name, keyKey, certKey, key, cert, labels, ownerReference);
     }
 
     /**
@@ -72,7 +73,7 @@ public class SecretCertProvider {
      * @return the Secret
      * @throws IOException
      */
-    public Secret createSecret(String namespace, String name, String keyKey, String certKey, byte[] key, byte[] cert, Map<String, String> labels) {
+    public Secret createSecret(String namespace, String name, String keyKey, String certKey, byte[] key, byte[] cert, Map<String, String> labels, OwnerReference ownerReference) {
         Map<String, String> data = new HashMap<>();
 
         Base64.Encoder encoder = Base64.getEncoder();
@@ -80,7 +81,7 @@ public class SecretCertProvider {
         data.put(keyKey, encoder.encodeToString(key));
         data.put(certKey, encoder.encodeToString(cert));
 
-        return createSecret(namespace, name, data, labels);
+        return createSecret(namespace, name, data, labels, ownerReference);
     }
 
     /**
@@ -93,12 +94,13 @@ public class SecretCertProvider {
      * @return the Secret
      * @throws IOException
      */
-    public Secret createSecret(String namespace, String name, Map<String, String> data, Map<String, String> labels) {
+    public Secret createSecret(String namespace, String name, Map<String, String> data, Map<String, String> labels, OwnerReference ownerReference) {
         Secret secret = new SecretBuilder()
                 .withNewMetadata()
-                .withName(name)
-                .withNamespace(namespace)
-                .withLabels(labels)
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withLabels(labels)
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withData(data)
                 .build();

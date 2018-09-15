@@ -8,7 +8,9 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -77,6 +79,7 @@ public class KafkaClusterTest {
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null);
         checkMetricsConfigMap(metricsCm);
+        checkOwnerReference(kc.createOwnerReference(), metricsCm);
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
@@ -95,6 +98,7 @@ public class KafkaClusterTest {
     public void testGenerateService() {
         Service headful = kc.generateService();
         checkService(headful);
+        checkOwnerReference(kc.createOwnerReference(), headful);
     }
 
     private void checkService(Service headful) {
@@ -120,6 +124,7 @@ public class KafkaClusterTest {
     public void testGenerateHeadlessService() {
         Service headless = kc.generateHeadlessService();
         checkHeadlessService(headless);
+        checkOwnerReference(kc.createOwnerReference(), headless);
     }
 
     private void checkHeadlessService(Service headless) {
@@ -144,6 +149,7 @@ public class KafkaClusterTest {
         // We expect a single statefulSet ...
         StatefulSet ss = kc.generateStatefulSet(true);
         checkStatefulSet(ss, kafkaAssembly, true);
+        checkOwnerReference(kc.createOwnerReference(), ss);
     }
 
     @Test
@@ -410,6 +416,7 @@ public class KafkaClusterTest {
         assertEquals("ClusterIP", ext.getSpec().getType());
         assertEquals(kc.getSelectorLabels(), ext.getSpec().getSelector());
         assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), ext.getSpec().getPorts());
+        checkOwnerReference(kc.createOwnerReference(), ext);
 
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
@@ -418,6 +425,7 @@ public class KafkaClusterTest {
             assertEquals("ClusterIP", srv.getSpec().getType());
             assertEquals(KafkaCluster.kafkaPodName(cluster, i), srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL));
             assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
+            checkOwnerReference(kc.createOwnerReference(), srv);
         }
 
         // Check bootstrap route
@@ -427,6 +435,7 @@ public class KafkaClusterTest {
         assertEquals("Service", brt.getSpec().getTo().getKind());
         assertEquals(KafkaCluster.externalBootstrapServiceName(cluster), brt.getSpec().getTo().getName());
         assertEquals(new IntOrString(KafkaCluster.EXTERNAL_PORT), brt.getSpec().getPort().getTargetPort());
+        checkOwnerReference(kc.createOwnerReference(), brt);
 
         // Check per pod router
         for (int i = 0; i < replicas; i++)  {
@@ -436,6 +445,7 @@ public class KafkaClusterTest {
             assertEquals("Service", rt.getSpec().getTo().getKind());
             assertEquals(KafkaCluster.externalServiceName(cluster, i), rt.getSpec().getTo().getName());
             assertEquals(new IntOrString(KafkaCluster.EXTERNAL_PORT), rt.getSpec().getPort().getTargetPort());
+            checkOwnerReference(kc.createOwnerReference(), rt);
         }
     }
 
@@ -480,6 +490,7 @@ public class KafkaClusterTest {
         assertEquals("LoadBalancer", ext.getSpec().getType());
         assertEquals(kc.getSelectorLabels(), ext.getSpec().getSelector());
         assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), ext.getSpec().getPorts());
+        checkOwnerReference(kc.createOwnerReference(), ext);
 
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
@@ -488,6 +499,7 @@ public class KafkaClusterTest {
             assertEquals("LoadBalancer", srv.getSpec().getType());
             assertEquals(KafkaCluster.kafkaPodName(cluster, i), srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL));
             assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
+            checkOwnerReference(kc.createOwnerReference(), srv);
         }
     }
 
@@ -532,6 +544,7 @@ public class KafkaClusterTest {
         assertEquals("NodePort", ext.getSpec().getType());
         assertEquals(kc.getSelectorLabels(), ext.getSpec().getSelector());
         assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), ext.getSpec().getPorts());
+        checkOwnerReference(kc.createOwnerReference(), ext);
 
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
@@ -540,6 +553,12 @@ public class KafkaClusterTest {
             assertEquals("NodePort", srv.getSpec().getType());
             assertEquals(KafkaCluster.kafkaPodName(cluster, i), srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL));
             assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
+            checkOwnerReference(kc.createOwnerReference(), srv);
         }
+    }
+
+    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
+        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
     }
 }

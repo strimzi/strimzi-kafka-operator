@@ -199,6 +199,7 @@ public class EntityTopicOperator extends AbstractModel {
                         kafkaAssembly.getMetadata().getName(),
                         Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
+                result.setOwnerReference(kafkaAssembly);
                 result.setImage(topicOperatorSpec.getImage());
                 result.setWatchedNamespace(topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace);
                 result.setReconciliationIntervalMs(topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
@@ -253,6 +254,6 @@ public class EntityTopicOperator extends AbstractModel {
 
     public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
         return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), EntityOperator.EO_CLUSTER_ROLE_NAME,
-                namespace, EntityOperator.entityOperatorServiceAccountName(cluster));
+                namespace, EntityOperator.entityOperatorServiceAccountName(cluster), createOwnerReference());
     }
 }

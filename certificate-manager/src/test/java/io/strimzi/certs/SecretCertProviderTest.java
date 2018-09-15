@@ -4,6 +4,8 @@
  */
 package io.strimzi.certs;
 
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.test.TestUtils;
 import org.junit.BeforeClass;
@@ -23,12 +25,19 @@ public class SecretCertProviderTest {
 
     private static CertManager ssl;
     private static SecretCertProvider secretCertProvider;
+    private static OwnerReference ownerReference;
 
     @BeforeClass
     public static void before() {
         TestUtils.assumeLinux();
         ssl = new OpenSslCertManager();
         secretCertProvider = new SecretCertProvider();
+        ownerReference = new OwnerReferenceBuilder()
+                .withApiVersion("myapi/v1")
+                .withKind("mykind")
+                .withName("myname")
+                .withUid("myuid")
+                .build();
     }
 
     @Test
@@ -41,10 +50,12 @@ public class SecretCertProviderTest {
 
         ssl.generateSelfSignedCert(key, cert, 365);
 
-        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap());
+        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap(), ownerReference);
 
         assertEquals("my-secret", secret.getMetadata().getName());
         assertEquals("my-namespace", secret.getMetadata().getNamespace());
+        assertEquals(1, secret.getMetadata().getOwnerReferences().size());
+        assertEquals(ownerReference, secret.getMetadata().getOwnerReferences().get(0));
         assertEquals(2, secret.getData().size());
         assertTrue(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("tls.key"))));
         assertTrue(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("tls.crt"))));
@@ -63,7 +74,7 @@ public class SecretCertProviderTest {
 
         ssl.generateSelfSignedCert(key, cert, 365);
 
-        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap());
+        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap(), ownerReference);
 
         File addedKey = File.createTempFile("added-key-", ".key");
         File addedCert = File.createTempFile("added-crt-", ".crt");
@@ -74,6 +85,8 @@ public class SecretCertProviderTest {
 
         assertEquals("my-secret", secret.getMetadata().getName());
         assertEquals("my-namespace", secret.getMetadata().getNamespace());
+        assertEquals(1, secret.getMetadata().getOwnerReferences().size());
+        assertEquals(ownerReference, secret.getMetadata().getOwnerReferences().get(0));
         assertEquals(4, secret.getData().size());
         assertTrue(Arrays.equals(Files.readAllBytes(key.toPath()), decoder.decode(secret.getData().get("tls.key"))));
         assertTrue(Arrays.equals(Files.readAllBytes(cert.toPath()), decoder.decode(secret.getData().get("tls.crt"))));

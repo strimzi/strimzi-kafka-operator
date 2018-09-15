@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -28,15 +29,19 @@ public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOpera
         private final String serviceAccountNamespace;
         private final String name;
         private final String clusterRoleName;
+        private final OwnerReference ownerRef;
 
         public RoleBinding(
                 String name,
                 String clusterRoleName,
-                String serviceAccountNamespace, String serviceAccountName) {
+                String serviceAccountNamespace,
+                String serviceAccountName,
+                OwnerReference ownerRef) {
             this.name = name;
             this.clusterRoleName = clusterRoleName;
             this.serviceAccountNamespace = serviceAccountNamespace;
             this.serviceAccountName = serviceAccountName;
+            this.ownerRef = ownerRef;
         }
         public String toString() {
             return "{\"apiVersion\": \"" + GROUP + "/" + API_VERSION + "\"," +
@@ -45,7 +50,17 @@ public class RoleBindingOperator extends WorkaroundRbacOperator<RoleBindingOpera
                    "  \"name\": \"" + name + "\"," +
                    "  \"labels\":{" +
                    "    \"app\": \"strimzi\"" +
-                    "}" +
+                    "}," +
+                    "        \"ownerReferences\": [" +
+                    "            {" +
+                    "                \"apiVersion\": \"" + ownerRef.getApiVersion() + "\"," +
+                    "                \"blockOwnerDeletion\": " + ownerRef.getBlockOwnerDeletion() + "," +
+                    "                \"controller\": " + ownerRef.getController() + "," +
+                    "                \"kind\": \"" + ownerRef.getKind() + "\"," +
+                    "                \"name\": \"" + ownerRef.getName() + "\"," +
+                    "                \"uid\": \"" + ownerRef.getUid() + "\"" +
+                    "            }" +
+                    "        ]" +
                     "}," +
                    "\"subjects\":[" +
                    "  { \"kind\": \"ServiceAccount\"," +

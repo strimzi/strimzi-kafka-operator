@@ -25,13 +25,12 @@ import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -113,32 +112,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
 
     @Override
     protected Future<Void> delete(Reconciliation reconciliation) {
-        if (isOpenShift) {
-            String namespace = reconciliation.namespace();
-            String assemblyName = reconciliation.name();
-            String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
-
-            return CompositeFuture.join(serviceOperations.reconcile(namespace, KafkaConnectS2ICluster.serviceName(assemblyName), null),
-                configMapOperations.reconcile(namespace, KafkaConnectS2ICluster.logAndMetricsConfigName(assemblyName), null),
-                deploymentConfigOperations.reconcile(namespace, clusterName, null),
-                imagesStreamOperations.reconcile(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(clusterName), null),
-                imagesStreamOperations.reconcile(namespace, clusterName, null),
-                buildConfigOperations.reconcile(namespace, clusterName, null))
-            .map((Void) null);
-        } else {
-            return Future.failedFuture("S2I only available on OpenShift");
-        }
+        return Future.succeededFuture();
     }
 
     @Override
     protected List<HasMetadata> getResources(String namespace, Labels selector) {
-        List<HasMetadata> result = new ArrayList<>();
-        result.addAll(serviceOperations.list(namespace, selector));
-        result.addAll(deploymentConfigOperations.list(namespace, selector));
-        result.addAll(imagesStreamOperations.list(namespace, selector));
-        result.addAll(buildConfigOperations.list(namespace, selector));
-        result.addAll(resourceOperator.list(namespace, selector));
-        return result;
+        return Collections.EMPTY_LIST;
     }
 
 }

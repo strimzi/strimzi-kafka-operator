@@ -152,6 +152,8 @@ public class TopicOperatorTest {
         assertEquals(namespace, dep.getMetadata().getNamespace());
         assertEquals(new Integer(TopicOperatorSpec.DEFAULT_REPLICAS), dep.getSpec().getReplicas());
         Assert.assertEquals(TopicOperator.TOPIC_OPERATOR_NAME, containers.get(0).getName());
+        assertEquals(1, dep.getMetadata().getOwnerReferences().size());
+        assertEquals(tc.createOwnerReference(), dep.getMetadata().getOwnerReferences().get(0));
 
         // checks on the main Topic Operator container
         assertEquals(tc.image, containers.get(0).getImage());

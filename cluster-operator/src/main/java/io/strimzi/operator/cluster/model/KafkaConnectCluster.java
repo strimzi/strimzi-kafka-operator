@@ -109,10 +109,12 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     public static KafkaConnectCluster fromCrd(KafkaConnect kafkaConnect) {
-        return fromSpec(kafkaConnect.getSpec(),
-                new KafkaConnectCluster(kafkaConnect.getMetadata().getNamespace(),
-                    kafkaConnect.getMetadata().getName(),
-                    Labels.fromResource(kafkaConnect).withKind(kafkaConnect.getKind())));
+        KafkaConnectCluster cluster = fromSpec(kafkaConnect.getSpec(), new KafkaConnectCluster(kafkaConnect.getMetadata().getNamespace(),
+                kafkaConnect.getMetadata().getName(), Labels.fromResource(kafkaConnect).withKind(kafkaConnect.getKind())));
+
+        cluster.setOwnerReference(kafkaConnect);
+
+        return cluster;
     }
 
     /**
