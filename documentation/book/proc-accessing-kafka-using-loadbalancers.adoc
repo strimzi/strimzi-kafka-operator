@@ -61,12 +61,12 @@ oc get service _<cluster-name>_-kafka-external-bootstrap -o=jsonpath='{.status.l
 If no hostname was found (nothing was returned by the command), use the loadbalancer IP address.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName} this can be done using `kubectl get`:
 [source,shell,subs=+quotes]
 kubectl get service _<cluster-name>_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName} this can be done using `oc get`:
 +
 [source,shell,subs=+quotes]
 oc get service _<cluster-name>_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
@@ -76,12 +76,12 @@ Use the hostname or IP address together with port 9094 in your Kafka client as t
 . Extract the public certificate of the broker certification authority.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName} this can be done using `kubectl get`:
 [source,shell,subs=+quotes]
 kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName} this can be done using `oc extract`:
 +
 [source,shell,subs=+quotes]
 oc extract secret/_<cluster-name>_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt

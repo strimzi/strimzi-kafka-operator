@@ -48,12 +48,12 @@ oc apply -f _<your-file>_
 . Find the port number of the bootstrap service.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName} this can be done using `kubectl get`:
 [source,shell,subs=+quotes]
 kubectl get service _<cluster-name>_-kafka-external-bootstrap -o=jsonpath='{.spec.ports[0].nodePort}{"\n"}'
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName} this can be done using `oc get`:
 +
 [source,shell,subs=+quotes]
 oc get service _<cluster-name>_-kafka-external-bootstrap -o=jsonpath='{.spec.ports[0].nodePort}{"\n"}'
@@ -63,12 +63,12 @@ The port should be used in the Kafka _bootstrap_ address.
 . Find the address of the {ProductPlatformName} node.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName} this can be done using `kubectl get`:
 [source,shell,subs=+quotes]
 kubectl get node _<node-name>_ -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}'
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName} this can be done using `oc get`:
 +
 [source,shell,subs=+quotes]
 oc get node _<node-name>_ -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}'
@@ -81,17 +81,17 @@ If several different addresses are returned, select the address type you want ba
 .. InternalDNS
 .. InternalIP
 +
-The address should be used together with the port from previous step in the Kafka _bootstrap_ address.
+Use the address with the port found in the previous step in the Kafka _bootstrap_ address.
 
 . Extract the public certificate of the broker certification authority
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName} this can be done using `kubectl get`:
 [source,shell,subs=+quotes]
 kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName} this can be done using `oc extract`:
 +
 [source,shell,subs=+quotes]
 oc extract secret/_<cluster-name>_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt
