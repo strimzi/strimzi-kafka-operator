@@ -28,7 +28,9 @@ Communication between Kafka brokers and Zookeeper nodes uses an `stunnel` sideca
 
 == Kafka Client connections
 
-Encrypted communication between Kafka brokers and clients is provided through the `CLIENTTLS` listener on port 9093.
+Encrypted communication between Kafka brokers and clients running within the same OpenShift cluster is provided through the `CLIENTTLS` listener on port 9093.
+
+Encrypted communication between Kafka brokers and clients running outside the same OpenShift cluster is provided through the `EXTERNAL` listener on port 9094.
 
 NOTE: You can use the `CLIENT` listener on port 9092 for unencrypted communication with brokers.
 
