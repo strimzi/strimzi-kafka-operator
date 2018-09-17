@@ -250,16 +250,16 @@ public class KafkaST extends AbstractST {
         LOGGER.info("Verify values before update");
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
-            assertEquals("transaction.state.log.replication.factor=1\\ndefault.replication.factor=1\\noffsets.topic.replication.factor=1\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
-                    globalVariableJsonPathBuilder("KAFKA_CONFIGURATION")));
+            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
+                    hasItem("transaction.state.log.replication.factor=1\ndefault.replication.factor=1\noffsets.topic.replication.factor=1\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
-            assertEquals("timeTick=2000\\nautopurge.purgeInterval=1\\nsyncLimit=2\\ninitLimit=5\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
-                    globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION")));
+            assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
+                    hasItem("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
@@ -291,17 +291,16 @@ public class KafkaST extends AbstractST {
         LOGGER.info("Verify values after update");
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
-            assertEquals("transaction.state.log.replication.factor=2\\ndefault.replication.factor=2\\noffsets.topic.replication.factor=2\\n".replaceAll("\\p{P}", ""), getValueFromJson(kafkaPodJson,
-                    globalVariableJsonPathBuilder("KAFKA_CONFIGURATION")));
-
+            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
+                    hasItem("transaction.state.log.replication.factor=2\ndefault.replication.factor=2\noffsets.topic.replication.factor=2\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
-            assertEquals("timeTick=2100\\nautopurge.purgeInterval=1\\nsyncLimit=3\\ninitLimit=6\\n".replaceAll("\\p{P}", ""), getValueFromJson(zkPodJson,
-                    globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION")));
+            assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
+                    hasItem("timeTick=2100\nautopurge.purgeInterval=1\nsyncLimit=3\ninitLimit=6\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
         }
@@ -495,11 +494,11 @@ public class KafkaST extends AbstractST {
         while (m.find()) {
             String json = m.group();
             String name2 = getValueFromJson(json, "$.name");
-            if ("tooldata".equals(name2)) {
+            if ("tool_data".equals(name2)) {
                 assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.sent"));
                 assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.acked"));
                 producerSuccess = true;
-            } else if ("recordsconsumed".equals(name2)) {
+            } else if ("records_consumed".equals(name2)) {
                 assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.count"));
                 consumerSuccess = true;
             }
