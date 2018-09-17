@@ -575,8 +575,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     .getPo(zookeeperStatefulSetName)
                     .logs(zookeeperStatefulSetName + ".*", "zookeeper")
                     .getDep(eoDeploymentName)
-                    .logs(eoDeploymentName + ".*", "entity-operator")) {
-
+                    .logs(eoDeploymentName + ".*", "user-operator")
+                    .logs(eoDeploymentName + ".*", "topic-operator")
+                    .logs(eoDeploymentName + ".*", "tls-sidecar")) {
                     @Override
                     protected void before() {
                         LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", kafkaAssembly.getMetadata().getName(), name(element));
