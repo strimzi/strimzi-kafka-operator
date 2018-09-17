@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Deploy Kafka cluster with external listener enabled and configured to the type `nodeport`.
+. Deploy Kafka cluster with an external listener enabled and configured to the type `nodeport`.
 +
 An example configuration with an external listener configured to use node ports:
 +
@@ -73,8 +73,7 @@ On {OpenShiftName} this can be done using `oc apply`:
 [source,shell,subs=+quotes]
 oc get node _<node-name>_ -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}'
 +
-The command might print different types of addresses.
-Select the right address type according to following order:
+If several different addresses are returned, select the address type you want based on the following order:
 +
 .. ExternalDNS
 .. ExternalIP

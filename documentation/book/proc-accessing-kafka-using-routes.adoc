@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Deploy Kafka cluster with external listener enabled and configured to the type `route`.
+. Deploy Kafka cluster with an external listener enabled and configured to the type `route`.
 +
 An example configuration with an external listener configured to use `Routes`:
 +
@@ -42,7 +42,7 @@ oc apply -f _<your-file>_
 [source,shell]
 oc get routes _<cluster-name>_-kafka-bootstrap -o=jsonpath='{.status.ingress[0].host}{"\n"}'
 +
-Use the address together with the port 443 in your Kafka client as the _bootstrap_ address.
+Use the address together with port 443 in your Kafka client as the _bootstrap_ address.
 
 . Extract the public certificate of the broker certification authority
 +

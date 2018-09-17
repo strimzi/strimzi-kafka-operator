@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Deploy Kafka cluster with external listener enabled and configured to the type `loadbalancer`.
+. Deploy Kafka cluster with an external listener enabled and configured to the type `loadbalancer`.
 +
 An example configuration with an external listener configured to use loadbalancers:
 +
@@ -48,17 +48,17 @@ oc apply -f _<your-file>_
 . Find the hostname of the bootstrap loadbalancer.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName} this can be done using `kubectl get`:
 [source,shell,subs=+quotes]
 kubectl get service _<cluster-name>_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName} this can be done using `oc get`:
 +
 [source,shell,subs=+quotes]
 oc get service _<cluster-name>_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
 +
-If no hostname was found (the command did not return anything), the loadbalancer IP address has to be used.
+If no hostname was found (nothing was returned by the command), use the loadbalancer IP address.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
@@ -71,9 +71,9 @@ On {OpenShiftName} this can be done using `oc apply`:
 [source,shell,subs=+quotes]
 oc get service _<cluster-name>_-kafka-external-bootstrap -o=jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
 +
-Use the hostname or IP address together with the port 9094 in your Kafka client as the _bootstrap_ address.
+Use the hostname or IP address together with port 9094 in your Kafka client as the _bootstrap_ address.
 
-. Extract the public certificate of the broker certification authority
+. Extract the public certificate of the broker certification authority.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:

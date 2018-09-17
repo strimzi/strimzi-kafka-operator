@@ -72,10 +72,10 @@ For more information on using loadbalancers to access Kafka, see xref:proc-acces
 External listeners of type `nodeport` expose Kafka by using `NodePort` type `Services`.
 When exposing Kafka in this way, Kafka clients connect directly to the nodes of {ProductPlatformName}.
 You must enable access to the ports on the {ProductPlatformName} nodes for each client (for example, in firewalls or security groups).
-Each Kafka broker Pod is then accessible on a separate port.
+Each Kafka broker pod is then accessible on a separate port.
 Additional `NodePort` type `Service` is created to serve as a Kafka bootstrap address.
 
-When configuring the advertised addresses for the Kafka broker `Pods`, {ProductName} uses the address of the node on which given pod is running.
+When configuring the advertised addresses for the Kafka broker pods, {ProductName} uses the address of the node on which the given pod is running.
 When selecting the node address, the different address types are used with the following priority:
 
 . ExternalDNS
