@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.7.0-SNAPSHOT</version>
+    <version>0.7.0-RC1</version>
 
     <licenses>
         <license>
@@ -63,23 +63,23 @@
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>test</artifactId>
-                <version>${project.version}</version>
+                <version>0.7.0-RC1</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>api</artifactId>
-                <version>${project.version}</version>
+                <version>0.7.0-RC1</version>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>operator-common</artifactId>
-                <version>${project.version}</version>
+                <version>0.7.0-RC1</version>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>api</artifactId>
-                <version>${project.version}</version>
+                <version>0.7.0-RC1</version>
                 <classifier>tests</classifier>
                 <type>test-jar</type>
                 <scope>test</scope>
@@ -87,7 +87,7 @@
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>operator-common</artifactId>
-                <version>${project.version}</version>
+                <version>0.7.0-RC1</version>
                 <classifier>tests</classifier>
                 <type>test-jar</type>
                 <scope>test</scope>
@@ -201,7 +201,7 @@
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>certificate-manager</artifactId>
-                <version>${project.version}</version>
+                <version>0.7.0-RC1</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
