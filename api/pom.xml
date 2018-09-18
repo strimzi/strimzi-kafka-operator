@@ -122,6 +122,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaConnectS2I=${pom.basedir}${file.separator}..${file.separator}helm-charts${file.separator}strimzi-kafka-operator${file.separator}templates${file.separator}042-Crd-kafkaconnects2i.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaTopic=${pom.basedir}${file.separator}..${file.separator}helm-charts${file.separator}strimzi-kafka-operator${file.separator}templates${file.separator}043-Crd-kafkatopic.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaUser=${pom.basedir}${file.separator}..${file.separator}helm-charts${file.separator}strimzi-kafka-operator${file.separator}templates${file.separator}044-Crd-kafkauser.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker=${pom.basedir}${file.separator}..${file.separator}helm-charts${file.separator}strimzi-kafka-operator${file.separator}templates${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -144,6 +145,8 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaConnectS2I=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}042-Crd-kafkaconnects2i.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaTopic=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}043-Crd-kafkatopic.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaUser=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}044-Crd-kafkauser.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker=${pom.basedir}${file.separator}..${file.separator}examples${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
+
                             </arguments>
                         </configuration>
                     </execution>
@@ -187,6 +190,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaConnectS2I</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaTopic</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaUser</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker</argument>
                             </arguments>
                             <workingDirectory>${pom.basedir}${file.separator}..${file.separator}documentation${file.separator}book</workingDirectory>
                         </configuration>

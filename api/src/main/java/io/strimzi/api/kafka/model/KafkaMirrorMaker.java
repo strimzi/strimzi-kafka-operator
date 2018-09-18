@@ -32,16 +32,16 @@ import static java.util.Collections.singletonList;
         using = JsonDeserializer.None.class
 )
 @Crd(
-        apiVersion = KafkaTopic.CRD_API_VERSION,
+        apiVersion = KafkaMirrorMaker.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
-                        kind = KafkaTopic.RESOURCE_KIND,
-                        plural = KafkaTopic.RESOURCE_PLURAL,
-                        shortNames = {KafkaTopic.SHORT_NAME}
+                        kind = KafkaMirrorMaker.RESOURCE_KIND,
+                        plural = KafkaMirrorMaker.RESOURCE_PLURAL,
+                        shortNames = {KafkaMirrorMaker.SHORT_NAME}
                 ),
-                group = KafkaTopic.RESOURCE_GROUP,
+                group = KafkaMirrorMaker.RESOURCE_GROUP,
                 scope = "Namespaced",
-                version = KafkaTopic.VERSION
+                version = KafkaMirrorMaker.VERSION
         )
 )
 @Buildable(
@@ -53,24 +53,24 @@ import static java.util.Collections.singletonList;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
-public class KafkaTopic extends CustomResource {
+public class KafkaMirrorMaker extends CustomResource {
 
     private static final long serialVersionUID = 1L;
 
     public static final String VERSION = "v1alpha1";
-    public static final String RESOURCE_KIND = "KafkaTopic";
+    public static final String RESOURCE_KIND = "KafkaMirrorMaker";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
-    public static final String RESOURCE_PLURAL = "kafkatopics";
-    public static final String RESOURCE_SINGULAR = "kafkatopic";
+    public static final String RESOURCE_PLURAL = "kafkamirrormakers";
+    public static final String RESOURCE_SINGULAR = "kafkamirrormaker";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
-    public static final String SHORT_NAME = "kt";
+    public static final String SHORT_NAME = "kmm";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
 
     private String apiVersion;
     private ObjectMeta metadata;
-    private KafkaTopicSpec spec;
+    private KafkaMirrorMakerSpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -93,12 +93,12 @@ public class KafkaTopic extends CustomResource {
         super.setMetadata(metadata);
     }
 
-    @Description("The specification of the topic.")
-    public KafkaTopicSpec getSpec() {
+    @Description("The specification of the mirror maker.")
+    public KafkaMirrorMakerSpec getSpec() {
         return spec;
     }
 
-    public void setSpec(KafkaTopicSpec spec) {
+    public void setSpec(KafkaMirrorMakerSpec spec) {
         this.spec = spec;
     }
 

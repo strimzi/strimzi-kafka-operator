@@ -53,6 +53,7 @@
 :ApachaKafkaConnectConfig: link:http://kafka.apache.org/11/documentation.html#connectconfigs[Apache Kafka documentation^]
 :ApacheZookeeperConfig: link:http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html[Zookeeper documentation^]
 
+:JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 
 // Docker image names
 :DockerTag: {ProductVersion}
