@@ -189,7 +189,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T, List) created} for all ConfigMaps without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T) created} for all ConfigMaps without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation) deleted} for all resources without same-named ConfigMaps</li>
      * </ul>
      *
