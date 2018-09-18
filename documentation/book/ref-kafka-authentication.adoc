@@ -14,7 +14,7 @@ The supported authentication mechanisms are:
 * TLS client authentication
 * SASL SCRAM-SHA-512
 
-== TLS Client Authentication
+== TLS client authentication
 
 TLS Client authentication can be enabled by specifying the `type` as `tls`.
 The TLS client authentication is supported only on the `tls` listener.
