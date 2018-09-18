@@ -1,13 +1,13 @@
 # Strimzi: Kafka as a Service
 
-Strimzi provides a way to run an [Apache Kafka](https://kafka.apache.org/) cluster on 
+Strimzi provides a way to run an [Apache Kafka](https://kafka.apache.org/) cluster on
 [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
 See our [website](https://github.com/strimzi/strimzi-kafka-operator) for more details about the project.
 
 ## Introduction
 
-This chart bootstraps the Strimzi Cluster Operator Deployment, Cluster Roles, Cluster Role Bindings, Service Accounts, and 
-Custom Resource Definitions for running [Apache Kafka](https://kafka.apache.org/) on [Kubernetes](http://kubernetes.io) 
+This chart bootstraps the Strimzi Cluster Operator Deployment, Cluster Roles, Cluster Role Bindings, Service Accounts, and
+Custom Resource Definitions for running [Apache Kafka](https://kafka.apache.org/) on [Kubernetes](http://kubernetes.io)
 cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
@@ -29,7 +29,7 @@ To install the chart with the release name `my-release`:
 $ helm install --name my-release strimzi/strimzi-kafka-operator
 ```
 
-The command deploys the Strimzi Cluster Operator on the Kubernetes cluster with the default configuration. 
+The command deploys the Strimzi Cluster Operator on the Kubernetes cluster with the default configuration.
 The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 ## Uninstalling the Chart
@@ -44,12 +44,13 @@ The command removes all the Kubernetes components associated with the operator a
 
 ## Configuration
 
-The following table lists the configurable parameters of the Strimzi chart and their default values.  Runtime 
+The following table lists the configurable parameters of the Strimzi chart and their default values.  Runtime
 configuration of Kafka and other components are defined within their respective Custom Resource Definitions.  See
 the documentation for more details.
 
 | Parameter                            | Description                               | Default                                              |
 | ------------------------------------ | ----------------------------------------- | ---------------------------------------------------- |
+| `strimzi.watch_namespaces`           | Comma separated list of namespaces to watch | namespace where helm is applied                    |
 | `image.repository`                   | Cluster Operator image repository         | `strimzi`                                            |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
 | `image.tag`                          | Cluster Operator image tag                | `latest`                                             |

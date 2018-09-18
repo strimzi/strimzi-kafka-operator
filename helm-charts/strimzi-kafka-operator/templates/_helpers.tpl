@@ -25,6 +25,17 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 {{/*
+helper function to have strimzi watch multiple namespaces
+*/}}
+{{- define "strimzi.watched_namespaces" -}}
+{{- if .Values.strimzi.watch_namespaces -}}
+{{- join "," .Values.strimzi.watch_namespaces -}}
+{{- else -}}
+{{- .Release.Namespace -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "strimzi.chart" -}}

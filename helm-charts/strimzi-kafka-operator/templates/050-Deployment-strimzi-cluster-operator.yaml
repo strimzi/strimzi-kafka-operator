@@ -22,9 +22,7 @@ spec:
           imagePullPolicy: {{ .Values.image.imagePullPolicy | quote }}
           env:
             - name: STRIMZI_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              value: {{ include "strimzi.watched_namespaces" . }}
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: {{ .Values.fullReconciliationIntervalMs | quote }}
             - name: STRIMZI_OPERATION_TIMEOUT_MS

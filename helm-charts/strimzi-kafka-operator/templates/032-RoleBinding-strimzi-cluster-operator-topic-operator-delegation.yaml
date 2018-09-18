@@ -9,6 +9,13 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 subjects:
+  {{ if .Values.strimzi.watch_namespaces }}
+  {{ range .Values.strimzi.watch_namespaces }}
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: {{ . }}
+  {{ end }}
+  {{ end }}
   - kind: ServiceAccount
     name: strimzi-cluster-operator
     namespace: {{ .Release.Namespace }}
