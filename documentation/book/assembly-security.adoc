@@ -5,8 +5,8 @@
 [id='security-{context}']
 = Security
 
-{ProductName} supports encrypted communication between the different Kafka and {ProductName} components using the TLS protocol.
-Communication between Kafka brokers (interbroker communication), between Zookeeper nodes (internodal communication), and between these things and the {ProductName} operators is always encrpyred.
+{ProductName} supports encrypted communication between the Kafka and {ProductName} components using the TLS protocol.
+Communication between Kafka brokers (interbroker communication), between Zookeeper nodes (internodal communication), and between these and the {ProductName} operators is always encrypted.
 Communication between Kafka clients and Kafka brokers will be encrypted according how the cluster is configured.
 For the Kafka and {ProductName} components, TLS certificates are also used for authentication.
 
