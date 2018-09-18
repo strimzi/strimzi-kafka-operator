@@ -1093,10 +1093,11 @@ public abstract class AbstractModel {
 
             Map<String, String> sbjAltNames = new HashMap<>();
             sbjAltNames.put("DNS.1", getServiceName());
-            sbjAltNames.put("DNS.2", String.format("%s.%s.svc.%s", getServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
-            sbjAltNames.put("DNS.3", String.format("%s.%s.%s.svc.%s", podName.apply(cluster, i), getHeadlessServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.2", String.format("%s.%s", getServiceName(), namespace));
+            sbjAltNames.put("DNS.3", String.format("%s.%s.svc.%s", getServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.4", String.format("%s.%s.%s.svc.%s", podName.apply(cluster, i), getHeadlessServiceName(), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
 
-            int nextDnsId = 4;
+            int nextDnsId = 5;
 
             if (externalBootstrapAddress != null)   {
                 sbjAltNames.put("DNS." + nextDnsId, externalBootstrapAddress);
