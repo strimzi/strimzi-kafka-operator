@@ -2,6 +2,7 @@
 //
 // assembly-security.adoc
 
+[id='tls-within-the-cluster-{context}']
 = TLS within the cluster
 
 All the internal communication within the Kafka cluster is encrypted with TLS. 

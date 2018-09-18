@@ -1,3 +1,8 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='security-{context}']
 = Security
 
 {ProductName} supports encrypted communication between the different Kafka and {ProductName} components using the TLS protocol.

@@ -2,6 +2,7 @@
 //
 // assembly-security.adoc
 
+[id='certificates-{context}']
 = Certificates
 
 Each {ProductName} component needs its own private keys and public key certificates in order to support encryption.

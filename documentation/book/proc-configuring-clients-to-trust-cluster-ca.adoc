@@ -2,6 +2,7 @@
 //
 // assembly-security.adoc
 
+[id='configuring-clients-to-trust-cluster-ca-{context}']
 = Configuring clients to trust the Cluster CA 
 
 If a Kafka client wants to connect to the `tls` listener on port 9093 or the `external` listener on port 9094, it needs to trust the cluster CA certificate.
