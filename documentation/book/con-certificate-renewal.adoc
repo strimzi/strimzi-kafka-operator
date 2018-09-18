@@ -1,0 +1,31 @@
+[id='con-certificate-renewal-{context}']
+= Certificate Renewal
+
+CA certificates (_cluster CA_ and _clients CA_) are only valid for given number of days after they are generated.
+When using auto-generated CA certificates this time period defaults to 365 days.
+Manually installed CA certificates will come with their own validity period.
+
+If a CA certificate has expired then certificates signed by it will not be valid, even if they are still within their own period of validity. This usually means that new client certificates must also be generated when a CA certificate is going to expire.
+
+While CA certificates are being replaced it is necessary for peers to trust certificates signed by either the old or the new CA. 
+This ensures continued operation of the cluster.
+
+The process for CA certificate renewal is:
+
+. Detect that the current certificate is within `Kafka.tlsVertificates.renewalDays` of running out.
+
+. If `Kafka.tlsCertificates.generateCertificateAuthority` is false then log a warning message that CA certificate expiration is imminent and proceed to the next Step. Otherwise, generate a new CA certificate and add it to the corresponding `Secret` (`<cluster-name>-cluster-ca` for the cluster CA, `<cluster-name>-clients-ca` for the clients CA).
+
+. Restart Zookeeper nodes so they trust the new CA certificate
+
+. Restart Kafka brokers so they trust the new CA certificate
+
+. Restart the Topic and User operators so they trust the new CA certificate
+
+. Generate new client certificates (for Zookeeper nodes, Kafka brokers and the entity operator) signed by the new CA.
+
+. Perform the same restarts so that clients are using certificates signed by the new CA certificate.
+
+. Remove the old CA certificate from the `Secret`.
+
+. Perform another round of restarts.

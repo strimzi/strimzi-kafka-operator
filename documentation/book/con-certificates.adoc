@@ -14,21 +14,18 @@ All of the generated certificates are saved as `Secrets` in the {ProductPlatform
 `_<cluster-name>_-cluster-ca`::
 Contains the private and public keys of the cluster CA which is used for signing server certificates for the Kafka and {ProductName} components (Kafka brokers, Zookeeper nodes, and so on).
 `_<cluster-name>_-cluster-ca-cert`::
-Contains only the public key of the cluster CA.
-The public key used by Kafka clients to verify the identity of the Kafka brokers they are connecting to (TLS server authentication).
+Contains only the public key of the cluster CA which is used by Kafka clients to verify the identity of the Kafka brokers they are connecting to (TLS server authentication).
 `_<cluster-name>_-clients-ca`::
-Contains the private and public keys of the clients CA.
-The clients CA is used for TLS client authentication of Kafka clients when connecting to Kafka brokers.
+Contains private and public keys of the clients CA which is used for TLS client authentication of Kafka clients when connecting to Kafka brokers.
 `_<cluster-name>_-clients-ca-cert`::
-Contains only the public key of the client CA.
-The public key is used by the Kafka brokers to verify the identity of Kafka clients when TLS client authentication is used.
+Contains only the public key of the client CA which is used by the Kafka brokers to verify the identity of Kafka clients when TLS client authentication is used.
 `_<cluster-name>_-kafka-brokers`::
-Contains all the Kafka broker private and public keys (certificates signed with the cluster CA).
+Contains all Kafka broker private and public keys (certificates signed with the cluster CA).
 `_<cluster-name>_-zookeeper-nodes`::
-Contains all the Zookeeper node private and public keys (certificates signed with the cluster CA).
+Contains all Zookeeper node private and public keys (certificates signed with the cluster CA).
 `_<cluster-name>_-topic-operator-certs`::
 Contains the private and public keys (certificates signed with the cluster CA) used for encrypting communication between the Topic Operator and Kafka or Zookeeper.
 
-All the keys are 2048 bits in size and are valid for 365 days from initial generation.
+All keys are 2048 bits in size and are valid for 365 days from initial generation.
 
-NOTE: "certificate rotation" for generating new ones on their expiration will be supported in a future release.
+NOTE: Certificate rotation for generating new ones on their expiration will be supported in a future release.
