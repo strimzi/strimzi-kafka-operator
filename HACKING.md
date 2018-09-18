@@ -172,13 +172,13 @@ Attach the TAR.GZ/ZIP archives, YAML files (for installation from URL) and the H
 
 ### Test groups
 
-To execute an expected group of system tests need to add system property `junitgroup` with following value:
+To execute an expected group of system tests need to add system property `junitTags` with following value:
 
-`-Djunitgroup=integration` - to execute one test group
-`-Djunitgroup=acceptance,regression` - to execute many test groups
-`-Djunitgroup=all` - to execute all test groups
+`-DjunitTags=integration` - to execute one test group
+`-DjunitTags=acceptance,regression` - to execute many test groups
+`-DjunitTags=all` - to execute all test groups
 
-If `junitgroup` system property isn't defined, all tests without an explicitly declared test group will be executed.
+If `junitTags` system property isn't defined, all tests without an explicitly declared test group will be executed.
 
 ### Helper script
 
@@ -195,7 +195,7 @@ Use the `test` build goal and provide a `-Dtest=TestClassName[#testMethodName]` 
 
 Ex)
 
-    mvn test -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Djunitgroup=acceptance,regression -Dtest=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
+    mvn test -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -DjunitTags=acceptance,regression -Dtest=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
 
 
 ### Log level

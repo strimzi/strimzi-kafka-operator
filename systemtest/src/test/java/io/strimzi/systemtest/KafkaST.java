@@ -27,19 +27,24 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.systemtest.timemeasuring.Operation;
+import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.TimeoutException;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -65,27 +70,28 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.StrimziRunner.TOPIC_CM;
+import static io.strimzi.test.StrimziExtension.TOPIC_CM;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
+import static io.strimzi.test.StrimziExtension.ACCEPTANCE;
 
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @Namespace(KafkaST.NAMESPACE)
 @ClusterOperator
-public class KafkaST extends AbstractST {
+class KafkaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
 
@@ -97,10 +103,10 @@ public class KafkaST extends AbstractST {
     private Random rng = new Random();
 
     @Test
-    @JUnitGroup(name = "regression")
+    @Tag(REGRESSION)
     @OpenShiftOnly
     @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
-    public void testDeployKafkaClusterViaTemplate() {
+    void testDeployKafkaClusterViaTemplate() {
         Oc oc = (Oc) this.kubeClient;
         String clusterName = "openshift-my-cluster";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
@@ -116,8 +122,9 @@ public class KafkaST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "acceptance")
-    public void testKafkaAndZookeeperScaleUpScaleDown() {
+    @Tag(ACCEPTANCE)
+    void testKafkaAndZookeeperScaleUpScaleDown() {
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
@@ -141,7 +148,7 @@ public class KafkaST extends AbstractST {
         // (execute bash because we want the env vars expanded in the pod)
         String versions = getBrokerApiVersions(newPodName);
         for (int brokerId = 0; brokerId < scaleTo; brokerId++) {
-            assertTrue(versions, versions.indexOf("(id: " + brokerId + " rack: ") >= 0);
+            assertTrue(versions.indexOf("(id: " + brokerId + " rack: ") >= 0, versions);
         }
 
         //Test that the new pod does not have errors or failures in events
@@ -149,7 +156,7 @@ public class KafkaST extends AbstractST {
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
 
         // scale down
         LOGGER.info("Scaling down");
@@ -163,20 +170,21 @@ public class KafkaST extends AbstractST {
         assertEquals(initialReplicas, finalReplicas);
         versions = getBrokerApiVersions(firstPodName);
 
-        assertTrue("Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh",
-                versions.indexOf("(id: " + newBrokerId + " rack: ") == -1);
+        assertTrue(versions.indexOf("(id: " + newBrokerId + " rack: ") == -1,
+                "Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh");
 
         //Test that the new broker has event 'Killing'
         assertThat(getEvents("Pod", newPodName), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testZookeeperScaleUpScaleDown() {
+    @Tag(REGRESSION)
+    void testZookeeperScaleUpScaleDown() {
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
@@ -214,7 +222,7 @@ public class KafkaST extends AbstractST {
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
 
         // scale down
         LOGGER.info("Scaling down");
@@ -229,13 +237,15 @@ public class KafkaST extends AbstractST {
         assertThat(getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
+        // Stop measuring
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testCustomAndUpdatedValues() {
+    @Tag(REGRESSION)
+    void testCustomAndUpdatedValues() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
         kafkaConfig.put("transaction.state.log.replication.factor", "1");
@@ -348,8 +358,8 @@ public class KafkaST extends AbstractST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @JUnitGroup(name = "acceptance")
-    public void testSendMessagesPlainAnonymous() throws InterruptedException {
+    @Tag(ACCEPTANCE)
+    void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
         int messagesCount = 20;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -368,8 +378,8 @@ public class KafkaST extends AbstractST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @JUnitGroup(name = "regression")
-    public void testSendMessagesTlsAuthenticated() {
+    @Tag(REGRESSION)
+    void testSendMessagesTlsAuthenticated() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-auth";
         int messagesCount = 20;
@@ -405,8 +415,8 @@ public class KafkaST extends AbstractST {
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
-    @JUnitGroup(name = "regression")
-    public void testSendMessagesPlainScramSha() {
+    @Tag(REGRESSION)
+    void testSendMessagesPlainScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-plain-scram-sha";
         int messagesCount = 20;
@@ -462,8 +472,8 @@ public class KafkaST extends AbstractST {
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    @JUnitGroup(name = "regression")
-    public void testSendMessagesTlsScramSha() {
+    @Tag(REGRESSION)
+    void testSendMessagesTlsScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-scram-sha";
         int messagesCount = 20;
@@ -544,8 +554,8 @@ public class KafkaST extends AbstractST {
         if (!producerSuccess || !consumerSuccess) {
             LOGGER.info("log from pod {}:\n----\n{}\n----", podName, indent(log));
         }
-        assertTrue("The producer didn't send any messages (no tool_data message)", producerSuccess);
-        assertTrue("The consumer didn't consume any messages (no records_consumed message)", consumerSuccess);
+        assertTrue(producerSuccess, "The producer didn't send any messages (no tool_data message)");
+        assertTrue(consumerSuccess, "The consumer didn't consume any messages (no records_consumed message)");
     }
 
     /**
@@ -568,7 +578,7 @@ public class KafkaST extends AbstractST {
         if (!consumerSuccess) {
             LOGGER.info("log from pod {}:\n----\n{}\n----", podName, indent(log));
         }
-        assertTrue("The consumer didn't consume any messages (no records_consumed message)", consumerSuccess);
+        assertTrue(consumerSuccess, "The consumer didn't consume any messages (no records_consumed message)");
     }
 
     /**
@@ -786,8 +796,8 @@ public class KafkaST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testJvmAndResources() {
+    @Tag(REGRESSION)
+    void testJvmAndResources() {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
@@ -829,18 +839,32 @@ public class KafkaST extends AbstractST {
                         .withXx(jvmOptionsXX)
                     .endJvmOptions()
                 .endZookeeper()
-                .withNewTopicOperator()
-                    .withNewResources()
-                        .withNewLimits()
-                            .withMemory("500M")
-                            .withMilliCpu("300m")
-                        .endLimits()
-                        .withNewRequests()
-                            .withMemory("500M")
-                            .withMilliCpu("300m")
-                        .endRequests()
-                    .endResources()
-                .endTopicOperator()
+                .withNewEntityOperator()
+                    .withNewTopicOperator()
+                        .withNewResources()
+                            .withNewLimits()
+                                .withMemory("500M")
+                                .withMilliCpu("300m")
+                            .endLimits()
+                            .withNewRequests()
+                                .withMemory("500M")
+                                .withMilliCpu("300m")
+                            .endRequests()
+                        .endResources()
+                    .endTopicOperator()
+                    .withNewUserOperator()
+                        .withNewResources()
+                            .withNewLimits()
+                                .withMemory("500M")
+                                .withMilliCpu("300m")
+                            .endLimits()
+                            .withNewRequests()
+                                .withMemory("500M")
+                                .withMilliCpu("300m")
+                            .endRequests()
+                        .endResources()
+                    .endUserOperator()
+                .endEntityOperator()
             .endSpec().done();
 
         assertResources(kubeClient.namespace(), kafkaPodName(CLUSTER_NAME, 0),
@@ -862,8 +886,8 @@ public class KafkaST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testForTopicOperator() throws InterruptedException {
+    @Tag(REGRESSION)
+    void testForTopicOperator() throws InterruptedException {
 
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
@@ -958,8 +982,8 @@ public class KafkaST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testRackAware() {
+    @Tag(REGRESSION)
+    void testRackAware() {
         resources().kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editKafka()
@@ -989,9 +1013,9 @@ public class KafkaST extends AbstractST {
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */
     @Test
-    @JUnitGroup(name = "regression")
+    @Tag(REGRESSION)
     @Namespace(value = "topic-operator-namespace", use = false)
-    public void testWatchingOtherNamespace() throws InterruptedException {
+    void testWatchingOtherNamespace() throws InterruptedException {
         resources().kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editEntityOperator()
@@ -1014,8 +1038,9 @@ public class KafkaST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testMirrorMaker() {
+    @Tag(REGRESSION)
+    void testMirrorMaker() {
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String nameProducerSource = "send-messages-producer-source";
         String nameConsumerSource = "send-messages-consumer-source";
@@ -1033,9 +1058,10 @@ public class KafkaST extends AbstractST {
         // Deploy Mirror Maker
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
+        TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
         waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
-            !kubeClient.searchInLog("deploy", "my-cluster-mirror-maker", stopwatch.runtime(SECONDS),  "\"Successfully joined group\"").isEmpty()
+            !kubeClient.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
         // Create job to send 20 records using Kafka producer for source cluster
@@ -1052,8 +1078,9 @@ public class KafkaST extends AbstractST {
      * Test mirroring messages by Mirror Maker over tls transport using mutual tls auth
      */
     @Test
-    @JUnitGroup(name = "regression")
-    public void testMirrorMakerTlsAuthenticated() {
+    @Tag(REGRESSION)
+    void testMirrorMakerTlsAuthenticated() {
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String nameProducerSource = "send-messages-producer-source";
         String nameConsumerSource = "send-messages-consumer-source";
@@ -1124,9 +1151,10 @@ public class KafkaST extends AbstractST {
                 .endSpec()
                 .done();
 
+        TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join the group
         waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
-            !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", stopwatch.runtime(SECONDS),  "\"Successfully joined group\"").isEmpty()
+            !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
         // Create job to send 20 records using Kafka producer for source cluster
@@ -1143,8 +1171,9 @@ public class KafkaST extends AbstractST {
      * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
      */
     @Test
-    @JUnitGroup(name = "regression")
-    public void testMirrorMakerTlsScramSha() {
+    @Tag(REGRESSION)
+    void testMirrorMakerTlsScramSha() {
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
         String nameProducerSource = "send-messages-producer-source";
@@ -1230,9 +1259,10 @@ public class KafkaST extends AbstractST {
                 .endProducer()
                 .endSpec().done();
 
+        TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
         waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
-            !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", stopwatch.runtime(SECONDS),  "\"Successfully joined group\"").isEmpty()
+            !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
         // Create job to send 20 records using Kafka producer for source cluster
@@ -1478,7 +1508,17 @@ public class KafkaST extends AbstractST {
         return job;
     }
 
-    private String clusterCaCertSecretName(String cluster)  {
+    private String clusterCaCertSecretName(String cluster) {
         return cluster + "-cluster-ca-cert";
+    }
+
+    @BeforeAll
+    static void createClassResources(TestInfo testInfo) {
+        testClass = testInfo.getTestClass().get().getSimpleName();
+    }
+
+    @BeforeEach
+    void setTestName(TestInfo testInfo) {
+        testName = testInfo.getTestMethod().get().getName();
     }
 }

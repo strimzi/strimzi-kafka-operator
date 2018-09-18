@@ -6,10 +6,10 @@ package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.Namespace;
 import io.strimzi.test.Resources;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -17,7 +17,7 @@ import org.junit.runner.RunWith;
  * I.e. that such instance resources obtained from POJOs are valid according to the schema
  * validation done by K8S.
  */
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @Namespace(KafkaTopicCrdIT.NAMESPACE)
 @Resources(value = TestUtils.CRD_TOPIC, asAdmin = true)
 public class KafkaTopicCrdIT extends AbstractCrdIT {
@@ -25,17 +25,17 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "topiccrd-it";
 
     @Test
-    public void testKafkaTopic() {
+    void testKafkaTopic() {
         createDelete(KafkaTopic.class, "KafkaTopic.yaml");
     }
 
     @Test
-    public void testKafkaTopicMinimal() {
+    void testKafkaTopicMinimal() {
         createDelete(KafkaTopic.class, "KafkaTopic-minimal.yaml");
     }
 
     @Test
-    public void testKafkaTopicWithExtraProperty() {
+    void testKafkaTopicWithExtraProperty() {
         createDelete(KafkaTopic.class, "KafkaTopic-with-extra-property.yaml");
     }
 }

@@ -6,11 +6,11 @@ package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.Namespace;
 import io.strimzi.test.Resources;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertTrue;
 
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
  * I.e. that such instance resources obtained from POJOs are valid according to the schema
  * validation done by K8S.
  */
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @Namespace(KafkaMirrorMakerCrdIT.NAMESPACE)
 @Resources(value = TestUtils.CRD_KAFKA_MIRROR_MAKER, asAdmin = true)
 public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
@@ -28,22 +28,22 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkamirrormaker-crd-it";
 
     @Test
-    public void testKafkaMirrorMaker() {
+    void testKafkaMirrorMaker() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker.yaml");
     }
 
     @Test
-    public void testKafkaMirrorMakerMinimal() {
+    void testKafkaMirrorMakerMinimal() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-minimal.yaml");
     }
 
     @Test
-    public void testKafkaMirrorMakerWithExtraProperty() {
+    void testKafkaMirrorMakerWithExtraProperty() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-extra-property.yaml");
     }
 
     @Test
-    public void testKafkaMirrorMakerWithMissingRequired() {
+    void testKafkaMirrorMakerWithMissingRequired() {
         try {
             createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
@@ -54,17 +54,17 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaMirrorMakerWithTls() {
+    void testKafkaMirrorMakerWithTls() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls.yaml");
     }
 
     @Test
-    public void testKafkaMirrorMakerWithTlsAuth() {
+    void testKafkaMirrorMakerWithTlsAuth() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth.yaml");
     }
 
     @Test
-    public void testKafkaWithTlsAuthWithMissingRequired() {
+    void testKafkaWithTlsAuthWithMissingRequired() {
         try {
             createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml");
         } catch (KubeClusterException.InvalidResource e) {
@@ -74,7 +74,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaWithScramSha512Auth() {
+    void testKafkaWithScramSha512Auth() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-scram-sha-512-auth.yaml");
     }
 

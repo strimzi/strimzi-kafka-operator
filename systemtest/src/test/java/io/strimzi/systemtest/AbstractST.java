@@ -25,6 +25,8 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.systemtest.timemeasuring.Operation;
+import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
@@ -32,11 +34,9 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.rules.Stopwatch;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,10 +50,12 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 
 public class AbstractST {
 
@@ -75,17 +77,14 @@ public class AbstractST {
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
 
-    @Rule
-    public Stopwatch stopwatch = new Stopwatch() {
-        //TODO Add integration with Polarion in this code
-    };
-
-    @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
-
-    static DefaultKubernetesClient client = new DefaultKubernetesClient();
+    private static DefaultKubernetesClient client = new DefaultKubernetesClient();
     static KubeClient<?> kubeClient = cluster.client();
+
     private Resources resources;
+    static String operationID;
+    static String testClass;
+    static String testName;
 
     protected static NamespacedKubernetesClient namespacedClient() {
         return client.inNamespace(kubeClient.namespace());
@@ -246,9 +245,8 @@ public class AbstractST {
 
     protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = client.pods().inNamespace(namespace).withName(podName).get();
-        assertNotNull("Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-            client.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()),
-            po);
+        assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
+            client.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
         Container container = po.getSpec().getContainers().get(0);
         Map<String, Quantity> limits = container.getResources().getLimits();
         assertEquals(memoryLimit, limits.get("memory").getAmount());
@@ -260,8 +258,7 @@ public class AbstractST {
 
     protected void assertExpectedJavaOpts(String podName, String expectedXmx, String expectedXms, String expectedServer, String expectedXx) {
         List<List<String>> cmdLines = commandLines(podName, "java");
-        assertEquals("Expected exactly 1 java process to be running",
-                1, cmdLines.size());
+        assertEquals(1, cmdLines.size(), "Expected exactly 1 java process to be running");
         List<String> cmd = cmdLines.get(0);
         int toIndex = cmd.indexOf("-jar");
         if (toIndex != -1) {
@@ -295,6 +292,7 @@ public class AbstractST {
     }
 
     void assertNoCoErrorsLogged(long sinceSeconds) {
+        LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
         String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
@@ -370,12 +368,18 @@ public class AbstractST {
         return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
     }
 
-    @Before
+    @BeforeEach
     public void createResources() {
+        LOGGER.info("Creating resources before the test");
         resources = new Resources(namespacedClient());
     }
 
-    @After
+    @BeforeEach
+    void setTestName(TestInfo testInfo) {
+        testName = testInfo.getTestMethod().get().getName();
+    }
+
+    @AfterEach
     public void deleteResources() {
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
@@ -384,5 +388,10 @@ public class AbstractST {
 
     Resources resources() {
         return resources;
+    }
+
+    String startTimeMeasuring(Operation operation) {
+        TimeMeasuringSystem.setTestName(testClass, testName);
+        return TimeMeasuringSystem.startOperation(operation);
     }
 }

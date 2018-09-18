@@ -5,24 +5,26 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.stream.IntStream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @Namespace(SecurityST.NAMESPACE)
 @ClusterOperator
-public class SecurityST extends AbstractST {
+@Tag(REGRESSION)
+class SecurityST extends AbstractST {
 
     public static final String NAMESPACE = "security-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
@@ -31,8 +33,7 @@ public class SecurityST extends AbstractST {
     private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testCertificates() {
+    void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
         resources().kafkaEphemeral(CLUSTER_NAME, 2)
             .editSpec().editZookeeper().withReplicas(2).endZookeeper().endSpec().done();
@@ -113,11 +114,11 @@ public class SecurityST extends AbstractST {
                 "subject=/O=io.strimzi/CN=my-cluster-kafka\n" +
                 "issuer=/O=io.strimzi/CN=cluster-ca";
         for (String kafkaCertificate : kafkaCertificates) {
-            Assert.assertThat(kafkaCertificate, containsString(kafkaCertificateChain));
-            Assert.assertThat(kafkaCertificate, containsString(kafkaBrokerCertificate));
-            Assert.assertThat(kafkaCertificate, containsString(TLS_PROTOCOL));
-            Assert.assertThat(kafkaCertificate, containsString(SSL_TIMEOUT));
-            Assert.assertThat(kafkaCertificate, containsString(OPENSSL_RETURN_CODE));
+            assertThat(kafkaCertificate, containsString(kafkaCertificateChain));
+            assertThat(kafkaCertificate, containsString(kafkaBrokerCertificate));
+            assertThat(kafkaCertificate, containsString(TLS_PROTOCOL));
+            assertThat(kafkaCertificate, containsString(SSL_TIMEOUT));
+            assertThat(kafkaCertificate, containsString(OPENSSL_RETURN_CODE));
         }
     }
 
@@ -128,11 +129,11 @@ public class SecurityST extends AbstractST {
                 "subject=/O=io.strimzi/CN=my-cluster-zookeeper\n" +
                 "issuer=/O=io.strimzi/CN=cluster-ca";
         for (String zookeeperCertificate : zookeeperCertificates) {
-            Assert.assertThat(zookeeperCertificate, containsString(zookeeperCertificateChain));
-            Assert.assertThat(zookeeperCertificate, containsString(zookeeperNodeCertificate));
-            Assert.assertThat(zookeeperCertificate, containsString(TLS_PROTOCOL));
-            Assert.assertThat(zookeeperCertificate, containsString(SSL_TIMEOUT));
-            Assert.assertThat(zookeeperCertificate, containsString(OPENSSL_RETURN_CODE));
+            assertThat(zookeeperCertificate, containsString(zookeeperCertificateChain));
+            assertThat(zookeeperCertificate, containsString(zookeeperNodeCertificate));
+            assertThat(zookeeperCertificate, containsString(TLS_PROTOCOL));
+            assertThat(zookeeperCertificate, containsString(SSL_TIMEOUT));
+            assertThat(zookeeperCertificate, containsString(OPENSSL_RETURN_CODE));
         }
     }
 }

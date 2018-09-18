@@ -6,11 +6,11 @@ package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.Namespace;
 import io.strimzi.test.Resources;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.Assert.assertTrue;
 
@@ -20,29 +20,29 @@ import static org.junit.Assert.assertTrue;
  * I.e. that such instance resources obtained from POJOs are valid according to the schema
  * validation done by K8S.
  */
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @Namespace(KafkaCrdIT.NAMESPACE)
 @Resources(value = TestUtils.CRD_KAFKA, asAdmin = true)
 public class KafkaCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkacrd-it";
 
     @Test
-    public void testKafka() {
+    void testKafka() {
         createDelete(Kafka.class, "Kafka.yaml");
     }
 
     @Test
-    public void testKafkaMinimal() {
+    void testKafkaMinimal() {
         createDelete(Kafka.class, "Kafka-minimal.yaml");
     }
 
     @Test
-    public void testKafkaWithExtraProperty() {
+    void testKafkaWithExtraProperty() {
         createDelete(Kafka.class, "Kafka-with-extra-property.yaml");
     }
 
     @Test
-    public void testKafkaWithMissingRequired() {
+    void testKafkaWithMissingRequired() {
         try {
             createDelete(Kafka.class, "Kafka-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
@@ -52,7 +52,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaWithInvalidResourceMemory() {
+    void testKafkaWithInvalidResourceMemory() {
         try {
             createDelete(Kafka.class, "Kafka-with-invalid-resource-memory.yaml");
         } catch (KubeClusterException.InvalidResource e) {
