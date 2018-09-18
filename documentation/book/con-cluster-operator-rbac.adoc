@@ -52,7 +52,7 @@ include::examples/install/cluster-operator/050-Deployment-strimzi-cluster-operat
       # ...
 ----
 
-NOTE: line 12, where the the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
+Note line 12, where the the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
 
 == `ClusterRoles`
 
