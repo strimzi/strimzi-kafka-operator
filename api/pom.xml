@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.strimzi</groupId>
         <artifactId>strimzi</artifactId>
-        <version>0.7.0-RC1</version>
+        <version>0.7.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>api</artifactId>
@@ -77,7 +77,7 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>crd-generator</artifactId>
-            <version>0.7.0-RC1</version>
+            <version>0.7.0</version>
             <!-- use provided scope because this is not needed at runtime -->
             <scope>provided</scope>
         </dependency>

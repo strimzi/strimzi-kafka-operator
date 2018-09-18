@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.7.0-RC1</version>
+    <version>0.7.0</version>
 
     <licenses>
         <license>
@@ -63,23 +63,23 @@
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>test</artifactId>
-                <version>0.7.0-RC1</version>
+                <version>0.7.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>api</artifactId>
-                <version>0.7.0-RC1</version>
+                <version>0.7.0</version>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>operator-common</artifactId>
-                <version>0.7.0-RC1</version>
+                <version>0.7.0</version>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>api</artifactId>
-                <version>0.7.0-RC1</version>
+                <version>0.7.0</version>
                 <classifier>tests</classifier>
                 <type>test-jar</type>
                 <scope>test</scope>
@@ -87,7 +87,7 @@
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>operator-common</artifactId>
-                <version>0.7.0-RC1</version>
+                <version>0.7.0</version>
                 <classifier>tests</classifier>
                 <type>test-jar</type>
                 <scope>test</scope>
@@ -201,7 +201,7 @@
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>certificate-manager</artifactId>
-                <version>0.7.0-RC1</version>
+                <version>0.7.0</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
