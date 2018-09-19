@@ -28,4 +28,4 @@ Contains the private and public keys (certificates signed with the cluster CA) u
 
 All keys are 2048 bits in size and are valid for 365 days from initial generation.
 
-NOTE: Certificate rotation for generating new ones on their expiration will be supported in a future release.
+NOTE: Certificate rotation is not currently supported.
