@@ -10,7 +10,8 @@ Communication between Kafka brokers (interbroker communication), between Zookeep
 Communication between Kafka clients and Kafka brokers will be encrypted according how the cluster is configured.
 For the Kafka and {ProductName} components, TLS certificates are also used for authentication.
 
-The Cluster Operator sets up the TLS certificates to provide this encryption and authentication.
+The Cluster Operator automatically sets up TLS certificates to enable encryption and authentication within your cluster.
+It also sets up other TLS certificates if you want to enable encryption or TLS authentication between Kafka brokers and clients.
 
 ifdef::SecurityImg[]
 
