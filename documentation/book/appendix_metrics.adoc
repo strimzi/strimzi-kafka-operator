@@ -8,74 +8,69 @@ ifdef::InstallationAppendix[]
 When adding Prometheus and Grafana servers to an Apache Kafka deployment using `minikube` or `minishift`, the memory available to the virtual machine should be increased (to 4 GB of RAM, for example, instead of the default 2 GB). Information on how to increase the default amount of memory can be found in the following section <<installing_kubernetes_and_openshift_cluster>>.
 endif::InstallationAppendix[]
 
-=== Deploying on {OpenShiftName}
+=== Prometheus
 
-==== Prometheus
+The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/prometheus/kubernetes.yaml[`kubernetes.yaml`] YAML file describes all the resources required by Prometheus in order to effectively monitor a Strimzi Kafka & ZooKeeper cluster.
+It defines the following:
 
-The Prometheus server configuration uses a service discovery feature in order to discover the pods in the cluster from which it gets metrics.
-In order to have this feature working, it is necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
+* A `ClusterRole` that grants permissions to read Prometheus health endpoints of the Kubernetes system, including cAdvisor and kubelet for container metrics.  The Prometheus server configuration uses the Kubernetes service discovery feature in order to discover the pods in the cluster from which it gets metrics.  In order to have this feature working, it is necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list.
+* A `ServiceAccount` for the Prometheus pods to run under.
+* A `ClusterRoleBinding` which binds the aforementioned `ClusterRole` to the `ServiceAccount`.
+* A `Deployment` to manage the actual Prometheus server pod.
+* A `ConfigMap` to manage the configuration of Prometheus Server.
+* A `Service` to provide an easy to reference hostname for other services to connect to Prometheus server (such as Grafana).
 
-[source,shell]
-export NAMESPACE=[namespace]
+==== Deploying on {OpenShiftName}
+
+To deploy all these resources you can run the following.  Note that this file creates a `ClusterRoleBinding` in the `myproject` namespace.  If you're not using this namespace then download the resource file locally and update it.
+
+[source,shell,subs=attributes+]
 oc login -u system:admin
-oc create sa prometheus-server
-oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:${NAMESPACE}:prometheus-server
-oc login -u developer
-
-where `[namespace]` is the namespace/project where the Apache Kafka cluster was deployed.
-
-Finally, create the Prometheus service by running
-
-[source,shell]
-oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/prometheus/kubernetes.yaml
-
-==== Grafana
-
-A Grafana server is necessary only to get a visualisation of the Prometheus metrics.
-
-To deploy Grafana on {OpenShiftName}, the following commands should be executed:
-
-[source,shell]
-oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/grafana/kubernetes.yaml
+oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/prometheus/kubernetes.yaml
 
 ifdef::Kubernetes[]
-=== Deploying on {KubernetesName}
+==== Deploying on {KubernetesName}
 
-==== Prometheus
+To deploy all these resources you can run the following.  Note that this file creates a `ClusterRoleBinding` in the `myproject` namespace.  If you're not using this namespace then download the resource file locally and update it.
 
-The Prometheus server configuration uses a service discovery feature in order to discover the pods in the cluster from which it gets metrics.
-If the RBAC is enabled in your {KubernetesName} deployment then in order to have this feature working, it is necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list. By default the service account `prometheus-server` is used.
+[source,shell,subs=attributes+]
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/prometheus/kubernetes.yaml
 
-[source,shell]
-export NAMESPACE=[namespace]
-kubectl create sa prometheus-server
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/prometheus/cluster-reader.yaml
-kubectl create clusterrolebinding read-pods-binding --clusterrole=cluster-reader --serviceaccount=${NAMESPACE}:prometheus-server
+endif::Kubernetes[]
 
-where `[namespace]` is the namespace/project where the Apache Kafka cluster was deployed.
+=== Grafana
 
-Finally, create the Prometheus service by running
+A Grafana server is necessary to get a visualisation of the Prometheus metrics.  The source for the Grafana docker image used can be found in the `./metrics/examples/grafana/grafana-openshift` directory.
 
-[source,shell]
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/prometheus/kubernetes.yaml
+==== Deploying on {OpenShiftName}
 
-==== Grafana
+To deploy Grafana the following commands should be executed:
 
-A Grafana server is necessary only to get a visualisation of Prometheus metrics.
+[source,shell,subs=attributes+]
+oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/grafana/kubernetes.yaml
 
-To deploy Grafana on {KubernetesName}, the following commands should be executed:
+ifdef::Kubernetes[]
+==== Deploying on {KubernetesName}
 
-[source,shell]
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/metrics/examples/grafana/kubernetes.yaml
+To deploy Grafana the following commands should be executed:
+
+[source,shell,subs=attributes+]
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/grafana/kubernetes.yaml
+
+endif::Kubernetes[]
 
 === Grafana dashboard
 
-As an example, and in order to visualize the exported metrics in Grafana, the simple dashboard https://github.com/strimzi/strimzi-kafka-operator/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] file is provided.
-The Prometheus data source, and the above dashboard, can be set up in Grafana by following these steps.
+As an example, and in order to visualize the exported metrics in Grafana, two sample dashboards are provided https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-kafka.json[`strimzi-kafka.json`] and https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-zookeeper.json[`strimzi-zookeeper.json`].
+These dashboards represent a good starting point for key metrics to monitor Kafka and ZooKeeper clusters.
+Please note that they are not representative of all the metrics available.
+No alerting rules are defined.
+
+The Grafana Prometheus data source, and the above dashboards, can be set up in Grafana by following these steps.
 
 NOTE: For accessing the dashboard, you can use the `port-forward` command for forwarding traffic from the Grafana pod to the host. For example, you can access the Grafana UI by running `oc port-forward grafana-1-fbl7s 3000:3000` (or using `kubectl` instead of `oc`) and then pointing a browser to `http://localhost:3000`.
 
-. Access to the Grafana UI using `admin/admin` credentials.
+. Access to the Grafana UI using `admin/admin` credentials.  On the following view you can choose to skip resetting the admin password, or set it to a password you desire.
 +
 image::grafana_login.png[Grafana login]
 
@@ -87,11 +82,16 @@ image::grafana_home.png[Grafana home]
 +
 image::grafana_prometheus_data_source.png[Add Prometheus data source]
 
-. From the top left menu, click on "Dashboards" and then "Import" to open the "Import Dashboard" window where the provided https://github.com/strimzi/strimzi-kafka-operator/blob/master/metrics/examples/grafana/kafka-dashboard.json[`kafka-dashboard.json`] file can be imported or its content pasted.
+. From the top left menu, click on "Dashboards" and then "Import" to open the "Import Dashboard" window where the provided https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-kafka.json[`strimzi-kafka.json`] and https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-zookeeper.json[`strimzi-zookeeper.json`] files can be imported or their content pasted.
 +
 image::grafana_import_dashboard.png[Add Grafana dashboard]
 
-. After importing the dashboard, the Grafana home should show with some initial metrics about CPU and JVM memory usage. When the Kafka cluster is used (creating topics and exchanging messages) the other metrics, like messages in and bytes in/out per topic, will be shown.
-+
+. After importing the dashboards, the Grafana dashboard homepage will now list two dashboards for you to choose from.  After your Prometheus server has been collecting metrics for a Strimzi cluster for some time you should see a populated dashboard such as the examples list below.
+
+==== Kafka Dashboard
+
 image::grafana_kafka_dashboard.png[Kafka dashboard]
-endif::Kubernetes[]
+
+==== ZooKeeper Dashboard
+
+image::grafana_zookeeper_dashboard.png[ZooKeeper dashboard]
