@@ -34,4 +34,3 @@ Encrypted communication between Kafka brokers and clients running within the sam
 Encrypted communication between Kafka brokers and clients running outside the same {ProductPlatformName} cluster is provided through the `EXTERNAL` listener on port 9094.
 
 NOTE: You can use the `CLIENT` listener on port 9092 for unencrypted communication with brokers.
-
