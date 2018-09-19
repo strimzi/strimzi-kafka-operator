@@ -19,8 +19,8 @@ image::secure_communication.png[Secure Communication]
 
 endif::SecurityImg[]
 
-include::con-certificates.adoc[leveloffset+=1]
+include::con-certificates.adoc[leveloffset=+1]
 
-include::con-tls-within-the-cluster.adoc[leveloffset+=1]
+include::con-tls-within-the-cluster.adoc[leveloffset=+1]
 
-include::proc-configuring-clients-to-trust-cluster-ca.adoc[leveloffset+=1]
+include::proc-configuring-clients-to-trust-cluster-ca.adoc[leveloffset=+1]
