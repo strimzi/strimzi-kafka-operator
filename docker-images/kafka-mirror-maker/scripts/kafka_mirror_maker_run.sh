@@ -20,5 +20,18 @@ echo "Kafka Mirror Maker producer configuration:"
 ./kafka_mirror_maker_producer_config_generator.sh | tee /tmp/strimzi-producer.properties
 echo ""
 
+
+if [ -n "$KAFKA_MIRRORMAKER_WHITELIST" ]; then
+    whitelist="--whitelist ${KAFKA_MIRRORMAKER_WHITELIST}"
+fi
+
+if [ -n "$KAFKA_MIRRORMAKER_NUMSTREAMS_CONSUMER" ]; then
+    numstreams="--num.streams ${KAFKA_MIRRORMAKER_NUMSTREAMS_CONSUMER}"
+fi
+
 # starting Kafka Mirror Maker with final configuration
-exec $KAFKA_HOME/bin/kafka-mirror-maker.sh --consumer.config /tmp/strimzi-consumer.properties --producer.config /tmp/strimzi-producer.properties
+exec $KAFKA_HOME/bin/kafka-mirror-maker.sh \
+--consumer.config /tmp/strimzi-consumer.properties \
+--producer.config /tmp/strimzi-producer.properties \
+$whitelist \
+$numstreams
