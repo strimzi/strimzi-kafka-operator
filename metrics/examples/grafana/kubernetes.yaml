@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: strimzilabs/grafana-openshift:latest
+        image: strimzilab/grafana-openshift:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: grafana

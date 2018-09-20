@@ -2,7 +2,7 @@
 [id='metrics-{context}']
 == Metrics
 
-This section describes how to monitor Strimzi clusters using Grafana dashboards.
+This section describes how to monitor Strimzi Kafka and ZooKeeper clusters using Grafana dashboards.
 In order to run the example dashboards you must configure Prometheus server and add the appropriate https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter] rules to your Kafka cluster resource.
 
 WARNING: The resources referenced in this section serve as a good starting point for setting up monitoring, but they are provided as an example only.
