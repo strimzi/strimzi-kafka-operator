@@ -1,0 +1,178 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: grafana-openshift
+parameters:
+- name: GIT_URI
+  displayName: Git repository URI
+  description: location of the grafana git repo
+  value: https://github.com/OpenShiftDemos/grafana-openshift
+- description: Github trigger secret.  A difficult to guess string encoded as part
+    of the webhook URL.  Not encrypted.
+  displayName: GitHub Webhook Secret
+  from: '[a-zA-Z0-9]{40}'
+  generate: expression
+  name: WEBHOOK_SECRET
+- name: VOLUME_SIZE
+  displayName: Volume Size
+  description: Size of persistent volume used for Grafana datastore
+  required: true
+  value: 1Gi
+- name: DATA_DIR
+  displayName: Data directory
+  description: Path to Grafana data directory
+  required: true
+  value: /usr/share/grafana/data
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: grafana
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: grafana:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      git:
+        uri: ${GIT_URI}
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: centos:7
+      type: Docker
+    triggers:
+    - github:
+        secret: ${WEBHOOK_SECRET}
+      type: GitHub
+    - generic:
+        secret: ${WEBHOOK_SECRET}
+      type: Generic
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: grafana
+  spec:
+    ports:
+    - name: 3000-tcp
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+    selector:
+      deploymentconfig: grafana
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: grafana
+  spec:
+    port:
+      targetPort: 3000-tcp
+    to:
+      kind: Service
+      name: grafana
+      weight: 100
+    wildcardPolicy: None
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: grafana
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: grafana
+    strategy:
+      activeDeadlineSeconds: 21600
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          deploymentconfig: grafana
+      spec:
+        containers:
+        - env:
+          - name: GF_INSTALL_PLUGINS
+            value: hawkular-datasource
+          - name: DATAD
+            value: ${DATA_DIR}
+          - name: PLGND
+            value: ${DATA_DIR}/plugins
+          image: ''
+          imagePullPolicy: Always
+          name: grafana
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: ${DATA_DIR}
+            name: data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: conf
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - grafana
+        from:
+          kind: ImageStreamTag
+          name: grafana:latest
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: centos
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/imported-from: centos:7
+      from:
+        kind: DockerImage
+        name: docker.io/centos:7
+      importPolicy:
+        scheduled: true
+      name: "7"
+      referencePolicy:
+        type: Source
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: grafana
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: conf
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${VOLUME_SIZE}
+
