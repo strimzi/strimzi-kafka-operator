@@ -1,5 +1,7 @@
 # This is not a recommended configuration, and further support should be available
-# from the Prometheus and Grafana communities
+# from the Prometheus and Grafana communities.  The main purpose of this file is to
+# provide a Prometheus server configuration that is compatible with the Strimzi
+# Grafana dashboards.
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

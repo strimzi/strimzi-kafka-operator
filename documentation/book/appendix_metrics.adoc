@@ -2,16 +2,46 @@
 [id='metrics-{context}']
 == Metrics
 
-This section describes how to deploy a Prometheus server for scraping metrics from the Kafka cluster and showing them using a Grafana dashboard. The resources provided are examples to show how Kafka metrics can be stored in Prometheus: They are not a recommended configuration, and further support should be available from the Prometheus and Grafana communities.
+This section describes how to monitor Strimzi clusters using Grafana dashboards.
+In order to run the example dashboards you must configure Prometheus server and add the appropriate https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter] rules to your Kafka cluster resource.
+
+WARNING: The resources referenced in this section serve as a good starting point for setting up monitoring, but they are provided as an example only.
+If you require further support on configuration and running Prometheus or Grafana in production then please reach out to their respective communities.
 
 ifdef::InstallationAppendix[]
 When adding Prometheus and Grafana servers to an Apache Kafka deployment using `minikube` or `minishift`, the memory available to the virtual machine should be increased (to 4 GB of RAM, for example, instead of the default 2 GB). Information on how to increase the default amount of memory can be found in the following section <<installing_kubernetes_and_openshift_cluster>>.
 endif::InstallationAppendix[]
 
+=== Kafka Metrics Configuration
+
+Strimzi uses the https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter] to export JMX metrics from Kafka and ZooKeeper to a Prometheus HTTP metrics endpoint that is scraped by Prometheus server.
+The Grafana dashboard relies on the Kafka and ZooKeeper Prometheus JMX Exporter relabeling rules defined in the example `Kafka` resource configuration in https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/kafka/kafka-metrics.yaml[`kafka-metrics.yaml`].
+Copy this configuration to your own `Kafka` resource definition, or run this example, in order to use the provided Grafana dashboards.
+
+==== Deploying on {OpenShiftName}
+
+To deploy the example Kafka cluster the following command should be executed:
+
+[source,shell,subs=attributes+]
+oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/kafka/kafka-metrics.yaml
+
+ifdef::Kubernetes[]
+==== Deploying on {KubernetesName}
+
+To deploy the example Kafka cluster the following command should be executed:
+
+[source,shell,subs=attributes+]
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/kafka/kafka-metrics.yaml
+
+endif::Kubernetes[]
+
 === Prometheus
 
 The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/prometheus/kubernetes.yaml[`kubernetes.yaml`] YAML file describes all the resources required by Prometheus in order to effectively monitor a Strimzi Kafka & ZooKeeper cluster.
-It defines the following:
+These resources lack important production configuration to run a healthy and highly available Prometheus server.
+They should only be used to demonstrate this Grafana dashboard example.
+
+The following resources are defined:
 
 * A `ClusterRole` that grants permissions to read Prometheus health endpoints of the Kubernetes system, including cAdvisor and kubelet for container metrics.  The Prometheus server configuration uses the Kubernetes service discovery feature in order to discover the pods in the cluster from which it gets metrics.  In order to have this feature working, it is necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list.
 * A `ServiceAccount` for the Prometheus pods to run under.
@@ -62,7 +92,7 @@ endif::Kubernetes[]
 === Grafana dashboard
 
 As an example, and in order to visualize the exported metrics in Grafana, two sample dashboards are provided https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-kafka.json[`strimzi-kafka.json`] and https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-zookeeper.json[`strimzi-zookeeper.json`].
-These dashboards represent a good starting point for key metrics to monitor Kafka and ZooKeeper clusters.
+These dashboards represent a good starting point for key metrics to monitor Kafka and ZooKeeper clusters, but depending on your infrastructure you may need to update or add to them.
 Please note that they are not representative of all the metrics available.
 No alerting rules are defined.
 
@@ -95,3 +125,15 @@ image::grafana_kafka_dashboard.png[Kafka dashboard]
 ==== ZooKeeper Dashboard
 
 image::grafana_zookeeper_dashboard.png[ZooKeeper dashboard]
+
+==== Metrics References
+
+To learn more about what metrics are available to monitor for Kafka, ZooKeeper, and Kubernetes in general, please review the following resources.
+
+* http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] - A list of JMX metrics exposed by Apache Kafka.
+It includes a description, JMX mbean name, and in some cases a suggestion on what is a normal value returned.
+* https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] - A list of JMX metrics exposed by Apache ZooKeeper.
+* https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/[Prometheus - Monitoring Docker Container Metrics using cAdvisor] - cAdvisor (short for container Advisor) analyzes and exposes resource usage (such as CPU, Memory, and Disk) and performance data from running containers within pods on Kubernetes.
+cAdvisor is bundled along with the kubelet binary so that it is automatically available within Kubernetes clusters.
+This reference describes how to monitor cAdvisor metrics in various ways using Prometheus.
+** https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md[cAdvisor Metrics] - A full list of cAdvisor metrics as exposed through Prometheus.
