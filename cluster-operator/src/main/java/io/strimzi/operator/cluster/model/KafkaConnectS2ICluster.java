@@ -68,7 +68,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      *
      * @return      Source ImageStream resource definition
      */
-    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations) {
+    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift) {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
@@ -121,7 +121,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                         .endMetadata()
                         .withNewSpec()
                             .withContainers(container)
-                            .withVolumes(getVolumes())
+                            .withVolumes(getVolumes(isOpenShift))
                             .withTolerations(getTolerations())
                             .withAffinity(getMergedAffinity())
                         .endSpec()

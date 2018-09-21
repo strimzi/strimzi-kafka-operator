@@ -170,7 +170,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testGenerateDeploymentConfig()   {
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap());
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true);
 
         assertEquals(kc.kafkaConnectClusterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
@@ -279,13 +279,13 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void withAffinity() throws IOException {
         resourceTester
-            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(new HashMap<String, String>()).getSpec().getTemplate().getSpec().getAffinity());
+            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(new HashMap<String, String>(), true).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
     public void withTolerations() throws IOException {
         resourceTester
-            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(new HashMap<String, String>()).getSpec().getTemplate().getSpec().getTolerations());
+            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(new HashMap<String, String>(), true).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test
@@ -300,7 +300,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap());
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true);
 
         assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
         assertEquals("my-another-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
@@ -334,7 +334,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap());
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true);
 
         assertEquals("user-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
 
@@ -367,7 +367,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap());
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true);
 
         // 2 = 1 volume from logging/metrics + just 1 from above certs Secret
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getVolumes().size());
@@ -390,7 +390,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
-        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap());
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true);
 
         assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
 

@@ -948,7 +948,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     topicOperator.getLogging() instanceof ExternalLogging ?
                                             configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
                                             null);
-                            this.toDeployment = topicOperator.generateDeployment();
+                            this.toDeployment = topicOperator.generateDeployment(isOpenShift);
                             this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             this.toDeployment.getSpec().getTemplate().getMetadata().getAnnotations().put("strimzi.io/logging", this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
                         } else {
@@ -1033,7 +1033,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             null) : null;
 
                             this.entityOperator = entityOperator;
-                            this.eoDeployment = entityOperator.generateDeployment();
+                            this.eoDeployment = entityOperator.generateDeployment(isOpenShift);
                             this.topicOperatorMetricsAndLogsConfigMap = topicOperatorLogAndMetricsConfigMap;
                             this.userOperatorMetricsAndLogsConfigMap = userOperatorLogAndMetricsConfigMap;
                         }

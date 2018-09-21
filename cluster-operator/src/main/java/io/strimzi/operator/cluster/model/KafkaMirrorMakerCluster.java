@@ -204,32 +204,32 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return portList;
     }
 
-    protected List<Volume> getVolumes() {
+    protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(1);
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
 
-        createClientSecretVolume(producer, producerTlsAuthCertAndKey, producerPasswordSecret, volumeList);
-        createClientSecretVolume(consumer, consumerTlsAuthCertAndKey, consumerPasswordSecret, volumeList);
+        createClientSecretVolume(producer, producerTlsAuthCertAndKey, producerPasswordSecret, volumeList, isOpenShift);
+        createClientSecretVolume(consumer, consumerTlsAuthCertAndKey, consumerPasswordSecret, volumeList, isOpenShift);
 
         return volumeList;
     }
 
-    protected void createClientSecretVolume(KafkaMirrorMakerClientSpec client, CertAndKeySecretSource clientTlsAuthCertAndKey, PasswordSecretSource clientPasswordSecret, List<Volume> volumeList) {
+    protected void createClientSecretVolume(KafkaMirrorMakerClientSpec client, CertAndKeySecretSource clientTlsAuthCertAndKey, PasswordSecretSource clientPasswordSecret, List<Volume> volumeList, boolean isOpenShift) {
         if (client.getTls() != null && client.getTls().getTrustedCertificates() != null && client.getTls().getTrustedCertificates().size() > 0) {
             for (CertSecretSource certSecretSource: client.getTls().getTrustedCertificates()) {
                 // skipping if a volume with same Secret name was already added
                 if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeList.add(createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName()));
+                    volumeList.add(createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
                 }
             }
         }
 
         if (clientTlsAuthCertAndKey != null) {
             if (!volumeList.stream().anyMatch(v -> v.getName().equals(clientTlsAuthCertAndKey.getSecretName()))) {
-                volumeList.add(createSecretVolume(clientTlsAuthCertAndKey.getSecretName(), clientTlsAuthCertAndKey.getSecretName()));
+                volumeList.add(createSecretVolume(clientTlsAuthCertAndKey.getSecretName(), clientTlsAuthCertAndKey.getSecretName(), isOpenShift));
             }
         } else if (clientPasswordSecret != null)  {
-            volumeList.add(createSecretVolume(clientPasswordSecret.getSecretName(), clientPasswordSecret.getSecretName()));
+            volumeList.add(createSecretVolume(clientPasswordSecret.getSecretName(), clientPasswordSecret.getSecretName(), isOpenShift));
         }
     }
 
@@ -282,7 +282,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return volumeMountList;
     }
 
-    public Deployment generateDeployment(Map<String, String> annotations) {
+    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
                 .withRollingUpdate(new RollingUpdateDeploymentBuilder()
@@ -298,7 +298,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),
-                getVolumes());
+                getVolumes(isOpenShift));
     }
 
     @Override

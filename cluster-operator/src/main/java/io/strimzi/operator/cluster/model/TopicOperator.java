@@ -239,7 +239,7 @@ public class TopicOperator extends AbstractModel {
         return result;
     }
 
-    public Deployment generateDeployment() {
+    public Deployment generateDeployment(boolean isOpenShift) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")
                 .build();
@@ -251,7 +251,7 @@ public class TopicOperator extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),
-                getVolumes()
+                getVolumes(isOpenShift)
         );
     }
 
@@ -340,11 +340,11 @@ public class TopicOperator extends AbstractModel {
         return "log4j2.properties";
     }
 
-    private List<Volume> getVolumes() {
+    private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TopicOperator.secretName(cluster)));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.getClusterCaName(cluster)));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TopicOperator.secretName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.getClusterCaName(cluster), isOpenShift));
         return volumeList;
     }
 

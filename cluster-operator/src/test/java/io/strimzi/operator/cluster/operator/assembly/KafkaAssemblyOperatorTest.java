@@ -677,12 +677,12 @@ public class KafkaAssemblyOperatorTest {
         // Mock Deployment get
         if (originalTopicOperator != null) {
             when(mockDepOps.get(clusterNamespace, TopicOperator.topicOperatorName(clusterName))).thenReturn(
-                    originalTopicOperator.generateDeployment()
+                    originalTopicOperator.generateDeployment(true)
             );
         }
         if (originalEntityOperator != null) {
             when(mockDepOps.get(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    originalEntityOperator.generateDeployment()
+                    originalEntityOperator.generateDeployment(true)
             );
         }
 

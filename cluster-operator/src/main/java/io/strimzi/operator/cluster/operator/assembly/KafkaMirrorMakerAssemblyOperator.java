@@ -91,7 +91,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         return deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas())
                 .compose(scale -> serviceOperations.reconcile(namespace, mirror.getServiceName(), mirror.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, mirror.getAncillaryConfigName(), logAndMetricsConfigMap))
-                .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations)))
+                .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations, isOpenShift)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirror.getName(), mirror.getReplicas()).map((Void) null));
     }
 

@@ -259,7 +259,7 @@ public class ZookeeperCluster extends AbstractModel {
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
 
         return createStatefulSet(
-                getVolumes(),
+                getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getVolumeMounts(),
                 getMergedAffinity(),
@@ -368,14 +368,14 @@ public class ZookeeperCluster extends AbstractModel {
         return portList;
     }
 
-    private List<Volume> getVolumes() {
+    private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
         if (storage instanceof EphemeralStorage) {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_NODES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster)));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, AbstractModel.getClusterCaName(cluster)));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_NODES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, AbstractModel.getClusterCaName(cluster), isOpenShift));
         return volumeList;
     }
 
