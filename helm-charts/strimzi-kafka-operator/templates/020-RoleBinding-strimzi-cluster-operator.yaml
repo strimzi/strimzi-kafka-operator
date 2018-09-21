@@ -1,3 +1,4 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
@@ -9,13 +10,6 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 subjects:
-  {{ if .Values.strimzi.watch_namespaces }}
-  {{ range .Values.strimzi.watch_namespaces }}
-  - kind: ServiceAccount
-    name: strimzi-cluster-operator
-    namespace: {{ . }}
-  {{ end }}
-  {{ end }}
   - kind: ServiceAccount
     name: strimzi-cluster-operator
     namespace: {{ .Release.Namespace }}
@@ -23,3 +17,25 @@ roleRef:
   kind: ClusterRole
   name: strimzi-cluster-operator-namespaced
   apiGroup: rbac.authorization.k8s.io
+{{ $root := . }}
+{{ range .Values.strimzi.watch_namespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: strimzi-cluster-operator
+  labels:
+    app: {{ template "strimzi.name" $root }}
+    chart: {{ template "strimzi.chart" $root }}
+    component: role-binding
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: {{ . }}
+roleRef:
+  kind: ClusterRole
+  name: strimzi-cluster-operator-namespaced
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}
