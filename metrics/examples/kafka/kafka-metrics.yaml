@@ -67,7 +67,6 @@ spec:
         type: COUNTER
         labels:
           "$4": "$5"
-        type: COUNTER
       - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*><>Count
         name: kafka_$1_$2_$3_total
         type: COUNTER
