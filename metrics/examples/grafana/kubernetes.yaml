@@ -1,5 +1,5 @@
 # This is not a recommended configuration, and further support should be available
-# from the Prometheus and Grafana communities
+# from the Prometheus and Grafana communities.
 
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: strimzilab/grafana:latest
+        image: strimzilab/grafana-openshift:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: grafana
