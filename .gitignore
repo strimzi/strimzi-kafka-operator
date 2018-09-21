@@ -1,5 +1,9 @@
-# Maven specific
+# Maven build targets
 **/target/*
+
+# Maven release files
+*.releaseBackup
+release.properties
 
 # Eclipse specific
 **/.project
@@ -11,6 +15,9 @@
 # IntelliJ IDEA specific
 .idea/
 *.iml
+
+# VS Code
+.factorypath
 
 # Velocity.log
 velocity.log
@@ -24,3 +31,4 @@ helm-charts/strimzi-kafka-operator-*.*.*.tgz
 # Connect plugin (tests)
 systemtest/*.tar.gz
 systemtest/my-plugins/
+
