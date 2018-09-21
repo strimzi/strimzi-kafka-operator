@@ -6,7 +6,6 @@
 **/.settings/*
 **/.prefs
 **/.classpath
-**/.factorypath
 /target/
 
 # IntelliJ IDEA specific
