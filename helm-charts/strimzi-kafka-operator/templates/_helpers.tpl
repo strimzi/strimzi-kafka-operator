@@ -25,11 +25,13 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 {{/*
-helper function to have strimzi watch multiple namespaces
+helper function to complete STRIMZI_NAMESPACE.
 */}}
 {{- define "strimzi.watched_namespaces" -}}
 {{- if .Values.strimzi.watch_namespaces -}}
-{{- join "," .Values.strimzi.watch_namespaces -}}
+{{- $ns := .Values.strimzi.watch_namespaces -}}
+{{- $ns := append $ns .Release.Namespace -}}
+{{- join "," $ns -}}
 {{- else -}}
 {{- .Release.Namespace -}}
 {{- end -}}
