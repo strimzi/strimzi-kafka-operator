@@ -20,6 +20,10 @@ echo "Kafka Mirror Maker producer configuration:"
 ./kafka_mirror_maker_producer_config_generator.sh | tee /tmp/strimzi-producer.properties
 echo ""
 
+# enabling Prometheus JMX exporter as Java agent
+if [ "$KAFKA_MIRRORMAKER_METRICS_ENABLED" = "true" ]; then
+  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+fi
 
 if [ -n "$KAFKA_MIRRORMAKER_WHITELIST" ]; then
     whitelist="--whitelist ${KAFKA_MIRRORMAKER_WHITELIST}"
@@ -34,4 +38,5 @@ exec $KAFKA_HOME/bin/kafka-mirror-maker.sh \
 --consumer.config /tmp/strimzi-consumer.properties \
 --producer.config /tmp/strimzi-producer.properties \
 $whitelist \
-$numstreams
+$numstreams \
+$KAFKA_OPTS
