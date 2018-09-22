@@ -973,11 +973,16 @@ public abstract class AbstractModel {
             // Honour explicit max heap
             kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
         } else {
-            // Otherwise delegate to the container to figure out
-            // Using whatever cgroup memory limit has been set by the k8s infra
-            envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
-            if (dynamicHeapMaxBytes > 0) {
-                envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
+            Resources resources = getResources();
+            CpuMemory cpuMemory = resources == null ? null : resources.getLimits();
+            // Delegate to the container to figure out only when cgroup memory limits are defined to prevent allocating
+            // too much memory on the kubelet.  When no memory limit is defined let JVM allocate "just enough" memory
+            // by not trying to guess `Xms` or `Xmx`.
+            if (resources != null && cpuMemory != null && cpuMemory.getMemory() != null) {
+                envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
+                if (dynamicHeapMaxBytes > 0) {
+                    envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
+                }
             }
         }
         String trim = kafkaHeapOpts.toString().trim();

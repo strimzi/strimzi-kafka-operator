@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -25,6 +26,11 @@ import java.util.Map;
         @JsonSubTypes.Type(name = KafkaListenerAuthenticationScramSha512.SCRAM_SHA_512, value = KafkaListenerAuthenticationScramSha512.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = false,
+        builderPackage = "io.fabric8.kubernetes.api.builder"
+)
 public abstract class KafkaListenerAuthentication implements Serializable {
     private static final long serialVersionUID = 1L;
 

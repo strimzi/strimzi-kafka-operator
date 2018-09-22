@@ -19,14 +19,18 @@ The following options are supported:
 
 `-Xmx` configures the maximum heap size.
 
+.-Xms
+
+`-Xms` configures the initial allocation heap size when the JVM starts.
+
 NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
 Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
 This is in contrast to the units used for xref:assembly-resource-limits-and-requests-{context}[memory requests and limits], which follow the {ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
 
-The default value used for `-Xmx` depends on whether there is a xref:assembly-resource-limits-and-requests-{context}[memory request] configured for the container:
+The default values used for `-Xms` and `-Xmx` depends on whether there is a xref:assembly-resource-limits-and-requests-{context}[memory request] configured for the container:
 
-* If there is a memory request, the JVM's maximum memory will be set to a value corresponding to the limit.
-* When there is no memory request, the JVM's maximum memory will be set according to the RAM available to the container.
+* If there is a memory request, the JVM's minimum and maximum memory will be set to a value corresponding to the limit.
+* When there is no memory request, `-Xms` and `-Xmx` use the defaults provided by the Kafka release which are 512M for ZooKeeper and 1G for Kafka broker.
 
 [IMPORTANT]
 ====
