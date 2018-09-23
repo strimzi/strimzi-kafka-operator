@@ -1,0 +1,84 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: strimzi-ephemeral
+spec:
+  kafka:
+    replicas: 3
+    storage:
+      type: persistent-claim
+      size: 500Gi
+    listeners:
+      plain: {}
+      tls: {}
+    template:
+      statefulset:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      pods:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      service:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      headlessService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+  zookeeper:
+    replicas: 3
+    storage:
+      type: ephemeral
+    template:
+      statefulset:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      pods:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      service:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      headlessService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+

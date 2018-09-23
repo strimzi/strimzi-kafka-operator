@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
@@ -37,7 +38,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-        "metrics", "logging", "tlsSidecar"})
+        "metrics", "logging", "tlsSidecar", "template"})
 public class KafkaClusterSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -75,6 +76,7 @@ public class KafkaClusterSpec implements Serializable {
     private List<Toleration> tolerations;
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
+    private KafkaClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
@@ -251,6 +253,18 @@ public class KafkaClusterSpec implements Serializable {
     public void setAuthorization(KafkaAuthorization authorization) {
         this.authorization = authorization;
     }
+
+    @Description("Template for Kafka cluster resources. " +
+            "The template allows users to specify how are the stateful set, pods and services generated.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public KafkaClusterTemplate getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(KafkaClusterTemplate template) {
+        this.template = template;
+    }
+
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {

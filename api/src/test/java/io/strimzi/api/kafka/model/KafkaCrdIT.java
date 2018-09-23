@@ -78,4 +78,8 @@ public class KafkaCrdIT extends AbstractCrdIT {
             assertTrue(e.getMessage().contains("spec.maintenanceTimeWindows in body must be of type string: \"null\""));
         }
     }
+
+    public void testKafkaWithTemplate() {
+        createDelete(Kafka.class, "Kafka-with-template.yaml");
+    }
 }

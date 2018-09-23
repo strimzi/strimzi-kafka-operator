@@ -271,6 +271,18 @@ spec:
               - type
             metrics:
               type: object
+            template:
+              type: object
+              properties:
+                deployment:
+                  type: object
+                  properties: {}
+                pods:
+                  type: object
+                  properties: {}
+                service:
+                  type: object
+                  properties: {}
             authentication:
               type: object
               properties:

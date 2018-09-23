@@ -1,0 +1,33 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnect
+metadata:
+  name: test-kafka-connect
+spec:
+  image: foo
+  replicas: 6
+  bootstrapServers: kafka:9092
+  template:
+    deployment:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
+    pods:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
+    service:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2

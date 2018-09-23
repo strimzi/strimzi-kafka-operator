@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
@@ -28,7 +29,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "tolerations", "logging", "metrics"})
+        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "tolerations", "logging", "metrics", "template"})
 public class KafkaConnectSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -53,6 +54,7 @@ public class KafkaConnectSpec implements Serializable {
     private String bootstrapServers;
     private KafkaConnectTls tls;
     private KafkaConnectAuthentication authentication;
+    private KafkaConnectTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the Kafka Connect group.")
@@ -196,6 +198,18 @@ public class KafkaConnectSpec implements Serializable {
     public void setAuthentication(KafkaConnectAuthentication authentication) {
         this.authentication = authentication;
     }
+
+    @Description("Template for Kafka Connect and Kafka Connect S2I resources. " +
+            "The template allows users to specify how is the deployment, pods and service generated.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public KafkaConnectTemplate getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(KafkaConnectTemplate template) {
+        this.template = template;
+    }
+
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
