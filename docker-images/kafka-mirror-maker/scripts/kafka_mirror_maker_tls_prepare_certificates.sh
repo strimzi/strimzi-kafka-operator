@@ -19,35 +19,26 @@ function create_keystore {
    RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $5 -password pass:$2 -out $1
 }
 
-if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" ]; then
-    echo "Preparing consumer truststore"
-    IFS=';' read -ra CERTS <<< ${KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER}
+# $1 = trusted certs, $2 = TLS auth cert, $3 = TLS auth key, $4 = truststore path, $5 = keystore path, $6 = certs and key path
+trusted_certs=$1
+tls_auth_cert=$2
+tls_auth_key=$3
+truststore_path=$4
+keystore_path=$5
+certs_key_path=$6
+
+if [ -n "$trusted_certs" ]; then
+    echo "Preparing truststore"
+    IFS=';' read -ra CERTS <<< ${trusted_certs}
     for cert in "${CERTS[@]}"
     do
-        create_truststore /tmp/kafka/consumer.truststore.p12 $CERTS_STORE_PASSWORD /opt/kafka/consumer-certs/$cert $cert
+        create_truststore $truststore_path $CERTS_STORE_PASSWORD $certs_key_path/$cert $cert
     done
-    echo "Preparing consumer truststore is complete"
+    echo "Preparing truststore is complete"
 fi
 
-if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_PRODUCER" ]; then
-    echo "Preparing producer truststore"
-    IFS=';' read -ra CERTS <<< ${KAFKA_MIRRORMAKER_TRUSTED_CERTS_PRODUCER}
-    for cert in "${CERTS[@]}"
-    do
-        create_truststore /tmp/kafka/producer.truststore.p12 $CERTS_STORE_PASSWORD /opt/kafka/producer-certs/$cert $cert
-    done
-    echo "Preparing producer truststore is complete"
-fi
-
-
-if [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_CONSUMER" ] && [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_CONSUMER" ]; then
-    echo "Preparing consumer keystore"
-    create_keystore /tmp/kafka/consumer.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/consumer-certs/${KAFKA_MIRRORMAKER_TLS_AUTH_CERT_CONSUMER} /opt/kafka/consumer-certs/${KAFKA_MIRRORMAKER_TLS_AUTH_KEY_CONSUMER} ${KAFKA_MIRRORMAKER_TLS_AUTH_CERT_CONSUMER}
-    echo "Preparing consumer keystore is complete"
-fi
-
-if [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_PRODUCER" ] && [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_PRODUCER" ]; then
-    echo "Preparing producer keystore"
-    create_keystore /tmp/kafka/producer.keystore.p12 $CERTS_STORE_PASSWORD /opt/kafka/producer-certs/${KAFKA_MIRRORMAKER_TLS_AUTH_CERT_PRODUCER} /opt/kafka/producer-certs/${KAFKA_MIRRORMAKER_TLS_AUTH_KEY_PRODUCER} ${KAFKA_MIRRORMAKER_TLS_AUTH_CERT_PRODUCER}
-    echo "Preparing producer keystore is complete"
+if [ -n "$tls_auth_cert" ] && [ -n "$tls_auth_key" ]; then
+    echo "Preparing keystore"
+    create_keystore $keystore_path $CERTS_STORE_PASSWORD $certs_key_path/$tls_auth_cert $certs_key_path/$tls_auth_key $tls_auth_cert
+    echo "Preparing keystore is complete"
 fi
