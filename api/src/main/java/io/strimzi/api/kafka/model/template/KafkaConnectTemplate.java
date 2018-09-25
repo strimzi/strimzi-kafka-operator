@@ -21,13 +21,13 @@ import java.io.Serializable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pods", "service"})
+        "deployment", "pod", "apiService"})
 public class KafkaConnectTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private DeploymentTemplate deployment;
     private PodTemplate pod;
-    private ServiceTemplate service;
+    private ServiceTemplate apiService;
 
     @Description("Template for Kafka Connect `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -49,13 +49,13 @@ public class KafkaConnectTemplate implements Serializable {
         this.pod = pod;
     }
 
-    @Description("Template for Kafka Connect `Service`.")
+    @Description("Template for Kafka Connect API `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ServiceTemplate getService() {
-        return service;
+    public ServiceTemplate getApiService() {
+        return apiService;
     }
 
-    public void setService(ServiceTemplate service) {
-        this.service = service;
+    public void setApiService(ServiceTemplate apiService) {
+        this.apiService = apiService;
     }
 }

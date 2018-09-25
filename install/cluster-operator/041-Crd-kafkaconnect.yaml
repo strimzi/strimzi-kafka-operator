@@ -273,10 +273,10 @@ spec:
                 deployment:
                   type: object
                   properties: {}
-                service:
+                pod:
                   type: object
                   properties: {}
-                pod:
+                apiService:
                   type: object
                   properties: {}
             authentication:

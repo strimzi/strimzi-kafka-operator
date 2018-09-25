@@ -21,14 +21,14 @@ import java.io.Serializable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "statefulset", "pods", "service", "headlessService"})
+        "statefulset", "pod", "bootstrapService", "brokersService"})
 public class KafkaClusterTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private StatefulSetTemplate statefulset;
     private PodTemplate pod;
-    private ServiceTemplate service;
-    private ServiceTemplate headlessService;
+    private ServiceTemplate bootstrapService;
+    private ServiceTemplate brokersService;
 
     @Description("Template for Kafka `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -50,23 +50,23 @@ public class KafkaClusterTemplate implements Serializable {
         this.pod = pod;
     }
 
-    @Description("Template for Kafka boostrap `Service`.")
+    @Description("Template for Kafka bootstrap `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ServiceTemplate getService() {
-        return service;
+    public ServiceTemplate getBootstrapService() {
+        return bootstrapService;
     }
 
-    public void setService(ServiceTemplate service) {
-        this.service = service;
+    public void setBootstrapService(ServiceTemplate bootstrapService) {
+        this.bootstrapService = bootstrapService;
     }
 
-    @Description("Template for Kafka headless `Service`.")
+    @Description("Template for Kafka broker `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ServiceTemplate getHeadlessService() {
-        return headlessService;
+    public ServiceTemplate getBrokersService() {
+        return brokersService;
     }
 
-    public void setHeadlessService(ServiceTemplate headlessService) {
-        this.headlessService = headlessService;
+    public void setBrokersService(ServiceTemplate brokersService) {
+        this.brokersService = brokersService;
     }
 }

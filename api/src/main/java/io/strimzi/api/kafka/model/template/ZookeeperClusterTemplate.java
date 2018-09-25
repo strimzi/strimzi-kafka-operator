@@ -21,14 +21,14 @@ import java.io.Serializable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "statefulset", "pods", "service", "headlessService"})
+        "statefulset", "pod", "clientService", "nodesService"})
 public class ZookeeperClusterTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private StatefulSetTemplate statefulset;
     private PodTemplate pod;
-    private ServiceTemplate service;
-    private ServiceTemplate headlessService;
+    private ServiceTemplate clientService;
+    private ServiceTemplate nodesService;
 
     @Description("Template for Zookeeper `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -52,21 +52,21 @@ public class ZookeeperClusterTemplate implements Serializable {
 
     @Description("Template for Zookeeper client `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ServiceTemplate getService() {
-        return service;
+    public ServiceTemplate getClientService() {
+        return clientService;
     }
 
-    public void setService(ServiceTemplate service) {
-        this.service = service;
+    public void setClientService(ServiceTemplate clientService) {
+        this.clientService = clientService;
     }
 
-    @Description("Template for Zookeeper headless `Service`.")
+    @Description("Template for Zookeeper nodes `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ServiceTemplate getHeadlessService() {
-        return headlessService;
+    public ServiceTemplate getNodesService() {
+        return nodesService;
     }
 
-    public void setHeadlessService(ServiceTemplate headlessService) {
-        this.headlessService = headlessService;
+    public void setNodesService(ServiceTemplate nodesService) {
+        this.nodesService = nodesService;
     }
 }
