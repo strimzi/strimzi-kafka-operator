@@ -19,9 +19,11 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
+import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 
@@ -107,6 +109,15 @@ public class Crds {
             group = KafkaUser.RESOURCE_GROUP;
             version = KafkaUser.VERSION;
             shortNames = KafkaUser.RESOURCE_SHORTNAMES;
+        } else if (cls.equals(KafkaMirrorMaker.class)) {
+            kind = KafkaMirrorMaker.RESOURCE_KIND;
+            crdApiVersion = KafkaMirrorMaker.CRD_API_VERSION;
+            plural = KafkaMirrorMaker.RESOURCE_PLURAL;
+            singular = KafkaMirrorMaker.RESOURCE_SINGULAR;
+            listKind = KafkaMirrorMaker.RESOURCE_LIST_KIND;
+            group = KafkaMirrorMaker.RESOURCE_GROUP;
+            version = KafkaMirrorMaker.VERSION;
+            shortNames = KafkaMirrorMaker.RESOURCE_SHORTNAMES;
         } else {
             throw new RuntimeException();
         }
@@ -168,6 +179,14 @@ public class Crds {
 
     public static MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUserOperation(KubernetesClient client) {
         return client.customResources(kafkaUser(), KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
+    }
+
+    public static CustomResourceDefinition mirrorMaker() {
+        return crd(KafkaMirrorMaker.class);
+    }
+
+    public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> mirrorMakerOperation(KubernetesClient client) {
+        return client.customResources(mirrorMaker(), KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>>
