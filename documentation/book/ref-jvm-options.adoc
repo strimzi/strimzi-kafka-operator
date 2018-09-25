@@ -15,22 +15,22 @@ JVM options can be configured using the `jvmOptions` property in following resou
 Only a selected subset of available JVM options can be configured.
 The following options are supported:
 
+.-Xms
+
+`-Xms` configures the minimum initial allocation heap size when the JVM starts.
+
 .-Xmx
 
 `-Xmx` configures the maximum heap size.
-
-.-Xms
-
-`-Xms` configures the initial allocation heap size when the JVM starts.
 
 NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
 Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
 This is in contrast to the units used for xref:assembly-resource-limits-and-requests-{context}[memory requests and limits], which follow the {ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
 
-The default values used for `-Xms` and `-Xmx` depends on whether there is a xref:assembly-resource-limits-and-requests-{context}[memory request] configured for the container:
+The default values used for `-Xms` and `-Xmx` depends on whether there is a xref:assembly-resource-limits-and-requests-{context}[memory request] limit configured for the container:
 
-* If there is a memory request, the JVM's minimum and maximum memory will be set to a value corresponding to the limit.
-* When there is no memory request, `-Xms` and `-Xmx` use the defaults provided by the Kafka release which are 512M for ZooKeeper and 1G for Kafka broker.
+* If there is a memory limit then the JVM's minimum and maximum memory will be set to a value corresponding to the limit.
+* If there is no memory limit then the JVM's minimum memory will be set to `128M` and the JVM's maximum memory will not be defined.  This allows for the JVM's memory to grow as-needed, which is ideal for single node environments in test and development.
 
 [IMPORTANT]
 ====

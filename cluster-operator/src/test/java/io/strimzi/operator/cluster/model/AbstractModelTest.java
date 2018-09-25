@@ -66,10 +66,29 @@ public class AbstractModelTest {
     }
 
     @Test
-    public void testJvmMemoryOptionsDefaultWithNoMemoryLimit() {
+    public void testJvmMemoryOptionsXmsOnly() {
         Map<String, String> env = getStringStringMap(null, "4",
                 0.5, 5_000_000_000L, null);
         assertEquals("-Xms4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+    }
+
+    @Test
+    public void testJvmMemoryOptionsXmxOnly() {
+        Map<String, String> env = getStringStringMap("4", null,
+                0.5, 5_000_000_000L, null);
+        assertEquals("-Xmx4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+    }
+
+
+    @Test
+    public void testJvmMemoryOptionsDefaultWithNoMemoryLimitOrJvmOptions() {
+        Map<String, String> env = getStringStringMap(null, null,
+                0.5, 5_000_000_000L, null);
+        assertEquals("-Xms" + AbstractModel.DEFAULT_JVM_XMS, env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
         assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
         assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
     }
