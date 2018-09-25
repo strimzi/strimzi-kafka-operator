@@ -46,6 +46,11 @@ public class ClusterCa extends Ca {
         this.clusterName = clusterName;
     }
 
+    @Override
+    public String toString() {
+        return "Cluster CA";
+    }
+
     public void sort(List<Secret> secrets) {
         Secret brokersSecret = null;
         Secret eoSecrets = null;

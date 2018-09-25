@@ -229,6 +229,13 @@ public abstract class Ca {
         }
         SecretCertProvider secretCertProvider = new SecretCertProvider();
 
+        if (certsRemoved) {
+            log.info("{}: Expired CA certificates removed", this);
+        }
+        if (needsRenewal) {
+            log.info("{}: certificates renewed", this);
+        }
+
         caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, labels, ownerRef);
         caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels, ownerRef);
     }

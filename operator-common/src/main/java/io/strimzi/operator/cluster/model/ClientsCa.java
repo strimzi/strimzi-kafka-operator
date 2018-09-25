@@ -15,4 +15,9 @@ public class ClientsCa extends Ca {
                 caSecretKeyName, clientsCaKey,
                 validityDays, renewalDays, generateCa);
     }
+
+    @Override
+    public String toString() {
+        return "Clients CA";
+    }
 }
