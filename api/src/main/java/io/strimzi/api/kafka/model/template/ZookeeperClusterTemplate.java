@@ -26,11 +26,11 @@ public class ZookeeperClusterTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private StatefulSetTemplate statefulset;
-    private PodTemplate pods;
+    private PodTemplate pod;
     private ServiceTemplate service;
     private ServiceTemplate headlessService;
 
-    @Description("Template for Zookeeper stateful set.")
+    @Description("Template for Zookeeper `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public StatefulSetTemplate getStatefulset() {
         return statefulset;
@@ -40,17 +40,17 @@ public class ZookeeperClusterTemplate implements Serializable {
         this.statefulset = statefulset;
     }
 
-    @Description("Template for Zookeeper pods.")
+    @Description("Template for Zookeeper `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodTemplate getPods() {
-        return pods;
+    public PodTemplate getPod() {
+        return pod;
     }
 
-    public void setPods(PodTemplate pods) {
-        this.pods = pods;
+    public void setPod(PodTemplate pod) {
+        this.pod = pod;
     }
 
-    @Description("Template for Zookeeper client service.")
+    @Description("Template for Zookeeper client `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ServiceTemplate getService() {
         return service;
@@ -60,7 +60,7 @@ public class ZookeeperClusterTemplate implements Serializable {
         this.service = service;
     }
 
-    @Description("Template for Zookeeper headless service.")
+    @Description("Template for Zookeeper headless `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ServiceTemplate getHeadlessService() {
         return headlessService;

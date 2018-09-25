@@ -27,7 +27,7 @@ public class ServiceTemplate implements Serializable {
 
     private MetadataTemplate metadata;
 
-    @Description("Metadata which should be applied to the service.")
+    @Description("Metadata which should be applied to the `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;

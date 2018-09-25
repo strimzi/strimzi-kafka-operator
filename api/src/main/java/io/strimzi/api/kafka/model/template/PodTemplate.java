@@ -27,7 +27,7 @@ public class PodTemplate implements Serializable {
 
     private MetadataTemplate metadata;
 
-    @Description("Metadata which should be applied to the pods.")
+    @Description("Metadata which should be applied to the `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;

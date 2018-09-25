@@ -430,13 +430,13 @@ spec:
                     statefulset:
                       type: object
                       properties: {}
-                    pods:
-                      type: object
-                      properties: {}
                     service:
                       type: object
                       properties: {}
                     headlessService:
+                      type: object
+                      properties: {}
+                    pod:
                       type: object
                       properties: {}
               required:
@@ -777,13 +777,13 @@ spec:
                     statefulset:
                       type: object
                       properties: {}
-                    pods:
-                      type: object
-                      properties: {}
                     service:
                       type: object
                       properties: {}
                     headlessService:
+                      type: object
+                      properties: {}
+                    pod:
                       type: object
                       properties: {}
               required:

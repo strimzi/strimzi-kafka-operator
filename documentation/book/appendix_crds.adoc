@@ -87,7 +87,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 =======
 |xref:type-Sidecar-{context}[`Sidecar`]
-|template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the stateful set, pods and services generated.
+|template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 >>>>>>> Add support for template structure for all our clusters to allow users to overwrite templates and annotations for resources created by our clusters. - Re #817
 |====
@@ -410,14 +410,14 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [options="header"]
 |====
 |Field                   |Description
-|statefulset      1.2+<.<|Template for Kafka stateful set.
+|statefulset      1.2+<.<|Template for Kafka `StatefulSet`.
 |xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
-|pods             1.2+<.<|Template for Kafka pods.
+|service          1.2+<.<|Template for Kafka boostrap `Service`.
+|xref:type-ServiceTemplate-{context}[`ServiceTemplate`]
+|headlessService  1.2+<.<|Template for Kafka headless `Service`.
+|xref:type-ServiceTemplate-{context}[`ServiceTemplate`]
+|pod              1.2+<.<|Template for Kafka `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|service          1.2+<.<|Template for Kafka boostrap service.
-|xref:type-ServiceTemplate-{context}[`ServiceTemplate`]
-|headlessService  1.2+<.<|Template for Kafka headless service.
-|xref:type-ServiceTemplate-{context}[`ServiceTemplate`]
 |====
 
 [id='type-StatefulSetTemplate-{context}']
@@ -431,8 +431,8 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 |Field|Description
 |====
 
-[id='type-PodTemplate-{context}']
-### `PodTemplate` schema reference
+[id='type-ServiceTemplate-{context}']
+### `ServiceTemplate` schema reference
 
 Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
@@ -442,8 +442,8 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 |Field|Description
 |====
 
-[id='type-ServiceTemplate-{context}']
-### `ServiceTemplate` schema reference
+[id='type-PodTemplate-{context}']
+### `PodTemplate` schema reference
 
 Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
@@ -495,7 +495,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 =======
 |xref:type-Sidecar-{context}[`Sidecar`]
-|template        1.2+<.<|Template for Zookeeper cluster resources. The template allows users to specify how are the stateful set, pods and services generated.
+|template        1.2+<.<|Template for Zookeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 |====
 
@@ -508,15 +508,18 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 [options="header"]
 |====
 |Field                   |Description
-|statefulset      1.2+<.<|Template for Zookeeper stateful set.
+|statefulset      1.2+<.<|Template for Zookeeper `StatefulSet`.
 |xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
-|pods             1.2+<.<|Template for Zookeeper pods.
-|xref:type-PodTemplate-{context}[`PodTemplate`]
-|service          1.2+<.<|Template for Zookeeper client service.
+|service          1.2+<.<|Template for Zookeeper client `Service`.
 |xref:type-ServiceTemplate-{context}[`ServiceTemplate`]
-|headlessService  1.2+<.<|Template for Zookeeper headless service.
+|headlessService  1.2+<.<|Template for Zookeeper headless `Service`.
 |xref:type-ServiceTemplate-{context}[`ServiceTemplate`]
+<<<<<<< HEAD
 >>>>>>> Add support for template structure for all our clusters to allow users to overwrite templates and annotations for resources created by our clusters. - Re #817
+=======
+|pod              1.2+<.<|Template for Zookeeper `Pods`.
+|xref:type-PodTemplate-{context}[`PodTemplate`]
+>>>>>>> Review comments
 |====
 
 [id='type-TopicOperatorSpec-{context}']
@@ -683,7 +686,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics           1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|template          1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the deployment, pods and service generated.
+|template          1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |authentication    1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`]
@@ -706,12 +709,12 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 [options="header"]
 |====
 |Field              |Description
-|deployment  1.2+<.<|Template for Kafka Connect deployment.
+|deployment  1.2+<.<|Template for Kafka Connect `Deployment`.
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
-|pods        1.2+<.<|Template for Kafka Connect pods.
-|xref:type-PodTemplate-{context}[`PodTemplate`]
-|service     1.2+<.<|Template for Kafka Connect service.
+|service     1.2+<.<|Template for Kafka Connect `Service`.
 |xref:type-ServiceTemplate-{context}[`ServiceTemplate`]
+|pod         1.2+<.<|Template for Kafka Connect `Pods`.
+|xref:type-PodTemplate-{context}[`PodTemplate`]
 |====
 
 [id='type-DeploymentTemplate-{context}']
@@ -857,7 +860,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|template                  1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the deployment, pods and service generated.
+|template                  1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |authentication            1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`]

@@ -255,7 +255,7 @@ public class KafkaClusterSpec implements Serializable {
     }
 
     @Description("Template for Kafka cluster resources. " +
-            "The template allows users to specify how are the stateful set, pods and services generated.")
+            "The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaClusterTemplate getTemplate() {
         return template;

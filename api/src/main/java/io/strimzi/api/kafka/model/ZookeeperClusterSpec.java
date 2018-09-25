@@ -203,7 +203,7 @@ public class ZookeeperClusterSpec implements Serializable {
     }
 
     @Description("Template for Zookeeper cluster resources. " +
-            "The template allows users to specify how are the stateful set, pods and services generated.")
+            "The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ZookeeperClusterTemplate getTemplate() {
         return template;

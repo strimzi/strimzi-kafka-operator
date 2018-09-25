@@ -26,11 +26,11 @@ public class KafkaClusterTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private StatefulSetTemplate statefulset;
-    private PodTemplate pods;
+    private PodTemplate pod;
     private ServiceTemplate service;
     private ServiceTemplate headlessService;
 
-    @Description("Template for Kafka stateful set.")
+    @Description("Template for Kafka `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public StatefulSetTemplate getStatefulset() {
         return statefulset;
@@ -40,17 +40,17 @@ public class KafkaClusterTemplate implements Serializable {
         this.statefulset = statefulset;
     }
 
-    @Description("Template for Kafka pods.")
+    @Description("Template for Kafka `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodTemplate getPods() {
-        return pods;
+    public PodTemplate getPod() {
+        return pod;
     }
 
-    public void setPods(PodTemplate pods) {
-        this.pods = pods;
+    public void setPod(PodTemplate pod) {
+        this.pod = pod;
     }
 
-    @Description("Template for Kafka boostrap service.")
+    @Description("Template for Kafka boostrap `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ServiceTemplate getService() {
         return service;
@@ -60,7 +60,7 @@ public class KafkaClusterTemplate implements Serializable {
         this.service = service;
     }
 
-    @Description("Template for Kafka headless service.")
+    @Description("Template for Kafka headless `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ServiceTemplate getHeadlessService() {
         return headlessService;

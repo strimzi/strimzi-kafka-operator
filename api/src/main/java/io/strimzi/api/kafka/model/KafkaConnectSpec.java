@@ -200,7 +200,7 @@ public class KafkaConnectSpec implements Serializable {
     }
 
     @Description("Template for Kafka Connect and Kafka Connect S2I resources. " +
-            "The template allows users to specify how is the deployment, pods and service generated.")
+            "The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaConnectTemplate getTemplate() {
         return template;

@@ -26,10 +26,10 @@ public class KafkaConnectTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private DeploymentTemplate deployment;
-    private PodTemplate pods;
+    private PodTemplate pod;
     private ServiceTemplate service;
 
-    @Description("Template for Kafka Connect deployment.")
+    @Description("Template for Kafka Connect `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public DeploymentTemplate getDeployment() {
         return deployment;
@@ -39,17 +39,17 @@ public class KafkaConnectTemplate implements Serializable {
         this.deployment = deployment;
     }
 
-    @Description("Template for Kafka Connect pods.")
+    @Description("Template for Kafka Connect `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodTemplate getPods() {
-        return pods;
+    public PodTemplate getPod() {
+        return pod;
     }
 
-    public void setPods(PodTemplate pods) {
-        this.pods = pods;
+    public void setPod(PodTemplate pod) {
+        this.pod = pod;
     }
 
-    @Description("Template for Kafka Connect service.")
+    @Description("Template for Kafka Connect `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ServiceTemplate getService() {
         return service;

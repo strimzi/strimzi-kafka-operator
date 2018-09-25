@@ -30,7 +30,8 @@ public class MetadataTemplate implements Serializable {
     private Map<String, String> labels = new HashMap<>(0);
     private Map<String, String> annotations = new HashMap<>(0);
 
-    @Description("Labels which should be added to the resource template. Can be applied to different resources such as statefulsets, deployments, pods, and services.")
+    @Description("Labels which should be added to the resource template. " +
+            "Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
         return labels;
@@ -40,7 +41,8 @@ public class MetadataTemplate implements Serializable {
         this.labels = labels;
     }
 
-    @Description("Annotations which should be added to the resource template. Can be applied to different resources such as statefulsets, deployments, pods, and services.")
+    @Description("Annotations which should be added to the resource template. " +
+            "Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
         return annotations;

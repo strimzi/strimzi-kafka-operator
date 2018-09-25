@@ -27,7 +27,7 @@ public class DeploymentTemplate implements Serializable {
 
     private MetadataTemplate metadata;
 
-    @Description("Metadata which should be applied to the deployment.")
+    @Description("Metadata which should be applied to the `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;

@@ -27,7 +27,7 @@ public class StatefulSetTemplate implements Serializable {
 
     private MetadataTemplate metadata;
 
-    @Description("Metadata which should be applied to the stateful set.")
+    @Description("Metadata which should be applied to the `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;
