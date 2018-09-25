@@ -4,13 +4,17 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaAssemblyList;
@@ -46,9 +50,12 @@ public class Resources {
     }
 
     private MixedOperation<Kafka, KafkaAssemblyList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafka() {
-        return client()
-                .customResources(Crds.kafka(),
-                        Kafka.class, KafkaAssemblyList.class, DoneableKafka.class);
+        return customResourcesWithCascading(Kafka.class, KafkaAssemblyList.class, DoneableKafka.class);
+    }
+
+    // This logic is necessary only for the deletion of resources with `cascading: true`
+    private <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
+        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) client()).getHttpClient(), client().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas",  client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
     }
 
     private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> kafkaTopic() {
