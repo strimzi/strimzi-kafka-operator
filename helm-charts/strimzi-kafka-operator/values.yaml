@@ -1,7 +1,6 @@
 # Default values for strimzi-kafka-operator.
 
-strimzi:
-  watch_namespaces: []
+watchNamespaces: []
 
 image:
   repository: strimzi

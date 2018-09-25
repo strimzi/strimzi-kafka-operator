@@ -50,7 +50,7 @@ the documentation for more details.
 
 | Parameter                            | Description                               | Default                                              |
 | ------------------------------------ | ----------------------------------------- | ---------------------------------------------------- |
-| `strimzi.watch_namespaces`           | Comma separated list of additional namespaces for the strimzi-operator to watch | []                    |
+| `watchNamespaces`                    | Comma separated list of additional namespaces for the strimzi-operator to watch | []                    |
 | `image.repository`                   | Cluster Operator image repository         | `strimzi`                                            |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
 | `image.tag`                          | Cluster Operator image tag                | `latest`                                             |
