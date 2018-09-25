@@ -185,11 +185,11 @@ Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
     
 ### Running single test class
 
-Use the `test` build goal and provide a `-Dtest=TestClassName` system property.
+Use the `test` build goal and provide a `-Dtest=TestClassName[#testMethodName]` system property. 
 
 Ex)
 
-    mvn test -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Djunitgroup=acceptance,regression -Dtest=KafkaClusterIT
+    mvn test -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Djunitgroup=acceptance,regression -Dtest=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
 
 
 ### Log level
