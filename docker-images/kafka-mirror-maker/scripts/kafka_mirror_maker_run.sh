@@ -73,5 +73,4 @@ exec $KAFKA_HOME/bin/kafka-mirror-maker.sh \
 --consumer.config /tmp/strimzi-consumer.properties \
 --producer.config /tmp/strimzi-producer.properties \
 $whitelist \
-$numstreams \
-$KAFKA_OPTS
+$numstreams
