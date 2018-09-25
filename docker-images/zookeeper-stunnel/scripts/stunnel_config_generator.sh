@@ -64,4 +64,5 @@ cert = ${CERTS}/${CURRENT}.crt
 key = ${CERTS}/${CURRENT}.key
 accept = 2181
 connect = 127.0.0.1:$CLIENT_PORT
+verify = 2
 EOF
