@@ -972,7 +972,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |string
 |authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
-|config            1.2+<.<|The mirror maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl.
+|config            1.2+<.<|The mirror maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
 |map
 |tls               1.2+<.<|TLS configuration for connecting to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
@@ -1040,7 +1040,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |string
 |authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
-|config            1.2+<.<|The mirror maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl.
+|config            1.2+<.<|The mirror maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
 |map
 |tls               1.2+<.<|TLS configuration for connecting to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]

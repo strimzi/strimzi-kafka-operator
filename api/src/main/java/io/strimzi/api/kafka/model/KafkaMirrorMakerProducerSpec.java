@@ -21,7 +21,7 @@ import java.util.Map;
 public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
     private static final long serialVersionUID = 1L;
 
-    public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl.";
+    public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, sasl., security.";
 
     @Override
     @Description("The mirror maker producer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
