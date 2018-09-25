@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "5.2.0"
+      "version": "5.2.4"
     },
     {
       "type": "panel",
@@ -54,7 +54,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1536953244583,
+  "iteration": 1537901015481,
   "links": [],
   "panels": [
     {
@@ -1258,7 +1258,7 @@
         "multi": false,
         "name": "kubernetes_namespace",
         "options": [],
-        "query": "query_result(zookeeper_quorumsize)",
+        "query": "query_result(zookeeper_inmemorydatatree_nodecount)",
         "refresh": 1,
         "regex": "/.*namespace=\"([^\"]*).*/",
         "sort": 0,
@@ -1278,7 +1278,7 @@
         "multi": false,
         "name": "strimzi_cluster_name",
         "options": [],
-        "query": "query_result(zookeeper_quorumsize{namespace=\"$kubernetes_namespace\"})",
+        "query": "query_result(zookeeper_inmemorydatatree_nodecount{namespace=\"$kubernetes_namespace\"})",
         "refresh": 1,
         "regex": "/.*strimzi_io_cluster=\"([^\"]*).*/",
         "sort": 0,
@@ -1298,7 +1298,7 @@
         "multi": false,
         "name": "zk_node",
         "options": [],
-        "query": "query_result(zookeeper_quorumsize{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"})",
+        "query": "query_result(zookeeper_inmemorydatatree_nodecount{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"})",
         "refresh": 1,
         "regex": "/.*statefulset_kubernetes_io_pod_name=\"$strimzi_cluster_name-([^\"]*).*/",
         "sort": 0,
