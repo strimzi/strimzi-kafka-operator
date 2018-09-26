@@ -25,7 +25,11 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"replicas", "whitelist", "consumer", "producer", "logging", "metrics"})
+@JsonPropertyOrder({
+        "replicas", "image", "whitelist",
+        "consumer", "producer", "resources",
+        "affinity", "tolerations", "jvmOptions",
+        "logging", "metrics"})
 public class KafkaMirrorMakerSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -34,23 +38,15 @@ public class KafkaMirrorMakerSpec implements Serializable {
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE", "strimzi/kafka-mirror-maker:latest");
 
     private int replicas;
-
+    private String image;
     private String whitelist;
-
     private KafkaMirrorMakerConsumerSpec consumer;
-
     private KafkaMirrorMakerProducerSpec producer;
-
     private Resources resources;
-
     private Affinity affinity;
-
     private List<Toleration> tolerations;
-
     private JvmOptions jvmOptions;
-
     private Logging logging;
-
     private Map<String, Object> metrics = new HashMap<>(0);
 
     @Description("The number of pods in the `Deployment`.")
@@ -64,8 +60,19 @@ public class KafkaMirrorMakerSpec implements Serializable {
         this.replicas = replicas;
     }
 
+    @Description("The docker image for the pods.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
     @Description("List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions." +
             "Mirroring two topics named A and B can be achieved by using `--whitelist 'A|B'`. Or you could mirror all topics using `--whitelist '*'`.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getWhitelist() {
         return whitelist;
     }
@@ -75,6 +82,7 @@ public class KafkaMirrorMakerSpec implements Serializable {
     }
 
     @Description("Configuration of source cluster.")
+    @JsonProperty(required = true)
     public KafkaMirrorMakerConsumerSpec getConsumer() {
         return consumer;
     }
@@ -84,6 +92,7 @@ public class KafkaMirrorMakerSpec implements Serializable {
     }
 
     @Description("Configuration of target cluster.")
+    @JsonProperty(required = true)
     public KafkaMirrorMakerProducerSpec getProducer() {
         return producer;
     }

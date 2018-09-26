@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import java.util.Map;
 
@@ -24,7 +25,7 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
 
     public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, group.id, sasl., security.";
 
-    private int numStreams;
+    private Integer numStreams;
 
     private String groupId;
 
@@ -36,12 +37,13 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     }
 
     @Description("Specifies the number of consumer stream threads to create.")
-    @JsonProperty(required = true)
-    public int getNumStreams() {
+    @Minimum(1)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getNumStreams() {
         return numStreams;
     }
 
-    public void setNumStreams(int numStreams) {
+    public void setNumStreams(Integer numStreams) {
         this.numStreams = numStreams;
     }
 
