@@ -272,7 +272,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
                                 ownerRef);
 
-                        this.clusterCa.sort(clusterSecrets);
+                        this.clusterCa.initCaSecrets(clusterSecrets);
 
                         this.clientsCa = new ClientsCa(certManager,
                                 clientsCaCertName, clientCaCertSecret,
@@ -295,23 +295,33 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return result;
         }
 
-
-
+        /**
+         * Perform a rolling update of the cluster so that renewed CA certificates get added to their truststores,
+         * or expired CA certificates get removed from their truststores .
+         */
         Future<ReconciliationState> rollingUpdateForNewCaCert() {
-            if (this.clusterCa.certRenewed() || this.clusterCa.certsRemoved()) {
+            String r = "";
+            if (this.clusterCa.certRenewed()) {
+                r = "trust new CA certificate, ";
+            }
+            if (this.clusterCa.certsRemoved()) {
+                r = r + "remove expired CA certificate";
+            }
+            String reason = r.trim();
+            if (!reason.isEmpty()) {
                 return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
                         .compose(ss -> {
-                            log.debug("{}: Rolling StatefulSet {} to trust new CA certificate", reconciliation, ss.getMetadata().getName());
+                            log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
                             return zkSetOperations.maybeRollingUpdate(ss, true);
                         })
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
                         .compose(ss -> {
-                            log.debug("{}: Rolling StatefulSet {} to trust new CA certificate", reconciliation, ss.getMetadata().getName());
+                            log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
                             return kafkaSetOperations.maybeRollingUpdate(ss, true);
                         })
                         .compose(i -> {
                             if (topicOperator != null) {
-                                log.debug("{}: Rolling Deployment {} to trust new CA certificate", reconciliation, TopicOperator.topicOperatorName(name));
+                                log.debug("{}: Rolling Deployment {} to {}", reconciliation, TopicOperator.topicOperatorName(name), reason);
                                 return deploymentOperations.rollingUpdate(namespace, TopicOperator.topicOperatorName(name), operationTimeoutMs);
                             } else {
                                 return Future.succeededFuture();
@@ -319,7 +329,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         })
                         .compose(i -> {
                             if (entityOperator != null) {
-                                log.debug("{}: Rolling Deployment {} to trust new CA certificate", reconciliation, EntityOperator.entityOperatorName(name));
+                                log.debug("{}: Rolling Deployment {} to {}", reconciliation, EntityOperator.entityOperatorName(name), reason);
                                 return deploymentOperations.rollingUpdate(namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs);
                             } else {
                                 return Future.succeededFuture();
@@ -856,15 +866,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaClientsCaSecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), kafkaCluster.generateClientsCASecret(clientsCa)));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCASecretName(name), clientsCa.caKeySecret()));
         }
 
         Future<ReconciliationState> kafkaClientsPublicKeySecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), kafkaCluster.generateClientsPublicKeySecret(clientsCa)));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsPublicKeyName(name), clientsCa.caCertSecret()));
         }
 
         Future<ReconciliationState> kafkaClusterPublicKeySecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), kafkaCluster.generateClusterPublicKeySecret(clusterCa)));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterPublicKeyName(name), clusterCa.caCertSecret()));
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {

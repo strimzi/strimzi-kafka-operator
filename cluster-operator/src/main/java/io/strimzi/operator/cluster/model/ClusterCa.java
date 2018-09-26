@@ -51,27 +51,19 @@ public class ClusterCa extends Ca {
         return "cluster-ca";
     }
 
-    public void sort(List<Secret> secrets) {
-        Secret brokersSecret = null;
-        Secret eoSecrets = null;
-        Secret toSecret = null;
-        Secret zkNodesSecret = null;
+    public void initCaSecrets(List<Secret> secrets) {
         for (Secret secret: secrets) {
             String name = secret.getMetadata().getName();
             if (KafkaCluster.brokersSecretName(clusterName).equals(name)) {
                 brokersSecret = secret;
             } else if (EntityOperator.secretName(clusterName).equals(name)) {
-                eoSecrets = secret;
+                entityOperatorSecret = secret;
             } else if (TopicOperator.secretName(clusterName).equals(name)) {
-                toSecret = secret;
+                topicOperatorSecret = secret;
             } else if (ZookeeperCluster.nodesSecretName(clusterName).equals(name)) {
                 zkNodesSecret = secret;
             }
         }
-        this.brokersSecret = brokersSecret;
-        this.entityOperatorSecret = eoSecrets;
-        this.topicOperatorSecret = toSecret;
-        this.zkNodesSecret = zkNodesSecret;
     }
 
     public Secret topicOperatorSecret() {
@@ -100,7 +92,7 @@ public class ClusterCa extends Ca {
             return subject;
         };
 
-        log.debug("{}: reconciling zookeeper certificates", this);
+        log.debug("{}: Reconciling zookeeper certificates", this);
         return maybeCopyOrGenerateCerts(
             kafka.getSpec().getZookeeper().getReplicas(),
             subjectFn,

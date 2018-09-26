@@ -835,10 +835,10 @@ public class KafkaAssemblyOperatorTest {
         );
         when(mockSecretOps.list(eq(clusterCmNamespace), eq(barLabels))).thenAnswer(
             invocation -> new ArrayList<>(asList(
-                    barCluster.generateClientsCASecret(barClientsCa),
-                    barCluster.generateClientsPublicKeySecret(barClientsCa),
+                    barClientsCa.caKeySecret(),
+                    barClientsCa.caCertSecret(),
                     barCluster.generateBrokersSecret(),
-                    barCluster.generateClusterPublicKeySecret(barClusterCa)))
+                    barClusterCa.caCertSecret()))
         );
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.getClusterCaName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());

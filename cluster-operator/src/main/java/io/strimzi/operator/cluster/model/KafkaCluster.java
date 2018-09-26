@@ -139,7 +139,6 @@ public class KafkaCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
-    //private Secret clientsCaSecret;
     /**
      * Private key and certificate for each Kafka Pod name
      * used as server certificates for Kafka brokers
@@ -300,7 +299,6 @@ public class KafkaCluster extends AbstractModel {
         try {
             clientsCa.createOrRenew(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(),
                     labels.toMap(), createOwnerReference());
-            //clientsCaSecret = clientsCa.caCertSecret();
             brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapAddress, externalAddresses);
         } catch (IOException e) {
             log.warn("Error while generating certificates", e);
@@ -513,34 +511,6 @@ public class KafkaCluster extends AbstractModel {
                 getInitContainers(),
                 getContainers(),
                 isOpenShift);
-    }
-
-    /**
-     * Generate the Secret containing CA private key and self-signed certificate used
-     * for signing brokers certificates used for communication with clients
-     * @return The generated Secret
-     */
-    public Secret generateClientsCASecret(ClientsCa clientsCa) {
-        return clientsCa.caKeySecret();
-    }
-
-    /**
-     * Generate the Secret containing just the self-signed CA certificate used
-     * for signing client certificates. It is used for the broker truststore.
-     * @return The generated Secret
-     */
-    public Secret generateClientsPublicKeySecret(ClientsCa clientsCa) {
-        return clientsCa.caCertSecret();
-    }
-
-    /**
-     * Generate the Secret containing just the self-signed CA certificate used
-     * for signing brokers certificates used for communication with clients
-     * It's useful for users to extract the certificate itself to put as trusted on the clients
-     * @return The generated Secret
-     */
-    public Secret generateClusterPublicKeySecret(ClusterCa clusterCa) {
-        return clusterCa.caCertSecret();
     }
 
     /**

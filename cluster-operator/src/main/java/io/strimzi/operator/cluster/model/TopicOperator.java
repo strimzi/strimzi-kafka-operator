@@ -48,10 +48,10 @@ public class TopicOperator extends AbstractModel {
     private static final String NAME_SUFFIX = "-topic-operator";
     private static final String CERTS_SUFFIX = NAME_SUFFIX + "-certs";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
-    protected static final String TLS_SIDECAR1_VOLUME_NAME = "eo-certs";
-    protected static final String TLS_SIDECAR1_VOLUME_MOUNT = "/etc/tls-sidecar/eo-certs/";
-    protected static final String TLS_SIDECAR2_VOLUME_NAME = "cluster-ca-certs";
-    protected static final String TLS_SIDECAR2_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
+    protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_NAME = "eo-certs";
+    protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/eo-certs/";
+    protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
+    protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
 
 
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
@@ -279,7 +279,7 @@ public class TopicOperator extends AbstractModel {
                 .withImage(tlsSidecarImage)
                 .withResources(resources(tlsSidecarResources))
                 .withEnv(singletonList(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
-                .withVolumeMounts(createVolumeMount(TLS_SIDECAR1_VOLUME_NAME, TLS_SIDECAR1_VOLUME_MOUNT))
+                .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT))
                 .build();
 
         containers.add(container);
@@ -342,16 +342,16 @@ public class TopicOperator extends AbstractModel {
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
-        volumeList.add(createSecretVolume(TLS_SIDECAR1_VOLUME_NAME, TopicOperator.secretName(cluster)));
-        volumeList.add(createSecretVolume(TLS_SIDECAR2_VOLUME_NAME, AbstractModel.getClusterCaName(cluster)));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TopicOperator.secretName(cluster)));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.getClusterCaName(cluster)));
         return volumeList;
     }
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        volumeMountList.add(createVolumeMount(TLS_SIDECAR1_VOLUME_NAME, TLS_SIDECAR1_VOLUME_MOUNT));
-        volumeMountList.add(createVolumeMount(TLS_SIDECAR2_VOLUME_NAME, TLS_SIDECAR2_VOLUME_MOUNT));
+        volumeMountList.add(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
         return volumeMountList;
     }
 

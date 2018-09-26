@@ -214,7 +214,7 @@ public abstract class Ca {
                     || caKeySecret.getData().get(CA_KEY) == null
                     || needsRenewal) {
                 try {
-                    Map<String, String>[] newData = createOrRenewCert(this.toString(), currentCert);
+                    Map<String, String>[] newData = createOrRenewCert(currentCert);
                     certData = newData[0];
                     keyData = newData[1];
                 } catch (IOException e) {
