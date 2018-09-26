@@ -43,7 +43,8 @@ public class Crds {
         KafkaConnect.class,
         KafkaConnectS2I.class,
         KafkaTopic.class,
-        KafkaUser.class
+        KafkaUser.class,
+        KafkaMirrorMaker.class
     };
 
     private Crds() {
