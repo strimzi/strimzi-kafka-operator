@@ -8,7 +8,7 @@ if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" ] || [ -n "$KAFKA_MIRRORMAKE
 
     # Import certificates into keystore and truststore
     # $1 = trusted certs, $2 = TLS auth cert, $3 = TLS auth key, $4 = truststore path, $5 = keystore path, $6 = certs and key path
-    kafka_mirror_maker_tls_prepare_certificates.sh \
+    ./kafka_mirror_maker_tls_prepare_certificates.sh \
         "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" \
         "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_CONSUMER" \
         "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_CONSUMER" \
@@ -16,7 +16,7 @@ if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" ] || [ -n "$KAFKA_MIRRORMAKE
         "/tmp/kafka/consumer.keystore.p12" \
         "/opt/kafka/consumer-certs"
 
-    kafka_mirror_maker_tls_prepare_certificates.sh \
+    ./kafka_mirror_maker_tls_prepare_certificates.sh \
         "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_PRODUCER" \
         "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_PRODUCER" \
         "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_PRODUCER" \
