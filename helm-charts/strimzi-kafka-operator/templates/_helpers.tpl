@@ -32,6 +32,14 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
+Comma delimited list of namespaces to watch
+*/}}
+{{- define "strimzi.watchNamespaces" -}}
+{{- $namespaces := append .Values.watchNamespaces .Release.Namespace -}}
+{{- join "," $namespaces | quote -}}
+{{- end -}}
+
+{{/*
 Generate a docker registry prefix or empty string.
 
 NOTE: Not currently being used.  Is this useful?
