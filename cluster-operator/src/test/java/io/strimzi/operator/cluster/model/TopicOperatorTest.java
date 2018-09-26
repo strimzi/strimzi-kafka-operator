@@ -75,7 +75,7 @@ public class TopicOperatorTest {
 
     private final CertManager certManager = new MockCertManager();
     private final Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, storage, topicOperator, kafkaLogJson, zooLogJson);
-    private final TopicOperator tc = TopicOperator.fromCrd(certManager, resource, ResourceUtils.createKafkaClusterInitialSecrets(namespace, cluster));
+    private final TopicOperator tc = TopicOperator.fromCrd(resource);
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
@@ -95,7 +95,7 @@ public class TopicOperatorTest {
     public void testFromConfigMapNoConfig() {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, null, kafkaLogJson, zooLogJson);
-        TopicOperator tc = TopicOperator.fromCrd(certManager, resource, ResourceUtils.createKafkaClusterInitialSecrets(namespace, cluster));
+        TopicOperator tc = TopicOperator.fromCrd(resource);
         assertNull(tc);
     }
 
@@ -104,7 +104,7 @@ public class TopicOperatorTest {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 storage, new TopicOperatorSpec(), kafkaLogJson, zooLogJson);
-        TopicOperator tc = TopicOperator.fromCrd(certManager, resource, ResourceUtils.createKafkaClusterInitialSecrets(namespace, cluster));
+        TopicOperator tc = TopicOperator.fromCrd(resource);
         Assert.assertEquals(TopicOperatorSpec.DEFAULT_IMAGE, tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());
         assertEquals(TopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, tc.getReconciliationIntervalMs());
@@ -167,14 +167,14 @@ public class TopicOperatorTest {
         assertEquals(TopicOperator.HEALTHCHECK_PORT_NAME, containers.get(0).getPorts().get(0).getName());
         assertEquals("TCP", containers.get(0).getPorts().get(0).getProtocol());
         assertEquals("Recreate", dep.getSpec().getStrategy().getType());
-        assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_NAME, containers.get(0).getVolumeMounts().get(1).getName());
-        assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_MOUNT, containers.get(0).getVolumeMounts().get(1).getMountPath());
+        assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, containers.get(0).getVolumeMounts().get(1).getName());
+        assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT, containers.get(0).getVolumeMounts().get(1).getMountPath());
         assertLoggingConfig(dep);
         // checks on the TLS sidecar container
         assertEquals(TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
         assertEquals(TopicOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(containers.get(1)).get(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT));
-        assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_NAME, containers.get(1).getVolumeMounts().get(0).getName());
-        assertEquals(TopicOperator.TLS_SIDECAR_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(0).getMountPath());
+        assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, containers.get(1).getVolumeMounts().get(0).getName());
+        assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(0).getMountPath());
     }
 
     @Test

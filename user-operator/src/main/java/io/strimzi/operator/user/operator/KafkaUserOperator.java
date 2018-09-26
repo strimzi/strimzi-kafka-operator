@@ -52,7 +52,8 @@ public class KafkaUserOperator {
     private final SecretOperator secretOperations;
     private final SimpleAclOperator aclOperations;
     private final CertManager certManager;
-    private final String caName;
+    private final String caCertName;
+    private final String caKeyName;
     private final String caNamespace;
     private final ScramShaCredentialsOperator scramShaCredentialOperator;
     private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
@@ -67,7 +68,7 @@ public class KafkaUserOperator {
      * @param secretOperations For operating on Secrets
      * @param scramShaCredentialOperator For operating on SCRAM SHA credentials
      * @param aclOperations For operating on ACLs
-     * @param caName The name of the Secret containing the clients CA certificate and private key
+     * @param caCertName The name of the Secret containing the clients CA certificate and private key
      * @param caNamespace The namespace of the Secret containing the clients CA certificate and private key
      */
     public KafkaUserOperator(Vertx vertx,
@@ -75,14 +76,15 @@ public class KafkaUserOperator {
                              CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperator,
                              SecretOperator secretOperations,
                              ScramShaCredentialsOperator scramShaCredentialOperator,
-                             SimpleAclOperator aclOperations, String caName, String caNamespace) {
+                             SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace) {
         this.vertx = vertx;
         this.certManager = certManager;
         this.secretOperations = secretOperations;
         this.scramShaCredentialOperator = scramShaCredentialOperator;
         this.crdOperator = crdOperator;
         this.aclOperations = aclOperations;
-        this.caName = caName;
+        this.caCertName = caCertName;
+        this.caKeyName = caKeyName;
         this.caNamespace = caNamespace;
     }
 
@@ -103,16 +105,17 @@ public class KafkaUserOperator {
      * one resource means that all resources need to be created).
      * @param reconciliation Unique identification for the reconciliation
      * @param kafkaUser KafkaUser resources with the desired user configuration.
-     * @param clientsCa Secret with the Clients CA
+     * @param clientsCaCert Secret with the Clients CA cert
+     * @param clientsCaCert Secret with the Clients CA key
      * @param userSecret User secret (if it exists, null otherwise)
      * @param handler Completion handler
      */
-    protected void createOrUpdate(Reconciliation reconciliation, KafkaUser kafkaUser, Secret clientsCa, Secret userSecret, Handler<AsyncResult<Void>> handler) {
+    protected void createOrUpdate(Reconciliation reconciliation, KafkaUser kafkaUser, Secret clientsCaCert, Secret clientsCaKey, Secret userSecret, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         String userName = reconciliation.name();
         KafkaUserModel user;
         try {
-            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCa, userSecret);
+            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, kafkaUser, clientsCaCert, clientsCaKey, userSecret);
         } catch (Exception e) {
             handler.handle(Future.failedFuture(e));
             return;
@@ -167,10 +170,11 @@ public class KafkaUserOperator {
 
                     if (cr != null) {
                         log.info("{}: User {} should be created or updated", reconciliation, name);
-                        Secret clientsCa = secretOperations.get(caNamespace, caName);
+                        Secret clientsCaCert = secretOperations.get(caNamespace, caCertName);
+                        Secret clientsCaKey = secretOperations.get(caNamespace, caKeyName);
                         Secret userSecret = secretOperations.get(namespace, KafkaUserModel.getSecretName(name));
 
-                        createOrUpdate(reconciliation, cr, clientsCa, userSecret, createResult -> {
+                        createOrUpdate(reconciliation, cr, clientsCaCert, clientsCaKey, userSecret, createResult -> {
                             lock.release();
                             log.debug("{}: Lock {} released", reconciliation, lockName);
                             if (createResult.failed()) {

@@ -39,7 +39,8 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
-    public static final String ENV_VAR_CLIENTS_CA_NAME = "STRIMZI_CA_NAME";
+    public static final String ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
+    public static final String ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
 
     private String zookeeperConnect;
     private String watchedNamespace;
@@ -189,7 +190,8 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Long.toString(zookeeperSessionTimeoutMs)));
-        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_NAME, KafkaCluster.clientsCASecretName(cluster)));
+        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCASecretName(cluster)));
+        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaCluster.clientsPublicKeyName(cluster)));
         return varList;
     }
 

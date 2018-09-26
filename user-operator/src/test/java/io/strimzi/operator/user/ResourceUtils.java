@@ -28,7 +28,8 @@ public class ResourceUtils {
     public static final Map LABELS = Collections.singletonMap("foo", "bar");
     public static final String NAMESPACE = "namespace";
     public static final String NAME = "user";
-    public static final String CA_NAME = "somename";
+    public static final String CA_CERT_NAME = NAME + "-cert";
+    public static final String CA_KEY_NAME = NAME + "-key";
 
     public static KafkaUser createKafkaUser(KafkaUserAuthentication authentication) {
         return new KafkaUserBuilder()
@@ -73,14 +74,23 @@ public class ResourceUtils {
         return createKafkaUser(new KafkaUserScramSha512ClientAuthentication());
     }
 
-    public static Secret createClientsCa()  {
+    public static Secret createClientsCaCertSecret()  {
         return new SecretBuilder()
                 .withNewMetadata()
-                    .withName(CA_NAME)
+                    .withName(ResourceUtils.CA_CERT_NAME)
                     .withNamespace(NAMESPACE)
                 .endMetadata()
-                .addToData("clients-ca.key", Base64.getEncoder().encodeToString("clients-ca-key".getBytes()))
-                .addToData("clients-ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
+                .addToData("ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
+                .build();
+    }
+
+    public static Secret createClientsCaKeySecret()  {
+        return new SecretBuilder()
+                .withNewMetadata()
+                .withName(ResourceUtils.CA_KEY_NAME)
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData("ca.key", Base64.getEncoder().encodeToString("clients-ca-key".getBytes()))
                 .build();
     }
 

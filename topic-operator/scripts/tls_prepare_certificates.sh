@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 # Parameters:
 # $1: Path to the new truststore
 # $2: Truststore password
@@ -17,10 +19,20 @@ function create_truststore {
 # $5: CA public key to be imported
 # $6: Alias of the certificate
 function create_keystore {
-   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -chain -CAfile $5 -name topic-operator -password pass:$2 -out $1
+   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name topic-operator -password pass:$2 -out $1
 }
 
 echo "Preparing certificates for internal communication"
-create_truststore /tmp/topic-operator/replication.truststore.p12 $CERTS_STORE_PASSWORD /etc/tls-sidecar/certs/cluster-ca.crt cluster-ca
-create_keystore /tmp/topic-operator/replication.keystore.p12 $CERTS_STORE_PASSWORD /etc/tls-sidecar/certs/entity-operator.crt /etc/tls-sidecar/certs/entity-operator.key /etc/tls-sidecar/certs/cluster-ca.crt entity-operator
+STORE=/tmp/topic-operator/replication.truststore.p12
+for CRT in /etc/tls-sidecar/cluster-ca-certs/*.crt; do
+  ALIAS=$(basename "$CRT" .crt)
+  echo "Adding $CRT to truststore $STORE with alias $ALIAS"
+  create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
+done
+
+create_keystore /tmp/topic-operator/replication.keystore.p12 $CERTS_STORE_PASSWORD \
+    /etc/tls-sidecar/eo-certs/entity-operator.crt \
+    /etc/tls-sidecar/eo-certs/entity-operator.key \
+    /etc/tls-sidecar/cluster-ca-certs/ca.crt \
+    entity-operator
 echo "Preparing certificates for internal communication is complete"
