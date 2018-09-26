@@ -48,7 +48,7 @@ public class ClusterCa extends Ca {
 
     @Override
     public String toString() {
-        return "Cluster CA";
+        return "cluster-ca";
     }
 
     public void sort(List<Secret> secrets) {
@@ -100,7 +100,7 @@ public class ClusterCa extends Ca {
             return subject;
         };
 
-        log.debug("Cluster communication certificates");
+        log.debug("{}: reconciling zookeeper certificates", this);
         return maybeCopyOrGenerateCerts(
             kafka.getSpec().getZookeeper().getReplicas(),
             subjectFn,
@@ -111,7 +111,6 @@ public class ClusterCa extends Ca {
     public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, String externalBootstrapAddress, Map<Integer, String> externalAddresses) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
-        log.debug("Internal communication certificates");
         Function<Integer, Subject> subjectFn = i -> {
             Map<String, String> sbjAltNames = new HashMap<>();
             sbjAltNames.put("DNS.1", KafkaCluster.serviceName(cluster));
@@ -136,7 +135,7 @@ public class ClusterCa extends Ca {
 
             return subject;
         };
-
+        log.debug("{}: Reconciling kafka broker certificates", this);
         return maybeCopyOrGenerateCerts(
             kafka.getSpec().getKafka().getReplicas(),
             subjectFn,

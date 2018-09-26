@@ -18,6 +18,6 @@ public class ClientsCa extends Ca {
 
     @Override
     public String toString() {
-        return "Clients CA";
+        return "clients-ca";
     }
 }

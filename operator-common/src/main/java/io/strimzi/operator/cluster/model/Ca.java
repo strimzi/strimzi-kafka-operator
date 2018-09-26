@@ -163,7 +163,7 @@ public abstract class Ca {
         for (int i = 0; i < Math.min(replicasInSecret, replicas); i++) {
 
             String podName = podNameFn.apply(i);
-            log.debug("{} already exists", podName);
+            log.debug("Certificate for {} already exists", podName);
             certs.put(
                     podName,
                     asCertAndKey(secret, podName + ".key", podName + ".crt"));
@@ -178,7 +178,7 @@ public abstract class Ca {
         // scale down -> does nothing
         for (int i = replicasInSecret; i < replicas; i++) {
             String podName = podNameFn.apply(i);
-            log.debug("{} to generate", podName);
+            log.debug("Certificate for {} to generate", podName);
             CertAndKey k = generateSignedCert(subjectFn.apply(i),
                     brokerCsrFile, brokerKeyFile, brokerCertFile);
             certs.put(podName, k);
@@ -199,7 +199,7 @@ public abstract class Ca {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         this.needsRenewal = currentCert != null && certNeedsRenewal(currentCert);
         if (needsRenewal) {
-            log.debug("Cluster CA certificate in secret {} needs to be renewed", caCertSecretName);
+            log.debug("{}: CA certificate in secret {} needs to be renewed", this, caCertSecretName);
         }
         Map<String, String> certData;
         Map<String, String> keyData;
@@ -214,14 +214,14 @@ public abstract class Ca {
                     || caKeySecret.getData().get(CA_KEY) == null
                     || needsRenewal) {
                 try {
-                    Map<String, String>[] newData = createOrRenewCert(currentCert);
+                    Map<String, String>[] newData = createOrRenewCert(this.toString(), currentCert);
                     certData = newData[0];
                     keyData = newData[1];
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             } else {
-                log.debug("The cluster CA in secret {} already exists and does not need renewing", caCertSecretName);
+                log.debug("{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
                 certData = caCertSecret.getData();
                 keyData = caKeySecret.getData();
             }
@@ -233,7 +233,7 @@ public abstract class Ca {
             log.info("{}: Expired CA certificates removed", this);
         }
         if (needsRenewal) {
-            log.info("{}: certificates renewed", this);
+            log.info("{}: Certificates renewed", this);
         }
 
         caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, labels, ownerRef);
