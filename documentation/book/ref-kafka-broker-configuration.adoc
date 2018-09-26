@@ -14,7 +14,7 @@ The values could be in one of the following JSON types:
 * Number
 * Boolean
 
-Users can specify and configure the options listed in {ApachaKafkaBrokerConfig} with the exception of those options which are managed directly by {ProductName}.
+Users can specify and configure the options listed in {ApacheKafkaBrokerConfig} with the exception of those options which are managed directly by {ProductName}.
 Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
 
 * `listeners`
