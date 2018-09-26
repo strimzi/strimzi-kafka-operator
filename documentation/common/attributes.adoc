@@ -49,8 +49,9 @@
 :K8sManagingComputingResources: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/[Managing Compute Resources for Containers^]
 :K8sLivenessReadinessProbes: link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Configure Liveness and Readiness Probes^]
 
-:ApachaKafkaBrokerConfig: link:http://kafka.apache.org/20/documentation.html#brokerconfigs[Apache Kafka documentation^]
-:ApachaKafkaConnectConfig: link:http://kafka.apache.org/20/documentation.html#connectconfigs[Apache Kafka documentation^]
+
+:ApacheKafkaBrokerConfig: link:http://kafka.apache.org/20/documentation.html#brokerconfigs[Apache Kafka documentation^]
+:ApacheKafkaConnectConfig: link:http://kafka.apache.org/20/documentation.html#connectconfigs[Apache Kafka documentation^]
 :ApacheZookeeperConfig: link:http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html[Zookeeper documentation^]
 
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]

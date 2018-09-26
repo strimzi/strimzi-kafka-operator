@@ -11,7 +11,7 @@
 
 = Kafka Connect configuration
 
-{ProductName} allows you to customize the configuration of Apache Kafka Connect nodes by editing most of the options listed in {ApachaKafkaConnectConfig}.
+{ProductName} allows you to customize the configuration of Apache Kafka Connect nodes by editing most of the options listed in {ApacheKafkaConnectConfig}.
 
 The only options which cannot be configured are those related to the following areas:
 
