@@ -27,22 +27,22 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkaconnect-crd-it";
 
     @Test
-    public void testKafka() {
+    public void testKafkaConnect() {
         createDelete(KafkaConnect.class, "KafkaConnect.yaml");
     }
 
     @Test
-    public void testKafkaMinimal() {
+    public void testKafkaConnectMinimal() {
         createDelete(KafkaConnect.class, "KafkaConnect-minimal.yaml");
     }
 
     @Test
-    public void testKafkaWithExtraProperty() {
+    public void testKafkaConnectWithExtraProperty() {
         createDelete(KafkaConnect.class, "KafkaConnect-with-extra-property.yaml");
     }
 
     @Test
-    public void testKafkaWithMissingRequired() {
+    public void testKafkaConnectWithMissingRequired() {
         try {
             createDelete(KafkaConnect.class, "KafkaConnect-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
@@ -51,26 +51,26 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaWithInvalidResourceMemory() {
+    public void testKafkaConnectWithInvalidReplicas() {
         try {
-            createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-resource-memory.yaml");
+            createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-replicas.yaml");
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("spec.replicas in body must be of type integer: \"string\""));
         }
     }
 
     @Test
-    public void testKafkaWithTls() {
+    public void testKafkaConnectWithTls() {
         createDelete(KafkaConnect.class, "KafkaConnect-with-tls.yaml");
     }
 
     @Test
-    public void testKafkaWithTlsAuth() {
+    public void testKafkaConnectWithTlsAuth() {
         createDelete(KafkaConnect.class, "KafkaConnect-with-tls-auth.yaml");
     }
 
     @Test
-    public void testKafkaWithTlsAuthWithMissingRequired() {
+    public void testKafkaConnectWithTlsAuthWithMissingRequired() {
         try {
             createDelete(KafkaConnect.class, "KafkaConnect-with-tls-auth-with-missing-required.yaml");
         } catch (KubeClusterException.InvalidResource e) {
@@ -80,7 +80,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaWithScramSha512Auth() {
+    public void testKafkaConnectWithScramSha512Auth() {
         createDelete(KafkaConnect.class, "KafkaConnect-with-scram-sha-512-auth.yaml");
     }
 }

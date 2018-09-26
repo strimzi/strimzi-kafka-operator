@@ -25,17 +25,17 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "topiccrd-it";
 
     @Test
-    public void testKafka() {
+    public void testKafkaTopic() {
         createDelete(KafkaTopic.class, "KafkaTopic.yaml");
     }
 
     @Test
-    public void testKafkaMinimal() {
+    public void testKafkaTopicMinimal() {
         createDelete(KafkaTopic.class, "KafkaTopic-minimal.yaml");
     }
 
     @Test
-    public void testKafkaWithExtraProperty() {
+    public void testKafkaTopicWithExtraProperty() {
         createDelete(KafkaTopic.class, "KafkaTopic-with-extra-property.yaml");
     }
 }
