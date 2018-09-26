@@ -56,7 +56,7 @@ import static java.util.Collections.emptyMap;
  * K8S CRD validation schema support, which is more limited that the full OpenAPI schema
  * supported in the rest of K8S.</p>
  *
- * <p>The tool works be recursing through class properties (in the JavaBeans sense)
+ * <p>The tool works by recursing through class properties (in the JavaBeans sense)
  * and the types of those properties, guided by the annotations.</p>
  *
  * <h3>Annotations</h3>

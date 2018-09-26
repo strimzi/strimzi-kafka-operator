@@ -28,7 +28,7 @@ To build this project you must first install several command line utilities.
 - [`helm`](https://helm.sh/) - Helm Package Management System for Kubernetes
     - After installing Helm be sure to run `helm init`.
 - [`asciidoctor`](https://asciidoctor.org/) - Documentation generation (use `gem` to install latest version for your platform)
-- [`yq`](https://github.com/mikefarah/yq) - YAML manipulation tool
+- [`yq`](https://github.com/mikefarah/yq) - YAML manipulation tool.  **Warning: There are several different `yq` yaml projects in the wild.  [Use this one.](https://github.com/mikefarah/yq)** 
 
 In order to use `make` these all need to be available in your `$PATH`.
  
@@ -185,11 +185,11 @@ Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
     
 ### Running single test class
 
-Use the `test` build goal and provide a `-Dtest=TestClassName` system property.
+Use the `test` build goal and provide a `-Dtest=TestClassName[#testMethodName]` system property. 
 
 Ex)
 
-    mvn test -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Djunitgroup=acceptance,regression -Dtest=KafkaClusterIT
+    mvn test -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Djunitgroup=acceptance,regression -Dtest=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
 
 
 ### Log level

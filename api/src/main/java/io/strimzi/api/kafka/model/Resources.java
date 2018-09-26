@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation for resource containts.
+ * Representation for resource constraints.
  */
 @Buildable(
         editableEnabled = false,

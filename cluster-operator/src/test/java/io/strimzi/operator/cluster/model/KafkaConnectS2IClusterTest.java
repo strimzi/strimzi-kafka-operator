@@ -53,6 +53,7 @@ public class KafkaConnectS2IClusterTest {
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String bootstrapServers = "foo-kafka:9092";
+    private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
     private final String expectedConfiguration = "group.id=connect-cluster" + LINE_SEPARATOR +
             "key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
             "internal.key.converter.schemas.enable=false" + LINE_SEPARATOR +
@@ -114,7 +115,7 @@ public class KafkaConnectS2IClusterTest {
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
-        expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION).withValue("1.0").build());
+        expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
         return expected;
     }
 

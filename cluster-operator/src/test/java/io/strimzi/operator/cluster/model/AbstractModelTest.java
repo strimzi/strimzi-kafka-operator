@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -38,13 +39,14 @@ public class AbstractModelTest {
     @Test
     public void testJvmMemoryOptionsExplicit() {
         Map<String, String> env = getStringStringMap("4", "4",
-                0.5, 4_000_000_000L);
+                0.5, 4_000_000_000L, null);
         assertEquals("-Xms4 -Xmx4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
         assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
         assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
     }
 
-    private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax) {
+    private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax,
+                                                   Resources resources) {
         AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
             @Override
             protected String getDefaultLogConfigFileName() {
@@ -57,21 +59,51 @@ public class AbstractModelTest {
             }
         };
         am.setJvmOptions(jvmOptions(xmx, xms));
+        am.setResources(resources);
         List<EnvVar> envVars = new ArrayList<>(1);
         am.heapOptions(envVars, dynamicFraction, dynamicMax);
         return envVars.stream().collect(Collectors.toMap(e -> e.getName(), e -> e.getValue()));
     }
 
     @Test
-    public void testJvmMemoryOptionsDefault() {
+    public void testJvmMemoryOptionsXmsOnly() {
         Map<String, String> env = getStringStringMap(null, "4",
-                0.5, 5_000_000_000L);
+                0.5, 5_000_000_000L, null);
         assertEquals("-Xms4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
-        assertEquals("0.5", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
-        assertEquals("5000000000", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+    }
 
-        env = getStringStringMap(null, "4",
-                0.5, 5_000_000_000L);
+    @Test
+    public void testJvmMemoryOptionsXmxOnly() {
+        Map<String, String> env = getStringStringMap("4", null,
+                0.5, 5_000_000_000L, null);
+        assertEquals("-Xmx4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+    }
+
+
+    @Test
+    public void testJvmMemoryOptionsDefaultWithNoMemoryLimitOrJvmOptions() {
+        Map<String, String> env = getStringStringMap(null, null,
+                0.5, 5_000_000_000L, null);
+        assertEquals("-Xms" + AbstractModel.DEFAULT_JVM_XMS, env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
+        assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
+    }
+
+    private Resources getResourceLimit() {
+        CpuMemory limits = new CpuMemory();
+        limits.setMemory("16000000000");
+        Resources resources = new Resources(limits, null);
+        return resources;
+    }
+
+    @Test
+    public void testJvmMemoryOptionsDefaultWithMemoryLimit() {
+        Map<String, String> env = getStringStringMap(null, "4",
+                0.5, 5_000_000_000L, getResourceLimit());
         assertEquals("-Xms4", env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
         assertEquals("0.5", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
         assertEquals("5000000000", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
@@ -80,7 +112,7 @@ public class AbstractModelTest {
     @Test
     public void testJvmMemoryOptionsMemoryRequest() {
         Map<String, String> env = getStringStringMap(null, null,
-                0.7, 10_000_000_000L);
+                0.7, 10_000_000_000L, getResourceLimit());
         assertEquals(null, env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS));
         assertEquals("0.7", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION));
         assertEquals("10000000000", env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));

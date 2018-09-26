@@ -99,6 +99,7 @@ public abstract class AbstractModel {
             System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
 
     protected static final int CERTS_EXPIRATION_DAYS = 365;
+    protected static final String DEFAULT_JVM_XMS = "128M";
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     protected static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
@@ -973,13 +974,23 @@ public abstract class AbstractModel {
             // Honour explicit max heap
             kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
         } else {
-            // Otherwise delegate to the container to figure out
-            // Using whatever cgroup memory limit has been set by the k8s infra
-            envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
-            if (dynamicHeapMaxBytes > 0) {
-                envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
+            Resources resources = getResources();
+            CpuMemory cpuMemory = resources == null ? null : resources.getLimits();
+
+            // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
+            // too much memory on the kubelet.
+            if (cpuMemory != null && cpuMemory.getMemory() != null) {
+                envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
+                if (dynamicHeapMaxBytes > 0) {
+                    envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
+                }
+            // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
+            // leave `Xmx` undefined.
+            } else if (xms == null) {
+                kafkaHeapOpts.append("-Xms").append(DEFAULT_JVM_XMS);
             }
         }
+
         String trim = kafkaHeapOpts.toString().trim();
         if (!trim.isEmpty()) {
             envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, trim));
