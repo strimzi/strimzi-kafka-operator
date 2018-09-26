@@ -53,6 +53,8 @@
 :ApacheKafkaBrokerConfig: link:http://kafka.apache.org/20/documentation.html#brokerconfigs[Apache Kafka documentation^]
 :ApacheKafkaConnectConfig: link:http://kafka.apache.org/20/documentation.html#connectconfigs[Apache Kafka documentation^]
 :ApacheZookeeperConfig: link:http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html[Zookeeper documentation^]
+:ApacheKafkaConsumerConfig: link:http://kafka.apache.org/20/documentation.html#newconsumerconfigs[Apache Kafka documentation^]
+:ApacheKafkaProducerConfig: link:http://kafka.apache.org/20/documentation.html#producerconfigs[Apache Kafka documentation^]
 
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 
