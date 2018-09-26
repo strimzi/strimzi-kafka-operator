@@ -64,8 +64,8 @@ if [ -n "$KAFKA_MIRRORMAKER_WHITELIST" ]; then
     whitelist="--whitelist ${KAFKA_MIRRORMAKER_WHITELIST}"
 fi
 
-if [ -n "$KAFKA_MIRRORMAKER_NUMSTREAMS_CONSUMER" ]; then
-    numstreams="--num.streams ${KAFKA_MIRRORMAKER_NUMSTREAMS_CONSUMER}"
+if [ -n "$KAFKA_MIRRORMAKER_NUMSTREAMS" ]; then
+    numstreams="--num.streams ${KAFKA_MIRRORMAKER_NUMSTREAMS}"
 fi
 
 # starting Kafka Mirror Maker with final configuration
