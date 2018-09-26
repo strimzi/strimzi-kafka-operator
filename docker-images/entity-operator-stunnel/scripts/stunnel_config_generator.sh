@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# path were the Secret with ZK nodes certificates is mounted
+# path were the Secret with EO certificates is mounted
 EO_CERTS_KEYS=/etc/tls-sidecar/eo-certs
 # Combine all the certs in the cluster CA into one file
 CA_CERTS=/tmp/cluster-ca.crt

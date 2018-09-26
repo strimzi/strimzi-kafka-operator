@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# path were the Secret with ZK nodes certificates is mounted
+# path were the Secret with broker certificates is mounted
 KAFKA_CERTS_KEYS=/etc/tls-sidecar/kafka-brokers
 # Combine all the certs in the cluster CA into one file
 CA_CERTS=/tmp/cluster-ca.crt
