@@ -25,10 +25,10 @@ velocity.log
 # Generated docs
 documentation/html/**
 documentation/htmlnoheader/**
+documentation/book/build/**
 
 helm-charts/strimzi-kafka-operator-*.*.*.tgz
 
 # Connect plugin (tests)
 systemtest/*.tar.gz
 systemtest/my-plugins/
-
