@@ -279,7 +279,8 @@ public class TopicOperator extends AbstractModel {
                 .withImage(tlsSidecarImage)
                 .withResources(resources(tlsSidecarResources))
                 .withEnv(singletonList(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
-                .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT))
+                .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
+                        createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
                 .build();
 
         containers.add(container);
