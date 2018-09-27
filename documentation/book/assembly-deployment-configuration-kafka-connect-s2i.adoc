@@ -18,7 +18,7 @@ This provides a convenient mechanism for those resources to be labelled in whate
 
 include::assembly-kafka-connect-replicas.adoc[leveloffset=+1]
 
-include::assembly-bootstrap-servers.adoc[leveloffset=+1]
+include::assembly-kafka-connect-bootstrap-servers.adoc[leveloffset=+1]
 
 include::assembly-kafka-connect-tls.adoc[leveloffset=+1]
 

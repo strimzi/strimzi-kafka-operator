@@ -1,8 +1,8 @@
 // Module included in the following assemblies:
 //
-// assembly-bootstrap-servers.adoc
+// assembly-kafka-connect-bootstrap-servers.adoc
 
-[id='proc-configuring-bootstrap-servers-{context}']
+[id='proc-configuring-kafka-connect-bootstrap-servers-{context}']
 = Configuring bootstrap servers
 
 .Prerequisites
