@@ -15,12 +15,9 @@ JVM options can be configured using the `jvmOptions` property in following resou
 Only a selected subset of available JVM options can be configured.
 The following options are supported:
 
-.-Xms
+.-Xms and -Xmx
 
 `-Xms` configures the minimum initial allocation heap size when the JVM starts.
-
-.-Xmx
-
 `-Xmx` configures the maximum heap size.
 
 NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
@@ -51,7 +48,7 @@ When setting `-Xmx` explicitly, it is recommended to:
 IMPORTANT: Containers doing lots of disk I/O (such as Kafka broker containers) will need to leave some memory available for use as operating system page cache.
 On such containers, the requested memory should be significantly higher than the memory used by the JVM.
 
-.Example fragment configuring `-Xmx`
+.Example fragment configuring `-Xmx` and `-Xms`
 [source,yaml,subs=attributes+]
 ----
 # ...
@@ -64,27 +61,9 @@ jvmOptions:
 In the above example, the JVM will use 2 GiB (=2,147,483,648 bytes) for its heap.
 Its total memory usage will be approximately 8GiB.
 
-.-Xms
-
-`-Xms` configures the initial heap size.
-
-NOTE: The units accepted by JVM settings such as `-Xmx` and `-Xms` are those accepted by the JDK `java` binary in the corresponding image.
-Accordingly, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
-This is in contrast to the units used for xref:assembly-resource-limits-and-requests-{context}[memory requests and limits], which follow the {ProductPlatformName} convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
-
-Setting the same value for initial and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
+Setting the same value for initial (`-Xms`) and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
 For Kafka and Zookeeper pods such allocation could cause unwanted latency.
 For Kafka Connect avoiding over allocation may be the most important concern, especially in distributed mode where the effects of over-allocation will be multiplied by the number of consumers.
-
-.Example fragment configuring `-Xms`
-[source,yaml,subs=attributes+]
-----
-# ...
-jvmOptions:
-  "-Xmx": "2g"
-  "-Xms": "2g"
-# ...
-----
 
 .-server
 
