@@ -6,8 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.TlsCertificates;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 
 import java.util.List;
 
@@ -21,24 +20,16 @@ public class ModelUtils {
         return secrets.stream().filter(s -> s.getMetadata().getName().equals(sname)).findFirst().orElse(null);
     }
 
-    public static int getCertificateValidity(Kafka kafka) {
+    public static int getCertificateValidity(CertificateAuthority certificateAuthority) {
         int validity = AbstractModel.CERTS_EXPIRATION_DAYS;
-        if (kafka.getSpec() != null) {
-            validity = getCertificateValidity(kafka.getSpec().getTlsCertificates());
+        if (certificateAuthority != null
+                && certificateAuthority.getValidityDays() > 0) {
+            validity = certificateAuthority.getValidityDays();
         }
         return validity;
     }
 
-    public static int getCertificateValidity(TlsCertificates tlsCertificates) {
-        int validity = AbstractModel.CERTS_EXPIRATION_DAYS;
-        if (tlsCertificates != null
-                && tlsCertificates.getValidityDays() > 0) {
-            validity = tlsCertificates.getValidityDays();
-        }
-        return validity;
-    }
-
-    public static int getRenewalDays(TlsCertificates tlsCertificates) {
-        return tlsCertificates != null ? tlsCertificates.getRenewalDays() : 30;
+    public static int getRenewalDays(CertificateAuthority certificateAuthority) {
+        return certificateAuthority != null ? certificateAuthority.getRenewalDays() : 30;
     }
 }

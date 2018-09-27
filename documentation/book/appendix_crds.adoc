@@ -20,16 +20,18 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 [options="header"]
 |====
-|Field                   |Description
-|kafka            1.2+<.<|Configuration of the Kafka cluster.
+|Field                  |Description
+|kafka           1.2+<.<|Configuration of the Kafka cluster.
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
-|zookeeper        1.2+<.<|Configuration of the Zookeeper cluster.
+|zookeeper       1.2+<.<|Configuration of the Zookeeper cluster.
 |xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-|topicOperator    1.2+<.<|Configuration of the Topic Operator.
+|topicOperator   1.2+<.<|Configuration of the Topic Operator.
 |xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
-|tlsCertificates  1.2+<.<|Configuration of how TLS certificates are handled.
-|xref:type-TlsCertificates-{context}[`TlsCertificates`]
-|entityOperator   1.2+<.<|Configuration of the Entity Operator.
+|clientsCa       1.2+<.<|Configuration of the clients certificate authority.
+|xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
+|clusterCa       1.2+<.<|Configuration of the cluster certificate authority.
+|xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
+|entityOperator  1.2+<.<|Configuration of the Entity Operator.
 |xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |====
 
@@ -457,8 +459,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |====
 
-[id='type-TlsCertificates-{context}']
-### `TlsCertificates` schema reference
+[id='type-CertificateAuthority-{context}']
+### `CertificateAuthority` schema reference
 
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 

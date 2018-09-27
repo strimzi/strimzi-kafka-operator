@@ -103,8 +103,12 @@ spec:
     metrics: {}
   topicOperator:
     watchedNamespace: my-ns
-  tlsCertificates:
+  clusterCa:
     renewalDays: 32
     validityDays: 395
+    generateCertificateAuthority: false
+  clientsCa:
+    renewalDays: 20
+    validityDays: 400
     generateCertificateAuthority: false
 

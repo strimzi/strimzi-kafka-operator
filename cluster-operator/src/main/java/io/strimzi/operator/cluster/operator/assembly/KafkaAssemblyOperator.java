@@ -19,7 +19,7 @@ import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.TlsCertificates;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -229,7 +229,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Likewise, the corresponding keys are stored under keys named like {@code cluster-ca-<not-after-date>.key}.
          */
         Future<ReconciliationState>  reconcileClusterCa() {
-            TlsCertificates tlsCertificates = kafkaAssembly.getSpec().getTlsCertificates();
             Labels caLabels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
             Future<ReconciliationState> result = Future.future();
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
@@ -256,10 +255,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clientCaKeySecret = secret;
                             }
                         }
+                        CertificateAuthority clusterCaConfig = kafkaAssembly.getSpec().getClusterCa();
                         this.clusterCa = new ClusterCa(certManager, name, clusterCaCertSecret, clusterCaKeySecret,
-                                ModelUtils.getCertificateValidity(tlsCertificates),
-                                ModelUtils.getRenewalDays(tlsCertificates),
-                                tlsCertificates == null || tlsCertificates.isGenerateCertificateAuthority());
+                                ModelUtils.getCertificateValidity(clusterCaConfig),
+                                ModelUtils.getRenewalDays(clusterCaConfig),
+                                clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority());
                         OwnerReference ownerRef = new OwnerReferenceBuilder()
                                 .withApiVersion(kafkaAssembly.getApiVersion())
                                 .withKind(kafkaAssembly.getKind())
@@ -274,12 +274,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
 
+                        CertificateAuthority clientsCaConfig = kafkaAssembly.getSpec().getClusterCa();
                         this.clientsCa = new ClientsCa(certManager,
                                 clientsCaCertName, clientCaCertSecret,
                                 clientsCaKeyName, clientCaKeySecret,
-                                ModelUtils.getCertificateValidity(tlsCertificates),
-                                ModelUtils.getRenewalDays(tlsCertificates),
-                                tlsCertificates == null || tlsCertificates.isGenerateCertificateAuthority());
+                                ModelUtils.getCertificateValidity(clientsCaConfig),
+                                ModelUtils.getRenewalDays(clientsCaConfig),
+                                clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority());
 
                         secretOperations.reconcile(reconciliation.namespace(), clusterCaCertName, this.clusterCa.caCertSecret())
                                 .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clusterCaKeyName, this.clusterCa.caKeySecret()))
