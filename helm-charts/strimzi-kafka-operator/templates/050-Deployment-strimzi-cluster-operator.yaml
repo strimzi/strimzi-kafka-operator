@@ -22,7 +22,15 @@ spec:
           imagePullPolicy: {{ .Values.image.imagePullPolicy | quote }}
           env:
             - name: STRIMZI_NAMESPACE
-              value: {{ template "strimzi.watchNamespaces" . }}
+              {{- if .Values.watchNamespaces -}}
+              {{- $ns := .Values.watchNamespaces -}}
+              {{- $ns := append $ns .Release.Namespace }}
+              value: "{{ join "," $ns }}"
+              {{- else }}
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+              {{- end }}
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: {{ .Values.fullReconciliationIntervalMs | quote }}
             - name: STRIMZI_OPERATION_TIMEOUT_MS
