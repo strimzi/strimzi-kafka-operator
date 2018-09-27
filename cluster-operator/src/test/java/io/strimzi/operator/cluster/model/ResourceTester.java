@@ -9,12 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
-
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
@@ -24,7 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
@@ -44,14 +41,17 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
         this.fromK8sResource = fromK8sResource;
     }
 
-    interface TriFunction<X, Y, Z, R> {
-        public R apply(X x, Y y, Z z);
-    }
-
-    ResourceTester(Class<R> cls, TriFunction<CertManager, R, List<Secret>, M> fromResource) {
+    ResourceTester(Class<R> cls, BiFunction<R, ClusterCa, M> fromResource) {
         this.cls = cls;
         this.fromK8sResource = resource -> {
-            return fromResource.apply(new MockCertManager(), resource, ResourceUtils.createKafkaClusterInitialSecrets(resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+            return fromResource.apply(resource,
+                    new ClusterCa(new MockCertManager(), resource.getMetadata().getName(),
+                            ResourceUtils.createInitialClusterCaCertSecret(resource.getMetadata().getNamespace(),
+                                    resource.getMetadata().getName(),
+                                    MockCertManager.clusterCaCert()),
+                            ResourceUtils.createInitialClusterCaKeySecret(resource.getMetadata().getNamespace(),
+                                    resource.getMetadata().getName(),
+                                    MockCertManager.clusterCaKey())));
         };
     }
 

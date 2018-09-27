@@ -70,7 +70,6 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
 
     @Override
     protected Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnect) {
-
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         KafkaConnectCluster connect;

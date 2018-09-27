@@ -55,7 +55,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 
     protected static final int LOCK_TIMEOUT_MS = 10000;
-    protected static final int CERTS_EXPIRATION_DAYS = 365;
+
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
@@ -131,7 +131,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given name and
      * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T, List) created or updated} if ConfigMap is without same-named resources</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, T) created or updated} if ConfigMap is without same-named resources</li>
      * <li>An assembly will be {@linkplain #delete(Reconciliation) deleted} if resources without same-named ConfigMap</li>
      * </ul>
      */
@@ -150,7 +150,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
                     if (cr != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
-
                         createOrUpdate(reconciliation, cr)
                             .setHandler(createResult -> {
                                 lock.release();

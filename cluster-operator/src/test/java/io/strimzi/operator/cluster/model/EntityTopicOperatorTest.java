@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.test.TestUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -168,7 +169,10 @@ public class EntityTopicOperatorTest {
         assertEquals(new Integer(EntityTopicOperator.HEALTHCHECK_PORT), container.getPorts().get(0).getContainerPort());
         assertEquals(EntityTopicOperator.HEALTHCHECK_PORT_NAME, container.getPorts().get(0).getName());
         assertEquals("TCP", container.getPorts().get(0).getProtocol());
-        assertEquals("/opt/entity-topic-operator/custom-config/", container.getVolumeMounts().get(0).getMountPath());
-        assertEquals("entity-topic-operator-metrics-and-logging", container.getVolumeMounts().get(0).getName());
+        assertEquals(map("entity-topic-operator-metrics-and-logging", "/opt/entity-topic-operator/custom-config/",
+                EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
+                EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
+                EntityOperatorTest.volumeMounts(container.getVolumeMounts()));
     }
+
 }

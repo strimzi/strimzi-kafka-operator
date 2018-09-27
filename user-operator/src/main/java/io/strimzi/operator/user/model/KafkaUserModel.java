@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
-import io.strimzi.certs.Subject;
+import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.operator.PasswordGenerator;
@@ -23,10 +23,8 @@ import org.apache.logging.log4j.Logger;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,7 +44,7 @@ public class KafkaUserModel {
     protected final Labels labels;
 
     protected KafkaUserAuthentication authentication;
-    protected CertAndKey caCertAndKey;
+    protected String caCert;
     protected CertAndKey userCertAndKey;
     protected String scramSha512Password;
 
@@ -71,21 +69,22 @@ public class KafkaUserModel {
      * @param certManager   CertManager instance for work with certificates
      * @param passwordGenerator A password generator
      * @param kafkaUser     The Custom Resource based on which the model should be created
-     * @param clientsCa     Kubernetes secret with the clients certification authority
      * @param userSecret    Kubernetes secret with existing user certificate
      * @return
      */
     public static KafkaUserModel fromCrd(CertManager certManager,
                                          PasswordGenerator passwordGenerator,
                                          KafkaUser kafkaUser,
-                                         Secret clientsCa, Secret userSecret) {
+                                         Secret clientsCaCert,
+                                         Secret clientsCaKey,
+                                         Secret userSecret) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
                 Labels.fromResource(kafkaUser).withKind(kafkaUser.getKind()));
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
 
         if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
-            result.maybeGenerateCertificates(certManager, clientsCa, userSecret);
+            result.maybeGenerateCertificates(certManager, clientsCaCert, clientsCaKey, userSecret);
         } else if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
             result.maybeGeneratePassword(passwordGenerator, userSecret);
         }
@@ -107,9 +106,9 @@ public class KafkaUserModel {
     public Secret generateSecret()  {
         if (authentication instanceof KafkaUserTlsClientAuthentication) {
             Map<String, String> data = new HashMap<>();
-            data.put("ca.crt", Base64.getEncoder().encodeToString(caCertAndKey.cert()));
-            data.put("user.key", Base64.getEncoder().encodeToString(userCertAndKey.key()));
-            data.put("user.crt", Base64.getEncoder().encodeToString(userCertAndKey.cert()));
+            data.put("ca.crt", caCert);
+            data.put("user.key", userCertAndKey.keyAsBase64String());
+            data.put("user.crt", userCertAndKey.certAsBase64String());
             return createSecret(data);
         } else if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
             Map<String, String> data = new HashMap<>();
@@ -124,70 +123,50 @@ public class KafkaUserModel {
      * Manage certificates generation based on those already present in the Secrets
      *
      * @param certManager CertManager instance for handling certificates creation
-     * @param clientsCa Secret with the CA
      * @param userSecret Secret with the user certificate
      */
-    public void maybeGenerateCertificates(CertManager certManager, Secret clientsCa, Secret userSecret) {
-        try {
-            if (clientsCa != null) {
-                this.caCertAndKey = new CertAndKey(
-                        decodeFromSecret(clientsCa, "clients-ca.key"),
-                        decodeFromSecret(clientsCa, "clients-ca.crt")
-                );
-
-                if (userSecret != null) {
-                    // Secret already exists -> lets verify if it has keys from the same CA
-                    String originalCaCrt = clientsCa.getData().get("clients-ca.crt");
-                    String caCrt = userSecret.getData().get("ca.crt");
-                    String userCrt = userSecret.getData().get("user.crt");
-                    String userKey = userSecret.getData().get("user.key");
-
-                    if (originalCaCrt != null
-                            && originalCaCrt.equals(caCrt)
-                            && userCrt != null
-                            && !userCrt.isEmpty()
-                            && userKey != null
-                            && !userKey.isEmpty())    {
-                        // User certificate already exists and and is from the right CA -> no need to generate new certificate
-                        log.debug("Reusing existing user certificate");
-                        this.userCertAndKey = new CertAndKey(
-                                decodeFromSecret(userSecret, "user.key"),
-                                decodeFromSecret(userSecret, "user.crt")
-                        );
-                        return;
-                    }
+    public void maybeGenerateCertificates(CertManager certManager,
+                                          Secret clientsCaCertSecret, Secret clientsCaKeySecret,
+                                          Secret userSecret) {
+        if (clientsCaCertSecret == null) {
+            throw new NoCertificateSecretException("The Clients CA Cert Secret is missing");
+        } else if (clientsCaKeySecret == null) {
+            throw new NoCertificateSecretException("The Clients CA Key Secret is missing");
+        } else {
+            ClientsCa clientsCa = new ClientsCa(certManager,
+                    clientsCaCertSecret.getMetadata().getName(),
+                    clientsCaCertSecret,
+                    clientsCaCertSecret.getMetadata().getName(),
+                    clientsCaKeySecret,
+                    CERTS_EXPIRATION_DAYS,
+                    30,
+                    false);
+            this.caCert = clientsCa.currentCaCertBase64();
+            if (userSecret != null) {
+                // Secret already exists -> lets verify if it has keys from the same CA
+                String originalCaCrt = clientsCaCertSecret.getData().get("ca.crt");
+                String caCrt = userSecret.getData().get("ca.crt");
+                String userCrt = userSecret.getData().get("user.crt");
+                String userKey = userSecret.getData().get("user.key");
+                if (originalCaCrt != null
+                        && originalCaCrt.equals(caCrt)
+                        && userCrt != null
+                        && !userCrt.isEmpty()
+                        && userKey != null
+                        && !userKey.isEmpty()) {
+                    this.userCertAndKey = new CertAndKey(
+                            decodeFromSecret(userSecret, "user.key"),
+                            decodeFromSecret(userSecret, "user.crt"));
+                    return;
                 }
-
-                log.debug("Generating user certificate");
-
-                File userCsrFile = File.createTempFile("tls", name + ".csr");
-                File userKeyFile = File.createTempFile("tls", name + ".key");
-                File userCrtFile = File.createTempFile("tls", name + ".crt");
-
-                Subject userSubject = new Subject();
-                userSubject.setCommonName(name);
-
-                certManager.generateCsr(userKeyFile, userCsrFile, userSubject);
-                certManager.generateCert(userCsrFile, caCertAndKey.key(), caCertAndKey.cert(), userCrtFile, userSubject, CERTS_EXPIRATION_DAYS);
-                this.userCertAndKey = new CertAndKey(Files.readAllBytes(userKeyFile.toPath()), Files.readAllBytes(userCrtFile.toPath()));
-
-                if (!userCsrFile.delete()) {
-                    log.warn("{} cannot be deleted", userCsrFile.getName());
-                }
-                if (!userKeyFile.delete()) {
-                    log.warn("{} cannot be deleted", userKeyFile.getName());
-                }
-                if (!userCrtFile.delete()) {
-                    log.warn("{} cannot be deleted", userCrtFile.getName());
-                }
-
-                log.debug("End generating user certificate");
-            } else {
-                throw new NoCertificateSecretException("The Clients CA Secret is missing");
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            try {
+                this.userCertAndKey = clientsCa.generateSignedCert(name);
+            } catch (IOException e) {
+                log.error("Error generating signed certificate for user {}", name, e);
+            }
+
         }
     }
 

@@ -21,22 +21,16 @@ import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Sidecar;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.CertManager;
-import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 import static java.util.Collections.singletonList;
 
 /**
@@ -54,8 +48,11 @@ public class TopicOperator extends AbstractModel {
     private static final String NAME_SUFFIX = "-topic-operator";
     private static final String CERTS_SUFFIX = NAME_SUFFIX + "-certs";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
-    protected static final String TLS_SIDECAR_VOLUME_NAME = "tls-sidecar-certs";
-    protected static final String TLS_SIDECAR_VOLUME_MOUNT = "/etc/tls-sidecar/certs/";
+    protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_NAME = "eo-certs";
+    protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/eo-certs/";
+    protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
+    protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
+
 
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
@@ -88,11 +85,6 @@ public class TopicOperator extends AbstractModel {
     private int topicMetadataMaxAttempts;
 
     private Sidecar tlsSidecar;
-
-    /**
-     * Private key and certificate for encrypting communication with Zookeeper and Kafka
-     */
-    private CertAndKey cert;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -218,12 +210,10 @@ public class TopicOperator extends AbstractModel {
     /**
      * Create a Topic Operator from given desired resource
      *
-     * @param certManager Certificate manager for certificates generation
      * @param kafkaAssembly desired resource with cluster configuration containing the topic operator one
-     * @param secrets Secrets containing already generated certificates
      * @return Topic Operator instance, null if not configured in the ConfigMap
      */
-    public static TopicOperator fromCrd(CertManager certManager, Kafka kafkaAssembly, List<Secret> secrets) {
+    public static TopicOperator fromCrd(Kafka kafkaAssembly) {
         TopicOperator result;
         if (kafkaAssembly.getSpec().getTopicOperator() != null) {
             String namespace = kafkaAssembly.getMetadata().getNamespace();
@@ -242,62 +232,11 @@ public class TopicOperator extends AbstractModel {
             result.setLogging(tcConfig.getLogging());
             result.setResources(tcConfig.getResources());
             result.setUserAffinity(tcConfig.getAffinity());
-            result.generateCertificates(certManager, secrets);
             result.setTlsSidecar(tcConfig.getTlsSidecar());
         } else {
             result = null;
         }
         return result;
-    }
-
-    /**
-     * Manage certificates generation based on those already present in the Secrets
-     *
-     * @param certManager CertManager instance for handling certificates creation
-     * @param secrets The Secrets storing certificates
-     */
-    public void generateCertificates(CertManager certManager, List<Secret> secrets) {
-        log.debug("Generating certificates");
-
-        try {
-            Secret clusterCaSecret = findSecretWithName(secrets, getClusterCaName(cluster));
-            if (clusterCaSecret != null) {
-                // get the generated CA private key + self-signed certificate for each broker
-                clusterCA = new CertAndKey(
-                        decodeFromSecret(clusterCaSecret, "cluster-ca.key"),
-                        decodeFromSecret(clusterCaSecret, "cluster-ca.crt"));
-
-                Secret topicOperatorSecret = findSecretWithName(secrets, TopicOperator.secretName(cluster));
-                if (topicOperatorSecret == null) {
-                    log.debug("Topic Operator certificate to generate");
-
-                    File csrFile = File.createTempFile("tls", "csr");
-                    File keyFile = File.createTempFile("tls", "key");
-                    File certFile = File.createTempFile("tls", "cert");
-
-                    Subject sbj = new Subject();
-                    sbj.setOrganizationName("io.strimzi");
-                    sbj.setCommonName(TopicOperator.topicOperatorName(cluster));
-
-                    certManager.generateCsr(keyFile, csrFile, sbj);
-                    certManager.generateCert(csrFile, clusterCA.key(), clusterCA.cert(), certFile, CERTS_EXPIRATION_DAYS);
-
-                    cert = new CertAndKey(Files.readAllBytes(keyFile.toPath()), Files.readAllBytes(certFile.toPath()));
-                } else {
-                    log.debug("Topic Operator certificate already exists");
-                    cert = new CertAndKey(
-                            decodeFromSecret(topicOperatorSecret, "entity-operator.key"),
-                            decodeFromSecret(topicOperatorSecret, "entity-operator.crt"));
-                }
-            } else {
-                throw new NoCertificateSecretException("The cluster CA certificate Secret is missing");
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        log.debug("End generating certificates");
     }
 
     public Deployment generateDeployment() {
@@ -340,7 +279,7 @@ public class TopicOperator extends AbstractModel {
                 .withImage(tlsSidecarImage)
                 .withResources(resources(tlsSidecarResources))
                 .withEnv(singletonList(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
-                .withVolumeMounts(createVolumeMount(TLS_SIDECAR_VOLUME_NAME, TLS_SIDECAR_VOLUME_MOUNT))
+                .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT))
                 .build();
 
         containers.add(container);
@@ -403,14 +342,16 @@ public class TopicOperator extends AbstractModel {
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_VOLUME_NAME, TopicOperator.secretName(cluster)));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TopicOperator.secretName(cluster)));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.getClusterCaName(cluster)));
         return volumeList;
     }
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        volumeMountList.add(createVolumeMount(TLS_SIDECAR_VOLUME_NAME, TLS_SIDECAR_VOLUME_MOUNT));
+        volumeMountList.add(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
         return volumeMountList;
     }
 
@@ -419,11 +360,24 @@ public class TopicOperator extends AbstractModel {
      * It also contains the private key-certificate (signed by internal CA) for communicating with Zookeeper and Kafka
      * @return The generated Secret
      */
-    public Secret generateSecret() {
+    public Secret generateSecret(ClusterCa clusterCa) {
         Map<String, String> data = new HashMap<>();
-        data.put("cluster-ca.crt", Base64.getEncoder().encodeToString(clusterCA.cert()));
-        data.put("entity-operator.key", Base64.getEncoder().encodeToString(cert.key()));
-        data.put("entity-operator.crt", Base64.getEncoder().encodeToString(cert.cert()));
+        Secret topicOperatorSecret = clusterCa.topicOperatorSecret();
+        if (topicOperatorSecret == null || clusterCa.certRenewed()) {
+            log.debug("Generating certificates");
+            try {
+                log.debug("Topic Operator certificate to generate");
+                CertAndKey toCertAndKey = clusterCa.generateSignedCert(name);
+                data.put("entity-operator.crt", toCertAndKey.certAsBase64String());
+                data.put("entity-operator.key", toCertAndKey.keyAsBase64String());
+            } catch (IOException e) {
+                log.warn("Error while generating certificates", e);
+            }
+            log.debug("End generating certificates");
+        } else {
+            data.put("entity-operator.crt", topicOperatorSecret.getData().get("entity-operator.crt"));
+            data.put("entity-operator.key", topicOperatorSecret.getData().get("entity-operator.key"));
+        }
         return createSecret(TopicOperator.secretName(cluster), data);
     }
 

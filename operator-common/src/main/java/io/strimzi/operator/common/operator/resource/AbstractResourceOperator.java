@@ -163,6 +163,23 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
     }
 
     /**
+     * Asynchronously gets the resource with the given {@code name} in the given {@code namespace}.
+     * @param namespace The namespace.
+     * @param name The name.
+     * @return A Future for the result.
+     */
+    public Future<T> getAsync(String namespace, String name) {
+        Future<T> result = Future.future();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
+            future -> {
+                T resource = get(namespace, name);
+                future.complete(resource);
+            }, true, result.completer()
+        );
+        return result;
+    }
+
+    /**
      * Synchronously list the resources in the given {@code namespace} with the given {@code selector}.
      * @param namespace The namespace.
      * @param selector The selector.

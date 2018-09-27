@@ -32,7 +32,6 @@ import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
-
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -50,16 +49,11 @@ import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Sidecar;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.certs.CertManager;
-import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -68,7 +62,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.model.ModelUtils.findSecretWithName;
 import static java.util.Collections.singletonList;
 
 public class KafkaCluster extends AbstractModel {
@@ -109,12 +102,15 @@ public class KafkaCluster extends AbstractModel {
     protected static final String EXTERNAL_PORT_NAME = "external";
 
     protected static final String KAFKA_NAME = "kafka";
+    protected static final String CLUSTER_CA_CERTS_VOLUME = "cluster-ca";
     protected static final String BROKER_CERTS_VOLUME = "broker-certs";
     protected static final String CLIENT_CA_CERTS_VOLUME = "client-ca-cert";
+    protected static final String CLUSTER_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/cluster-ca-certs";
     protected static final String BROKER_CERTS_VOLUME_MOUNT = "/opt/kafka/broker-certs";
-    protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-cert";
+    protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-certs";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
-    protected static final String TLS_SIDECAR_VOLUME_MOUNT = "/etc/tls-sidecar/certs/";
+    protected static final String TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/kafka-brokers/";
+    protected static final String TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
 
     private static final String NAME_SUFFIX = "-kafka";
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-bootstrap";
@@ -143,7 +139,6 @@ public class KafkaCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
-    private CertAndKey clientsCA;
     /**
      * Private key and certificate for each Kafka Pod name
      * used as server certificates for Kafka brokers
@@ -235,7 +230,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String clusterPublicKeyName(String cluster) {
-        return getClusterCaName(cluster) + KafkaCluster.SECRET_CLUSTER_PUBLIC_KEY_SUFFIX;
+        return getClusterCaName(cluster);
     }
 
     public static KafkaCluster fromCrd(Kafka kafkaAssembly) {
@@ -296,63 +291,17 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Manage certificates generation based on those already present in the Secrets
-     *
-     * @param certManager CertManager instance for handling certificates creation
-     * @param secrets The Secrets storing certificates
-     * @param externalBootstrapAddress External address to the bootstrap service
-     * @param externalAddresses Map with external addresses under which the individual pods are available
+     * @param clusterCa The certificates
      */
-    public void generateCertificates(CertManager certManager, List<Secret> secrets, String externalBootstrapAddress, Map<Integer, String> externalAddresses) {
+    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, ClientsCa clientsCa, String externalBootstrapAddress, Map<Integer, String> externalAddresses) {
         log.debug("Generating certificates");
 
         try {
-            Secret clusterCaSecret = findSecretWithName(secrets, getClusterCaName(cluster));
-            if (clusterCaSecret != null) {
-                // get the generated CA private key + self-signed certificate for each broker
-                clusterCA = new CertAndKey(
-                        decodeFromSecret(clusterCaSecret, "cluster-ca.key"),
-                        decodeFromSecret(clusterCaSecret, "cluster-ca.crt"));
-
-                // CA private key + self-signed certificate for clients communications
-                Secret clientsCaSecret = findSecretWithName(secrets, KafkaCluster.clientsCASecretName(cluster));
-                if (clientsCaSecret == null) {
-                    log.debug("Clients CA to generate");
-                    File clientsCAkeyFile = File.createTempFile("tls", "clients-ca-key");
-                    File clientsCAcertFile = File.createTempFile("tls", "clients-ca-cert");
-
-                    Subject sbj = new Subject();
-                    sbj.setOrganizationName("io.strimzi");
-                    sbj.setCommonName("kafka-clients-ca");
-
-                    certManager.generateSelfSignedCert(clientsCAkeyFile, clientsCAcertFile, sbj, CERTS_EXPIRATION_DAYS);
-                    clientsCA =
-                            new CertAndKey(Files.readAllBytes(clientsCAkeyFile.toPath()), Files.readAllBytes(clientsCAcertFile.toPath()));
-                    if (!clientsCAkeyFile.delete()) {
-                        log.warn("{} cannot be deleted", clientsCAkeyFile.getName());
-                    }
-                    if (!clientsCAcertFile.delete()) {
-                        log.warn("{} cannot be deleted", clientsCAcertFile.getName());
-                    }
-                } else {
-                    log.debug("Clients CA already exists");
-                    clientsCA = new CertAndKey(
-                            decodeFromSecret(clientsCaSecret, "clients-ca.key"),
-                            decodeFromSecret(clientsCaSecret, "clients-ca.crt"));
-                }
-
-                // recover or generates the private key + certificate for each broker for internal and clients communication
-                Secret clusterSecret = findSecretWithName(secrets, KafkaCluster.brokersSecretName(cluster));
-
-                int replicasInternalSecret = clusterSecret == null ? 0 : (clusterSecret.getData().size() - 1) / 2;
-
-                log.debug("Internal communication certificates");
-                brokerCerts = maybeCopyOrGenerateCerts(certManager, clusterSecret, replicasInternalSecret, clusterCA, KafkaCluster::kafkaPodName, externalBootstrapAddress, externalAddresses);
-            } else {
-                throw new NoCertificateSecretException("The cluster CA certificate Secret is missing");
-            }
-
+            clientsCa.createOrRenew(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(),
+                    labels.toMap(), createOwnerReference());
+            brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapAddress, externalAddresses);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn("Error while generating certificates", e);
         }
 
         log.debug("End generating certificates");
@@ -565,41 +514,6 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generate the Secret containing CA private key and self-signed certificate used
-     * for signing brokers certificates used for communication with clients
-     * @return The generated Secret
-     */
-    public Secret generateClientsCASecret() {
-        Map<String, String> data = new HashMap<>();
-        data.put("clients-ca.key", Base64.getEncoder().encodeToString(clientsCA.key()));
-        data.put("clients-ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
-        return createSecret(KafkaCluster.clientsCASecretName(cluster), data);
-    }
-
-    /**
-     * Generate the Secret containing just the self-signed CA certificate used
-     * for signing client certificates. It is used for the broker truststore.
-     * @return The generated Secret
-     */
-    public Secret generateClientsPublicKeySecret() {
-        Map<String, String> data = new HashMap<>();
-        data.put("ca.crt", Base64.getEncoder().encodeToString(clientsCA.cert()));
-        return createSecret(KafkaCluster.clientsPublicKeyName(cluster), data);
-    }
-
-    /**
-     * Generate the Secret containing just the self-signed CA certificate used
-     * for signing brokers certificates used for communication with clients
-     * It's useful for users to extract the certificate itself to put as trusted on the clients
-     * @return The generated Secret
-     */
-    public Secret generateClusterPublicKeySecret() {
-        Map<String, String> data = new HashMap<>();
-        data.put("ca.crt", Base64.getEncoder().encodeToString(clusterCA.cert()));
-        return createSecret(KafkaCluster.clusterPublicKeyName(cluster), data);
-    }
-
-    /**
      * Generate the Secret containing CA self-signed certificate for TLS communication.
      * It also contains the private key-certificate (signed by cluster CA) for each brokers as well as for communicating
      * with Zookeeper as well
@@ -607,15 +521,12 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateBrokersSecret() {
-        Base64.Encoder encoder = Base64.getEncoder();
 
         Map<String, String> data = new HashMap<>();
-        data.put("cluster-ca.crt", encoder.encodeToString(clusterCA.cert()));
-
         for (int i = 0; i < replicas; i++) {
             CertAndKey cert = brokerCerts.get(KafkaCluster.kafkaPodName(cluster, i));
-            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", encoder.encodeToString(cert.key()));
-            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", encoder.encodeToString(cert.cert()));
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".key", cert.keyAsBase64String());
+            data.put(KafkaCluster.kafkaPodName(cluster, i) + ".crt", cert.certAsBase64String());
         }
         return createSecret(KafkaCluster.brokersSecretName(cluster), data);
     }
@@ -652,6 +563,7 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null || isExposedWithNodePort()) {
             volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME));
         }
+        volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.getClusterCaName(cluster)));
         volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster)));
         volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsPublicKeyName(cluster)));
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
@@ -671,6 +583,7 @@ public class KafkaCluster extends AbstractModel {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
 
+        volumeMountList.add(createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
@@ -771,7 +684,8 @@ public class KafkaCluster extends AbstractModel {
                 .withImage(tlsSidecarImage)
                 .withResources(resources(tlsSidecarResources))
                 .withEnv(singletonList(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect)))
-                .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_VOLUME_MOUNT))
+                .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
+                        createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .build();
 
         containers.add(container);
