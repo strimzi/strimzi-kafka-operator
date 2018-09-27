@@ -22,7 +22,7 @@ import java.io.Serializable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "generateCertificateAuthority", "validityDays", "renewalDays" })
-public class TlsCertificates implements Serializable {
+public class CertificateAuthority implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

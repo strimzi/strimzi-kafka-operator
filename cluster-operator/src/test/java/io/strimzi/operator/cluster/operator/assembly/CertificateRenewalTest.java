@@ -5,10 +5,10 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.TlsCertificates;
-import io.strimzi.api.kafka.model.TlsCertificatesBuilder;
+import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
@@ -68,7 +68,7 @@ public class CertificateRenewalTest {
         secrets = new ArrayList();
     }
 
-    private ArgumentCaptor<Secret> reconcileCa(TestContext context, TlsCertificates tlsCertificates) {
+    private ArgumentCaptor<Secret> reconcileCa(TestContext context, CertificateAuthority certificateAuthority) {
         SecretOperator secretOps = mock(SecretOperator.class);
 
         when(secretOps.list(eq(NAMESPACE), any())).thenAnswer(invocation -> {
@@ -95,7 +95,7 @@ public class CertificateRenewalTest {
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
-                    .withTlsCertificates(tlsCertificates)
+                    .withClusterCa(certificateAuthority)
                 .endSpec()
             .build();
 
@@ -119,7 +119,7 @@ public class CertificateRenewalTest {
         return c;
     }
 
-    private CertAndKey generateCa(OpenSslCertManager certManager, TlsCertificates tlsCertificates, String commonName) throws IOException {
+    private CertAndKey generateCa(OpenSslCertManager certManager, CertificateAuthority certificateAuthority, String commonName) throws IOException {
         File clusterCaKeyFile = File.createTempFile("tls", "cluster-ca-key");
         File clusterCaCertFile = File.createTempFile("tls", "cluster-ca-cert");
         try {
@@ -127,7 +127,7 @@ public class CertificateRenewalTest {
             sbj.setOrganizationName("io.strimzi");
             sbj.setCommonName(commonName);
 
-            certManager.generateSelfSignedCert(clusterCaKeyFile, clusterCaCertFile, sbj, ModelUtils.getCertificateValidity(tlsCertificates));
+            certManager.generateSelfSignedCert(clusterCaKeyFile, clusterCaCertFile, sbj, ModelUtils.getCertificateValidity(certificateAuthority));
             return new CertAndKey(Files.readAllBytes(clusterCaKeyFile.toPath()),
                     Files.readAllBytes(clusterCaCertFile.toPath()));
         } finally {
@@ -136,29 +136,29 @@ public class CertificateRenewalTest {
         }
     }
 
-    private Secret initialCaCertSecret(TlsCertificates tlsCertificates) throws IOException {
+    private Secret initialCaCertSecret(CertificateAuthority certificateAuthority) throws IOException {
         String commonName = "cluster-ca";
-        CertAndKey result = generateCa(certManager, tlsCertificates, commonName);
+        CertAndKey result = generateCa(certManager, certificateAuthority, commonName);
         return ResourceUtils.createInitialClusterCaCertSecret(NAMESPACE, NAME,
                 result.certAsBase64String());
     }
 
-    private Secret initialCaKeySecret(TlsCertificates tlsCertificates) throws IOException {
+    private Secret initialCaKeySecret(CertificateAuthority certificateAuthority) throws IOException {
         String commonName = "cluster-ca";
-        CertAndKey result = generateCa(certManager, tlsCertificates, commonName);
+        CertAndKey result = generateCa(certManager, certificateAuthority, commonName);
         return ResourceUtils.createInitialClusterCaKeySecret(NAMESPACE, NAME,
                 result.keyAsBase64String());
     }
 
     @Test
     public void certsGetGeneratedInitiallyAuto(TestContext context) throws IOException {
-        TlsCertificates tlsCertificates = new TlsCertificatesBuilder()
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(true)
                 .build();
         secrets.clear();
-        ArgumentCaptor<Secret> c = reconcileCa(context, tlsCertificates);
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
         assertEquals(2, c.getAllValues().size());
 
         assertEquals(singleton(CA_CRT), c.getAllValues().get(0).getData().keySet());
@@ -167,13 +167,13 @@ public class CertificateRenewalTest {
 
     @Test
     public void certsNotGeneratedInitiallyManual(TestContext context) throws IOException {
-        TlsCertificates tlsCertificates = new TlsCertificatesBuilder()
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(false)
                 .build();
         secrets.clear();
-        ArgumentCaptor<Secret> c = reconcileCa(context, tlsCertificates);
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
         assertEquals(c.getAllValues().toString(), 2, c.getAllValues().size());
         assertTrue(c.getAllValues().get(0).getData().isEmpty());
         assertTrue(c.getAllValues().get(1).getData().isEmpty());
@@ -185,13 +185,13 @@ public class CertificateRenewalTest {
     }
 
     private void noCertsGetGeneratedOutsideRenewalPeriod(TestContext context, boolean generateCertificateAuthority) throws IOException {
-        TlsCertificates tlsCertificates = new TlsCertificatesBuilder()
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(generateCertificateAuthority)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(tlsCertificates);
-        Secret initialCaKeySecret = initialCaKeySecret(tlsCertificates);
+        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
+        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
         Map<String, String> initialCertData = initialCaCertSecret.getData();
         assertEquals(singleton(CA_CRT), initialCertData.keySet());
         String initialCert = initialCertData.get(CA_CRT);
@@ -203,7 +203,7 @@ public class CertificateRenewalTest {
 
         secrets.add(initialCaCertSecret);
         secrets.add(initialCaKeySecret);
-        ArgumentCaptor<Secret> c = reconcileCa(context, tlsCertificates);
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
 
         assertEquals(set(CA_CRT), c.getAllValues().get(0).getData().keySet());
         assertEquals(initialCert, c.getAllValues().get(0).getData().get(CA_CRT));
@@ -219,13 +219,13 @@ public class CertificateRenewalTest {
 
     @Test
     public void newCertsGetGeneratedWhenInRenewalPeriodAuto(TestContext context) throws IOException {
-        TlsCertificates tlsCertificates = new TlsCertificatesBuilder()
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
                 .withRenewalDays(3)
                 .withGenerateCertificateAuthority(true)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(tlsCertificates);
-        Secret initialCaKeySecret = initialCaKeySecret(tlsCertificates);
+        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
+        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
         Map<String, String> initialCertData = initialCaCertSecret.getData();
         assertEquals(singleton(CA_CRT), initialCertData.keySet());
         String initialCert = initialCertData.get(CA_CRT);
@@ -238,7 +238,7 @@ public class CertificateRenewalTest {
         secrets.add(initialCaCertSecret);
         secrets.add(initialCaKeySecret);
 
-        ArgumentCaptor<Secret> c = reconcileCa(context, tlsCertificates);
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
         assertEquals(2, c.getAllValues().size());
         Map<String, String> certData = c.getAllValues().get(0).getData();
         assertEquals(2, certData.size());
@@ -259,13 +259,13 @@ public class CertificateRenewalTest {
 
     @Test
     public void newCertsNotGeneratedWhenInRenewalPeriodManual(TestContext context) throws IOException {
-        TlsCertificates tlsCertificates = new TlsCertificatesBuilder()
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
                 .withRenewalDays(3)
                 .withGenerateCertificateAuthority(false)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(tlsCertificates);
-        Secret initialCaKeySecret = initialCaKeySecret(tlsCertificates);
+        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
+        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
         Map<String, String> initialCertData = initialCaCertSecret.getData();
         assertEquals(singleton(CA_CRT), initialCertData.keySet());
         String initialCert = initialCertData.get(CA_CRT);
@@ -278,7 +278,7 @@ public class CertificateRenewalTest {
         secrets.add(initialCaCertSecret);
         secrets.add(initialCaKeySecret);
 
-        ArgumentCaptor<Secret> c = reconcileCa(context, tlsCertificates);
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
         assertEquals(2, c.getAllValues().size());
         Map<String, String> certData = c.getAllValues().get(0).getData();
         assertEquals(initialCertData, certData);
@@ -288,13 +288,13 @@ public class CertificateRenewalTest {
 
     @Test
     public void expiredCertsGetRemovedAuto(TestContext context) throws IOException {
-        TlsCertificates tlsCertificates = new TlsCertificatesBuilder()
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(true)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(tlsCertificates);
-        Secret initialCaKeySecret = initialCaKeySecret(tlsCertificates);
+        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
+        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
         Map<String, String> initialCertData = initialCaCertSecret.getData();
         assertEquals(singleton(CA_CRT), initialCertData.keySet());
         String initialCert = initialCertData.get(CA_CRT);
@@ -308,7 +308,7 @@ public class CertificateRenewalTest {
         secrets.add(initialCaCertSecret);
         secrets.add(initialCaKeySecret);
 
-        ArgumentCaptor<Secret> c = reconcileCa(context, tlsCertificates);
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
         assertEquals(2, c.getAllValues().size());
         Map<String, String> certData = c.getAllValues().get(0).getData();
         assertEquals(certData.keySet().toString(), 1, certData.size());
@@ -319,13 +319,13 @@ public class CertificateRenewalTest {
 
     @Test
     public void expiredCertsNotRemovedManual(TestContext context) throws IOException {
-        TlsCertificates tlsCertificates = new TlsCertificatesBuilder()
+        CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(false)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(tlsCertificates);
-        Secret initialCaKeySecret = initialCaKeySecret(tlsCertificates);
+        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
+        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
         Map<String, String> initialCertData = initialCaCertSecret.getData();
         assertEquals(singleton(CA_CRT), initialCertData.keySet());
         String initialCert = initialCertData.get(CA_CRT);
@@ -339,7 +339,7 @@ public class CertificateRenewalTest {
         secrets.add(initialCaCertSecret);
         secrets.add(initialCaKeySecret);
 
-        ArgumentCaptor<Secret> c = reconcileCa(context, tlsCertificates);
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
         assertEquals(2, c.getAllValues().size());
         Map<String, String> certData = c.getAllValues().get(0).getData();
         assertEquals(initialCertData, certData);

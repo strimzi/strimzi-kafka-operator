@@ -36,7 +36,9 @@ public class KafkaSpec implements Serializable {
     private ZookeeperClusterSpec zookeeper;
     private TopicOperatorSpec topicOperator;
     private EntityOperatorSpec entityOperator;
-    private TlsCertificates tlsCertificates;
+    private CertificateAuthority clusterCa;
+
+    private CertificateAuthority clientsCa;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Kafka cluster")
@@ -79,13 +81,22 @@ public class KafkaSpec implements Serializable {
         this.entityOperator = entityOperator;
     }
 
-    @Description("Configuration of how TLS certificates are handled.")
-    public TlsCertificates getTlsCertificates() {
-        return tlsCertificates;
+    @Description("Configuration of the cluster certificate authority")
+    public CertificateAuthority getClusterCa() {
+        return clusterCa;
     }
 
-    public void setTlsCertificates(TlsCertificates tlsCertificates) {
-        this.tlsCertificates = tlsCertificates;
+    public void setClusterCa(CertificateAuthority clusterCa) {
+        this.clusterCa = clusterCa;
+    }
+
+    @Description("Configuration of the clients certificate authority")
+    public CertificateAuthority getClientsCa() {
+        return clientsCa;
+    }
+
+    public void setClientsCa(CertificateAuthority clientsCa) {
+        this.clientsCa = clientsCa;
     }
 
     @JsonAnyGetter

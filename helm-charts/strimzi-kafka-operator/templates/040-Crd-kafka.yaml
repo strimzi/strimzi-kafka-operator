@@ -947,7 +947,18 @@ spec:
                       type: string
                     type:
                       type: string
-            tlsCertificates:
+            clientsCa:
+              type: object
+              properties:
+                generateCertificateAuthority:
+                  type: boolean
+                validityDays:
+                  type: integer
+                  minimum: 1
+                renewalDays:
+                  type: integer
+                  minimum: 1
+            clusterCa:
               type: object
               properties:
                 generateCertificateAuthority:

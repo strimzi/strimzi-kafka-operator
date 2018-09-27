@@ -101,8 +101,12 @@ spec:
     reconciliationIntervalSeconds: 90
     zookeeperSessionTimeoutSeconds: 20
     topicMetadataMaxAttempts: 6
-  tlsCertificates:
+  clusterCa:
     generateCertificateAuthority: false
     validityDays: 395
     renewalDays: 32
+  clientsCa:
+    generateCertificateAuthority: false
+    validityDays: 400
+    renewalDays: 20
   someExtraThing: true
