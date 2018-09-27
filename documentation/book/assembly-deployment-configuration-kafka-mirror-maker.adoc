@@ -16,6 +16,12 @@ The full schema of the `KafkaMirrorMaker` resource is described in the xref:type
 All labels that are applied to the desired `KafkaMirrorMaker` resource will also be applied to the {ProductPlatformName} resources making up Mirror Maker.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
 
+include::assembly-kafka-connect-replicas.adoc[leveloffset=+1]
+
+include::assembly-kafka-mirror-maker-bootstrap-servers.adoc[leveloffset=+1]
+
+include::assembly-kafka-mirror-maker-tls.adoc[leveloffset=+1]
+
 TBD
 
 // Restore the context to what it was before this assembly.
