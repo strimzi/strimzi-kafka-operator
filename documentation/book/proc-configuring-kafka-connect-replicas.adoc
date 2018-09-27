@@ -3,7 +3,7 @@
 // assembly-kafka-connect-replicas.adoc
 
 [id='proc-configuring-kafka-connect-replicas-{context}']
-= Configuring the number of broker nodes
+= Configuring the number of nodes
 
 Number of Kafka Connect nodes can be configured using the `replicas` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
 
