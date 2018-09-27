@@ -1,0 +1,10 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaMirrorMaker
+metadata:
+  name: test-kafka-mirror-maker
+spec:
+  replicas: 1
+  consumer:
+    # required bootstrapServers is missing
+    groupId: my-source-group-id
+  # required producer is missing
