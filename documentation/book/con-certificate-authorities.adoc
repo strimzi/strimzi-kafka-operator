@@ -8,7 +8,7 @@
 Each {ProductName} component needs its own private keys and public key certificates in order to support encryption.
 All component certificates are signed by a Certification Authority (CA) called the _cluster CA_.
 
-Similarly, each Kafka client application connecting using TLS needs private keys and certificates.
+Similarly, each Kafka client application connecting using TLS client authentication needs private keys and certificates.
 The _clients CA_, is used to sign the certificates for the Kafka clients.
 
 == CA certificates
