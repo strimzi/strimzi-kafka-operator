@@ -49,6 +49,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage(), e.getMessage().contains("spec.consumer.bootstrapServers in body is required"));
             assertTrue(e.getMessage(), e.getMessage().contains("spec.producer in body is required"));
+            assertTrue(e.getMessage(), e.getMessage().contains("spec.whitelist in body is required"));
         }
     }
 

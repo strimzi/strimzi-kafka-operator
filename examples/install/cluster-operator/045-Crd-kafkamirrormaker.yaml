@@ -389,5 +389,6 @@ spec:
               type: object
           required:
           - replicas
+          - whitelist
           - consumer
           - producer
