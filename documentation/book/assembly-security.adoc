@@ -20,8 +20,18 @@ image::secure_communication.png[Secure Communication]
 
 endif::SecurityImg[]
 
-include::con-certificates.adoc[leveloffset=+1]
+include::con-certificate-authorities.adoc[leveloffset=+1]
+
+include::ref-certificates-and-secrets.adoc[leveloffset=+1]
+
+include::proc-installing-your-own-ca-certificates.adoc[leveloffset=+1]
+
+include::con-certificate-renewal.adoc[leveloffset=+1]
+
+include::proc-renewing-your-own-ca-certificates.adoc[leveloffset=+1]
 
 include::con-tls-connections.adoc[leveloffset=+1]
 
-include::proc-configuring-clients-to-trust-cluster-ca.adoc[leveloffset=+1]
+include::proc-configuring-internal-clients-to-trust-cluster-ca.adoc[leveloffset=+1]
+
+include::proc-configuring-external-clients-to-trust-cluster-ca.adoc[leveloffset=+1]

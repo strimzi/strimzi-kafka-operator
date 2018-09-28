@@ -1,0 +1,23 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='certificate-authorities-{context}']
+= Certificate Authorities
+
+Each {ProductName} component needs its own private keys and public key certificates in order to support encryption.
+All component certificates are signed by a Certification Authority (CA) called the _cluster CA_.
+
+Similarly, each Kafka client application connecting using TLS needs private keys and certificates.
+The _clients CA_, is used to sign the certificates for the Kafka clients.
+
+== CA certificates
+
+Each CA has a self-signed public key certificate.
+
+The Kafka brokers are configured to trust certificates signed by either of the CAs.
+Other {ProductName} components, such as Zookeeper, only trust certificates signed by the cluster CA, since client applications do not need to connect to it.
+Client applications performing mutual TLS authentication will need to trust the certificates signed by the cluster CA
+
+By default {ProductName} will generate and renew CA certificates automatically.
+It is possible to configure how CA certificates are managed in the `Kafka.spec.clusterCa` and `Kafka.spec.clientsCa` objects.

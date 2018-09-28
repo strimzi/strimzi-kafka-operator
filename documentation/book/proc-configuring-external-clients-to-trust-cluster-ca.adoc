@@ -1,0 +1,56 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='configuring-external-clients-to-trust-cluster-ca-{context}']
+= Configuring external clients to trust the cluster CA 
+
+This procedure will show you how to configure a Kafka client that's outside the {ProductPlatformName} cluster (that is, connecting to the `external` listener on port 9094) so that it trusts the cluster CA certificate.
+
+This procedure can also be used for clients within {ProductPlatformName} connecting to the `tls` listener on port 9093, but it is usually more convenient to access the `Secrets` using a volume mount in the client `Pod`.
+
+This procedure needs to be followed both initially, when setting up the client, and also during the renewal period, when the old clients CA certificate is replaced with a new one.
+
+IMPORTANT: The `_<cluster-name>_-cluster-ca-cert` `Secret` will contain more than one CA certificate during CA certificate renewal. Clients should add _all_ of them to their truststores.
+
+.Prerequisites
+
+* The Cluster Operator up and running
+* An `Kafka` resource within the {ProductPlatformName} cluster.
+* A Kafka client application outside the {ProductPlatformName} cluster which will connect using TLS and needs to trust the cluster CA certificate.
+
+.Procedure
+
+. The cluster CA certificates can be extracted from the generated `_<cluster-name>_-cluster-ca-cert` `Secret`.
+ifdef::Kubernetes[]
++
+On {KubernetesName}, the certificates can be extracted with the following command:
++
+[source,shell,subs="+quotes"]
+kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+endif::Kubernetes[]
++
+On {OpenShiftName}, the certificates can be extracted with the following command:
++
+[source,shell,subs="+quotes"]
+oc extract secret/_<cluster-name>_-cluster-ca-cert --keys ca.crt
++
+The same command should be executed for each of the `.crt` files contained in the Secret.
+
+. The Kafka client has to be configured to trust certificates signed by this CA.
+For the Java-based Kafka Producer, Consumer, and Streams APIs, you can do this by importing the CA certificates into the JVM's truststore using the following `keytool` command:
++
+[source,shell]
+keytool -keystore client.truststore.jks -alias CARoot -import -file ca.crt
++
+The same command should be executed for each of the `.crt` files extracted in the first step.
+
+. In order to configure the Kafka client, following properties should be specified:
+
+* `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication), or `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS. 
+* `ssl.truststore.location`: the truststore location where the certificates were imported.
+* `ssl.truststore.password`: the password for accessing the truststore. This property can be omitted if it is not needed by the truststore.
+
+.Additional resources
+
+* For the procedure for configuring internal clients to trust the cluster CA, see xref:configuring-internal-clients-to-trust-cluster-ca-{context}[]

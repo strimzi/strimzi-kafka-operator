@@ -1,0 +1,129 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='renewing-your-own-ca-certificates-{context}']
+= Renewing your own CA certificates
+
+This procedure will show you how to renew CA certificates and private keys you installed previously.
+You will need to follow this procedure during the renewal period in order to replace CA certificates which will soon expire.
+
+.Prerequisites
+
+* The Cluster Operator up and running.
+* A Kafka cluster in which you previously installed your own CA certificates and private keys.
+* New cluster and clients X.509 certificates and keys in PEM format. These could be generated using `openssl` using a command such as:
++
+[source,shell,subs="+quotes"]
+openssl req -x509 -new -days _<validity>_ --nodes -out ca.crt -keyout ca.key
+
+.Procedure
+
+. Establish what CA certificates already exist in the `Secret`:
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using the following commands:
++
+[source,shell,subs="+quotes"]
+kubectl describe secret _<ca-cert-secret>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using the following commands:
++
+[source,shell,subs="+quotes"]
+oc describe secret _<ca-cert-secret>_
+
+
+. Prepare a directory containing the existing CA certificates in the secret.
++
+[source,shell,subs="+quotes"]
+----
+mkdir new-ca-cert-secret
+cd new-ca-cert-secret
+----
+ifdef::Kubernetes[]
++
+On {KubernetesName} for each certificate _<ca-certificate>_ from the previous step, run:
++
+[source,shell,subs="+quotes"]
+----
+# Fetch the existing secret
+kubectl get secret _<ca-cert-secret>_ -o 'jsonpath={.data._<ca-certificate>_}' | base64 -d > _<ca-certificate>_
+----
+endif::Kubernetes[]
++
+On {OpenShiftName} for each certificate _<ca-certificate>_ from the previous step, run:
++
+[source,shell,subs="+quotes"]
+----
+# Fetch the existing secret
+oc get secret _<ca-cert-secret>_ -o 'jsonpath={.data._<ca-certificate>_}' | base64 -d > _<ca-certificate>_
+----
+
+
+. Rename the old `ca.crt` file to `ca_<date>_.crt`, where _<date>_ is the certificate expiry date in the format _<year>_-_<month>_-_<day>_T_<hour>_-_<minute>_-_<second>_Z, for example `ca-2018-09-27T17-32-00Z.crt`. 
++
+[source,shell,subs="+quotes"]
+mv ca.crt ca-$(date -u -d$(openssl x509 -enddate -noout -in ca.crt | sed 's/.*=//') +'%Y-%m-%dT%H-%M-%SZ').crt
+
+. Copy the new CA certificate into the directory, naming it `ca.crt`
++
+[source,shell,subs="+quotes"]
+cp _<path-to-new-cert>_ ca.crt
+
+
+. Replace the CA certificate `Secret`  (`_<cluster>_-cluster-ca` or `_<cluster>_-clients-ca`).
+ifdef::Kubernetes[]
++
+On {OpenShiftName} this can be done using the following commands:
++
+[source,shell,subs="+quotes"]
+----
+# Delete the existing secret
+kubectl delete secret _<ca-cert-secret>_
+# Re-create the secret with the new private key
+kubectl create secret generic _<ca-cert-secret>_ --from-file=.
+----
+endif::Kubernetes[]
++
+On {OpenShiftName} this can be done using the following commands:
++
+[source,shell,subs="+quotes"]
+----
+# Delete the existing secret
+oc delete secret _<ca-cert-secret>_
+# Re-create the secret with the new private key
+oc create secret generic _<ca-cert-secret>_ --from-file=.
+----
++
+You can now delete the directory you created:
++
+[source,shell,subs="+quotes"]
+----
+cd ..
+rm -r new-ca-cert-secret
+----
+
+. Replace the CA key `Secret` (`_<cluster>_-cluster-ca` or `_<cluster>_-clients-ca`).
+ifdef::Kubernetes[]
++
+On {KubernetesName} this can be done using the following commands:
++
+[source,shell,subs="+quotes"]
+----
+# Delete the existing secret
+kubectl delete secret _<ca-key-secret>_
+# Re-create the secret with the new private key
+kubectl create secret generic _<ca-key-secret>_ --from-file=ca.key=_<ca-key-file>_
+----
+endif::Kubernetes[]
++
+On {OpenShiftName} this can be done using the following commands:
++
+[source,shell,subs="+quotes"]
+----
+# Delete the existing secret
+oc delete secret _<ca-key-secret>_
+# Re-create the secret with the new private key
+oc create secret generic _<ca-key-secret>_ --from-file=ca.key=_<ca-key-file>_
+----
