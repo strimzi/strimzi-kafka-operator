@@ -26,6 +26,18 @@ include::assembly-kafka-mirror-maker-authentication.adoc[leveloffset=+1]
 
 include::assembly-kafka-mirror-maker-configuration.adoc[leveloffset=+1]
 
+include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
+
+include::assembly-logging.adoc[leveloffset=+1]
+
+include::assembly-metrics.adoc[leveloffset=+1]
+
+include::assembly-jvm-options.adoc[leveloffset=+1]
+
+include::assembly-configuring-container-images.adoc[leveloffset=+1]
+
+include::assembly-scheduling.adoc[leveloffset=+1]
+
 TBD
 
 // Restore the context to what it was before this assembly.
