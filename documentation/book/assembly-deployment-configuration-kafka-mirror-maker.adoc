@@ -20,6 +20,8 @@ include::assembly-kafka-mirror-maker-replicas.adoc[leveloffset=+1]
 
 include::assembly-kafka-mirror-maker-bootstrap-servers.adoc[leveloffset=+1]
 
+include::assembly-kafka-mirror-maker-whitelist.adoc[leveloffset=+1]
+
 include::assembly-kafka-mirror-maker-tls.adoc[leveloffset=+1]
 
 include::assembly-kafka-mirror-maker-authentication.adoc[leveloffset=+1]
