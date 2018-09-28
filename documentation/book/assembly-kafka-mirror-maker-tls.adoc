@@ -15,4 +15,4 @@ If you would prefer to use TLS additional configuration will be necessary.
 
 include::ref-kafka-mirror-maker-tls.adoc[leveloffset=+1]
 
-include::proc-configuring-kafka-mirror-makerx-tls.adoc[leveloffset=+1]
+include::proc-configuring-kafka-mirror-maker-tls.adoc[leveloffset=+1]
