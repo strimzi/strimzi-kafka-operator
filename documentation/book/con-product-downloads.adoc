@@ -3,14 +3,14 @@
 // getting-started.adoc
 
 [id='downloads-{context}']
-= {ProductName} Downloads
+= {ProductName} downloads
 
 ifdef::Downloading[]
 {ProductName} releases are available to download from {ReleaseDownload}. The release artefacts contain documentation and example `.yaml` files for deployment on {ProductPlatformName}. The example files are used throughout this documentation and can be used to install {ProductName}. Additionally, a Helm Chart is provided for deploying the Cluster Operator using link:https://helm.sh/[Helm^]. The container images are available through the {DockerRepository}.
 endif::Downloading[]
 ifndef::Downloading[]
-The following procedures use example `.yaml` files to help you install {ProductName} on {ProductPlatformName}, perform common operations, and configure your Kafka cluster. To access these `.yaml` files, download and extract the `examples.zip` file from http://amq.io/amqstreams/
+The following procedures use example YAML files to help you install {ProductName} on {ProductPlatformName}, perform common operations, and configure your Kafka cluster. {ExampleYAMLURL} are available to download from the AMQ Streams website.
 
-NOTE: Container images for {ProductName} are available in the {ReleaseDownload}. We recommend that you use the example `.yaml` files instead of downloading the container images.
+NOTE: Container images for {ProductName} are available in the {ReleaseDownload}. We recommend that you use the example YAML files instead of downloading the container images.
 
 endif::Downloading[]
