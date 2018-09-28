@@ -9,5 +9,6 @@ spec:
     groupId: my-source-group-id
   producer:
     bootstrapServers: my-target-kafka:9092
+  whitelist: "*"
   extra: true
 extra: true
