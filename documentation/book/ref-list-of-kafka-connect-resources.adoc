@@ -2,7 +2,7 @@
 //
 // assembly-deployment-configuration-kafka-connect.adoc
 
-[id='ref-list-of-kafka-cluster-resources-{context}']
+[id='ref-list-of-kafka-connect-resources-{context}']
 = List of resources created as part of Kafka Connect cluster
 
 The following resources will created by the Cluster Operator in the {ProductPlatformName} cluster:
