@@ -13,7 +13,7 @@
 
 .Procedure
 
-Because Kafka Mirror Maker connects to two Kafka clusters (source and target), it's possible to configure SCRAM-SHA-512 authentication for one of them or both.
+Because Kafka Mirror Maker connects to two Kafka clusters (source and target), it is possible to configure SCRAM-SHA-512 authentication for one of them or both.
 Following the steps for configuring SCRAM-SHA-512 authentication on the consumer side for connecting to the source Kafka cluster.
 
 . Find out the name of the `Secret` with the password which should be used for authentication and the key under which the password is stored in the `Secret`.

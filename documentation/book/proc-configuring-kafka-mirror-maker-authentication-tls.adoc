@@ -12,7 +12,7 @@
 
 .Procedure
 
-Because Kafka Mirror Maker connects to two Kafka clusters (source and target), it's possible to configure TLS client authentication for one of them or both.
+Because Kafka Mirror Maker connects to two Kafka clusters (source and target), it is possible to configure TLS client authentication for one of them or both.
 Following the steps for configuring TLS client authentication on the consumer side for connecting to the source Kafka cluster.
 
 . Find out the name of the `Secret` with the public and private keys which should be used for TLS Client Authentication and the keys under which they are stored in the `Secret`.
