@@ -40,7 +40,7 @@ public class ClusterCa extends Ca {
                      int validityDays,
                      int renewalDays,
                      boolean generateCa) {
-        super(certManager, AbstractModel.getClusterCaName(clusterName), clusterCaCert,
+        super(certManager, "cluster-ca", AbstractModel.getClusterCaName(clusterName), clusterCaCert,
                 AbstractModel.getClusterCaKeyName(clusterName), clusterCaKey,
                 validityDays, renewalDays, generateCa);
         this.clusterName = clusterName;

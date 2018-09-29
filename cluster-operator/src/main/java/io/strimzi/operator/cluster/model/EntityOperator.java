@@ -226,7 +226,7 @@ public class EntityOperator extends AbstractModel {
             log.debug("Generating certificates");
             try {
                 Ca.log.debug("Entity Operator certificate to generate");
-                CertAndKey eoCertAndKey = clusterCa.generateSignedCert(name);
+                CertAndKey eoCertAndKey = clusterCa.generateSignedCert(name, Ca.IO_STRIMZI);
                 data.put("entity-operator.key", eoCertAndKey.keyAsBase64String());
                 data.put("entity-operator.crt", eoCertAndKey.certAsBase64String());
             } catch (IOException e) {
