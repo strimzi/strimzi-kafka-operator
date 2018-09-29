@@ -249,9 +249,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clusterCaCertSecret = secret;
                             } else if (secretName.equals(clusterCaKeyName)) {
                                 clusterCaKeySecret = secret;
-                            } else if (secretName.equals(clientsCaKeyName)) {
-                                clientCaCertSecret = secret;
                             } else if (secretName.equals(clientsCaCertName)) {
+                                clientCaCertSecret = secret;
+                            } else if (secretName.equals(clientsCaKeyName)) {
                                 clientCaKeySecret = secret;
                             }
                         }
@@ -274,7 +274,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         this.clusterCa.initCaSecrets(clusterSecrets);
 
-                        CertificateAuthority clientsCaConfig = kafkaAssembly.getSpec().getClusterCa();
+                        CertificateAuthority clientsCaConfig = kafkaAssembly.getSpec().getClientsCa();
                         this.clientsCa = new ClientsCa(certManager,
                                 clientsCaCertName, clientCaCertSecret,
                                 clientsCaKeyName, clientCaKeySecret,
