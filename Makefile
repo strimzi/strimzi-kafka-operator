@@ -57,6 +57,7 @@ helm_pkg:
 	cp -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
 	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
 	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
+	mv strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
 	rm -rf strimzi-$(RELEASE_VERSION)/charts/
 
 docu_html: docu_htmlclean docu_check
