@@ -4,6 +4,7 @@ metadata:
   name: test-kafka-mirror-maker
 spec:
   replicas: 1
+  whitelist: "*"
   consumer:
     bootstrapServers: my-source-kafka:9093
     groupId: my-source-group-id
