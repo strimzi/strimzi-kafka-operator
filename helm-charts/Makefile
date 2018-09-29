@@ -27,6 +27,7 @@ helm_examples: helm_clean helm_template
 	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.component \;
 	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.release \;
 	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.labels.heritage \;
+	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -exec yq d -i {} metadata.namespace \;
 	# Copying rendered template files to: $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_EXAMPLES)
 	# Find rendered resources which are not CustomResourceDefinition and move them
