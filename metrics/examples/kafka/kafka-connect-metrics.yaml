@@ -1,0 +1,17 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  labels:
+    app: my-connect-cluster
+spec:
+  replicas: 1
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
+  metrics:
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    rules:
+    - pattern : "kafka.connect<type=connect-worker-metrics>([^:]+):"
+      name: "kafka_connect_connect_worker_metrics_$1"
+    - pattern : "kafka.connect<type=connect-metrics, client-id=([^:]+)><>([^:]+)"
+      name: "kafka_connect_connect_metrics_$1_$2"
