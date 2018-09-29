@@ -1,5 +1,7 @@
 # Default values for strimzi-kafka-operator.
 
+watchNamespaces: []
+
 image:
   repository: strimzi
   name: cluster-operator

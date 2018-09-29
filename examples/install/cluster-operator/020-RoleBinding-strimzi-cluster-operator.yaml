@@ -2,6 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: strimzi-cluster-operator
+  namespace: myproject
   labels:
     app: strimzi
 subjects:
