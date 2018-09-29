@@ -1,6 +1,6 @@
 TOPDIR=$(dir $(lastword $(MAKEFILE_LIST)))
 RELEASE_VERSION ?= latest
-CHART_PATH ?= ./helm-charts/strimzi-cluster-operator/
+CHART_PATH ?= ./helm-charts/strimzi-kafka-operator/
 CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | tr A-Z a-z)
 
 SUBDIRS=docker-images test crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init helm-charts examples
@@ -57,7 +57,7 @@ helm_pkg:
 	cp -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
 	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
 	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
-	mv strimzi-cluster-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-helm-chart-cluster-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
+	mv strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
 	rm -rf strimzi-$(RELEASE_VERSION)/charts/
 
 docu_html: docu_htmlclean docu_check

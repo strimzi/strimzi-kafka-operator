@@ -2,7 +2,7 @@ PROJECT_NAME=helm-charts
 
 RELEASE_VERSION ?= latest
 CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ../release.version | tr A-Z a-z)
-CHART_NAME=strimzi-cluster-operator
+CHART_NAME=strimzi-kafka-operator
 CHART_PATH=./$(CHART_NAME)/
 CHART_RENDERED_TEMPLATES_TMP=../target/charts
 CHART_RENDERED_TEMPLATES_EXAMPLES=../examples/install/cluster-operator/
@@ -40,7 +40,7 @@ helm_pkg: helm_lint helm_examples
 	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
 	cp -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
 	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
-	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION)-chart --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
+	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
 	rm -rf strimzi-$(RELEASE_VERSION)
 
 docker_build: helm_pkg
