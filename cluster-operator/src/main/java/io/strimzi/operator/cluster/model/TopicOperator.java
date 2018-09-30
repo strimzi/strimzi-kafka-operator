@@ -368,7 +368,7 @@ public class TopicOperator extends AbstractModel {
             log.debug("Generating certificates");
             try {
                 log.debug("Topic Operator certificate to generate");
-                CertAndKey toCertAndKey = clusterCa.generateSignedCert(name);
+                CertAndKey toCertAndKey = clusterCa.generateSignedCert(name, Ca.IO_STRIMZI);
                 data.put("entity-operator.crt", toCertAndKey.certAsBase64String());
                 data.put("entity-operator.key", toCertAndKey.keyAsBase64String());
             } catch (IOException e) {

@@ -75,6 +75,7 @@ public abstract class Ca {
     public static final String CA_CRT = "ca.crt";
     public static final String IO_STRIMZI = "io.strimzi";
 
+    protected final String commonName;
     protected final CertManager certManager;
     protected final int validityDays;
     protected final int renewalDays;
@@ -86,10 +87,11 @@ public abstract class Ca {
     private boolean needsRenewal;
     private boolean certsRemoved;
 
-    public Ca(CertManager certManager,
+    public Ca(CertManager certManager, String commonName,
               String caCertSecretName, Secret caCertSecret,
               String caKeySecretName, Secret caKeySecret,
               int validityDays, int renewalDays, boolean generateCa) {
+        this.commonName = commonName;
         this.caCertSecret = caCertSecret;
         this.caCertSecretName = caCertSecretName;
         this.caKeySecret = caKeySecret;
@@ -115,7 +117,6 @@ public abstract class Ca {
 
     private CertAndKey generateSignedCert(Subject subject,
                                             File csrFile, File keyFile, File certFile) throws IOException {
-
         log.debug("Generating certificate {} with SAN {}, signed by CA {}", subject, subject.subjectAltNames(), this);
 
         certManager.generateCsr(keyFile, csrFile, subject);
@@ -129,12 +130,23 @@ public abstract class Ca {
      * Generates a certificate signed by this CA
      */
     public CertAndKey generateSignedCert(String commonName) throws IOException {
+        return generateSignedCert(commonName, null);
+    }
+
+    /**
+     * Generates a certificate signed by this CA
+     */
+    public CertAndKey generateSignedCert(String commonName, String organization) throws IOException {
         File csrFile = File.createTempFile("tls", "csr");
         File keyFile = File.createTempFile("tls", "key");
         File certFile = File.createTempFile("tls", "cert");
 
         Subject subject = new Subject();
-        subject.setOrganizationName("io.strimzi");
+
+        if (organization != null) {
+            subject.setOrganizationName(organization);
+        }
+
         subject.setCommonName(commonName);
 
         CertAndKey result = generateSignedCert(subject,
@@ -155,7 +167,8 @@ public abstract class Ca {
            Function<Integer, Subject> subjectFn,
            Secret secret,
            Function<Integer, String> podNameFn) throws IOException {
-        int replicasInSecret = secret == null || this.certRenewed() ? 0 : (secret.getData().size() - 1) / 2;
+        int replicasInSecret = secret == null || this.certRenewed() ? 0 : secret.getData().size() / 2;
+
         Map<String, CertAndKey> certs = new HashMap<>();
         // copying the minimum number of certificates already existing in the secret
         // scale up -> it will copy all certificates
@@ -306,10 +319,8 @@ public abstract class Ca {
     }
 
     private Map<String, String>[] createOrRenewCert(X509Certificate currentCert) throws IOException {
-        Map<String, String> newData;
         log.debug("Generating new certificate {} to be stored in {}", CA_CRT, caCertSecretName);
-        // TODO factor out the common name
-        CertAndKey ca = generateCa("cluster-ca");
+        CertAndKey ca = generateCa(commonName);
         Map<String, String> certData = new HashMap<>();
         Map<String, String> keyData = new HashMap<>();
         if (currentCert != null) {
