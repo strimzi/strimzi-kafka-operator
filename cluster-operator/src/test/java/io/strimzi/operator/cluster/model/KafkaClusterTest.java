@@ -610,8 +610,6 @@ public class KafkaClusterTest {
                         .withNewListeners()
                             .withNewKafkaListenerExternalNodePortExternal()
                                 .withTls(false)
-                                .withNewKafkaListenerAuthenticationTlsAuth()
-                                .endKafkaListenerAuthenticationTlsAuth()
                             .endKafkaListenerExternalNodePortExternal()
                         .endListeners()
                     .endKafka()
@@ -633,7 +631,6 @@ public class KafkaClusterTest {
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "false")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
-        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
