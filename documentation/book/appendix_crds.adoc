@@ -225,6 +225,8 @@ It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBal
 |Field                  |Description
 |authentication  1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|tls             1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
+|boolean
 |type            1.2+<.<|Must be `loadbalancer`.
 |string
 |====
@@ -242,6 +244,8 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 |Field                  |Description
 |authentication  1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|tls             1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
+|boolean
 |type            1.2+<.<|Must be `nodeport`.
 |string
 |====

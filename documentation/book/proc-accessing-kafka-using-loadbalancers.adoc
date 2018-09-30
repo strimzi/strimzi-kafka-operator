@@ -26,6 +26,7 @@ spec:
     listeners:
       external:
         type: loadbalancer
+        tls: true
         # ...
     # ...
   zookeeper:
@@ -73,7 +74,7 @@ oc get service _<cluster-name>_-kafka-external-bootstrap -o=jsonpath='{.status.l
 +
 Use the hostname or IP address together with port 9094 in your Kafka client as the _bootstrap_ address.
 
-. Extract the public certificate of the broker certification authority.
+. Unless TLS encryption was disabled, extract the public certificate of the broker certification authority.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl get`:

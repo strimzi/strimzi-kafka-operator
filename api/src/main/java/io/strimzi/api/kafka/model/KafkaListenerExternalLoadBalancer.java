@@ -25,6 +25,7 @@ public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
     public static final String TYPE_LOADBALANCER = "loadbalancer";
 
     private KafkaListenerAuthentication auth;
+    private boolean tls = true;
 
     @Description("Must be `" + TYPE_LOADBALANCER + "`")
     @Override
@@ -41,5 +42,16 @@ public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
 
     public void setAuth(KafkaListenerAuthentication auth) {
         this.auth = auth;
+    }
+
+    @Description("Enables TLS encryption on the listener. " +
+            "By default set to `true` for enabled TLS encryption.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public boolean isTls() {
+        return tls;
+    }
+
+    public void setTls(boolean tls) {
+        this.tls = tls;
     }
 }

@@ -42,10 +42,7 @@ The external listener is used to connect to a Kafka cluster from outside of an {
 * `loadbalancer`
 * `nodeport`
 
-Each type of external listener uses TLS encryption.
-
 .Exposing Kafka using {OpenShiftName} Routes
-
 
 An external listener of type `route` exposes Kafka by using {OpenShiftName} `Routes` and the HAProxy router.
 A dedicated `Route` is created for every Kafka broker pod.
@@ -56,6 +53,8 @@ ifdef::Kubernetes[]
 NOTE: `Routes` are available only on {OpenShiftName}. External listeners of type `route` cannot be used on {KubernetesName}.
 endif::Kubernetes[]
 
+When exposing Kafka using {OpenShiftName} `Routes`, TLS encryption is always used.
+
 For more information on using `Routes` to access Kafka, see xref:proc-accessing-kafka-using-routes-{context}[].
 
 .Exposing Kafka using loadbalancers
@@ -64,6 +63,9 @@ External listeners of type `loadbalancer` expose Kafka by using `Loadbalancer` t
 A new loadbalancer service is created for every Kafka broker pod.
 An additional loadbalancer is created to serve as a Kafka _bootstrap_ address.
 Loadbalancers listen to connections on port 9094.
+
+By default, TLS encryption is enabled.
+To disable it, set the `tls` field to `false`.
 
 For more information on using loadbalancers to access Kafka, see xref:proc-accessing-kafka-using-loadbalancers-{context}[].
 
@@ -84,6 +86,9 @@ When selecting the node address, the different address types are used with the f
 . InternalDNS
 . InternalIP
 
+By default, TLS encryption is enabled.
+To disable it, set the `tls` field to `false`.
+
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
 For more information on using node ports to access Kafka, see xref:proc-accessing-kafka-using-nodeports-{context}[].
@@ -93,7 +98,7 @@ For more information on using node ports to access Kafka, see xref:proc-accessin
 The listener sub-properties can also contain additional configuration.
 Both listeners support the `authentication` property. This is used to specify an authentication mechanism specific to that listener:
 
-* mutual TLS authentication (only on the `tls` listener)
+* mutual TLS authentication (only on the listeners with TLS encryption)
 * SCRAM-SHA authentication
 
 If no `authentication` property is specified then the listener does not authenticate clients which connect though that listener.
@@ -111,6 +116,7 @@ listeners:
       type: tls
   external:
     type: loadbalancer
+    tls: true
     authentication:
       type: tls
 # ...

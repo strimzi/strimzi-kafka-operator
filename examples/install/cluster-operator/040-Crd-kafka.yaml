@@ -68,6 +68,8 @@ spec:
                           properties:
                             type:
                               type: string
+                        tls:
+                          type: boolean
                         type:
                           type: string
                 authorization:

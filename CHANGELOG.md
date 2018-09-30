@@ -3,6 +3,7 @@
 ## 0.8.0
 
 * Support for TLS hostname verification when connecting through IP address from outside of the Kafka cluster 
+* Support for unencrypted connections on LoadBalancers and NodePorts.
 
 ## 0.7.0
 
