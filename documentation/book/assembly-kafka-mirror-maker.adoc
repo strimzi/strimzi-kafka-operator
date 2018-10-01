@@ -9,9 +9,9 @@
 [id='kafka-mirror-maker-{context}']
 = Kafka Mirror Maker
 
-The Cluster Operator deploys one or more Kafka Mirror Maker instances, which can be used to replicate data between Kafka clusters.
+The Cluster Operator deploys one or more Kafka Mirror Maker replicas, which can be used to replicate data between Kafka clusters.
 Such a process is named "mirroring" for avoiding confusion with the Kafka partitions replication concept.
-The Mirror Maker consumes from a source cluster and produce to a target cluster.
+The Mirror Maker consumes from a source cluster and produces to a target cluster.
 
 Example `KafkaMirrorMaker` resources and the details about the `KafkaMirrorMaker` format for deploying Kafka Mirror Maker can be found in
 xref:assembly-deployment-configuration-kafka-mirror-maker-str[Kafka Mirror Maker configuration].

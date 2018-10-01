@@ -5,7 +5,7 @@
 [id='proc-configuring-kafka-mirror-maker-numstreams-{context}']
 = Configuring the number of consumer streams
 
-The number of consumer streams can be configured using the `numStreams` sub-property of `consumer` property in `KafkaMirrorMaker.spec`.
+The number of consumer streams can be configured using the `KafkaMirrorMaker.spec.consumer.numStreams` property.
 
 .Prerequisites
 
@@ -14,7 +14,7 @@ The number of consumer streams can be configured using the `numStreams` sub-prop
 
 .Procedure
 
-. Edit the `numStreams` sub-property of `consumer` property in the `KafkaMirrorMaker` resource.
+. Edit the `KafkaMirrorMaker.spec.consumer.numStreams` property.
 For example:
 +
 [source,yaml,subs=attributes+]

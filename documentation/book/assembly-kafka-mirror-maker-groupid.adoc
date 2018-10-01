@@ -12,6 +12,6 @@
 
 The Kafka Mirror Maker has a consumer part behaving as any other Kafka consumer client.
 It is in charge to consume the messages from the source Kafka cluster which will be mirrored to the target Kafka cluster.
-The consumer needs to be part of a "consumer group" for being assigned partitions.
+The consumer needs to be part of a _consumer group_ for being assigned partitions.
 
 include::proc-configuring-kafka-mirror-maker-groupid.adoc[leveloffset=+1]

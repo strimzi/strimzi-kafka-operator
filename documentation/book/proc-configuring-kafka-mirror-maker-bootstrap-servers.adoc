@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Edit the `bootstrapServers` sub-property of `consumer` and `producer` properties in the `KafkaMirrorMaker` resource.
+. Edit the `KafkaMirrorMaker.spec.consumer.bootstrapServers` and `KafkaMirrorMaker.spec.producer.bootstrapServers` properties.
 For example:
 +
 [source,yaml,subs=attributes+]

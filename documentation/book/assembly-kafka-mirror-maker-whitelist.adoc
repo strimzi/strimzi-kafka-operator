@@ -11,7 +11,7 @@
 = Whitelist
 
 It is possible to specify what are the topics that the Kafka Mirror Maker has to mirror from the source to the target Kafka cluster.
-The so called "whitelist" is defined in the `KafkaMirrorMaker` resource.
+The so called _whitelist_ is defined in the `KafkaMirrorMaker` resource.
 It is a regular expression used for specifying from the simpler case with a single topic name to complex patterns.
 For example, it is possible to mirror two topics named A and B using "A|B" or all topics using "*".
 Multiple regular expressions separated by commas can be passed to Kafka Mirror Maker as well.

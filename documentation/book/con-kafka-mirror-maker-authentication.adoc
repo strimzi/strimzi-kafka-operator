@@ -5,8 +5,8 @@
 [id='con-kafka-mirror-maker-authentication{context}']
 = Authentication support in Kafka Mirror Maker
 
-Authentication can be configured in the `authentication` sub-property of `consumer` and `producer` properties in `KafkaMirrorMaker.spec`.
-The `authentication` property specifies the type of the authentication mechanisms which should be used and additional configuration details depending on the mechanism.
+Authentication can be configured in the `KafkaMirrorMaker.spec.consumer.authentication` and `KafkaMirrorMaker.spec.producer.authentication` properties.
+The `authentication` property specifies the type of the authentication method which should be used and additional configuration details depending on the mechanism.
 The currently supported authentication types are:
 
 * TLS client authentication
@@ -54,6 +54,7 @@ spec:
 == SCRAM-SHA-512 authentication
 
 To use the authentication using the SCRAM-SHA-512 SASL mechanism, set the `type` property to the value `scram-sha-512`.
+It is possible to use it only if the broker listener, clients are connecting to, is configured to use it.
 SCRAM-SHA-512 uses a username and password to authenticate.
 Specify the username in the `username` property.
 Specify the password as a link to a `Secret` containing the password in the `passwordSecret` property.

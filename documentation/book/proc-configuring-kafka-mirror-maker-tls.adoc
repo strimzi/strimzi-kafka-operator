@@ -3,7 +3,7 @@
 // assembly-kafka-mirror-maker-tls.adoc
 
 [id='proc-configuring-kafka-mirror-maker-tls-{context}']
-= Configuring TLS in Kafka Mirror Maker
+= Configuring TLS encryption in Kafka Mirror Maker
 
 .Prerequisites
 
@@ -28,7 +28,7 @@ On {OpenShiftName} this can be done using `oc create`:
 +
 [source,shell,subs=+quotes]
 oc create secret generic _<my-secret>_ --from-file=_<my-file.crt>_
-. Edit the `tls` sub-property of `consumer` property in the `KafkaMirrorMaker` resource.
+. Edit the `KafkaMirrorMaker.spec.consumer.tls` property.
 For example:
 +
 [source,yaml,subs=attributes+]
@@ -61,4 +61,4 @@ On {OpenShiftName} this can be done using `oc apply`:
 oc apply -f _<your-file>_
 
 The same steps can be done for configuring TLS on the producer side for connecting to the target Kafka cluster.
-In this case, the secret containing the certificate has to be configured in the `tls` sub-property of `producer` property in the `KafkaMirrorMaker` resource.
+In this case, the secret containing the certificate has to be configured in the `KafkaMirrorMaker.spec.producer.tls` property.

@@ -12,7 +12,7 @@
 
 .Procedure
 
-. Edit the `config` sub-property under `consumer` and `producer` properties in the `KafkaMirrorMaker` resource.
+. Edit the `KafkaMirrorMaker.spec.consumer.config` and `KafkaMirrorMaker.spec.producer.config` properties.
 For example:
 +
 [source,yaml,subs=attributes+]
