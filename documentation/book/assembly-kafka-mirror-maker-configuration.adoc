@@ -22,6 +22,6 @@ The only options which cannot be configured are those related to the following a
 
 These options are automatically configured by {ProductName}.
 
-include::ref-kafka-mirror-maker-configuration.adoc[leveloffset=+1]
+//include::ref-kafka-mirror-maker-configuration.adoc[leveloffset=+1]
 
 include::proc-configuring-kafka-mirror-maker.adoc[leveloffset=+1]
