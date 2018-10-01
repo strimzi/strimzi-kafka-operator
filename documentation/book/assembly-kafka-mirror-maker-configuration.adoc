@@ -11,8 +11,8 @@
 = Kafka Mirror Maker configuration
 
 {ProductName} allows you to customize the configuration of Apache Kafka Mirror Maker by editing most of the options for the related consumer and producer.
-Producer options are listed in {ApachaKafkaProducerConfig}.
-Consumer options are listed in {ApachaKafkaConsumerConfig}.
+Producer options are listed in {ApacheKafkaProducerConfig}.
+Consumer options are listed in {ApacheKafkaConsumerConfig}.
 
 The only options which cannot be configured are those related to the following areas:
 
@@ -22,6 +22,6 @@ The only options which cannot be configured are those related to the following a
 
 These options are automatically configured by {ProductName}.
 
-//include::ref-kafka-mirror-maker-configuration.adoc[leveloffset=+1]
+include::ref-kafka-mirror-maker-configuration.adoc[leveloffset=+1]
 
 include::proc-configuring-kafka-mirror-maker.adoc[leveloffset=+1]

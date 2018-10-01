@@ -13,7 +13,7 @@ The values could be in one of the following JSON types:
 * Number
 * Boolean
 
-Users can specify and configure the options listed in the {ApachaKafkaProducerConfig} and {ApachaKafkaConsumerConfig} with the exception of those options which are managed directly by {ProductName}.
+Users can specify and configure the options listed in the {ApacheKafkaProducerConfig} and {ApacheKafkaConsumerConfig} with the exception of those options which are managed directly by {ProductName}.
 Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
 
 * `ssl.`
@@ -47,4 +47,4 @@ spec:
       compression.type: gzip
       batch.size: 8192
   # ...
----
+----
