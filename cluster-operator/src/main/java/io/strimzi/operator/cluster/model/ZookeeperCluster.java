@@ -29,7 +29,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
-import io.strimzi.api.kafka.model.Sidecar;
+import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
@@ -67,7 +67,7 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
 
     // Zookeeper configuration
-    private Sidecar tlsSidecar;
+    private TlsSidecar tlsSidecar;
 
     // Configuration defaults
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -390,7 +390,7 @@ public class ZookeeperCluster extends AbstractModel {
         return volumeMountList;
     }
 
-    protected void setTlsSidecar(Sidecar tlsSidecar) {
+    protected void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }
 

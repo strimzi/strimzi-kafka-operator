@@ -44,7 +44,7 @@ public class EntityOperatorSpec implements Serializable {
     private EntityUserOperatorSpec userOperator;
     private Affinity affinity;
     private List<Toleration> tolerations;
-    private Sidecar tlsSidecar;
+    private TlsSidecar tlsSidecar;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Topic Operator")
@@ -91,11 +91,11 @@ public class EntityOperatorSpec implements Serializable {
 
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Sidecar getTlsSidecar() {
+    public TlsSidecar getTlsSidecar() {
         return tlsSidecar;
     }
 
-    public void setTlsSidecar(Sidecar tlsSidecar) {
+    public void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }
 

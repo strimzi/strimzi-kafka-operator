@@ -63,7 +63,7 @@ public class KafkaClusterSpec implements Serializable {
 
     private Logging logging;
 
-    private Sidecar tlsSidecar;
+    private TlsSidecar tlsSidecar;
     private int replicas;
     private String image;
     private Resources resources;
@@ -130,11 +130,11 @@ public class KafkaClusterSpec implements Serializable {
 
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Sidecar getTlsSidecar() {
+    public TlsSidecar getTlsSidecar() {
         return tlsSidecar;
     }
 
-    public void setTlsSidecar(Sidecar tlsSidecar) {
+    public void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }
 

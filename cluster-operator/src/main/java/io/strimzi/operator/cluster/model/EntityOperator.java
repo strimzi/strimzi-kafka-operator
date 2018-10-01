@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Resources;
-import io.strimzi.api.kafka.model.Sidecar;
+import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
 
@@ -49,7 +49,7 @@ public class EntityOperator extends AbstractModel {
     private String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
-    private Sidecar tlsSidecar;
+    private TlsSidecar tlsSidecar;
 
     private boolean isDeployed;
 
@@ -65,7 +65,7 @@ public class EntityOperator extends AbstractModel {
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
     }
 
-    protected void setTlsSidecar(Sidecar tlsSidecar) {
+    protected void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }
 
