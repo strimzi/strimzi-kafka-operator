@@ -27,7 +27,7 @@ public class ConnectS2IST extends AbstractST {
 
     @Before
     public void deployKafka() {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        resources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
     }
 
     @Test
