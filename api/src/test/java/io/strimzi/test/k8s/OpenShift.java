@@ -4,7 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
-import io.strimzi.test.TestUtils;
+//import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,30 +21,30 @@ public class OpenShift implements KubeCluster {
 
     @Override
     public boolean isClusterUp() {
-        try {
-            Exec.exec(OC, "cluster", "status");
-            return true;
-        } catch (KubeClusterException e) {
-            if (e.result.exitStatus() == 1) {
-                if (e.result.out().contains("not yet ready")) {
-                    LOGGER.debug("Waiting for oc cluster to finish coming up");
-                    // In this case it is still coming up, so wait for rather than saying it's not up
-                    TestUtils.waitFor("oc cluster up", 1_000, 60_000, () -> {
-                        try {
-                            Exec.exec(OC, "cluster", "status");
-                            LOGGER.trace("oc cluster is up");
-                            return true;
-                        } catch (KubeClusterException e2) {
-                            LOGGER.trace("oc cluster still not up");
-                            return false;
-                        }
-                    });
-                    return true;
-                }
-                return false;
-            }
-            throw e;
-        }
+//        try {
+//            Exec.exec(OC, "cluster", "status");
+        return true;
+//        } catch (KubeClusterException e) {
+//            if (e.result.exitStatus() == 1) {
+//                if (e.result.out().contains("not yet ready")) {
+//                    LOGGER.debug("Waiting for oc cluster to finish coming up");
+//                     In this case it is still coming up, so wait for rather than saying it's not up
+//                    TestUtils.waitFor("oc cluster up", 1_000, 60_000, () -> {
+//                        try {
+//                            Exec.exec(OC, "cluster", "status");
+//                            LOGGER.trace("oc cluster is up");
+//                            return true;
+//                        } catch (KubeClusterException e2) {
+//                            LOGGER.trace("oc cluster still not up");
+//                            return false;
+//                        }
+//                    });
+//                    return true;
+//                }
+//                return false;
+//            }
+//            throw e;
+//        }
     }
 
     @Override
