@@ -14,12 +14,11 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.TestUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,7 +58,6 @@ public class ZookeeperClusterTest {
     }
     private final Map<String, Object> zooConfigurationJson = singletonMap("foo", "bar");
 
-    private final CertManager certManager = new MockCertManager();
     private final Kafka ka = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson);
     private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka);
 
@@ -162,6 +160,7 @@ public class ZookeeperClusterTest {
         // checks on the TLS sidecar container
         assertEquals(ZookeeperClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
         assertEquals(new Integer(replicas), Integer.valueOf(AbstractModel.containerEnvVars(containers.get(1)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT)));
+        assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(containers.get(1)).get(ZookeeperCluster.ENV_VAR_TLS_SIDECAR_LOG_LEVEL));
         assertEquals(ZookeeperCluster.CLUSTERING_PORT_NAME, containers.get(1).getPorts().get(0).getName());
         assertEquals(new Integer(ZookeeperCluster.CLUSTERING_PORT), containers.get(1).getPorts().get(0).getContainerPort());
         assertEquals(ZookeeperCluster.LEADER_ELECTION_PORT_NAME, containers.get(1).getPorts().get(1).getName());
