@@ -43,6 +43,7 @@ rules:
   - kafkas
   - kafkaconnects
   - kafkaconnects2is
+  - kafkamirrormakers
   verbs:
   - get
   - list

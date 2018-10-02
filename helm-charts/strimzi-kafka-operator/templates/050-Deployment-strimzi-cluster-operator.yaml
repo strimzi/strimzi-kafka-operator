@@ -57,6 +57,8 @@ spec:
               value: "{{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
+            - name: STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE
+              value: "{{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tag .Values.imageTagOverride }}"          
           livenessProbe:
             httpGet:
               path: /healthy

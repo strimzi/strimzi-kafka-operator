@@ -47,6 +47,8 @@ spec:
           value: strimzi/entity-operator-stunnel:latest
         - name: STRIMZI_LOG_LEVEL
           value: INFO
+        - name: STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE
+          value: strimzi/kafka-mirror-maker:latest
         livenessProbe:
           httpGet:
             path: /healthy

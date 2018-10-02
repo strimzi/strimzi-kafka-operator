@@ -61,7 +61,7 @@ if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
 fi
 
 if [ -n "$KAFKA_MIRRORMAKER_WHITELIST" ]; then
-    whitelist="--whitelist ${KAFKA_MIRRORMAKER_WHITELIST}"
+    whitelist="--whitelist \""${KAFKA_MIRRORMAKER_WHITELIST}"\""
 fi
 
 if [ -n "$KAFKA_MIRRORMAKER_NUMSTREAMS" ]; then

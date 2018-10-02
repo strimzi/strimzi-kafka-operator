@@ -118,6 +118,7 @@ public class ZookeeperCluster extends AbstractModel {
      *
      * @param namespace Kubernetes/OpenShift namespace where Zookeeper cluster resources are going to be created
      * @param cluster   overall cluster name
+     * @param labels    labels to add to the cluster
      */
     private ZookeeperCluster(String namespace, String cluster, Labels labels) {
 

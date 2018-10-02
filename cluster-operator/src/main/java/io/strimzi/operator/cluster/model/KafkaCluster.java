@@ -152,6 +152,7 @@ public class KafkaCluster extends AbstractModel {
      *
      * @param namespace Kubernetes/OpenShift namespace where Kafka cluster resources are going to be created
      * @param cluster  overall cluster name
+     * @param labels    labels to add to the cluster
      */
     private KafkaCluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);

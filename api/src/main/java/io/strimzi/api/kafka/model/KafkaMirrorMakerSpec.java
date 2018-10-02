@@ -71,7 +71,7 @@ public class KafkaMirrorMakerSpec implements Serializable {
     }
 
     @Description("List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions." +
-            "Mirroring two topics named A and B can be achieved by using the whitelist `'A|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'`." +
+            "Mirroring two topics named A and B can be achieved by using the whitelist `'A|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'`. " +
             "Multiple regular expressions separated by commas can be specified as well.")
     @JsonProperty(required = true)
     public String getWhitelist() {

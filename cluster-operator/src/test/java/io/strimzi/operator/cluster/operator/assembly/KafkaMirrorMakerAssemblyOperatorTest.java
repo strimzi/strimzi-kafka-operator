@@ -8,10 +8,14 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -55,20 +59,23 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(VertxUnitRunner.class)
-public class KafkaConnectAssemblyOperatorTest {
+public class KafkaMirrorMakerAssemblyOperatorTest {
 
     protected static Vertx vertx;
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
     public static final String LOGGING_CONFIG = "#Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.\n" +
             "\n" +
-            "log4j.rootLogger=${connect.root.logger.level}, CONSOLE\n" +
-            "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
-            "log4j.logger.org.reflections=ERROR\n" +
+            "log4j.rootLogger=${mirrormaker.root.logger}, CONSOLE\n" +
+            "mirrormaker.root.logger=INFO\n" +
             "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
             "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-            "connect.root.logger.level=INFO\n" +
-            "log4j.logger.org.apache.zookeeper=ERROR\n" +
             "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n";
+    private final String producerBootstrapServers = "foo-kafka:9092";
+    private final String consumerBootstrapServers = "bar-kafka:9092";
+    private final String groupId = "my-group-id";
+    private final int numStreams = 2;
+    private final String whitelist = ".*";
+    private final String image = "my-image:latest";
 
     @BeforeClass
     public static void before() {
@@ -82,7 +89,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testCreateCluster(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
+        CrdOperator mockMirrorOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -91,9 +98,19 @@ public class KafkaConnectAssemblyOperatorTest {
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
-        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
+        KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
+                .withBootstrapServers(consumerBootstrapServers)
+                .withGroupId(groupId)
+                .withNumStreams(numStreams)
+                .build();
+        KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
+                .withBootstrapServers(producerBootstrapServers)
+                .build();
+        Map<String, Object> metricsCm = new HashMap<>();
+        metricsCm.put("foo", "bar");
+        KafkaMirrorMaker clusterCm = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, clusterCmName, image, producer, consumer, whitelist, metricsCm);
 
-        when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -104,38 +121,42 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+        KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
+                mockMirrorOps,
+                mockSecretOps,
+                mockCmOps,
+                mockPolicyOps,
+                mockDcOps,
+                mockServiceOps);
 
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(clusterCm);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.MIRRORMAKER, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
-
-            // No metrics config  => no CMs created
-            Set<String> metricsNames = new HashSet<>();
-            if (connect.isMetricsEnabled()) {
-                metricsNames.add(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName));
-            }
 
             // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(1, capturedServices.size());
             Service service = capturedServices.get(0);
-            context.assertEquals(connect.getServiceName(), service.getMetadata().getName());
-            context.assertEquals(connect.generateService(), service, "Services are not equal");
+            context.assertEquals(mirror.getServiceName(), service.getMetadata().getName());
+            context.assertEquals(mirror.generateService(), service, "Services are not equal");
+
+            // No metrics config  => no CMs created
+            Set<String> metricsNames = new HashSet<>();
+            if (mirror.isMetricsEnabled()) {
+                metricsNames.add(KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName));
+            }
 
             // Verify Deployment
             List<Deployment> capturedDc = dcCaptor.getAllValues();
             context.assertEquals(1, capturedDc.size());
             Deployment dc = capturedDc.get(0);
-            context.assertEquals(connect.getName(), dc.getMetadata().getName());
+            context.assertEquals(mirror.getName(), dc.getMetadata().getName());
             Map annotations = new HashMap();
             annotations.put("strimzi.io/logging", LOGGING_CONFIG);
-            context.assertEquals(connect.generateDeployment(annotations), dc, "Deployments are not equal");
+            context.assertEquals(mirror.generateDeployment(annotations), dc, "Deployments are not equal");
 
             async.complete();
         });
@@ -143,7 +164,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterNoDiff(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
+        CrdOperator mockMirrorOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -153,11 +174,22 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
-        when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
+        KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
+                .withBootstrapServers(consumerBootstrapServers)
+                .withGroupId(groupId)
+                .withNumStreams(numStreams)
+                .build();
+        KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
+                .withBootstrapServers(producerBootstrapServers)
+                .build();
+        Map<String, Object> metricsCm = new HashMap<>();
+        metricsCm.put("foo", "bar");
+        KafkaMirrorMaker clusterCm = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, clusterCmName, image, producer, consumer, whitelist, metricsCm);
+
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(clusterCm);
+        when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockServiceOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateService());
+        when(mockDcOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>()));
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -177,13 +209,17 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+        KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
+                mockMirrorOps,
+                mockSecretOps,
+                mockCmOps,
+                mockPolicyOps,
+                mockDcOps,
+                mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.MIRRORMAKER, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
             // Verify service
@@ -204,7 +240,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateCluster(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
+        CrdOperator mockMirrorOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -214,13 +250,23 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
+        KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
+                .withBootstrapServers(consumerBootstrapServers)
+                .withGroupId(groupId)
+                .withNumStreams(numStreams)
+                .build();
+        KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
+                .withBootstrapServers(producerBootstrapServers)
+                .build();
+        Map<String, Object> metricsCmP = new HashMap<>();
+        metricsCmP.put("foo", "bar");
+        KafkaMirrorMaker clusterCm = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, clusterCmName, image, producer, consumer, whitelist, metricsCmP);
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(clusterCm);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
-        when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
+        when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockServiceOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateService());
+        when(mockDcOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>()));
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -241,23 +287,23 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         // Mock CM get
-        when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))
+                    .withName(KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                 .endMetadata()
                 .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterCmNamespace, KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
 
         ConfigMap loggingCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))
+                    .withName(KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName))
                     .withNamespace(clusterCmNamespace)
                     .endMetadata()
                     .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOGGING_CONFIG))
                     .build();
 
-        when(mockCmOps.get(clusterCmNamespace, KafkaConnectCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
+        when(mockCmOps.get(clusterCmNamespace, KafkaMirrorMakerCluster.logAndMetricsConfigName(clusterCmName))).thenReturn(metricsCm);
 
         // Mock CM patch
         Set<String> metricsCms = TestUtils.set();
@@ -266,18 +312,22 @@ public class KafkaConnectAssemblyOperatorTest {
             return Future.succeededFuture();
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+        KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
+                mockMirrorOps,
+                mockSecretOps,
+                mockCmOps,
+                mockPolicyOps,
+                mockDcOps,
+                mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.MIRRORMAKER, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            KafkaConnectCluster compareTo = KafkaConnectCluster.fromCrd(clusterCm);
+            KafkaMirrorMakerCluster compareTo = KafkaMirrorMakerCluster.fromCrd(clusterCm);
 
-            // Vertify service
+            // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(1, capturedServices.size());
             Service service = capturedServices.get(0);
@@ -305,7 +355,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterFailure(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
+        CrdOperator mockMirrorOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -315,13 +365,23 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
+        KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
+                .withBootstrapServers(consumerBootstrapServers)
+                .withGroupId(groupId)
+                .withNumStreams(numStreams)
+                .build();
+        KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
+                .withBootstrapServers(producerBootstrapServers)
+                .build();
+        Map<String, Object> metricsCm = new HashMap<>();
+        metricsCm.put("foo", "bar");
+        KafkaMirrorMaker clusterCm = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, clusterCmName, image, producer, consumer, whitelist, metricsCm);
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(clusterCm);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
-        when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
+        when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockServiceOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateService());
+        when(mockDcOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>()));
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -343,16 +403,20 @@ public class KafkaConnectAssemblyOperatorTest {
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
         when(mockDcOps.scaleDown(dcScaleDownNamespaceCaptor.capture(), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+        when(mockMirrorOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+        KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
+                mockMirrorOps,
+                mockSecretOps,
+                mockCmOps,
+                mockPolicyOps,
+                mockDcOps,
+                mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.MIRRORMAKER, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertFalse(createResult.succeeded());
 
             async.complete();
@@ -363,7 +427,7 @@ public class KafkaConnectAssemblyOperatorTest {
     public void testUpdateClusterScaleUp(TestContext context) {
         final int scaleTo = 4;
 
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
+        CrdOperator mockMirrorOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -373,37 +437,51 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
+        KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
+                .withBootstrapServers(consumerBootstrapServers)
+                .withGroupId(groupId)
+                .withNumStreams(numStreams)
+                .build();
+        KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
+                .withBootstrapServers(producerBootstrapServers)
+                .build();
+        Map<String, Object> metricsCm = new HashMap<>();
+        metricsCm.put("foo", "bar");
+        KafkaMirrorMaker clusterCm = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, clusterCmName, image, producer, consumer, whitelist, metricsCm);
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(clusterCm);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
-        when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
+        when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockServiceOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateService());
+        when(mockDcOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>()));
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         when(mockDcOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
+                .when(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
+                .when(mockDcOps).scaleDown(clusterCmNamespace, mirror.getName(), scaleTo);
 
-        when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+        when(mockMirrorOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+        KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
+                mockMirrorOps,
+                mockSecretOps,
+                mockCmOps,
+                mockPolicyOps,
+                mockDcOps,
+                mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.MIRRORMAKER, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
+            verify(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
 
             async.complete();
         });
@@ -413,7 +491,7 @@ public class KafkaConnectAssemblyOperatorTest {
     public void testUpdateClusterScaleDown(TestContext context) {
         int scaleTo = 2;
 
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
+        CrdOperator mockMirrorOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -423,37 +501,51 @@ public class KafkaConnectAssemblyOperatorTest {
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
 
-        KafkaConnect clusterCm = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm);
+        KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
+                .withBootstrapServers(consumerBootstrapServers)
+                .withGroupId(groupId)
+                .withNumStreams(numStreams)
+                .build();
+        KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
+                .withBootstrapServers(producerBootstrapServers)
+                .build();
+        Map<String, Object> metricsCm = new HashMap<>();
+        metricsCm.put("foo", "bar");
+        KafkaMirrorMaker clusterCm = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, clusterCmName, image, producer, consumer, whitelist, metricsCm);
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(clusterCm);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
-        when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
-        when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>()));
+        when(mockMirrorOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockServiceOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateService());
+        when(mockDcOps.get(clusterCmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>()));
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         when(mockDcOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
+                .when(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(clusterCmNamespace, connect.getName(), scaleTo);
+                .when(mockDcOps).scaleDown(clusterCmNamespace, mirror.getName(), scaleTo);
 
-        when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+        when(mockMirrorOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+        KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps);
+                mockMirrorOps,
+                mockSecretOps,
+                mockCmOps,
+                mockPolicyOps,
+                mockDcOps,
+                mockServiceOps);
 
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.MIRRORMAKER, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            verify(mockDcOps).scaleUp(clusterCmNamespace, connect.getName(), scaleTo);
+            verify(mockDcOps).scaleUp(clusterCmNamespace, mirror.getName(), scaleTo);
 
             async.complete();
         });
@@ -461,31 +553,44 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testReconcile(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
+        CrdOperator mockMirrorOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
+        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
 
         String clusterCmNamespace = "test";
 
-        KafkaConnect foo = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "foo");
-        KafkaConnect bar = ResourceUtils.createEmptyKafkaConnectCluster(clusterCmNamespace, "bar");
-        when(mockConnectOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
-        // when requested ConfigMap for a specific Kafka Connect cluster
-        when(mockConnectOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
-        when(mockConnectOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
 
-        // providing the list of ALL Deployments for all the Kafka Connect clusters
-        Labels newLabels = Labels.forKind(KafkaConnect.RESOURCE_KIND);
+        KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
+                .withBootstrapServers(consumerBootstrapServers)
+                .withGroupId(groupId)
+                .withNumStreams(numStreams)
+                .build();
+        KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
+                .withBootstrapServers(producerBootstrapServers)
+                .build();
+        Map<String, Object> metricsCm = new HashMap<>();
+        metricsCm.put("foo", "bar");
+
+        KafkaMirrorMaker foo = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, "foo", image, producer, consumer, whitelist, metricsCm);
+        KafkaMirrorMaker bar = ResourceUtils.createKafkaMirrorMakerCluster(clusterCmNamespace, "bar", image, producer, consumer, whitelist, metricsCm);
+
+        when(mockMirrorOps.list(eq(clusterCmNamespace), any())).thenReturn(asList(foo, bar));
+        // when requested ConfigMap for a specific Kafka Mirror Maker cluster
+        when(mockMirrorOps.get(eq(clusterCmNamespace), eq("foo"))).thenReturn(foo);
+        when(mockMirrorOps.get(eq(clusterCmNamespace), eq("bar"))).thenReturn(bar);
+
+        // providing the list of ALL Deployments for all the Kafka Mirror Maker clusters
+        Labels newLabels = Labels.forKind(KafkaMirrorMaker.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>())));
+                asList(KafkaMirrorMakerCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>())));
 
-        // providing the list Deployments for already "existing" Kafka Connect clusters
+        // providing the list Deployments for already "existing" Kafka Mirror Maker clusters
         Labels barLabels = Labels.forCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>()))
+                asList(KafkaMirrorMakerCluster.fromCrd(bar).generateDeployment(new HashMap<String, String>()))
         );
 
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
@@ -494,20 +599,25 @@ public class KafkaConnectAssemblyOperatorTest {
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
         Async async = context.async(2);
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
+
+        KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx, true,
                 new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps) {
+                mockMirrorOps,
+                mockSecretOps,
+                mockCmOps,
+                mockPolicyOps,
+                mockDcOps,
+                mockServiceOps) {
 
             @Override
-            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly) {
-                createdOrUpdated.add(kafkaConnectAssembly.getMetadata().getName());
+            public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMakerAssembly) {
+                createdOrUpdated.add(kafkaMirrorMakerAssembly.getMetadata().getName());
                 async.countDown();
                 return Future.succeededFuture();
             }
         };
 
-        // Now try to reconcile all the Kafka Connect clusters
+        // Now try to reconcile all the Kafka Mirror Maker clusters
         ops.reconcileAll("test", clusterCmNamespace);
 
         async.await();
