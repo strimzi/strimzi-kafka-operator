@@ -354,6 +354,17 @@ spec:
                   properties:
                     image:
                       type: string
+                    logLevel:
+                      type: string
+                      enum:
+                      - emerg
+                      - alert
+                      - crit
+                      - err
+                      - warning
+                      - notice
+                      - info
+                      - debug
                     resources:
                       type: object
                       properties:
@@ -665,6 +676,17 @@ spec:
                   properties:
                     image:
                       type: string
+                    logLevel:
+                      type: string
+                      enum:
+                      - emerg
+                      - alert
+                      - crit
+                      - err
+                      - warning
+                      - notice
+                      - info
+                      - debug
                     resources:
                       type: object
                       properties:
@@ -913,6 +935,17 @@ spec:
                   properties:
                     image:
                       type: string
+                    logLevel:
+                      type: string
+                      enum:
+                      - emerg
+                      - alert
+                      - crit
+                      - err
+                      - warning
+                      - notice
+                      - info
+                      - debug
                     resources:
                       type: object
                       properties:
@@ -1259,6 +1292,17 @@ spec:
                   properties:
                     image:
                       type: string
+                    logLevel:
+                      type: string
+                      enum:
+                      - emerg
+                      - alert
+                      - crit
+                      - err
+                      - warning
+                      - notice
+                      - info
+                      - debug
                     resources:
                       type: object
                       properties:

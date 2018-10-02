@@ -47,7 +47,7 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Resources;
-import io.strimzi.api.kafka.model.Sidecar;
+import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -128,7 +128,7 @@ public class KafkaCluster extends AbstractModel {
     private String zookeeperConnect;
     private Rack rack;
     private String initImage;
-    private Sidecar tlsSidecar;
+    private TlsSidecar tlsSidecar;
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
     private SortedMap<Integer, String> externalAddresses = new TreeMap<>();
@@ -763,7 +763,7 @@ public class KafkaCluster extends AbstractModel {
         this.initImage = initImage;
     }
 
-    protected void setTlsSidecar(Sidecar tlsSidecar) {
+    protected void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }
 

@@ -31,7 +31,7 @@ public class TopicOperatorSpec extends EntityTopicOperatorSpec {
     public static final String DEFAULT_TLS_SIDECAR_IMAGE = EntityOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
 
     private Affinity affinity;
-    private Sidecar tlsSidecar;
+    private TlsSidecar tlsSidecar;
 
     @Description("Pod affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
@@ -45,11 +45,11 @@ public class TopicOperatorSpec extends EntityTopicOperatorSpec {
 
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Sidecar getTlsSidecar() {
+    public TlsSidecar getTlsSidecar() {
         return tlsSidecar;
     }
 
-    public void setTlsSidecar(Sidecar tlsSidecar) {
+    public void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }
 }

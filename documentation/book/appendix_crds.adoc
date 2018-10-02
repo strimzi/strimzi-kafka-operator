@@ -81,7 +81,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |tlsSidecar           1.2+<.<|TLS sidecar configuration.
-|xref:type-Sidecar-{context}[`Sidecar`]
+|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |====
 
 [id='type-EphemeralStorage-{context}']
@@ -311,7 +311,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 [id='type-Resources-{context}']
 ### `Resources` schema reference
 
-Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-Sidecar-{context}[`Sidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -372,8 +372,8 @@ It must have the value `external` for the type `ExternalLogging`.
 |string
 |====
 
-[id='type-Sidecar-{context}']
-### `Sidecar` schema reference
+[id='type-TlsSidecar-{context}']
+### `TlsSidecar` schema reference
 
 Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
@@ -383,6 +383,8 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type
 |Field             |Description
 |image      1.2+<.<|The docker image for the container.
 |string
+|logLevel   1.2+<.<|The log level for the TLS sidecar.Default value is `notice`.
+|string (one of [emerg, debug, crit, err, alert, warning, notice, info])
 |resources  1.2+<.<|Resource constraints (limits and requests).
 |xref:type-Resources-{context}[`Resources`]
 |====
@@ -425,7 +427,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |logging         1.2+<.<|Logging configuration for Zookeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |tlsSidecar      1.2+<.<|TLS sidecar configuration.
-|xref:type-Sidecar-{context}[`Sidecar`]
+|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |====
 
 [id='type-TopicOperatorSpec-{context}']
@@ -454,7 +456,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
 |tlsSidecar                      1.2+<.<|TLS sidecar configuration.
-|xref:type-Sidecar-{context}[`Sidecar`]
+|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |====
@@ -499,7 +501,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |tlsSidecar     1.2+<.<|TLS sidecar configuration.
-|xref:type-Sidecar-{context}[`Sidecar`]
+|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |====
 
 [id='type-EntityTopicOperatorSpec-{context}']

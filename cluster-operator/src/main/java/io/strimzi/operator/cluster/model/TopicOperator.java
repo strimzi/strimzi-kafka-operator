@@ -18,7 +18,7 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Resources;
-import io.strimzi.api.kafka.model.Sidecar;
+import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
@@ -84,7 +84,7 @@ public class TopicOperator extends AbstractModel {
     private String topicConfigMapLabels;
     private int topicMetadataMaxAttempts;
 
-    private Sidecar tlsSidecar;
+    private TlsSidecar tlsSidecar;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -382,7 +382,7 @@ public class TopicOperator extends AbstractModel {
         return createSecret(TopicOperator.secretName(cluster), data);
     }
 
-    protected void setTlsSidecar(Sidecar tlsSidecar) {
+    protected void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
     }
 }
