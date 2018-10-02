@@ -52,7 +52,7 @@ For example, because your network does not allow access to the container reposit
 In such case, you should either copy the {ProductName} images or build them from source.
 In case the configured image is not compatible with {ProductName} images, it might not work properly.
 
-.Example of TLS sidecar configuration
+.Example of container image configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
