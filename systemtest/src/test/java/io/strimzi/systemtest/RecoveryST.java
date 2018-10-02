@@ -6,11 +6,11 @@ package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -24,13 +24,17 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @JUnitGroup(name = "regression")
 @Namespace(RecoveryST.NAMESPACE)
 @ClusterOperator
-@KafkaFromClasspathYaml
 public class RecoveryST extends AbstractST {
 
     static final String NAMESPACE = "recovery-cluster-test";
     static final String CLUSTER_NAME = "recovery-cluster";
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
+
+    @Before
+    public void deployKafka() {
+        resources().kafkaEphemeral(CLUSTER_NAME, 1).done();
+    }
 
     @Test
     public void testRecoveryFromEntityOperatorDeletion() {

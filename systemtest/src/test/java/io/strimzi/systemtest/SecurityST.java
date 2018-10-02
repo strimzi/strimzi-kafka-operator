@@ -6,7 +6,6 @@ package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.KubeClusterException;
@@ -33,10 +32,9 @@ public class SecurityST extends AbstractST {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaFromClasspathYaml()
     public void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
-
+        resources().kafkaEphemeral(CLUSTER_NAME, 2).done();
         String commandForKafkaBootstrap = "openssl s_client -connect my-cluster-kafka-bootstrap:9093 -showcerts " +
                         "-CAfile /opt/kafka/broker-certs/cluster-ca.crt " +
                         "-verify_hostname my-cluster-kafka-bootstrap";

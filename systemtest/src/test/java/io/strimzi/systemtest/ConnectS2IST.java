@@ -6,11 +6,10 @@ package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaConnectS2IFromClasspathYaml;
-import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.StrimziRunner;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -20,18 +19,27 @@ import static org.junit.Assert.assertThat;
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectS2IST.NAMESPACE)
 @ClusterOperator
-@KafkaFromClasspathYaml
 public class ConnectS2IST extends AbstractST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     public static final String CONNECT_CLUSTER_NAME = "connect-s2i-tests";
     public static final String CONNECT_DEPLOYMENT_NAME = CONNECT_CLUSTER_NAME + "-connect";
 
+    @Before
+    public void deployKafka() {
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+    }
+
     @Test
     @OpenShiftOnly
     @JUnitGroup(name = "regression")
-    @KafkaConnectS2IFromClasspathYaml
     public void testDeployS2IWithMongoDBPlugin() {
+        resources().kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
+            .editMetadata()
+                .addToLabels("type", "kafka-connect-s2i")
+            .endMetadata()
+            .done();
+
         String pathToDebeziumMongodb = "https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.3.0/debezium-connector-mongodb-0.3.0-plugin.tar.gz";
         // Create directory for plugin
         kubeClient.exec("mkdir", "-p", "./my-plugins/");
