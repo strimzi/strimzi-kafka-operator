@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: strimzi-mirror-maker
+  annotations:
+    openshift.io/display-name: "Apache Kafka MirrorMaker"
+    description: >-
+      This template installs Kafka MirrorMaker to mirror Kafka clusters. 
+      For more information about using this template see http://strimzi.io
+    tags: "messaging,datastore"
+    iconClass: "fa fa-cubes"
+    template.openshift.io/documentation-url: "http://strimzi.io"
+message: "Kafka MirrorMaker is being deployed"
+parameters:
+- description: Bootstrap server of the source cluster to be mirrored
+  displayName: Bootstrap server of the source cluster
+  name: MIRROR_MAKER_SOURCE
+  required: true
+  value: "my-source-cluster-kafka-bootstrap:9092"
+- description: Bootstrap server of the target cluster to mirror source cluster
+  displayName: Bootstrap server of the target cluster
+  name: MIRROR_MAKER_TARGET
+  required: true
+  value: "my-target-cluster-kafka-bootstrap:9092"
+- description: Number of MirrorMaker cluster nodes which will be deployed
+  displayName: Number of MirrorMaker cluster nodes
+  name: MIRROR_MAKER_NODE_COUNT
+  required: true
+  value: "1"
+- description: The consumer group id to which this consumer belongs
+  displayName: The consumer group id
+  name: MIRROR_MAKER_GROUP_ID
+  required: true
+  value: "my-source-group-id"
+- description: List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions
+  displayName: List of topics which are included for mirroring.
+  name: MIRROR_MAKER_WHITELIST
+  required: true
+  value: ".*"
+objects:
+- apiVersion: kafka.strimzi.io/v1alpha1
+  kind: KafkaMirrorMaker
+  metadata:
+    name: mirror-maker
+  spec:
+    replicas: ${{MIRROR_MAKER_NODE_COUNT}}
+    consumer:
+      bootstrapServers: ${{MIRROR_MAKER_SOURCE}}
+      groupId: ${{MIRROR_MAKER_GROUP_ID}}
+    producer:
+      bootstrapServers: ${{MIRROR_MAKER_TARGET}}
+    whitelist: ${{MIRROR_MAKER_WHITELIST}}

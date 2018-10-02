@@ -19,6 +19,10 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.KafkaListenerTls;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
@@ -366,6 +370,40 @@ public class ResourceUtils {
                 .withNewSpec().endSpec()
                 .build();
     }
+
+    /**
+     * Generate empty Kafka MirrorMaker ConfigMap
+     */
+    public static KafkaMirrorMaker createEmptyKafkaMirrorMakerCluster(String clusterCmNamespace, String clusterCmName) {
+        return new KafkaMirrorMakerBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(clusterCmName)
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                                "my-user-label", "cromulent"))
+                        .build())
+                .withNewSpec().endSpec()
+                .build();
+    }
+
+    public static KafkaMirrorMaker createKafkaMirrorMakerCluster(String clusterCmNamespace, String clusterCmName, String image, KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer, String whitelist, Map<String, Object> metricsCm) {
+        return new KafkaMirrorMakerBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(clusterCmName)
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
+                                "my-user-label", "cromulent"))
+                        .build())
+                .withNewSpec()
+                .withImage(image)
+                .withProducer(producer)
+                .withConsumer(consumer)
+                .withWhitelist(whitelist)
+                .withMetrics(metricsCm)
+                .endSpec()
+                .build();
+    }
+
 
     public static void cleanUpTemporaryTLSFiles() {
         String tmpString = "/tmp";

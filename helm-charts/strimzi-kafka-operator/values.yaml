@@ -63,6 +63,11 @@ tlsSidecarEntityOperator:
     repository: strimzi
     name: entity-operator-stunnel
     tag: latest
+kafkaMirrorMaker:
+  image:
+    repository: strimzi
+    name: kafka-mirror-maker
+    tag: latest
 resources:
   limits:
     memory: 256Mi

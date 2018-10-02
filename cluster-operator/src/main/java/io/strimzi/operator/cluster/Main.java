@@ -10,16 +10,20 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
+import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -84,7 +88,10 @@ public class Main {
         ConfigMapOperator configMapOperations = new ConfigMapOperator(vertx, client);
         DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);
         SecretOperator secretOperations = new SecretOperator(vertx, client);
-        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect> kco = new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class);
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect> kco =
+                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class);
+        CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> kmmo =
+                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
         NetworkPolicyOperator networkPolicyOperator = new NetworkPolicyOperator(vertx, client);
 
         OpenSslCertManager certManager = new OpenSslCertManager();
@@ -100,6 +107,9 @@ public class Main {
             maybeLogS2iOnKubeWarning(vertx, client);
         }
 
+        KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
+                new KafkaMirrorMakerAssemblyOperator(vertx, isOpenShift, certManager, kmmo, secretOperations, configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations);
+
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
             Future<String> fut = Future.future();
@@ -109,7 +119,8 @@ public class Main {
                     client,
                     kafkaClusterOperations,
                     kafkaConnectClusterOperations,
-                    kafkaConnectS2IClusterOperations);
+                    kafkaConnectS2IClusterOperations,
+                    kafkaMirrorMakerAssemblyOperator);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {

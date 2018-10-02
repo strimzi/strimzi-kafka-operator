@@ -156,7 +156,7 @@ public class ClusterOperatorTest {
             async2.await();
         }
 
-        if (numWatchers.get() > (openShift ? 3 : 2) * namespaceList.size()) {
+        if (numWatchers.get() > (openShift ? 4 : 3) * namespaceList.size()) {
             context.fail("Looks like there were more watchers than namespaces");
         }
     }

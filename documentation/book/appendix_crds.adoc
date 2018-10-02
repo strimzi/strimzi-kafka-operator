@@ -957,7 +957,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |integer
 |image        1.2+<.<|The docker image for the pods.
 |string
-|whitelist    1.2+<.<|List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions.Mirroring two topics named A and B can be achieved by using the whitelist `'A|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'`.Multiple regular expressions separated by commas can be specified as well.
+|whitelist    1.2+<.<|List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions.Mirroring two topics named A and B can be achieved by using the whitelist `'A|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'`. Multiple regular expressions separated by commas can be specified as well.
 |string
 |consumer     1.2+<.<|Configuration of source cluster.
 |xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`]
