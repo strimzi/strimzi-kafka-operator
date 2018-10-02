@@ -107,11 +107,13 @@ public class Resources {
                     x.delete(resource);
                     waitForDeletion((KafkaConnect) resource);
                 });
+                break;
             case KafkaConnectS2I.RESOURCE_KIND:
                 resources.add(() -> {
                     x.delete(resource);
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
+                break;
             default :
                 resources.add(() -> {
                     x.delete(resource);
