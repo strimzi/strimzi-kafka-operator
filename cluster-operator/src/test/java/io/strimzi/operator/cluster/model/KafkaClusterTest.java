@@ -413,6 +413,7 @@ public class KafkaClusterTest {
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "route")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "true")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
 
@@ -487,6 +488,7 @@ public class KafkaClusterTest {
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "loadbalancer")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "true")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
 
@@ -510,6 +512,38 @@ public class KafkaClusterTest {
             assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
             checkOwnerReference(kc.createOwnerReference(), srv);
         }
+    }
+
+    @Test
+    public void testExternalLoadBalancersWithoutTls() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalLoadBalancerExternal()
+                                .withTls(false)
+                            .endKafkaListenerExternalLoadBalancerExternal()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+
+        SortedMap<Integer, String> addresses = new TreeMap<>();
+        addresses.put(0, "my-address-0");
+        addresses.put(1, "my-address-1");
+        addresses.put(2, "my-address-2");
+        kc.setExternalAddresses(addresses);
+
+        // Check StatefulSet changes
+        StatefulSet ss = kc.generateStatefulSet(true);
+
+        List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "loadbalancer")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "false")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
     }
 
     @Test
@@ -541,6 +575,7 @@ public class KafkaClusterTest {
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "true")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
 
@@ -564,6 +599,38 @@ public class KafkaClusterTest {
             assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
             checkOwnerReference(kc.createOwnerReference(), srv);
         }
+    }
+
+    @Test
+    public void testExternalNodePortsWithoutTls() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePortExternal()
+                                .withTls(false)
+                            .endKafkaListenerExternalNodePortExternal()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+
+        SortedMap<Integer, String> addresses = new TreeMap<>();
+        addresses.put(0, "32123");
+        addresses.put(1, "32456");
+        addresses.put(2, "32789");
+        kc.setExternalAddresses(addresses);
+
+        // Check StatefulSet changes
+        StatefulSet ss = kc.generateStatefulSet(true);
+
+        List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "false")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {

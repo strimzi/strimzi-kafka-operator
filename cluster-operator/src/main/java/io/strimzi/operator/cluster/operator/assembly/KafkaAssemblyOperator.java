@@ -199,8 +199,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Service kafkaHeadlessService;
         private ConfigMap kafkaMetricsAndLogsConfigMap;
         private ReconcileResult<StatefulSet> kafkaDiffs;
-        private String kafkaExternalBootstrapAddress;
+        private String kafkaExternalBootstrapDnsName = null;
         private SortedMap<Integer, String> kafkaExternalAddresses = new TreeMap<>();
+        private SortedMap<Integer, String> kafkaExternalDnsNames = new TreeMap<>();
         private boolean kafkaAncillaryCmChange;
 
         private TopicOperator topicOperator;
@@ -644,18 +645,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     address.setHandler(res -> {
                         if (res.succeeded()) {
+                            String bootstrapAddress = null;
+
                             if (kafkaCluster.isExposedWithLoadBalancer()) {
                                 if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
-                                    this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                                    bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
                                 } else {
-                                    this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                                    bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
                                 }
+
+                                this.kafkaExternalBootstrapDnsName = bootstrapAddress;
                             } else if (kafkaCluster.isExposedWithNodePort()) {
-                                this.kafkaExternalBootstrapAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
+                                bootstrapAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
                             }
 
                             if (log.isTraceEnabled()) {
-                                log.trace("{}: Found address {} for Service {}", reconciliation, this.kafkaExternalBootstrapAddress, serviceName);
+                                log.trace("{}: Found address {} for Service {}", reconciliation, bootstrapAddress, serviceName);
                             }
 
                             future.complete();
@@ -710,6 +715,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     } else {
                                         serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
                                     }
+
+                                    if (kafkaCluster.isExposedWithTls())    {
+                                        this.kafkaExternalDnsNames.put(podNumber, serviceAddress);
+                                    }
                                 } else if (kafkaCluster.isExposedWithNodePort()) {
                                     serviceAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
                                 }
@@ -763,10 +772,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     address.setHandler(res -> {
                         if (res.succeeded()) {
-                            this.kafkaExternalBootstrapAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
+                            String bootstrapAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
+                            this.kafkaExternalBootstrapDnsName = bootstrapAddress;
 
                             if (log.isTraceEnabled()) {
-                                log.trace("{}: Found address {} for Route {}", reconciliation, routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                                log.trace("{}: Found address {} for Route {}", reconciliation, bootstrapAddress, routeName);
                             }
 
                             future.complete();
@@ -806,10 +816,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         address.setHandler(res -> {
                             if (res.succeeded()) {
-                                this.kafkaExternalAddresses.put(podNumber, routeOperations.get(namespace, routeName).getSpec().getHost());
+                                String routeAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
+                                this.kafkaExternalAddresses.put(podNumber, routeAddress);
+                                this.kafkaExternalDnsNames.put(podNumber, routeAddress);
 
                                 if (log.isTraceEnabled()) {
-                                    log.trace("{}: Found address {} for Route {}", reconciliation, routeOperations.get(namespace, routeName).getSpec().getHost(), routeName);
+                                    log.trace("{}: Found address {} for Route {}", reconciliation, routeAddress, routeName);
                                 }
 
                                 routeFuture.complete();
@@ -850,7 +862,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     clusterCa, clientsCa, null, Collections.EMPTY_MAP);
                         } else {
                             kafkaCluster.generateCertificates(kafkaAssembly,
-                                    clusterCa, clientsCa, kafkaExternalBootstrapAddress, kafkaExternalAddresses);
+                                    clusterCa, clientsCa, kafkaExternalBootstrapDnsName, kafkaExternalDnsNames);
                         }
                         future.complete(this);
                     } catch (Throwable e) {

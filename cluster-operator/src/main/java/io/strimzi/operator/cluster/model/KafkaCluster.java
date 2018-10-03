@@ -84,6 +84,7 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_EXTERNAL_ENABLED = "KAFKA_EXTERNAL_ENABLED";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_ADDRESSES = "KAFKA_EXTERNAL_ADDRESSES";
     protected static final String ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION = "KAFKA_EXTERNAL_AUTHENTICATION";
+    protected static final String ENV_VAR_KAFKA_EXTERNAL_TLS = "KAFKA_EXTERNAL_TLS";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_TYPE = "KAFKA_AUTHORIZATION_TYPE";
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
@@ -280,13 +281,19 @@ public class KafkaCluster extends AbstractModel {
         result.setTlsSidecar(kafkaClusterSpec.getTlsSidecar());
 
         KafkaListeners listeners = kafkaClusterSpec.getListeners();
+        result.setListeners(listeners);
+
         if (listeners != null) {
             if (listeners.getPlain() != null
                 && listeners.getPlain().getAuthentication() instanceof KafkaListenerAuthenticationTls) {
                 throw new InvalidResourceException("You cannot configure TLS authentication on a plain listener.");
             }
+
+            if (listeners.getExternal() != null && !result.isExposedWithTls() && listeners.getExternal().getAuth() instanceof KafkaListenerAuthenticationTls)  {
+                throw new InvalidResourceException("TLS Client Authentication can be used only with enabled TLS encryption!");
+            }
         }
-        result.setListeners(listeners);
+
         result.setAuthorization(kafkaClusterSpec.getAuthorization());
 
         return result;
@@ -296,13 +303,13 @@ public class KafkaCluster extends AbstractModel {
      * Manage certificates generation based on those already present in the Secrets
      * @param clusterCa The certificates
      */
-    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, ClientsCa clientsCa, String externalBootstrapAddress, Map<Integer, String> externalAddresses) {
+    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, ClientsCa clientsCa, String externalBootstrapDnsName, Map<Integer, String> externalDnsNames) {
         log.debug("Generating certificates");
 
         try {
             clientsCa.createOrRenew(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(),
                     labels.toMap(), createOwnerReference());
-            brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapAddress, externalAddresses);
+            brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapDnsName, externalDnsNames);
         } catch (IOException e) {
             log.warn("Error while generating certificates", e);
         }
@@ -737,6 +744,7 @@ public class KafkaCluster extends AbstractModel {
             if (listeners.getExternal() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, listeners.getExternal().getType()));
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses.values())));
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TLS, Boolean.toString(isExposedWithTls())));
 
                 if (listeners.getExternal().getAuth() != null) {
                     varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, listeners.getExternal().getAuth().getType()));
@@ -949,5 +957,24 @@ public class KafkaCluster extends AbstractModel {
      */
     public boolean isExposedWithNodePort()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalNodePort;
+    }
+
+    /**
+     * Returns true when the Kafka cluster is exposed to the outside of OpenShift with TLS enabled
+     *
+     * @return
+     */
+    public boolean isExposedWithTls() {
+        if (isExposed() && listeners.getExternal() instanceof KafkaListenerExternalRoute)   {
+            return true;
+        } else if (isExposed())   {
+            if (listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer) {
+                return ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).isTls();
+            } else if (listeners.getExternal() instanceof KafkaListenerExternalNodePort)    {
+                return ((KafkaListenerExternalNodePort) listeners.getExternal()).isTls();
+            }
+        }
+
+        return false;
     }
 }

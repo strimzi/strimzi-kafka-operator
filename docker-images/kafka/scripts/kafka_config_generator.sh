@@ -53,6 +53,7 @@ EOF
     LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},CLIENTTLS:SASL_SSL"
     CLIENTTLS_LISTENER=$(cat <<EOF
 $CLIENTTLS_LISTENER
+# CLIENTTLS listener authentication
 listener.name.clienttls.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
 EOF
 )
@@ -83,14 +84,15 @@ if [ "$KAFKA_EXTERNAL_ENABLED" ]; then
     ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${EXTERNAL_ADDRESS}:${ADDRESSES[$KAFKA_BROKER_ID]}"
   fi
 
-  # Configuring TLS client authentication for clienttls interface
-  if [ "$KAFKA_EXTERNAL_AUTHENTICATION" = "tls" ]; then
-    LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH="required"
-  else
-    LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH="none"
-  fi
+  if [ "$KAFKA_EXTERNAL_TLS" = "true" ]; then
+    # Configuring TLS client authentication for clienttls interface
+    if [ "$KAFKA_EXTERNAL_AUTHENTICATION" = "tls" ]; then
+      LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH="required"
+    else
+      LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH="none"
+    fi
 
-  EXTERNAL_LISTENER=$(cat <<EOF
+    EXTERNAL_LISTENER=$(cat <<EOF
 # EXTERNAL interface configuration
 listener.name.external.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12
 listener.name.external.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
@@ -98,17 +100,29 @@ listener.name.external.ssl.truststore.location=/tmp/kafka/clients.truststore.p12
 listener.name.external.ssl.client.auth=${LISTENER_NAME_EXTERNAL_SSL_CLIENT_AUTH}
 EOF
 )
+  fi
 
   if [ "$KAFKA_EXTERNAL_AUTHENTICATION" = "scram-sha-512" ]; then
     SASL_ENABLED_MECHANISMS="SCRAM-SHA-512\n$SASL_ENABLED_MECHANISMS"
-    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SASL_SSL"
+
+    if [ "$KAFKA_EXTERNAL_TLS" = "true" ]; then
+      LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SASL_SSL"
+    else
+      LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SASL_PLAINTEXT"
+    fi
+
     EXTERNAL_LISTENER=$(cat <<EOF
 $EXTERNAL_LISTENER
+# EXTERNAL listener authentication
 listener.name.external.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;
 EOF
 )
   else
-    LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SSL"
+    if [ "$KAFKA_EXTERNAL_TLS" = "true" ]; then
+      LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:SSL"
+    else
+      LISTENER_SECURITY_PROTOCOL_MAP="${LISTENER_SECURITY_PROTOCOL_MAP},EXTERNAL:PLAINTEXT"
+    fi
   fi
 fi
 

@@ -26,6 +26,7 @@ spec:
     listeners:
       external:
         type: nodeport
+        tls: true
         # ...
     # ...
   zookeeper:
@@ -83,7 +84,7 @@ If several different addresses are returned, select the address type you want ba
 +
 Use the address with the port found in the previous step in the Kafka _bootstrap_ address.
 
-. Extract the public certificate of the broker certification authority
+. Unless TLS encryption was disabled, extract the public certificate of the broker certification authority.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl get`:
