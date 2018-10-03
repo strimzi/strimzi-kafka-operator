@@ -33,7 +33,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static io.strimzi.systemtest.ConnectST.KAFKA_CONNECT_BOOTSTRAP_SERVERS;
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
