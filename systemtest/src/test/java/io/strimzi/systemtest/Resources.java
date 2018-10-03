@@ -348,8 +348,8 @@ public class Resources {
         String namespace = kafkaConnect.getMetadata().getNamespace();
 
         client.pods().inNamespace(namespace).list().getItems().stream()
-                .filter(p -> p.getKind().startsWith(kafkaConnect.getKind()))
-                .forEach(p -> waitForPodDeletion(namespace, p.getKind()));
+                .filter(p -> p.getMetadata().getName().startsWith(kafkaConnect.getMetadata().getName() + "-connect-"))
+                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
@@ -357,8 +357,8 @@ public class Resources {
         String namespace = kafkaConnectS2I.getMetadata().getNamespace();
 
         client.pods().inNamespace(namespace).list().getItems().stream()
-                .filter(p -> p.getKind().startsWith(kafkaConnectS2I.getKind()))
-                .forEach(p -> waitForPodDeletion(namespace, p.getKind()));
+                .filter(p -> p.getMetadata().getName().startsWith(kafkaConnectS2I.getMetadata().getName() + "-connect-"))
+                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
     }
 
     private void waitForPodDeletion(String namespace, String name) {
