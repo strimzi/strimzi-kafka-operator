@@ -5,7 +5,7 @@
 [id='proc-configuring-kafka-mirror-maker-whitelist-{context}']
 = Configuring the topics whitelist
 
-The topic whitelist, describing which topics has to be mirrored by Kafka Mirror Maker from source to target Kafka cluster, can be configured using the `whitelist` property in `KafkaMirrorMaker.spec`.
+The topic whitelist, describing which topics have to be mirrored by Kafka Mirror Maker from source to target Kafka cluster, can be configured using the `whitelist` property in `KafkaMirrorMaker.spec`.
 
 .Prerequisites
 
