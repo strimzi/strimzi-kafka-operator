@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
@@ -306,7 +307,7 @@ public class Resources {
     private KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
         String namespace = kafkaConnectS2I.getMetadata().getNamespace();
-        waitForDeployment(namespace, kafkaConnectS2I.getMetadata().getName() + "-connect");
+        waitForDeploymentConfig(namespace, kafkaConnectS2I.getMetadata().getName() + "-connect");
         return kafkaConnectS2I;
     }
 
@@ -330,6 +331,13 @@ public class Resources {
         TestUtils.waitFor("deployment " + name, 1000, 300000,
             () -> client().extensions().deployments().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment {} is ready", name);
+    }
+
+    private void waitForDeploymentConfig(String namespace, String name) {
+        LOGGER.info("Waiting for Deployment Config {}", name);
+        TestUtils.waitFor("deployment config " + name, 1000, 300000,
+            () -> client().adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespace).withName(name).isReady());
+        LOGGER.info("Deployment Config {} is ready", name);
     }
 
     private void waitForDeletion(Kafka kafka) {
