@@ -38,7 +38,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromEntityOperatorDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String entityOperatorDeploymentName = entityOperatorDeploymentName(CLUSTER_NAME);
         LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", CLUSTER_NAME);
 
@@ -54,7 +54,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromKafkaStatefulSetDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
 
@@ -70,7 +70,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromZookeeperStatefulSetDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
         LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
 
@@ -86,7 +86,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromKafkaServiceDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String kafkaServiceName = kafkaServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
 
@@ -101,7 +101,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromZookeeperServiceDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String zookeeperServiceName = zookeeperServiceName(CLUSTER_NAME);
 
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
@@ -117,7 +117,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromKafkaHeadlessServiceDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
 
@@ -132,7 +132,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromZookeeperHeadlessServiceDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String zookeeperHeadlessServiceName = zookeeperHeadlessServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
 
@@ -147,7 +147,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromKafkaMetricsConfigDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", CLUSTER_NAME);
 
@@ -163,7 +163,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromZookeeperMetricsConfigDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);
         LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", CLUSTER_NAME);
 
