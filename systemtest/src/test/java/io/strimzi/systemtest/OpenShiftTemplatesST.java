@@ -200,20 +200,6 @@ public class OpenShiftTemplatesST {
 
     @Test
     @JUnitGroup(name = "regression")
-    @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
-    @OpenShiftOnly
-    public void testDeployConnectClusterViaTemplate() {
-        String clusterName = "openshift-my-connect-cluster";
-        oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
-                "KAFKA_CONNECT_BOOTSTRAP_SERVERS", KAFKA_CONNECT_BOOTSTRAP_SERVERS));
-        String deploymentName = clusterName + "-connect";
-        oc.waitForDeployment(deploymentName, 1);
-        oc.deleteByName("KafkaConnect", clusterName);
-        oc.waitForResourceDeletion("deployment", deploymentName);
-    }
-
-    @Test
-    @JUnitGroup(name = "regression")
     public void testTopicOperator() {
         String topicName = "test-topic-topic";
         oc.newApp("strimzi-topic", map(
