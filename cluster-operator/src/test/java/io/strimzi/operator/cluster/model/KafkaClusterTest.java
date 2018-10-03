@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -572,13 +573,7 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateBrokerSecret() throws CertificateParsingException {
-        ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
-        clusterCa.createOrRenew(namespace, cluster, emptyMap(), null);
-
-        ClientsCa clientsCa = new ClientsCa(new OpenSslCertManager(), KafkaCluster.getClusterCaKeyName(cluster), null, KafkaCluster.clientsCASecretName(cluster), null, 365, 30, true);
-
-        kc.generateCertificates(kafkaAssembly, clusterCa, clientsCa, null, emptyMap());
-        Secret secret = kc.generateBrokersSecret();
+        Secret secret = generateBrokerSecret(null, emptyMap());
         assertEquals(set(
                 "foo-kafka-0.crt",  "foo-kafka-0.key",
                 "foo-kafka-1.crt", "foo-kafka-1.key",
@@ -593,5 +588,40 @@ public class KafkaClusterTest {
                 asList(2, "foo-kafka-bootstrap.test.svc.cluster.local")),
                 new HashSet<Object>(cert.getSubjectAlternativeNames()));
 
+    }
+
+    @Test
+    public void testGenerateBrokerSecretExternal() throws CertificateParsingException {
+        Map<Integer, String> externalAddresses = new HashMap<>();
+        externalAddresses.put(0, "123.10.125.130");
+        externalAddresses.put(1, "123.10.125.131");
+        externalAddresses.put(2, "123.10.125.132");
+
+        Secret secret = generateBrokerSecret("123.10.125.140", externalAddresses);
+        assertEquals(set(
+                "foo-kafka-0.crt",  "foo-kafka-0.key",
+                "foo-kafka-1.crt", "foo-kafka-1.key",
+                "foo-kafka-2.crt", "foo-kafka-2.key"),
+                secret.getData().keySet());
+        X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
+        assertEquals("CN=foo-kafka, O=io.strimzi", cert.getSubjectDN().getName());
+        assertEquals(set(
+                asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
+                asList(2, "foo-kafka-bootstrap"),
+                asList(2, "foo-kafka-bootstrap.test"),
+                asList(2, "foo-kafka-bootstrap.test.svc.cluster.local"),
+                asList(7, "123.10.125.140"),
+                asList(7, "123.10.125.130")),
+                new HashSet<Object>(cert.getSubjectAlternativeNames()));
+    }
+
+    private Secret generateBrokerSecret(String externalBootstrapAddress, Map<Integer, String> externalAddresses) {
+        ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
+        clusterCa.createOrRenew(namespace, cluster, emptyMap(), null);
+
+        ClientsCa clientsCa = new ClientsCa(new OpenSslCertManager(), KafkaCluster.getClusterCaKeyName(cluster), null, KafkaCluster.clientsCASecretName(cluster), null, 365, 30, true);
+
+        kc.generateCertificates(kafkaAssembly, clusterCa, clientsCa, externalBootstrapAddress, externalAddresses);
+        return kc.generateBrokersSecret();
     }
 }
