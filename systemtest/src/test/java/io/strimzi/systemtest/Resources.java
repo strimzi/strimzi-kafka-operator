@@ -288,6 +288,7 @@ public class Resources {
     }
 
     private Kafka waitFor(Kafka kafka) {
+        LOGGER.info("Waiting for Kafka {}", kafka.getMetadata().getName());
         String namespace = kafka.getMetadata().getNamespace();
         waitForStatefulSet(namespace, kafka.getMetadata().getName() + "-zookeeper");
         waitForStatefulSet(namespace, kafka.getMetadata().getName() + "-kafka");
@@ -296,12 +297,14 @@ public class Resources {
     }
 
     KafkaConnect waitFor(KafkaConnect kafkaConnect) {
+        LOGGER.info("Waiting for Kafka Connect {}", kafkaConnect.getMetadata().getName());
         String namespace = kafkaConnect.getMetadata().getNamespace();
         waitForDeployment(namespace, kafkaConnect.getMetadata().getName() + "-connect");
         return kafkaConnect;
     }
 
     private KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
+        LOGGER.info("Waiting for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
         String namespace = kafkaConnectS2I.getMetadata().getNamespace();
         waitForDeployment(namespace, kafkaConnectS2I.getMetadata().getName() + "-connect");
         return kafkaConnectS2I;
@@ -330,7 +333,7 @@ public class Resources {
     }
 
     private void waitForDeletion(Kafka kafka) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka with name {}", kafka.getMetadata().getName());
+        LOGGER.info("Waiting when all the pods are terminated for Kafka {}", kafka.getMetadata().getName());
         String namespace = kafka.getMetadata().getNamespace();
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
@@ -341,7 +344,7 @@ public class Resources {
     }
 
     private void waitForDeletion(KafkaConnect kafkaConnect) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka Connect with name {}", kafkaConnect.getMetadata().getName());
+        LOGGER.info("Waiting when all the pods are terminated for Kafka Connect {}", kafkaConnect.getMetadata().getName());
         String namespace = kafkaConnect.getMetadata().getNamespace();
 
         client.pods().inNamespace(namespace).list().getItems().stream()
@@ -350,7 +353,7 @@ public class Resources {
     }
 
     private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
-        LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I with name {}", kafkaConnectS2I.getMetadata().getName());
+        LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
         String namespace = kafkaConnectS2I.getMetadata().getNamespace();
 
         client.pods().inNamespace(namespace).list().getItems().stream()
