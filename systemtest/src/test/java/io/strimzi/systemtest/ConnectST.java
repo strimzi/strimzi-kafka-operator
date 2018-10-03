@@ -12,7 +12,8 @@ import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -46,7 +47,6 @@ public class ConnectST extends AbstractST {
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
-    public static final String CONNECT_CLUSTER_NAME = "my-cluster";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KAFKA_CLUSTER_NAME + "-kafka-bootstrap:9092";
     private static final String EXPECTED_CONFIG = "group.id=connect-cluster\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
@@ -59,10 +59,7 @@ public class ConnectST extends AbstractST {
             "internal.value.converter.schemas.enable=false\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
 
-    @Before
-    public void deployKafka() {
-        resources().kafkaEphemeral(KAFKA_CLUSTER_NAME, 3).done();
-    }
+    private static Resources classResources;
 
     @Test
     @JUnitGroup(name = "acceptance")
@@ -243,4 +240,31 @@ public class ConnectST extends AbstractST {
         LOGGER.info("Docker images verified");
     }
 
+    @BeforeClass
+    public static void createClassResources() {
+        classResources = new Resources(namespacedClient());
+
+        Map<String, Object> kafkaConfig = new HashMap<>();
+        kafkaConfig.put("offsets.topic.replication.factor", "3");
+        kafkaConfig.put("transaction.state.log.replication.factor", "3");
+        kafkaConfig.put("transaction.state.log.min.isr", "2");
+
+        classResources().kafkaEphemeral(KAFKA_CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .withConfig(kafkaConfig)
+                .endKafka()
+            .endSpec().done();
+    }
+
+    @AfterClass
+    public static void deleteClassResources() {
+        LOGGER.info("Deleting resources after the test class");
+        classResources.deleteResources();
+        classResources = null;
+    }
+
+    static Resources classResources() {
+        return classResources;
+    }
 }

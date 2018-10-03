@@ -9,7 +9,10 @@ import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.StrimziRunner;
-import org.junit.Before;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -24,11 +27,8 @@ public class ConnectS2IST extends AbstractST {
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     public static final String CONNECT_CLUSTER_NAME = "connect-s2i-tests";
     public static final String CONNECT_DEPLOYMENT_NAME = CONNECT_CLUSTER_NAME + "-connect";
-
-    @Before
-    public void deployKafka() {
-        resources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
-    }
+    private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
+    private static Resources classResources;
 
     @Test
     @OpenShiftOnly
@@ -59,5 +59,23 @@ public class ConnectS2IST extends AbstractST {
         String plugins = kubeClient.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
+    }
+
+
+    @BeforeClass
+    public static void createClassResources() {
+        classResources = new Resources(namespacedClient());
+        classResources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
+    }
+
+    @AfterClass
+    public static void deleteClassResources() {
+        LOGGER.info("Deleting resources after the test class");
+        classResources.deleteResources();
+        classResources = null;
+    }
+
+    static Resources classResources() {
+        return classResources;
     }
 }

@@ -10,7 +10,8 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -30,11 +31,7 @@ public class RecoveryST extends AbstractST {
     static final String CLUSTER_NAME = "recovery-cluster";
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
-
-    @Before
-    public void deployKafka() {
-        resources().kafkaEphemeral(CLUSTER_NAME, 1).done();
-    }
+    private static Resources classResources;
 
     @Test
     public void testRecoveryFromEntityOperatorDeletion() {
@@ -175,5 +172,22 @@ public class RecoveryST extends AbstractST {
 
         //Test that CO doesn't have any exceptions in log
         assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
+    }
+
+    @BeforeClass
+    public static void createClassResources() {
+        classResources = new Resources(namespacedClient());
+        classResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
+    }
+
+    @AfterClass
+    public static void deleteClassResources() {
+        LOGGER.info("Deleting resources after the test class");
+        classResources.deleteResources();
+        classResources = null;
+    }
+
+    static Resources classResources() {
+        return classResources;
     }
 }
