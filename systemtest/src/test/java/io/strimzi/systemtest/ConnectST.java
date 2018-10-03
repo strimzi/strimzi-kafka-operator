@@ -70,7 +70,7 @@ public class ConnectST extends AbstractST {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
-        String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith(kafkaClusterName(KAFKA_CLUSTER_NAME))).findFirst().get();
+        String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith(kafkaConnectName(KAFKA_CLUSTER_NAME))).findFirst().get();
         String kafkaPodJson = kubeClient.getResourceAsJson("pod", podName);
 
         assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
