@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class ClusterCa extends Ca {
 
@@ -28,6 +29,8 @@ public class ClusterCa extends Ca {
 
     private Secret brokersSecret;
     private Secret zkNodesSecret;
+
+    private final Pattern ipv4Address = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
 
     public ClusterCa(CertManager certManager, String clusterName, Secret caCertSecret, Secret caKeySecret) {
         this(certManager, clusterName, caCertSecret, caKeySecret, 365, 30, true);
@@ -110,14 +113,21 @@ public class ClusterCa extends Ca {
             sbjAltNames.put("DNS.3", String.format("%s.%s.svc.%s", KafkaCluster.serviceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
             sbjAltNames.put("DNS.4", String.format("%s.%s.%s.svc.%s", KafkaCluster.kafkaPodName(cluster, i), KafkaCluster.headlessServiceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
             int nextDnsId = 5;
+            int nextIpId = 1;
             if (externalBootstrapAddress != null)   {
-                sbjAltNames.put("DNS." + nextDnsId, externalBootstrapAddress);
-                nextDnsId++;
+                String sna = !ipv4Address.matcher(externalBootstrapAddress).matches() ?
+                        String.format("DNS.%d", nextDnsId++) :
+                        String.format("IP.%d", nextIpId++);
+
+                sbjAltNames.put(sna, externalBootstrapAddress);
             }
 
             if (externalAddresses.get(i) != null)   {
-                sbjAltNames.put("DNS." + nextDnsId, externalAddresses.get(i));
-                nextDnsId++;
+                String sna = !ipv4Address.matcher(externalAddresses.get(i)).matches() ?
+                        String.format("DNS.%d", nextDnsId) :
+                        String.format("IP.%d", nextIpId);
+
+                sbjAltNames.put(sna, externalAddresses.get(i));
             }
 
             Subject subject = new Subject();
