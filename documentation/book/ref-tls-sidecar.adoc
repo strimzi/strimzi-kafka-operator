@@ -22,7 +22,7 @@ The `resources` property can be used to specify the xref:assembly-resource-limit
 The `image` property can be used to configure the container image which will be used.
 For more details about configuring custom container images, see xref:assembly-configuring-container-images-{context}[].
 
-The `logLevel` property can be used to specify the logging level which will be used.
+The `logLevel` property is used to specify the logging level.
 Following logging levels are supported:
 
 * emerg
