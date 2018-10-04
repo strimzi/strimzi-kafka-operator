@@ -18,13 +18,13 @@ If such secret does not exist yet, prepare the certificate in a file and create 
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl create`:
 [source,shell,subs=+quotes]
-kubectl create secret generic _<my-secret>_ --from-file=_<my-file.crt>_
+kubectl create secret generic _my-secret_ --from-file=_my-file.crt_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc create`:
 +
 [source,shell,subs=+quotes]
-oc create secret generic _<my-secret>_ --from-file=_<my-file.crt>_
+oc create secret generic _my-secret_ --from-file=_my-file.crt_
 . Edit the `tls` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
 For example:
 +
@@ -48,10 +48,10 @@ spec:
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _<your-file>_
+kubectl apply -f _your-file_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
-oc apply -f _<your-file>_
+oc apply -f _your-file_
