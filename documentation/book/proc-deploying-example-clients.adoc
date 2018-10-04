@@ -13,7 +13,7 @@
 . Deploy the producer.
 +
 [source,subs="+quotes,attributes"]
-oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-producer.sh --broker-list __<cluster-name>__-kafka-bootstrap:9092 --topic _<my-topic>_
+oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-producer.sh --broker-list _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_
 
 . Type your message into the console where the producer is running.
 
@@ -22,6 +22,6 @@ oc run kafka-producer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-co
 . Deploy the consumer.
 +
 [source,subs="+quotes,attributes"]
-oc run kafka-consumer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-consumer.sh --bootstrap-server __<cluster-name>__-kafka-bootstrap:9092 --topic _<my-topic>_ --from-beginning
+oc run kafka-consumer -ti --image={DockerKafka} --restart=Never \-- bin/kafka-console-consumer.sh --bootstrap-server _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_ --from-beginning
 
 . Confirm that you see the incoming messages in the consumer console.

@@ -12,7 +12,7 @@
 +
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _<my-project>_/' examples/install/cluster-operator/*RoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _my-project_/' examples/install/cluster-operator/*RoleBinding*.yaml
 ----
 
 .Procedure
@@ -21,6 +21,6 @@ sed -i 's/namespace: .\*/namespace: _<my-project>_/' examples/install/cluster-op
 +
 [source]
 ----
-oc apply -f examples/install/cluster-operator -n _<my-project>_
-oc apply -f examples/templates/cluster-operator -n _<my-project>_
+oc apply -f examples/install/cluster-operator -n _my-project_
+oc apply -f examples/templates/cluster-operator -n _my-project_
 ----

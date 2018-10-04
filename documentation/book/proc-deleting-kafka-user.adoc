@@ -21,13 +21,13 @@ ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl`:
 +
 [source,shell,subs=+quotes]
-kubectl delete kafkauser _<your-user-name>_
+kubectl delete kafkauser _your-user-name_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc`:
 +
 [source,shell,subs=+quotes]
-oc delete kafkauser _<your-user-name>_
+oc delete kafkauser _your-user-name_
 +
 
 .Additional resources

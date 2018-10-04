@@ -11,7 +11,7 @@
 +
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-operator/*RoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
 ----
 
 .Procedure
@@ -20,5 +20,5 @@ sed -i 's/namespace: .\*/namespace: _<my-namespace>_/' examples/install/cluster-
 +
 [source]
 ----
-kubectl apply -f examples/install/cluster-operator -n _<my-namespace>_
+kubectl apply -f examples/install/cluster-operator -n _my-namespace_
 ----
