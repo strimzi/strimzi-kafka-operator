@@ -8,14 +8,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
 import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -32,8 +32,6 @@ import io.strimzi.test.k8s.Oc;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
 
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.Assert.assertEquals;
@@ -80,7 +78,7 @@ public class OpenShiftTemplatesST {
 
     @Test
     @JUnitGroup(name = "regression")
-    public void testStrimziEphemeral() throws IOException {
+    public void testStrimziEphemeral() {
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
@@ -97,7 +95,7 @@ public class OpenShiftTemplatesST {
 
     @Test
     @JUnitGroup(name = "regression")
-    public void testStrimziPersistent() throws IOException {
+    public void testStrimziPersistent() {
         String clusterName = "bar";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
@@ -113,7 +111,7 @@ public class OpenShiftTemplatesST {
 
     @Test
     @JUnitGroup(name = "regression")
-    public void testStrimziEphemeralWithCustomParameters() throws IOException {
+    public void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
@@ -143,7 +141,7 @@ public class OpenShiftTemplatesST {
 
     @Test
     @JUnitGroup(name = "regression")
-    public void testStrimziPersistentWithCustomParameters() throws IOException {
+    public void testStrimziPersistentWithCustomParameters() {
         String clusterName = "test-persistent-with-custom-parameters";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",

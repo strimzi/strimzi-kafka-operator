@@ -6,11 +6,12 @@ package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -24,17 +25,17 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @JUnitGroup(name = "regression")
 @Namespace(RecoveryST.NAMESPACE)
 @ClusterOperator
-@KafkaFromClasspathYaml
 public class RecoveryST extends AbstractST {
 
     static final String NAMESPACE = "recovery-cluster-test";
     static final String CLUSTER_NAME = "recovery-cluster";
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
+    private static Resources classResources;
 
     @Test
     public void testRecoveryFromEntityOperatorDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String entityOperatorDeploymentName = entityOperatorDeploymentName(CLUSTER_NAME);
         LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", CLUSTER_NAME);
 
@@ -50,7 +51,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromKafkaStatefulSetDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
 
@@ -66,7 +67,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromZookeeperStatefulSetDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
         LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
 
@@ -82,7 +83,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromKafkaServiceDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String kafkaServiceName = kafkaServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
 
@@ -97,7 +98,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromZookeeperServiceDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String zookeeperServiceName = zookeeperServiceName(CLUSTER_NAME);
 
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
@@ -113,7 +114,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromKafkaHeadlessServiceDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
 
@@ -128,7 +129,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromZookeeperHeadlessServiceDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String zookeeperHeadlessServiceName = zookeeperHeadlessServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
 
@@ -143,7 +144,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromKafkaMetricsConfigDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", CLUSTER_NAME);
 
@@ -159,7 +160,7 @@ public class RecoveryST extends AbstractST {
 
     @Test
     public void testRecoveryFromZookeeperMetricsConfigDeletion() {
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);
         LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", CLUSTER_NAME);
 
@@ -171,5 +172,22 @@ public class RecoveryST extends AbstractST {
 
         //Test that CO doesn't have any exceptions in log
         assertNoCoErrorsLogged(stopwatch.runtime(SECONDS));
+    }
+
+    @BeforeClass
+    public static void createClassResources() {
+        classResources = new Resources(namespacedClient());
+        classResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
+    }
+
+    @AfterClass
+    public static void deleteClassResources() {
+        LOGGER.info("Deleting resources after the test class");
+        classResources.deleteResources();
+        classResources = null;
+    }
+
+    static Resources classResources() {
+        return classResources;
     }
 }

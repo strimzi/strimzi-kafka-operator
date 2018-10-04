@@ -84,10 +84,10 @@ public class AbstractST {
     public static KubeClusterResource cluster = new KubeClusterResource();
 
     static DefaultKubernetesClient client = new DefaultKubernetesClient();
-    KubeClient<?> kubeClient = cluster.client();
+    static KubeClient<?> kubeClient = cluster.client();
     private Resources resources;
 
-    protected NamespacedKubernetesClient namespacedClient() {
+    protected static NamespacedKubernetesClient namespacedClient() {
         return client.inNamespace(kubeClient.namespace());
     }
 

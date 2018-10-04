@@ -15,15 +15,24 @@ import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.KafkaUserList;
+import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -34,6 +43,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public class Resources {
 
@@ -58,6 +68,18 @@ public class Resources {
         return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) client()).getHttpClient(), client().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas",  client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
     }
 
+    private MixedOperation<KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnect() {
+        return client()
+                .customResources(Crds.kafkaConnect(),
+                        KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class);
+    }
+
+    private MixedOperation<KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2I() {
+        return client()
+                .customResources(Crds.kafkaConnectS2I(),
+                        KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class);
+    }
+
     private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> kafkaTopic() {
         return client()
                 .customResources(Crds.topic(),
@@ -73,22 +95,51 @@ public class Resources {
     private List<Runnable> resources = new ArrayList<>();
 
     private <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> x, T resource) {
-        resources.add(0, () -> {
-            LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-            x.delete(resource);
-        });
+        LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+        switch (resource.getKind()) {
+            case Kafka.RESOURCE_KIND:
+                resources.add(() -> {
+                    x.delete(resource);
+                    waitForDeletion((Kafka) resource);
+                });
+                break;
+            case KafkaConnect.RESOURCE_KIND:
+                resources.add(() -> {
+                    x.delete(resource);
+                    waitForDeletion((KafkaConnect) resource);
+                });
+                break;
+            case KafkaConnectS2I.RESOURCE_KIND:
+                resources.add(() -> {
+                    x.delete(resource);
+                    waitForDeletion((KafkaConnectS2I) resource);
+                });
+                break;
+            default :
+                resources.add(() -> {
+                    x.delete(resource);
+                });
+        }
         return resource;
     }
 
-    Kafka deleteLater(Kafka resource) {
+    private Kafka deleteLater(Kafka resource) {
         return deleteLater(kafka(), resource);
     }
 
-    KafkaTopic deleteLater(KafkaTopic resource) {
+    private KafkaConnect deleteLater(KafkaConnect resource) {
+        return deleteLater(kafkaConnect(), resource);
+    }
+
+    private KafkaConnectS2I deleteLater(KafkaConnectS2I resource) {
+        return deleteLater(kafkaConnectS2I(), resource);
+    }
+
+    private KafkaTopic deleteLater(KafkaTopic resource) {
         return deleteLater(kafkaTopic(), resource);
     }
 
-    KafkaUser deleteLater(KafkaUser resource) {
+    private KafkaUser deleteLater(KafkaUser resource) {
         return deleteLater(kafkaUser(), resource);
     }
 
@@ -169,12 +220,101 @@ public class Resources {
         });
     }
 
-    Kafka waitFor(Kafka kafka) {
+    DoneableKafkaConnect kafkaConnect(String name, int kafkaConnectReplicas) {
+        return kafkaConnect(defaultKafkaConnect(name, kafkaConnectReplicas).build());
+    }
+
+    private KafkaConnectBuilder defaultKafkaConnect(String name, int kafkaConnectReplicas) {
+        return new KafkaConnectBuilder()
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withNewSpec()
+                .withBootstrapServers(name + "-kafka-bootstrap:9092")
+                .withReplicas(kafkaConnectReplicas)
+            .endSpec();
+    }
+
+    private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
+        return new DoneableKafkaConnect(kafkaConnect, kC -> {
+            TestUtils.waitFor("KafkaConnect creation", 60000, 5000,
+                () -> {
+                    try {
+                        kafkaConnect().inNamespace(client().getNamespace()).createOrReplace(kC);
+                        return true;
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().contains("object is being deleted")) {
+                            return false;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            );
+            return waitFor(deleteLater(
+                    kC));
+        });
+    }
+
+    /**
+     * Method to create Kafka Connect S2I using OpenShift client. This method can only be used if you run system tests on the OpenShift platform because of adapting fabric8 client to ({@link OpenShiftClient}) on waiting stage.
+     * @param name Kafka Connect S2I name
+     * @param kafkaConnectS2IReplicas the number of replicas
+     * @return Kafka Connect S2I
+     */
+    DoneableKafkaConnectS2I kafkaConnectS2I(String name, int kafkaConnectS2IReplicas) {
+        return kafkaConnectS2I(defaultKafkaConnectS2I(name, kafkaConnectS2IReplicas).build());
+    }
+
+    private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, int kafkaConnectS2IReplicas) {
+        return new KafkaConnectS2IBuilder()
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withNewSpec()
+                .withBootstrapServers(name + "-kafka-bootstrap:9092")
+                .withReplicas(kafkaConnectS2IReplicas)
+            .endSpec();
+    }
+
+    private DoneableKafkaConnectS2I kafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I) {
+        return new DoneableKafkaConnectS2I(kafkaConnectS2I, kCS2I -> {
+            TestUtils.waitFor("KafkaConnectS2I creation", 60000, 5000,
+                () -> {
+                    try {
+                        kafkaConnectS2I().inNamespace(client().getNamespace()).createOrReplace(kCS2I);
+                        return true;
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().contains("object is being deleted")) {
+                            return false;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            );
+            return waitFor(deleteLater(
+                    kCS2I));
+        });
+    }
+
+    private Kafka waitFor(Kafka kafka) {
+        LOGGER.info("Waiting for Kafka {}", kafka.getMetadata().getName());
         String namespace = kafka.getMetadata().getNamespace();
         waitForStatefulSet(namespace, kafka.getMetadata().getName() + "-zookeeper");
         waitForStatefulSet(namespace, kafka.getMetadata().getName() + "-kafka");
         waitForDeployment(namespace, kafka.getMetadata().getName() + "-entity-operator");
         return kafka;
+    }
+
+    KafkaConnect waitFor(KafkaConnect kafkaConnect) {
+        LOGGER.info("Waiting for Kafka Connect {}", kafkaConnect.getMetadata().getName());
+        String namespace = kafkaConnect.getMetadata().getNamespace();
+        waitForDeployment(namespace, kafkaConnect.getMetadata().getName() + "-connect");
+        return kafkaConnect;
+    }
+
+    private KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
+        LOGGER.info("Waiting for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
+        String namespace = kafkaConnectS2I.getMetadata().getNamespace();
+        waitForDeploymentConfig(namespace, kafkaConnectS2I.getMetadata().getName() + "-connect");
+        return kafkaConnectS2I;
     }
 
     private void waitForStatefulSet(String namespace, String name) {
@@ -197,6 +337,48 @@ public class Resources {
         TestUtils.waitFor("deployment " + name, 1000, 300000,
             () -> client().extensions().deployments().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment {} is ready", name);
+    }
+
+    private void waitForDeploymentConfig(String namespace, String name) {
+        LOGGER.info("Waiting for Deployment Config {}", name);
+        TestUtils.waitFor("deployment config " + name, 1000, 300000,
+            () -> client().adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespace).withName(name).isReady());
+        LOGGER.info("Deployment Config {} is ready", name);
+    }
+
+    private void waitForDeletion(Kafka kafka) {
+        LOGGER.info("Waiting when all the pods are terminated for Kafka {}", kafka.getMetadata().getName());
+        String namespace = kafka.getMetadata().getNamespace();
+
+        IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
+            waitForPodDeletion(namespace, kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
+
+        IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
+            waitForPodDeletion(namespace, kafka.getMetadata().getName() + "-kafka-" + podIndex));
+    }
+
+    private void waitForDeletion(KafkaConnect kafkaConnect) {
+        LOGGER.info("Waiting when all the pods are terminated for Kafka Connect {}", kafkaConnect.getMetadata().getName());
+        String namespace = kafkaConnect.getMetadata().getNamespace();
+
+        client.pods().inNamespace(namespace).list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(kafkaConnect.getMetadata().getName() + "-connect-"))
+                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+    }
+
+    private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
+        LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
+        String namespace = kafkaConnectS2I.getMetadata().getNamespace();
+
+        client.pods().inNamespace(namespace).list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(kafkaConnectS2I.getMetadata().getName() + "-connect-"))
+                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+    }
+
+    private void waitForPodDeletion(String namespace, String name) {
+        LOGGER.info("Waiting when Pod {} will be deleted", name);
+        TestUtils.waitFor("statefulset " + name, 1000, 300000,
+            () -> client().pods().inNamespace(namespace).withName(name).get() == null);
     }
 
     DoneableKafkaTopic topic(String clusterName, String topicName) {

@@ -26,7 +26,6 @@ import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
@@ -44,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -114,10 +114,11 @@ public class KafkaST extends AbstractST {
 
     @Test
     @JUnitGroup(name = "acceptance")
-    @KafkaFromClasspathYaml()
     public void testKafkaAndZookeeperScaleUpScaleDown() {
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
-        // kafka cluster already deployed via annotation
+        // kafka cluster already deployed
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
         //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
 
@@ -130,9 +131,7 @@ public class KafkaST extends AbstractST {
         final String newPodName = kafkaPodName(CLUSTER_NAME,  newPodId);
         final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getKafka().setReplicas(initialReplicas + 1);
-        });
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas + 1));
         kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
@@ -174,9 +173,9 @@ public class KafkaST extends AbstractST {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaFromClasspathYaml()
     public void testZookeeperScaleUpScaleDown() {
-        // kafka cluster already deployed via annotation
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
         //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(CLUSTER_NAME), 1);
         KubernetesClient client = new DefaultKubernetesClient();
@@ -233,23 +232,59 @@ public class KafkaST extends AbstractST {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaFromClasspathYaml()
     public void testCustomAndUpdatedValues() {
-        String clusterName = "my-cluster";
+        Map<String, Object> kafkaConfig = new HashMap<>();
+        kafkaConfig.put("offsets.topic.replication.factor", "1");
+        kafkaConfig.put("transaction.state.log.replication.factor", "1");
+        kafkaConfig.put("default.replication.factor", "1");
+
+        Map<String, Object> zookeeperConfig = new HashMap<>();
+        zookeeperConfig.put("timeTick", "2000");
+        zookeeperConfig.put("initLimit", "5");
+        zookeeperConfig.put("syncLimit", "2");
+
+        resources().kafkaEphemeral(CLUSTER_NAME, 2)
+            .editSpec()
+                .editKafka()
+                    .withNewReadinessProbe()
+                        .withInitialDelaySeconds(30)
+                        .withTimeoutSeconds(10)
+                    .endReadinessProbe()
+                    .withNewLivenessProbe()
+                        .withInitialDelaySeconds(30)
+                        .withTimeoutSeconds(10)
+                    .endLivenessProbe()
+                    .withConfig(kafkaConfig)
+                .endKafka()
+                .editZookeeper()
+                    .withReplicas(2)
+                    .withNewReadinessProbe()
+                       .withInitialDelaySeconds(30)
+                        .withTimeoutSeconds(10)
+                    .endReadinessProbe()
+                        .withNewLivenessProbe()
+                        .withInitialDelaySeconds(30)
+                        .withTimeoutSeconds(10)
+                    .endLivenessProbe()
+                    .withConfig(zookeeperConfig)
+                .endZookeeper()
+            .endSpec()
+            .done();
+
         int expectedZKPods = 2;
         int expectedKafkaPods = 2;
         List<Date> zkPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedZKPods; i++) {
-            zkPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", zookeeperPodName(clusterName, i)));
+            zkPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", zookeeperPodName(CLUSTER_NAME, i)));
         }
         List<Date> kafkaPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedKafkaPods; i++) {
-            kafkaPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", kafkaPodName(clusterName, i)));
+            kafkaPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", kafkaPodName(CLUSTER_NAME, i)));
         }
 
         LOGGER.info("Verify values before update");
         for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
+            String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
                     hasItem("transaction.state.log.replication.factor=1\ndefault.replication.factor=1\noffsets.topic.replication.factor=1\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
@@ -257,14 +292,14 @@ public class KafkaST extends AbstractST {
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
+            String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
                     hasItem("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
 
-        replaceKafkaResource(clusterName, k -> {
+        replaceKafkaResource(CLUSTER_NAME, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
             kafkaClusterSpec.getLivenessProbe().setInitialDelaySeconds(31);
             kafkaClusterSpec.getReadinessProbe().setInitialDelaySeconds(31);
@@ -280,17 +315,17 @@ public class KafkaST extends AbstractST {
         });
 
         for (int i = 0; i < expectedZKPods; i++) {
-            kubeClient.waitForResourceUpdate("pod", zookeeperPodName(clusterName, i), zkPodStartTime.get(i));
-            kubeClient.waitForPod(zookeeperPodName(clusterName,  i));
+            kubeClient.waitForResourceUpdate("pod", zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
+            kubeClient.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
         }
         for (int i = 0; i < expectedKafkaPods; i++) {
-            kubeClient.waitForResourceUpdate("pod", kafkaPodName(clusterName, i), kafkaPodStartTime.get(i));
-            kubeClient.waitForPod(kafkaPodName(clusterName,  i));
+            kubeClient.waitForResourceUpdate("pod", kafkaPodName(CLUSTER_NAME, i), kafkaPodStartTime.get(i));
+            kubeClient.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
         }
 
         LOGGER.info("Verify values after update");
         for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(clusterName, i));
+            String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
                     hasItem("transaction.state.log.replication.factor=2\ndefault.replication.factor=2\noffsets.topic.replication.factor=2\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
@@ -298,7 +333,7 @@ public class KafkaST extends AbstractST {
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(clusterName, i));
+            String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
                     hasItem("timeTick=2100\nautopurge.purgeInterval=1\nsyncLimit=3\ninitLimit=6\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
@@ -724,25 +759,76 @@ public class KafkaST extends AbstractST {
                 "password=\"" + password + "\";\n";
     }
 
-    /**
-     *
-     */
-    @KafkaFromClasspathYaml
     @Test
     @JUnitGroup(name = "regression")
     public void testJvmAndResources() {
-        assertResources(kubeClient.namespace(), "jvm-resource-cluster-kafka-0",
+        Map<String, String> jvmOptionsXX = new HashMap<>();
+        jvmOptionsXX.put("UseG1GC", "true");
+
+        resources().kafkaEphemeral(CLUSTER_NAME, 1)
+            .editSpec()
+                .editKafka()
+                    .withNewResources()
+                        .withNewLimits()
+                            .withMemory("2Gi")
+                            .withMilliCpu("400m")
+                        .endLimits()
+                        .withNewRequests()
+                            .withMemory("2Gi")
+                            .withMilliCpu("400m")
+                        .endRequests()
+                    .endResources()
+                    .withNewJvmOptions()
+                        .withXmx("1g")
+                        .withXms("1G")
+                        .withServer(true)
+                        .withXx(jvmOptionsXX)
+                    .endJvmOptions()
+                .endKafka()
+                .editZookeeper()
+                .withNewResources()
+                    .withNewLimits()
+                        .withMemory("1Gi")
+                        .withMilliCpu("300m")
+                    .endLimits()
+                        .withNewRequests()
+                        .withMemory("1Gi")
+                        .withMilliCpu("300m")
+                    .endRequests()
+                .endResources()
+                    .withNewJvmOptions()
+                        .withXmx("600m")
+                        .withXms("300m")
+                        .withServer(true)
+                        .withXx(jvmOptionsXX)
+                    .endJvmOptions()
+                .endZookeeper()
+                .withNewTopicOperator()
+                    .withNewResources()
+                        .withNewLimits()
+                            .withMemory("500M")
+                            .withMilliCpu("300m")
+                        .endLimits()
+                        .withNewRequests()
+                            .withMemory("500M")
+                            .withMilliCpu("300m")
+                        .endRequests()
+                    .endResources()
+                .endTopicOperator()
+            .endSpec().done();
+
+        assertResources(kubeClient.namespace(), kafkaPodName(CLUSTER_NAME, 0),
                 "2Gi", "400m", "2Gi", "400m");
-        assertExpectedJavaOpts("jvm-resource-cluster-kafka-0",
+        assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0),
                 "-Xmx1g", "-Xms1G", "-server", "-XX:+UseG1GC");
 
-        assertResources(kubeClient.namespace(), "jvm-resource-cluster-zookeeper-0",
+        assertResources(kubeClient.namespace(), zookeeperPodName(CLUSTER_NAME, 0),
                 "1Gi", "300m", "1Gi", "300m");
-        assertExpectedJavaOpts("jvm-resource-cluster-zookeeper-0",
+        assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
         String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems()
-                .stream().filter(p -> p.getMetadata().getName().startsWith("jvm-resource-cluster-entity-operator-"))
+                .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
                 .findFirst().get().getMetadata().getName();
 
         assertResources(kubeClient.namespace(), podName,
@@ -751,9 +837,21 @@ public class KafkaST extends AbstractST {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaFromClasspathYaml
     public void testForTopicOperator() throws InterruptedException {
-        //Createing topics for testing
+
+        Map<String, Object> kafkaConfig = new HashMap<>();
+        kafkaConfig.put("offsets.topic.replication.factor", "3");
+        kafkaConfig.put("transaction.state.log.replication.factor", "3");
+        kafkaConfig.put("transaction.state.log.min.isr", "2");
+
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .withConfig(kafkaConfig)
+                .endKafka()
+            .endSpec().done();
+
+        //Creating topics for testing
         kubeClient.create(TOPIC_CM);
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem("my-topic"));
 
@@ -835,17 +933,25 @@ public class KafkaST extends AbstractST {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaFromClasspathYaml
     public void testRackAware() {
+        resources().kafkaEphemeral(CLUSTER_NAME, 1)
+            .editSpec()
+                .editKafka()
+                    .withNewRack()
+                        .withTopologyKey("rack-key")
+                    .endRack()
+                .endKafka()
+            .endSpec().done();
+
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
         kubeClient.waitForPod(kafkaPodName);
 
-        String rackId = kubeClient.execInPod(kafkaPodName, "/bin/bash", "-c", "cat /opt/kafka/rack/rack.id").out();
+        String rackId = kubeClient.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
         assertEquals("zone", rackId);
 
-        String brokerRack = kubeClient.execInPod(kafkaPodName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
+        String brokerRack = kubeClient.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
         List<Event> events = getEvents("Pod", kafkaPodName);
@@ -858,9 +964,18 @@ public class KafkaST extends AbstractST {
      */
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaFromClasspathYaml
     @Namespace(value = "topic-operator-namespace", use = false)
     public void testWatchingOtherNamespace() throws InterruptedException {
+        resources().kafkaEphemeral(CLUSTER_NAME, 1)
+            .editSpec()
+                .editEntityOperator()
+                    .editTopicOperator()
+                        .withWatchedNamespace("topic-operator-namespace")
+                    .endTopicOperator()
+                .endEntityOperator()
+            .endSpec()
+            .done();
+
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         String origNamespace = kubeClient.namespace("topic-operator-namespace");

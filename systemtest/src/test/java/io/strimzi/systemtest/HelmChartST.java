@@ -6,10 +6,8 @@ package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziRunner;
-import io.strimzi.test.Topic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
@@ -28,9 +26,9 @@ public class HelmChartST extends AbstractST {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaFromClasspathYaml()
-    @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
     public void testDeployKafkaClusterViaHelmChart() {
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
         LOGGER.info("Running testDeployKafkaClusterViaHelmChart {}", CLUSTER_NAME);
         this.kubeClient.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 3);
         this.kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
