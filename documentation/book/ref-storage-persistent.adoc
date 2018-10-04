@@ -72,8 +72,8 @@ storage:
 
 When the persistent storage is used, it will create Persistent Volume Claims with the following names:
 
-`data-_<cluster-name>_-kafka-_<idx>_`::
-Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`.
+`data-_cluster-name_-kafka-_idx_`::
+Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`.
 
-`data-_<cluster-name>_-zookeeper-_<idx>_`::
-Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`.
+`data-_cluster-name_-zookeeper-_idx_`::
+Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `_idx_`.
