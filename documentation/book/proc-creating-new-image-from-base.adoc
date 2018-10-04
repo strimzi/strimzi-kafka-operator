@@ -19,7 +19,7 @@ The following procedure describes the process for creating such a custom image.
 ----
 FROM {DockerKafkaConnect}
 USER root:root
-COPY ./_<my-plugins>_/ /opt/kafka/plugins/
+COPY ./_my-plugins_/ /opt/kafka/plugins/
 USER {DockerImageUser}
 ----
 
