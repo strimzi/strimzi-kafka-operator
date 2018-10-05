@@ -1,0 +1,43 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-mirror-maker-whitelist.adoc
+
+[id='proc-configuring-kafka-mirror-maker-whitelist-{context}']
+= Configuring the topics whitelist
+
+Specify the list topics that have to be mirrored by the Kafka Mirror Maker from source to target Kafka cluster using the `whitelist` property in `KafkaMirrorMaker.spec`.
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `whitelist` property in the `KafkaMirrorMaker` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  # ...
+  whitelist: "my-topic|other-topic"
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-mirror-maker-groupid.adoc
+
+[id='proc-configuring-kafka-mirror-maker-groupid-{context}']
+= Configuring the consumer group identifier
+
+The consumer group identifier can be configured in the `KafkaMirrorMaker.spec.consumer.groupId` property.
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `KafkaMirrorMaker.spec.consumer.groupId` property.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  # ...
+  consumer:
+    groupId: "my-group"
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_

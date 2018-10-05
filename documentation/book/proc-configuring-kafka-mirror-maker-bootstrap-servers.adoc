@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-mirror-maker-bootstrap-servers.adoc
+
+[id='proc-configuring-kafka-mirror-maker-bootstrap-servers-{context}']
+= Configuring bootstrap servers
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `KafkaMirrorMaker.spec.consumer.bootstrapServers` and `KafkaMirrorMaker.spec.producer.bootstrapServers` properties.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  # ...
+  consumer:
+    bootstrapServers: my-source-cluster-kafka-bootstrap:9092
+  # ...
+  producer:
+    bootstrapServers: my-target-cluster-kafka-bootstrap:9092
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _<your-file>_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _<your-file>_
