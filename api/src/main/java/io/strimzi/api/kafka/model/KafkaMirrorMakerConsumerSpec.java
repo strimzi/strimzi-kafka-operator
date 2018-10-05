@@ -31,7 +31,6 @@ public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
 
     @Override
     @Description("The mirror maker consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
     }
