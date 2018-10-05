@@ -28,7 +28,7 @@ public class KafkaMirrorMakerClientSpec implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String bootstrapServers;
-    protected Map<String, Object> config;
+    protected Map<String, Object> config = new HashMap<>(0);
     private KafkaMirrorMakerTls tls;
     private KafkaMirrorMakerAuthentication authentication;
     private Map<String, Object> additionalProperties;

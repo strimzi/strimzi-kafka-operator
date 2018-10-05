@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 
 public class KafkaMirrorMakerClusterTest {
@@ -40,7 +41,12 @@ public class KafkaMirrorMakerClusterTest {
     private final int replicas = 2;
     private final String image = "my-image:latest";
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
-    private final String configurationJson = "{\"foo\":\"bar\"}";
+    private final String producerConfigurationJson = "{\"foo\":\"bar\"}";
+    private final String consumerConfigurationJson = "{\"foo\":\"buz\"}";
+    private final String defaultProducerConfiguration = "";
+    private final String defaultConsumerConfiguration = "";
+    private final String expectedProducerConfiguration = "foo=bar" + LINE_SEPARATOR;
+    private final String expectedConsumerConfiguration = "foo=buz" + LINE_SEPARATOR;
     private final String producerBootstrapServers = "target-kafka:9092";
     private final String consumerBootstrapServers = "source-kafka:9092";
     private final String groupId = "my-group-id";
@@ -50,11 +56,13 @@ public class KafkaMirrorMakerClusterTest {
 
     private KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
             .withBootstrapServers(producerBootstrapServers)
+            .withConfig((Map<String, Object>) TestUtils.fromJson(producerConfigurationJson, Map.class))
             .build();
     private KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
             .withBootstrapServers(consumerBootstrapServers)
             .withGroupId(groupId)
             .withNumStreams(numStreams)
+            .withConfig((Map<String, Object>) TestUtils.fromJson(consumerConfigurationJson, Map.class))
             .build();
     private final KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMakerCluster(namespace, cluster))
             .withNewSpec()
@@ -101,6 +109,8 @@ public class KafkaMirrorMakerClusterTest {
 
         List<EnvVar> expected = new ArrayList<>();
 
+        expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER).withValue(expectedConsumerConfiguration).build());
+        expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER).withValue(expectedProducerConfiguration).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED).withValue("true").build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER).withValue(consumerBootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER).withValue(producerBootstrapServers).build());
@@ -113,8 +123,28 @@ public class KafkaMirrorMakerClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(ResourceUtils.createEmptyKafkaMirrorMakerCluster(namespace, cluster));
+        KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
+                .withBootstrapServers(producerBootstrapServers)
+                .build();
+        KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
+                .withBootstrapServers(consumerBootstrapServers)
+                .withGroupId(groupId)
+                .withNumStreams(numStreams)
+                .build();
+
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMakerCluster(namespace, cluster))
+                .withNewSpec()
+                    .withReplicas(replicas)
+                    .withProducer(producer)
+                    .withConsumer(consumer)
+                .endSpec()
+                .build();
+        KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource);
         assertEquals(KafkaMirrorMakerSpec.DEFAULT_IMAGE, mm.image);
+        assertEquals(defaultConsumerConfiguration,
+                new KafkaMirrorMakerConsumerConfiguration(mm.consumer.getConfig().entrySet()).getConfiguration());
+        assertEquals(defaultProducerConfiguration,
+                new KafkaMirrorMakerProducerConfiguration(mm.producer.getConfig().entrySet()).getConfiguration());
     }
 
     @Test
