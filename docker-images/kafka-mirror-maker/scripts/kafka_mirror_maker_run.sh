@@ -44,6 +44,10 @@ if [ -z "$KAFKA_LOG4J_OPTS" ]; then
 export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
 fi
 
+# We don't need LOG_DIR because we write no log files, but setting it to a
+# directory avoids trying to create it (and logging a permission denied error)
+export LOG_DIR="$KAFKA_HOME"
+
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_MIRRORMAKER_METRICS_ENABLED" = "true" ]; then
   export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
