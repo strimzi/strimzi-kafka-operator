@@ -10,7 +10,7 @@
 
 = Kafka Mirror Maker configuration
 
-{ProductName} allows you to customize the configuration of Apache Kafka Mirror Maker by editing most of the options for the related consumer and producer.
+{ProductName} allows you to customize the configuration of the Kafka Mirror Maker by editing most of the options for the related consumer and producer.
 Producer options are listed in {ApacheKafkaProducerConfig}.
 Consumer options are listed in {ApacheKafkaConsumerConfig}.
 

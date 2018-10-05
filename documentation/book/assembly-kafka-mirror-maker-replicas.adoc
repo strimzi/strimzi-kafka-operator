@@ -1,4 +1,4 @@
-// This assembly is included in the following assemblies:
+    // This assembly is included in the following assemblies:
 //
 // assembly-deployment-configuration-kafka-mirror-maker.adoc
 
@@ -12,9 +12,9 @@
 
 It is possible to run multiple Mirror Maker replicas.
 The number of replicas is defined in the `KafkaMirrorMaker` resource.
-Running Kafka Mirror Maker with multiple replicas can provide better availability and scalability.
-However, when running Kafka Mirror Maker on {ProductPlatformName} it is not absolutely necessary to run multiple replicas of Kafka Mirror Maker for high availability.
-When the node where Kafka Mirror Maker is deployed to crashes, {ProductPlatformName} will automatically take care of rescheduling the Kafka Mirror Maker pod to a different node.
-However, running Kafka Mirror Maker with multiple replicas can provide faster failover times, because the other nodes will be already up and running.
+You can run multiple Mirror Maker replicas to provide better availability and scalability.
+However, when running Kafka Mirror Maker on {ProductPlatformName} it is not absolutely necessary to run multiple replicas of the Kafka Mirror Maker for high availability.
+When the node where the Kafka Mirror Maker has deployed crashes, {ProductPlatformName} will automatically reschedule the Kafka Mirror Maker pod to a different node.
+However, running Kafka Mirror Maker with multiple replicas can provide faster failover times as the other nodes will be up and running.
 
 include::proc-configuring-kafka-mirror-maker-replicas.adoc[leveloffset=+1]

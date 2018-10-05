@@ -5,7 +5,7 @@
 [id='proc-configuring-kafka-mirror-maker-replicas-{context}']
 = Configuring the number of replicas
 
-Number of Kafka Mirror Maker replicas can be configured using the `replicas` property in `KafkaMirrorMaker.spec`.
+The number of Kafka Mirror Maker replicas can be configured using the `replicas` property in `KafkaMirrorMaker.spec`.
 
 .Prerequisites
 

@@ -10,7 +10,7 @@
 
 = Consumer group identifier
 
-The Kafka Mirror Maker has a consumer part behaving as any other Kafka consumer client.
+The Kafka Mirror Maker uses Kafka consumer to consume messages and it behaves like any other Kafka consumer client.
 It is in charge to consume the messages from the source Kafka cluster which will be mirrored to the target Kafka cluster.
 The consumer needs to be part of a _consumer group_ for being assigned partitions.
 

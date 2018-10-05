@@ -16,10 +16,10 @@ The currently supported authentication types are:
 == TLS Client Authentication
 
 To use the TLS client authentication, set the `type` property to the value `tls`.
-TLS client authentication is using TLS certificate to authenticate.
-The certificate has to be specified in the `certificateAndKey` property.
-It is always loaded from an {ProductPlatformName} secret.
-Inside the secret, it has to be stored in the X509 format under two different keys: for public and private keys.
+The TLS client authentication uses TLS certificate to authenticate.
+The certificate has to be specified in the certificateAndKey property.
+It is always loaded from a {ProductPlatformName} secret.
+Inside the secret, it has to be stored in the X.509 format separately as public and private keys.
 
 NOTE: TLS client authentication can be used only with TLS connections.
 For more details about TLS configuration in Kafka Mirror Maker see xref:assembly-kafka-mirror-maker-tls-{context}[].
