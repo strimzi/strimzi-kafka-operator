@@ -18,7 +18,7 @@ The currently supported authentication types are:
 To use the TLS client authentication, set the `type` property to the value `tls`.
 The TLS client authentication uses TLS certificate to authenticate.
 The certificate has to be specified in the certificateAndKey property.
-It is always loaded from a {ProductPlatformName} secret.
+It is always loaded from an {ProductPlatformName} secret.
 Inside the secret, it has to be stored in the X.509 format separately as public and private keys.
 
 NOTE: TLS client authentication can be used only with TLS connections.
