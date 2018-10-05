@@ -30,8 +30,8 @@ with Kafka Connect plugins:
 +
 [source,subs="+quotes"]
 ----
-$ tree ./_<my-plugins>_/
-./_<my-plugins>_/
+$ tree ./_my-plugins_/
+./_my-plugins_/
 ├── debezium-connector-mongodb
 │   ├── bson-3.4.2.jar
 │   ├── CHANGELOG.md
@@ -69,7 +69,7 @@ $ tree ./_<my-plugins>_/
 . Start a new image build using the prepared directory:
 +
 [source,subs="+quotes"]
-oc start-build _<my-connect-cluster-connect>_ --from-dir ./_<my-plugins>_/
+oc start-build _my-connect-cluster-connect_ --from-dir ./_my-plugins_/
 +
 NOTE: The name of the build will be changed according to the cluster name of the deployed Kafka Connect cluster.
 

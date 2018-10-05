@@ -35,19 +35,19 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-oc apply -f _<your-file>_
+oc apply -f _your-file_
 
 . Find the address of the bootstrap `Route`.
 +
 [source,shell]
-oc get routes _<cluster-name>_-kafka-bootstrap -o=jsonpath='{.status.ingress[0].host}{"\n"}'
+oc get routes _cluster-name_-kafka-bootstrap -o=jsonpath='{.status.ingress[0].host}{"\n"}'
 +
 Use the address together with port 443 in your Kafka client as the _bootstrap_ address.
 
 . Extract the public certificate of the broker certification authority
 +
 [source,shell]
-oc extract secret/_<cluster-name>_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt
+oc extract secret/_cluster-name_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.

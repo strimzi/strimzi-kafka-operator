@@ -35,10 +35,10 @@ spec:
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _<your-file>_
+kubectl apply -f _your-file_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
-oc apply -f _<your-file>_
+oc apply -f _your-file_

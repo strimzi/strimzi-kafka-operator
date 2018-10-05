@@ -21,13 +21,13 @@ ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl`:
 +
 [source,shell,subs=+quotes]
-kubectl delete kafkatopic _<your-topic-name>_
+kubectl delete kafkatopic _your-topic-name_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc`:
 +
 [source,shell,subs=+quotes]
-oc delete kafkatopic _<your-topic-name>_
+oc delete kafkatopic _your-topic-name_
 +
 NOTE: Whether the topic can actually be deleted depends on the value of the `delete.topic.enable` Kafka broker configuration, specified in the `Kafka.spec.kafka.config` property.
 

@@ -18,13 +18,13 @@ If such a `Secret` does not exist yet, prepare the keys in a file and create the
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl create`:
 [source,shell,subs=+quotes]
-kubectl create secret generic _<my-secret>_ --from-file=_<my-public.crt>_ --from-file=_<my-private.key>_
+kubectl create secret generic _my-secret_ --from-file=_my-public.crt_ --from-file=_my-private.key_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc create`:
 +
 [source,shell,subs=+quotes]
-oc create secret generic _<my-secret>_ --from-file=_<my-public.crt>_ --from-file=_<my-private.key>_
+oc create secret generic _my-secret_ --from-file=_my-public.crt_ --from-file=_my-private.key_
 . Edit the `authentication` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
 For example:
 +
@@ -50,10 +50,10 @@ spec:
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _<your-file>_
+kubectl apply -f _your-file_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
-oc apply -f _<your-file>_
+oc apply -f _your-file_

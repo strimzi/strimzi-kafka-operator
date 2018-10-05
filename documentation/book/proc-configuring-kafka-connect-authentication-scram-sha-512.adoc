@@ -19,15 +19,15 @@ If such a `Secret` does not exist yet, prepare a file with the password and crea
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl create`:
 [source,shell,subs=+quotes]
-echo -n '_<password>_' > _<my-password.txt>_
-kubectl create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
+echo -n '_password_' > _my-password.txt_
+kubectl create secret generic _my-secret_ --from-file=_my-password.txt_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc create`:
 +
 [source,shell,subs=+quotes]
-echo -n '1f2d1e2e67df' > _<my-password.txt>_
-oc create secret generic _<my-secret>_ --from-file=_<my-password.txt>_
+echo -n '1f2d1e2e67df' > _my-password.txt_
+oc create secret generic _my-secret_ --from-file=_my-password.txt_
 . Edit the `authentication` property in the `KafkaConnect` or `KafkaConnectS2I` resource.
 For example:
 +
@@ -41,10 +41,10 @@ spec:
   # ...
   authentication:
     type: scram-sha-512
-    username: _<my-username>_
+    username: _my-username_
     passwordSecret:
-      secretName: _<my-secret>_
-      password: _<my-password.txt>_
+      secretName: _my-secret_
+      password: _my-password.txt_
   # ...
 ----
 +
@@ -53,10 +53,10 @@ spec:
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _<your-file>_
+kubectl apply -f _your-file_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
-oc apply -f _<your-file>_
+oc apply -f _your-file_
