@@ -76,6 +76,7 @@ public class Crds {
             listKind = Kafka.RESOURCE_LIST_KIND;
             group = Kafka.RESOURCE_GROUP;
             version = Kafka.VERSION;
+            shortNames = Kafka.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaConnect.class)) {
             kind = KafkaConnect.RESOURCE_KIND;
             crdApiVersion = KafkaConnect.CRD_API_VERSION;
@@ -84,6 +85,7 @@ public class Crds {
             listKind = KafkaConnect.RESOURCE_LIST_KIND;
             group = KafkaConnect.RESOURCE_GROUP;
             version = KafkaConnect.VERSION;
+            shortNames = KafkaConnect.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaConnectS2I.class)) {
             kind = KafkaConnectS2I.RESOURCE_KIND;
             crdApiVersion = KafkaConnectS2I.CRD_API_VERSION;
@@ -92,6 +94,7 @@ public class Crds {
             listKind = KafkaConnectS2I.RESOURCE_LIST_KIND;
             group = KafkaConnectS2I.RESOURCE_GROUP;
             version = KafkaConnectS2I.VERSION;
+            shortNames = KafkaConnectS2I.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaTopic.class)) {
             kind = KafkaTopic.RESOURCE_KIND;
             crdApiVersion = KafkaTopic.CRD_API_VERSION;

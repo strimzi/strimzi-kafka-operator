@@ -18,6 +18,8 @@ spec:
     listKind: KafkaConnectList
     singular: kafkaconnect
     plural: kafkaconnects
+    shortNames:
+    - kc
   validation:
     openAPIV3Schema:
       properties:

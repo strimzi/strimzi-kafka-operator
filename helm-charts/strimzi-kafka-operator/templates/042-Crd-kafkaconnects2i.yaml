@@ -18,6 +18,8 @@ spec:
     listKind: KafkaConnectS2IList
     singular: kafkaconnects2i
     plural: kafkaconnects2is
+    shortNames:
+    - kcs2i
   validation:
     openAPIV3Schema:
       properties:
