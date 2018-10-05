@@ -23,7 +23,10 @@ import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.Inline;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.singletonList;
 
 /**
  * A description of a Kafka assembly, as exposed by the Strimzi Kafka CRD.
@@ -36,7 +39,8 @@ import java.util.Map;
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
                         kind = Kafka.RESOURCE_KIND,
-                        plural = Kafka.RESOURCE_PLURAL
+                        plural = Kafka.RESOURCE_PLURAL,
+                        shortNames = {Kafka.SHORT_NAME}
                 ),
                 group = Kafka.RESOURCE_GROUP,
                 scope = "Namespaced",
@@ -63,6 +67,8 @@ public class Kafka extends CustomResource {
     public static final String RESOURCE_SINGULAR = "kafka";
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
+    public static final String SHORT_NAME = "k";
+    public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
 
     private String apiVersion;
     private ObjectMeta metadata;

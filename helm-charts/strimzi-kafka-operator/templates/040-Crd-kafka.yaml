@@ -18,6 +18,8 @@ spec:
     listKind: KafkaList
     singular: kafka
     plural: kafkas
+    shortNames:
+    - k
   validation:
     openAPIV3Schema:
       properties:
