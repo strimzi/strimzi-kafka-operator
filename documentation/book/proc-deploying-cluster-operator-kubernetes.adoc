@@ -16,7 +16,7 @@ On Linux, use:
 sed -i 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
 ----
 +
-On MacOS use:
+On MacOS, use:
 +
 [source, subs="+quotes"]
 ----
