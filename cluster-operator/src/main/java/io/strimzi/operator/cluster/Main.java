@@ -8,8 +8,6 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.dsl.ParameterNamespaceListVisitFromServerGetDeleteRecreateWaitApplicable;
-import io.fabric8.openshift.api.model.ClusterRole;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
@@ -49,7 +47,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -218,23 +215,24 @@ public class Main {
             List<Future> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
-            Map<String, String> clusterRoles = new HashMap<String, String>()
-            {{
-                put("strimzi-cluster-operator-namespaced", "020-ClusterRole-strimzi-cluster-operator-role.yaml");
-                put("strimzi-cluster-operator-global", "021-ClusterRole-strimzi-cluster-operator-role.yaml");
-                put("strimzi-kafka-broker", "030-ClusterRole-strimzi-kafka-broker.yaml");
-                put("strimzi-entity-operator", "031-ClusterRole-strimzi-entity-operator.yaml");
-                put("strimzi-topic-operator", "032-ClusterRole-strimzi-topic-operator.yaml");
-            }};
+            Map<String, String> clusterRoles = new HashMap<String, String>() {
+                {
+                    put("strimzi-cluster-operator-namespaced", "020-ClusterRole-strimzi-cluster-operator-role.yaml");
+                    put("strimzi-cluster-operator-global", "021-ClusterRole-strimzi-cluster-operator-role.yaml");
+                    put("strimzi-kafka-broker", "030-ClusterRole-strimzi-kafka-broker.yaml");
+                    put("strimzi-entity-operator", "031-ClusterRole-strimzi-entity-operator.yaml");
+                    put("strimzi-topic-operator", "032-ClusterRole-strimzi-topic-operator.yaml");
+                }
+            };
 
             for (Map.Entry<String, String> clusterRole : clusterRoles.entrySet()) {
                 log.info("Creating cluster role {}", clusterRole);
 
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()), Charset.defaultCharset()))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
-                    Future fut = cro.reconcile(clusterRole.getKey(), new ClusterRoleOperator.ClusterRole(clusterRole.getKey(), yaml));
+                    Future fut = cro.reconcile(clusterRole.getKey(), new ClusterRoleOperator.ClusterRole(yaml));
                     futures.add(fut);
-                } catch (Exception e) {
+                } catch (IOException e) {
                     log.error("Failed to create Cluster Roles.", e);
                     throw new RuntimeException(e);
                 }

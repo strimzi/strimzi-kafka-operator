@@ -4,9 +4,10 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import java.io.IOException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -24,13 +25,9 @@ public class ClusterRoleOperator extends WorkaroundRbacOperator<ClusterRoleOpera
     }
 
     public static class ClusterRole {
-        private final String name;
         private final String resource;
 
-        public ClusterRole(
-                String name,
-                String yaml) {
-            this.name = name;
+        public ClusterRole(String yaml) {
             this.resource = convertYamlToJson(yaml);
         }
 
@@ -40,7 +37,7 @@ public class ClusterRoleOperator extends WorkaroundRbacOperator<ClusterRoleOpera
                 Object obj = yamlReader.readValue(yaml, Object.class);
                 ObjectMapper jsonWriter = new ObjectMapper();
                 return jsonWriter.writeValueAsString(obj);
-            } catch (Exception e)   {
+            } catch (IOException e)   {
                 throw new RuntimeException(e);
             }
         }
