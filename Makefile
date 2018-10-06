@@ -3,12 +3,12 @@ RELEASE_VERSION ?= latest
 CHART_PATH ?= ./helm-charts/strimzi-kafka-operator/
 CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | tr A-Z a-z)
 
-SUBDIRS=docker-images test crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init helm-charts examples metrics
+SUBDIRS=docker-images helm-charts test crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init examples metrics
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
 clean: $(SUBDIRS) docu_clean
-$(DOCKER_TARGETS): $(SUBDIRS)
+$(DOCKER_TARGETS): helm_examples $(SUBDIRS)
 release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg release_helm_repo docu_clean
 
 next_version:
