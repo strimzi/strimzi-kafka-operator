@@ -41,17 +41,17 @@ public final class TestUtils {
 
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-    public static final String CRD_TOPIC = "../examples/install/cluster-operator/043-Crd-kafkatopic.yaml";
+    public static final String CRD_TOPIC = "../install/cluster-operator/043-Crd-kafkatopic.yaml";
 
-    public static final String CRD_KAFKA = "../examples/install/cluster-operator/040-Crd-kafka.yaml";
+    public static final String CRD_KAFKA = "../install/cluster-operator/040-Crd-kafka.yaml";
 
-    public static final String CRD_KAFKA_CONNECT = "../examples/install/cluster-operator/041-Crd-kafkaconnect.yaml";
+    public static final String CRD_KAFKA_CONNECT = "../install/cluster-operator/041-Crd-kafkaconnect.yaml";
 
-    public static final String CRD_KAFKA_CONNECT_S2I = "../examples/install/cluster-operator/042-Crd-kafkaconnects2i.yaml";
+    public static final String CRD_KAFKA_CONNECT_S2I = "../install/cluster-operator/042-Crd-kafkaconnects2i.yaml";
 
-    public static final String CRD_KAFKA_USER = "../examples/install/cluster-operator/044-Crd-kafkauser.yaml";
+    public static final String CRD_KAFKA_USER = "../install/cluster-operator/044-Crd-kafkauser.yaml";
 
-    public static final String CRD_KAFKA_MIRROR_MAKER = "../examples/install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
+    public static final String CRD_KAFKA_MIRROR_MAKER = "../install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
 
     private TestUtils() {
         // All static methods
