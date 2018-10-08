@@ -8,7 +8,7 @@ DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
 clean: $(SUBDIRS) docu_clean
-$(DOCKER_TARGETS): helm_examples $(SUBDIRS)
+$(DOCKER_TARGETS): helm_install $(SUBDIRS)
 release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg release_helm_repo docu_clean
 
 next_version:
@@ -52,9 +52,9 @@ release_helm_repo:
 	mv ./index.yaml ./helm-charts/index.yaml
 
 release_single_file:
-	find ./strimzi-$(RELEASE_VERSION)/examples/install/cluster-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-cluster-operator-$(RELEASE_VERSION).yaml
-	find ./strimzi-$(RELEASE_VERSION)/examples/install/topic-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-topic-operator-$(RELEASE_VERSION).yaml
-	find ./strimzi-$(RELEASE_VERSION)/examples/install/user-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-user-operator-$(RELEASE_VERSION).yaml
+	find ./strimzi-$(RELEASE_VERSION)/install/cluster-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-cluster-operator-$(RELEASE_VERSION).yaml
+	find ./strimzi-$(RELEASE_VERSION)/install/topic-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-topic-operator-$(RELEASE_VERSION).yaml
+	find ./strimzi-$(RELEASE_VERSION)/install/user-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-user-operator-$(RELEASE_VERSION).yaml
 
 helm_pkg:
 	# Copying unarchived Helm Chart to release directory

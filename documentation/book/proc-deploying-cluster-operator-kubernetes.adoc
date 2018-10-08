@@ -20,7 +20,7 @@ On MacOS, use:
 +
 [source, subs="+quotes"]
 ----
-sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
+sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator/*RoleBinding*.yaml
 ----
 
 .Procedure
