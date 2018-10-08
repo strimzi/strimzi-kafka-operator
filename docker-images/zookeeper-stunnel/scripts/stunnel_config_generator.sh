@@ -9,7 +9,7 @@ cat /etc/tls-sidecar/cluster-ca-certs/*.crt > "$CA_CERTS"
 echo "pid = /usr/local/var/run/stunnel.pid"
 echo "foreground = yes"
 echo "debug = $TLS_SIDECAR_LOG_LEVEL"
- 
+
 declare -a PORTS=("2888" "3888")
 
 CURRENT=${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1))
@@ -32,6 +32,7 @@ do
 			key = ${NODE_CERTS_KEYS}/${CURRENT}.key
 			accept = 127.0.0.1:$(expr $port \* 10 + $NODE - 1)
 			connect = ${PEER}.${BASE_FQDN}:$port
+			delay = yes
 			verify = 2
 
 			EOF

@@ -20,6 +20,7 @@ cert = ${KAFKA_CERTS_KEYS}/${CURRENT}.crt
 key = ${KAFKA_CERTS_KEYS}/${CURRENT}.key
 accept = 127.0.0.1:2181
 connect = ${KAFKA_ZOOKEEPER_CONNECT:-zookeeper-client:2181}
+delay = yes
 verify = 2
 
 EOF
