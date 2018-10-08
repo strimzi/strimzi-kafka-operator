@@ -34,6 +34,9 @@ Components and their loggers are listed below.
 ** `log4j.logger.org.I0Itec.zkclient`
 ** `log4j.logger.org.reflections`
 
+* Kafka Mirror Maker
+** `mirrormaker.root.logger`
+
 * Topic Operator
 ** `rootLogger.level`
 
