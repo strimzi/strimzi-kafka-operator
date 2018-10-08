@@ -9,9 +9,18 @@
 
 * Modify the installation files according to the namespace the Cluster Operator is going to be installed in.
 +
+On Linux, use:
++
 [source, subs="+quotes"]
 ----
 sed -i 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
+----
++
+On MacOS, use:
++
+[source, subs="+quotes"]
+----
+sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
 ----
 
 .Procedure
