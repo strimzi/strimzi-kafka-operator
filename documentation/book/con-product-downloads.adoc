@@ -6,7 +6,7 @@
 = {ProductName} downloads
 
 ifdef::Downloading[]
-{ProductName} releases are available to download from {ReleaseDownload}. The release artefacts contain documentation, installation and example `.yaml` files for deployment on {ProductPlatformName}. The installation and example files are used throughout this documentation. Additionally, a Helm Chart is provided for deploying the Cluster Operator using link:https://helm.sh/[Helm^]. The container images are available through the {DockerRepository}.
+{ProductName} releases are available to download from {ReleaseDownload}. The release artefacts contain documentation, installation, and example `.yaml` files for deployment on {ProductPlatformName}. The installation, and example files are used throughout this documentation. Additionally, a Helm Chart is provided for deploying the Cluster Operator using link:https://helm.sh/[Helm^]. The container images are available through the {DockerRepository}.
 endif::Downloading[]
 ifndef::Downloading[]
 The following procedures use installation and example YAML files to help you install {ProductName} on {ProductPlatformName}, perform common operations, and configure your Kafka cluster. {ExampleYAMLURL} are available to download from the AMQ Streams website.
