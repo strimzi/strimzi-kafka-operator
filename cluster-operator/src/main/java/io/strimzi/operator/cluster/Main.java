@@ -72,7 +72,7 @@ public class Main {
         Vertx vertx = Vertx.vertx();
         KubernetesClient client = new DefaultKubernetesClient();
 
-        createClusterRoles(vertx, config, client).setHandler(crs -> {
+        maybeCreateClusterRoles(vertx, config, client).setHandler(crs -> {
             if (crs.succeeded())    {
                 isOnOpenShift(vertx, client).setHandler(os -> {
                     if (os.succeeded()) {
@@ -210,7 +210,7 @@ public class Main {
         }
     }
 
-    private static Future<Void> createClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
+    private static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
             List<Future> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
