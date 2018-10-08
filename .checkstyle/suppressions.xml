@@ -39,6 +39,7 @@
     <suppress checks="ClassFanOutComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]MockAdminClient.java"/>
 
-
+    <suppress checks="ClassDataAbstractionCoupling"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]Main.java"/>
 
 </suppressions>

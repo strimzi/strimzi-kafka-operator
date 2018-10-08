@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOper
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
+import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
@@ -44,11 +45,15 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
@@ -67,16 +72,23 @@ public class Main {
         Vertx vertx = Vertx.vertx();
         KubernetesClient client = new DefaultKubernetesClient();
 
-        isOnOpenShift(vertx, client).setHandler(os -> {
-            if (os.succeeded()) {
-                run(vertx, client, os.result().booleanValue(), config).setHandler(ar -> {
-                    if (ar.failed()) {
-                        log.error("Unable to start operator for 1 or more namespace", ar.cause());
+        maybeCreateClusterRoles(vertx, config, client).setHandler(crs -> {
+            if (crs.succeeded())    {
+                isOnOpenShift(vertx, client).setHandler(os -> {
+                    if (os.succeeded()) {
+                        run(vertx, client, os.result().booleanValue(), config).setHandler(ar -> {
+                            if (ar.failed()) {
+                                log.error("Unable to start operator for 1 or more namespace", ar.cause());
+                                System.exit(1);
+                            }
+                        });
+                    } else {
+                        log.error("Failed to distinguish between Kubernetes and OpenShift", os.cause());
                         System.exit(1);
                     }
                 });
-            } else {
-                log.error("Failed to distinguish between Kubernetes and OpenShift", os.cause());
+            } else  {
+                log.error("Failed to create Cluster Roles", crs.cause());
                 System.exit(1);
             }
         });
@@ -195,6 +207,49 @@ public class Main {
         } else {
             log.error("Cannot adapt KubernetesClient to OkHttpClient");
             return Future.failedFuture("Cannot adapt KubernetesClient to OkHttpClient");
+        }
+    }
+
+    private static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
+        if (config.isCreateClusterRoles()) {
+            List<Future> futures = new ArrayList<>();
+            ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
+
+            Map<String, String> clusterRoles = new HashMap<String, String>() {
+                {
+                    put("strimzi-cluster-operator-namespaced", "020-ClusterRole-strimzi-cluster-operator-role.yaml");
+                    put("strimzi-cluster-operator-global", "021-ClusterRole-strimzi-cluster-operator-role.yaml");
+                    put("strimzi-kafka-broker", "030-ClusterRole-strimzi-kafka-broker.yaml");
+                    put("strimzi-entity-operator", "031-ClusterRole-strimzi-entity-operator.yaml");
+                    put("strimzi-topic-operator", "032-ClusterRole-strimzi-topic-operator.yaml");
+                }
+            };
+
+            for (Map.Entry<String, String> clusterRole : clusterRoles.entrySet()) {
+                log.info("Creating cluster role {}", clusterRole);
+
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()), Charset.defaultCharset()))) {
+                    String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
+                    Future fut = cro.reconcile(clusterRole.getKey(), new ClusterRoleOperator.ClusterRole(yaml));
+                    futures.add(fut);
+                } catch (IOException e) {
+                    log.error("Failed to create Cluster Roles.", e);
+                    throw new RuntimeException(e);
+                }
+            }
+
+            Future returnFuture = Future.future();
+            CompositeFuture.all(futures).setHandler(res -> {
+                if (res.succeeded())    {
+                    returnFuture.complete();
+                } else  {
+                    returnFuture.fail("Failed to create Cluster Roles.");
+                }
+            });
+
+            return returnFuture;
+        } else {
+            return Future.succeededFuture();
         }
     }
 

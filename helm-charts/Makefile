@@ -6,6 +6,7 @@ CHART_NAME=strimzi-kafka-operator
 CHART_PATH=./$(CHART_NAME)/
 CHART_RENDERED_TEMPLATES_TMP=../target/charts
 CHART_RENDERED_TEMPLATES_EXAMPLES=../examples/install/cluster-operator/
+CHART_RENDERED_TEMPLATES_CLUSTERROLES=../cluster-operator/src/main/resources/cluster-roles/
 
 helm_clean:
 	rm -rf $(CHART_RENDERED_TEMPLATES_TMP)
@@ -35,6 +36,12 @@ helm_examples: helm_clean helm_template
 	| grep -v 'CustomResourceDefinition$$' \
 	| sed -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
 	| xargs -IFILE cp FILE $(CHART_RENDERED_TEMPLATES_EXAMPLES)
+	# Copying rendered template files to: $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
+	mkdir -p $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
+	# Find rendered resources which are not CustomResourceDefinition and move them
+	find $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*ClusterRole-*.yaml' -printf "%p " -exec yq r {} kind \; \
+	| sed -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
+	| xargs -IFILE cp FILE $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
 
 helm_pkg: helm_lint helm_examples
 	# Copying unarchived Helm Chart to release directory

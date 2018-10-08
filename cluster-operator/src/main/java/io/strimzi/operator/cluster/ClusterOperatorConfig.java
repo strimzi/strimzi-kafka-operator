@@ -21,13 +21,16 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
+    public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
+    public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
     private final long operationTimeoutMs;
+    private final boolean createClusterRoles;
 
     /**
      * Constructor
@@ -36,10 +39,11 @@ public class ClusterOperatorConfig {
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      */
-    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs) {
+    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
+        this.createClusterRoles = createClusterRoles;
     }
 
     /**
@@ -70,7 +74,13 @@ public class ClusterOperatorConfig {
             operationTimeout = Long.parseLong(operationTimeoutEnvVar);
         }
 
-        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout);
+        boolean createClusterRoles = DEFAULT_CREATE_CLUSTER_ROLES;
+        String createClusterRolesEnvVar = map.get(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES);
+        if (createClusterRolesEnvVar != null) {
+            createClusterRoles = Boolean.parseBoolean(createClusterRolesEnvVar);
+        }
+
+        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles);
     }
 
 
@@ -95,11 +105,20 @@ public class ClusterOperatorConfig {
         return operationTimeoutMs;
     }
 
+    /**
+     * @return  Indicates whether Cluster Roles should be created
+     */
+    public boolean isCreateClusterRoles() {
+        return createClusterRoles;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
                 "namespaces=" + namespaces +
                 ",reconciliationIntervalMs=" + reconciliationIntervalMs +
+                ",operationTimeoutMs=" + operationTimeoutMs +
+                ",createClusterRoles=" + createClusterRoles +
                 ")";
     }
 }
