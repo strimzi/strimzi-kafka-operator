@@ -474,8 +474,8 @@ public abstract class AbstractModel {
         return getPersistentVolumeClaimName(name,  podId);
     }
 
-    public static String getPersistentVolumeClaimName(String kafkaClusterName, int podId) {
-        return VOLUME_NAME + "-" + kafkaClusterName + "-" + podId;
+    public static String getPersistentVolumeClaimName(String name, int podId) {
+        return VOLUME_NAME + "-" + name + "-" + podId;
     }
 
     public String getPodName(int podId) {

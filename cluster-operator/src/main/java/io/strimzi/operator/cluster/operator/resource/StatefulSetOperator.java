@@ -4,9 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -40,6 +42,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     private static final Logger log = LogManager.getLogger(StatefulSetOperator.class.getName());
     private final PodOperator podOperations;
+    private final PvcOperator pvcOperations;
     private final long operationTimeoutMs;
 
     /**
@@ -48,13 +51,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param client The Kubernetes client
      */
     public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
-        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client));
+        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client), new PvcOperator(vertx, client));
     }
 
-    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, PodOperator podOperator) {
+    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, PodOperator podOperator, PvcOperator pvcOperator) {
         super(vertx, client, "StatefulSet");
         this.podOperations = podOperator;
         this.operationTimeoutMs = operationTimeoutMs;
+        this.pvcOperations = pvcOperator;
     }
 
     @Override
@@ -80,6 +84,40 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             String podName = name + "-" + i;
             f = f.compose(ignored -> maybeRestartPod(ss, podName, forceRestart));
         }
+        return f;
+    }
+
+    public Future<Void> maybeDeletePodAndPvc(StatefulSet ss) {
+        String namespace = ss.getMetadata().getNamespace();
+        String name = ss.getMetadata().getName();
+        final int replicas = ss.getSpec().getReplicas();
+        log.debug("Considering manual deletion and restart of pods for {}/{}", namespace, name);
+        Future<Void> f = Future.succeededFuture();
+        for (int i = 0; i < replicas; i++) {
+            String podName = name + "-" + i;
+            String pvcName = AbstractModel.getPersistentVolumeClaimName(name, i);
+            Pod pod = podOperations.get(namespace, podName);
+            String value = pod.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_DELETE_POD_AND_PVC);
+            if (value != null && Boolean.valueOf(value)) {
+                f = f.compose(ignored -> deletePvc(ss, pvcName))
+                        .compose(ignored -> maybeRestartPod(ss, podName, true));
+
+            }
+        }
+        return f;
+    }
+
+    public Future<Void> deletePvc(StatefulSet ss, String pvcName) {
+        String namespace = ss.getMetadata().getNamespace();
+        Future<Void> f = Future.future();
+        Future<ReconcileResult<PersistentVolumeClaim>> r = pvcOperations.reconcile(namespace, pvcName, null);
+        r.setHandler(h -> {
+            if (h.succeeded()) {
+                f.complete();
+            } else {
+                f.fail(h.cause());
+            }
+        });
         return f;
     }
 
