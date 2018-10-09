@@ -1,4 +1,4 @@
-    // This assembly is included in the following assemblies:
+// This assembly is included in the following assemblies:
 //
 // assembly-deployment-configuration-kafka-mirror-maker.adoc
 
