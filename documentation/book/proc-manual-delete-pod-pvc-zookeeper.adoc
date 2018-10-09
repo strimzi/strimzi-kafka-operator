@@ -33,3 +33,8 @@ On {OpenShiftName} this can be done using `oc annotate`:
 oc annotate pod _cluster-name_-zookeeper-_index_ cluster.operator.strimzi.io/delete-pod-and-pvc=true
 +
 . Wait for next reconciliation and the annotated pod will be deleted and then recreated.
+
+.Additional resources
+
+* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
+* For more information about deploying the Zookeeper cluster, see xref:deploying-zookeeper-cluster-openshift-str[] and xref:deploying-zookeeper-cluster-kubernetes-str[].
