@@ -113,6 +113,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // Roll everything so the new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaCert())
 
+                .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.getZookeeperState())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
@@ -126,6 +127,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
 
+                .compose(state -> state.kafkaManualPodCleaning())
                 .compose(state -> state.getKafkaClusterDescription())
                 .compose(state -> state.kafkaInitServiceAccount())
                 .compose(state -> state.kafkaInitClusterRoleBinding())
@@ -484,6 +486,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 return this;
             });
+        }
+
+        Future<ReconciliationState> zkManualPodCleaning() {
+            String reason = "manual pod cleaning";
+            Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            if (futss != null) {
+                return futss.compose(ss -> {
+                    if (ss != null) {
+                        log.debug("{}: Cleaning Pods for StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
+                        return zkSetOperations.maybeDeletePodAndPvc(ss);
+                    }
+                    return Future.succeededFuture();
+                }).map(i -> this);
+            }
+            return Future.succeededFuture(this);
         }
 
         private Future<ReconciliationState> getKafkaClusterDescription() {
@@ -933,6 +950,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaHeadlessServiceEndpointReady() {
             return withVoid(serviceOperations.endpointReadiness(namespace, kafkaHeadlessService, 1_000, operationTimeoutMs));
+        }
+
+        Future<ReconciliationState> kafkaManualPodCleaning() {
+            String reason = "manual pod cleaning";
+            Future<StatefulSet> futss = kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
+            if (futss != null) {
+                return futss.compose(ss -> {
+                    if (ss != null) {
+                        log.debug("{}: Cleaning Pods for StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
+                        return kafkaSetOperations.maybeDeletePodAndPvc(ss);
+                    }
+                    return Future.succeededFuture();
+                }).map(i -> this);
+            }
+            return Future.succeededFuture(this);
         }
 
         private final Future<ReconciliationState> getTopicOperatorDescription() {
