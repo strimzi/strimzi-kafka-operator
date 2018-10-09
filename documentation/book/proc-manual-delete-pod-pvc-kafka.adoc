@@ -9,6 +9,8 @@ This procedure describes how it is possible to delete an existing Kafka node by 
 The Kafka node deletion consists of deleting the `Pod` which is running the Kafka broker and the related `PersistentVolumeClaim` if the cluster was deployed with `persistent` storage.
 After deletion, the `Pod` (and the related `PersistentVolumeClaim`) will be recreated automatically.
 
+WARNING: this operation should be done only in case of storage issues because `PersistentVolumeClaim` deletion can cause data loss.
+
 .Prerequisites
 
 * A running Kafka cluster.
@@ -32,7 +34,7 @@ On {OpenShiftName} this can be done using `oc annotate`:
 [source,shell,subs=+quotes]
 oc annotate pod _cluster-name_-kafka-_index_ cluster.operator.strimzi.io/delete-pod-and-pvc=true
 +
-. Wait for next reconciliation and the annotated pod will be deleted and then recreated.
+. Wait for next reconciliation and the annotated pod with the underlying persistent volume claim will be deleted and then recreated.
 
 .Additional resources
 
