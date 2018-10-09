@@ -13,5 +13,5 @@ For example, in the following code, you will want to replace `_my-namespace_` wi
 
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator/*RoleBinding*.yaml
 ----

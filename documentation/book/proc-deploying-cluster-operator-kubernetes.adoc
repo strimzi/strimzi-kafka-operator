@@ -13,14 +13,14 @@ On Linux, use:
 +
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator/*RoleBinding*.yaml
 ----
 +
 On MacOS, use:
 +
 [source, subs="+quotes"]
 ----
-sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
+sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator/*RoleBinding*.yaml
 ----
 
 .Procedure
@@ -29,5 +29,5 @@ sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster
 +
 [source]
 ----
-kubectl apply -f examples/install/cluster-operator -n _my-namespace_
+kubectl apply -f install/cluster-operator -n _my-namespace_
 ----

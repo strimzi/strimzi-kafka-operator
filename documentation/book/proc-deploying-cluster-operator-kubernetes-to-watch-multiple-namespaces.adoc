@@ -13,19 +13,19 @@ On Linux, use:
 +
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator/*RoleBinding*.yaml
 ----
 +
 On MacOS, use:
 +
 [source, subs="+quotes"]
 ----
-sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' examples/install/cluster-operator/*RoleBinding*.yaml
+sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator/*RoleBinding*.yaml
 ----
 
 .Procedure
 
-. Edit the file `examples/install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` and in the environment variable `STRIMZI_NAMESPACE` list all the {Namespaces} where Cluster Operator should watch for resources.
+. Edit the file `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` and in the environment variable `STRIMZI_NAMESPACE` list all the {Namespaces} where Cluster Operator should watch for resources.
 For example:
 +
 [source,yaml]
@@ -51,27 +51,27 @@ Replace the `_my-namespace_` or `_my-project_` with the {Namespace} used in the 
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f examples/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n _my-namespace_
-kubectl apply -f examples/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n _my-namespace_
-kubectl apply -f examples/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n _my-namespace_
+kubectl apply -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n _my-namespace_
+kubectl apply -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n _my-namespace_
+kubectl apply -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n _my-namespace_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
-oc apply -f examples/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n _my-project_
-oc apply -f examples/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n _my-project_
-oc apply -f examples/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n _my-project_
+oc apply -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n _my-project_
+oc apply -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n _my-project_
+oc apply -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n _my-project_
 
 . Deploy the Cluster Operator
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f examples/install/cluster-operator -n _my-namespace_
+kubectl apply -f install/cluster-operator -n _my-namespace_
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
-oc apply -f examples/install/cluster-operator -n _my-project_
+oc apply -f install/cluster-operator -n _my-project_

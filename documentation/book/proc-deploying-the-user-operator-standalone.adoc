@@ -14,7 +14,7 @@ For instance it can operate _with_ any Kafka cluster, not only the one deployed 
 
 .Procedure
 
-. Edit the `examples/install/user-operator/05-Deployment-strimzi-user-operator.yaml` resource. You will need to change the following
+. Edit the `install/user-operator/05-Deployment-strimzi-user-operator.yaml` resource. You will need to change the following
 +
 .. The `STRIMZI_CA_NAME` environment variable in `Deployment.spec.template.spec.containers[0].env` should be set to point to an {ProductPlatformName} `Secret` which should contain the Certificate Authority for signing new user certificates for TLS Client Authentication.
 The `Secret` should contain the public key of the Certificate Authority under the key `clients-ca.crt` and the private key under `clients-ca.key`.
@@ -27,13 +27,13 @@ ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 +
 [source,shell]
-kubectl apply -f examples/install/user-operator
+kubectl apply -f install/user-operator
 +
 endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell]
-oc apply -f examples/install/user-operator
+oc apply -f install/user-operator
 
 . Verify that the User Operator has been deployed successfully.
 ifdef::Kubernetes[]
