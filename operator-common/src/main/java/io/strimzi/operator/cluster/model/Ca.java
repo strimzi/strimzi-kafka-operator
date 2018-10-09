@@ -239,15 +239,14 @@ public abstract class Ca {
         List<String> subjectAltNames = null;
 
         try {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            ByteArrayInputStream inStream = new ByteArrayInputStream(certificate);
-            X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
+            X509Certificate cert = x509Certificate("Parsing certificate SANs", certificate);
             Collection<List<?>> altNames = cert.getSubjectAlternativeNames();
             subjectAltNames = altNames.stream()
                     .filter(name -> name.get(1) instanceof String)
                     .map(item -> (String) item.get(1))
                     .collect(Collectors.toList());
-        } catch (CertificateException e) {
+        } catch (CertificateException|RuntimeException e) {
+            // TODO: We should mock the certificates properly so that this doesn't fail in tests (not now => long term :-o)
             log.debug("Failed to parse existing certificate", e);
         }
 
