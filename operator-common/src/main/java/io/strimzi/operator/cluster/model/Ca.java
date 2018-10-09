@@ -28,13 +28,16 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
@@ -169,22 +172,45 @@ public abstract class Ca {
            Function<Integer, String> podNameFn) throws IOException {
         int replicasInSecret = secret == null || this.certRenewed() ? 0 : secret.getData().size() / 2;
 
+        File brokerCsrFile = File.createTempFile("tls", "broker-csr");
+        File brokerKeyFile = File.createTempFile("tls", "broker-key");
+        File brokerCertFile = File.createTempFile("tls", "broker-cert");
+
         Map<String, CertAndKey> certs = new HashMap<>();
         // copying the minimum number of certificates already existing in the secret
         // scale up -> it will copy all certificates
         // scale down -> it will copy just the requested number of replicas
         for (int i = 0; i < Math.min(replicasInSecret, replicas); i++) {
-
             String podName = podNameFn.apply(i);
             log.debug("Certificate for {} already exists", podName);
-            certs.put(
-                    podName,
-                    asCertAndKey(secret, podName + ".key", podName + ".crt"));
-        }
 
-        File brokerCsrFile = File.createTempFile("tls", "broker-csr");
-        File brokerKeyFile = File.createTempFile("tls", "broker-key");
-        File brokerCertFile = File.createTempFile("tls", "broker-cert");
+            Subject subject = subjectFn.apply(i);
+            Collection<String> desiredSbjAltNames = subject.subjectAltNames().values();
+            Collection<String> currentSbjAltNames = getSubjectAltNames(asCertAndKey(secret, podName + ".key", podName + ".crt").cert());
+
+            if (currentSbjAltNames != null && desiredSbjAltNames.containsAll(currentSbjAltNames) && currentSbjAltNames.containsAll(desiredSbjAltNames))   {
+                log.trace("Alternate subjects match. No need to refresh cert for pod {}.", podName);
+
+                certs.put(
+                        podName,
+                        asCertAndKey(secret, podName + ".key", podName + ".crt"));
+            } else {
+                if (log.isTraceEnabled()) {
+                    if (currentSbjAltNames != null) {
+                        log.trace("Current alternate subjects for pod {}: {}", podName, String.join(", ", currentSbjAltNames));
+                    } else {
+                        log.trace("Current certificate for pod {} has no alternate subjects", podName);
+                    }
+                    log.trace("Desired alternate subjects for pod {}: {}", podName, String.join(", ", desiredSbjAltNames));
+                }
+
+                log.debug("Alternate subjects do not match. Certificate needs to be refreshed for pod {}.", podName);
+
+                CertAndKey k = generateSignedCert(subject,
+                        brokerCsrFile, brokerKeyFile, brokerCertFile);
+                certs.put(podName, k);
+            }
+        }
 
         // generate the missing number of certificates
         // scale up -> generate new certificates for added replicas
@@ -201,6 +227,31 @@ public abstract class Ca {
         delete(brokerCertFile);
 
         return certs;
+    }
+
+    /**
+     * Extracts the alternate subject names out of existing certificate
+     *
+     * @param certificate Existing X509 certificate as a byte array
+     * @return
+     */
+    protected List<String> getSubjectAltNames(byte[] certificate) {
+        List<String> subjectAltNames = null;
+
+        try {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            ByteArrayInputStream inStream = new ByteArrayInputStream(certificate);
+            X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
+            Collection<List<?>> altNames = cert.getSubjectAlternativeNames();
+            subjectAltNames = altNames.stream()
+                    .filter(name -> name.get(1) instanceof String)
+                    .map(item -> (String) item.get(1))
+                    .collect(Collectors.toList());
+        } catch (CertificateException e) {
+            log.error("Failed to parse existing certificate", e);
+        }
+
+        return subjectAltNames;
     }
 
     /**

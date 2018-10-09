@@ -105,39 +105,18 @@ public class ClusterCa extends Ca {
 
     public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, String externalBootstrapAddress, Map<Integer, String> externalAddresses) throws IOException {
         String cluster = kafka.getMetadata().getName();
-        String namespace = kafka.getMetadata().getNamespace();
+
         Function<Integer, Subject> subjectFn = i -> {
-            Map<String, String> sbjAltNames = new HashMap<>();
-            sbjAltNames.put("DNS.1", KafkaCluster.serviceName(cluster));
-            sbjAltNames.put("DNS.2", String.format("%s.%s", KafkaCluster.serviceName(cluster), namespace));
-            sbjAltNames.put("DNS.3", String.format("%s.%s.svc.%s", KafkaCluster.serviceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
-            sbjAltNames.put("DNS.4", String.format("%s.%s.%s.svc.%s", KafkaCluster.kafkaPodName(cluster, i), KafkaCluster.headlessServiceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
-            int nextDnsId = 5;
-            int nextIpId = 1;
-            if (externalBootstrapAddress != null)   {
-                String sna = !ipv4Address.matcher(externalBootstrapAddress).matches() ?
-                        String.format("DNS.%d", nextDnsId++) :
-                        String.format("IP.%d", nextIpId++);
-
-                sbjAltNames.put(sna, externalBootstrapAddress);
-            }
-
-            if (externalAddresses.get(i) != null)   {
-                String sna = !ipv4Address.matcher(externalAddresses.get(i)).matches() ?
-                        String.format("DNS.%d", nextDnsId) :
-                        String.format("IP.%d", nextIpId);
-
-                sbjAltNames.put(sna, externalAddresses.get(i));
-            }
-
             Subject subject = new Subject();
             subject.setOrganizationName("io.strimzi");
             subject.setCommonName(KafkaCluster.kafkaClusterName(cluster));
-            subject.setSubjectAltNames(sbjAltNames);
+            subject.setSubjectAltNames(generateSbjAltNames(kafka, externalBootstrapAddress, externalAddresses, i));
 
             return subject;
         };
+
         log.debug("{}: Reconciling kafka broker certificates", this);
+
         return maybeCopyOrGenerateCerts(
             kafka.getSpec().getKafka().getReplicas(),
             subjectFn,
@@ -145,4 +124,33 @@ public class ClusterCa extends Ca {
             podNum -> KafkaCluster.kafkaPodName(cluster, podNum));
     }
 
+    private Map<String, String> generateSbjAltNames(Kafka kafka, String externalBootstrapAddress, Map<Integer, String> externalAddresses, Integer podNumber)    {
+        String cluster = kafka.getMetadata().getName();
+        String namespace = kafka.getMetadata().getNamespace();
+
+        Map<String, String> sbjAltNames = new HashMap<>();
+        sbjAltNames.put("DNS.1", KafkaCluster.serviceName(cluster));
+        sbjAltNames.put("DNS.2", String.format("%s.%s", KafkaCluster.serviceName(cluster), namespace));
+        sbjAltNames.put("DNS.3", String.format("%s.%s.svc.%s", KafkaCluster.serviceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+        sbjAltNames.put("DNS.4", String.format("%s.%s.%s.svc.%s", KafkaCluster.kafkaPodName(cluster, podNumber), KafkaCluster.headlessServiceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+        int nextDnsId = 5;
+        int nextIpId = 1;
+        if (externalBootstrapAddress != null)   {
+            String sna = !ipv4Address.matcher(externalBootstrapAddress).matches() ?
+                    String.format("DNS.%d", nextDnsId++) :
+                    String.format("IP.%d", nextIpId++);
+
+            sbjAltNames.put(sna, externalBootstrapAddress);
+        }
+
+        if (externalAddresses.get(podNumber) != null)   {
+            String sna = !ipv4Address.matcher(externalAddresses.get(podNumber)).matches() ?
+                    String.format("DNS.%d", nextDnsId) :
+                    String.format("IP.%d", nextIpId);
+
+            sbjAltNames.put(sna, externalAddresses.get(podNumber));
+        }
+
+        return sbjAltNames;
+    }
 }
