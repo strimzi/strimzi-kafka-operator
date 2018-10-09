@@ -184,6 +184,7 @@ public class DocGenerator {
         if (!doc.trim().matches(".*[.!?]$")) {
             doc = doc + ".";
         }
+        doc = doc.replaceAll("[|]", "\\\\|");
         return doc;
     }
 
