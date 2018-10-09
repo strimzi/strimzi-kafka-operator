@@ -248,7 +248,7 @@ public abstract class Ca {
                     .map(item -> (String) item.get(1))
                     .collect(Collectors.toList());
         } catch (CertificateException e) {
-            log.error("Failed to parse existing certificate", e);
+            log.debug("Failed to parse existing certificate", e);
         }
 
         return subjectAltNames;
