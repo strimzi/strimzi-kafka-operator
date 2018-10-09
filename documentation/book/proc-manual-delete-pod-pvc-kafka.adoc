@@ -1,0 +1,35 @@
+// Module included in the following assemblies:
+//
+// assembly-todo.adoc
+
+[id='proc-manual-delete-pod-pvc-kafka-{context}']
+= Manually deletion of Kafka node
+
+This procedure describes how it is possible to delete an existing Kafka node by using an {ProductPlatformName} annotation.
+The Kafka node deletion consists of deleting the `Pod` which is running the Kafka broker and the related `PersistentVolumeClaim` if the cluster was deployed with `persistent` storage.
+After deletion, the `Pod` (and the related `PersistentVolumeClaim`) will be recreated automatically.
+
+.Prerequisites
+
+* A running Kafka cluster.
+* A running Cluster Operator.
+
+.Procedure
+
+. Find the name of the `Pod` to delete.
+
+Given the name of the cluster as _cluster-name_, all the pods are named as _cluster-name_-kafka-_index_ where `index` goes from 0 to the number of replicas.
+
+. Annotate `Pod` resource in {ProductPlatformName}.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl annotate`:
+[source,shell,subs=+quotes]
+kubectl annotate pod _cluster-name_-kafka-_index_ cluster.operator.strimzi.io/delete-pod-and-pvc=true
+endif::Kubernetes[]
++
+On {OpenShiftName} this can be done using `oc annotate`:
+[source,shell,subs=+quotes]
+oc annotate pod _cluster-name_-kafka-_index_ cluster.operator.strimzi.io/delete-pod-and-pvc=true
++
+. Wait for next reconciliation and the annotated pod will be deleted and then recreated.
