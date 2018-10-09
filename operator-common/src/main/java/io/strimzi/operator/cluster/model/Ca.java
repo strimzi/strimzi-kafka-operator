@@ -245,7 +245,7 @@ public abstract class Ca {
                     .filter(name -> name.get(1) instanceof String)
                     .map(item -> (String) item.get(1))
                     .collect(Collectors.toList());
-        } catch (CertificateException|RuntimeException e) {
+        } catch (CertificateException | RuntimeException e) {
             // TODO: We should mock the certificates properly so that this doesn't fail in tests (not now => long term :-o)
             log.debug("Failed to parse existing certificate", e);
         }
