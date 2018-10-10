@@ -78,6 +78,12 @@ spec:
                           type: boolean
                         type:
                           type: string
+                          enum:
+                          - route
+                          - loadbalancer
+                          - nodeport
+                      required:
+                      - type
                 authorization:
                   type: object
                   properties:
