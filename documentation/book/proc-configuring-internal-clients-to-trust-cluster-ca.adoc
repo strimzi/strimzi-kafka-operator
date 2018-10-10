@@ -5,14 +5,14 @@
 [id='configuring-internal-clients-to-trust-cluster-ca-{context}']
 = Configuring internal clients to trust the cluster CA 
 
-This procedure will show you how to configure a Kafka client that is inside the {ProductPlatformName} cluster (that is, connecting to the `tls` listener on port 9093) so that it trusts the cluster CA certificate.
+This procedure describes how to configure a Kafka client that resides inside the {ProductPlatformName} cluster — connecting to the `tls` listener on port 9093 — to trust the cluster CA certificate.
 
 The easiest way to achieve this for an internal client is to use a volume mount to access the `Secrets` containing the necessary certificates and keys.
 
 .Prerequisites
 
-* The Cluster Operator up and running.
-* An `Kafka` resource within the {ProductPlatformName} cluster.
+* The Cluster Operator is running.
+* A `Kafka` resource within the {ProductPlatformName} cluster.
 * A Kafka client application inside the {ProductPlatformName} cluster which will connect using TLS and needs to trust the cluster CA certificate.
 
 .Procedure
@@ -25,7 +25,7 @@ For the Java-based Kafka Producer, Consumer, and Streams APIs, you can do this b
 [source,shell]
 keytool -keystore client.truststore.jks -alias CARoot -import -file ca.crt
 
-. In order to configure the Kafka client, following properties should be specified:
+. To configure the Kafka client, specify the following properties:
 
 * `security.protocol: SSL` when using TLS for encryption (with or without TLS authentication), or `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS. 
 * `ssl.truststore.location`: the truststore location where the certificates were imported.

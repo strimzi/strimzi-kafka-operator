@@ -5,12 +5,12 @@
 [id='renewing-your-own-ca-certificates-{context}']
 = Renewing your own CA certificates
 
-This procedure will show you how to renew CA certificates and private keys you installed previously.
+This procedure describes how to renew CA certificates and private keys that you previously installed.
 You will need to follow this procedure during the renewal period in order to replace CA certificates which will soon expire.
 
 .Prerequisites
 
-* The Cluster Operator up and running.
+* The Cluster Operator is running.
 * A Kafka cluster in which you previously installed your own CA certificates and private keys.
 * New cluster and clients X.509 certificates and keys in PEM format. These could be generated using `openssl` using a command such as:
 +
