@@ -27,6 +27,11 @@ spec:
               properties:
                 type:
                   type: string
+                  enum:
+                  - tls
+                  - scram-sha-512
+              required:
+              - type
             authorization:
               type: object
               properties:
@@ -63,6 +68,12 @@ spec:
                             - prefix
                           type:
                             type: string
+                            enum:
+                            - topic
+                            - group
+                            - cluster
+                        required:
+                        - type
                       type:
                         type: string
                         enum:
@@ -73,7 +84,10 @@ spec:
                     - resource
                 type:
                   type: string
+                  enum:
+                  - simple
               required:
               - acls
+              - type
           required:
           - authentication

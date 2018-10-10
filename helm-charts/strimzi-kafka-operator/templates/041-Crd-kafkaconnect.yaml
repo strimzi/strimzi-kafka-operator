@@ -265,6 +265,11 @@ spec:
                   type: string
                 type:
                   type: string
+                  enum:
+                  - inline
+                  - external
+              required:
+              - type
             metrics:
               type: object
             authentication:
@@ -295,8 +300,13 @@ spec:
                   - secretName
                 type:
                   type: string
+                  enum:
+                  - tls
+                  - scram-sha-512
                 username:
                   type: string
+              required:
+              - type
             bootstrapServers:
               type: string
             config:

@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
@@ -16,6 +17,7 @@ import io.sundr.builder.annotations.Buildable;
         generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
+@JsonPropertyOrder({"type", "name"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExternalLogging extends Logging {
 

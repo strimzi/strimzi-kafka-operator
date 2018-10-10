@@ -4,9 +4,9 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.crdgenerator.annotations.Description;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 
@@ -19,6 +19,7 @@ import io.vertx.core.cli.annotations.DefaultValue;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"type", "name", "patternType"})
 public class AclRuleGroupResource extends AclRuleResource {
     private static final long serialVersionUID = 1L;
 

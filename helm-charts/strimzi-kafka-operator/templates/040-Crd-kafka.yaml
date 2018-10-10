@@ -47,6 +47,11 @@ spec:
                       type: string
                     type:
                       type: string
+                      enum:
+                      - ephemeral
+                      - persistent-claim
+                  required:
+                  - type
                 listeners:
                   type: object
                   properties:
@@ -58,6 +63,11 @@ spec:
                           properties:
                             type:
                               type: string
+                              enum:
+                              - tls
+                              - scram-sha-512
+                          required:
+                          - type
                     tls:
                       type: object
                       properties:
@@ -66,6 +76,11 @@ spec:
                           properties:
                             type:
                               type: string
+                              enum:
+                              - tls
+                              - scram-sha-512
+                          required:
+                          - type
                     external:
                       type: object
                       properties:
@@ -74,6 +89,11 @@ spec:
                           properties:
                             type:
                               type: string
+                              enum:
+                              - tls
+                              - scram-sha-512
+                          required:
+                          - type
                         tls:
                           type: boolean
                         type:
@@ -93,6 +113,10 @@ spec:
                         type: string
                     type:
                       type: string
+                      enum:
+                      - simple
+                  required:
+                  - type
                 config:
                   type: object
                 rack:
@@ -363,6 +387,11 @@ spec:
                       type: string
                     type:
                       type: string
+                      enum:
+                      - inline
+                      - external
+                  required:
+                  - type
                 tlsSidecar:
                   type: object
                   properties:
@@ -425,6 +454,11 @@ spec:
                       type: string
                     type:
                       type: string
+                      enum:
+                      - ephemeral
+                      - persistent-claim
+                  required:
+                  - type
                 config:
                   type: object
                 affinity:
@@ -685,6 +719,11 @@ spec:
                       type: string
                     type:
                       type: string
+                      enum:
+                      - inline
+                      - external
+                  required:
+                  - type
                 tlsSidecar:
                   type: object
                   properties:
@@ -990,6 +1029,11 @@ spec:
                       type: string
                     type:
                       type: string
+                      enum:
+                      - inline
+                      - external
+                  required:
+                  - type
             clientsCa:
               type: object
               properties:
@@ -1061,6 +1105,11 @@ spec:
                           type: string
                         type:
                           type: string
+                          enum:
+                          - inline
+                          - external
+                      required:
+                      - type
                 userOperator:
                   type: object
                   properties:
@@ -1104,6 +1153,11 @@ spec:
                           type: string
                         type:
                           type: string
+                          enum:
+                          - inline
+                          - external
+                      required:
+                      - type
                 affinity:
                   type: object
                   properties:

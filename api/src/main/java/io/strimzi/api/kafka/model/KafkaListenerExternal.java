@@ -19,7 +19,9 @@ import java.util.Map;
 /**
  * Configures the external listener which exposes Kafka outside of Kubernetes / OpenShift
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = false, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaListenerExternalRoute.TYPE_ROUTE, value = KafkaListenerExternalRoute.class),
         @JsonSubTypes.Type(name = KafkaListenerExternalLoadBalancer.TYPE_LOADBALANCER, value = KafkaListenerExternalLoadBalancer.class),
