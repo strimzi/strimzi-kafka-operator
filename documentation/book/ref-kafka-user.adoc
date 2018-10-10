@@ -11,7 +11,7 @@ The `KafkaUser` resource is used to declare a user with its authentication mecha
 
 Authentication is configured using the `authentication` property in `KafkaUser.spec`.
 The authentication mechanism enabled for this user will be specified using the `type` field.
-Currently, the only supported authentication mechanism is the TLS Client Authentication mechanism.
+Currently, the only supported authentication mechanisms are the TLS Client Authentication mechanism and the SCRAM-SHA-512 mechanism.
 
 When no authentication mechanism is specified, User Operator will not create the user or its credentials.
 
@@ -54,6 +54,43 @@ data:
   ca.crt: # Public key of the Clients CA
   user.crt: # Public key of the user
   user.key: # Private key of the user
+----
+
+=== SCRAM-SHA-512 Authentication
+
+To use SCRAM-SHA-512 authentication mechanism, set the `type` field to `scram-sha-512`.
+
+.An example of `KafkaUser` with enabled SCRAM-SHA-512 authentication
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: scram-sha-512
+  # ...
+----
+
+When the user is created by the User Operator, the User Operator will create a new secret with the same name as the `KafkaUser` resource.
+The secret will contain the generated password.
+
+.An example of the `Secret` with user credentials
+[source,yaml,subs="attributes+"]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/kind: KafkaUser
+    strimzi.io/cluster: my-cluster
+type: Opaque
+data:
+  password: # Generated password
 ----
 
 == Authorization
@@ -158,3 +195,5 @@ spec:
 == Additional resources
 
 * For more information about the `KafkaUser` object, see xref:type-KafkaUser-reference[`KafkaUser` schema reference].
+* For more information about the TLS Client Authentication, see xref:con-mutual-tls-authentication-{context}[].
+* For more information about the SASL SCRAM-SHA-512 authentication, see xref:con-scram-sha-authentication-{context}[].
