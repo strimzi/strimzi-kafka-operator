@@ -78,7 +78,7 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag("acceptance")
+    @Tag("regression")
     void testKafkaConnectWithFileSinkPlugin() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editMetadata()
@@ -102,7 +102,7 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag("acceptance")
+    @Tag("regression")
     void testJvmAndResources() {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
@@ -138,7 +138,7 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag("acceptance")
+    @Tag("regression")
     void testKafkaConnectScaleUpScaleDown() {
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
@@ -176,7 +176,7 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag("acceptance")
+    @Tag("regression")
     void testForUpdateValuesInConnectCM() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editSpec()

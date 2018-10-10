@@ -124,7 +124,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag("acceptance")
     void testKafkaAndZookeeperScaleUpScaleDown() {
         operationID = startTimeMeasuring();
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -360,7 +360,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @Tag("regression")
+    @Tag("acceptance")
     void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
         int messagesCount = 20;
