@@ -39,6 +39,7 @@ public abstract class KafkaListenerExternal implements Serializable {
             "* `loadbalancer` type uses LoadBalancer type services to expose Kafka." +
             "* `nodeport` type uses NodePort type services to expose Kafka.")
     @JsonIgnore
+    @JsonProperty(required = true)
     public abstract String getType();
 
     @Description("Authentication configuration for Kafka brokers")
