@@ -16,7 +16,7 @@ include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
 
 include::assembly-using-the-user-operator.adoc[leveloffset=+1]
 
-include::assembly-security.adoc[leveloffset+=1]
+include::assembly-security.adoc[leveloffset=+1]
 
 include::faq.adoc[]
 
