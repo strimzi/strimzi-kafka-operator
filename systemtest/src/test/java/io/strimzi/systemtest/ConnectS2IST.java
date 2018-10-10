@@ -5,24 +5,24 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @Namespace(ConnectS2IST.NAMESPACE)
 @ClusterOperator
-public class ConnectS2IST extends AbstractST {
+class ConnectS2IST extends AbstractST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     public static final String CONNECT_CLUSTER_NAME = "connect-s2i-tests";
@@ -32,8 +32,8 @@ public class ConnectS2IST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @JUnitGroup(name = "regression")
-    public void testDeployS2IWithMongoDBPlugin() {
+    @Tag("regression")
+    void testDeployS2IWithMongoDBPlugin() {
         resources().kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
@@ -62,20 +62,20 @@ public class ConnectS2IST extends AbstractST {
     }
 
 
-    @BeforeClass
-    public static void createClassResources() {
+    @BeforeAll
+    static void createClassResources() {
         classResources = new Resources(namespacedClient());
         classResources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
     }
 
-    @AfterClass
-    public static void deleteClassResources() {
+    @AfterAll
+    static void deleteClassResources() {
         LOGGER.info("Deleting resources after the test class");
         classResources.deleteResources();
         classResources = null;
     }
 
-    static Resources classResources() {
+    private static Resources classResources() {
         return classResources;
     }
 }

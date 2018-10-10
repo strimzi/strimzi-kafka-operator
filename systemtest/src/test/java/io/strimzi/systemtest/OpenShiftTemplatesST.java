@@ -21,29 +21,28 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.strimzi.test.TestUtils.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Basic tests for the OpenShift templates.
  * This only tests that the template create the appropriate resource,
  * not that the created resource is processed by operator(s) in the appropriate way.
  */
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @OpenShiftOnly
 @Namespace(OpenShiftTemplatesST.NAMESPACE)
 @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
@@ -57,7 +56,6 @@ public class OpenShiftTemplatesST {
 
     public static final String NAMESPACE = "template-test";
 
-    @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
 
     private ObjectMapper mapper = new ObjectMapper();
@@ -77,8 +75,8 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testStrimziEphemeral() {
+    @Tag("regression")
+    void testStrimziEphemeral() {
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
@@ -94,8 +92,8 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testStrimziPersistent() {
+    @Tag("regression")
+    void testStrimziPersistent() {
         String clusterName = "bar";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
@@ -110,8 +108,8 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testStrimziEphemeralWithCustomParameters() {
+    @Tag("regression")
+    void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
@@ -140,8 +138,8 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testStrimziPersistentWithCustomParameters() {
+    @Tag("regression")
+    void testStrimziPersistentWithCustomParameters() {
         String clusterName = "test-persistent-with-custom-parameters";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
@@ -174,8 +172,8 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testConnect() {
+    @Tag("regression")
+    void testConnect() {
         String clusterName = "test-connect";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
@@ -186,8 +184,8 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testS2i() {
+    @Tag("regression")
+    void testS2i() {
         String clusterName = "test-s2i";
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
@@ -198,8 +196,8 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testTopicOperator() {
+    @Tag("regression")
+    void testTopicOperator() {
         String topicName = "test-topic-topic";
         oc.newApp("strimzi-topic", map(
                 "TOPIC_NAME", topicName,

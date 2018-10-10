@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(StrimziExtension.class)
 @Namespace(LogLevelST.NAMESPACE)
 @ClusterOperator
-class LogLevelST extends AbstractNewST {
+class LogLevelST extends AbstractST {
     static final String NAMESPACE = "log-level-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LogLevelST.class);
     private static final String TESTED_LOGGER = "kafka.root.logger.level";

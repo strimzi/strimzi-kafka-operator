@@ -6,16 +6,16 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,11 +34,11 @@ import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @Namespace(ConnectST.NAMESPACE)
 @ClusterOperator
 public class ConnectST extends AbstractST {
@@ -62,8 +62,8 @@ public class ConnectST extends AbstractST {
     private static Resources classResources;
 
     @Test
-    @JUnitGroup(name = "acceptance")
-    public void testDeployUndeploy() {
+    @Tag("acceptance")
+    void testDeployUndeploy() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
@@ -78,8 +78,8 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testKafkaConnectWithFileSinkPlugin() {
+    @Tag("acceptance")
+    void testKafkaConnectWithFileSinkPlugin() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
@@ -102,8 +102,8 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testJvmAndResources() {
+    @Tag("acceptance")
+    void testJvmAndResources() {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
@@ -138,8 +138,8 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testKafkaConnectScaleUpScaleDown() {
+    @Tag("acceptance")
+    void testKafkaConnectScaleUpScaleDown() {
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
 
@@ -176,8 +176,8 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testForUpdateValuesInConnectCM() {
+    @Tag("acceptance")
+    void testForUpdateValuesInConnectCM() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editSpec()
                 .withNewReadinessProbe()
@@ -240,8 +240,8 @@ public class ConnectST extends AbstractST {
         LOGGER.info("Docker images verified");
     }
 
-    @BeforeClass
-    public static void createClassResources() {
+    @BeforeAll
+    static void createClassResources() {
         classResources = new Resources(namespacedClient());
 
         Map<String, Object> kafkaConfig = new HashMap<>();
@@ -257,14 +257,14 @@ public class ConnectST extends AbstractST {
             .endSpec().done();
     }
 
-    @AfterClass
-    public static void deleteClassResources() {
+    @AfterAll
+    static void deleteClassResources() {
         LOGGER.info("Deleting resources after the test class");
         classResources.deleteResources();
         classResources = null;
     }
 
-    static Resources classResources() {
+    private static Resources classResources() {
         return classResources;
     }
 }

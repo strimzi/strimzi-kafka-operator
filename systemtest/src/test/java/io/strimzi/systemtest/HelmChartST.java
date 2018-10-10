@@ -5,18 +5,18 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @Namespace(HelmChartST.NAMESPACE)
 @ClusterOperator(useHelmChart = true)
-public class HelmChartST extends AbstractST {
+class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
 
@@ -25,12 +25,12 @@ public class HelmChartST extends AbstractST {
     private static final String TOPIC_NAME = "test-topic";
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testDeployKafkaClusterViaHelmChart() {
+    @Tag("regression")
+    void testDeployKafkaClusterViaHelmChart() {
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
         LOGGER.info("Running testDeployKafkaClusterViaHelmChart {}", CLUSTER_NAME);
-        this.kubeClient.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 3);
-        this.kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
+        kubeClient.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 3);
+        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
     }
 }

@@ -6,30 +6,30 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.Namespace;
-import io.strimzi.test.StrimziRunner;
+import io.strimzi.test.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
-@RunWith(StrimziRunner.class)
+@ExtendWith(StrimziExtension.class)
 @Namespace(UserST.NAMESPACE)
 @ClusterOperator
-public class UserST extends AbstractST {
+class UserST extends AbstractST {
 
     public static final String NAMESPACE = "user-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
 
     @Test
-    @JUnitGroup(name = "regression")
-    public void testUpdateUser() {
+    @Tag("regression")
+    void testUpdateUser() {
         LOGGER.info("Running testUpdateUser in namespace {}", NAMESPACE);
         String kafkaUser = "test-user";
 
@@ -51,17 +51,17 @@ public class UserST extends AbstractST {
         kubeClient.waitForResourceCreation("secret", kafkaUser);
 
         String kafkaUserSecret = kubeClient.getResourceAsJson("secret", kafkaUser);
-        Assert.assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
-        Assert.assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
-        Assert.assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
-        Assert.assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
-        Assert.assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
+        assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
+        assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
+        assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
+        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
+        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
 
         String kafkaUserAsJson = kubeClient.getResourceAsJson("KafkaUser", kafkaUser);
 
-        Assert.assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
-        Assert.assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
-        Assert.assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("tls")));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("tls")));
 
         kafkaUser = "new-" + kafkaUser;
 
@@ -76,12 +76,12 @@ public class UserST extends AbstractST {
             .endSpec().done();
 
         kafkaUserSecret = kubeClient.getResourceAsJson("secret", kafkaUser);
-        Assert.assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
+        assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
         kafkaUserAsJson = kubeClient.getResourceAsJson("KafkaUser", kafkaUser);
-        Assert.assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
-        Assert.assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
-        Assert.assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
         kubeClient.deleteByName("KafkaUser", kafkaUser);
         kubeClient.waitForResourceDeletion("KafkaUser", kafkaUser);
