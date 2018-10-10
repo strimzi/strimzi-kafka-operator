@@ -6,7 +6,6 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -19,7 +18,9 @@ import java.util.Map;
 /**
  * Configures the Kafka Connect authentication
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaConnectAuthenticationTls.TYPE_TLS, value = KafkaConnectAuthenticationTls.class),
         @JsonSubTypes.Type(name = KafkaConnectAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaConnectAuthenticationScramSha512.class),
@@ -35,7 +36,6 @@ public abstract class KafkaConnectAuthentication implements Serializable {
             "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
             "`tls` type uses TLS Client Authentication. " +
             "`tls` type is supported only over TLS connections.")
-    @JsonIgnore
     public abstract String getType();
 
     @JsonAnyGetter

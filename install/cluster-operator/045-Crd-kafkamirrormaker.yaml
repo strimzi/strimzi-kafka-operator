@@ -67,8 +67,13 @@ spec:
                       - secretName
                     type:
                       type: string
+                      enum:
+                      - tls
+                      - scram-sha-512
                     username:
                       type: string
+                  required:
+                  - type
                 config:
                   type: object
                 tls:
@@ -124,8 +129,13 @@ spec:
                       - secretName
                     type:
                       type: string
+                      enum:
+                      - tls
+                      - scram-sha-512
                     username:
                       type: string
+                  required:
+                  - type
                 config:
                   type: object
                 tls:
@@ -385,6 +395,11 @@ spec:
                   type: string
                 type:
                   type: string
+                  enum:
+                  - inline
+                  - external
+              required:
+              - type
             metrics:
               type: object
           required:

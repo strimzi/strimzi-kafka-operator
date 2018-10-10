@@ -4,10 +4,10 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.strimzi.crdgenerator.annotations.Description;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.util.List;
@@ -21,6 +21,7 @@ import java.util.List;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"type", "acls"})
 public class KafkaUserAuthorizationSimple extends KafkaUserAuthorization {
     private static final long serialVersionUID = 1L;
 

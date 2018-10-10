@@ -4,7 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -15,7 +14,9 @@ import java.io.Serializable;
 /**
  * Describes the logging configuration
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(name = InlineLogging.TYPE_INLINE, value = InlineLogging.class),
         @JsonSubTypes.Type(name = ExternalLogging.TYPE_EXTERNAL, value = ExternalLogging.class),
@@ -26,7 +27,6 @@ public abstract class Logging implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Description("Logging type, must be either 'inline' or 'external'.")
-    @JsonIgnore
     public abstract String getType();
 }
 

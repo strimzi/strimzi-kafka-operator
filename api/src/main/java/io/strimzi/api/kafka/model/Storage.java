@@ -6,7 +6,6 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -21,6 +20,7 @@ import java.util.Map;
  */
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type"
 )
 @JsonSubTypes({
@@ -37,7 +37,6 @@ public abstract class Storage implements Serializable {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Storage type, must be either 'ephemeral' or 'persistent-claim'.")
-    @JsonIgnore
     public abstract String getType();
 
     @JsonAnyGetter

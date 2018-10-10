@@ -110,15 +110,15 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 [options="header"]
 |====
 |Field               |Description
-|class        1.2+<.<|The storage class to use for dynamic volume allocation.
+|type         1.2+<.<|Must be `persistent-claim`.
 |string
-|deleteClaim  1.2+<.<|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
-|boolean
-|selector     1.2+<.<|Specifies a specific persistent volume to use. It contains a matchLabels field which defines an inner JSON object with key:value representing labels for selecting such a volume.
-|map
 |size         1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
 |string
-|type         1.2+<.<|Must be `persistent-claim`.
+|selector     1.2+<.<|Specifies a specific persistent volume to use. It contains a matchLabels field which defines an inner JSON object with key:value representing labels for selecting such a volume.
+|map
+|deleteClaim  1.2+<.<|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+|boolean
+|class        1.2+<.<|The storage class to use for dynamic volume allocation.
 |string
 |====
 
@@ -206,10 +206,10 @@ It must have the value `route` for the type `KafkaListenerExternalRoute`.
 [options="header"]
 |====
 |Field                  |Description
-|authentication  1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
 |type            1.2+<.<|Must be `route`.
 |string
+|authentication  1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
 |====
 
 [id='type-KafkaListenerExternalLoadBalancer-{context}']
@@ -223,12 +223,12 @@ It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBal
 [options="header"]
 |====
 |Field                  |Description
+|type            1.2+<.<|Must be `loadbalancer`.
+|string
 |authentication  1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
 |tls             1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
-|type            1.2+<.<|Must be `loadbalancer`.
-|string
 |====
 
 [id='type-KafkaListenerExternalNodePort-{context}']
@@ -242,12 +242,12 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 [options="header"]
 |====
 |Field                  |Description
+|type            1.2+<.<|Must be `nodeport`.
+|string
 |authentication  1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
 |tls             1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
-|type            1.2+<.<|Must be `nodeport`.
-|string
 |====
 
 [id='type-KafkaAuthorizationSimple-{context}']
@@ -261,10 +261,10 @@ It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 [options="header"]
 |====
 |Field              |Description
-|superUsers  1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
-|string array
 |type        1.2+<.<|Must be `simple`.
 |string
+|superUsers  1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
+|string array
 |====
 
 [id='type-Rack-{context}']
@@ -353,10 +353,10 @@ It must have the value `inline` for the type `InlineLogging`.
 [options="header"]
 |====
 |Field           |Description
-|loggers  1.2+<.<|A Map from logger name to logger level.
-|map
 |type     1.2+<.<|Must be `inline`.
 |string
+|loggers  1.2+<.<|A Map from logger name to logger level.
+|map
 |====
 
 [id='type-ExternalLogging-{context}']
@@ -370,9 +370,9 @@ It must have the value `external` for the type `ExternalLogging`.
 [options="header"]
 |====
 |Field        |Description
-|name  1.2+<.<|The name of the `ConfigMap` from which to get the logging configuration.
-|string
 |type  1.2+<.<|Must be `external`.
+|string
+|name  1.2+<.<|The name of the `ConfigMap` from which to get the logging configuration.
 |string
 |====
 
@@ -859,10 +859,10 @@ It must have the value `simple` for the type `KafkaUserAuthorizationSimple`.
 [options="header"]
 |====
 |Field        |Description
-|acls  1.2+<.<|List of ACL rules which should be applied to this user.
-|xref:type-AclRule-{context}[`AclRule`] array
 |type  1.2+<.<|Must be `simple`.
 |string
+|acls  1.2+<.<|List of ACL rules which should be applied to this user.
+|xref:type-AclRule-{context}[`AclRule`] array
 |====
 
 [id='type-AclRule-{context}']
@@ -895,12 +895,12 @@ It must have the value `topic` for the type `AclRuleTopicResource`.
 [options="header"]
 |====
 |Field               |Description
+|type         1.2+<.<|Must be `topic`.
+|string
 |name         1.2+<.<|Name of resource for which given ACL rule applies. Can be combined with `patternType` field to use prefix pattern.
 |string
 |patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full topic name. With `prefix` pattern type, the resource name will be used only as a prefix. Default value is `literal`.
 |string (one of [prefix, literal])
-|type         1.2+<.<|Must be `topic`.
-|string
 |====
 
 [id='type-AclRuleGroupResource-{context}']
@@ -914,12 +914,12 @@ It must have the value `group` for the type `AclRuleGroupResource`.
 [options="header"]
 |====
 |Field               |Description
+|type         1.2+<.<|Must be `group`.
+|string
 |name         1.2+<.<|Name of resource for which given ACL rule applies. Can be combined with `patternType` field to use prefix pattern.
 |string
 |patternType  1.2+<.<|Describes the pattern used in the resource field. The supported types are `literal` and `prefix`. With `literal` pattern type, the resource field will be used as a definition of a full topic name. With `prefix` pattern type, the resource name will be used only as a prefix. Default value is `literal`.
 |string (one of [prefix, literal])
-|type         1.2+<.<|Must be `group`.
-|string
 |====
 
 [id='type-AclRuleClusterResource-{context}']
