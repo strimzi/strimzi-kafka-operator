@@ -3,13 +3,13 @@
 // assembly-todo.adoc
 
 [id='proc-manual-delete-pod-pvc-zookeeper-{context}']
-= Manually deletion of Zookeeper node
+= Delete Zookeeper nodes manually
 
-This procedure describes how it is possible to delete an existing Zookeeper node by using an {ProductPlatformName} annotation.
-The Zookeeper node deletion consists of deleting the `Pod` which is running Zookeeper and the related `PersistentVolumeClaim` if the cluster was deployed with `persistent` storage.
-After deletion, the `Pod` (and the related `PersistentVolumeClaim`) will be recreated automatically.
+This procedure describes how to delete an existing Zookeeper node by using an {ProductPlatformName} annotation.
+Deleting a Zookeeper node consists of deleting both the `Pod` on which Zookeeper is running and the related `PersistentVolumeClaim` (if the cluster was deployed with persistent storage).
+After deletion, the `Pod` and its related `PersistentVolumeClaim` are recreated automatically.
 
-WARNING: this operation should be done only in case of storage issues because `PersistentVolumeClaim` deletion can cause data loss.
+WARNING: Deleting a `PersistentVolumeClaim` can cause permanent data loss. The following procedure should only be performed if you have encountered storage issues.
 
 .Prerequisites
 
@@ -18,23 +18,23 @@ WARNING: this operation should be done only in case of storage issues because `P
 
 .Procedure
 
-. Find the name of the `Pod` to delete.
+. Find the name of the `Pod` that you want to delete.
 
-Given the name of the cluster as _cluster-name_, all the pods are named as _cluster-name_-zookeeper-_index_ where `index` goes from 0 to the number of replicas.
+For example, if the cluster is named _cluster-name_, the pods are named _cluster-name_-zookeeper-_index_, where _index_ starts at zero and ends at the total number of replicas.
 
-. Annotate `Pod` resource in {ProductPlatformName}.
+. Annotate the `Pod` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl annotate`:
+On {KubernetesName} use `kubectl annotate`:
 [source,shell,subs=+quotes]
 kubectl annotate pod _cluster-name_-zookeeper-_index_ cluster.operator.strimzi.io/delete-pod-and-pvc=true
 endif::Kubernetes[]
 +
-On {OpenShiftName} this can be done using `oc annotate`:
+On {OpenShiftName} use `oc annotate`:
 [source,shell,subs=+quotes]
 oc annotate pod _cluster-name_-zookeeper-_index_ cluster.operator.strimzi.io/delete-pod-and-pvc=true
 +
-. Wait for next reconciliation and the annotated pod with the underlying persistent volume claim will be deleted and then recreated.
+. Wait for the next reconciliation, when the annotated pod with the underlying persistent volume claim will be deleted and then recreated.
 
 .Additional resources
 
