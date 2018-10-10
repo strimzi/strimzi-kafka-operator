@@ -59,10 +59,11 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         ExecutionCondition, AfterTestExecutionCallback, BeforeTestExecutionCallback {
     private static final Logger LOGGER = LogManager.getLogger(StrimziExtension.class);
 
+    public static final String NOTEARDOWN = "NOTEARDOWN";
     public static final String KAFKA_PERSISTENT_YAML = "../examples/kafka/kafka-persistent.yaml";
     public static final String KAFKA_CONNECT_YAML = "../examples/kafka-connect/kafka-connect.yaml";
     public static final String KAFKA_CONNECT_S2I_CM = "../examples/configmaps/cluster-operator/kafka-connect-s2i.yaml";
-    public static final String CO_INSTALL_DIR = "../examples/install/cluster-operator";
+    public static final String CO_INSTALL_DIR = "../install/cluster-operator";
     public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
     public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
@@ -75,7 +76,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
     public static final String OPERATOR_LOG_LEVEL = "INFO";
-    public static final String NOTEARDOWN = "NOTEARDOWN";
     private static final String DEFAULT_TAG = "all";
     private static final String TAG_LIST_NAME = "tags";
     private static final String START_TIME = "start time";
