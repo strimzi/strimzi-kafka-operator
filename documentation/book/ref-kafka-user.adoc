@@ -75,7 +75,7 @@ spec:
   # ...
 ----
 
-When the user is created by the User Operator, it will create a new secret with the same name as the `KafkaUser` resource.
+When the user is created by the User Operator, the User Operator will create a new secret with the same name as the `KafkaUser` resource.
 The secret will contain the generated password.
 
 .An example of the `Secret` with user credentials
