@@ -39,4 +39,4 @@ oc annotate pod _cluster-name_-zookeeper-_index_ cluster.operator.strimzi.io/del
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about deploying the Zookeeper cluster, see xref:deploying-zookeeper-cluster-openshift-str[] and xref:deploying-zookeeper-cluster-kubernetes-str[].
+* For more information about deploying the Zookeeper cluster, see xref:deploying-kafka-cluster-openshift-str[] and xref:deploying-kafka-cluster-kubernetes-str[].
