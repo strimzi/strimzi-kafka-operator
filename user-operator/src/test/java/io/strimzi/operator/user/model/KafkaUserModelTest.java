@@ -176,6 +176,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGetUsername()    {
-        assertEquals("CN=my-user", KafkaUserModel.getUserName("my-user"));
+        assertEquals("CN=my-user", KafkaUserModel.getTlsUserName("my-user"));
+        assertEquals("my-user", KafkaUserModel.getScramUserName("my-user"));
     }
 }
