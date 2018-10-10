@@ -215,3 +215,14 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+  - patch
+  - update
