@@ -11,7 +11,7 @@ The `KafkaUser` resource is used to declare a user with its authentication mecha
 
 Authentication is configured using the `authentication` property in `KafkaUser.spec`.
 The authentication mechanism enabled for this user will be specified using the `type` field.
-Currently, the only supported authentication mechanism are the TLS Client Authentication mechanism and the SCRAM-SHA-512 mechanism.
+Currently, the only supported authentication mechanisms are the TLS Client Authentication mechanism and the SCRAM-SHA-512 mechanism.
 
 When no authentication mechanism is specified, User Operator will not create the user or its credentials.
 
@@ -58,7 +58,7 @@ data:
 
 === SCRAM-SHA-512 Authentication
 
-To use TLS client authentication, set the `type` field to `scram-sha-512`.
+To use SCRAM-SHA-512 authentication mechanism, set the `type` field to `scram-sha-512`.
 
 .An example of `KafkaUser` with enabled SCRAM-SHA-512 authentication
 [source,yaml,subs="attributes+"]
