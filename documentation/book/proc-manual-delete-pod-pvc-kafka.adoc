@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-todo.adoc
+// assembly-deployment-configuration.adoc
 
 [id='proc-manual-delete-pod-pvc-kafka-{context}']
 = Deleting Kafka nodes manually
