@@ -3,7 +3,7 @@
 // assembly-todo.adoc
 
 [id='proc-manual-delete-pod-pvc-zookeeper-{context}']
-= Delete Zookeeper nodes manually
+= Deleting Zookeeper nodes manually
 
 This procedure describes how to delete an existing Zookeeper node by using an {ProductPlatformName} annotation.
 Deleting a Zookeeper node consists of deleting both the `Pod` on which Zookeeper is running and the related `PersistentVolumeClaim` (if the cluster was deployed with persistent storage).

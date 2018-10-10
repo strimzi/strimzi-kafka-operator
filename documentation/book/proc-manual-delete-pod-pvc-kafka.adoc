@@ -3,7 +3,7 @@
 // assembly-todo.adoc
 
 [id='proc-manual-delete-pod-pvc-kafka-{context}']
-= Delete Kafka nodes manually
+= Deleting Kafka nodes manually
 
 This procedure describes how to delete an existing Kafka node by using an {ProductPlatformName} annotation.
 Deleting a Kafka node consists of deleting both the `Pod` on which the Kafka broker is running and the related `PersistentVolumeClaim` (if the cluster was deployed with persistent storage).
