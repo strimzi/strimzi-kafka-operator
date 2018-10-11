@@ -84,6 +84,9 @@ docu_check:
 docu_pushtowebsite: docu_htmlnoheader docu_html
 	./.travis/docu-push-to-website.sh
 
+pushtonexus:
+	./.travis/push-to-nexus.sh
+
 release_docu: docu_html docu_htmlnoheader
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs
 	cp -rv documentation/html/index.html strimzi-$(RELEASE_VERSION)/docs/
