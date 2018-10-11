@@ -18,7 +18,7 @@ This procedure describes how to decrease the number of brokers in a Kafka cluste
 include::snip-reassign-partitions.adoc[]
 
 . Once all the partition reassignments have finished, the broker(s) being removed should not have responsibility for any of the partitions in the cluster.
-You can verify this by checking that the broker's data log directory doesn't contain any live partition logs.
+You can verify this by checking that the broker's data log directory does not contain any live partition logs.
 If the log directory on the broker contains a directory that does not match the extended regular expression `[a-zA-Z0-9.-]+\.[a-z0-9]+-delete$` then the broker still has live partitions and it should not be stopped.
 +
 You can check this by executing the command:
