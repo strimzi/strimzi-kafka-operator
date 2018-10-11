@@ -148,7 +148,7 @@ public class EntityOperator extends AbstractModel {
         return null;
     }
 
-    public Deployment generateDeployment() {
+    public Deployment generateDeployment(boolean isOpenShift) {
 
         if (!isDeployed()) {
             log.warn("Topic and/or User Operators not declared: Entity Operator will not be deployed");
@@ -166,7 +166,7 @@ public class EntityOperator extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),
-                getVolumes()
+                getVolumes(isOpenShift)
         );
     }
 
@@ -203,7 +203,7 @@ public class EntityOperator extends AbstractModel {
         return containers;
     }
 
-    private List<Volume> getVolumes() {
+    private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
         if (topicOperator != null) {
             volumeList.addAll(topicOperator.getVolumes());
@@ -211,8 +211,8 @@ public class EntityOperator extends AbstractModel {
         if (userOperator != null) {
             volumeList.addAll(userOperator.getVolumes());
         }
-        volumeList.add(createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.secretName(cluster)));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.getClusterCaName(cluster)));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.secretName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.getClusterCaName(cluster), isOpenShift));
         return volumeList;
     }
 

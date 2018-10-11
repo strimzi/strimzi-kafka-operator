@@ -164,7 +164,7 @@ public class KafkaMirrorMakerClusterTest {
 
     @Test
     public void testGenerateDeployment()   {
-        Deployment dep = mm.generateDeployment(new HashMap<String, String>());
+        Deployment dep = mm.generateDeployment(new HashMap<String, String>(), true);
 
         assertEquals(mm.kafkaMirrorMakerClusterName(cluster), dep.getMetadata().getName());
         assertEquals(namespace, dep.getMetadata().getNamespace());
@@ -202,7 +202,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
         KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(resource);
-        Deployment dep = kc.generateDeployment(Collections.emptyMap());
+        Deployment dep = kc.generateDeployment(Collections.emptyMap(), true);
 
         assertEquals("my-secret-p", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
         assertEquals("my-another-secret-p", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
@@ -262,7 +262,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
         KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource);
-        Deployment dep = mmc.generateDeployment(Collections.emptyMap());
+        Deployment dep = mmc.generateDeployment(Collections.emptyMap(), true);
 
         assertEquals("user-secret-c", dep.getSpec().getTemplate().getSpec().getVolumes().get(4).getName());
 
@@ -320,7 +320,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
         KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource);
-        Deployment dep = mmc.generateDeployment(Collections.emptyMap());
+        Deployment dep = mmc.generateDeployment(Collections.emptyMap(), true);
 
         assertEquals(3, dep.getSpec().getTemplate().getSpec().getVolumes().size());
         assertEquals("my-secret-p", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
@@ -352,7 +352,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
         KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource);
-        Deployment dep = mmc.generateDeployment(Collections.emptyMap());
+        Deployment dep = mmc.generateDeployment(Collections.emptyMap(), true);
 
         assertEquals("producer-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
 

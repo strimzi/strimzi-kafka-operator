@@ -202,24 +202,24 @@ public class KafkaConnectCluster extends AbstractModel {
         return portList;
     }
 
-    protected List<Volume> getVolumes() {
+    protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(1);
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         if (trustedCertificates != null && trustedCertificates.size() > 0) {
             for (CertSecretSource certSecretSource: trustedCertificates) {
                 // skipping if a volume with same Secret name was already added
                 if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeList.add(createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName()));
+                    volumeList.add(createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
                 }
             }
         }
         if (tlsAuthCertAndKey != null) {
             // skipping if a volume with same Secret name was already added
             if (!volumeList.stream().anyMatch(v -> v.getName().equals(tlsAuthCertAndKey.getSecretName()))) {
-                volumeList.add(createSecretVolume(tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getSecretName()));
+                volumeList.add(createSecretVolume(tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getSecretName(), isOpenShift));
             }
         } else if (passwordSecret != null)  {
-            volumeList.add(createSecretVolume(passwordSecret.getSecretName(), passwordSecret.getSecretName()));
+            volumeList.add(createSecretVolume(passwordSecret.getSecretName(), passwordSecret.getSecretName(), isOpenShift));
         }
 
         return volumeList;
@@ -251,7 +251,7 @@ public class KafkaConnectCluster extends AbstractModel {
         return volumeMountList;
     }
 
-    public Deployment generateDeployment(Map<String, String> annotations) {
+    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
                 .withRollingUpdate(new RollingUpdateDeploymentBuilder()
@@ -267,7 +267,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),
-                getVolumes());
+                getVolumes(isOpenShift));
     }
 
     @Override

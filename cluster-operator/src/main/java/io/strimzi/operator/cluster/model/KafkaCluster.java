@@ -514,7 +514,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
         return createStatefulSet(
-                getVolumes(),
+                getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getVolumeMounts(),
                 getMergedAffinity(),
@@ -564,7 +564,7 @@ public class KafkaCluster extends AbstractModel {
         return portList;
     }
 
-    private List<Volume> getVolumes() {
+    private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
         if (storage instanceof EphemeralStorage) {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
@@ -573,9 +573,9 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null || isExposedWithNodePort()) {
             volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME));
         }
-        volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.getClusterCaName(cluster)));
-        volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster)));
-        volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsPublicKeyName(cluster)));
+        volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.getClusterCaName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsPublicKeyName(cluster), isOpenShift));
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
 
         return volumeList;

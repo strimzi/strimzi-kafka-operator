@@ -626,9 +626,14 @@ public abstract class AbstractModel {
                 .build();
     }
 
-    protected Volume createSecretVolume(String name, String secretName) {
+    protected Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+        int mode = 0444;
+        if (isOpenshift) {
+            mode = 0440;
+        }
 
         SecretVolumeSource secretVolumeSource = new SecretVolumeSourceBuilder()
+                .withDefaultMode(mode)
                 .withSecretName(secretName)
                 .build();
 

@@ -65,7 +65,7 @@ public class EntityOperatorTest {
     @Test
     public void testGenerateDeployment() {
 
-        Deployment dep = entityOperator.generateDeployment();
+        Deployment dep = entityOperator.generateDeployment(true);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -117,7 +117,7 @@ public class EntityOperatorTest {
 
     @Test
     public void withAffinity() throws IOException {
-        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment().getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @AfterClass
