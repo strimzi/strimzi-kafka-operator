@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -168,7 +169,12 @@ public class ScramShaCredentials {
         arguments.addAll(kafkaConfigsOptions);
 
         try {
-            return ProcessHelper.executeSubprocess(arguments);
+            return ProcessHelper.executeSubprocess(arguments, args -> args.stream()
+                    .map(arg ->
+                        arg.replaceAll("password=[^]]+", "[password=***]")
+                    )
+                    .collect(Collectors.toList()));
+
         } catch (IOException e) {
             throw new RuntimeException("Error starting subprocess " + arguments, e);
         } catch (InterruptedException e) {

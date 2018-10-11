@@ -10,12 +10,21 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Function;
 
 public class ProcessHelper {
 
     private static final Logger LOGGER = LogManager.getLogger(ProcessHelper.class);
 
     public static ProcessResult executeSubprocess(List<String> verifyArgs) throws IOException, InterruptedException {
+        return executeSubprocess(verifyArgs, Function.identity());
+    }
+
+    /**
+     * Execute the command given in {@code verifyArgs}.
+     * Apply the given {@code sanitizer} function to the
+     * {@code verifyArgs} when logging, so that security-sensitive information is not logged.*/
+    public static ProcessResult executeSubprocess(List<String> verifyArgs, Function<List<String>, List<String>> sanitizer) throws IOException, InterruptedException {
         if (verifyArgs.isEmpty() || !new File(verifyArgs.get(0)).canExecute()) {
             throw new RuntimeException("Command " + verifyArgs + " lacks an executable arg[0]");
         }
@@ -29,7 +38,9 @@ public class ProcessHelper {
         pb.redirectError(stderr);
         pb.redirectOutput(stdout);
         Process p = pb.start();
-        LOGGER.info("Started process {} with command line {}", p, verifyArgs);
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Started process {} with command line {}", p, sanitizer.apply(verifyArgs));
+        }
         p.getOutputStream().close();
         int exitCode = p.waitFor();
         // TODO timeout on wait
