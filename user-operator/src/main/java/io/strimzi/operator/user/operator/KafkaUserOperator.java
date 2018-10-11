@@ -20,6 +20,8 @@ import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.model.KafkaUserModel;
+import io.strimzi.operator.user.model.acl.SimpleAclRule;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -121,7 +123,7 @@ public class KafkaUserOperator {
             return;
         }
 
-        log.debug("{}: Updating User", reconciliation, userName, namespace);
+        log.debug("{}: Updating User {} in namespace {}", reconciliation, userName, namespace);
         Secret desired = user.generateSecret();
         String password = null;
 
@@ -129,10 +131,20 @@ public class KafkaUserOperator {
             password = new String(Base64.getDecoder().decode(desired.getData().get("password")), Charset.forName("US-ASCII"));
         }
 
+        Set<SimpleAclRule> tlsAcls = null;
+        Set<SimpleAclRule> scramAcls = null;
+
+        if (user.isTlsUser())   {
+            tlsAcls = user.getSimpleAclRules();
+        } else if (user.isScramUser())  {
+            scramAcls = user.getSimpleAclRules();
+        }
+
         CompositeFuture.join(
                 scramShaCredentialOperator.reconcile(user.getName(), password),
                 secretOperations.reconcile(namespace, user.getSecretName(), desired),
-                aclOperations.reconcile(user.getUserName(), user.getSimpleAclRules()))
+                aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
+                aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramAcls))
                 .map((Void) null).setHandler(handler);
     }
 
@@ -146,8 +158,9 @@ public class KafkaUserOperator {
         String user = reconciliation.name();
         log.debug("{}: Deleting User", reconciliation, user, namespace);
         CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(user), null),
-                aclOperations.reconcile(KafkaUserModel.getUserName(user), null),
-                scramShaCredentialOperator.reconcile(KafkaUserModel.getUserName(user), null))
+                aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
+                aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),
+                scramShaCredentialOperator.reconcile(KafkaUserModel.getScramUserName(user), null))
             .map((Void) null).setHandler(handler);
     }
 
@@ -201,6 +214,7 @@ public class KafkaUserOperator {
                     }
                 } catch (Throwable ex) {
                     lock.release();
+                    log.error("{}: Reconciliation failed", reconciliation, ex);
                     log.debug("{}: Lock {} released", reconciliation, lockName);
                     handler.handle(Future.failedFuture(ex));
                 }

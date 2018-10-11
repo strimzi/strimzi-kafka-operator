@@ -106,16 +106,18 @@ public class KafkaUserOperatorTest {
             context.assertEquals("key file", new String(Base64.getDecoder().decode(captured.getData().get("user.key"))));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
             List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
-            context.assertEquals(1, capturedAcls.size());
+            context.assertEquals(2, capturedAcls.size());
             Set<SimpleAclRule> aclRules = capturedAcls.get(0);
 
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+            context.assertNull(capturedAcls.get(1));
 
             async.complete();
         });
@@ -170,16 +172,18 @@ public class KafkaUserOperatorTest {
             context.assertEquals(userCert.getData().get("user.key"), captured.getData().get("user.key"));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
             List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
-            context.assertEquals(1, capturedAcls.size());
+            context.assertEquals(2, capturedAcls.size());
             Set<SimpleAclRule> aclRules = capturedAcls.get(0);
 
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+            context.assertNull(capturedAcls.get(1));
 
             async.complete();
         });
@@ -236,14 +240,15 @@ public class KafkaUserOperatorTest {
             context.assertNull(captured);
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
             List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
-            context.assertEquals(1, capturedAcls.size());
-            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
-            context.assertNull(aclRules);
+            context.assertEquals(2, capturedAcls.size());
+            context.assertNull(capturedAcls.get(0));
+            context.assertNull(capturedAcls.get(1));
 
             async.complete();
         });
@@ -334,8 +339,9 @@ public class KafkaUserOperatorTest {
             context.assertEquals(ResourceUtils.NAMESPACE, capturedNamespaces.get(0));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
             async.complete();
         });
@@ -396,16 +402,18 @@ public class KafkaUserOperatorTest {
             context.assertEquals("key file", new String(Base64.getDecoder().decode(captured.getData().get("user.key"))));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
             List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
-            context.assertEquals(1, capturedAcls.size());
+            context.assertEquals(2, capturedAcls.size());
             Set<SimpleAclRule> aclRules = capturedAcls.get(0);
 
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+            context.assertNull(capturedAcls.get(1));
 
             async.complete();
         });
@@ -466,16 +474,18 @@ public class KafkaUserOperatorTest {
             context.assertEquals(userCert.getData().get("user.key"), captured.getData().get("user.key"));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
             List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
-            context.assertEquals(1, capturedAcls.size());
+            context.assertEquals(2, capturedAcls.size());
             Set<SimpleAclRule> aclRules = capturedAcls.get(0);
 
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+            context.assertNull(capturedAcls.get(1));
 
             async.complete();
         });
@@ -520,8 +530,9 @@ public class KafkaUserOperatorTest {
             context.assertEquals(ResourceUtils.NAMESPACE, capturedNamespaces.get(0));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
             async.complete();
         });
@@ -653,16 +664,18 @@ public class KafkaUserOperatorTest {
             context.assertTrue(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))).matches("[a-zA-Z0-9]{12}"));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
             List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
-            context.assertEquals(1, capturedAcls.size());
-            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+            context.assertEquals(2, capturedAcls.size());
+            Set<SimpleAclRule> aclRules = capturedAcls.get(1);
 
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+            context.assertNull(capturedAcls.get(0));
 
             async.complete();
         });
@@ -721,16 +734,18 @@ public class KafkaUserOperatorTest {
             context.assertEquals(password, scramPasswordCaptor.getValue());
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
             List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
 
-            context.assertEquals(1, capturedAcls.size());
-            Set<SimpleAclRule> aclRules = capturedAcls.get(0);
+            context.assertEquals(2, capturedAcls.size());
+            Set<SimpleAclRule> aclRules = capturedAcls.get(1);
 
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user).size(), aclRules.size());
             context.assertEquals(ResourceUtils.createExpectedSimpleAclRules(user), aclRules);
+            context.assertNull(capturedAcls.get(0));
 
             async.complete();
         });
@@ -775,10 +790,11 @@ public class KafkaUserOperatorTest {
             context.assertEquals(ResourceUtils.NAMESPACE, capturedNamespaces.get(0));
 
             List<String> capturedAclNames = aclNameCaptor.getAllValues();
-            context.assertEquals(1, capturedAclNames.size());
-            context.assertEquals(KafkaUserModel.getUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(2, capturedAclNames.size());
+            context.assertEquals(KafkaUserModel.getTlsUserName(ResourceUtils.NAME), capturedAclNames.get(0));
+            context.assertEquals(KafkaUserModel.getScramUserName(ResourceUtils.NAME), capturedAclNames.get(1));
 
-            context.assertEquals(singletonList("CN=" + ResourceUtils.NAME), scramUserCaptor.getAllValues());
+            context.assertEquals(singletonList(ResourceUtils.NAME), scramUserCaptor.getAllValues());
             context.assertEquals(singletonList(null), scramPasswordCaptor.getAllValues());
 
             async.complete();

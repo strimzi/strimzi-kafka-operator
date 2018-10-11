@@ -237,8 +237,17 @@ public class KafkaUserModel {
      *
      * @return
      */
-    public static String getUserName(String username)    {
+    public static String getTlsUserName(String username)    {
         return "CN=" + username;
+    }
+
+    /**
+     * Generates the name of the User secret based on the username
+     *
+     * @return
+     */
+    public static String getScramUserName(String username)    {
+        return username;
     }
 
     /**
@@ -247,7 +256,13 @@ public class KafkaUserModel {
      * @return
      */
     public String getUserName()    {
-        return getUserName(name);
+        if (isTlsUser()) {
+            return getTlsUserName(name);
+        } else if (isScramUser()) {
+            return getScramUserName(name);
+        } else {
+            throw new RuntimeException("At least one authentication mechanism has to be selected");
+        }
     }
 
     public String getName() {
@@ -307,5 +322,23 @@ public class KafkaUserModel {
         }
 
         this.simpleAclRules = simpleAclRules;
+    }
+
+    /**
+     * Returns true if the user is using TLS authentication
+     *
+     * @return
+     */
+    public boolean isTlsUser()  {
+        return authentication instanceof KafkaUserTlsClientAuthentication;
+    }
+
+    /**
+     * Returns true if the user is using SCRAM-SHA-512 authentication
+     *
+     * @return
+     */
+    public boolean isScramUser()  {
+        return authentication instanceof KafkaUserScramSha512ClientAuthentication;
     }
 }
