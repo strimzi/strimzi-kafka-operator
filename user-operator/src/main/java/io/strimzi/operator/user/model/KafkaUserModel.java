@@ -330,11 +330,7 @@ public class KafkaUserModel {
      * @return
      */
     public boolean isTlsUser()  {
-        if (authentication instanceof KafkaUserTlsClientAuthentication) {
-            return true;
-        }
-
-        return false;
+        return authentication instanceof KafkaUserTlsClientAuthentication;
     }
 
     /**
@@ -343,10 +339,6 @@ public class KafkaUserModel {
      * @return
      */
     public boolean isScramUser()  {
-        if (authentication instanceof KafkaUserScramSha512ClientAuthentication) {
-            return true;
-        }
-
-        return false;
+        return authentication instanceof KafkaUserScramSha512ClientAuthentication;
     }
 }
