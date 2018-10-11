@@ -1,0 +1,148 @@
+// Module included in the following assemblies:
+//
+// assembly-scaling-clusters.adoc
+
+[id='con-reassignment-of-partitions-{context}']
+
+= Reassignment of partitions
+
+The Topic Operator does not currently support reassigning replicas to different brokers, so it is necessary to connect directly to broker pods to reassign replicas to brokers.
+
+Within a broker pod the `kafka-reassign-partitions.sh` utility is used to reassign partitions to different brokers.
+
+It has three different modes:
+
+`--generate`::
+Takes a set of topics and brokers and generates a _reassignment JSON file_ which will result in the partitions of those topics being assigned to those brokers.
+It is an easy way to generate a _reassignment JSON Because {ProductName} uses `StatefulSets` to manage the broker pods you cannot remove _any_ pod from the cluster. You can only remove the highest numbered pod(s) from the cluster.file_, but it operates on whole topics, so its use is not always appropriate.
+
+`--execute`::
+Takes a _reassignment JSON file_ and applies it to the partitions and brokers in the cluster.
+Brokers which are gaining partitions will become followers of the partition leader.
+For a given partition, once the new broker has caught up and joined the ISR the old broker will stop being a follower and will delete its replica.
+
+`--verify`::
+Using the same _reassignment JSON file_ as the `--execute` step, `--verify` checks whether all of the partitions in the file have been moved to their intended brokers.
+If the reassignment is complete it will also remove any xref:con-reassignment-throttles-{context}[throttles] which are in effect.
+Unless removed, throttles will continue to affect the cluster even after the reassignment has finished.
+
+It is only possible to have one reassignment running in the cluster at any given time, and it is not possible to cancel a running reassignment.
+If you need to cancel a reassignment you have to wait for it to complete and then perform another reassignment to revert the effects of the first one.
+The `kafka-reassign-partitions.sh` will print the reassignment JSON for this reversion as part of its output.
+Very large reassignments should be broken down into a number of smaller reassignments in case there is a need to stop in-progress reassignment.
+
+== Reassignment JSON file
+
+The _reassignment JSON file_ has a specific structure:
+
+[source,subs=+quotes]
+----
+{
+  "version": 1,
+  "partitions": [
+    _<PartitionObjects>_
+  ]
+}
+----
+
+Where _<PartitionObjects>_ is a comma-separated list of objects like:
+
+[source,subs=+quotes]
+----
+{
+  "topic": _<TopicName>_,
+  "partition": _<Partition>_,
+  "replicas": [ _<AssignedBrokerIds>_ ]
+}
+----
+
+NOTE: Although Kafka also supports a `"log_dirs"` property this should not be used in {ProductLongName}.
+
+The following is an example reassignment JSON file that assigns topic `topic-a`, partition `4` to brokers `2`, `4` and `7`, and topic `topic-b` partition `2` to brokers `1`, `5` and `7`:
+
+[source,json]
+----
+{
+  "version": 1,
+  "partitions": [
+    {
+      "topic": "topic-a",
+      "partition": 4,
+      "replicas": [2,4,7]
+    },
+    {
+      "topic": "topic-b",
+      "partition": 2,
+      "replicas": [1,5,7]
+    }
+  ]
+}
+----
+
+Partitions not included in the JSON are not changed.
+
+== Generating reassignment JSON files
+
+The easiest way to assign all the partitions for a given set of topics to a given set of brokers is to generate a reassignment JSON file using the `kafka-reassign-partitions.sh --generate` command within a broker pod.
+
+ifdef::Kubernetes[]
+On {KubernetesName}:
+
+[source,subs=+quotes]
+----
+kubectl exec _<BrokerPod>_ -c kafka -it -- bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 --topics-to-move-json-file _<TopicsFile>_ --broker-list _<BrokerList>_ --generate
+----
+endif::Kubernetes[]
+
+On {OpenShiftName}:
+
+[source,subs=+quotes]
+----
+oc rsh _<BrokerPod>_ -c kafka bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 --topics-to-move-json-file _<TopicsFile>_ --broker-list _<BrokerList>_ --generate
+----
+
+The `_<TopicsFile>_` is a JSON file which lists the topics to move. 
+It has the following structure:
+
+[source,subs=+quotes]
+----
+{
+  "version": 1,
+  "topics": [
+    _<TopicObjects>_
+  ]
+}
+----
+
+where _<TopicObjects>_ is a comma-separated list of objects like:
+
+[source,subs=+quotes]
+----
+{
+  "topic": _<TopicName>_
+}
+----
+
+For example to move all the partitions of `topic-a` and `topic-b` to brokers `4` and `7`
+
+[source,shell]
+----
+bin/kafka-reassign-partitions.sh --zookeeper localhost:2181 --topics-to-move-json-file topics-to-be-moved.json --broker-list 4,7 --generate
+----
+
+where `topics-to-be-moved.json` has contents:
+
+[source,json]
+----
+{
+  "version": 1,
+  "topics": [
+    { "topic": "topic-a"},
+    { "topic": "topic-b"}
+  ]
+}
+----
+
+== Creating reassignment JSON files manually
+
+You can manually create the reassignment JSON file if you want to move specific partitions.

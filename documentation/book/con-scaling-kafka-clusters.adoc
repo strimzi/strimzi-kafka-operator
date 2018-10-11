@@ -1,0 +1,29 @@
+// Module included in the following assemblies:
+//
+// assembly-scaling-clusters.adoc
+
+[id='con-scaling-kafka-clusters-{context}']
+
+= Scaling Kafka clusters
+
+== Adding brokers to a cluster
+
+The primary way of increasing throughput for a topic is to increase the number of partitions for that topic. 
+That works because the partitions allow the load for that topic to be shared between the brokers in the cluster.
+When the brokers are all constrained by some resource (typically I/O), then using more partitions will not yield an increase in throughput.
+Instead, you must add brokers to the cluster.
+
+When you add an extra broker to the cluster, Kafka does not assign any partitions to it automatically.
+You have to decide which partitions to move from the existing brokers to the new broker.
+
+Once the partitions have been redistributed between all brokers, each broker should have a lower resource utilization.
+
+== Removing brokers from the cluster
+
+Because {ProductName} uses `StatefulSets` to manage the broker pods you cannot remove _any_ pod from the cluster. You can only remove the highest numbered pod(s) from the cluster.
+
+Before you remove a broker from a cluster, you must ensure that it is not assigned to any partitions.
+You should decide which remaining brokers will be responsible for each of the partitions on the broker being decommissioned.
+Once the broker has no assigned partitions, you can stop it.
+
+

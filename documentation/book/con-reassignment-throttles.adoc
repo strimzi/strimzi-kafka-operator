@@ -1,0 +1,15 @@
+// Module included in the following assemblies:
+//
+// assembly-scaling-clusters.adoc
+
+[id='con-reassignment-throttles-{context}']
+
+= Reassignment throttles
+
+Reassigning partitions can be a slow process because it can require moving lots of data between brokers.
+To avoid this having a detrimental impact on clients it is possible to _throttle_ the reassignment.
+Using a throttle can mean the reassignment takes longer.
+If the throttle is too low then the newly assigned brokers will not be able to keep up with records being published and the reassignment will never complete.
+If the throttle is too high then clients will be impacted.
+For example, for producers, this could manifest as higher than normal latency waiting for acknowledgement. For consumers, this could manifest as a drop in throughput caused by higher latency between polls.
+
