@@ -1,0 +1,73 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='con-certificate-renewal-{context}']
+= Certificate renewal
+
+The cluster CA and clients CA certificates are only valid for a limited time period, known as the validity period. 
+This is usually defined as a number of days since the certificate was generated. 
+For auto-generated CA certificates, you can configure the validity period in `Kafka.spec.clusterCa.validityDays` and `Kafka.spec.clientsCa.validityDays`. 
+The default validity period for both certificates is 365 days. 
+Manually-installed CA certificates should have their own validity period defined.
+
+When a CA certificate expires, the certificates that it has signed will fail validation, even if they were previously valid. 
+This means that, when replacing a CA certificate, you must also replace all other certificates signed by it. 
+When the replacement of a CA certificate is in progress, it is necessary for peers to trust certificates signed by either the old or the new CA. 
+This ensures the continued operation of the cluster.
+
+To allow the renewal of CA certificates without a loss of service, the Cluster Operator will initiate certificate renewal before the old CA certificates expire. 
+You can configure the renewal period in `Kafka.spec.clusterCa.renewalDays` and `Kafka.spec.clientsCa.renewalDays` (both default to 30 days). 
+The renewal period is measured backwards, from the expiry date of the current certificate.
+
+[source]
+----
+Not Before                                     Not After
+    |                                              |
+    |<--------------- validityDays --------------->|
+                              <--- renewalDays --->|
+----
+
+The behavior of the Cluster Operator during the renewal period depends on whether the relevant setting is enabled, in either `Kafka.spec.clusterCa.generateCertificateAuthority` or `Kafka.spec.clientsCa.generateCertificateAuthority`.
+
+
+== Renewal process with generated CAs
+
+The Cluster Operator performs the following process to renew CA certificates:
+
+. Generate a new CA key and certificate. The new private key replaces the old private key in the corresponding `Secret`. The new certificate is given the name `ca.crt` within the corresponding `Secret` and the old certificate is renamed `ca-_<expiry-date>_.crt`.
+
+. Restart Zookeeper nodes so that they will trust the new CA certificate.
+
+. Restart Kafka brokers so that they will trust the new CA certificate.
+
+. Restart the Topic and User Operators so that they will trust the new CA certificate.
+
+. Generate new client certificates (for Zookeeper nodes, Kafka brokers, and the entity operator) signed by the new CA.
+
+. Perform the same restarts so that clients are using certificates signed by the new CA certificate.
+
+At the end of the renewal period the Cluster Operator will remove the now expired CA certificates (those named `ca-_<expiry-date>_.crt`) from the corresponding `Secret` and perform a further round of restarts.
+
+== Renewal process with your own CA certificates
+
+At the start of the renewal period the Cluster Operator will start logging at the `WARN` level that new CA certificates and keys are needed.
+Once you have provided the new certificates and keys, the Cluster Operator performs a further set of restarts within the Kafka cluster for which the warning was issued.
+
+== Client applications
+
+The Cluster Operator is not aware of all the client applications using the Kafka cluster.
+
+IMPORTANT: Depending on how your applications are configured, you might need take action to ensure they continue working after certificate renewal.
+
+Consider the following important points to ensure that client applications continue working.
+
+* When they connect to the cluster, client applications must trust _all_ the cluster CA certificates published in _<cluster>_-cluster-ca-certs.
+
+* When using the User Operator to provision client certificates, client applications must use the current `user.crt` and `user.key` published in their `_<user>_` `Secret` when they connect to the cluster.
+For workloads running inside the same {ProductPlatformName} cluster this can be achieved by mounting the secrets as a volume and having the client Pods construct their key- and truststores from the current state of the `Secrets`. 
+For more details on this procedure, see xref:configuring-internal-clients-to-trust-cluster-ca-{context}[].
+
+* When renewing client certificates, if you are provisioning client certificates and keys manually, you must generate new client certificates and ensure the new certificates are used by clients within the renewal period. Failure to do this by the end of the renewal period could result in client applications being unable to connect. 
+
+
