@@ -35,6 +35,9 @@ grep_check '\<a {ProductPlatformLongName}' "The article should be 'an' {ProductP
 grep_check '[<][<][[:alnum:]_-]+,' "Internal links should be xref:doc_id[Section title], not <<doc_id,link text>>"
 grep_check '[[]id=(["'"'"'])[[:alnum:]_-]+(?!-[{]context[}])\1' "[id=...] should end with -{context}" "-i -P -r -n"
 
+# leveloffset=+
+grep_check 'leveloffset+=[0-9]+'  "It should be leveloffset=+... not +="
+
 if [ $fatal -gt 0 ]; then
   echo "ERROR: ${fatal} docs problems found."
   exit 1
