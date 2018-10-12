@@ -1,0 +1,41 @@
+// Module included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+[id='proc-manual-rolling-update-zookeeper-{context}']
+= Performing a rolling update of a Zookeeper cluster
+
+This procedure describes how to manually trigger a rolling update of an existing Zookeeper cluster by using an {ProductPlatformName} annotation.
+
+.Prerequisites
+
+* A running Zookeeper cluster.
+* A running Cluster Operator.
+
+.Procedure
+
+. Find the name of the `StatefulSet` that controls the Zookeeper pods you want to manually update.
++
+For example, if your Kafka cluster is named _my-cluster_, the corresponding `StatefulSet` is named _my-cluster-zookeeper_.
++
+
+. Annotate a `StatefulSet` resource in {ProductPlatformName}.
++
+ifdef::Kubernetes[]
+On {KubernetesName}, use `kubectl annotate`:
+[source,shell,subs=+quotes]
+kubectl annotate statefulset _cluster-name_-zookeeper operator.strimzi.io/manual-rolling-update=true
+endif::Kubernetes[]
++
+On {OpenShiftName}, use `oc annotate`:
+[source,shell,subs=+quotes]
+oc annotate statefulset _cluster-name_-zookeeper operator.strimzi.io/manual-rolling-update=true
++
+. Wait for the next reconciliation to occur (every two minutes by default).
+A rolling update of all pods within the annotated `StatefulSet` is triggered, as long as the annotation was detected by the reconciliation process.
+Once the rolling update of all the pods is complete, the annotation is removed from the `StatefulSet`.
+
+.Additional resources
+
+* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
+* For more information about deploying the Zookeeper cluster, see xref:deploying-kafka-cluster-openshift-str[].
