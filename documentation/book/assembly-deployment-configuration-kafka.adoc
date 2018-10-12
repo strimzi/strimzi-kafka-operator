@@ -54,6 +54,8 @@ include::proc-manual-rolling-update-kafka.adoc[leveloffset=+1]
 
 include::proc-manual-rolling-update-zookeeper.adoc[leveloffset=+1]
 
+include::assembly-scaling-clusters.adoc[leveloffset=+1]
+
 include::proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+1]
 
 include::proc-manual-delete-pod-pvc-zookeeper.adoc[leveloffset=+1]

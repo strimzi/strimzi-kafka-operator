@@ -20,10 +20,11 @@ Once the partitions have been redistributed between all brokers, each broker sho
 
 == Removing brokers from the cluster
 
-Because {ProductName} uses `StatefulSets` to manage the broker pods you cannot remove _any_ pod from the cluster. You can only remove the highest numbered pod(s) from the cluster.
+Because {ProductName} uses `StatefulSets` to manage the broker pods you cannot remove _any_ pod from the cluster. You can only remove the highest numbered pod(s) from the cluster. 
+For example, if you have a cluster of 12 brokers the pods will be named `_cluster-name_-kafka-0` up to `_cluster-name_-kafka-11` and if you want to scale down by one broker it is `_cluster-name_-kafka-11` which will be removed.
 
 Before you remove a broker from a cluster, you must ensure that it is not assigned to any partitions.
 You should decide which remaining brokers will be responsible for each of the partitions on the broker being decommissioned.
-Once the broker has no assigned partitions, you can stop it.
+Once the broker has no assigned partitions, you can scale the cluster down safely.
 
 
