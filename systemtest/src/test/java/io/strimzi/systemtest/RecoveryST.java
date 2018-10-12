@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 import static io.strimzi.test.k8s.BaseKubeClient.CM;
 import static io.strimzi.test.k8s.BaseKubeClient.DEPLOYMENT;
 import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
@@ -27,7 +28,7 @@ import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 @ExtendWith(StrimziExtension.class)
 @Namespace(RecoveryST.NAMESPACE)
 @ClusterOperator
-@Tag("regression")
+@Tag(REGRESSION)
 class RecoveryST extends AbstractST {
 
     static final String NAMESPACE = "recovery-cluster-test";

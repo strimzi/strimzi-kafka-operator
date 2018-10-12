@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,7 +29,7 @@ class UserST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testUpdateUser() {
         LOGGER.info("Running testUpdateUser in namespace {}", NAMESPACE);
         String kafkaUser = "test-user";

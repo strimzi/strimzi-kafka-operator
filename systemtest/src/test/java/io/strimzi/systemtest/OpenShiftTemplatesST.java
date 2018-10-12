@@ -36,6 +36,7 @@ import static io.strimzi.test.TestUtils.map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 
 /**
  * Basic tests for the OpenShift templates.
@@ -75,7 +76,7 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testStrimziEphemeral() {
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -92,7 +93,7 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testStrimziPersistent() {
         String clusterName = "bar";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
@@ -108,7 +109,7 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -138,7 +139,7 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testStrimziPersistentWithCustomParameters() {
         String clusterName = "test-persistent-with-custom-parameters";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
@@ -172,7 +173,7 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testConnect() {
         String clusterName = "test-connect";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
@@ -184,7 +185,7 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testS2i() {
         String clusterName = "test-s2i";
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
@@ -196,7 +197,7 @@ public class OpenShiftTemplatesST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testTopicOperator() {
         String topicName = "test-topic-topic";
         oc.newApp("strimzi-topic", map(

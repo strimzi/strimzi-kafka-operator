@@ -15,10 +15,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(LogLevelST.NAMESPACE)
 @ClusterOperator
+@Tag(REGRESSION)
 class LogLevelST extends AbstractST {
     static final String NAMESPACE = "log-level-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LogLevelST.class);
@@ -34,7 +36,6 @@ class LogLevelST extends AbstractST {
     }
 
     @Test
-    @Tag("release")
     void testLogLevelError() {
         String logLevel = "ERROR";
         LOGGER.info("Running testLogLevelInfo in namespace {}", NAMESPACE);
@@ -43,7 +44,6 @@ class LogLevelST extends AbstractST {
     }
 
     @Test
-    @Tag("release")
     void testLogLevelWarn() {
         String logLevel = "WARN";
         LOGGER.info("Running testLogLevelInfo in namespace {}", NAMESPACE);
@@ -52,7 +52,6 @@ class LogLevelST extends AbstractST {
     }
 
     @Test
-    @Tag("release")
     void testLogLevelTrace() {
         String logLevel = "TRACE";
         LOGGER.info("Running testLogLevelInfo in namespace {}", NAMESPACE);
@@ -61,7 +60,6 @@ class LogLevelST extends AbstractST {
     }
 
     @Test
-    @Tag("release")
     void testLogLevelDebug() {
         String logLevel = "DEBUG";
         LOGGER.info("Running testLogLevelInfo in namespace {}", NAMESPACE);
@@ -70,7 +68,6 @@ class LogLevelST extends AbstractST {
     }
 
     @Test
-    @Tag("release")
     void testLogLevelFatal() {
         String logLevel = "FATAL";
         LOGGER.info("Running testLogLevelInfo in namespace {}", NAMESPACE);
@@ -79,7 +76,6 @@ class LogLevelST extends AbstractST {
     }
 
     @Test
-    @Tag("release")
     void testLogLevelOff() {
         String logLevel = "OFF";
         LOGGER.info("Running testLogLevelInfo in namespace {}", NAMESPACE);

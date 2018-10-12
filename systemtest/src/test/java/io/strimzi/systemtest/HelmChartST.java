@@ -13,9 +13,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static io.strimzi.test.StrimziExtension.REGRESSION;
+
 @ExtendWith(StrimziExtension.class)
 @Namespace(HelmChartST.NAMESPACE)
 @ClusterOperator(useHelmChart = true)
+@Tag(REGRESSION)
 class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
@@ -25,7 +28,6 @@ class HelmChartST extends AbstractST {
     private static final String TOPIC_NAME = "test-topic";
 
     @Test
-    @Tag("regression")
     void testDeployKafkaClusterViaHelmChart() {
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();

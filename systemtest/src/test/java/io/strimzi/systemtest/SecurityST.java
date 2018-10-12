@@ -18,10 +18,12 @@ import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(SecurityST.NAMESPACE)
 @ClusterOperator
+@Tag(REGRESSION)
 class SecurityST extends AbstractST {
 
     public static final String NAMESPACE = "security-cluster-test";
@@ -31,7 +33,6 @@ class SecurityST extends AbstractST {
     private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
 
     @Test
-    @Tag("regression")
     void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
         resources().kafkaEphemeral(CLUSTER_NAME, 2)

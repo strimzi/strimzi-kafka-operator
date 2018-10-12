@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(ConnectS2IST.NAMESPACE)
@@ -32,7 +33,7 @@ class ConnectS2IST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testDeployS2IWithMongoDBPlugin() {
         resources().kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
             .editMetadata()

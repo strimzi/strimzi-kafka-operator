@@ -37,11 +37,13 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
+import static io.strimzi.test.StrimziExtension.ACCEPTANCE;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(ConnectST.NAMESPACE)
 @ClusterOperator
-public class ConnectST extends AbstractST {
+class ConnectST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);
 
@@ -62,7 +64,7 @@ public class ConnectST extends AbstractST {
     private static Resources classResources;
 
     @Test
-    @Tag("acceptance")
+    @Tag(ACCEPTANCE)
     void testDeployUndeploy() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
@@ -78,7 +80,7 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testKafkaConnectWithFileSinkPlugin() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editMetadata()
@@ -102,7 +104,7 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testJvmAndResources() {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
@@ -138,7 +140,7 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testKafkaConnectScaleUpScaleDown() {
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
@@ -176,7 +178,7 @@ public class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag("regression")
+    @Tag(REGRESSION)
     void testForUpdateValuesInConnectCM() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editSpec()
