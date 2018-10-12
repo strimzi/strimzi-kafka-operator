@@ -8,6 +8,7 @@ release:
 	cp -r ./templates $(RELEASE_PATH)/
 	cp -r ./kafka $(RELEASE_PATH)/
 	cp -r ./kafka-connect $(RELEASE_PATH)/
+	cp -r ./kafka-mirror-maker $(RELEASE_PATH)/
 	cp -r ./user $(RELEASE_PATH)/
 	cp -r ./topic $(RELEASE_PATH)/
 
