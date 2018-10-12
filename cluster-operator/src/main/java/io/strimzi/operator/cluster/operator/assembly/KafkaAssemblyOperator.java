@@ -59,7 +59,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
 
-import static io.strimzi.operator.cluster.ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN;
+import static io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator.STRIMZI_OPERATOR_DOMAIN;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -85,7 +85,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final RoleBindingOperator roleBindingOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
 
-    public static final String ANNOTATION_MANUAL_RESTART = STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/manual-rolling-update";
+    public static final String ANNOTATION_MANUAL_RESTART = STRIMZI_OPERATOR_DOMAIN + "/manual-rolling-update";
 
     /**
      * @param vertx The Vertx instance
