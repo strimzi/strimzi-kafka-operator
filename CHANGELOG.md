@@ -1,9 +1,16 @@
 # CHANGELOG
 
+## 0.9.0
+
+* Work in Progress
+
 ## 0.8.0
 
-* Support for TLS hostname verification when connecting through IP address from outside of the Kafka cluster 
 * Support for unencrypted connections on LoadBalancers and NodePorts.
+* Better support for TLS hostname verification for external connections
+* Certificate renewal / expiration
+* Mirror Maker operator
+* Triggering rolling update / pod deletion manually
 
 ## 0.7.0
 
