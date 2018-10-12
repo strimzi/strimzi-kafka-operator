@@ -3,7 +3,7 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-// Original author: David Kornel
+// Original author: David Kornel, EnMasse
 
 package io.strimzi.systemtest.timemeasuring;
 
@@ -23,18 +23,33 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-
+/**
+ * Time measuring class which is able to collect running time of specific operation in the framework.
+ * Collected data are saved into map and from there they can be printed or exported as csv file.
+ *
+ * Usage example: kafka deployment time, kafka deletion time, CO deployment time, namespace creation ...
+ */
 public class TimeMeasuringSystem {
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss:SSS");
     private static final Logger LOGGER = LogManager.getLogger(TimeMeasuringSystem.class);
     private static TimeMeasuringSystem instance;
+    /**
+     * Map for store collected data. System saves operation and test class and method names:
+     * test class 1
+     *   - method 1
+     *      - operation 1
+     *      - operation 2
+     *   - method 2
+     *      - operation 1
+     * test class 2
+     *   - method 2
+     *      - operation 1
+     * where operation run time data are stored in MeasureRecord and keys provide names of classes and methods.
+     */
     private Map<String, Map<String, Map<String, MeasureRecord>>> measuringMap;
     private String testClass;
     private String testName;
 
-    //===============================================================
-    // private instance methods
-    //===============================================================
     private TimeMeasuringSystem() {
         measuringMap = new LinkedHashMap<>();
     }
@@ -153,9 +168,6 @@ public class TimeMeasuringSystem {
         return measuringMap.get(testClass).get(testName).get(operationID).duration;
     }
 
-    //===============================================================
-    // public static methods
-    //===============================================================
     public static void setTestName(String testClass, String testName) {
         TimeMeasuringSystem.getInstance().setTestName(testName);
         TimeMeasuringSystem.getInstance().setTestClass(testClass);
@@ -189,7 +201,7 @@ public class TimeMeasuringSystem {
 
 
     /**
-     * Test time duration class
+     * Test time duration class for data about each operation.
      */
     private class MeasureRecord {
         private long startTime;
