@@ -3,7 +3,7 @@
 // assembly-kafka-mirror-maker.adoc
 
 [id='deploying-kafka-mirror-maker-kubernetes-{context}']
-= Deploying Kafka Connect to {KubernetesName}
+= Deploying Kafka Mirror Maker to {KubernetesName}
 
 .Prerequisites
 
