@@ -16,12 +16,11 @@ import io.strimzi.test.k8s.OpenShift;
 import io.strimzi.test.k8s.Minishift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -55,10 +54,22 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
+/**
+ * A test extension which sets up Strimzi resources in a Kubernetes cluster
+ * according to annotations ({@link Namespace}, {@link Resources}, {@link ClusterOperator})
+ * on the test class and/or test methods. {@link OpenShiftOnly} can be used to ignore tests when not running on
+ * OpenShift (if the thing under test is OpenShift-specific). {@link Tag} can be used for execute/skip specific
+ * test classes and/or test methods.
+ */
 public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, AfterEachCallback, BeforeEachCallback,
-        ExecutionCondition, AfterTestExecutionCallback, BeforeTestExecutionCallback {
+        ExecutionCondition {
     private static final Logger LOGGER = LogManager.getLogger(StrimziExtension.class);
 
+    /**
+     * If env var NOTEARDOWN is set to any value then teardown for resources supported by annotations
+     * won't happen. This can be useful in debugging a single test, because it leaves the cluster
+     * in the state it was in when the test failed.
+     */
     public static final String NOTEARDOWN = "NOTEARDOWN";
     public static final String KAFKA_PERSISTENT_YAML = "../examples/kafka/kafka-persistent.yaml";
     public static final String KAFKA_CONNECT_YAML = "../examples/kafka-connect/kafka-connect.yaml";
@@ -80,12 +91,15 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private static final String TAG_LIST_NAME = "tags";
     private static final String START_TIME = "start time";
 
-    private static long startTime;
+    // Tags
+    public static final String ACCEPTANCE = "acceptance";
+    public static final String REGRESSION = "regression";
 
     private KubeClusterResource clusterResource;
     private Class testClass;
     private Statement classStatement;
     private Statement methodStatement;
+    private Collection<String> declaredClassTags;
 
     public StrimziExtension() {
     }
@@ -165,10 +179,15 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
-        if (!isIgnoredByTag(context)) {
-            return ConditionEvaluationResult.enabled("Test method is enabled");
+        if (context.getElement().get() instanceof Class) {
+            saveClassTags(context);
+            return ConditionEvaluationResult.enabled("Test class is enabled");
+        } else {
+            if (!isIgnoredByTag(context)) {
+                return ConditionEvaluationResult.enabled("Test method is enabled");
+            }
+            return ConditionEvaluationResult.disabled("Test method is disabled");
         }
-        return ConditionEvaluationResult.disabled("Test method is disabled");
     }
 
     private void deleteResource(Bracket resource) {
@@ -178,25 +197,9 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         }
     }
 
-    @Override
-    public void afterTestExecution(ExtensionContext extensionContext) throws Exception {
-//        Method testMethod = extensionContext.getRequiredTestMethod();
-//        long startTime = getStore(extensionContext).remove(START_TIME, long.class);
-//        long duration = System.currentTimeMillis() - startTime;
-//
-//        LOGGER.info(() -> String.format("Method [%s] took %s ms.", testMethod.getName(), duration));
-    }
-
-    @Override
-    public void beforeTestExecution(ExtensionContext extensionContext) throws Exception {
-        startTime = System.currentTimeMillis();
-    }
-
-    public static int getRuntimeInSeconds() {
-        return (int) (System.currentTimeMillis() - startTime * 1000);
-    }
-
-
+    /**
+     * TODO
+     */
     abstract class Bracket extends Statement implements Runnable {
         public final Statement statement;
         private final Thread hook = new Thread(this);
@@ -278,9 +281,12 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         }
     }
 
+    /**
+     * Checks if all methods of current test class are enabled by tag annotation.
+     */
     private boolean areAllChildrenIgnored() {
         for (Method method : testClass.getDeclaredMethods()) {
-            if (!isWrongClusterType(method)) {
+            if (!isWrongClusterType(method) && !isIgnoredByTag(method)) {
                 return false;
             }
         }
@@ -300,18 +306,67 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         return result;
     }
 
+    private void saveClassTags(ExtensionContext context) {
+        declaredClassTags = context.getTags();
+        Collection<String> enabledTags = getEnabledTags();
+        if (declaredClassTags.isEmpty()) {
+            LOGGER.info("Test class {} with tags {} does not have any tag restrictions by tags: {}",
+                    context.getDisplayName(), declaredClassTags, enabledTags);
+        } else if (isTagEnabled(declaredClassTags, enabledTags)) {
+            LOGGER.info("One of the test group {} is enabled for test class: {}", enabledTags, context.getDisplayName());
+        } else {
+            LOGGER.info("None of the test group {} are enabled for test: {} class", enabledTags, context.getDisplayName());
+        }
+    }
+
+    /**
+     * Check if currently executed test element is ignored by set tags.
+     * This method is used for junit5 conditional evaluation.
+     * @param context test context
+     * @return true or false
+     */
     private boolean isIgnoredByTag(ExtensionContext context) {
         Collection<String> declaredTags = context.getTags();
         Collection<String> enabledTags = getEnabledTags();
-        if (declaredTags.isEmpty()) {
-            LOGGER.info("Test method {} does not have any tag restrictions", context.getDisplayName());
+        if (declaredTags.isEmpty() && (declaredClassTags.isEmpty() || isTagEnabled(declaredClassTags, enabledTags))) {
+            if (context.getTestClass().get().getSimpleName().equals(context.getDisplayName())) {
+                LOGGER.info("Test class {} with tags {} does not have any tag restrictions by tags: {}",
+                        context.getDisplayName(), declaredTags, enabledTags);
+            } else {
+                LOGGER.info("Test method {} with tags {} does not have any tag restrictions by tags: {}",
+                        context.getDisplayName(), declaredTags, enabledTags);
+            }
             return false;
         }
         if (isTagEnabled(declaredTags, enabledTags)) {
-            LOGGER.info("One of the test group {} is enabled for test: {}", enabledTags, context.getDisplayName());
+            LOGGER.info("One of the test group {} with tags {} is enabled for test: {}",
+                    enabledTags, declaredTags, context.getDisplayName());
             return false;
         }
-        LOGGER.info("None of the test group {} are enabled for test: {}", enabledTags, context.getDisplayName());
+        LOGGER.info("None of the test group {} with tags {} are enabled for test: {}",
+                enabledTags, declaredTags, context.getDisplayName());
+        return true;
+    }
+
+    /**
+     * Check if passed element is ignored by set tags.
+     * This method is used in @BeforaAll method.
+     * @param element test method or class
+     * @return true or false
+     */
+    private boolean isIgnoredByTag(AnnotatedElement element) {
+        Tag[] annotations = element.getDeclaredAnnotationsByType(Tag.class);
+        Collection<String> enabledTags = getEnabledTags();
+
+        if (annotations.length == 0 && isTagEnabled(declaredClassTags, enabledTags)) {
+            return false;
+        }
+
+        for (Tag annotation : annotations) {
+            if (enabledTags.contains(annotation.value())) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -347,7 +402,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     }
 
     private static boolean isTagEnabled(Collection<String> declaredTags, Collection<String> enabledTags) {
-        if (enabledTags.contains(DEFAULT_TAG) || enabledTags.isEmpty()) {
+        if (enabledTags.contains(DEFAULT_TAG) || enabledTags.isEmpty() || declaredTags.isEmpty()) {
             return true;
         }
         for (String enabledTag : enabledTags) {
@@ -502,13 +557,12 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     /**
      * Get the (possibly @Repeatable) annotations on the given element.
      *
-     * @param annotatedElement
-     * @param annotationType
-     * @param <A>
-     * @return
+     * @param annotatedElement test method, class or field
+     * @param annotationType annotation type
+     * @return list of element's annotations
      */
     @SuppressWarnings("unchecked")
-    <A extends Annotation> List<A> annotations(AnnotatedElement annotatedElement, Class<A> annotationType) {
+    private <A extends Annotation> List<A> annotations(AnnotatedElement annotatedElement, Class<A> annotationType) {
         final List<A> list;
         A annotation = annotatedElement.getAnnotation(annotationType);
 
@@ -523,31 +577,12 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             }
 
         }
-//        } else {
-//            Repeatable repeatable = annotationType.getAnnotation(Repeatable.class);
-//            Annotation[] x = annotatedElement.getAnnotationsByType(annotationType);
-//            System.out.println(Arrays.toString(x));
-//            if (repeatable != null) {
-//                Class<? extends Annotation> repeatableAnnotation = repeatable.value();
-//                Annotation container = repeatableAnnotation.getAnnotation(annotationType);
-//                if (container != null) {
-//                    try {
-//                        Method value = repeatableAnnotation.getDeclaredMethod("value");
-//                        list = asList((A[]) value.invoke(container));
-//                    } catch (ReflectiveOperationException e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                } else {
-//                    list = emptyList();
-//                }
-//            } else {
-//                list = emptyList();
-//            }
-//        }
-
         return list;
     }
 
+    /**
+     * ClusterOperator annotation handler
+     */
     private Statement withClusterOperator(AnnotatedElement element,
                                           Statement statement) {
         Statement last = statement;
@@ -562,6 +597,9 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         return last;
     }
 
+    /**
+     * Namespace annotation handler
+     */
     private Statement withNamespaces(AnnotatedElement element,
                                      Statement statement) {
         Statement last = statement;
@@ -634,7 +672,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 subject.put("kind", "ServiceAccount")
                         .put("name", "strimzi-cluster-operator")
                         .put("namespace", ns);
-//                LOGGER.info("Modified binding from {}: {}", f, node);
             }
         }), (x, y) -> x, LinkedHashMap::new));
         last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
@@ -717,6 +754,9 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         return last;
     }
 
+    /**
+     * Resources annotation handler
+     */
     private Statement withResources(AnnotatedElement element,
                                     Statement statement) {
         Statement last = statement;
