@@ -43,6 +43,8 @@ spec:
               value: "{{ default .Values.kafkaConnect.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.kafkaConnect.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
               value: "{{ default .Values.kafkaConnects2i.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnects2i.image.name }}:{{ default .Values.kafkaConnects2i.image.tag .Values.imageTagOverride }}"
+            - name: STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE
+              value: "{{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
               value: "{{ default .Values.topicOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.topicOperator.image.name }}:{{ default .Values.topicOperator.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
@@ -57,8 +59,6 @@ spec:
               value: "{{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
-            - name: STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE
-              value: "{{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tag .Values.imageTagOverride }}"          
           livenessProbe:
             httpGet:
               path: /healthy
