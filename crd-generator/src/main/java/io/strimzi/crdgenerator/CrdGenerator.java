@@ -506,7 +506,7 @@ public class CrdGenerator {
         }
 
         CrdGenerator generator = new CrdGenerator(yaml ?
-                new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true) :
+                new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true).configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false) :
                 new ObjectMapper(), labels);
         for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {
             File file = new File(entry.getKey());
