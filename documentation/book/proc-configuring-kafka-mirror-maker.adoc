@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* Two {ProductPlatformName} clusters (source and target)
+* Two running Kafka clusters (source and target)
 * A running Cluster Operator
 
 .Procedure
