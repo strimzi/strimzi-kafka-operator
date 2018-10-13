@@ -13,12 +13,12 @@
 . Deploy the producer.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl run`:
+On {KubernetesName}, use `kubectl run`:
 [source,shell,subs="+quotes,attributes"]
 kubectl run kafka-producer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc run`:
+On {OpenShiftName}, use `oc run`:
 +
 [source,shell,subs="+quotes,attributes"]
 oc run kafka-producer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_
@@ -30,12 +30,12 @@ oc run kafka-producer -ti --image={DockerKafka} --rm=true --restart=Never -- bin
 . Deploy the consumer.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl run`:
+On {KubernetesName}, use `kubectl run`:
 [source,shell,subs="+quotes,attributes"]
 kubectl run kafka-consumer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_ --from-beginning
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc run`:
+On {OpenShiftName}, use `oc run`:
 +
 [source,shell,subs="+quotes,attributes"]
 oc run kafka-consumer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_ --from-beginning
