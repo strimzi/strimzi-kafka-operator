@@ -4,15 +4,15 @@
 
 java_build:
 	echo "Building JAR file ..."
-	mvn -q $(MVN_ARGS) verify
+	mvn $(MVN_ARGS) verify
 
 java_install_root:
 	echo "Installing root pom ..."
-	mvn -q $(MVN_ARGS) install -f ../pom.xml -N
+	mvn $(MVN_ARGS) install -f ../pom.xml -N
 
 java_install: java_install_root
 	echo "Installing JAR files ..."
-	mvn -q $(MVN_ARGS) install
+	mvn $(MVN_ARGS) install
 
 java_clean:
 	echo "Cleaning Maven build ..."
