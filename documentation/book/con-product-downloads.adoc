@@ -3,7 +3,7 @@
 // getting-started.adoc
 
 [id='downloads-{context}']
-= {ProductName} downloads
+= Installing and deploying {ProductName} components test
 
 ifdef::Downloading[]
 {ProductName} releases are available to download from {ReleaseDownload}. The release artefacts contain documentation, installation, and example `.yaml` files for deployment on {ProductPlatformName}. The installation, and example files are used throughout this documentation. Additionally, a Helm Chart is provided for deploying the Cluster Operator using link:https://helm.sh/[Helm^]. The container images are available through the {DockerRepository}.
