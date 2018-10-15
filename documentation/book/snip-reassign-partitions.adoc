@@ -134,6 +134,7 @@ oc rsh -c kafka _broker-pod_ \
   --reassignment-json-file /tmp/reassignment.json \
   --verify
 ----
+ifdef::Kubernetes[]
 +
 For example, on {KubernetesName},
 +
