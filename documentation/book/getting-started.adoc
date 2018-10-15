@@ -44,6 +44,9 @@ ifdef::Kubernetes[]
 endif::Kubernetes[]
 {OpenShiftLongName} user must have the rights to manage role-based access control (RBAC).
 
+For more information about {OpenShiftName} and setting up {OpenShiftName} cluster, see link:https://docs.openshift.com/container-platform/3.9/welcome/index.html[OpenShift documentation].
+
+
 include::con-product-downloads.adoc[leveloffset=+1]
 
 include::assembly-cluster-operator.adoc[leveloffset=+1]
