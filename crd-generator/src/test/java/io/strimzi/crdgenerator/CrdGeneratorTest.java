@@ -4,6 +4,7 @@
  */
 package io.strimzi.crdgenerator;
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.junit.Test;
 
@@ -18,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class CrdGeneratorTest {
     @Test
     public void simpleTest() throws IOException, URISyntaxException {
-        CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper());
+        CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false));
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
@@ -33,7 +34,7 @@ public class CrdGeneratorTest {
         labels.put("component", "%plural%.%group%-crd");
         labels.put("release", "{{ .Release.Name }}");
         labels.put("heritage", "{{ .Release.Service }}");
-        CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper(), labels);
+        CrdGenerator crdGenerator = new CrdGenerator(new YAMLMapper().configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false), labels);
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();

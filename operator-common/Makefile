@@ -1,4 +1,4 @@
-PROJECT_NAME=api
+PROJECT_NAME=operator-common
 
 docker_build: java_install
 docker_push:
