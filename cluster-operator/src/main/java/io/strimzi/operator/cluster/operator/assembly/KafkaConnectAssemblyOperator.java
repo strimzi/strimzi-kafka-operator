@@ -73,6 +73,10 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         KafkaConnectCluster connect;
+        if (kafkaConnect.getSpec() == null) {
+            log.error("{} spec cannot be null", kafkaConnect.getMetadata().getName());
+            return Future.failedFuture("Spec cannot be null");
+        }
         try {
             connect = KafkaConnectCluster.fromCrd(kafkaConnect);
         } catch (Exception e) {
