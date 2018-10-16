@@ -199,6 +199,8 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public NetworkPolicy generateNetworkPolicy() {
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
+
         NetworkPolicyPort port1 = new NetworkPolicyPort();
         port1.setPort(new IntOrString(CLIENT_PORT));
 
@@ -234,6 +236,20 @@ public class ZookeeperCluster extends AbstractModel {
                 .withFrom(kafkaClusterPeer, zookeeperClusterPeer, entityOperatorPeer)
                 .build();
 
+        rules.add(networkPolicyIngressRule);
+
+        if (isMetricsEnabled) {
+            NetworkPolicyPort metricsPort = new NetworkPolicyPort();
+            metricsPort.setPort(new IntOrString(METRICS_PORT));
+
+            NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
+                    .withPorts(metricsPort)
+                    .withFrom()
+                    .build();
+
+            rules.add(metricsRule);
+        }
+
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()
                     .withName(policyName(cluster))
@@ -243,7 +259,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .endMetadata()
                 .withNewSpec()
                     .withPodSelector(labelSelector2)
-                    .withIngress(networkPolicyIngressRule)
+                    .withIngress(rules)
                 .endSpec()
                 .build();
 
