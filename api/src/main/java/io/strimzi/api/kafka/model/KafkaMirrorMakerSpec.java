@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -48,6 +50,7 @@ public class KafkaMirrorMakerSpec implements Serializable {
     private JvmOptions jvmOptions;
     private Logging logging;
     private Map<String, Object> metrics = new HashMap<>(0);
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the `Deployment`.")
     @Minimum(1)
@@ -163,5 +166,15 @@ public class KafkaMirrorMakerSpec implements Serializable {
 
     public void setResources(Resources resources) {
         this.resources = resources;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

@@ -4,12 +4,16 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Describes the logging configuration
@@ -26,7 +30,19 @@ public abstract class Logging implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
+
     @Description("Logging type, must be either 'inline' or 'external'.")
     public abstract String getType();
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
+    }
 }
 
