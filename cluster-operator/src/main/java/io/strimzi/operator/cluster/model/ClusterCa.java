@@ -44,10 +44,27 @@ public class ClusterCa extends Ca {
                      int renewalDays,
                      boolean generateCa) {
         super(certManager, "cluster-ca", AbstractModel.getClusterCaName(clusterName), clusterCaCert,
-                AbstractModel.getClusterCaKeyName(clusterName), clusterCaKey,
+                AbstractModel.getClusterCaKeyName(clusterName),
+                adapt060ClusterCaSecret(clusterCaKey),
                 validityDays, renewalDays, generateCa);
         this.clusterName = clusterName;
     }
+
+    /**
+     * In Strimzi 0.6.0 the Secrets and keys used a different convention.
+     * Here we adapt the keys in the {@code *-cluster-ca} Secret to match what
+     * 0.7.0 expects.
+     */
+    public static Secret adapt060ClusterCaSecret(Secret clusterCaKey) {
+        if (clusterCaKey != null && clusterCaKey.getData() != null) {
+            String key = clusterCaKey.getData().get("cluster-ca.key");
+            if (key != null) {
+                clusterCaKey.getData().put("ca.key", key);
+            }
+        }
+        return clusterCaKey;
+    }
+
 
     @Override
     public String toString() {
