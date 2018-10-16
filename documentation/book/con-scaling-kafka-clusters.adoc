@@ -11,7 +11,7 @@
 The primary way of increasing throughput for a topic is to increase the number of partitions for that topic. 
 That works because the extra partitions allow the load of the topic to be shared between the different brokers in the cluster.
 However, in situations where every broker is constrained by a particular resource (typically I/O) using more partitions will not result in increased throughput.
-Instead, you must add brokers to the cluster.
+Instead, you need to add brokers to the cluster.
 
 When you add an extra broker to the cluster, Kafka does not assign any partitions to it automatically.
 You must decide which partitions to move from the existing brokers to the new broker.
