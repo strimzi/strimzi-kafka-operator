@@ -43,11 +43,19 @@ public class ClusterCa extends Ca {
                      int validityDays,
                      int renewalDays,
                      boolean generateCa) {
-        super(certManager, "cluster-ca", AbstractModel.getClusterCaName(clusterName), clusterCaCert,
+        super(certManager, "cluster-ca",
+                forceRenewal(clusterCaKey),
+                AbstractModel.getClusterCaName(clusterName), clusterCaCert,
                 AbstractModel.getClusterCaKeyName(clusterName),
                 adapt060ClusterCaSecret(clusterCaKey),
                 validityDays, renewalDays, generateCa);
         this.clusterName = clusterName;
+    }
+
+    private static boolean forceRenewal(Secret clientsCaKey) {
+        return clientsCaKey != null
+                && clientsCaKey.getData() != null
+                && clientsCaKey.getData().containsKey("cluster-ca.key");
     }
 
     /**

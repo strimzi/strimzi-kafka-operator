@@ -83,6 +83,7 @@ public abstract class Ca {
     protected final int validityDays;
     protected final int renewalDays;
     private final boolean generateCa;
+    private final boolean forceRenewal;
     protected String caCertSecretName;
     private Secret caCertSecret;
     protected String caKeySecretName;
@@ -91,9 +92,11 @@ public abstract class Ca {
     private boolean certsRemoved;
 
     public Ca(CertManager certManager, String commonName,
+              boolean forceRenewal,
               String caCertSecretName, Secret caCertSecret,
               String caKeySecretName, Secret caKeySecret,
               int validityDays, int renewalDays, boolean generateCa) {
+        this.forceRenewal = forceRenewal;
         this.commonName = commonName;
         this.caCertSecret = caCertSecret;
         this.caCertSecretName = caCertSecretName;
@@ -271,7 +274,8 @@ public abstract class Ca {
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
             certsRemoved = false;
         } else {
-            if (caCertSecret == null
+            if (forceRenewal
+                    || caCertSecret == null
                     || caCertSecret.getData().get(CA_CRT) == null
                     || caKeySecret == null
                     || caKeySecret.getData().get(CA_KEY) == null

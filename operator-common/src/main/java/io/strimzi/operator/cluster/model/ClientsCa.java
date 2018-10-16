@@ -11,9 +11,17 @@ public class ClientsCa extends Ca {
     public ClientsCa(CertManager certManager, String caCertSecretName, Secret clientsCaCert,
                      String caSecretKeyName, Secret clientsCaKey,
                      int validityDays, int renewalDays, boolean generateCa) {
-        super(certManager, "clients-ca", caCertSecretName, clientsCaCert,
+        super(certManager, "clients-ca",
+                forceRenewal(clientsCaKey),
+                caCertSecretName, clientsCaCert,
                 caSecretKeyName, adapt060ClientsCaSecret(clientsCaKey),
                 validityDays, renewalDays, generateCa);
+    }
+
+    private static boolean forceRenewal(Secret clientsCaKey) {
+        return clientsCaKey != null
+                && clientsCaKey.getData() != null
+                && clientsCaKey.getData().containsKey("clients-ca.key");
     }
 
     /**
