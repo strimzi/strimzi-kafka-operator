@@ -6,9 +6,13 @@ This procedure describes how to generate a reassignment JSON file that reassigns
 
 .Prerequisites
 
+* A running Cluster Operator
+* A `Kafka` resource
+* A set of topics to reassign the partitions of
+
 .Procedure
 
-. Prepare a JSON file, `_topics.json_` which lists the topics to move. 
+. Prepare a JSON file named `_topics.json_` that lists the topics to move.
 It must have the following structure:
 +
 [source,subs=+quotes]

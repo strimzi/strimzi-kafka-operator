@@ -11,7 +11,7 @@ This procedure describes how to decrease the number of brokers in a Kafka cluste
 .Prerequisites
 
 * An existing Kafka cluster.
-* A _reassignment JSON file_, `_reassignment.json_`, of how partitions should be reassigned to brokers in the cluster once the broker(s) in the highest numbered `Pod(s)` have been removed.
+* A _reassignment JSON file_ named `_reassignment.json_` describing how partitions should be reassigned to brokers in the cluster once the broker(s) in the highest numbered `Pod(s)` have been removed.
 
 .Procedure
 

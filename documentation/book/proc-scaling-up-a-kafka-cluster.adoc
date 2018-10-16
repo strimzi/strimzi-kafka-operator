@@ -11,7 +11,7 @@ This procedure describes how to increase the number of brokers in a Kafka cluste
 .Prerequisites
 
 * An existing Kafka cluster.
-* A _reassignment JSON file_, `_reassignment.json_`, of how partitions should be reassigned to brokers in the enlarged cluster.
+* A _reassignment JSON file_ named `_reassignment.json_` that describes how partitions should be reassigned to brokers in the enlarged cluster.
 
 .Procedure
 
