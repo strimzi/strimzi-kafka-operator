@@ -5,12 +5,16 @@
 [id='proc-configuring-kafka-broker-replicas-{context}']
 = Configuring the number of broker nodes
 
-Number of Kafka broker nodes is configured using the `replicas` property in `Kafka.spec.kafka`.
+This procedure describes how to configure the number of Kafka broker nodes in a new cluster. 
+It only applies to new clusters, with no partitions.
+If your cluster already has topics defined you should see
+xref:scaling-clusters-{context}[]. 
 
 .Prerequisites
 
 * An {ProductPlatformName} cluster
 * A running Cluster Operator
+* A Kafka cluster with no topics defined yet
 
 .Procedure
 
@@ -44,3 +48,7 @@ On {OpenShiftName} this can be done using `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
+
+.Additional resources
+If your cluster already has topics defined see
+xref:scaling-clusters-{context}[]. 

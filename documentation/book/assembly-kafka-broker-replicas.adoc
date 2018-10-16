@@ -10,8 +10,8 @@
 
 = Replicas
 
-Kafka cluster can run with many brokers and Kafka brokers can run with various numbers of nodes.
-The number of brokers used for the Kafka cluster is defined in the Kafka resource.
+A Kafka cluster can run with many brokers.
+You can configure the number of brokers used for the Kafka cluster in `Kafka.spec.kafka.replicas`.
 The best number of brokers for your cluster has to be determined based on your specific use case.
 
 include::proc-configuring-kafka-broker-replicas.adoc[leveloffset=+1]
