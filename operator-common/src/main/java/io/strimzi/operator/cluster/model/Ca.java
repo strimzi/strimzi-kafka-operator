@@ -273,11 +273,17 @@ public abstract class Ca {
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
             certsRemoved = false;
         } else {
-            if (forceRenewal
-                    || caCertSecret == null
+            boolean certRenewal = caCertSecret == null
                     || caCertSecret.getData().get(CA_CRT) == null
-                    || caKeySecret == null
-                    || caKeySecret.getData().get(CA_KEY) == null
+                    || caCertSecret.getMetadata() != null
+                        && caCertSecret.getMetadata().getAnnotations() != null
+                        && "true".equals(caCertSecret.getMetadata().getAnnotations().get(
+                                "strimzi.io/force-renew"));
+            boolean keyRenewal = caKeySecret == null
+                    || caKeySecret.getData().get(CA_KEY) == null;
+            if (forceRenewal
+                    || certRenewal
+                    || keyRenewal
                     || needsRenewal) {
                 try {
                     Map<String, String>[] newData = createOrRenewCert(currentCert);
