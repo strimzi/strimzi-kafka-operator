@@ -21,6 +21,4 @@ endif::Downloading[]
 
 The remainder of this chapter provides an overview of each component and instructions for deploying the components to {ProductPlatformName} using the YAML files provided.
 
-ifndef::Downloading[]
-NOTE: Although container images for {ProductName} are available in the {ReleaseDownload}, we recommend that you use the YAML files provided instead.
-endif::Downloading[]
+NOTE: Although container images for {ProductName} are available in the {DockerRepository}, we recommend that you use the YAML files provided instead.
