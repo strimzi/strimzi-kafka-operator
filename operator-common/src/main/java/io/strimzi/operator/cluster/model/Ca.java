@@ -22,7 +22,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -374,15 +373,9 @@ public abstract class Ca {
 
     private Map<String, String>[] createOrRenewCert(X509Certificate currentCert) throws IOException {
         log.debug("Generating new certificate {} to be stored in {}", CA_CRT, caCertSecretName);
-        CertAndKey ca = generateCa(commonName);
+        CertAndKey ca = currentCert == null ? generateCa(commonName) : renewCa(commonName);
         Map<String, String> certData = new HashMap<>();
         Map<String, String> keyData = new HashMap<>();
-        if (currentCert != null) {
-            // Add the current certificate as an old certificate (with date in UTC)
-            String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-            // TODO factor out this naming scheme
-            certData.put("ca-" + notAfterDate + ".crt", caCertSecret.getData().get(CA_CRT));
-        }
         // Add the generated certificate as the current certificate
         certData.put(CA_CRT, ca.certAsBase64String());
         keyData.put(CA_KEY, ca.keyAsBase64String());
@@ -468,6 +461,31 @@ public abstract class Ca {
 
                 certManager.generateSelfSignedCert(keyFile, certFile, sbj, validityDays);
                 return new CertAndKey(Files.readAllBytes(keyFile.toPath()), Files.readAllBytes(certFile.toPath()));
+            } finally {
+                delete(certFile);
+            }
+        } finally {
+            delete(keyFile);
+        }
+    }
+
+    private CertAndKey renewCa(String commonName) throws IOException {
+        log.debug("Renewing CA with cn={}, org={}", commonName, IO_STRIMZI);
+
+        Base64.Decoder decoder = Base64.getDecoder();
+        byte[] bytes = decoder.decode(caKeySecret.getData().get(CA_KEY));
+        File keyFile = File.createTempFile("ererver", "dffbvd");
+        try {
+            Files.write(keyFile.toPath(), bytes);
+            File certFile = File.createTempFile("tls", commonName + "-cert");
+            try {
+
+                Subject sbj = new Subject();
+                sbj.setOrganizationName(IO_STRIMZI);
+                sbj.setCommonName(commonName);
+
+                certManager.renewSelfSignedCert(keyFile, certFile, sbj, validityDays);
+                return new CertAndKey(bytes, Files.readAllBytes(certFile.toPath()));
             } finally {
                 delete(certFile);
             }

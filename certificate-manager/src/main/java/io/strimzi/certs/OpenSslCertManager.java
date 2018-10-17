@@ -76,6 +76,63 @@ public class OpenSslCertManager implements CertManager {
         }
     }
 
+
+    @Override
+    public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
+        // See https://serverfault.com/questions/306345/certification-authority-root-certificate-expiry-and-renewal
+
+        //openssl req -new -key root.key -out newcsr.csr
+        File csrFile = File.createTempFile("renewal", ".csr");
+        List<String> cmd = new ArrayList<>(asList("openssl", "req",
+                "-new",
+                "-batch",
+                "-out", csrFile.getAbsolutePath(),
+                "-key", keyFile.getAbsolutePath()));
+
+        File sna = null;
+        File openSslConf = null;
+        if (sbj != null) {
+            if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+
+                // subject alt names need to be in an openssl configuration file
+                InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
+                openSslConf = File.createTempFile("openssl-", ".conf");
+                Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                sna = addSubjectAltNames(openSslConf, sbj);
+                cmd.addAll(asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
+            }
+            cmd.addAll(asList("-subj", sbj.toString()));
+        }
+
+        exec(cmd);
+
+        if (sna != null) {
+            if (!sna.delete()) {
+                log.warn("{} cannot be deleted", sna.getName());
+            }
+        }
+        if (openSslConf != null) {
+            if (!openSslConf.delete()) {
+                log.warn("{} cannot be deleted", openSslConf.getName());
+            }
+        }
+
+        //openssl x509 -req -days 3650 -in newcsr.csr -signkey root.key -out newroot.pem
+        List<String> cmd2 = new ArrayList<>(asList("openssl", "x509",
+                "-req",
+                "-days", String.valueOf(days),
+                "-in", csrFile.getAbsolutePath(),
+                "-signkey", keyFile.getAbsolutePath(),
+                "-out", certFile.getAbsolutePath()));
+
+        exec(cmd2);
+
+        if (!csrFile.delete()) {
+            log.warn("{} cannot be deleted", csrFile.getName());
+        }
+    }
+
     /**
      * Add subject alt names section to the provided openssl configuration file
      *
