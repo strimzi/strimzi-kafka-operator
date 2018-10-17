@@ -860,40 +860,42 @@ public class KafkaCluster extends AbstractModel {
         rules.add(replicationRule);
 
         // Free access to 9092, 9093 and 9094 ports
-        if (listeners != null && listeners.getPlain() != null) {
-            NetworkPolicyPort plainPort = new NetworkPolicyPort();
-            plainPort.setPort(new IntOrString(CLIENT_PORT));
+        if (listeners != null) {
+            if (listeners.getPlain() != null) {
+                NetworkPolicyPort plainPort = new NetworkPolicyPort();
+                plainPort.setPort(new IntOrString(CLIENT_PORT));
 
-            NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(plainPort)
-                    .withFrom()
-                    .build();
+                NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
+                        .withPorts(plainPort)
+                        .withFrom()
+                        .build();
 
-            rules.add(plainRule);
-        }
+                rules.add(plainRule);
+            }
 
-        if (listeners != null && listeners.getTls() != null) {
-            NetworkPolicyPort tlsPort = new NetworkPolicyPort();
-            tlsPort.setPort(new IntOrString(CLIENT_TLS_PORT));
+            if (listeners.getTls() != null) {
+                NetworkPolicyPort tlsPort = new NetworkPolicyPort();
+                tlsPort.setPort(new IntOrString(CLIENT_TLS_PORT));
 
-            NetworkPolicyIngressRule tlsRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(tlsPort)
-                    .withFrom()
-                    .build();
+                NetworkPolicyIngressRule tlsRule = new NetworkPolicyIngressRuleBuilder()
+                        .withPorts(tlsPort)
+                        .withFrom()
+                        .build();
 
-            rules.add(tlsRule);
-        }
+                rules.add(tlsRule);
+            }
 
-        if (isExposed()) {
-            NetworkPolicyPort externalPort = new NetworkPolicyPort();
-            externalPort.setPort(new IntOrString(EXTERNAL_PORT));
+            if (isExposed()) {
+                NetworkPolicyPort externalPort = new NetworkPolicyPort();
+                externalPort.setPort(new IntOrString(EXTERNAL_PORT));
 
-            NetworkPolicyIngressRule externalRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(externalPort)
-                    .withFrom()
-                    .build();
+                NetworkPolicyIngressRule externalRule = new NetworkPolicyIngressRuleBuilder()
+                        .withPorts(externalPort)
+                        .withFrom()
+                        .build();
 
-            rules.add(externalRule);
+                rules.add(externalRule);
+            }
         }
 
         if (isMetricsEnabled) {
