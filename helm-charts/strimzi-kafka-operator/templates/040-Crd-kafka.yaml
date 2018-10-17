@@ -1033,28 +1033,6 @@ spec:
                       - external
                   required:
                   - type
-            clientsCa:
-              type: object
-              properties:
-                generateCertificateAuthority:
-                  type: boolean
-                validityDays:
-                  type: integer
-                  minimum: 1
-                renewalDays:
-                  type: integer
-                  minimum: 1
-            clusterCa:
-              type: object
-              properties:
-                generateCertificateAuthority:
-                  type: boolean
-                validityDays:
-                  type: integer
-                  minimum: 1
-                renewalDays:
-                  type: integer
-                  minimum: 1
             entityOperator:
               type: object
               properties:
@@ -1391,6 +1369,35 @@ spec:
                             memory:
                               type: string
                               pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+            clusterCa:
+              type: object
+              properties:
+                generateCertificateAuthority:
+                  type: boolean
+                validityDays:
+                  type: integer
+                  minimum: 1
+                renewalDays:
+                  type: integer
+                  minimum: 1
+            clientsCa:
+              type: object
+              properties:
+                generateCertificateAuthority:
+                  type: boolean
+                validityDays:
+                  type: integer
+                  minimum: 1
+                renewalDays:
+                  type: integer
+                  minimum: 1
+            maintenance:
+              type: object
+              properties:
+                schedule:
+                  type: string
+              required:
+              - schedule
           required:
           - kafka
           - zookeeper

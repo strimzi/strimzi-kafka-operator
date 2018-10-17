@@ -27,7 +27,9 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator", "tlsCertificates"})
+@JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator",
+                    "entityOperator", "clusterCa", "clientsCa",
+                    "maintenance"})
 public class KafkaSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -39,6 +41,7 @@ public class KafkaSpec implements Serializable {
     private CertificateAuthority clusterCa;
 
     private CertificateAuthority clientsCa;
+    private MaintenanceSpec maintenance;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Kafka cluster")
@@ -97,6 +100,15 @@ public class KafkaSpec implements Serializable {
 
     public void setClientsCa(CertificateAuthority clientsCa) {
         this.clientsCa = clientsCa;
+    }
+
+    @Description("Configuration maintenance tasks schedule.")
+    public MaintenanceSpec getMaintenance() {
+        return maintenance;
+    }
+
+    public void setMaintenance(MaintenanceSpec maintenance) {
+        this.maintenance = maintenance;
     }
 
     @JsonAnyGetter
