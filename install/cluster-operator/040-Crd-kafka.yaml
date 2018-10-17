@@ -1390,10 +1390,12 @@ spec:
             maintenance:
               type: object
               properties:
-                schedule:
-                  type: string
+                windows:
+                  type: array
+                  items:
+                    type: string
               required:
-              - schedule
+              - windows
           required:
           - kafka
           - zookeeper

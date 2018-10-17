@@ -566,9 +566,9 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 [options="header"]
 |====
-|Field            |Description
-|schedule  1.2+<.<|The schedule for the maintenance tasks. It's defined by a cron expression.
-|string
+|Field           |Description
+|windows  1.2+<.<|A list of windows for the maintenance tasks. Each window is defined by a cron expression.
+|string array
 |====
 
 [id='type-KafkaConnect-{context}']

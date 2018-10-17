@@ -13,6 +13,7 @@ import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Buildable(
@@ -25,18 +26,18 @@ public class MaintenanceSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private String schedule;
+    private List<String> windows;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The schedule for the maintenance tasks. It's defined by a cron expression.")
+    @Description("A list of windows for the maintenance tasks. Each window is defined by a cron expression.")
     @JsonProperty(required = true)
-    public String getSchedule() {
-        return schedule;
+    public List<String> getWindows() {
+        return windows;
     }
 
-    public void setSchedule(String schedule) {
-        this.schedule = schedule;
+    public void setWindows(List<String> windows) {
+        this.windows = windows;
     }
 
     @JsonAnyGetter
