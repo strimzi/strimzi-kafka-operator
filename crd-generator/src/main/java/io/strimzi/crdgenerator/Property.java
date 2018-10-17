@@ -5,6 +5,7 @@
 package io.strimzi.crdgenerator;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -122,6 +123,20 @@ class Property implements AnnotatedElement {
         return sortedProperties(order != null ? order.value() : null, unordered);
     }
 
+    private static boolean isAnySetter(Method method) {
+        return method.getParameterCount() == 2
+                && method.getReturnType().equals(void.class)
+                && method.getParameterTypes()[0].equals(String.class)
+                && method.getParameterTypes()[1].equals(Object.class)
+                && !Modifier.isStatic(method.getModifiers());
+    }
+
+    private static boolean isAnyGetter(Method method) {
+        return method.getParameterCount() == 0
+                && !method.getReturnType().equals(void.class)
+                && !Modifier.isStatic(method.getModifiers());
+    }
+
     static Map<String, Property> sortedProperties(String[] order, TreeMap<String, Property> unordered) {
         Map<String, Property> result;
         if (order != null) {
@@ -141,6 +156,25 @@ class Property implements AnnotatedElement {
             result = unordered;
         }
         return unmodifiableMap(result);
+    }
+
+    static boolean hasAnyGetterAndAnySetter(Class<?> crdClass) {
+        boolean anyGetter = false;
+        boolean anySetter = false;
+        for (Method method : crdClass.getMethods()) {
+            if (isAnySetter(method) &&
+                    method.isAnnotationPresent(JsonAnySetter.class)) {
+                anySetter = true;
+            }
+            if (isAnyGetter(method) &&
+                    method.isAnnotationPresent(JsonAnyGetter.class)) {
+                anyGetter = true;
+            }
+            if (anyGetter && anySetter) {
+                break;
+            }
+        }
+        return anyGetter && anySetter;
     }
 
     private static boolean hasMethod(Class<?> c, Method m) {

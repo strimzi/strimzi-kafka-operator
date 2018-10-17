@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -11,6 +13,8 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 @Description("Configuration of how TLS certificates are used within the cluster." +
         "This applies to certificates used for both internal communication within the cluster and to certificates " +
@@ -26,9 +30,10 @@ public class CertificateAuthority implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    int validityDays;
-    boolean generateCertificateAuthority = true;
-    int renewalDays;
+    private int validityDays;
+    private boolean generateCertificateAuthority = true;
+    private int renewalDays;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of days generated certificates should be valid for. Default is 365.")
     @Minimum(1)
@@ -63,5 +68,15 @@ public class CertificateAuthority implements Serializable {
 
     public void setRenewalDays(int renewalDays) {
         this.renewalDays = renewalDays;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -11,6 +13,7 @@ import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -30,6 +33,7 @@ public class JvmOptions implements Serializable {
     private String xms;
     private Boolean server;
     private Map<String, String> xx;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonProperty("-Xmx")
     @Pattern("[0-9]+[mMgG]?")
@@ -71,6 +75,16 @@ public class JvmOptions implements Serializable {
 
     public void setXx(Map<String, String> xx) {
         this.xx = xx;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 
 }
