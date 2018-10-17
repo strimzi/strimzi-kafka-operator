@@ -832,6 +832,8 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public NetworkPolicy generateNetworkPolicy() {
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
+
         // Restrict access to 9091 / replication port
         NetworkPolicyPort replicationPort = new NetworkPolicyPort();
         replicationPort.setPort(new IntOrString(REPLICATION_PORT));
@@ -855,30 +857,58 @@ public class KafkaCluster extends AbstractModel {
                 .withFrom(kafkaClusterPeer, entityOperatorPeer)
                 .build();
 
+        rules.add(replicationRule);
+
         // Free access to 9092, 9093 and 9094 ports
-        NetworkPolicyPort plainPort = new NetworkPolicyPort();
-        plainPort.setPort(new IntOrString(CLIENT_PORT));
+        if (listeners != null) {
+            if (listeners.getPlain() != null) {
+                NetworkPolicyPort plainPort = new NetworkPolicyPort();
+                plainPort.setPort(new IntOrString(CLIENT_PORT));
 
-        NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(plainPort)
-                .withFrom()
-                .build();
+                NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
+                        .withPorts(plainPort)
+                        .withFrom()
+                        .build();
 
-        NetworkPolicyPort tlsPort = new NetworkPolicyPort();
-        tlsPort.setPort(new IntOrString(CLIENT_TLS_PORT));
+                rules.add(plainRule);
+            }
 
-        NetworkPolicyIngressRule tlsRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(tlsPort)
-                .withFrom()
-                .build();
+            if (listeners.getTls() != null) {
+                NetworkPolicyPort tlsPort = new NetworkPolicyPort();
+                tlsPort.setPort(new IntOrString(CLIENT_TLS_PORT));
 
-        NetworkPolicyPort externalPort = new NetworkPolicyPort();
-        externalPort.setPort(new IntOrString(EXTERNAL_PORT));
+                NetworkPolicyIngressRule tlsRule = new NetworkPolicyIngressRuleBuilder()
+                        .withPorts(tlsPort)
+                        .withFrom()
+                        .build();
 
-        NetworkPolicyIngressRule externalRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(externalPort)
-                .withFrom()
-                .build();
+                rules.add(tlsRule);
+            }
+
+            if (isExposed()) {
+                NetworkPolicyPort externalPort = new NetworkPolicyPort();
+                externalPort.setPort(new IntOrString(EXTERNAL_PORT));
+
+                NetworkPolicyIngressRule externalRule = new NetworkPolicyIngressRuleBuilder()
+                        .withPorts(externalPort)
+                        .withFrom()
+                        .build();
+
+                rules.add(externalRule);
+            }
+        }
+
+        if (isMetricsEnabled) {
+            NetworkPolicyPort metricsPort = new NetworkPolicyPort();
+            metricsPort.setPort(new IntOrString(METRICS_PORT));
+
+            NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
+                    .withPorts(metricsPort)
+                    .withFrom()
+                    .build();
+
+            rules.add(metricsRule);
+        }
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()
@@ -889,7 +919,7 @@ public class KafkaCluster extends AbstractModel {
                 .endMetadata()
                 .withNewSpec()
                     .withPodSelector(labelSelector)
-                    .withIngress(replicationRule, plainRule, tlsRule, externalRule)
+                    .withIngress(rules)
                 .endSpec()
                 .build();
 
