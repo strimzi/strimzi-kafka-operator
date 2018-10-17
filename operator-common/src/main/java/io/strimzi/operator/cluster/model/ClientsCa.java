@@ -11,9 +11,32 @@ public class ClientsCa extends Ca {
     public ClientsCa(CertManager certManager, String caCertSecretName, Secret clientsCaCert,
                      String caSecretKeyName, Secret clientsCaKey,
                      int validityDays, int renewalDays, boolean generateCa) {
-        super(certManager, "clients-ca", caCertSecretName, clientsCaCert,
-                caSecretKeyName, clientsCaKey,
+        super(certManager, "clients-ca",
+                forceRenewal(clientsCaKey),
+                caCertSecretName, clientsCaCert,
+                caSecretKeyName, adapt060ClientsCaSecret(clientsCaKey),
                 validityDays, renewalDays, generateCa);
+    }
+
+    private static boolean forceRenewal(Secret clientsCaKey) {
+        return clientsCaKey != null
+                && clientsCaKey.getData() != null
+                && clientsCaKey.getData().containsKey("clients-ca.key");
+    }
+
+    /**
+     * In Strimzi 0.6.0 the Secrets and keys used a different convention.
+     * Here we adapt the keys in the {@code *-clients-ca} Secret to match what
+     * 0.7.0 expects.
+     */
+    public static Secret adapt060ClientsCaSecret(Secret clientsCaKey) {
+        if (clientsCaKey != null && clientsCaKey.getData() != null) {
+            String key = clientsCaKey.getData().get("clients-ca.key");
+            if (key != null) {
+                clientsCaKey.getData().put("ca.key", key);
+            }
+        }
+        return clientsCaKey;
     }
 
     @Override

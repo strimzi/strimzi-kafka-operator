@@ -210,4 +210,46 @@ public class OpenSslCertManagerTest {
             fail();
         }
     }
+
+    @Test
+    public void testRenewSelfSignedCertWithSubject() throws Exception {
+        // First generate a self-signed cert
+        File caKey = File.createTempFile("key-", ".key");
+        File originalCert = File.createTempFile("crt-", ".crt");
+        Subject caSubject = new Subject();
+        caSubject.setCommonName("MyCommonName");
+        caSubject.setOrganizationName("MyOrganization");
+
+        testGenerateSelfSignedCert(caKey, originalCert, caSubject);
+
+        // generate a client cert
+        File clientKey = File.createTempFile("client-", ".key");
+        File csr = File.createTempFile("client-", ".csr");
+        File clientCert = File.createTempFile("client-", ".crt");
+        Subject clientSubject = new Subject();
+        clientSubject.setCommonName("MyCommonName");
+        clientSubject.setOrganizationName("MyOrganization");
+        ssl.generateCsr(clientKey, csr, clientSubject);
+
+        ssl.generateCert(csr, caKey, originalCert, clientCert, clientSubject, 365);
+        csr.delete();
+        originalCert.delete();
+
+        // Generate a renewed CA certificate
+        File newCert = File.createTempFile("crt-", ".crt");
+        ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365);
+
+        // verify the client cert is valid wrt the new cert.
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        Certificate c = cf.generateCertificate(new FileInputStream(clientCert));
+        Certificate ca = cf.generateCertificate(new FileInputStream(newCert));
+
+        c.verify(ca.getPublicKey());
+
+        clientKey.delete();
+        clientCert.delete();
+
+        caKey.delete();
+        newCert.delete();
+    }
 }
