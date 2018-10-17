@@ -14,24 +14,9 @@ This guide expects that an {ProductPlatformName} cluster is available and the
 ifdef::Kubernetes[`kubectl` and]
 `oc` command-line tools are installed and configured to connect to the running cluster.
 
-.Supported Versions
-[cols="50%,50%",options="header"]
-|====
-|Product
-|Version
-
-ifdef::Kubernetes[]
-|{KubernetesLongName}
-|{KubernetesVersion}
-endif::Kubernetes[]
-
-|{OpenShiftLongName}
-|{OpenShiftVersion}
-
-|Apache Kafka
-|2.0.0
-
-|====
+ifdef::Downloading[]
+{ProductName} is based on Strimzi 0.8.0. This chapter describes the procedures to deploy AMQ Streams on {OpenShiftName} {OpenShiftVersion}. 
+endif::Downloading[]
 
 ifdef::InstallationAppendix[]
 When no existing {ProductPlatformName} cluster is available, `Minikube` or `Minishift` can be used to create a local
