@@ -82,6 +82,10 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     @Override
     public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I) {
         String namespace = reconciliation.namespace();
+        if (kafkaConnectS2I.getSpec() == null) {
+            log.error("{} spec cannot be null", kafkaConnectS2I.getMetadata().getName());
+            return Future.failedFuture("Spec cannot be null");
+        }
         if (isOpenShift) {
             KafkaConnectS2ICluster connect;
             try {

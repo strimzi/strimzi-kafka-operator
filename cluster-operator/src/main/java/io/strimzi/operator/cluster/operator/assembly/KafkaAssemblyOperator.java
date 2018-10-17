@@ -112,6 +112,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     @Override
     public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
         Future<Void> chainFuture = Future.future();
+        if (kafkaAssembly.getSpec() == null) {
+            log.error("{} spec cannot be null", kafkaAssembly.getMetadata().getName());
+            return Future.failedFuture("Spec cannot be null");
+        }
         new ReconciliationState(reconciliation, kafkaAssembly)
                 .reconcileClusterCa()
                 // Roll everything so the new CA is added to the trust store.

@@ -74,6 +74,10 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         KafkaMirrorMakerCluster mirror;
+        if (assemblyResource.getSpec() == null) {
+            log.error("{} spec cannot be null", assemblyResource.getMetadata().getName());
+            return Future.failedFuture("Spec cannot be null");
+        }
         try {
             mirror = KafkaMirrorMakerCluster.fromCrd(assemblyResource);
         } catch (Exception e) {
