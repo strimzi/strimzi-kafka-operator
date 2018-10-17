@@ -26,18 +26,18 @@ public class MaintenanceSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private List<String> windows;
+    private List<String> timeWindows;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("A list of windows for the maintenance tasks. Each window is defined by a cron expression.")
+    @Description("A list of time windows for the maintenance tasks. Each time window is defined by a cron expression.")
     @JsonProperty(required = true)
-    public List<String> getWindows() {
-        return windows;
+    public List<String> getTimeWindows() {
+        return timeWindows;
     }
 
-    public void setWindows(List<String> windows) {
-        this.windows = windows;
+    public void setTimeWindows(List<String> timeWindows) {
+        this.timeWindows = timeWindows;
     }
 
     @JsonAnyGetter
