@@ -262,10 +262,6 @@ public abstract class Ca {
      */
     public void createOrRenew(String namespace, String clusterName, Map<String, String> labels, OwnerReference ownerRef) {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
-        this.needsRenewal = currentCert != null && certNeedsRenewal(currentCert);
-        if (needsRenewal) {
-            log.debug("{}: CA certificate in secret {} needs to be renewed", this, caCertSecretName);
-        }
         Map<String, String> certData;
         Map<String, String> keyData;
         if (!generateCa) {
@@ -284,7 +280,9 @@ public abstract class Ca {
             if (forceRenewal
                     || certRenewal
                     || keyRenewal
-                    || needsRenewal) {
+                    || currentCert != null && certNeedsRenewal(currentCert)) {
+                this.needsRenewal = true;
+                log.debug("{}: CA certificate in secret {} needs to be renewed", this, caCertSecretName);
                 try {
                     Map<String, String>[] newData = createOrRenewCert(currentCert);
                     certData = newData[0];
