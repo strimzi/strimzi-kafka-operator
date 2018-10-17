@@ -76,6 +76,7 @@ public abstract class Ca {
     public static final String CA_KEY = "ca.key";
     public static final String CA_CRT = "ca.crt";
     public static final String IO_STRIMZI = "io.strimzi";
+    public static final String ANNO_STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
 
     protected final String commonName;
     protected final CertManager certManager;
@@ -269,20 +270,8 @@ public abstract class Ca {
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
             certsRemoved = false;
         } else {
-            boolean certRenewal = caCertSecret == null
-                    || caCertSecret.getData().get(CA_CRT) == null
-                    || caCertSecret.getMetadata() != null
-                        && caCertSecret.getMetadata().getAnnotations() != null
-                        && "true".equals(caCertSecret.getMetadata().getAnnotations().get(
-                                "strimzi.io/force-renew"));
-            boolean keyRenewal = caKeySecret == null
-                    || caKeySecret.getData().get(CA_KEY) == null;
-            if (forceRenewal
-                    || certRenewal
-                    || keyRenewal
-                    || currentCert != null && certNeedsRenewal(currentCert)) {
+            if (shouldRenew(currentCert)) {
                 this.needsRenewal = true;
-                log.debug("{}: CA certificate in secret {} needs to be renewed", this, caCertSecretName);
                 try {
                     Map<String, String>[] newData = createOrRenewCert(currentCert);
                     certData = newData[0];
@@ -308,6 +297,34 @@ public abstract class Ca {
 
         caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, labels, ownerRef);
         caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels, ownerRef);
+    }
+
+    private boolean shouldRenew(X509Certificate currentCert) {
+        String reason = null;
+        boolean result = false;
+        if (forceRenewal) {
+            reason = "Forced";
+            result = true;
+        } else if (caCertSecret == null
+                || caCertSecret.getData().get(CA_CRT) == null) {
+            reason = "CA certificate secret " + caCertSecretName + " is missing or lacking the key " + CA_CRT;
+            result = true;
+        } else if (caKeySecret == null
+                || caKeySecret.getData().get(CA_KEY) == null) {
+            reason = "CA key secret " + caKeySecretName + " is missing or lacking the key " + CA_KEY;
+            result = true;
+        } else if (caCertSecret != null
+                && caCertSecret.getMetadata() != null
+                && caCertSecret.getMetadata().getAnnotations() != null
+                && "true".equals(caCertSecret.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FORCE_RENEW))) {
+            reason = "CA certificate secret " + caCertSecretName + " is annotated with " + ANNO_STRIMZI_IO_FORCE_RENEW;
+            result = true;
+        } else if (currentCert != null && certNeedsRenewal(currentCert)) {
+            reason = "Within renewal period for CA certificate";
+            result = true;
+        }
+        log.debug("{}: CA certificate in secret {} needs to be renewed: {}", this, caCertSecretName, reason);
+        return result;
     }
 
     /**
