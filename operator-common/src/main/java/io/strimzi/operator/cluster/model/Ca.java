@@ -6,10 +6,12 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -78,25 +80,35 @@ public abstract class Ca {
     public static final String IO_STRIMZI = "io.strimzi";
     public static final String ANNO_STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
 
+    /**
+     * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
+     * the given {@code key}.
+     *
+     * This is used to force certificate renewal when upgrading from a Strimzi 0.6.0 Secret.
+     */
+    protected static Secret forceRenewal(Secret caCert, Secret caKey, String key) {
+        if (caCert != null && caKey != null && caKey.getData() != null && caKey.getData().containsKey(key)) {
+            caCert = new SecretBuilder(caCert).editMetadata().addToAnnotations(ANNO_STRIMZI_IO_FORCE_RENEW, "true").endMetadata().build();
+        }
+        return caCert;
+    }
+
     protected final String commonName;
     protected final CertManager certManager;
     protected final int validityDays;
     protected final int renewalDays;
     private final boolean generateCa;
-    private final boolean forceRenewal;
     protected String caCertSecretName;
     private Secret caCertSecret;
     protected String caKeySecretName;
     private Secret caKeySecret;
-    private boolean needsRenewal;
+    private boolean caRenewed;
     private boolean certsRemoved;
 
     public Ca(CertManager certManager, String commonName,
-              boolean forceRenewal,
               String caCertSecretName, Secret caCertSecret,
               String caKeySecretName, Secret caKeySecret,
               int validityDays, int renewalDays, boolean generateCa) {
-        this.forceRenewal = forceRenewal;
         this.commonName = commonName;
         this.caCertSecret = caCertSecret;
         this.caCertSecretName = caCertSecretName;
@@ -265,13 +277,13 @@ public abstract class Ca {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
+        boolean shouldCreateOrRenew = shouldCreateOrRenew(currentCert, namespace, clusterName);
         if (!generateCa) {
-            certData = checkProvidedCert(namespace, clusterName, caCertSecret, currentCert);
+            certData = caCertSecret != null ? caCertSecret.getData() : emptyMap();
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
             certsRemoved = false;
         } else {
-            if (shouldRenew(currentCert)) {
-                this.needsRenewal = true;
+            if (shouldCreateOrRenew) {
                 try {
                     Map<String, String>[] newData = createOrRenewCert(currentCert);
                     certData = newData[0];
@@ -291,7 +303,7 @@ public abstract class Ca {
         if (certsRemoved) {
             log.info("{}: Expired CA certificates removed", this);
         }
-        if (needsRenewal) {
+        if (caRenewed) {
             log.info("{}: Certificates renewed", this);
         }
 
@@ -299,31 +311,47 @@ public abstract class Ca {
         caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels, ownerRef);
     }
 
-    private boolean shouldRenew(X509Certificate currentCert) {
+    private boolean shouldCreateOrRenew(X509Certificate currentCert, String namespace, String clusterName) {
         String reason = null;
         boolean result = false;
-        if (forceRenewal) {
-            reason = "Forced";
-            result = true;
-        } else if (caCertSecret == null
-                || caCertSecret.getData().get(CA_CRT) == null) {
+        if (this.caCertSecret == null
+                || this.caCertSecret.getData().get(CA_CRT) == null) {
             reason = "CA certificate secret " + caCertSecretName + " is missing or lacking the key " + CA_CRT;
             result = true;
+            this.caRenewed = this.caCertSecret != null;
         } else if (caKeySecret == null
                 || caKeySecret.getData().get(CA_KEY) == null) {
             reason = "CA key secret " + caKeySecretName + " is missing or lacking the key " + CA_KEY;
             result = true;
-        } else if (caCertSecret != null
-                && caCertSecret.getMetadata() != null
-                && caCertSecret.getMetadata().getAnnotations() != null
-                && "true".equals(caCertSecret.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FORCE_RENEW))) {
+            this.caRenewed = caKeySecret != null;
+        } else if (this.caCertSecret.getMetadata() != null
+                && this.caCertSecret.getMetadata().getAnnotations() != null
+                && "true".equals(this.caCertSecret.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FORCE_RENEW))) {
             reason = "CA certificate secret " + caCertSecretName + " is annotated with " + ANNO_STRIMZI_IO_FORCE_RENEW;
             result = true;
+            this.caRenewed = true;
         } else if (currentCert != null && certNeedsRenewal(currentCert)) {
-            reason = "Within renewal period for CA certificate";
+            reason = "Within renewal period for CA certificate (expires on " + currentCert.getNotAfter() + ")";
             result = true;
+            this.caRenewed = true;
         }
-        log.debug("{}: CA certificate in secret {} needs to be renewed: {}", this, caCertSecretName, reason);
+        log.log(!generateCa ? Level.WARN : Level.INFO,
+                "{}: CA certificate in secret {} needs to be renewed: {}", this, caCertSecretName, reason);
+        if (!generateCa) {
+            if (caRenewed) {
+                log.warn("The {} certificate in Secret {} in namespace {} needs to be renewed " +
+                                "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
+                                "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
+                        CA_CRT, this.caCertSecretName, namespace, currentCert.getNotAfter());
+            } else if (caCertSecret == null) {
+                log.warn("The certificate (data.{}) in Secret {} and the private key (data.{}) in Secret {} in namespace {} " +
+                                "needs to be configured with a Base64 encoded PEM-format certificate. " +
+                                "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
+                        CA_CRT, this.caCertSecretName,
+                        CA_KEY, this.caKeySecretName, namespace,
+                        clusterName, namespace);
+            }
+        }
         return result;
     }
 
@@ -368,7 +396,7 @@ public abstract class Ca {
      * resulted in a renewed CA certificate.
      */
     public boolean certRenewed() {
-        return this.needsRenewal;
+        return this.caRenewed;
     }
 
     private int removeExpiredCerts(Map<String, String> newData) {
@@ -403,26 +431,6 @@ public abstract class Ca {
 
         log.debug("End generating certificate {} to be stored in {}", CA_CRT, caCertSecretName);
         return new Map[]{certData, keyData};
-    }
-
-    private Map<String, String> checkProvidedCert(String namespace, String clusterName,
-                                                  Secret clusterCa, X509Certificate currentCert) {
-        Map<String, String> newData;
-        if (needsRenewal) {
-            log.warn("The {} certificate in Secret {} in namespace {} will expire on {} " +
-                            "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
-                            "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                    CA_CRT, caCertSecretName, namespace, currentCert.getNotAfter());
-        } else if (clusterCa == null) {
-            log.warn("The certificate (data.{}) in Secret {} and the private key (data.{}) in Secret {} in namespace {} " +
-                            "needs to be configured with a Base64 encoded PEM-format certificate. " +
-                            "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                    CA_CRT, this.caCertSecretName,
-                    CA_KEY, this.caKeySecretName, namespace,
-                    clusterName, namespace);
-        }
-        newData = clusterCa != null ? clusterCa.getData() : emptyMap();
-        return newData;
     }
 
     private boolean certNeedsRenewal(X509Certificate cert)  {
