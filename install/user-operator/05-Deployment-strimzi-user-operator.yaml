@@ -14,7 +14,7 @@ spec:
       serviceAccountName: strimzi-user-operator
       containers:
         - name: strimzi-user-operator
-          image: strimzi/user-operator:0.8.0
+          image: strimzi/user-operator:0.8.1
           env:
             - name: STRIMZI_NAMESPACE
               valueFrom:
