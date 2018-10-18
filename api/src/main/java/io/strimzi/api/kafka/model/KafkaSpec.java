@@ -103,7 +103,7 @@ public class KafkaSpec implements Serializable {
         this.clientsCa = clientsCa;
     }
 
-    @Description("A list of time windows for the maintenance tasks (i.e. certificates renewal). Each time window is defined by a cron expression.")
+    @Description("A list of time windows for the maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.")
     public List<String> getMaintenanceTimeWindows() {
         return maintenanceTimeWindows;
     }

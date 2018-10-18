@@ -33,7 +33,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
 |clientsCa               1.2+<.<|Configuration of the clients certificate authority.
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
-|maintenanceTimeWindows  1.2+<.<|A list of time windows for the maintenance tasks (i.e. certificates renewal). Each time window is defined by a cron expression.
+|maintenanceTimeWindows  1.2+<.<|A list of time windows for the maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.
 |string array
 |====
 
