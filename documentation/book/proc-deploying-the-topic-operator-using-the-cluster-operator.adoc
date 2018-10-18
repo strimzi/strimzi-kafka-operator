@@ -6,7 +6,7 @@
 [id='deploying-the-topic-operator-using-the-cluster-operator-{context}']
 = Deploying the Topic Operator using the Cluster Operator
 
-This procedure describes how to deploy the Topic Operator using the Cluster Operator. Alternatively, you can deploy the Topic Operator as a standalone component. For more information, see xref:deploying-the-topic-operator-standalone-str[].
+This procedure describes how to deploy the Topic Operator using the Cluster Operator. Alternatively, you can deploy the Topic Operator as a standalone component. For more information, see xref:deploying-the-topic-operator-standalone[].
 
 .Prerequisites
 
