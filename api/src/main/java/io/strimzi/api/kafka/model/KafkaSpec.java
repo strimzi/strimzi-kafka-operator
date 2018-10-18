@@ -16,6 +16,7 @@ import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,7 +42,7 @@ public class KafkaSpec implements Serializable {
     private CertificateAuthority clusterCa;
 
     private CertificateAuthority clientsCa;
-    private MaintenanceSpec maintenance;
+    private List<String> maintenanceTimeWindows;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Kafka cluster")
@@ -102,13 +103,13 @@ public class KafkaSpec implements Serializable {
         this.clientsCa = clientsCa;
     }
 
-    @Description("Configuration maintenance tasks schedule.")
-    public MaintenanceSpec getMaintenance() {
-        return maintenance;
+    @Description("A list of time windows for the maintenance tasks (i.e. certificates renewal). Each time window is defined by a cron expression.")
+    public List<String> getMaintenanceTimeWindows() {
+        return maintenanceTimeWindows;
     }
 
-    public void setMaintenance(MaintenanceSpec maintenance) {
-        this.maintenance = maintenance;
+    public void setMaintenanceTimeWindows(List<String> maintenanceTimeWindows) {
+        this.maintenanceTimeWindows = maintenanceTimeWindows;
     }
 
     @JsonAnyGetter

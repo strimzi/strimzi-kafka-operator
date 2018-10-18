@@ -20,21 +20,21 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 [options="header"]
 |====
-|Field                  |Description
-|kafka           1.2+<.<|Configuration of the Kafka cluster.
+|Field                          |Description
+|kafka                   1.2+<.<|Configuration of the Kafka cluster.
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
-|zookeeper       1.2+<.<|Configuration of the Zookeeper cluster.
+|zookeeper               1.2+<.<|Configuration of the Zookeeper cluster.
 |xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-|topicOperator   1.2+<.<|Configuration of the Topic Operator.
+|topicOperator           1.2+<.<|Configuration of the Topic Operator.
 |xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
-|entityOperator  1.2+<.<|Configuration of the Entity Operator.
+|entityOperator          1.2+<.<|Configuration of the Entity Operator.
 |xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
-|clusterCa       1.2+<.<|Configuration of the cluster certificate authority.
+|clusterCa               1.2+<.<|Configuration of the cluster certificate authority.
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
-|clientsCa       1.2+<.<|Configuration of the clients certificate authority.
+|clientsCa               1.2+<.<|Configuration of the clients certificate authority.
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
-|maintenance     1.2+<.<|Configuration maintenance tasks schedule.
-|xref:type-MaintenanceSpec-{context}[`MaintenanceSpec`]
+|maintenanceTimeWindows  1.2+<.<|A list of time windows for the maintenance tasks (i.e. certificates renewal). Each time window is defined by a cron expression.
+|string array
 |====
 
 [id='type-KafkaClusterSpec-{context}']
@@ -556,19 +556,6 @@ Configuration of how TLS certificates are used within the cluster.This applies t
 |integer
 |renewalDays                   1.2+<.<|The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed.When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30.
 |integer
-|====
-
-[id='type-MaintenanceSpec-{context}']
-### `MaintenanceSpec` schema reference
-
-Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
-
-
-[options="header"]
-|====
-|Field               |Description
-|timeWindows  1.2+<.<|A list of time windows for the maintenance tasks. Each time window is defined by a cron expression.
-|string array
 |====
 
 [id='type-KafkaConnect-{context}']

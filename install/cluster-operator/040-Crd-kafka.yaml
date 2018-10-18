@@ -1387,15 +1387,10 @@ spec:
                 renewalDays:
                   type: integer
                   minimum: 1
-            maintenance:
-              type: object
-              properties:
-                timeWindows:
-                  type: array
-                  items:
-                    type: string
-              required:
-              - timeWindows
+            maintenanceTimeWindows:
+              type: array
+              items:
+                type: string
           required:
           - kafka
           - zookeeper
