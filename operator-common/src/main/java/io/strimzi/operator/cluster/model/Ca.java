@@ -335,7 +335,7 @@ public abstract class Ca {
             result = true;
             this.caRenewed = true;
         }
-        if (this.caRenewed ) {
+        if (this.caRenewed) {
             log.log(!generateCa ? Level.WARN : Level.INFO,
                     "{}: CA certificate in secret {} needs to be renewed: {}", this, caCertSecretName, reason);
         }
