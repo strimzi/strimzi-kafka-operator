@@ -4,6 +4,10 @@
 
 * Work in Progress
 
+## 0.8.1
+
+* Fix certificate renewal issues
+
 ## 0.8.0
 
 * Support for unencrypted connections on LoadBalancers and NodePorts.
