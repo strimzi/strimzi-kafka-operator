@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.8.1
+
+* Fix certificate renewal issues
+
 ## 0.8.0
 
 * Support for TLS hostname verification when connecting through IP address from outside of the Kafka cluster 
