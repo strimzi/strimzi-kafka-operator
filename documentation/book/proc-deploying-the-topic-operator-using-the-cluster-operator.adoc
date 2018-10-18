@@ -29,8 +29,7 @@ spec:
     topicOperator: {}
     userOperator: {}
 ----
-. Configure the Topic Operator using the fields described in xref:type-EntityTopicOperatorSpec-str[].
-
+. Configure the Topic Operator using the fields described in xref:type-EntityTopicOperatorSpec-reference[].
 . Create or update the Kafka resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
