@@ -16,6 +16,7 @@ import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,7 +28,9 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator", "tlsCertificates"})
+@JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator",
+                    "entityOperator", "clusterCa", "clientsCa",
+                    "maintenance"})
 public class KafkaSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -39,6 +42,7 @@ public class KafkaSpec implements Serializable {
     private CertificateAuthority clusterCa;
 
     private CertificateAuthority clientsCa;
+    private List<String> maintenanceTimeWindows;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Kafka cluster")
@@ -97,6 +101,15 @@ public class KafkaSpec implements Serializable {
 
     public void setClientsCa(CertificateAuthority clientsCa) {
         this.clientsCa = clientsCa;
+    }
+
+    @Description("A list of time windows for the maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression.")
+    public List<String> getMaintenanceTimeWindows() {
+        return maintenanceTimeWindows;
+    }
+
+    public void setMaintenanceTimeWindows(List<String> maintenanceTimeWindows) {
+        this.maintenanceTimeWindows = maintenanceTimeWindows;
     }
 
     @JsonAnyGetter

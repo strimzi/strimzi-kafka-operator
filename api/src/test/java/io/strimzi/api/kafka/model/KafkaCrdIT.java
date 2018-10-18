@@ -61,9 +61,21 @@ public class KafkaCrdIT extends AbstractCrdIT {
     }
 
     @Test
-
     public void testKafkaWithEntityOperator() {
         createDelete(Kafka.class, "Kafka-with-entity-operator.yaml");
     }
 
+    @Test
+    public void testKafkaWithMaintenance() {
+        createDelete(Kafka.class, "Kafka-with-maintenance.yaml");
+    }
+
+    @Test
+    public void testKafkaWithNullMaintenance() {
+        try {
+            createDelete(Kafka.class, "Kafka-with-null-maintenance.yaml");
+        } catch (KubeClusterException.InvalidResource e) {
+            assertTrue(e.getMessage().contains("spec.maintenanceTimeWindows in body must be of type string: \"null\""));
+        }
+    }
 }
