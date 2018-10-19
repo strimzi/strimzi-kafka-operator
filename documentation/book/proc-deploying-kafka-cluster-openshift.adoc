@@ -5,14 +5,7 @@
 [id='deploying-kafka-cluster-openshift-{context}']
 = Deploying the Kafka cluster to {OpenShiftName}
 
-{ProductName} includes two templates for deploying a Kafka cluster to {OpenShiftName}:
-
-* `kafka-ephemeral.yaml` deploys an ephemeral cluster named `my-cluster` by default.
-* `kafka-persistent.yaml` deploys a persistent cluster named `my-cluster` by default.
-
-To rename the cluster before deployment, edit the `Kafka.metadata.name` resource in the relevant YAML file.
-
-The following procedure describes how to deploy both types of clusters on the command line. You can also deploy clusters in the {OpenShiftName} console. 
+The following procedure describes how to deploy an ephemeral or persistent Kafka cluster to {OpenShiftName} on the command line. You can also deploy clusters in the {OpenShiftName} console. 
 
 .Prerequisites
 

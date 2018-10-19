@@ -9,16 +9,32 @@
 [id='kafka-cluster-{context}']
 = Kafka cluster
 
-You can use {ProductName} to deploy ephemeral and persistent Kafka clusters.
+You can use {ProductName} to deploy ephemeral and persistent Kafka clusters to {ProductPlatformName}.
 
-Ephemeral:: An ephemeral Kafka cluster is only suitable for development and testing purposes, not for production. This deployment uses `emptyDir` volumes for storing broker information (Zookeeper) and topics or partitions (Kafka). Using an `emptyDir` volume means that its content is strictly related to the pod life cycle and is deleted when the pod goes down.
+Ephemeral:: An ephemeral Kafka cluster is only suitable for development and testing purposes, not for production. This deployment uses `emptyDir` volumes for storing broker information (for Zookeeper) and topics or partitions (for Kafka). Using an `emptyDir` volume means that its content is strictly related to the pod life cycle and is deleted when the pod goes down.
 
 Persistent:: A persistent Kafka cluster uses `PersistentVolumes` to store Zookeeper and Kafka data. The `PersistentVolume` is
 acquired using a `PersistentVolumeClaim` to make it independent of the actual type of the `PersistentVolume`. For example, it can use
 ifdef::Kubernetes[HostPath volumes on Minikube or]
 Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The `PersistentVolumeClaim` can use a `StorageClass` to trigger automatic volume provisioning.
 
-When installing Kafka, {ProductName} also installs a Zookeeper cluster and adds the necessary configuration to connect Kafka with Zookeeper.
+{ProductName} includes two templates for deploying a Kafka cluster:
+
+* `kafka-ephemeral.yaml` deploys an ephemeral cluster, named `my-cluster` by default.
+* `kafka-persistent.yaml` deploys a persistent cluster, named `my-cluster` by default.
+
+To rename the cluster before deployment, edit the `Kafka.metadata.name` resource in the relevant YAML file.
+
+[source,yaml,subs=+quotes]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: my-cluster
+# ...
+----
+
+NOTE: When installing Kafka, {ProductName} also installs a Zookeeper cluster and adds the necessary configuration to connect Kafka with Zookeeper.
 
 ifdef::Kubernetes[]
 include::proc-deploying-kafka-cluster-kubernetes.adoc[leveloffset=+1]
