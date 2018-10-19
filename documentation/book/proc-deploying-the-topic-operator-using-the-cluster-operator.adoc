@@ -6,6 +6,9 @@
 [id='deploying-the-topic-operator-using-the-cluster-operator-{context}']
 = Deploying the Topic Operator using the Cluster Operator
 
+This procedure describes how to deploy the Topic Operator using the Cluster Operator. 
+If you want to use the Topic Operator with a Kafka cluster that is not managed by {ProductName}, you must deploy the Topic Operator as a standalone component. For more information, see xref:deploying-the-topic-operator-standalone-deploying[].
+
 .Prerequisites
 
 * A running Cluster Operator
@@ -13,18 +16,30 @@
 
 .Procedure
 
-. Topic Operator can be included in the Entity Operator.
-Edit the `Kafka` resource ensuring it has a `Kafka.spec.entityOperator` object that configures the Entity Operator.
-
+. Ensure that the `Kafka.spec.entityOperator` object exists in the `Kafka` resource. This configures the Entity Operator.
++
+[source,yaml,subs=+quotes]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  #...
+  entityOperator:
+    *topicOperator: {}*
+    userOperator: {}
+----
+. Configure the Topic Operator using the fields described in xref:type-EntityTopicOperatorSpec-reference[].
 . Create or update the Kafka resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName}, use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName}, use `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
