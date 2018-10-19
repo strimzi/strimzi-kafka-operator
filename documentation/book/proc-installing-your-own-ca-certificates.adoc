@@ -96,6 +96,6 @@ spec:
     generateCertificateAuthority: false
 ----
 
-.Additional resources
-
-* For the procedure for renewing CA certificates you have previousy installed, see xref:renewing-your-own-ca-certificates-{context}[]
+//.Additional resources
+//
+//* For the procedure for renewing CA certificates you have previousy //installed, see xref:renewing-your-own-ca-certificates-{context}[]
