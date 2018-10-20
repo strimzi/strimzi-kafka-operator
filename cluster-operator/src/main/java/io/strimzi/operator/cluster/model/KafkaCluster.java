@@ -406,7 +406,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generates service for pod {@pod}. This service is used for exposing it externally.
+     * Generates service for pod. This service is used for exposing it externally.
      *
      * @param pod   Number of the pod for which this service should be generated
      * @return The generated Service
@@ -427,7 +427,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generates route for pod {@pod}. This route is used for exposing it externally using OpenShift Routes.
+     * Generates route for pod. This route is used for exposing it externally using OpenShift Routes.
      *
      * @param pod   Number of the pod for which this route should be generated
      * @return The generated Route

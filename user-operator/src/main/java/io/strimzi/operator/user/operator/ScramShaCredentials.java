@@ -40,7 +40,7 @@ public class ScramShaCredentials {
 
     /**
      * Create or update the SCRAM-SHA credentials for the given user.
-     * @param iterations If <= 0 the default number of iterations will be used.
+     * @param iterations If &lt;= 0 the default number of iterations will be used.
      */
     public void createOrUpdate(String username, String password, int iterations) {
         if (0 < iterations && iterations < mechanism.minIterations()) {

@@ -139,7 +139,6 @@ public final class TestUtils {
      * @param cls The class relative to which the resource will be loaded.
      * @param resourceName The name of the resource
      * @return The resource content
-     * @throws IOException
      */
     public static String readResource(Class<?> cls, String resourceName) {
         try {
