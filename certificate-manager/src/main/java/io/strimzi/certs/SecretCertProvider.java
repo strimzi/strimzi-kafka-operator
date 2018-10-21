@@ -71,7 +71,6 @@ public class SecretCertProvider {
      * @param cert certificate to store
      * @param labels Labels to add to the Secret
      * @return the Secret
-     * @throws IOException
      */
     public Secret createSecret(String namespace, String name, String keyKey, String certKey, byte[] key, byte[] cert, Map<String, String> labels, OwnerReference ownerReference) {
         Map<String, String> data = new HashMap<>();
@@ -92,7 +91,6 @@ public class SecretCertProvider {
      * @param data Map with secret data / files
      * @param labels Labels to add to the Secret
      * @return the Secret
-     * @throws IOException
      */
     public Secret createSecret(String namespace, String name, Map<String, String> data, Map<String, String> labels, OwnerReference ownerReference) {
         Secret secret = new SecretBuilder()
@@ -117,7 +115,6 @@ public class SecretCertProvider {
      * @param key private key to store
      * @param cert certificate to store
      * @return the Secret
-     * @throws IOException
      */
     public Secret addSecret(Secret secret, String keyKey, String certKey, byte[] key, byte[] cert) {
         Base64.Encoder encoder = Base64.getEncoder();

@@ -119,7 +119,7 @@ public class Labels {
      *
      * @param stringLabels  String with labels
      * @return  Labels object with parsed labels
-     * @throws IllegalArgumentException|
+     * @throws IllegalArgumentException
      */
     public static Labels fromString(String stringLabels) throws IllegalArgumentException {
         Map<String, String> labels = new HashMap<>();

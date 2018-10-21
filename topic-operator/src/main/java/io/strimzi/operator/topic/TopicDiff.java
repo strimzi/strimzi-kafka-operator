@@ -13,7 +13,7 @@ import java.util.Set;
  * Represents the difference between two topics.
  * {@code TopicDiff}s are {@linkplain #diff(Topic, Topic) computed} from a source topic to a target topic
  * with the invariant that:
- * <pre></pre><code>
+ * <pre><code>
  *     TopicDiff.diff(topicA, topicB).apply(topicA).equals(topicB)
  * </code></pre>
  */
