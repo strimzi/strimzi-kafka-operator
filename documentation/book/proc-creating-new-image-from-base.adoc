@@ -28,5 +28,6 @@ USER {DockerImageUser}
 . Set the `KafkaConnect.spec.image` property of the KafkaConnect custom resource or the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image.
 
 .Additional resources
-* For more information about the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable, see xref:ref-operators-cluster-operator-configuration-deploying-co[].
-* For more information about the `KafkaConnect.spec.image property`, see xref:assembly-configuring-container-images-deployment-configuration-kafka-connect[].
+* For more information about the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable, see xref:ref-operators-cluster-operator-configuration-str[].
+//Remove for now as there is no reference to this property anyw
+//* For more information about the `KafkaConnect.spec.image property`, see xref:assembly-configuring-container-images-deployment-configuration-kafka-connect[].

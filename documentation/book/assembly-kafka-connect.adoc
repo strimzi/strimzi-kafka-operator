@@ -15,9 +15,9 @@ The default image currently contains only the `FileStreamSinkConnector` and `Fil
 The REST interface for managing the Kafka Connect cluster is exposed internally within the {ProductPlatformName} cluster as a `kafka-connect` service on port `8083`.
 
 Example `KafkaConnect` resources and the details about the `KafkaConnect` format for deploying Kafka Connect can be found in
-xref:assembly-deployment-configuration-kafka-connect-str[Kafka Connect cluster configuration]
+xref:assembly-deployment-configuration-kafka-connect-deployment-configuration-kafka-connect[Kafka Connect cluster configuration]
 and
-xref:assembly-deployment-configuration-kafka-connect-s2i-str[Kafka Connect cluster with Source2Image support].
+xref:assembly-deployment-configuration-kafka-connect-s2i-deployment-configuration-kafka-connect[Kafka Connect cluster with Source2Image support].
 
 ifdef::Kubernetes[]
 include::proc-deploying-kafka-connect-kubernetes.adoc[leveloffset=+1]
