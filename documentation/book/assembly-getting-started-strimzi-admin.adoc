@@ -1,0 +1,13 @@
+// This assembly is included in the following assemblies:
+//
+// getting-started.adoc
+
+[id='assembly-getting-started-strimzi-admin-{context}']
+= Strimzi Administrator
+
+{ProductName} adds several custom resources.
+By default, only {ProductPlatformName} cluster administrators users will have the rights to create, edit and delete these resources.
+To allow also other users to manage the {ProductName} resources, they have to be granted these permissions.
+
+include::proc-adding-users-the-strimzi-admin-role.adoc[leveloffset=+1]
+

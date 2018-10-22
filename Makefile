@@ -62,7 +62,7 @@ release_single_file:
 helm_pkg:
 	# Copying unarchived Helm Chart to release directory
 	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
-	cp -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
+	$(CP) -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
 	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
 	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
 	mv strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
@@ -70,14 +70,14 @@ helm_pkg:
 
 docu_html: docu_htmlclean docu_check
 	mkdir -p documentation/html
-	cp -vrL documentation/book/images documentation/html/images
+	$(CP) -vrL documentation/book/images documentation/html/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) documentation/book/master.adoc -o documentation/html/index.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
 
 
 docu_htmlnoheader: docu_htmlnoheaderclean docu_check
 	mkdir -p documentation/htmlnoheader
-	cp -vrL documentation/book/images documentation/htmlnoheader/images
+	$(CP) -vrL documentation/book/images documentation/htmlnoheader/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -s documentation/book/master.adoc -o documentation/htmlnoheader/master.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -s documentation/contributing/master.adoc -o documentation/htmlnoheader/contributing.html
 
@@ -92,8 +92,8 @@ pushtonexus:
 
 release_docu: docu_html docu_htmlnoheader
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs
-	cp -rv documentation/html/index.html strimzi-$(RELEASE_VERSION)/docs/
-	cp -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/images/
+	$(CP) -rv documentation/html/index.html strimzi-$(RELEASE_VERSION)/docs/
+	$(CP) -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/images/
 
 docu_clean: docu_htmlclean docu_htmlnoheaderclean
 
