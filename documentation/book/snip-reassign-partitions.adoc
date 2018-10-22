@@ -156,8 +156,6 @@ oc rsh -c kafka my-cluster-kafka-0 \
   --reassignment-json-file /tmp/reassignment.json \
   --verify
 ----
-ifdef::Kubernetes[]
-
 
 . The reassignment has finished when the `--verify` command reports each of  the partitions being moved as completed successfully. 
 This final `--verify` will also have the effect of removing any reassignment throttles.

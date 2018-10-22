@@ -38,4 +38,8 @@ Once the rolling update of all the pods is complete, the annotation is removed f
 .Additional resources
 
 * For more information about deploying the Cluster Operator, see xref:cluster-operator-str[].
-* For more information about deploying the Kafka cluster, see xref:deploying-kafka-cluster-openshift-str[] and xref:deploying-kafka-cluster-kubernetes-str[].
+* For more information about deploying the Kafka cluster on {OpenShiftName}, see xref:deploying-kafka-cluster-openshift-str[].
+ifdef::Kubernetes[]
+* For more information about deploying the Kafka cluster on {KubernetesName}, see xref:deploying-kafka-cluster-kubernetes-str[].
+endif::Kubernetes[]
+
