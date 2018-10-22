@@ -277,11 +277,9 @@ public class ZookeeperCluster extends AbstractModel {
         return createStatefulSet(
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
-                getVolumeMounts(),
                 getMergedAffinity(),
                 getInitContainers(),
-                getContainers(),
-                isOpenShift);
+                getContainers());
     }
 
     /**
