@@ -686,9 +686,7 @@ public class KafkaClusterTest {
         ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
         clusterCa.createOrRenew(namespace, cluster, emptyMap(), null);
 
-        ClientsCa clientsCa = new ClientsCa(new OpenSslCertManager(), KafkaCluster.getClusterCaKeyName(cluster), null, KafkaCluster.clientsCASecretName(cluster), null, 365, 30, true);
-
-        kc.generateCertificates(kafkaAssembly, clusterCa, clientsCa, externalBootstrapAddress, externalAddresses);
+        kc.generateCertificates(kafkaAssembly, clusterCa, externalBootstrapAddress, externalAddresses);
         return kc.generateBrokersSecret();
     }
 }

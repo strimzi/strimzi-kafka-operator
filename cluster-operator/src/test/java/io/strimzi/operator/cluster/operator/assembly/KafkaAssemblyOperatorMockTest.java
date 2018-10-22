@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.ResourcesBuilder;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -239,12 +238,11 @@ public class KafkaAssemblyOperatorMockTest {
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricAndLogConfigsName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(CLUSTER_NAME)).get());
             assertResourceRequirements(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME));
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsCASecretName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsPublicKeyName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clusterPublicKeyName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.getClientsCaKeyName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.getClientsCaName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.getClusterCaName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(ZookeeperCluster.nodesSecretName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(AbstractModel.getClusterCaName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(TopicOperator.secretName(CLUSTER_NAME)).get());
             createAsync.complete();
         });
@@ -320,9 +318,9 @@ public class KafkaAssemblyOperatorMockTest {
     @Test
     public void testUpdateClusterWithoutKafkaSecrets(TestContext context) {
         updateClusterWithoutSecrets(context,
-                KafkaCluster.clientsCASecretName(CLUSTER_NAME),
-                KafkaCluster.clientsPublicKeyName(CLUSTER_NAME),
-                KafkaCluster.clusterPublicKeyName(CLUSTER_NAME),
+                KafkaCluster.getClientsCaKeyName(CLUSTER_NAME),
+                KafkaCluster.getClientsCaName(CLUSTER_NAME),
+                KafkaCluster.getClusterCaName(CLUSTER_NAME),
                 KafkaCluster.brokersSecretName(CLUSTER_NAME),
                 ZookeeperCluster.nodesSecretName(CLUSTER_NAME),
                 TopicOperator.secretName(CLUSTER_NAME));

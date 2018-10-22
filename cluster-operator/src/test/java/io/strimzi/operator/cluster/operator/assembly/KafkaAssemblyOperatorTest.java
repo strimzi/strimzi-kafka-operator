@@ -319,9 +319,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockPolicyOps.reconcile(anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         Set<String> expectedSecrets = set(
-                KafkaCluster.clientsCASecretName(clusterCmName),
-                KafkaCluster.clientsPublicKeyName(clusterCmName),
-                KafkaCluster.clusterPublicKeyName(clusterCmName),
+                KafkaCluster.getClientsCaKeyName(clusterCmName),
+                KafkaCluster.getClientsCaName(clusterCmName),
+                KafkaCluster.getClusterCaName(clusterCmName),
                 KafkaCluster.getClusterCaKeyName(clusterCmName),
                 KafkaCluster.brokersSecretName(clusterCmName),
                 ZookeeperCluster.nodesSecretName(clusterCmName));
@@ -813,8 +813,8 @@ public class KafkaAssemblyOperatorTest {
                 ModelUtils.findSecretWithName(barSecrets, AbstractModel.getClusterCaName("bar")),
                 ModelUtils.findSecretWithName(barSecrets, AbstractModel.getClusterCaKeyName("bar")));
         ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa("bar",
-                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsPublicKeyName("bar")),
-                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCASecretName("bar")));
+                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.getClientsCaName("bar")),
+                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.getClientsCaKeyName("bar")));
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);

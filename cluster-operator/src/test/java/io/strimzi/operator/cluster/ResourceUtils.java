@@ -131,9 +131,9 @@ public class ResourceUtils {
 
     public static ClientsCa createInitialClientsCa(String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
         return new ClientsCa(new MockCertManager(),
-                KafkaCluster.clientsPublicKeyName(clusterName),
+                KafkaCluster.getClientsCaName(clusterName),
                 initialClientsCaCert,
-                KafkaCluster.clientsCASecretName(clusterName),
+                KafkaCluster.getClientsCaKeyName(clusterName),
                 initialClientsCaKey,
                 365, 30, true);
     }
@@ -171,7 +171,7 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.clientsCASecretName(clusterName))
+                        .withName(KafkaCluster.getClientsCaKeyName(clusterName))
                         .withNamespace(clusterCmNamespace)
                         .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
@@ -183,7 +183,7 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.clientsPublicKeyName(clusterName))
+                        .withName(KafkaCluster.getClientsCaName(clusterName))
                         .withNamespace(clusterCmNamespace)
                         .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
@@ -208,7 +208,7 @@ public class ResourceUtils {
 
         builder = new SecretBuilder()
                         .withNewMetadata()
-                            .withName(KafkaCluster.clusterPublicKeyName(clusterName))
+                            .withName(KafkaCluster.getClusterCaName(clusterName))
                             .withNamespace(clusterCmNamespace)
                             .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
