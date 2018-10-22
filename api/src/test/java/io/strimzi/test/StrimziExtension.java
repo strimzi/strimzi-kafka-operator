@@ -183,7 +183,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             saveClassTags(context);
             return ConditionEvaluationResult.enabled("Test class is enabled");
         } else {
-            if (!isIgnoredByTag(context)) {
+            if (!isIgnoredByTag(context) && !isWrongClusterType(context)) {
                 return ConditionEvaluationResult.enabled("Test method is enabled");
             }
             return ConditionEvaluationResult.disabled("Test method is disabled");
@@ -267,32 +267,25 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         }
     }
 
-    private String name(AnnotatedElement a) {
-        if (a instanceof Class) {
-            return "class " + ((Class) a).getSimpleName();
-        } else if (a instanceof Method) {
-            Method method = (Method) a;
-            return "method " + method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()";
-        } else if (a instanceof Field) {
-            Field field = (Field) a;
-            return "field " + field.getDeclaringClass().getSimpleName() + "." + field.getName();
-        } else {
-            return a.toString();
-        }
-    }
-
     /**
-     * Checks if all methods of current test class are enabled by tag annotation.
+     * Checks if some method of current test class is enabled.
      */
     private boolean areAllChildrenIgnored() {
         for (Method method : testClass.getDeclaredMethods()) {
-            if (!isWrongClusterType(method) && !isIgnoredByTag(method)) {
+            if (!isWrongClusterType(method)) {
+                return false;
+            } else if (!isIgnoredByTag(method)) {
                 return false;
             }
         }
         return true;
     }
 
+    /**
+     * Check if current element has @OpenShiftOnly annotation
+     * @param element test method/test class
+     * @return true or false
+     */
     private boolean isWrongClusterType(AnnotatedElement element) {
         boolean result = element.getAnnotation(OpenShiftOnly.class) != null
                 && !(clusterResource().cluster() instanceof OpenShift
@@ -304,6 +297,16 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             );
         }
         return result;
+    }
+
+    /**
+     * Check if currently executed test has @OpenShiftOnly annotation
+     * @param context extension context
+     * @return true or false
+     */
+    private boolean isWrongClusterType(ExtensionContext context) {
+        AnnotatedElement element = context.getElement().get();
+        return isWrongClusterType(element);
     }
 
     private void saveClassTags(ExtensionContext context) {
@@ -350,7 +353,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
     /**
      * Check if passed element is ignored by set tags.
-     * This method is used in @BeforaAll method.
+     * This method is used in @BeforeAll method.
      * @param element test method or class
      * @return true or false
      */
@@ -815,5 +818,17 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         return minutes + "m" + seconds + "." + ms + "s";
     }
 
-
+    private String name(AnnotatedElement a) {
+        if (a instanceof Class) {
+            return "class " + ((Class) a).getSimpleName();
+        } else if (a instanceof Method) {
+            Method method = (Method) a;
+            return "method " + method.getDeclaringClass().getSimpleName() + "." + method.getName() + "()";
+        } else if (a instanceof Field) {
+            Field field = (Field) a;
+            return "field " + field.getDeclaringClass().getSimpleName() + "." + field.getName();
+        } else {
+            return a.toString();
+        }
+    }
 }
