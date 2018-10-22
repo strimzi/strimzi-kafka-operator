@@ -131,9 +131,9 @@ public class ResourceUtils {
 
     public static ClientsCa createInitialClientsCa(String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
         return new ClientsCa(new MockCertManager(),
-                KafkaCluster.getClientsCaName(clusterName),
+                KafkaCluster.clientsCaSecretName(clusterName),
                 initialClientsCaCert,
-                KafkaCluster.getClientsCaKeyName(clusterName),
+                KafkaCluster.clientsCaKeySecretName(clusterName),
                 initialClientsCaKey,
                 365, 30, true);
     }
@@ -141,7 +141,7 @@ public class ResourceUtils {
     public static Secret createInitialClusterCaCertSecret(String clusterCmNamespace, String clusterName, String caCert) {
         return new SecretBuilder()
         .withNewMetadata()
-            .withName(AbstractModel.getClusterCaName(clusterName))
+            .withName(AbstractModel.clusterCaSecretName(clusterName))
             .withNamespace(clusterCmNamespace)
             .withLabels(Labels.forCluster(clusterName).withKind("Kafka").toMap())
         .endMetadata()
@@ -152,7 +152,7 @@ public class ResourceUtils {
     public static Secret createInitialClusterCaKeySecret(String clusterCmNamespace, String clusterName, String caKey) {
         return new SecretBuilder()
         .withNewMetadata()
-            .withName(AbstractModel.getClusterCaKeyName(clusterName))
+            .withName(AbstractModel.clusterCaKeySecretName(clusterName))
             .withNamespace(clusterCmNamespace)
             .withLabels(Labels.forCluster(clusterName).withKind("Kafka").toMap())
         .endMetadata()
@@ -171,7 +171,7 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.getClientsCaKeyName(clusterName))
+                        .withName(KafkaCluster.clientsCaKeySecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
                         .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
@@ -183,7 +183,7 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.getClientsCaName(clusterName))
+                        .withName(KafkaCluster.clientsCaSecretName(clusterName))
                         .withNamespace(clusterCmNamespace)
                         .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()
@@ -208,7 +208,7 @@ public class ResourceUtils {
 
         builder = new SecretBuilder()
                         .withNewMetadata()
-                            .withName(KafkaCluster.getClusterCaName(clusterName))
+                            .withName(KafkaCluster.clusterCaSecretName(clusterName))
                             .withNamespace(clusterCmNamespace)
                             .withLabels(Labels.forCluster(clusterName).toMap())
                         .endMetadata()

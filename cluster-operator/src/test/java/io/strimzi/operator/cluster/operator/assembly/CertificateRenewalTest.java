@@ -14,6 +14,7 @@ import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
@@ -80,8 +81,10 @@ public class CertificateRenewalTest {
             }).collect(Collectors.toList());
         });
         ArgumentCaptor<Secret> c = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.getClusterCaName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.getClusterCaKeyName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaSecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaSecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, false, 1L, certManager,
                 new ResourceOperatorSupplier(null, null, null,
@@ -101,7 +104,7 @@ public class CertificateRenewalTest {
 
         AtomicReference<Throwable> error = new AtomicReference<>();
         Async async = context.async();
-        op.new ReconciliationState(reconciliation, kafka).reconcileClusterCa().setHandler(ar -> {
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas().setHandler(ar -> {
             error.set(ar.cause());
             async.complete();
         });
@@ -159,7 +162,7 @@ public class CertificateRenewalTest {
                 .build();
         secrets.clear();
         ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
+        assertEquals(4, c.getAllValues().size());
 
         assertEquals(singleton(CA_CRT), c.getAllValues().get(0).getData().keySet());
         assertEquals(singleton(CA_KEY), c.getAllValues().get(1).getData().keySet());
@@ -174,7 +177,7 @@ public class CertificateRenewalTest {
                 .build();
         secrets.clear();
         ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(c.getAllValues().toString(), 2, c.getAllValues().size());
+        assertEquals(c.getAllValues().toString(), 4, c.getAllValues().size());
         assertTrue(c.getAllValues().get(0).getData().isEmpty());
         assertTrue(c.getAllValues().get(1).getData().isEmpty());
     }
@@ -239,7 +242,7 @@ public class CertificateRenewalTest {
         secrets.add(initialCaKeySecret);
 
         ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
+        assertEquals(4, c.getAllValues().size());
         Map<String, String> certData = c.getAllValues().get(0).getData();
         assertEquals(1, certData.size());
         String newCrt = certData.remove(CA_CRT);
@@ -275,7 +278,7 @@ public class CertificateRenewalTest {
         secrets.add(initialCaKeySecret);
 
         ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
+        assertEquals(4, c.getAllValues().size());
         Map<String, String> certData = c.getAllValues().get(0).getData();
         assertEquals(initialCertData, certData);
         Map<String, String> keyData = c.getAllValues().get(1).getData();
@@ -305,7 +308,7 @@ public class CertificateRenewalTest {
         secrets.add(initialCaKeySecret);
 
         ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
+        assertEquals(4, c.getAllValues().size());
         Map<String, String> certData = c.getAllValues().get(0).getData();
         assertEquals(certData.keySet().toString(), 1, certData.size());
         assertEquals(initialCert, certData.get(CA_CRT));
@@ -336,7 +339,7 @@ public class CertificateRenewalTest {
         secrets.add(initialCaKeySecret);
 
         ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
+        assertEquals(4, c.getAllValues().size());
         Map<String, String> certData = c.getAllValues().get(0).getData();
         assertEquals(initialCertData, certData);
     }

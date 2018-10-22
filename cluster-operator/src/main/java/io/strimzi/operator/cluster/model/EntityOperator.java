@@ -212,7 +212,7 @@ public class EntityOperator extends AbstractModel {
             volumeList.addAll(userOperator.getVolumes());
         }
         volumeList.add(createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.secretName(cluster), isOpenShift));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.getClusterCaName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaSecretName(cluster), isOpenShift));
         return volumeList;
     }
 

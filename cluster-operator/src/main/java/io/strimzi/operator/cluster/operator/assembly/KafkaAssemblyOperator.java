@@ -117,7 +117,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return Future.failedFuture("Spec cannot be null");
         }
         new ReconciliationState(reconciliation, kafkaAssembly)
-                .reconcileClusterCa()
+                .reconcileCas()
                 // Roll everything so the new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaCert())
 
@@ -154,9 +154,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaReplicaRoutesReady())
                 .compose(state -> state.kafkaGenerateCertificates())
                 .compose(state -> state.kafkaAncillaryCm())
-                .compose(state -> state.kafkaClientsCaKeySecret())
-                .compose(state -> state.kafkaClientsCaSecret())
-                .compose(state -> state.kafkaClusterCaSecret())
                 .compose(state -> state.kafkaBrokersSecret())
                 .compose(state -> state.kafkaNetPolicy())
                 .compose(state -> state.kafkaStatefulSet())
@@ -234,24 +231,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Asynchronously reconciles the cluster and clients CA secrets.
-         * The cluster CA secret has to have the name determined by {@link AbstractModel#getClusterCaName(String)}.
-         * The clients CA secret has to have the name determined by {@link KafkaCluster#getClientsCaName(String)}.
+         * The cluster CA secret has to have the name determined by {@link AbstractModel#clusterCaSecretName(String)}.
+         * The clients CA secret has to have the name determined by {@link KafkaCluster#clientsCaSecretName(String)}.
          * Within both the secrets the current certificate is stored under the key {@code ca.crt}
          * and the current key is stored under the key {@code ca.key}.
          * Old certificates which are still within their validity are stored under keys named like {@code ca-<not-after-date>.crt}, where
          * {@code <not-after-date>} is the ISO 8601-formatted date of the certificates "notAfter" attribute.
          * Likewise, the corresponding keys are stored under keys named like {@code ca-<not-after-date>.key}.
          */
-        Future<ReconciliationState>  reconcileClusterCa() {
+        Future<ReconciliationState> reconcileCas() {
             Labels caLabels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
             Future<ReconciliationState> result = Future.future();
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        String clusterCaCertName = AbstractModel.getClusterCaName(name);
-                        String clusterCaKeyName = AbstractModel.getClusterCaKeyName(name);
-                        String clientsCaCertName = KafkaCluster.getClientsCaName(name);
-                        String clientsCaKeyName = KafkaCluster.getClientsCaKeyName(name);
+                        String clusterCaCertName = AbstractModel.clusterCaSecretName(name);
+                        String clusterCaKeyName = AbstractModel.clusterCaKeySecretName(name);
+                        String clientsCaCertName = KafkaCluster.clientsCaSecretName(name);
+                        String clientsCaKeyName = KafkaCluster.clientsCaKeySecretName(name);
                         Secret clusterCaCertSecret = null;
                         Secret clusterCaKeySecret = null;
                         Secret clientsCaCertSecret = null;
@@ -948,15 +945,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaClientsCaKeySecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.getClientsCaKeyName(name), clientsCa.caKeySecret()));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCaKeySecretName(name), clientsCa.caKeySecret()));
         }
 
         Future<ReconciliationState> kafkaClientsCaSecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.getClientsCaName(name), clientsCa.caCertSecret()));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCaSecretName(name), clientsCa.caCertSecret()));
         }
 
         Future<ReconciliationState> kafkaClusterCaSecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.getClusterCaName(name), clusterCa.caCertSecret()));
+            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterCaSecretName(name), clusterCa.caCertSecret()));
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {

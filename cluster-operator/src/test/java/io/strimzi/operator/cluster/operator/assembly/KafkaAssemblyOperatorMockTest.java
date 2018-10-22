@@ -238,9 +238,9 @@ public class KafkaAssemblyOperatorMockTest {
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaCluster.metricAndLogConfigsName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.configMaps().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(CLUSTER_NAME)).get());
             assertResourceRequirements(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME));
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.getClientsCaKeyName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.getClientsCaName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.getClusterCaName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsCaKeySecretName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clientsCaSecretName(CLUSTER_NAME)).get());
+            context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clusterCaSecretName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(ZookeeperCluster.nodesSecretName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(TopicOperator.secretName(CLUSTER_NAME)).get());
@@ -318,9 +318,9 @@ public class KafkaAssemblyOperatorMockTest {
     @Test
     public void testUpdateClusterWithoutKafkaSecrets(TestContext context) {
         updateClusterWithoutSecrets(context,
-                KafkaCluster.getClientsCaKeyName(CLUSTER_NAME),
-                KafkaCluster.getClientsCaName(CLUSTER_NAME),
-                KafkaCluster.getClusterCaName(CLUSTER_NAME),
+                KafkaCluster.clientsCaKeySecretName(CLUSTER_NAME),
+                KafkaCluster.clientsCaSecretName(CLUSTER_NAME),
+                KafkaCluster.clusterCaSecretName(CLUSTER_NAME),
                 KafkaCluster.brokersSecretName(CLUSTER_NAME),
                 ZookeeperCluster.nodesSecretName(CLUSTER_NAME),
                 TopicOperator.secretName(CLUSTER_NAME));
