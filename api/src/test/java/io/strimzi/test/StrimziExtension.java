@@ -271,6 +271,9 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
      * Checks if some method of current test class is enabled.
      */
     private boolean areAllChildrenIgnored() {
+        if (isWrongClusterType(testClass)) {
+            return true;
+        }
         for (Method method : testClass.getDeclaredMethods()) {
             if (!isWrongClusterType(method)) {
                 return false;
