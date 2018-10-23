@@ -5,8 +5,9 @@ RUN yum -y install java-1.8.0-openjdk-headless gettext nmap-ncat openssl && yum 
 # set Kafka home folder
 ENV KAFKA_HOME=/opt/kafka
 
-# Add kafka group / user
-RUN groupadd -r -g 1001 kafka && useradd -r -m -u 1001 -g kafka kafka
+# Add kafka user with UID 1001
+# The user is in the group 0 to have access to the mounted volumes and storage
+RUN useradd -r -m -u 1001 -g 0 kafka
 
 # Set Scala and Kafka version
 ENV SCALA_VERSION=2.12
