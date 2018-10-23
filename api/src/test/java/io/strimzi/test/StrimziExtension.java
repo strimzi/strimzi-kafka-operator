@@ -58,7 +58,7 @@ import static java.util.Collections.singletonList;
  * A test extension which sets up Strimzi resources in a Kubernetes cluster
  * according to annotations ({@link Namespace}, {@link Resources}, {@link ClusterOperator})
  * on the test class and/or test methods. {@link OpenShiftOnly} can be used to ignore tests when not running on
- * OpenShift (if the thing under test is OpenShift-specific). {@link Tag} can be used for execute/skip specific
+ * OpenShift (if the thing under test is OpenShift-specific). JUnit5 annotation @Tag can be used for execute/skip specific
  * test classes and/or test methods.
  */
 public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, AfterEachCallback, BeforeEachCallback,
