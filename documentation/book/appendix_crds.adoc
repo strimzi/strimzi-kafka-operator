@@ -114,7 +114,7 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |string
 |size         1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
 |string
-|selector     1.2+<.<|Specifies a specific persistent volume to use. It contains a matchLabels field which defines an inner JSON object with key:value representing labels for selecting such a volume.
+|selector     1.2+<.<|Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
 |map
 |deleteClaim  1.2+<.<|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
 |boolean

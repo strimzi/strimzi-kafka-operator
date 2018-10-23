@@ -58,8 +58,7 @@ public class PersistentClaimStorage extends Storage {
     }
 
     @Description("Specifies a specific persistent volume to use. " +
-            "It contains a matchLabels field which defines an inner JSON object with " +
-            "key:value representing labels for selecting such a volume.")
+            "It contains key:value pairs representing labels for selecting such a volume.")
     public Map<String, String> getSelector() {
         return selector;
     }
