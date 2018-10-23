@@ -279,7 +279,7 @@ public class KafkaAssemblyOperatorTest {
 
     private void createCluster(TestContext context, Kafka clusterCm, List<Secret> secrets) {
         ClusterCa clusterCa = new ClusterCa(new MockCertManager(), clusterCm.getMetadata().getName(),
-                ModelUtils.findSecretWithName(secrets, AbstractModel.clusterCaSecretName(clusterCm.getMetadata().getName())),
+                ModelUtils.findSecretWithName(secrets, AbstractModel.clusterCaCertSecretName(clusterCm.getMetadata().getName())),
                 ModelUtils.findSecretWithName(secrets, AbstractModel.clusterCaKeySecretName(clusterCm.getMetadata().getName())));
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(clusterCm);
@@ -320,8 +320,8 @@ public class KafkaAssemblyOperatorTest {
 
         Set<String> expectedSecrets = set(
                 KafkaCluster.clientsCaKeySecretName(clusterCmName),
-                KafkaCluster.clientsCaSecretName(clusterCmName),
-                KafkaCluster.clusterCaSecretName(clusterCmName),
+                KafkaCluster.clientsCaCertSecretName(clusterCmName),
+                KafkaCluster.clusterCaCertSecretName(clusterCmName),
                 KafkaCluster.clusterCaKeySecretName(clusterCmName),
                 KafkaCluster.brokersSecretName(clusterCmName),
                 ZookeeperCluster.nodesSecretName(clusterCmName));
@@ -805,15 +805,15 @@ public class KafkaAssemblyOperatorTest {
 
         // providing certificates Secrets for existing clusters
         List<Secret> fooSecrets = ResourceUtils.createKafkaClusterInitialSecrets(clusterCmNamespace, "foo");
-        //ClusterCa fooCerts = ResourceUtils.createInitialClusterCa("foo", ModelUtils.findSecretWithName(fooSecrets, AbstractModel.clusterCaSecretName("foo")));
+        //ClusterCa fooCerts = ResourceUtils.createInitialClusterCa("foo", ModelUtils.findSecretWithName(fooSecrets, AbstractModel.clusterCaCertSecretName("foo")));
         List<Secret> barSecrets = ResourceUtils.createKafkaClusterSecretsWithReplicas(clusterCmNamespace, "bar",
                 bar.getSpec().getKafka().getReplicas(),
                 bar.getSpec().getZookeeper().getReplicas());
         ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa("bar",
-                ModelUtils.findSecretWithName(barSecrets, AbstractModel.clusterCaSecretName("bar")),
+                ModelUtils.findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")),
                 ModelUtils.findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
         ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa("bar",
-                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCaSecretName("bar")),
+                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")),
                 ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
@@ -822,10 +822,10 @@ public class KafkaAssemblyOperatorTest {
                 asList(KafkaCluster.fromCrd(bar).generateStatefulSet(openShift))
         );
 
-        when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.clusterCaSecretName(foo.getMetadata().getName()))))
+        when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
                 .thenReturn(
                         fooSecrets.get(0));
-        when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.clusterCaSecretName(foo.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
@@ -840,8 +840,8 @@ public class KafkaAssemblyOperatorTest {
                     barCluster.generateBrokersSecret(),
                     barClusterCa.caCertSecret()))
         );
-        when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.clusterCaSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
-        when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.clusterCaSecretName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
+        when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();

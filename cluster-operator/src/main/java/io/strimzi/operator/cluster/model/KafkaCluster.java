@@ -228,7 +228,7 @@ public class KafkaCluster extends AbstractModel {
         return cluster + KafkaCluster.SECRET_BROKERS_SUFFIX;
     }
 
-    public static String clientsCaSecretName(String cluster) {
+    public static String clientsCaCertSecretName(String cluster) {
         return cluster + KafkaCluster.SECRET_CLIENTS_CA_SUFFIX;
     }
 
@@ -566,9 +566,9 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null || isExposedWithNodePort()) {
             volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME));
         }
-        volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaSecretName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
-        volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaSecretName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
 
         return volumeList;

@@ -81,9 +81,9 @@ public class CertificateRenewalTest {
             }).collect(Collectors.toList());
         });
         ArgumentCaptor<Secret> c = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaSecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
         when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaSecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
         when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, false, 1L, certManager,
@@ -144,7 +144,7 @@ public class CertificateRenewalTest {
         String commonName = "cluster-ca";
         CertAndKey result = generateCa(certManager, certificateAuthority, commonName);
         return ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME,
-                AbstractModel.clusterCaSecretName(NAME), result.certAsBase64String());
+                AbstractModel.clusterCaCertSecretName(NAME), result.certAsBase64String());
     }
 
     private Secret initialClusterCaKeySecret(CertificateAuthority certificateAuthority) throws IOException {
@@ -158,7 +158,7 @@ public class CertificateRenewalTest {
         String commonName = "clients-ca";
         CertAndKey result = generateCa(certManager, certificateAuthority, commonName);
         return ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME,
-                KafkaCluster.clientsCaSecretName(NAME), result.certAsBase64String());
+                KafkaCluster.clientsCaCertSecretName(NAME), result.certAsBase64String());
     }
 
     private Secret initialClientsCaKeySecret(CertificateAuthority certificateAuthority) throws IOException {

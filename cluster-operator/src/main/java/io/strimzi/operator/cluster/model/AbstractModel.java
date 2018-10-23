@@ -1077,7 +1077,7 @@ public abstract class AbstractModel {
         return ANCILLARY_CM_KEY_LOG_CONFIG;
     }
 
-    public static String clusterCaSecretName(String cluster)  {
+    public static String clusterCaCertSecretName(String cluster)  {
         return cluster + "-cluster-ca-cert";
     }
 

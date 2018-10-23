@@ -71,7 +71,7 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS).withValue(String.valueOf(uoReconciliationInterval * 1000)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(String.valueOf(uoZookeeperSessionTimeout * 1000)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME).withValue(KafkaCluster.clientsCaKeySecretName(cluster)).build());
-        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clientsCaSecretName(cluster)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clientsCaCertSecretName(cluster)).build());
         return expected;
     }
 

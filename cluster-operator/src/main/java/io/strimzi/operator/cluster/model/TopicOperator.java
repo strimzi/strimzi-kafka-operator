@@ -344,7 +344,7 @@ public class TopicOperator extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>();
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TopicOperator.secretName(cluster), isOpenShift));
-        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaSecretName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
     }
 

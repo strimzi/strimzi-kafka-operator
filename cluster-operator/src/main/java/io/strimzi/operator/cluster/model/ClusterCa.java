@@ -44,7 +44,7 @@ public class ClusterCa extends Ca {
                      int renewalDays,
                      boolean generateCa) {
         super(certManager, "cluster-ca",
-                AbstractModel.clusterCaSecretName(clusterName),
+                AbstractModel.clusterCaCertSecretName(clusterName),
                 forceRenewal(clusterCaCert, clusterCaKey, "cluster-ca.key"),
                 AbstractModel.clusterCaKeySecretName(clusterName),
                 adapt060ClusterCaSecret(clusterCaKey),

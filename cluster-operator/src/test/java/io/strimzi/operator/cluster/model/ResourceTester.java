@@ -48,7 +48,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
                     new ClusterCa(new MockCertManager(), resource.getMetadata().getName(),
                             ResourceUtils.createInitialCaCertSecret(resource.getMetadata().getNamespace(),
                                     resource.getMetadata().getName(),
-                                    AbstractModel.clusterCaSecretName(resource.getMetadata().getName()),
+                                    AbstractModel.clusterCaCertSecretName(resource.getMetadata().getName()),
                                     MockCertManager.clusterCaCert()),
                             ResourceUtils.createInitialCaKeySecret(resource.getMetadata().getNamespace(),
                                     resource.getMetadata().getName(),
