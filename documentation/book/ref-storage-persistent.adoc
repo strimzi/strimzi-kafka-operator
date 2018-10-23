@@ -63,7 +63,7 @@ storage:
   size: 1Gi
   selector:
     matchLabels:
-      "hdd-type": "ssd"
+      hdd-type: ssd
   deleteClaim: true
 # ...
 ----
