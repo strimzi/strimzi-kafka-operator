@@ -11,9 +11,8 @@
 
 {ProductName} container images for Kafka Connect contain, by default, only the `FileStreamSinkConnector` and `FileStreamSourceConnector` connectors which are part of Apache Kafka.
 
-To facilitate deployment with 3rd party connectors, Kafka Connect is configured to automatically load all plugins or connectors that are present in the `/opt/kafka/plugins` directory during startup.
-
-There are two ways of adding custom plugins into this directory:
+To facilitate deployment with 3rd party connectors, you have to add the connector plugins to the Kafka Connect container image.
+There are two ways how to do that:
 
 * Using a custom Docker image
 * Using the {OpenShiftName} build system with the {ProductName} S2I
