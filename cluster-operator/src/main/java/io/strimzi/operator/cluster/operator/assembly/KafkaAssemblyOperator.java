@@ -941,18 +941,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return getReconciliationStateOfConfigMap(kafkaCluster, kafkaMetricsAndLogsConfigMap, this::withKafkaAncillaryCmChanged);
         }
 
-        Future<ReconciliationState> kafkaClientsCaKeySecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCaKeySecretName(name), clientsCa.caKeySecret()));
-        }
-
-        Future<ReconciliationState> kafkaClientsCaSecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clientsCaCertSecretName(name), clientsCa.caCertSecret()));
-        }
-
-        Future<ReconciliationState> kafkaClusterCaSecret() {
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.clusterCaCertSecretName(name), clusterCa.caCertSecret()));
-        }
-
         Future<ReconciliationState> kafkaBrokersSecret() {
             return withVoid(secretOperations.reconcile(namespace, KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret()));
         }
