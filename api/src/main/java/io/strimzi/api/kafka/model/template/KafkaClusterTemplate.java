@@ -25,48 +25,92 @@ import java.io.Serializable;
 public class KafkaClusterTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private StatefulSetTemplate statefulset;
-    private PodTemplate pod;
-    private ServiceTemplate bootstrapService;
-    private ServiceTemplate brokersService;
+    private ResourceTemplate statefulset;
+    private ResourceTemplate pod;
+    private ResourceTemplate bootstrapService;
+    private ResourceTemplate brokersService;
+    private ResourceTemplate externalBootstrapService;
+    private ResourceTemplate perPodService;
+    private ResourceTemplate externalBootstrapRoute;
+    private ResourceTemplate perPodRoute;
 
     @Description("Template for Kafka `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public StatefulSetTemplate getStatefulset() {
+    public ResourceTemplate getStatefulset() {
         return statefulset;
     }
 
-    public void setStatefulset(StatefulSetTemplate statefulset) {
+    public void setStatefulset(ResourceTemplate statefulset) {
         this.statefulset = statefulset;
     }
 
     @Description("Template for Kafka `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodTemplate getPod() {
+    public ResourceTemplate getPod() {
         return pod;
     }
 
-    public void setPod(PodTemplate pod) {
+    public void setPod(ResourceTemplate pod) {
         this.pod = pod;
     }
 
     @Description("Template for Kafka bootstrap `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ServiceTemplate getBootstrapService() {
+    public ResourceTemplate getBootstrapService() {
         return bootstrapService;
     }
 
-    public void setBootstrapService(ServiceTemplate bootstrapService) {
+    public void setBootstrapService(ResourceTemplate bootstrapService) {
         this.bootstrapService = bootstrapService;
     }
 
     @Description("Template for Kafka broker `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ServiceTemplate getBrokersService() {
+    public ResourceTemplate getBrokersService() {
         return brokersService;
     }
 
-    public void setBrokersService(ServiceTemplate brokersService) {
+    public void setBrokersService(ResourceTemplate brokersService) {
         this.brokersService = brokersService;
+    }
+
+    @Description("Template for Kafka external bootstrap `Service`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getExternalBootstrapService() {
+        return externalBootstrapService;
+    }
+
+    public void setExternalBootstrapService(ResourceTemplate externalBootstrapService) {
+        this.externalBootstrapService = externalBootstrapService;
+    }
+
+    @Description("Template for Kafka per-pod `Services` used for access from outside of OpenShift.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getPerPodService() {
+        return perPodService;
+    }
+
+    public void setPerPodService(ResourceTemplate perPodService) {
+        this.perPodService = perPodService;
+    }
+
+    @Description("Template for Kafka external bootstrap `Route`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getExternalBootstrapRoute() {
+        return externalBootstrapRoute;
+    }
+
+    public void setExternalBootstrapRoute(ResourceTemplate externalBootstrapRoute) {
+        this.externalBootstrapRoute = externalBootstrapRoute;
+    }
+
+    @Description("Template for Kafka per-pod `Routes` used for access from outside of OpenShift.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getPerPodRoute() {
+        return perPodRoute;
+    }
+
+    public void setPerPodRoute(ResourceTemplate perPodRoute) {
+        this.perPodRoute = perPodRoute;
     }
 }

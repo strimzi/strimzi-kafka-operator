@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model.template;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -29,6 +31,7 @@ public class MetadataTemplate implements Serializable {
 
     private Map<String, String> labels = new HashMap<>(0);
     private Map<String, String> annotations = new HashMap<>(0);
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Labels which should be added to the resource template. " +
             "Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.")
@@ -50,5 +53,15 @@ public class MetadataTemplate implements Serializable {
 
     public void setAnnotations(Map<String, String> annotations) {
         this.annotations = annotations;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

@@ -443,6 +443,18 @@ spec:
                     brokersService:
                       type: object
                       properties: {}
+                    externalBootstrapRoute:
+                      type: object
+                      properties: {}
+                    externalBootstrapService:
+                      type: object
+                      properties: {}
+                    perPodRoute:
+                      type: object
+                      properties: {}
+                    perPodService:
+                      type: object
+                      properties: {}
               required:
               - replicas
               - storage

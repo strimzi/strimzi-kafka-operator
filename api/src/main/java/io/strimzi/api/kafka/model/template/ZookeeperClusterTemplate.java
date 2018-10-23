@@ -25,48 +25,48 @@ import java.io.Serializable;
 public class ZookeeperClusterTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private StatefulSetTemplate statefulset;
-    private PodTemplate pod;
-    private ServiceTemplate clientService;
-    private ServiceTemplate nodesService;
+    private ResourceTemplate statefulset;
+    private ResourceTemplate pod;
+    private ResourceTemplate clientService;
+    private ResourceTemplate nodesService;
 
     @Description("Template for Zookeeper `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public StatefulSetTemplate getStatefulset() {
+    public ResourceTemplate getStatefulset() {
         return statefulset;
     }
 
-    public void setStatefulset(StatefulSetTemplate statefulset) {
+    public void setStatefulset(ResourceTemplate statefulset) {
         this.statefulset = statefulset;
     }
 
     @Description("Template for Zookeeper `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodTemplate getPod() {
+    public ResourceTemplate getPod() {
         return pod;
     }
 
-    public void setPod(PodTemplate pod) {
+    public void setPod(ResourceTemplate pod) {
         this.pod = pod;
     }
 
     @Description("Template for Zookeeper client `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ServiceTemplate getClientService() {
+    public ResourceTemplate getClientService() {
         return clientService;
     }
 
-    public void setClientService(ServiceTemplate clientService) {
+    public void setClientService(ResourceTemplate clientService) {
         this.clientService = clientService;
     }
 
     @Description("Template for Zookeeper nodes `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ServiceTemplate getNodesService() {
+    public ResourceTemplate getNodesService() {
         return nodesService;
     }
 
-    public void setNodesService(ServiceTemplate nodesService) {
+    public void setNodesService(ResourceTemplate nodesService) {
         this.nodesService = nodesService;
     }
 }

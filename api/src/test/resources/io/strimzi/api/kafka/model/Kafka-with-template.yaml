@@ -44,6 +44,38 @@ spec:
           annotations:
             key1: label1
             key2: label2
+      externalBootstrapService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      perPodService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      externalBootstrapRoute:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      perPodRoute:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
   zookeeper:
     replicas: 3
     storage:

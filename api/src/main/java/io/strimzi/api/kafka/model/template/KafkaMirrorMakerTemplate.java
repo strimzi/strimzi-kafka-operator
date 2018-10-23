@@ -25,26 +25,26 @@ import java.io.Serializable;
 public class KafkaMirrorMakerTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private DeploymentTemplate deployment;
-    private PodTemplate pod;
+    private ResourceTemplate deployment;
+    private ResourceTemplate pod;
 
     @Description("Template for Kafka Mirror Maker `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public DeploymentTemplate getDeployment() {
+    public ResourceTemplate getDeployment() {
         return deployment;
     }
 
-    public void setDeployment(DeploymentTemplate deployment) {
+    public void setDeployment(ResourceTemplate deployment) {
         this.deployment = deployment;
     }
 
     @Description("Template for Kafka Mirror Maker `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodTemplate getPod() {
+    public ResourceTemplate getPod() {
         return pod;
     }
 
-    public void setPod(PodTemplate pod) {
+    public void setPod(ResourceTemplate pod) {
         this.pod = pod;
     }
 }

@@ -4,15 +4,19 @@
  */
 package io.strimzi.api.kafka.model.template;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Representation of a Pod template for Strimzi services.
+ * Representation of a template for Strimzi resources.
  */
 @Buildable(
         editableEnabled = false,
@@ -22,12 +26,13 @@ import java.io.Serializable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "metadata"})
-public class ServiceTemplate implements Serializable {
+public class ResourceTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private MetadataTemplate metadata;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metadata which should be applied to the `Service`.")
+    @Description("Metadata which should be applied to the resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;
@@ -35,5 +40,15 @@ public class ServiceTemplate implements Serializable {
 
     public void setMetadata(MetadataTemplate metadata) {
         this.metadata = metadata;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }
