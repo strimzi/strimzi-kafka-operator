@@ -9,11 +9,11 @@ The following procedure describes how to deploy an ephemeral or persistent Kafka
 
 .Prerequisites
 
-* You must have deployed the Cluster Operator before you can deploy a cluster.
+* The Cluster Operator is deployed.
 
 .Procedure
 
-. If you plan to use the cluster for development or testing purposes, create and deploy an ephemeral cluster using `kubectl apply`.
+. If you plan to use the cluster for development or testing purposes, you can create and deploy an ephemeral cluster using `kubectl apply`.
 +
 [source,shell]
 ----

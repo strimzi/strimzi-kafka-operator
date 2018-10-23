@@ -9,7 +9,7 @@ The following procedure describes how to deploy an ephemeral or persistent Kafka
 
 .Prerequisites
 
-* You must have deployed the Cluster Operator before you can deploy a cluster.
+* The Cluster Operator is deployed.
 
 .Procedure
 
