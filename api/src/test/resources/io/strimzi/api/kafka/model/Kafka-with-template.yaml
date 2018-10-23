@@ -20,7 +20,7 @@ spec:
           annotations:
             key1: label1
             key2: label2
-      pods:
+      pod:
         metadata:
           labels:
             key1: label1
@@ -28,7 +28,7 @@ spec:
           annotations:
             key1: label1
             key2: label2
-      service:
+      bootstrapService:
         metadata:
           labels:
             key1: label1
@@ -36,7 +36,7 @@ spec:
           annotations:
             key1: label1
             key2: label2
-      headlessService:
+      getBrokersService:
         metadata:
           labels:
             key1: label1
@@ -57,7 +57,7 @@ spec:
           annotations:
             key1: label1
             key2: label2
-      pods:
+      pod:
         metadata:
           labels:
             key1: label1
@@ -65,7 +65,7 @@ spec:
           annotations:
             key1: label1
             key2: label2
-      service:
+      clientService:
         metadata:
           labels:
             key1: label1
@@ -73,7 +73,7 @@ spec:
           annotations:
             key1: label1
             key2: label2
-      headlessService:
+      nodesService:
         metadata:
           labels:
             key1: label1

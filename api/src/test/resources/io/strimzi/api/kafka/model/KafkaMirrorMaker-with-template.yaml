@@ -1,11 +1,21 @@
 apiVersion: kafka.strimzi.io/v1alpha1
-kind: KafkaConnect
+kind: KafkaMirrorMaker
 metadata:
-  name: test-kafka-connect
+  name: test-kafka-mirror-maker
 spec:
   image: foo
-  replicas: 6
-  bootstrapServers: kafka:9092
+  replicas: 1
+  whitelist: "*"
+  consumer:
+    numStreams: 2
+    groupId: my-source-group-id
+    bootstrapServers: my-source-kafka:9092
+    config:
+      foo: bar
+  producer:
+    bootstrapServers: my-target-kafka:9092
+    config:
+      foo: buz
   template:
     deployment:
       metadata:
@@ -16,14 +26,6 @@ spec:
           key1: label1
           key2: label2
     pod:
-      metadata:
-        labels:
-          key1: label1
-          key2: label2
-        annotations:
-          key1: label1
-          key2: label2
-    apiService:
       metadata:
         labels:
           key1: label1

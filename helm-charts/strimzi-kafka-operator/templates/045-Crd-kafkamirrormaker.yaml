@@ -405,6 +405,15 @@ spec:
               - type
             metrics:
               type: object
+            template:
+              type: object
+              properties:
+                deployment:
+                  type: object
+                  properties: {}
+                pod:
+                  type: object
+                  properties: {}
           required:
           - replicas
           - whitelist

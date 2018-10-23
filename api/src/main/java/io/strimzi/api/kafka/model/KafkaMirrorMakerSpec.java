@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
@@ -31,7 +32,7 @@ import java.util.Map;
         "replicas", "image", "whitelist",
         "consumer", "producer", "resources",
         "affinity", "tolerations", "jvmOptions",
-        "logging", "metrics"})
+        "logging", "metrics", "template"})
 public class KafkaMirrorMakerSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -50,6 +51,7 @@ public class KafkaMirrorMakerSpec implements Serializable {
     private JvmOptions jvmOptions;
     private Logging logging;
     private Map<String, Object> metrics = new HashMap<>(0);
+    private KafkaMirrorMakerTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the `Deployment`.")
@@ -166,6 +168,17 @@ public class KafkaMirrorMakerSpec implements Serializable {
 
     public void setResources(Resources resources) {
         this.resources = resources;
+    }
+
+    @Description("Template for Kafka Mirror Maker resources. " +
+            "The template allows users to specify how is the `Deployment` and `Pods` generated.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public KafkaMirrorMakerTemplate getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(KafkaMirrorMakerTemplate template) {
+        this.template = template;
     }
 
     @JsonAnyGetter
