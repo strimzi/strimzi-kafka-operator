@@ -104,18 +104,20 @@ public class ResourceUtils {
                 .endSpec().build();
     }
 
-    public static List<Secret> createKafkaClusterInitialSecrets(String clusterCmNamespace, String clusterName) {
+    public static List<Secret> createKafkaClusterInitialSecrets(String clusterNamespace, String clusterName) {
         List<Secret> secrets = new ArrayList<>();
-        secrets.add(createInitialClusterCaCertSecret(clusterCmNamespace, clusterName,
-                MockCertManager.clusterCaCert()));
-        secrets.add(createInitialClusterCaKeySecret(clusterCmNamespace, clusterName,
-                MockCertManager.clusterCaKey()));
+        secrets.add(createInitialCaCertSecret(clusterNamespace, clusterName,
+                AbstractModel.clusterCaSecretName(clusterName), MockCertManager.clusterCaCert()));
+        secrets.add(createInitialCaKeySecret(clusterNamespace, clusterName,
+                AbstractModel.clusterCaKeySecretName(clusterName), MockCertManager.clusterCaKey()));
         return secrets;
     }
 
-    public static ClusterCa createInitialClusterCa(String clusterCmNamespace, String clusterName) {
-        Secret initialClusterCaCertSecret = createInitialClusterCaCertSecret(clusterCmNamespace, clusterName, MockCertManager.clusterCaCert());
-        Secret initialClusterCaKeySecret = createInitialClusterCaKeySecret(clusterCmNamespace, clusterName, MockCertManager.clusterCaKey());
+    public static ClusterCa createInitialClusterCa(String clusterNamespace, String clusterName) {
+        Secret initialClusterCaCertSecret = createInitialCaCertSecret(clusterNamespace, clusterName,
+                AbstractModel.clusterCaSecretName(clusterName), MockCertManager.clusterCaCert());
+        Secret initialClusterCaKeySecret = createInitialCaKeySecret(clusterNamespace, clusterName,
+                AbstractModel.clusterCaKeySecretName(clusterName), MockCertManager.clusterCaKey());
         return createInitialClusterCa(clusterName, initialClusterCaCertSecret, initialClusterCaKeySecret);
     }
 
@@ -123,9 +125,11 @@ public class ResourceUtils {
         return new ClusterCa(new MockCertManager(), clusterName, initialClusterCaCert, initialClusterCaKey);
     }
 
-    public static ClientsCa createInitialClientsCa(String clusterCmNamespace, String clusterName) {
-        Secret initialClusterCaCertSecret = createInitialClusterCaCertSecret(clusterCmNamespace, clusterName, MockCertManager.clusterCaCert());
-        Secret initialClusterCaKeySecret = createInitialClusterCaKeySecret(clusterCmNamespace, clusterName, MockCertManager.clusterCaKey());
+    public static ClientsCa createInitialClientsCa(String clusterNamespace, String clusterName) {
+        Secret initialClusterCaCertSecret = createInitialCaCertSecret(clusterNamespace, clusterName,
+                AbstractModel.clusterCaSecretName(clusterName), MockCertManager.clusterCaCert());
+        Secret initialClusterCaKeySecret = createInitialCaKeySecret(clusterNamespace, clusterName,
+                AbstractModel.clusterCaKeySecretName(clusterName), MockCertManager.clusterCaKey());
         return createInitialClientsCa(clusterName, initialClusterCaCertSecret, initialClusterCaKeySecret);
     }
 
@@ -138,35 +142,35 @@ public class ResourceUtils {
                 365, 30, true);
     }
 
-    public static Secret createInitialClusterCaCertSecret(String clusterCmNamespace, String clusterName, String caCert) {
+    public static Secret createInitialCaCertSecret(String clusterNamespace, String clusterName, String secretName, String caCert) {
         return new SecretBuilder()
-        .withNewMetadata()
-            .withName(AbstractModel.clusterCaSecretName(clusterName))
-            .withNamespace(clusterCmNamespace)
-            .withLabels(Labels.forCluster(clusterName).withKind("Kafka").toMap())
-        .endMetadata()
-        .addToData("ca.crt", caCert)
-        .build();
+                .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(clusterNamespace)
+                    .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
+                .endMetadata()
+                .addToData("ca.crt", caCert)
+                .build();
     }
 
-    public static Secret createInitialClusterCaKeySecret(String clusterCmNamespace, String clusterName, String caKey) {
+    public static Secret createInitialCaKeySecret(String clusterNamespace, String clusterName, String secretName, String caKey) {
         return new SecretBuilder()
-        .withNewMetadata()
-            .withName(AbstractModel.clusterCaKeySecretName(clusterName))
-            .withNamespace(clusterCmNamespace)
-            .withLabels(Labels.forCluster(clusterName).withKind("Kafka").toMap())
-        .endMetadata()
-        .addToData("ca.key", caKey)
-        .build();
+                .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(clusterNamespace)
+                    .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
+                .endMetadata()
+                .addToData("ca.key", caKey)
+                .build();
     }
 
     public static List<Secret> createKafkaClusterSecretsWithReplicas(String clusterCmNamespace, String clusterName, int kafkaReplicas, int zkReplicas) {
         List<Secret> secrets = new ArrayList<>();
 
-        secrets.add(createInitialClusterCaKeySecret(clusterCmNamespace, clusterName,
-                MockCertManager.clusterCaKey()));
-        secrets.add(createInitialClusterCaCertSecret(clusterCmNamespace, clusterName,
-                MockCertManager.clusterCaCert()));
+        secrets.add(createInitialCaKeySecret(clusterCmNamespace, clusterName,
+                AbstractModel.clusterCaKeySecretName(clusterName), MockCertManager.clusterCaKey()));
+        secrets.add(createInitialCaCertSecret(clusterCmNamespace, clusterName,
+                AbstractModel.clusterCaSecretName(clusterName), MockCertManager.clusterCaCert()));
 
         secrets.add(
                 new SecretBuilder()
