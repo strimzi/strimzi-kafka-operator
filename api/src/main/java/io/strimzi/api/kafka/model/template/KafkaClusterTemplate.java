@@ -84,7 +84,7 @@ public class KafkaClusterTemplate implements Serializable {
         this.externalBootstrapService = externalBootstrapService;
     }
 
-    @Description("Template for Kafka per-pod `Services` used for access from outside of OpenShift.")
+    @Description("Template for Kafka per-pod `Services` used for access from outside of Kubernetes.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getPerPodService() {
         return perPodService;
