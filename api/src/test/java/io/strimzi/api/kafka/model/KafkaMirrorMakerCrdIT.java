@@ -77,5 +77,9 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     public void testKafkaWithScramSha512Auth() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-scram-sha-512-auth.yaml");
     }
+
+    public void testKafkaMirrorMakerWithTemplate() {
+        createDelete(Kafka.class, "KafkaMIrrorMaker-with-template.yaml");
+    }
 }
 

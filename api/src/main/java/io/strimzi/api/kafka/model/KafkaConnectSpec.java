@@ -210,7 +210,6 @@ public class KafkaConnectSpec implements Serializable {
         this.template = template;
     }
 
-
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
