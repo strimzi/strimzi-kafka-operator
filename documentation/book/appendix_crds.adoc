@@ -420,7 +420,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|perPodService             1.2+<.<|Template for Kafka per-pod `Services` used for access from outside of OpenShift.
+|perPodService             1.2+<.<|Template for Kafka per-pod `Services` used for access from outside of Kubernetes.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
