@@ -242,6 +242,18 @@ spec:
                             type: string
             metrics:
               type: object
+            template:
+              type: object
+              properties:
+                deployment:
+                  type: object
+                  properties: {}
+                pod:
+                  type: object
+                  properties: {}
+                apiService:
+                  type: object
+                  properties: {}
             authentication:
               type: object
               properties:

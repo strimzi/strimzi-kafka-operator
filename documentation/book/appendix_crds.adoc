@@ -84,6 +84,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |tlsSidecar           1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
+|template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
+|xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 |====
 
 [id='type-EphemeralStorage-{context}']
@@ -395,6 +397,44 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type
 |xref:type-Resources-{context}[`Resources`]
 |====
 
+[id='type-KafkaClusterTemplate-{context}']
+### `KafkaClusterTemplate` schema reference
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+
+[options="header"]
+|====
+|Field                            |Description
+|statefulset               1.2+<.<|Template for Kafka `StatefulSet`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod                       1.2+<.<|Template for Kafka `Pods`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|bootstrapService          1.2+<.<|Template for Kafka bootstrap `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|brokersService            1.2+<.<|Template for Kafka broker `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|externalBootstrapRoute    1.2+<.<|Template for Kafka external bootstrap `Route`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|externalBootstrapService  1.2+<.<|Template for Kafka external bootstrap `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodService             1.2+<.<|Template for Kafka per-pod `Services` used for access from outside of Kubernetes.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|====
+
+[id='type-ResourceTemplate-{context}']
+### `ResourceTemplate` schema reference
+
+Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+
+
+[options="header"]
+|====
+|Field|Description
+|====
+
 [id='type-ZookeeperClusterSpec-{context}']
 ### `ZookeeperClusterSpec` schema reference
 
@@ -434,6 +474,27 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |tlsSidecar      1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
+|template        1.2+<.<|Template for Zookeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
+|xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+|====
+
+[id='type-ZookeeperClusterTemplate-{context}']
+### `ZookeeperClusterTemplate` schema reference
+
+Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+
+
+[options="header"]
+|====
+|Field                 |Description
+|statefulset    1.2+<.<|Template for Zookeeper `StatefulSet`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod            1.2+<.<|Template for Zookeeper `Pods`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|clientService  1.2+<.<|Template for Zookeeper client `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|nodesService   1.2+<.<|Template for Zookeeper nodes `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
 [id='type-TopicOperatorSpec-{context}']
@@ -600,6 +661,8 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics           1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|template          1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.
+|xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |authentication    1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`]
 |bootstrapServers  1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
@@ -610,6 +673,23 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-Resources-{context}[`Resources`]
 |tls               1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
+|====
+
+[id='type-KafkaConnectTemplate-{context}']
+### `KafkaConnectTemplate` schema reference
+
+Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+
+
+[options="header"]
+|====
+|Field              |Description
+|deployment  1.2+<.<|Template for Kafka Connect `Deployment`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod         1.2+<.<|Template for Kafka Connect `Pods`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|apiService  1.2+<.<|Template for Kafka Connect API `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
 [id='type-KafkaConnectAuthenticationTls-{context}']
@@ -744,6 +824,8 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|template                  1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how is the `Deployment`, `Pods` and `Service` generated.
+|xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |authentication            1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaConnectAuthenticationTls-{context}[`KafkaConnectAuthenticationTls`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`]
 |bootstrapServers          1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
@@ -985,6 +1067,8 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics      1.2+<.<|The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map
+|template     1.2+<.<|Template for Kafka Mirror Maker resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
+|xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
 |====
 
 [id='type-KafkaMirrorMakerConsumerSpec-{context}']
@@ -1076,5 +1160,20 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |map
 |tls               1.2+<.<|TLS configuration for connecting to the cluster.
 |xref:type-KafkaMirrorMakerTls-{context}[`KafkaMirrorMakerTls`]
+|====
+
+[id='type-KafkaMirrorMakerTemplate-{context}']
+### `KafkaMirrorMakerTemplate` schema reference
+
+Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
+
+
+[options="header"]
+|====
+|Field              |Description
+|deployment  1.2+<.<|Template for Kafka Mirror Maker `Deployment`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod         1.2+<.<|Template for Kafka Mirror Maker `Pods`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
