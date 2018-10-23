@@ -10,7 +10,7 @@
 The `{DockerKafkaConnect}` image is configured to automatically load all plugins or connectors that are present in the `/opt/kafka/plugins` directory during startup.
 This image can be used as a base image for building a new custom image with additional plugins.
 
-The following procedure describes the process for creating such a custom image and adding the connector plugins to the the `/opt/kafka/plugins` director.
+The following procedure describes the process for creating such a custom image and adding the connector plugins to the the `/opt/kafka/plugins` directory.
 
 .Procedure
 
