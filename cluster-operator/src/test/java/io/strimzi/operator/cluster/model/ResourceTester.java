@@ -46,11 +46,13 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
         this.fromK8sResource = resource -> {
             return fromResource.apply(resource,
                     new ClusterCa(new MockCertManager(), resource.getMetadata().getName(),
-                            ResourceUtils.createInitialClusterCaCertSecret(resource.getMetadata().getNamespace(),
+                            ResourceUtils.createInitialCaCertSecret(resource.getMetadata().getNamespace(),
                                     resource.getMetadata().getName(),
+                                    AbstractModel.clusterCaCertSecretName(resource.getMetadata().getName()),
                                     MockCertManager.clusterCaCert()),
-                            ResourceUtils.createInitialClusterCaKeySecret(resource.getMetadata().getNamespace(),
+                            ResourceUtils.createInitialCaKeySecret(resource.getMetadata().getNamespace(),
                                     resource.getMetadata().getName(),
+                                    AbstractModel.clusterCaKeySecretName(resource.getMetadata().getName()),
                                     MockCertManager.clusterCaKey())));
         };
     }

@@ -14,6 +14,7 @@ import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
@@ -68,7 +69,7 @@ public class CertificateRenewalTest {
         secrets = new ArrayList();
     }
 
-    private ArgumentCaptor<Secret> reconcileCa(TestContext context, CertificateAuthority certificateAuthority) {
+    private ArgumentCaptor<Secret> reconcileCa(TestContext context, CertificateAuthority clusterCa, CertificateAuthority clientsCa) {
         SecretOperator secretOps = mock(SecretOperator.class);
 
         when(secretOps.list(eq(NAMESPACE), any())).thenAnswer(invocation -> {
@@ -80,8 +81,10 @@ public class CertificateRenewalTest {
             }).collect(Collectors.toList());
         });
         ArgumentCaptor<Secret> c = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.getClusterCaName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.getClusterCaKeyName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
+        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, false, 1L, certManager,
                 new ResourceOperatorSupplier(null, null, null,
@@ -95,13 +98,14 @@ public class CertificateRenewalTest {
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
-                    .withClusterCa(certificateAuthority)
+                    .withClusterCa(clusterCa)
+                    .withClientsCa(clientsCa)
                 .endSpec()
             .build();
 
         AtomicReference<Throwable> error = new AtomicReference<>();
         Async async = context.async();
-        op.new ReconciliationState(reconciliation, kafka).reconcileClusterCa().setHandler(ar -> {
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas().setHandler(ar -> {
             error.set(ar.cause());
             async.complete();
         });
@@ -136,18 +140,32 @@ public class CertificateRenewalTest {
         }
     }
 
-    private Secret initialCaCertSecret(CertificateAuthority certificateAuthority) throws IOException {
+    private Secret initialClusterCaCertSecret(CertificateAuthority certificateAuthority) throws IOException {
         String commonName = "cluster-ca";
         CertAndKey result = generateCa(certManager, certificateAuthority, commonName);
-        return ResourceUtils.createInitialClusterCaCertSecret(NAMESPACE, NAME,
-                result.certAsBase64String());
+        return ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME,
+                AbstractModel.clusterCaCertSecretName(NAME), result.certAsBase64String());
     }
 
-    private Secret initialCaKeySecret(CertificateAuthority certificateAuthority) throws IOException {
+    private Secret initialClusterCaKeySecret(CertificateAuthority certificateAuthority) throws IOException {
         String commonName = "cluster-ca";
         CertAndKey result = generateCa(certManager, certificateAuthority, commonName);
-        return ResourceUtils.createInitialClusterCaKeySecret(NAMESPACE, NAME,
-                result.keyAsBase64String());
+        return ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME,
+                AbstractModel.clusterCaKeySecretName(NAME), result.keyAsBase64String());
+    }
+
+    private Secret initialClientsCaCertSecret(CertificateAuthority certificateAuthority) throws IOException {
+        String commonName = "clients-ca";
+        CertAndKey result = generateCa(certManager, certificateAuthority, commonName);
+        return ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME,
+                KafkaCluster.clientsCaCertSecretName(NAME), result.certAsBase64String());
+    }
+
+    private Secret initialClientsCaKeySecret(CertificateAuthority certificateAuthority) throws IOException {
+        String commonName = "clients-ca";
+        CertAndKey result = generateCa(certManager, certificateAuthority, commonName);
+        return ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME,
+                KafkaCluster.clientsCaKeySecretName(NAME), result.keyAsBase64String());
     }
 
     @Test
@@ -158,11 +176,13 @@ public class CertificateRenewalTest {
                 .withGenerateCertificateAuthority(true)
                 .build();
         secrets.clear();
-        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority, certificateAuthority);
+        assertEquals(4, c.getAllValues().size());
 
         assertEquals(singleton(CA_CRT), c.getAllValues().get(0).getData().keySet());
         assertEquals(singleton(CA_KEY), c.getAllValues().get(1).getData().keySet());
+        assertEquals(singleton(CA_CRT), c.getAllValues().get(2).getData().keySet());
+        assertEquals(singleton(CA_KEY), c.getAllValues().get(3).getData().keySet());
     }
 
     @Test
@@ -173,10 +193,12 @@ public class CertificateRenewalTest {
                 .withGenerateCertificateAuthority(false)
                 .build();
         secrets.clear();
-        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(c.getAllValues().toString(), 2, c.getAllValues().size());
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority, certificateAuthority);
+        assertEquals(c.getAllValues().toString(), 4, c.getAllValues().size());
         assertTrue(c.getAllValues().get(0).getData().isEmpty());
         assertTrue(c.getAllValues().get(1).getData().isEmpty());
+        assertTrue(c.getAllValues().get(2).getData().isEmpty());
+        assertTrue(c.getAllValues().get(3).getData().isEmpty());
     }
 
     @Test
@@ -190,26 +212,37 @@ public class CertificateRenewalTest {
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(generateCertificateAuthority)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
-        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
-        Map<String, String> initialCertData = initialCaCertSecret.getData();
-        assertEquals(singleton(CA_CRT), initialCertData.keySet());
-        String initialCert = initialCertData.get(CA_CRT);
-        assertNotNull(initialCert);
-        Map<String, String> initialKeyData = initialCaKeySecret .getData();
-        assertEquals(singleton(CA_KEY), initialKeyData.keySet());
-        String initialKey = initialKeyData.get(CA_KEY);
-        assertNotNull(initialKey);
+        Secret initialClusterCaCertSecret = initialClusterCaCertSecret(certificateAuthority);
+        Secret initialClusterCaKeySecret = initialClusterCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClusterCaCertSecret.getData().keySet());
+        assertNotNull(initialClusterCaCertSecret.getData().get(CA_CRT));
+        assertEquals(singleton(CA_KEY), initialClusterCaKeySecret.getData().keySet());
+        assertNotNull(initialClusterCaKeySecret.getData().get(CA_KEY));
 
-        secrets.add(initialCaCertSecret);
-        secrets.add(initialCaKeySecret);
-        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
+        Secret initialClientsCaCertSecret = initialClientsCaCertSecret(certificateAuthority);
+        Secret initialClientsCaKeySecret = initialClientsCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClientsCaCertSecret.getData().keySet());
+        assertNotNull(initialClientsCaCertSecret.getData().get(CA_CRT));
+        assertEquals(singleton(CA_KEY), initialClientsCaKeySecret.getData().keySet());
+        assertNotNull(initialClientsCaKeySecret.getData().get(CA_KEY));
+
+        secrets.add(initialClusterCaCertSecret);
+        secrets.add(initialClusterCaKeySecret);
+        secrets.add(initialClientsCaCertSecret);
+        secrets.add(initialClientsCaKeySecret);
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority, certificateAuthority);
 
         assertEquals(set(CA_CRT), c.getAllValues().get(0).getData().keySet());
-        assertEquals(initialCert, c.getAllValues().get(0).getData().get(CA_CRT));
+        assertEquals(initialClusterCaCertSecret.getData().get(CA_CRT), c.getAllValues().get(0).getData().get(CA_CRT));
 
         assertEquals(set(CA_KEY), c.getAllValues().get(1).getData().keySet());
-        assertEquals(initialKey, c.getAllValues().get(1).getData().get(CA_KEY));
+        assertEquals(initialClusterCaKeySecret.getData().get(CA_KEY), c.getAllValues().get(1).getData().get(CA_KEY));
+
+        assertEquals(set(CA_CRT), c.getAllValues().get(2).getData().keySet());
+        assertEquals(initialClientsCaCertSecret.getData().get(CA_CRT), c.getAllValues().get(2).getData().get(CA_CRT));
+
+        assertEquals(set(CA_KEY), c.getAllValues().get(3).getData().keySet());
+        assertEquals(initialClientsCaKeySecret.getData().get(CA_KEY), c.getAllValues().get(3).getData().get(CA_KEY));
     }
 
     @Test
@@ -224,33 +257,51 @@ public class CertificateRenewalTest {
                 .withRenewalDays(3)
                 .withGenerateCertificateAuthority(true)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
-        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
-        Map<String, String> initialCertData = initialCaCertSecret.getData();
-        assertEquals(singleton(CA_CRT), initialCertData.keySet());
-        String initialCert = initialCertData.get(CA_CRT);
-        assertNotNull(initialCert);
-        Map<String, String> initialKeyData = initialCaKeySecret .getData();
-        assertEquals(singleton(CA_KEY), initialKeyData.keySet());
-        String initialKey = initialKeyData.get(CA_KEY);
-        assertNotNull(initialKey);
+        Secret initialClusterCaCertSecret = initialClusterCaCertSecret(certificateAuthority);
+        Secret initialClusterCaKeySecret = initialClusterCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClusterCaCertSecret.getData().keySet());
+        assertNotNull(initialClusterCaCertSecret.getData().get(CA_CRT));
+        assertEquals(singleton(CA_KEY), initialClusterCaKeySecret.getData().keySet());
+        assertNotNull(initialClusterCaKeySecret.getData().get(CA_KEY));
 
-        secrets.add(initialCaCertSecret);
-        secrets.add(initialCaKeySecret);
+        Secret initialClientsCaCertSecret = initialClientsCaCertSecret(certificateAuthority);
+        Secret initialClientsCaKeySecret = initialClientsCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClientsCaCertSecret.getData().keySet());
+        assertNotNull(initialClientsCaCertSecret.getData().get(CA_CRT));
+        assertEquals(singleton(CA_KEY), initialClientsCaKeySecret.getData().keySet());
+        assertNotNull(initialClientsCaKeySecret.getData().get(CA_KEY));
 
-        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
-        Map<String, String> certData = c.getAllValues().get(0).getData();
-        assertEquals(1, certData.size());
-        String newCrt = certData.remove(CA_CRT);
-        assertNotNull(newCrt);
-        assertNotEquals(initialCert, newCrt);
+        secrets.add(initialClusterCaCertSecret);
+        secrets.add(initialClusterCaKeySecret);
+        secrets.add(initialClientsCaCertSecret);
+        secrets.add(initialClientsCaKeySecret);
 
-        Map<String, String> keyData = c.getAllValues().get(1).getData();
-        assertEquals(singleton(CA_KEY), keyData.keySet());
-        String newKey = keyData.remove(CA_KEY);
-        assertNotNull(newKey);
-        assertEquals(initialKey, newKey);
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority, certificateAuthority);
+        assertEquals(4, c.getAllValues().size());
+
+        Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
+        assertEquals(singleton(CA_CRT), clusterCaCertData.keySet());
+        String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
+        assertNotNull(newClusterCaCert);
+        assertNotEquals(initialClusterCaCertSecret.getData().get(CA_CRT), newClusterCaCert);
+
+        Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
+        assertEquals(singleton(CA_KEY), clusterCaKeyData.keySet());
+        String newClusterCaKey = clusterCaKeyData.remove(CA_KEY);
+        assertNotNull(newClusterCaKey);
+        assertEquals(initialClusterCaKeySecret.getData().get(CA_KEY), newClusterCaKey);
+
+        Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
+        assertEquals(singleton(CA_CRT), clientsCaCertData.keySet());
+        String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
+        assertNotNull(newClientsCaCert);
+        assertNotEquals(initialClientsCaCertSecret.getData().get(CA_CRT), newClientsCaCert);
+
+        Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
+        assertEquals(singleton(CA_KEY), clientsCaKeyData.keySet());
+        String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
+        assertNotNull(newClientsCaKey);
+        assertEquals(initialClientsCaKeySecret.getData().get(CA_KEY), newClientsCaKey);
     }
 
     @Test
@@ -260,26 +311,32 @@ public class CertificateRenewalTest {
                 .withRenewalDays(3)
                 .withGenerateCertificateAuthority(false)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
-        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
-        Map<String, String> initialCertData = initialCaCertSecret.getData();
-        assertEquals(singleton(CA_CRT), initialCertData.keySet());
-        String initialCert = initialCertData.get(CA_CRT);
-        assertNotNull(initialCert);
-        Map<String, String> initialKeyData = initialCaKeySecret .getData();
-        assertEquals(singleton(CA_KEY), initialKeyData.keySet());
-        String initialKey = initialKeyData.get(CA_KEY);
-        assertNotNull(initialKey);
+        Secret initialClusterCaCertSecret = initialClusterCaCertSecret(certificateAuthority);
+        Secret initialClusterCaKeySecret = initialClusterCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClusterCaCertSecret.getData().keySet());
+        assertNotNull(initialClusterCaCertSecret.getData().get(CA_CRT));
+        assertEquals(singleton(CA_KEY), initialClusterCaKeySecret.getData().keySet());
+        assertNotNull(initialClusterCaKeySecret.getData().get(CA_KEY));
 
-        secrets.add(initialCaCertSecret);
-        secrets.add(initialCaKeySecret);
+        Secret initialClientsCaCertSecret = initialClientsCaCertSecret(certificateAuthority);
+        Secret initialClientsCaKeySecret = initialClientsCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClientsCaCertSecret.getData().keySet());
+        assertNotNull(initialClientsCaCertSecret.getData().get(CA_CRT));
+        assertEquals(singleton(CA_KEY), initialClientsCaKeySecret.getData().keySet());
+        assertNotNull(initialClientsCaKeySecret.getData().get(CA_KEY));
 
-        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
-        Map<String, String> certData = c.getAllValues().get(0).getData();
-        assertEquals(initialCertData, certData);
-        Map<String, String> keyData = c.getAllValues().get(1).getData();
-        assertEquals(initialKeyData, keyData);
+        secrets.add(initialClusterCaCertSecret);
+        secrets.add(initialClusterCaKeySecret);
+        secrets.add(initialClientsCaCertSecret);
+        secrets.add(initialClientsCaKeySecret);
+
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority, certificateAuthority);
+        assertEquals(4, c.getAllValues().size());
+
+        assertEquals(initialClusterCaCertSecret.getData(), c.getAllValues().get(0).getData());
+        assertEquals(initialClusterCaKeySecret.getData(), c.getAllValues().get(1).getData());
+        assertEquals(initialClientsCaCertSecret.getData(), c.getAllValues().get(2).getData());
+        assertEquals(initialClientsCaKeySecret.getData(), c.getAllValues().get(3).getData());
     }
 
     @Test
@@ -289,28 +346,41 @@ public class CertificateRenewalTest {
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(true)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
-        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
-        Map<String, String> initialCertData = initialCaCertSecret.getData();
-        assertEquals(singleton(CA_CRT), initialCertData.keySet());
-        String initialCert = initialCertData.get(CA_CRT);
-        initialCertData.put("ca-2018-07-01T09-00-00.crt", "whatever");
-        assertNotNull(initialCert);
-        Map<String, String> initialKeyData = initialCaKeySecret .getData();
-        assertEquals(singleton(CA_KEY), initialKeyData.keySet());
-        String initialKey = initialKeyData.get(CA_KEY);
-        assertNotNull(initialKey);
+        Secret initialClusterCaCertSecret = initialClusterCaCertSecret(certificateAuthority);
+        Secret initialClusterCaKeySecret = initialClusterCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClusterCaCertSecret.getData().keySet());
+        assertNotNull(initialClusterCaCertSecret.getData().get(CA_CRT));
+        initialClusterCaCertSecret.getData().put("ca-2018-07-01T09-00-00.crt", "whatever");
+        assertEquals(singleton(CA_KEY), initialClusterCaKeySecret.getData().keySet());
+        assertNotNull(initialClusterCaKeySecret.getData().get(CA_KEY));
 
-        secrets.add(initialCaCertSecret);
-        secrets.add(initialCaKeySecret);
+        Secret initialClientsCaCertSecret = initialClientsCaCertSecret(certificateAuthority);
+        Secret initialClientsCaKeySecret = initialClientsCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClientsCaCertSecret.getData().keySet());
+        assertNotNull(initialClientsCaCertSecret.getData().get(CA_CRT));
+        initialClientsCaCertSecret.getData().put("ca-2018-07-01T09-00-00.crt", "whatever");
+        assertEquals(singleton(CA_KEY), initialClientsCaKeySecret.getData().keySet());
+        assertNotNull(initialClientsCaKeySecret.getData().get(CA_KEY));
 
-        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
-        Map<String, String> certData = c.getAllValues().get(0).getData();
-        assertEquals(certData.keySet().toString(), 1, certData.size());
-        assertEquals(initialCert, certData.get(CA_CRT));
-        Map<String, String> keyData = c.getAllValues().get(1).getData();
-        assertEquals(initialKey, keyData.get(CA_KEY));
+        secrets.add(initialClusterCaCertSecret);
+        secrets.add(initialClusterCaKeySecret);
+        secrets.add(initialClientsCaCertSecret);
+        secrets.add(initialClientsCaKeySecret);
+
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority, certificateAuthority);
+        assertEquals(4, c.getAllValues().size());
+
+        Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
+        assertEquals(clusterCaCertData.keySet().toString(), 1, clusterCaCertData.size());
+        assertEquals(initialClusterCaCertSecret.getData().get(CA_CRT), clusterCaCertData.get(CA_CRT));
+        Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
+        assertEquals(initialClusterCaKeySecret.getData().get(CA_KEY), clusterCaKeyData.get(CA_KEY));
+
+        Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
+        assertEquals(clientsCaCertData.keySet().toString(), 1, clientsCaCertData.size());
+        assertEquals(initialClientsCaCertSecret.getData().get(CA_CRT), clientsCaCertData.get(CA_CRT));
+        Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
+        assertEquals(initialClientsCaKeySecret.getData().get(CA_KEY), clientsCaKeyData.get(CA_KEY));
     }
 
     @Test
@@ -320,24 +390,31 @@ public class CertificateRenewalTest {
                 .withRenewalDays(10)
                 .withGenerateCertificateAuthority(false)
                 .build();
-        Secret initialCaCertSecret = initialCaCertSecret(certificateAuthority);
-        Secret initialCaKeySecret = initialCaKeySecret(certificateAuthority);
-        Map<String, String> initialCertData = initialCaCertSecret.getData();
-        assertEquals(singleton(CA_CRT), initialCertData.keySet());
-        String initialCert = initialCertData.get(CA_CRT);
-        initialCertData.put("cluster-ca-2018-07-01T09-00-00.crt", "whatever");
-        assertNotNull(initialCert);
-        Map<String, String> initialKeyData = initialCaKeySecret .getData();
-        assertEquals(singleton(CA_KEY), initialKeyData.keySet());
-        String initialKey = initialKeyData.get(CA_KEY);
-        assertNotNull(initialKey);
+        Secret initialClusterCaCertSecret = initialClusterCaCertSecret(certificateAuthority);
+        Secret initialClusterCaKeySecret = initialClusterCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClusterCaCertSecret.getData().keySet());
+        assertNotNull(initialClusterCaCertSecret.getData().get(CA_CRT));
+        initialClusterCaCertSecret.getData().put("ca-2018-07-01T09-00-00.crt", "whatever");
+        assertEquals(singleton(CA_KEY), initialClusterCaKeySecret.getData().keySet());
+        assertNotNull(initialClusterCaKeySecret.getData().get(CA_KEY));
 
-        secrets.add(initialCaCertSecret);
-        secrets.add(initialCaKeySecret);
+        Secret initialClientsCaCertSecret = initialClientsCaCertSecret(certificateAuthority);
+        Secret initialClientsCaKeySecret = initialClientsCaKeySecret(certificateAuthority);
+        assertEquals(singleton(CA_CRT), initialClientsCaCertSecret.getData().keySet());
+        assertNotNull(initialClientsCaCertSecret.getData().get(CA_CRT));
+        initialClientsCaCertSecret.getData().put("ca-2018-07-01T09-00-00.crt", "whatever");
+        assertEquals(singleton(CA_KEY), initialClientsCaKeySecret.getData().keySet());
+        assertNotNull(initialClientsCaKeySecret.getData().get(CA_KEY));
 
-        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority);
-        assertEquals(2, c.getAllValues().size());
-        Map<String, String> certData = c.getAllValues().get(0).getData();
-        assertEquals(initialCertData, certData);
+        secrets.add(initialClusterCaCertSecret);
+        secrets.add(initialClusterCaKeySecret);
+        secrets.add(initialClientsCaCertSecret);
+        secrets.add(initialClientsCaKeySecret);
+
+        ArgumentCaptor<Secret> c = reconcileCa(context, certificateAuthority, certificateAuthority);
+        assertEquals(4, c.getAllValues().size());
+
+        assertEquals(initialClusterCaCertSecret.getData(), c.getAllValues().get(0).getData());
+        assertEquals(initialClientsCaCertSecret.getData(), c.getAllValues().get(2).getData());
     }
 }

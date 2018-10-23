@@ -121,9 +121,8 @@ public class KafkaCluster extends AbstractModel {
 
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
-    private static final String SECRET_CLUSTER_PUBLIC_KEY_SUFFIX = "-cert";
-    private static final String SECRET_CLIENTS_CA_SUFFIX = "-clients-ca";
-    private static final String SECRET_CLIENTS_PUBLIC_KEY_SUFFIX = "-clients-ca-cert";
+    private static final String SECRET_CLIENTS_CA_KEY_SUFFIX = "-clients-ca";
+    private static final String SECRET_CLIENTS_CA_SUFFIX = "-clients-ca-cert";
 
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
@@ -221,20 +220,16 @@ public class KafkaCluster extends AbstractModel {
         return kafkaClusterName(cluster) + "-" + pod;
     }
 
-    public static String clientsCASecretName(String cluster) {
-        return cluster + KafkaCluster.SECRET_CLIENTS_CA_SUFFIX;
+    public static String clientsCaKeySecretName(String cluster) {
+        return cluster + KafkaCluster.SECRET_CLIENTS_CA_KEY_SUFFIX;
     }
 
     public static String brokersSecretName(String cluster) {
         return cluster + KafkaCluster.SECRET_BROKERS_SUFFIX;
     }
 
-    public static String clientsPublicKeyName(String cluster) {
-        return cluster + KafkaCluster.SECRET_CLIENTS_PUBLIC_KEY_SUFFIX;
-    }
-
-    public static String clusterPublicKeyName(String cluster) {
-        return getClusterCaName(cluster);
+    public static String clientsCaCertSecretName(String cluster) {
+        return cluster + KafkaCluster.SECRET_CLIENTS_CA_SUFFIX;
     }
 
     public static KafkaCluster fromCrd(Kafka kafkaAssembly) {
@@ -303,12 +298,10 @@ public class KafkaCluster extends AbstractModel {
      * Manage certificates generation based on those already present in the Secrets
      * @param clusterCa The certificates
      */
-    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, ClientsCa clientsCa, String externalBootstrapDnsName, Map<Integer, String> externalDnsNames) {
+    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, String externalBootstrapDnsName, Map<Integer, String> externalDnsNames) {
         log.debug("Generating certificates");
 
         try {
-            clientsCa.createOrRenew(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName(),
-                    labels.toMap(), createOwnerReference());
             brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapDnsName, externalDnsNames);
         } catch (IOException e) {
             log.warn("Error while generating certificates", e);
@@ -571,9 +564,9 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null || isExposedWithNodePort()) {
             volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME));
         }
-        volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.getClusterCaName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
-        volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsPublicKeyName(cluster), isOpenShift));
+        volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
 
         return volumeList;
