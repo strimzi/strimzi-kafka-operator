@@ -20,7 +20,7 @@ The {ProductPlatformName} {K8SStorageClass} to use for dynamic volume provisioni
 
 `selector` (optional)::
 Allows selecting a specific persistent volume to use.
-It contains a `matchLabels` field which contains key:value pairs representing labels for selecting such a volume.
+It contains key:value pairs representing labels for selecting such a volume.
 
 `delete-claim` (optional)::
 Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
@@ -62,8 +62,7 @@ storage:
   type: persistent-claim
   size: 1Gi
   selector:
-    matchLabels:
-      "hdd-type": "ssd"
+    hdd-type: ssd
   deleteClaim: true
 # ...
 ----
