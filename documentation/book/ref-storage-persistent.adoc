@@ -22,7 +22,7 @@ The {ProductPlatformName} {K8SStorageClass} to use for dynamic volume provisioni
 Allows selecting a specific persistent volume to use.
 It contains key:value pairs representing labels for selecting such a volume.
 
-`delete-claim` (optional)::
+`deleteClaim` (optional)::
 Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
 Default is `false`.
 
