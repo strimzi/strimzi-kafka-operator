@@ -34,25 +34,30 @@ public class SecurityST extends AbstractST {
     @JUnitGroup(name = "regression")
     public void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
-        resources().kafkaEphemeral(CLUSTER_NAME, 2).done();
-        String commandForKafkaBootstrap = "openssl s_client -connect my-cluster-kafka-bootstrap:9093 -showcerts " +
-                        "-CAfile /opt/kafka/broker-certs/cluster-ca.crt " +
-                        "-verify_hostname my-cluster-kafka-bootstrap";
+        resources().kafkaEphemeral(CLUSTER_NAME, 2)
+            .editSpec().editZookeeper().withReplicas(2).endZookeeper().endSpec().done();
+        String commandForKafkaBootstrap = "echo -n | openssl s_client -connect my-cluster-kafka-bootstrap:9093 -showcerts" +
+                        " -CAfile /opt/kafka/cluster-ca-certs/ca.crt" +
+                        " -verify_hostname my-cluster-kafka-bootstrap";
+
         String outputForKafkaBootstrap =
-                kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, 0), "kafka", "/bin/bash", "-c", commandForKafkaBootstrap).out();
+                kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, 0), "kafka",
+                        "/bin/bash", "-c", commandForKafkaBootstrap).out();
         checkKafkaCertificates(outputForKafkaBootstrap);
 
-
-        String commandForZookeeperClient = "openssl s_client -connect my-cluster-zookeeper-client:2181 -showcerts " +
-                "-CAfile /opt/kafka/broker-certs/cluster-ca.crt " +
-                "-verify_hostname my-cluster-zookeeper-client";
+        String commandForZookeeperClient = "echo -n | openssl s_client -connect my-cluster-zookeeper-client:2181 -showcerts" +
+                " -CAfile /opt/kafka/cluster-ca-certs/ca.crt" +
+                " -verify_hostname my-cluster-zookeeper-client" +
+                " -cert /opt/kafka/broker-certs/my-cluster-kafka-0.crt" +
+                " -key /opt/kafka/broker-certs/my-cluster-kafka-0.key";
         String outputForZookeeperClient =
-                kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, 0), "kafka", "/bin/bash", "-c", commandForZookeeperClient).out();
+                kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, 0), "kafka",
+                        "/bin/bash", "-c", commandForZookeeperClient).out();
         checkZookeeperCertificates(outputForZookeeperClient);
 
         IntStream.rangeClosed(0, 1).forEach(podId -> {
-            String commandForKafkaPort9091 = generateOpenSSLCommandWithCerts(kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9091");
-            String commandForKafkaPort9093 = generateOpenSSLCommandWithCAfile(kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9093");
+            String commandForKafkaPort9091 = "echo -n | " + generateOpenSSLCommandWithCerts(kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9091");
+            String commandForKafkaPort9093 = "echo -n | " + generateOpenSSLCommandWithCAfile(kafkaPodName(CLUSTER_NAME, podId), "my-cluster-kafka-brokers", "9093");
 
             String outputForKafkaPort9091 =
                     kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c", commandForKafkaPort9091).out();
@@ -61,19 +66,23 @@ public class SecurityST extends AbstractST {
 
             checkKafkaCertificates(outputForKafkaPort9091, outputForKafkaPort9093);
 
-            String commandForZookeeperPort2181 = generateOpenSSLCommandWithCAfile(zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2181");
-            String commandForZookeeperPort2888 = generateOpenSSLCommandWithCerts(zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2888");
-            String commandForZookeeperPort3888 = generateOpenSSLCommandWithCerts(zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "3888");
+            String commandForZookeeperPort2181 = "echo -n | " + generateOpenSSLCommandWithCerts(zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2181");
+            String commandForZookeeperPort2888 = "echo -n | " + generateOpenSSLCommandWithCerts(zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "2888");
+            String commandForZookeeperPort3888 = "echo -n | " + generateOpenSSLCommandWithCerts(zookeeperPodName(CLUSTER_NAME, podId), "my-cluster-zookeeper-nodes", "3888");
 
             String outputForZookeeperPort2181 =
-                    kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c", commandForZookeeperPort2181).out();
+                    kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c",
+                            commandForZookeeperPort2181).out();
+
             String outputForZookeeperPort3888 =
-                    kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c", commandForZookeeperPort3888).out();
+                    kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c",
+                            commandForZookeeperPort3888).out();
             checkZookeeperCertificates(outputForZookeeperPort2181, outputForZookeeperPort3888);
 
             try {
                 String outputForZookeeperPort2888 =
-                        kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c", commandForZookeeperPort2888).out();
+                        kubeClient.execInPodContainer(kafkaPodName(CLUSTER_NAME, podId), "kafka", "/bin/bash", "-c",
+                                commandForZookeeperPort2888).out();
                 checkZookeeperCertificates(outputForZookeeperPort2888);
             } catch (KubeClusterException e) {
                 if (e.result != null && e.result.exitStatus() == 104) {
@@ -87,15 +96,14 @@ public class SecurityST extends AbstractST {
 
     private String generateOpenSSLCommandWithCAfile(String podName, String hostname, String port) {
         return "openssl s_client -connect " + podName + "." + hostname + ":" + port +
-                " -showcerts -CAfile /opt/kafka/broker-certs/cluster-ca.crt " +
+                " -showcerts -CAfile /opt/kafka/cluster-ca-certs/ca.crt " +
                 "-verify_hostname " + podName + "." + hostname + "." + NAMESPACE + ".svc.cluster.local";
     }
 
     private String generateOpenSSLCommandWithCerts(String podName, String hostname, String port) {
-        return "openssl s_client -connect " + podName + "." + hostname + ":" + port + " -showcerts -CAfile /opt/kafka/broker-certs/cluster-ca.crt " +
-                "-cert /opt/kafka/broker-certs/my-cluster-kafka-0.crt " +
-                "-key /opt/kafka/broker-certs/my-cluster-kafka-0.key " +
-                "-verify_hostname " + podName + "." + hostname + "." + NAMESPACE + ".svc.cluster.local";
+        return generateOpenSSLCommandWithCAfile(podName, hostname, port) +
+                " -cert /opt/kafka/broker-certs/my-cluster-kafka-0.crt" +
+                " -key /opt/kafka/broker-certs/my-cluster-kafka-0.key";
     }
 
     private void checkKafkaCertificates(String... kafkaCertificates) {
