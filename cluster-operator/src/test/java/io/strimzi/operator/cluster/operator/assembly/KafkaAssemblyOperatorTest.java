@@ -96,6 +96,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -310,11 +311,11 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockZsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockZsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockZsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.maybeRollingUpdate(any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture());
         when(mockZsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockKsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockKsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockKsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.maybeRollingUpdate(any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture());
         when(mockKsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockPolicyOps.reconcile(anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
@@ -521,7 +522,7 @@ public class KafkaAssemblyOperatorTest {
     @Test
     public void testUpdateZookeeperClusterScaleUp(TestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
-        kafkaAssembly.getSpec().getZookeeper().setReplicas(4);
+        kafkaAssembly.getSpec().getZookeeper().setReplicas(5);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
@@ -717,14 +718,18 @@ public class KafkaAssemblyOperatorTest {
             StatefulSet ss = invocation.getArgument(2);
             return Future.succeededFuture(ReconcileResult.patched(ss));
         });
-        when(mockZsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
-        when(mockKsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.maybeRollingUpdate(any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.maybeRollingUpdate(any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet scaleUp
         ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);
         when(mockZsOps.scaleUp(anyString(), scaledUpCaptor.capture(), anyInt())).thenReturn(
                 Future.succeededFuture(42)
         );
+
+        // determine how many steps should be done during zookeeper scale up
+        int steps = updatedAssembly.getSpec().getZookeeper().getReplicas() - originalAssembly.getSpec().getZookeeper().getReplicas();
+
         // Mock StatefulSet scaleDown
         ArgumentCaptor<String> scaledDownCaptor = ArgumentCaptor.forClass(String.class);
         when(mockZsOps.scaleDown(anyString(), scaledDownCaptor.capture(), anyInt())).thenReturn(
@@ -767,6 +772,8 @@ public class KafkaAssemblyOperatorTest {
                             updatedZookeeperCluster.generateStatefulSet(openShift)))) {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }
+
+            verify(mockZsOps, times(steps > 0 ? steps : 0)).scaleUp(anyString(), scaledUpCaptor.capture(), anyInt());
 
             // No metrics config  => no CMs created
             verify(mockCmOps, never()).createOrUpdate(any());

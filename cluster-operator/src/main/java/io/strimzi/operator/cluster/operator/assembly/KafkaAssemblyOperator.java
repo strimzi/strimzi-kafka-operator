@@ -318,7 +318,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         String value = ss.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_RESTART);
                         if (value != null && value.equals("true")) {
                             log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                            return kafkaSetOperations.maybeRollingUpdate(ss, true);
+                            return kafkaSetOperations.maybeRollingUpdate(ss, true, false);
                         }
                     }
                     return Future.succeededFuture();
@@ -336,7 +336,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         String value = ss.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_RESTART);
                         if (value != null && value.equals("true")) {
                             log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                            return zkSetOperations.maybeRollingUpdate(ss, true);
+                            return zkSetOperations.maybeRollingUpdate(ss, true, true);
                         }
                     }
                     return Future.succeededFuture();
@@ -362,12 +362,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
                         .compose(ss -> {
                             log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                            return zkSetOperations.maybeRollingUpdate(ss, true);
+                            return zkSetOperations.maybeRollingUpdate(ss, true, true);
                         })
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
                         .compose(ss -> {
                             log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                            return kafkaSetOperations.maybeRollingUpdate(ss, true);
+                            return kafkaSetOperations.maybeRollingUpdate(ss, true, false);
                         })
                         .compose(i -> {
                             if (topicOperator != null) {
@@ -507,11 +507,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
             }
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(),
-                    zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved()));
+                    zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved(), true));
         }
 
         Future<ReconciliationState> zkScaleUp() {
-            return withVoid(zkSetOperations.scaleUp(namespace, zkCluster.getName(), zkCluster.getReplicas()));
+            int currentReplicas = 0;
+            StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            if (ss != null) {
+                currentReplicas = ss.getSpec().getReplicas();
+            }
+            Future<Integer> result = Future.succeededFuture(currentReplicas);
+            for (int i = currentReplicas + 1; i <= zkCluster.getReplicas(); i++) {
+                // When scaling up a Zk cluster in one step the quorum can be lost. It is better to use steps.
+                result.compose(scaleTo -> zkSetOperations.scaleUp(namespace, zkCluster.getName(), scaleTo + 1));
+            }
+            return withVoid(result);
         }
 
         Future<ReconciliationState> zkServiceEndpointReadiness() {
@@ -971,7 +981,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
             }
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(),
-                    kafkaAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved()));
+                    kafkaAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved(), false));
         }
 
         Future<ReconciliationState> kafkaScaleUp() {

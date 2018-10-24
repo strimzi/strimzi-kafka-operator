@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, boolean)}
+ * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, boolean, boolean)}
  * in addition to the usual operations.
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
@@ -73,7 +73,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
      * before the process proceeds with the pod with the next higher number.
      */
-    public Future<Void> maybeRollingUpdate(StatefulSet ss, boolean forceRestart) {
+    public Future<Void> maybeRollingUpdate(StatefulSet ss, boolean forceRestart, boolean waitForPod) {
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         final int replicas = ss.getSpec().getReplicas();
@@ -83,6 +83,9 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         for (int i = 0; i < replicas; i++) {
             String podName = name + "-" + i;
             f = f.compose(ignored -> maybeRestartPod(ss, podName, forceRestart));
+            if (waitForPod) {
+                f = f.compose(ignore -> podOperations.readiness(namespace, podName, 1_000, operationTimeoutMs));
+            }
         }
         return f;
     }

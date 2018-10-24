@@ -129,10 +129,10 @@ public class ZookeeperCluster extends AbstractModel {
         this.ancillaryConfigName = zookeeperMetricAndLogConfigsName(cluster);
         this.image = ZookeeperClusterSpec.DEFAULT_IMAGE;
         this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
-        this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
+        this.readinessPath = "/opt/kafka/zookeeper_readiness.sh";
         this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
-        this.livenessPath = "/opt/kafka/zookeeper_healthcheck.sh";
+        this.livenessPath = "/opt/kafka/zookeeper_liveness.sh";
         this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
