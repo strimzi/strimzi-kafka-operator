@@ -3,36 +3,36 @@
 // assembly-getting-started-strimzi-admin.adoc
 
 [id='proc-adding-users-the-strimzi-admin-role-{context}']
-= Deploying the User Operator using the Cluster Operator
+= Designating Strimzi Administrators
 
 .Prerequisites
 
-* {ProductName} `CustomResourceDefinitions` installed
+* {ProductName} `CustomResourceDefinitions` are installed.
 
 .Procedure
 
 . Create the `strimzi-admin` cluster role in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName}, use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f install/strimzi-admin
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName}, use `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f install/strimzi-admin
 
-. Assign the `strimzi-admin` cluster role to an existing {ProductPlatformName} user(s).
+. Assign the `strimzi-admin` `ClusterRole` to one or more existing users in the {ProductPlatformName} cluster.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl create`:
+On {KubernetesName}, use `kubectl create`:
 [source,shell,subs=+quotes]
 kubectl create clusterrolebinding strimzi-admin --clusterrole=strimzi-admin --user=_user1_ --user=_user2_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc adm`:
+On {OpenShiftName}, use `oc adm`:
 +
 [source,shell,subs=+quotes]
 oc adm policy add-cluster-role-to-user strimzi-admin _user1_ _user2_
