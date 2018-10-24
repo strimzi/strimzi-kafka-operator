@@ -38,18 +38,18 @@ helm_install: helm_clean helm_template
 	$(FIND) $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*.yaml' -printf "%p " -exec yq r {} kind \; \
 	| grep -v 'CustomResourceDefinition$$' \
 	| $(SED) -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
-	| xargs -IFILE cp FILE $(CHART_RENDERED_TEMPLATES_INSTALL)
+	| xargs -IFILE $(CP) FILE $(CHART_RENDERED_TEMPLATES_INSTALL)
 	# Copying rendered template files to: $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
 	# Find rendered resources which are not CustomResourceDefinition and move them
 	$(FIND) $(CHART_RENDERED_TEMPLATES_TMP) -type f -name '*ClusterRole-*.yaml' -printf "%p " -exec yq r {} kind \; \
 	| $(SED) -E 's/([^ ]*) ([a-zA-Z0-9]*)$$/\1/' \
-	| xargs -IFILE cp FILE $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
+	| xargs -IFILE $(CP) FILE $(CHART_RENDERED_TEMPLATES_CLUSTERROLES)
 
 helm_pkg: helm_lint helm_install
 	# Copying unarchived Helm Chart to release directory
 	mkdir -p strimzi-$(RELEASE_VERSION)/charts/
-	cp -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
+	$(CP) -r $(CHART_PATH) strimzi-$(RELEASE_VERSION)/charts/$(CHART_NAME)
 	# Packaging helm chart with semantic version: $(CHART_SEMANTIC_RELEASE_VERSION)
 	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
 	rm -rf strimzi-$(RELEASE_VERSION)
