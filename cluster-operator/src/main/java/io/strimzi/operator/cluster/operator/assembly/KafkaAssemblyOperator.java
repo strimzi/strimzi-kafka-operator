@@ -124,6 +124,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
                 .compose(state -> state.getZookeeperState())
+                .compose(state -> state.zkScaleUpStep())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
@@ -510,21 +511,31 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved(), true));
         }
 
+        Future<ReconciliationState> zkScaleUpStep() {
+            Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            return withVoid(futss.map(ss -> ss == null ? 0 : ss.getSpec().getReplicas())
+                .compose(currentReplicas -> {
+                    if (currentReplicas > 0 && zkCluster.getReplicas() > currentReplicas) {
+                        zkCluster.setReplicas(currentReplicas + 1);
+                    }
+                    Future<Integer> result = Future.succeededFuture(zkCluster.getReplicas() + 1);
+                    return result;
+                }));
+        }
+
+
         Future<ReconciliationState> zkScaleUp() {
             Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            if (futss != null) {
-                return withVoid(futss.map(ss -> ss == null ? 0 : ss.getSpec().getReplicas())
-                    .compose(currentReplicas -> {
-                        Future<Integer> result = Future.succeededFuture(currentReplicas);
-                        for (int i = currentReplicas + 1; i <= zkCluster.getReplicas(); i++) {
-                            // When scaling up a Zk cluster in one step the quorum can be lost. It is better to use steps.
-                            result.compose(scaleTo -> zkSetOperations.scaleUp(namespace, zkCluster.getName(), scaleTo + 1));
-                        }
-                        return result;
-                    }));
-            } else {
-                return withVoid(Future.succeededFuture(0));
-            }
+            return withVoid(futss.map(ss -> ss == null ? 0 : ss.getSpec().getReplicas())
+                .compose(currentReplicas -> {
+                    int desiredPods = zkCluster.getReplicas();
+                    Future<Integer> result = Future.succeededFuture(currentReplicas);
+                    for (int i = currentReplicas + 1; i <= desiredPods; i++) {
+                        // When scaling up a Zk cluster in one step the quorum can be lost. It is better to use steps.
+                        result.compose(scaleTo -> zkSetOperations.scaleUp(namespace, zkCluster.getName(), scaleTo + 1));
+                    }
+                    return result;
+                }));
         }
 
         Future<ReconciliationState> zkServiceEndpointReadiness() {
