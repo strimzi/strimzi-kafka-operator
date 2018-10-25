@@ -14,9 +14,11 @@ import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.OpenShift;
 import io.strimzi.test.k8s.Minishift;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -58,7 +60,7 @@ import static java.util.Collections.singletonList;
  * A test extension which sets up Strimzi resources in a Kubernetes cluster
  * according to annotations ({@link Namespace}, {@link Resources}, {@link ClusterOperator})
  * on the test class and/or test methods. {@link OpenShiftOnly} can be used to ignore tests when not running on
- * OpenShift (if the thing under test is OpenShift-specific). JUnit5 annotation @Tag can be used for execute/skip specific
+ * OpenShift (if the thing under test is OpenShift-specific). JUnit5 annotation {@link Tag} can be used for execute/skip specific
  * test classes and/or test methods.
  */
 public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, AfterEachCallback, BeforeEachCallback,
@@ -87,11 +89,11 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
     public static final String OPERATOR_LOG_LEVEL = "INFO";
-    private static final String DEFAULT_TAG = "all";
-    private static final String TAG_LIST_NAME = "tags";
+    private static final String DEFAULT_TAG = "";
+    private static final String TAG_LIST_NAME = "junitTags";
     private static final String START_TIME = "start time";
 
-    // Tags
+    /** Tags */
     public static final String ACCEPTANCE = "acceptance";
     public static final String REGRESSION = "regression";
 
@@ -99,7 +101,8 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private Class testClass;
     private Statement classStatement;
     private Statement methodStatement;
-    private Collection<String> declaredClassTags;
+    private Collection<String> declaredTags;
+    private Collection<String> enabledTags;
 
     public StrimziExtension() {
     }
@@ -111,33 +114,29 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
     @Override
     public void beforeAll(ExtensionContext context) {
-        testClass = context.getTestClass().orElse(null);
-
-        if (!areAllChildrenIgnored()) {
-            classStatement = new Bracket(null, () -> e -> {
-                LOGGER.info("Failed to set up test class {}, due to {}", testClass.getName(), e, e);
-            }) {
-                @Override
-                protected void before() {
-                }
-
-                @Override
-                protected void after() {
-                }
-            };
-            classStatement = withClusterOperator(testClass, classStatement);
-            classStatement = withResources(testClass, classStatement);
-            classStatement = withNamespaces(testClass, classStatement);
-            classStatement = withLogging(testClass, classStatement);
-            try {
-                Bracket current = (Bracket) classStatement;
-                while (current != null) {
-                    current.before();
-                    current = (Bracket) current.statement;
-                }
-            } catch (Throwable throwable) {
-                throwable.printStackTrace();
+        classStatement = new Bracket(null, () -> e -> {
+            LOGGER.info("Failed to set up test class {}, due to {}", testClass.getName(), e, e);
+        }) {
+            @Override
+            protected void before() {
             }
+
+            @Override
+            protected void after() {
+            }
+        };
+        classStatement = withClusterOperator(testClass, classStatement);
+        classStatement = withResources(testClass, classStatement);
+        classStatement = withNamespaces(testClass, classStatement);
+        classStatement = withLogging(testClass, classStatement);
+        try {
+            Bracket current = (Bracket) classStatement;
+            while (current != null) {
+                current.before();
+                current = (Bracket) current.statement;
+            }
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
         }
     }
 
@@ -180,8 +179,11 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
         if (context.getElement().get() instanceof Class) {
-            saveClassTags(context);
-            return ConditionEvaluationResult.enabled("Test class is enabled");
+            saveTestingClassInfo(context);
+            if (!isWrongClusterType(context) && !areAllChildrenIgnored(context)) {
+                return ConditionEvaluationResult.enabled("Test class is enabled");
+            }
+            return ConditionEvaluationResult.disabled("Test class is disabled");
         } else {
             if (!isIgnoredByTag(context) && !isWrongClusterType(context)) {
                 return ConditionEvaluationResult.enabled("Test method is enabled");
@@ -267,21 +269,15 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         }
     }
 
+
     /**
-     * Checks if some method of current test class is enabled.
+     * Check if currently executed test has @OpenShiftOnly annotation
+     * @param context extension context
+     * @return true or false
      */
-    private boolean areAllChildrenIgnored() {
-        if (isWrongClusterType(testClass)) {
-            return true;
-        }
-        for (Method method : testClass.getDeclaredMethods()) {
-            if (!isWrongClusterType(method)) {
-                return false;
-            } else if (!isIgnoredByTag(method)) {
-                return false;
-            }
-        }
-        return true;
+    private boolean isWrongClusterType(ExtensionContext context) {
+        AnnotatedElement element = context.getElement().get();
+        return isWrongClusterType(element);
     }
 
     /**
@@ -302,77 +298,72 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         return result;
     }
 
-    /**
-     * Check if currently executed test has @OpenShiftOnly annotation
-     * @param context extension context
-     * @return true or false
-     */
-    private boolean isWrongClusterType(ExtensionContext context) {
-        AnnotatedElement element = context.getElement().get();
-        return isWrongClusterType(element);
-    }
-
-    private void saveClassTags(ExtensionContext context) {
-        declaredClassTags = context.getTags();
-        Collection<String> enabledTags = getEnabledTags();
-        if (declaredClassTags.isEmpty()) {
-            LOGGER.info("Test class {} with tags {} does not have any tag restrictions by tags: {}",
-                    context.getDisplayName(), declaredClassTags, enabledTags);
-        } else if (isTagEnabled(declaredClassTags, enabledTags)) {
-            LOGGER.info("One of the test group {} is enabled for test class: {}", enabledTags, context.getDisplayName());
-        } else {
-            LOGGER.info("None of the test group {} are enabled for test: {} class", enabledTags, context.getDisplayName());
-        }
+    private void saveTestingClassInfo(ExtensionContext context) {
+        testClass = context.getTestClass().orElse(null);
+        declaredTags = context.getTags();
+        enabledTags = getEnabledTags();
     }
 
     /**
-     * Check if currently executed test element is ignored by set tags.
-     * This method is used for junit5 conditional evaluation.
+     * Checks if some method of current test class is enabled.
      * @param context test context
      * @return true or false
      */
-    private boolean isIgnoredByTag(ExtensionContext context) {
-        Collection<String> declaredTags = context.getTags();
-        Collection<String> enabledTags = getEnabledTags();
-        if (declaredTags.isEmpty() && (declaredClassTags.isEmpty() || isTagEnabled(declaredClassTags, enabledTags))) {
-            if (context.getTestClass().get().getSimpleName().equals(context.getDisplayName())) {
-                LOGGER.info("Test class {} with tags {} does not have any tag restrictions by tags: {}",
+    private boolean areAllChildrenIgnored(ExtensionContext context) {
+        if (enabledTags.isEmpty()) {
+            LOGGER.info("Test class {} with tags {} does not have any tag restrictions by tags: {}",
+                    context.getDisplayName(), declaredTags, enabledTags);
+            return false;
+        } else {
+            if (CollectionUtils.containsAny(enabledTags, declaredTags) || declaredTags.isEmpty()) {
+                LOGGER.info("Test class {} with tags {} does not have any tag restrictions by tags: {}. Checking method tags ...",
                         context.getDisplayName(), declaredTags, enabledTags);
-            } else {
-                LOGGER.info("Test method {} with tags {} does not have any tag restrictions by tags: {}",
-                        context.getDisplayName(), declaredTags, enabledTags);
+                for (Method method : testClass.getDeclaredMethods()) {
+                    if (method.getAnnotation(Test.class) == null) {
+                        continue;
+                    }
+                    if (!isWrongClusterType(method) && !isIgnoredByTag(method)) {
+                        LOGGER.info("One of the test group {} is enabled for test: {} with tags {} in class: {}",
+                                enabledTags, method.getName(), declaredTags, context.getDisplayName());
+                        return false;
+                    }
+                }
             }
-            return false;
         }
-        if (isTagEnabled(declaredTags, enabledTags)) {
-            LOGGER.info("One of the test group {} with tags {} is enabled for test: {}",
-                    enabledTags, declaredTags, context.getDisplayName());
-            return false;
-        }
-        LOGGER.info("None of the test group {} with tags {} are enabled for test: {}",
-                enabledTags, declaredTags, context.getDisplayName());
+        LOGGER.info("None test from class {} is enabled for tags {}", context.getDisplayName(), enabledTags);
         return true;
     }
 
     /**
      * Check if passed element is ignored by set tags.
-     * This method is used in @BeforeAll method.
+     * @param context extension context
+     * @return true or false
+     */
+    private boolean isIgnoredByTag(ExtensionContext context) {
+        AnnotatedElement element = context.getElement().get();
+        return isIgnoredByTag(element);
+    }
+
+    /**
+     * Check if passed element is ignored by set tags.
      * @param element test method or class
      * @return true or false
      */
     private boolean isIgnoredByTag(AnnotatedElement element) {
         Tag[] annotations = element.getDeclaredAnnotationsByType(Tag.class);
-        Collection<String> enabledTags = getEnabledTags();
 
-        if (annotations.length == 0 && isTagEnabled(declaredClassTags, enabledTags)) {
+        if (annotations.length == 0 || enabledTags.isEmpty()) {
+            LOGGER.info("Test method {} is not ignored by tag", ((Method) element).getName());
             return false;
         }
 
         for (Tag annotation : annotations) {
             if (enabledTags.contains(annotation.value())) {
+                LOGGER.info("Test method {} is not ignored by tag: {}", ((Method) element).getName(), annotation.value());
                 return false;
             }
         }
+        LOGGER.info("Test method {} is ignored by tag", ((Method) element).getName());
         return true;
     }
 
@@ -405,18 +396,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             return Collections.emptySet();
         }
         return new HashSet<>(Arrays.asList(commaSeparated.split(",+")));
-    }
-
-    private static boolean isTagEnabled(Collection<String> declaredTags, Collection<String> enabledTags) {
-        if (enabledTags.contains(DEFAULT_TAG) || enabledTags.isEmpty() || declaredTags.isEmpty()) {
-            return true;
-        }
-        for (String enabledTag : enabledTags) {
-            if (declaredTags.contains(enabledTag)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     protected KubeClient<?> kubeClient() {

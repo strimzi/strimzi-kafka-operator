@@ -192,6 +192,7 @@ class RecoveryST extends AbstractST {
 
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
+        LOGGER.info("Creating resources before the test class");
         classResources = new Resources(namespacedClient());
         classResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
         testClass = testInfo.getTestClass().get().getSimpleName();

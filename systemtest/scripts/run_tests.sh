@@ -5,4 +5,4 @@ if [ -n "$TESTCASE" ]; then
     EXTRA_ARGS="-Dit.test=$TESTCASE"
 fi
 
-mvn -q verify -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dtags=acceptance $EXTRA_ARGS
+mvn -e -q verify -pl systemtest -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -DjunitTags=acceptance $EXTRA_ARGS
