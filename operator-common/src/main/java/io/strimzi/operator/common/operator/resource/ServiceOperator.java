@@ -50,6 +50,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      *
      * @return  Future with reconciliation result
      */
+    @Override
     protected Future<ReconcileResult<Service>> internalPatch(String namespace, String name, Service current, Service desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null
@@ -58,9 +59,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                 patchNodePorts(current, desired);
             }
 
-            ReconcileResult.Patched<Service> result = ReconcileResult.patched(operation().inNamespace(namespace).withName(name).cascading(true).patch(desired));
-            log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
-            return Future.succeededFuture(result);
+            return super.internalPatch(namespace, name, current, desired);
         } catch (Exception e) {
             log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);

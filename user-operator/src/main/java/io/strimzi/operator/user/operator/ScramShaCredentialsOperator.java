@@ -34,7 +34,7 @@ public class ScramShaCredentialsOperator {
                         credsManager.delete(username);
                         future.complete(ReconcileResult.deleted());
                     } else {
-                        future.complete(ReconcileResult.noop());
+                        future.complete(ReconcileResult.noop(null));
                     }
                 }
             },

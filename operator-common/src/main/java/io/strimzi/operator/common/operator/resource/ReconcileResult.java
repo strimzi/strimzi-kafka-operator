@@ -13,8 +13,8 @@ public abstract class ReconcileResult<R> {
     };
 
     public static class Noop<R> extends ReconcileResult<R> {
-        private Noop() {
-            super(null);
+        private Noop(R resource) {
+            super(resource);
         }
 
         public String toString() {
@@ -22,7 +22,6 @@ public abstract class ReconcileResult<R> {
         }
     }
 
-    private static final ReconcileResult NOOP = new Noop();
 
     public static class Created<R> extends ReconcileResult<R> {
         private Created(R resource) {
@@ -61,8 +60,8 @@ public abstract class ReconcileResult<R> {
     }
 
     /** No action was performed. */
-    public static final <P> ReconcileResult<P> noop() {
-        return NOOP;
+    public static final <P> ReconcileResult<P> noop(P resource) {
+        return new Noop<>(resource);
     }
 
     private final R resource;
