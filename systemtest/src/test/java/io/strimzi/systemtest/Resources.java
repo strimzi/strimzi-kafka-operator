@@ -20,11 +20,13 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
+import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
 import io.strimzi.api.kafka.model.Kafka;
@@ -33,6 +35,8 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -80,6 +84,12 @@ public class Resources {
                         KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class);
     }
 
+    private MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> kafkaMirrorMaker() {
+        return client()
+                .customResources(Crds.mirrorMaker(),
+                        KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
+    }
+
     private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> kafkaTopic() {
         return client()
                 .customResources(Crds.topic(),
@@ -95,7 +105,7 @@ public class Resources {
     private List<Runnable> resources = new ArrayList<>();
 
     private <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> x, T resource) {
-        LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+        LOGGER.info("Scheduled deletion of {} {}", resource.getKind(), resource.getMetadata().getName());
         switch (resource.getKind()) {
             case Kafka.RESOURCE_KIND:
                 resources.add(() -> {
@@ -133,6 +143,10 @@ public class Resources {
 
     private KafkaConnectS2I deleteLater(KafkaConnectS2I resource) {
         return deleteLater(kafkaConnectS2I(), resource);
+    }
+
+    private KafkaMirrorMaker deleteLater(KafkaMirrorMaker resource) {
+        return deleteLater(kafkaMirrorMaker(), resource);
     }
 
     private KafkaTopic deleteLater(KafkaTopic resource) {
@@ -294,6 +308,47 @@ public class Resources {
         });
     }
 
+    DoneableKafkaMirrorMaker kafkaMirrorMaker(String name, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
+        return kafkaMirrorMaker(defaultMirrorMaker(name, groupId, mirrorMakerReplicas, tlsListener).build());
+    }
+
+    private KafkaMirrorMakerBuilder defaultMirrorMaker(String name, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
+        return new KafkaMirrorMakerBuilder()
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withNewSpec()
+                .withNewConsumer()
+                    .withBootstrapServers(tlsListener ? name + "-kafka-bootstrap:9093" : name + "-kafka-bootstrap:9092")
+                    .withGroupId(groupId)
+                .endConsumer()
+                .withNewProducer()
+                    .withBootstrapServers(tlsListener ? name + "-kafka-bootstrap:9093" : name + "-kafka-bootstrap:9092")
+                .endProducer()
+            .withReplicas(mirrorMakerReplicas)
+            .withWhitelist(".*")
+            .endSpec();
+    }
+
+    private DoneableKafkaMirrorMaker kafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker) {
+        return new DoneableKafkaMirrorMaker(kafkaMirrorMaker, k -> {
+            TestUtils.waitFor("Kafka Mirror Maker creation", 60000, 5000,
+                () -> {
+                    try {
+                        kafkaMirrorMaker().inNamespace(client().getNamespace()).createOrReplace(k);
+                        return true;
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().contains("object is being deleted")) {
+                            return false;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            );
+            return waitFor(deleteLater(
+                    k));
+        });
+    }
+
     private Kafka waitFor(Kafka kafka) {
         LOGGER.info("Waiting for Kafka {}", kafka.getMetadata().getName());
         String namespace = kafka.getMetadata().getNamespace();
@@ -315,6 +370,13 @@ public class Resources {
         String namespace = kafkaConnectS2I.getMetadata().getNamespace();
         waitForDeploymentConfig(namespace, kafkaConnectS2I.getMetadata().getName() + "-connect");
         return kafkaConnectS2I;
+    }
+
+    private KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
+        LOGGER.info("Waiting for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
+        String namespace = kafkaMirrorMaker.getMetadata().getNamespace();
+        waitForDeployment(namespace, kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker");
+        return kafkaMirrorMaker;
     }
 
     private void waitForStatefulSet(String namespace, String name) {
