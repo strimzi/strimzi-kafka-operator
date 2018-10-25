@@ -12,6 +12,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import org.apache.kafka.common.errors.InvalidReplicationFactorException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -194,6 +195,8 @@ public class TopicOperator {
                     handler.handle(ar);
                     if (ar.cause() instanceof TopicExistsException) {
                         // TODO reconcile
+                    } else if (ar.cause() instanceof InvalidReplicationFactorException) {
+                        // error message is printed in the `reconcile` method
                     } else {
                         throw new OperatorException(involvedObject, ar.cause());
                     }
