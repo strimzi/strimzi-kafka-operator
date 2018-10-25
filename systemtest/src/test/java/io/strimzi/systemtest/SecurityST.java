@@ -443,7 +443,7 @@ class SecurityST extends AbstractST {
      */
     @Test
     @JUnitGroup(name = "regression")
-    public void testManualInstallCaCertFromScratch() {
+    public void testManualCaCertFromScratch() {
         // TODO
     }
 
@@ -452,7 +452,7 @@ class SecurityST extends AbstractST {
      */
     @Test
     @JUnitGroup(name = "regression")
-    public void testManualInstallCaCertFromScratch() {
+    public void testAutoCaCertFromManual() {
         // TODO
     }
 
@@ -461,7 +461,7 @@ class SecurityST extends AbstractST {
      */
     @Test
     @JUnitGroup(name = "regression")
-    public void testManualInstallCaCertFromAuto() {
+    public void testManualCaCertFromAuto() {
         // TODO
     }
 
