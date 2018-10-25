@@ -35,6 +35,7 @@ import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.InvalidReplicationFactorException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -463,6 +464,21 @@ public class TopicOperatorIT {
     public void testKafkaTopicAdded(TestContext context) {
         String topicName = "test-kafkatopic-created";
         createKafkaTopicResource(context, topicName);
+    }
+
+    @Test
+    public void testKafkaTopicAddedWithHighReplicas(TestContext context) {
+        String topicName = "test-resource-created-with-higher-partition";
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        kafkaTopic.getSpec().setReplicas(42);
+
+        // Create a Topic Resource
+        try {
+            operation().inNamespace(NAMESPACE).create(kafkaTopic);
+        } catch (InvalidReplicationFactorException e) {
+            assertTrue(e.getMessage().contains("Replication factor: 42 larger than available brokers"));
+        }
     }
 
     @Test
