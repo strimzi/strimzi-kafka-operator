@@ -730,9 +730,6 @@ public class KafkaAssemblyOperatorTest {
                 Future.succeededFuture(42)
         );
 
-        // determine how many steps should be done during zookeeper scale up
-        int steps = updatedAssembly.getSpec().getZookeeper().getReplicas() - originalAssembly.getSpec().getZookeeper().getReplicas();
-
         // Mock StatefulSet scaleDown
         ArgumentCaptor<String> scaledDownCaptor = ArgumentCaptor.forClass(String.class);
         when(mockZsOps.scaleDown(anyString(), scaledDownCaptor.capture(), anyInt())).thenReturn(
@@ -757,6 +754,10 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 supplier);
 
+        // determine how many steps should be done during zookeeper scale up
+        // TODO fix - in the test env ve are scaling up from zero pods
+        int steps = updatedAssembly.getSpec().getZookeeper().getReplicas(); // - originalAssembly.getSpec().getZookeeper().getReplicas();
+
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, clusterNamespace, clusterName), updatedAssembly).setHandler(createResult -> {
@@ -775,9 +776,7 @@ public class KafkaAssemblyOperatorTest {
                             updatedZookeeperCluster.generateStatefulSet(openShift)))) {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }
-
-            // TODO fix
-            // verify(mockZsOps, times(steps > 0 ? steps : 0)).scaleUp(anyString(), scaledUpCaptor.capture(), anyInt());
+            verify(mockZsOps, times(steps > 0 ? steps : 0)).scaleUp(anyString(), scaledUpCaptor.capture(), anyInt());
 
             // No metrics config  => no CMs created
             verify(mockCmOps, never()).createOrUpdate(any());
