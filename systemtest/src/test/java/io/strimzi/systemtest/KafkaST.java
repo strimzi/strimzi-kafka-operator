@@ -1016,7 +1016,6 @@ public class KafkaST extends AbstractST {
     @JUnitGroup(name = "regression")
     public void testMirrorMaker() {
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String topicTargetName = TOPIC_NAME + "-target" + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         resources().kafkaEphemeral(CLUSTER_NAME + "-source", 3).done();
         resources().kafkaEphemeral(CLUSTER_NAME + "-target", 3).done();
@@ -1048,14 +1047,82 @@ public class KafkaST extends AbstractST {
         );
 
         waitForJobSuccess(sendRecordsToClusterJob(nameProducerSource, topicSourceName, messagesCount, null, false));
-        waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME+ "-source", nameConsumerSource, topicSourceName, messagesCount, null, false));
+        waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-source", nameConsumerSource, topicSourceName, messagesCount, null, false));
 
 
         Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-target", nameConsumerSource + "-1", topicSourceName, messagesCount, null, false));
 
         checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+    }
+
+    /**
+     * Test sending messages over tls transport using mutual tls auth
+     */
+    @Test
+    @JUnitGroup(name = "regression")
+    public void testMirrorMakerTlsAuthenticated() {
+        String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
+        String nameProducerSource = "send-messages-plain-anon-producer-source";
+        String nameConsumerSource = "send-messages-plain-anon-consumer-source";
+
+        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
+        KafkaListenerTls listenerTls = new KafkaListenerTls();
+        listenerTls.setAuth(auth);
+
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-source", 3)
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                .withTls(listenerTls)
+                .withNewTls()
+                .endTls()
+                .endListeners()
+                .endKafka()
+                .endSpec().build()).done();
+
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-target", 3)
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                .withTls(listenerTls)
+                .withNewTls()
+                .endTls()
+                .endListeners()
+                .endKafka()
+                .endSpec().build()).done();
+
+        String kafkaUser = "my-user";
+        String name = "send-messages-tls-auth";
+        int messagesCount = 20;
+
+        resources().topic(CLUSTER_NAME + "-source", topicSourceName).done();
+
+        KafkaUser user = resources().tlsUser(kafkaUser).done();
+        waitTillSecretExists(kafkaUser);
+
+        resources().kafkaMirrorMaker(CLUSTER_NAME, "my-group", 1, false)
+                .editSpec()
+                .editConsumer()
+                .withBootstrapServers("my-cluster-source-kafka-bootstrap:9093")
+                .endConsumer()
+                .editProducer()
+                .withBootstrapServers("my-cluster-target-kafka-bootstrap:9093")
+                .endProducer()
+                .endSpec()
+                .done();
+
+        waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
+//            kubeClient.searchInLog("deploy", "my-cluster-mirror-maker", stopwatch.runtime(SECONDS),  "\"Resetting offset for partition\"").isEmpty()
+                        !kubeClient.searchInLog("deploy", "my-cluster-mirror-maker", stopwatch.runtime(SECONDS),  "\"Successfully joined group\"").isEmpty()
+        );
+
+        waitForJobSuccess(sendRecordsToClusterJob(nameProducerSource, topicSourceName, messagesCount, user, true));
+        waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-source", nameConsumerSource, topicSourceName, messagesCount, user, true));
 
 
+        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-target", nameConsumerSource + "-1", topicSourceName, messagesCount, user, true));
+
+        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
     }
 
     private PodSpecBuilder createPodSpecForProducer(ContainerBuilder cb, KafkaUser kafkaUser, boolean tlsListener) {
