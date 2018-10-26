@@ -8,14 +8,6 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -28,6 +20,13 @@ import org.apache.logging.log4j.Logger;
 import scala.Tuple2;
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * SimlpeAclOperator is responsible for managing the authorization rules in Apache Kafka / Apache Zookeeper.
@@ -77,7 +76,7 @@ public class SimpleAclOperator {
                 if (desired == null || desired.isEmpty()) {
                     if (current.size() == 0)    {
                         log.debug("User {}: No expected Acl rules and no existing Acl rules -> NoOp", username);
-                        future.complete(ReconcileResult.noop());
+                        future.complete(ReconcileResult.noop(desired));
                     } else {
                         log.debug("User {}: No expected Acl rules, but {} existing Acl rules -> Deleting rules", username, current.size());
                         internalDelete(username, current).setHandler(future);

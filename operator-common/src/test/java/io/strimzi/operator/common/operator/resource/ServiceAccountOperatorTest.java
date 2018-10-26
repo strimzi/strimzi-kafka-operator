@@ -19,7 +19,6 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
@@ -91,8 +90,8 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
             if (!ar.succeeded()) {
                 ar.cause().printStackTrace();
             }
-            assertTrue(ar.succeeded());
-            assertTrue(ar.result().equals(ReconcileResult.noop()));
+            context.assertTrue(ar.succeeded());
+            context.assertTrue(ar.result() instanceof ReconcileResult.Noop);
             verify(mockResource).get();
             //verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());

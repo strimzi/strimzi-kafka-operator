@@ -45,7 +45,7 @@ public class ConfigMapOperator extends AbstractResourceOperator<KubernetesClient
                 // Checking some metadata. We cannot check entire metadata object because it contains
                 // timestamps which would cause restarting loop
                 log.debug("{} {} in namespace {} has not been patched because resources are equal", resourceKind, name, namespace);
-                return Future.succeededFuture(ReconcileResult.noop());
+                return Future.succeededFuture(ReconcileResult.noop(current));
             } else {
                 return super.internalPatch(namespace, name, current, desired);
             }

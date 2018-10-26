@@ -32,6 +32,6 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
     @Override
     protected Future<ReconcileResult<ServiceAccount>> internalPatch(String namespace, String name, ServiceAccount current, ServiceAccount desired) {
         // Patching a SA causes new tokens to be created, which we should avoid
-        return Future.succeededFuture(ReconcileResult.noop());
+        return Future.succeededFuture(ReconcileResult.noop(current));
     }
 }

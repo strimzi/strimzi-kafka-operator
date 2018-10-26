@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiPredicate;
 
 /**
@@ -96,7 +97,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
                         internalDelete(namespace, name).setHandler(future);
                     } else {
                         log.debug("{} {}/{} does not exist, noop", resourceKind, namespace, name);
-                        future.complete(ReconcileResult.noop());
+                        future.complete(ReconcileResult.noop(null));
                     }
                 }
 
@@ -127,13 +128,28 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      * and completes the given future accordingly.
      */
     protected Future<ReconcileResult<T>> internalPatch(String namespace, String name, T current, T desired) {
+        return internalPatch(namespace, name, current, desired, true);
+    }
+
+    protected Future<ReconcileResult<T>> internalPatch(String namespace, String name, T current, T desired, boolean cascading) {
         try {
-            ReconcileResult.Patched<T> result = ReconcileResult.patched(operation().inNamespace(namespace).withName(name).cascading(true).patch(desired));
+            T result = operation().inNamespace(namespace).withName(name).cascading(cascading).patch(desired);
             log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
-            return Future.succeededFuture(result);
+            return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
         } catch (Exception e) {
             log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
+        }
+    }
+
+    private boolean wasChanged(T oldVersion, T newVersion) {
+        if (oldVersion != null
+                && oldVersion.getMetadata() != null
+                && newVersion != null
+                && newVersion.getMetadata() != null) {
+            return !Objects.equals(oldVersion.getMetadata().getResourceVersion(), newVersion.getMetadata().getResourceVersion());
+        } else {
+            return true;
         }
     }
 

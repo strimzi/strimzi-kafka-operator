@@ -4,14 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
-import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.strimzi.operator.common.operator.resource.PvcOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
-
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
@@ -20,12 +14,16 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -278,9 +276,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         } else {
             log.debug("Patching {} {}/{}", resourceKind, namespace, name);
         }
-        StatefulSet ss = operation().inNamespace(namespace).withName(name).cascading(false).patch(desired);
-        log.debug("Patched {} {}/{}", resourceKind, namespace, name);
-        return Future.succeededFuture(ReconcileResult.patched(ss));
+        return super.internalPatch(namespace, name, current, desired, false);
     }
 
     /**
