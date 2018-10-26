@@ -551,7 +551,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             list = singletonList(annotation);
         } else {
             A[] annotations = annotatedElement.getAnnotationsByType(annotationType);
-            if (annotations.length == 0) {
+            if (annotations.length != 0) {
                 list = asList(annotations);
             } else {
                 list = emptyList();
