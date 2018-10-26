@@ -88,11 +88,6 @@
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-server-mock</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>zjsonpatch</artifactId>
-            <version>${fabric8.zjsonpatch.version}</version>
-        </dependency>
     </dependencies>
 
     <build>

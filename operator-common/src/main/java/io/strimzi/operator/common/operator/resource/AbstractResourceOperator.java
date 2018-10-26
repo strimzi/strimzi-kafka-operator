@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -20,9 +19,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiPredicate;
-
-import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -145,14 +143,11 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
     }
 
     private boolean wasChanged(T oldVersion, T newVersion) {
-        if (oldVersion != null && newVersion != null) {
-            try {
-                Object x = oldVersion.getClass().getMethod("getSpec").invoke(oldVersion);
-                Object y = newVersion.getClass().getMethod("getSpec").invoke(newVersion);
-                return JsonDiff.asJson(patchMapper().valueToTree(x), patchMapper().valueToTree(y)).iterator().hasNext();
-            } catch (ReflectiveOperationException e) {
-                return true;
-            }
+        if (oldVersion != null
+                && oldVersion.getMetadata() != null
+                && newVersion != null
+                && newVersion.getMetadata() != null) {
+            return !Objects.equals(oldVersion.getMetadata().getResourceVersion(), newVersion.getMetadata().getResourceVersion());
         } else {
             return true;
         }
