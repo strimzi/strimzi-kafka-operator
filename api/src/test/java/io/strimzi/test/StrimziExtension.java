@@ -104,9 +104,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private Collection<String> declaredTags;
     private Collection<String> enabledTags;
 
-    public StrimziExtension() {
-    }
-
     @Override
     public void afterAll(ExtensionContext context) {
         deleteResource((Bracket) classStatement);
@@ -268,7 +265,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             }
         }
     }
-
 
     /**
      * Check if currently executed test has @OpenShiftOnly annotation
@@ -555,7 +551,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             list = singletonList(annotation);
         } else {
             A[] annotations = annotatedElement.getAnnotationsByType(annotationType);
-            if (annotations != null) {
+            if (annotations.length == 0) {
                 list = asList(annotations);
             } else {
                 list = emptyList();

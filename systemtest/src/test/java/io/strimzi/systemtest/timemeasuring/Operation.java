@@ -3,8 +3,6 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-// Original author: David Kornel, EnMasse
-
 package io.strimzi.systemtest.timemeasuring;
 
 public enum Operation {

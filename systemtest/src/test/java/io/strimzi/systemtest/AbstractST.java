@@ -34,6 +34,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -74,25 +75,12 @@ public class AbstractST {
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
 
-    public static KubeClusterResource cluster;
-
-    static {
-        cluster = new KubeClusterResource();
-    }
-
-    static DefaultKubernetesClient client;
-
-    static {
-        client = new DefaultKubernetesClient();
-    }
-
-    static KubeClient<?> kubeClient;
-
-    static {
-        kubeClient = cluster.client();
-    }
+    public static KubeClusterResource cluster = new KubeClusterResource();
+    private static DefaultKubernetesClient client = new DefaultKubernetesClient();
+    static KubeClient<?> kubeClient = cluster.client();
 
     private Resources resources;
+    static String testName;
 
     protected static NamespacedKubernetesClient namespacedClient() {
         return client.inNamespace(kubeClient.namespace());
@@ -380,6 +368,11 @@ public class AbstractST {
     public void createResources() {
         LOGGER.info("Creating resources before the test");
         resources = new Resources(namespacedClient());
+    }
+
+    @BeforeEach
+    void setTestName(TestInfo testInfo) {
+        testName = testInfo.getTestMethod().get().getName();
     }
 
     @AfterEach
