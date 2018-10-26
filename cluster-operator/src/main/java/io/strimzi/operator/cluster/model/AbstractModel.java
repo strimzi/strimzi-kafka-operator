@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -23,6 +24,8 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.PodSecurityContext;
+import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -85,6 +88,10 @@ public abstract class AbstractModel {
 
     protected static final int CERTS_EXPIRATION_DAYS = 365;
     protected static final String DEFAULT_JVM_XMS = "128M";
+
+    private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
+    protected static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
+    private static final Long VOLUME_MOUNT_HACK_GROUPID = 0L;
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";
     public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
@@ -744,9 +751,11 @@ public abstract class AbstractModel {
     protected StatefulSet createStatefulSet(
             List<Volume> volumes,
             List<PersistentVolumeClaim> volumeClaims,
+            List<VolumeMount> volumeMounts,
             Affinity affinity,
             List<Container> initContainers,
-            List<Container> containers) {
+            List<Container> containers,
+            boolean isOpenShift) {
 
         Map<String, String> annotations = new HashMap<>();
 
@@ -755,6 +764,25 @@ public abstract class AbstractModel {
                         && ((PersistentClaimStorage) storage).isDeleteClaim()));
 
         List<Container> initContainersInternal = new ArrayList<>();
+        PodSecurityContext securityContext = null;
+        // if a persistent volume claim is requested and the running cluster is a Kubernetes one
+        // there is an hack on volume mounting which needs an "init-container"
+        if (this.storage instanceof PersistentClaimStorage && !isOpenShift) {
+            String chown = String.format("chown -R %d:%d %s",
+                    AbstractModel.VOLUME_MOUNT_HACK_GROUPID,
+                    AbstractModel.VOLUME_MOUNT_HACK_GROUPID,
+                    volumeMounts.get(0).getMountPath());
+            Container initContainer = new ContainerBuilder()
+                    .withName(AbstractModel.VOLUME_MOUNT_HACK_NAME)
+                    .withImage(AbstractModel.VOLUME_MOUNT_HACK_IMAGE)
+                    .withVolumeMounts(volumeMounts.get(0))
+                    .withCommand("sh", "-c", chown)
+                    .build();
+            initContainersInternal.add(initContainer);
+            securityContext = new PodSecurityContextBuilder()
+                    .withFsGroup(AbstractModel.VOLUME_MOUNT_HACK_GROUPID)
+                    .build();
+        }
         // add all the other init containers provided by the specific model implementation
         if (initContainers != null) {
             initContainersInternal.addAll(initContainers);
@@ -782,6 +810,7 @@ public abstract class AbstractModel {
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())
                             .withAffinity(affinity)
+                            .withSecurityContext(securityContext)
                             .withInitContainers(initContainersInternal)
                             .withContainers(containers)
                             .withVolumes(volumes)
