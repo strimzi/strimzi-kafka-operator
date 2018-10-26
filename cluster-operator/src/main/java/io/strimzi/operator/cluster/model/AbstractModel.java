@@ -91,6 +91,7 @@ public abstract class AbstractModel {
 
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     protected static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
+    private static final Long VOLUME_MOUNT_HACK_USERID = 1001L;
     private static final Long VOLUME_MOUNT_HACK_GROUPID = 0L;
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";
@@ -769,7 +770,7 @@ public abstract class AbstractModel {
         // there is an hack on volume mounting which needs an "init-container"
         if (this.storage instanceof PersistentClaimStorage && !isOpenShift) {
             String chown = String.format("chown -R %d:%d %s",
-                    AbstractModel.VOLUME_MOUNT_HACK_GROUPID,
+                    AbstractModel.VOLUME_MOUNT_HACK_USERID,
                     AbstractModel.VOLUME_MOUNT_HACK_GROUPID,
                     volumeMounts.get(0).getMountPath());
             Container initContainer = new ContainerBuilder()
