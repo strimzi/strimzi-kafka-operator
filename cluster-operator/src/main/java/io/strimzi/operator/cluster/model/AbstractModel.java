@@ -58,6 +58,7 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
@@ -69,7 +70,6 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -152,6 +152,12 @@ public abstract class AbstractModel {
     private String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
     private Logging logging;
 
+    // Templates
+    private ResourceTemplate statefulsetTemplate;
+    private ResourceTemplate deploymentTemplate;
+    private ResourceTemplate podTemplate;
+    private ResourceTemplate serviceTemplate;
+    private ResourceTemplate headlessServiceTemplate;
 
     // Owner Reference information
     private String ownerApiVersion;
@@ -228,8 +234,17 @@ public abstract class AbstractModel {
         return getLabelsWithName(name);
     }
 
+    protected Map<String, String> getLabelsWithName(Map<String, String> userLabels) {
+        return getLabelsWithName(name, userLabels);
+    }
+
+
     protected Map<String, String> getLabelsWithName(String name) {
         return labels.withName(name).toMap();
+    }
+
+    protected Map<String, String> getLabelsWithName(String name, Map<String, String> userLabels) {
+        return labels.withName(name).withUserLabels(userLabels).toMap();
     }
 
     public boolean isMetricsEnabled() {
@@ -698,12 +713,8 @@ public abstract class AbstractModel {
         return probe;
     }
 
-    protected Service createService(String type, List<ServicePort> ports) {
-        return createService(type, ports, Collections.emptyMap());
-    }
-
     protected Service createService(String type, List<ServicePort> ports,  Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithName(serviceName), getSelectorLabels(), annotations);
+        return createService(serviceName, type, ports, getLabelsWithName(serviceName, getServiceTemplate().getMetadata().getLabels()), getSelectorLabels(), annotations);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> selector, Map<String, String> annotations) {
@@ -725,17 +736,13 @@ public abstract class AbstractModel {
         return service;
     }
 
-    protected Service createHeadlessService(List<ServicePort> ports) {
-        return createHeadlessService(ports, Collections.emptyMap());
-    }
-
     protected Service createHeadlessService(List<ServicePort> ports, Map<String, String> annotations) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(headlessServiceName)
-                    .withLabels(getLabelsWithName(headlessServiceName))
+                    .withLabels(getLabelsWithName(headlessServiceName, getHeadlessServiceTemplate().getMetadata().getLabels()))
                     .withNamespace(namespace)
-                    .withAnnotations(annotations)
+                    .withAnnotations(mergeAnnotations(annotations, getHeadlessServiceTemplate().getMetadata().getAnnotations()))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -792,9 +799,9 @@ public abstract class AbstractModel {
         StatefulSet statefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithName())
+                    .withLabels(getLabelsWithName(getStatefulsetTemplate().getMetadata().getLabels()))
                     .withNamespace(namespace)
-                    .withAnnotations(annotations)
+                    .withAnnotations(mergeAnnotations(annotations, statefulsetTemplate.getMetadata().getAnnotations()))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -806,7 +813,8 @@ public abstract class AbstractModel {
                     .withNewTemplate()
                         .withNewMetadata()
                             .withName(name)
-                            .withLabels(getLabelsWithName())
+                            .withLabels(getLabelsWithName(getPodTemplate().getMetadata().getLabels()))
+                            .withAnnotations(mergeAnnotations(null, podTemplate.getMetadata().getAnnotations()))
                         .endMetadata()
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())
@@ -837,9 +845,9 @@ public abstract class AbstractModel {
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithName())
+                    .withLabels(getLabelsWithName(getDeploymentTemplate().getMetadata().getLabels()))
                     .withNamespace(namespace)
-                    .withAnnotations(deploymentAnnotations)
+                    .withAnnotations(mergeAnnotations(deploymentAnnotations, deploymentTemplate.getMetadata().getAnnotations()))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -848,8 +856,8 @@ public abstract class AbstractModel {
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels()).build())
                     .withNewTemplate()
                         .withNewMetadata()
-                            .withLabels(getLabelsWithName())
-                            .withAnnotations(podAnnotations)
+                            .withLabels(getLabelsWithName(getPodTemplate().getMetadata().getLabels()))
+                            .withAnnotations(mergeAnnotations(podAnnotations, podTemplate.getMetadata().getAnnotations()))
                         .endMetadata()
                         .withNewSpec()
                             .withAffinity(affinity)
@@ -1079,5 +1087,65 @@ public abstract class AbstractModel {
 
     public static String clusterCaKeySecretName(String cluster)  {
         return cluster + "-cluster-ca";
+    }
+
+    protected ResourceTemplate getStatefulsetTemplate() {
+        return statefulsetTemplate;
+    }
+
+    protected void setStatefulsetTemplate(ResourceTemplate statefulsetTemplate) {
+        this.statefulsetTemplate = statefulsetTemplate;
+    }
+
+    protected ResourceTemplate getDeploymentTemplate() {
+        return deploymentTemplate;
+    }
+
+    protected void setDeploymentTemplate(ResourceTemplate deploymentTemplate) {
+        this.deploymentTemplate = deploymentTemplate;
+    }
+
+    protected ResourceTemplate getPodTemplate() {
+        return podTemplate;
+    }
+
+    protected void setPodTemplate(ResourceTemplate podTemplate) {
+        this.podTemplate = podTemplate;
+    }
+
+    protected ResourceTemplate getServiceTemplate() {
+        return serviceTemplate;
+    }
+
+    protected void setServiceTemplate(ResourceTemplate serviceTemplate) {
+        this.serviceTemplate = serviceTemplate;
+    }
+
+    protected ResourceTemplate getHeadlessServiceTemplate() {
+        return headlessServiceTemplate;
+    }
+
+    protected void setHeadlessServiceTemplate(ResourceTemplate headlessServiceTemplate) {
+        this.headlessServiceTemplate = headlessServiceTemplate;
+    }
+
+    protected static Map<String, String> mergeAnnotations(Map<String, String> internal, Map<String, String> template) {
+        Map<String, String> merged = new HashMap<>();
+
+        if (internal != null) {
+            merged.putAll(internal);
+        }
+
+        if (template != null) {
+            for (String key : template.keySet()) {
+                if (key.contains("strimzi.io")) {
+                    throw new IllegalArgumentException("User annotations includes a Strimzi annotation: " + key);
+                }
+            }
+
+            merged.putAll(template);
+        }
+
+        return merged;
     }
 }

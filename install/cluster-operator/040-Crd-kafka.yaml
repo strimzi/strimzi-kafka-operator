@@ -1407,6 +1407,15 @@ spec:
                             memory:
                               type: string
                               pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
+                template:
+                  type: object
+                  properties:
+                    deployment:
+                      type: object
+                      properties: {}
+                    pod:
+                      type: object
+                      properties: {}
             clusterCa:
               type: object
               properties:

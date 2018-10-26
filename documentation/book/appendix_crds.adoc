@@ -427,7 +427,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [id='type-ResourceTemplate-{context}']
 ### `ResourceTemplate` schema reference
 
-Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -551,6 +551,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |tlsSidecar     1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
+|template       1.2+<.<|Template for Entity Operator resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
+|xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`]
 |====
 
 [id='type-EntityTopicOperatorSpec-{context}']
@@ -599,6 +601,21 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |xref:type-Resources-{context}[`Resources`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|====
+
+[id='type-EntityOperatorTemplate-{context}']
+### `EntityOperatorTemplate` schema reference
+
+Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
+
+
+[options="header"]
+|====
+|Field              |Description
+|deployment  1.2+<.<|Template for Entity Operator `Deployment`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod         1.2+<.<|Template for Entity Operator `Pods`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
 [id='type-CertificateAuthority-{context}']

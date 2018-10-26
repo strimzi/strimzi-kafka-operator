@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
@@ -45,6 +46,7 @@ public class EntityOperatorSpec implements Serializable {
     private Affinity affinity;
     private List<Toleration> tolerations;
     private TlsSidecar tlsSidecar;
+    private EntityOperatorTemplate template = new EntityOperatorTemplate();
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Topic Operator")
@@ -97,6 +99,17 @@ public class EntityOperatorSpec implements Serializable {
 
     public void setTlsSidecar(TlsSidecar tlsSidecar) {
         this.tlsSidecar = tlsSidecar;
+    }
+
+    @Description("Template for Entity Operator resources. " +
+            "The template allows users to specify how is the `Deployment` and `Pods` generated.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public EntityOperatorTemplate getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(EntityOperatorTemplate template) {
+        this.template = template;
     }
 
     @JsonAnyGetter

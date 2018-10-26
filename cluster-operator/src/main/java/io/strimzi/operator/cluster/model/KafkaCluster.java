@@ -49,6 +49,8 @@ import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
+import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -134,6 +136,12 @@ public class KafkaCluster extends AbstractModel {
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
     private SortedMap<Integer, String> externalAddresses = new TreeMap<>();
+
+    // Templates
+    private ResourceTemplate externalBootstrapServiceTemplate;
+    private ResourceTemplate perPodServiceTemplate;
+    private ResourceTemplate externalBootstrapRouteTemplate;
+    private ResourceTemplate perPodRouteTemplate;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -291,6 +299,18 @@ public class KafkaCluster extends AbstractModel {
 
         result.setAuthorization(kafkaClusterSpec.getAuthorization());
 
+        if (kafkaClusterSpec.getTemplate() != null) {
+            KafkaClusterTemplate template = kafkaClusterSpec.getTemplate();
+            result.setStatefulsetTemplate(template.getStatefulset());
+            result.setPodTemplate(template.getPod());
+            result.setServiceTemplate(template.getBootstrapService());
+            result.setHeadlessServiceTemplate(template.getBrokersService());
+            result.setExternalBootstrapServiceTemplate(template.getExternalBootstrapService());
+            result.setPerPodServiceTemplate(template.getPerPodService());
+            result.setExternalBootstrapRouteTemplate(template.getExternalBootstrapRoute());
+            result.setPerPodRouteTemplate(template.getPerPodRoute());
+        }
+
         return result;
     }
 
@@ -361,7 +381,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateService() {
-        return createService("ClusterIP", getServicePorts(), getPrometheusAnnotations());
+        return createService("ClusterIP", getServicePorts(), mergeAnnotations(getPrometheusAnnotations(), getServiceTemplate().getMetadata().getAnnotations()));
     }
 
     /**
@@ -392,7 +412,7 @@ public class KafkaCluster extends AbstractModel {
 
             List<ServicePort> ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
 
-            return createService(externalBootstrapServiceName, getExternalServiceType(), ports, getLabelsWithName(externalBootstrapServiceName), getSelectorLabels(), Collections.emptyMap());
+            return createService(externalBootstrapServiceName, getExternalServiceType(), ports, getLabelsWithName(externalBootstrapServiceName, getExternalBootstrapServiceTemplate().getMetadata().getLabels()), getSelectorLabels(), mergeAnnotations(Collections.EMPTY_MAP, getExternalBootstrapServiceTemplate().getMetadata().getAnnotations()));
         }
 
         return null;
@@ -413,7 +433,7 @@ public class KafkaCluster extends AbstractModel {
 
             Labels selector = Labels.fromMap(getSelectorLabels()).withStatefulSetPod(kafkaPodName(cluster, pod));
 
-            return createService(perPodServiceName, getExternalServiceType(), ports, getLabelsWithName(perPodServiceName), selector.toMap(), Collections.emptyMap());
+            return createService(perPodServiceName, getExternalServiceType(), ports, getLabelsWithName(perPodServiceName, getPerPodServiceTemplate().getMetadata().getLabels()), selector.toMap(), mergeAnnotations(Collections.EMPTY_MAP, getPerPodServiceTemplate().getMetadata().getAnnotations()));
         }
 
         return null;
@@ -432,7 +452,8 @@ public class KafkaCluster extends AbstractModel {
             Route route = new RouteBuilder()
                     .withNewMetadata()
                         .withName(perPodServiceName)
-                        .withLabels(getLabelsWithName(perPodServiceName))
+                        .withLabels(getLabelsWithName(perPodServiceName, perPodRouteTemplate.getMetadata().getLabels()))
+                        .withAnnotations(mergeAnnotations(null, perPodRouteTemplate.getMetadata().getAnnotations()))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -451,7 +472,6 @@ public class KafkaCluster extends AbstractModel {
                     .build();
 
             return route;
-
         }
 
         return null;
@@ -466,7 +486,8 @@ public class KafkaCluster extends AbstractModel {
             Route route = new RouteBuilder()
                     .withNewMetadata()
                         .withName(serviceName)
-                        .withLabels(getLabelsWithName(serviceName))
+                        .withLabels(getLabelsWithName(serviceName, externalBootstrapRouteTemplate.getMetadata().getLabels()))
+                        .withAnnotations(mergeAnnotations(null, externalBootstrapRouteTemplate.getMetadata().getAnnotations()))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -999,5 +1020,37 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return false;
+    }
+
+    public ResourceTemplate getExternalBootstrapServiceTemplate() {
+        return externalBootstrapServiceTemplate;
+    }
+
+    public void setExternalBootstrapServiceTemplate(ResourceTemplate externalBootstrapServiceTemplate) {
+        this.externalBootstrapServiceTemplate = externalBootstrapServiceTemplate;
+    }
+
+    public ResourceTemplate getPerPodServiceTemplate() {
+        return perPodServiceTemplate;
+    }
+
+    public void setPerPodServiceTemplate(ResourceTemplate perPodServiceTemplate) {
+        this.perPodServiceTemplate = perPodServiceTemplate;
+    }
+
+    public ResourceTemplate getExternalBootstrapRouteTemplate() {
+        return externalBootstrapRouteTemplate;
+    }
+
+    public void setExternalBootstrapRouteTemplate(ResourceTemplate externalBootstrapRouteTemplate) {
+        this.externalBootstrapRouteTemplate = externalBootstrapRouteTemplate;
+    }
+
+    public ResourceTemplate getPerPodRouteTemplate() {
+        return perPodRouteTemplate;
+    }
+
+    public void setPerPodRouteTemplate(ResourceTemplate perPodRouteTemplate) {
+        this.perPodRouteTemplate = perPodRouteTemplate;
     }
 }

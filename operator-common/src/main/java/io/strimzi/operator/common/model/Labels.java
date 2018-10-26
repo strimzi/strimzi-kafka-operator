@@ -96,6 +96,14 @@ public class Labels {
         return EMPTY;
     }
 
+    public Labels withUserLabels(Map<String, String> userLabels) {
+        Map<String, String> newLabels = new HashMap<>(labels.size());
+        newLabels.putAll(labels);
+        newLabels.putAll(Labels.userLabels(userLabels).toMap());
+
+        return new Labels(newLabels);
+    }
+
     /**
      * Returns the labels of the given {@code resource}.
      */

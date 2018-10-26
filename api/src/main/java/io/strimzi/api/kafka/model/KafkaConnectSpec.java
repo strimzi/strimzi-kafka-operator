@@ -54,7 +54,7 @@ public class KafkaConnectSpec implements Serializable {
     private String bootstrapServers;
     private KafkaConnectTls tls;
     private KafkaConnectAuthentication authentication;
-    private KafkaConnectTemplate template;
+    private KafkaConnectTemplate template = new KafkaConnectTemplate();
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the Kafka Connect group.")

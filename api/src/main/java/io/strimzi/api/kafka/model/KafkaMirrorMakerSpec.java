@@ -51,7 +51,7 @@ public class KafkaMirrorMakerSpec implements Serializable {
     private JvmOptions jvmOptions;
     private Logging logging;
     private Map<String, Object> metrics = new HashMap<>(0);
-    private KafkaMirrorMakerTemplate template;
+    private KafkaMirrorMakerTemplate template = new KafkaMirrorMakerTemplate();
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the `Deployment`.")

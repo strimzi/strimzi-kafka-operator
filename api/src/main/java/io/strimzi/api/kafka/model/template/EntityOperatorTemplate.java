@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for Strimzi resources.
+ * Representation of a template for Entity Operator resources.
  */
 @Buildable(
         editableEnabled = false,
@@ -25,21 +25,32 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "metadata"})
-public class ResourceTemplate implements Serializable {
+        "deployment", "pod"})
+public class EntityOperatorTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private MetadataTemplate metadata = new MetadataTemplate();
+    private ResourceTemplate deployment = new ResourceTemplate();
+    private ResourceTemplate pod = new ResourceTemplate();
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metadata which should be applied to the resource.")
+    @Description("Template for Entity Operator `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public MetadataTemplate getMetadata() {
-        return metadata;
+    public ResourceTemplate getDeployment() {
+        return deployment;
     }
 
-    public void setMetadata(MetadataTemplate metadata) {
-        this.metadata = metadata;
+    public void setDeployment(ResourceTemplate deployment) {
+        this.deployment = deployment;
+    }
+
+    @Description("Template for Entity Operator `Pods`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getPod() {
+        return pod;
+    }
+
+    public void setPod(ResourceTemplate pod) {
+        this.pod = pod;
     }
 
     @JsonAnyGetter

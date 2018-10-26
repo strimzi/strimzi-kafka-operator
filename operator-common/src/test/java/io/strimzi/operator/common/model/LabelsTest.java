@@ -85,4 +85,35 @@ public class LabelsTest {
 
         assertEquals(expected, labels.strimziLabels().toMap());
     }
+
+    @Test
+    public void testWithUserLabels()   {
+        Labels start = Labels.forCluster("my-cluster");
+
+        // null user labels
+        Labels nullLabels = start.withUserLabels(null);
+        assertEquals(start.toMap(), nullLabels.toMap());
+
+        // Non-null values
+        Map userLabels = new HashMap<String, String>(2);
+        userLabels.put("key1", "value1");
+        userLabels.put("key2", "value2");
+
+        Map<String, String> expected = new HashMap<String, String>();
+        expected.putAll(start.toMap());
+        expected.putAll(userLabels);
+
+        Labels nonNullLabels = start.withUserLabels(userLabels);
+        assertEquals(expected, nonNullLabels.toMap());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testWithInvalidUserLabels()   {
+        Map userLabelsWithStrimzi = new HashMap<String, String>(2);
+        userLabelsWithStrimzi.put("key1", "value1");
+        userLabelsWithStrimzi.put("key2", "value2");
+        userLabelsWithStrimzi.put("strimzi.io/something", "value3");
+
+        Labels nonNullLabels = Labels.EMPTY.withUserLabels(userLabelsWithStrimzi);
+    }
 }

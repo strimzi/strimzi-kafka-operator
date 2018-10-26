@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -178,6 +179,13 @@ public class KafkaConnectCluster extends AbstractModel {
                     }
                 }
             }
+
+            if (spec.getTemplate() != null) {
+                KafkaConnectTemplate template = spec.getTemplate();
+                kafkaConnect.setDeploymentTemplate(template.getDeployment());
+                kafkaConnect.setPodTemplate(template.getPod());
+                kafkaConnect.setServiceTemplate(template.getApiService());
+            }
         }
         return kafkaConnect;
     }
@@ -189,7 +197,7 @@ public class KafkaConnectCluster extends AbstractModel {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
 
-        return createService("ClusterIP", ports, getPrometheusAnnotations());
+        return createService("ClusterIP", ports, mergeAnnotations(getPrometheusAnnotations(), getServiceTemplate().getMetadata().getAnnotations()));
     }
 
     protected List<ContainerPort> getContainerPortList() {
