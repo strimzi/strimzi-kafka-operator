@@ -14,7 +14,7 @@ spec:
       serviceAccountName: strimzi-cluster-operator
       containers:
       - name: strimzi-cluster-operator
-        image: strimzi/cluster-operator:0.8.1
+        image: strimzi/cluster-operator:0.8.2
         imagePullPolicy: IfNotPresent
         env:
         - name: STRIMZI_NAMESPACE
@@ -26,27 +26,27 @@ spec:
         - name: STRIMZI_OPERATION_TIMEOUT_MS
           value: "300000"
         - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
-          value: strimzi/zookeeper:0.8.1
+          value: strimzi/zookeeper:0.8.2
         - name: STRIMZI_DEFAULT_KAFKA_IMAGE
-          value: strimzi/kafka:0.8.1
+          value: strimzi/kafka:0.8.2
         - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
-          value: strimzi/kafka-connect:0.8.1
+          value: strimzi/kafka-connect:0.8.2
         - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
-          value: strimzi/kafka-connect-s2i:0.8.1
+          value: strimzi/kafka-connect-s2i:0.8.2
         - name: STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE
-          value: strimzi/kafka-mirror-maker:0.8.1
+          value: strimzi/kafka-mirror-maker:0.8.2
         - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-          value: strimzi/topic-operator:0.8.1
+          value: strimzi/topic-operator:0.8.2
         - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-          value: strimzi/user-operator:0.8.1
+          value: strimzi/user-operator:0.8.2
         - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-          value: strimzi/kafka-init:0.8.1
+          value: strimzi/kafka-init:0.8.2
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
-          value: strimzi/zookeeper-stunnel:0.8.1
+          value: strimzi/zookeeper-stunnel:0.8.2
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
-          value: strimzi/kafka-stunnel:0.8.1
+          value: strimzi/kafka-stunnel:0.8.2
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-          value: strimzi/entity-operator-stunnel:0.8.1
+          value: strimzi/entity-operator-stunnel:0.8.2
         - name: STRIMZI_LOG_LEVEL
           value: INFO
         livenessProbe:
