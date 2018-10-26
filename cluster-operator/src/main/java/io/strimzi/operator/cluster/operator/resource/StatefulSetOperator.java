@@ -145,9 +145,12 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                 Future del = podOperations.waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                     // predicate - changed generation means pod has been updated
                     String newUid = getPodUid(podOperations.get(namespace, podName));
-                    return !deleted.result().equals(newUid);
+                    boolean done = !deleted.result().equals(newUid);
+                    if (done) {
+                        log.debug("Rolling pod {} finished", podName);
+                    }
+                    return done;
                 });
-                log.debug("Rolling pod {} finished", podName);
                 return del;
             });
 
