@@ -46,7 +46,7 @@ public class EntityOperatorSpec implements Serializable {
     private Affinity affinity;
     private List<Toleration> tolerations;
     private TlsSidecar tlsSidecar;
-    private EntityOperatorTemplate template = new EntityOperatorTemplate();
+    private EntityOperatorTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Topic Operator")

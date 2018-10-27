@@ -29,14 +29,14 @@ import java.util.Map;
 public class KafkaClusterTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate statefulset = new ResourceTemplate();
-    private ResourceTemplate pod = new ResourceTemplate();
-    private ResourceTemplate bootstrapService = new ResourceTemplate();
-    private ResourceTemplate brokersService = new ResourceTemplate();
-    private ResourceTemplate externalBootstrapService = new ResourceTemplate();
-    private ResourceTemplate perPodService = new ResourceTemplate();
-    private ResourceTemplate externalBootstrapRoute = new ResourceTemplate();
-    private ResourceTemplate perPodRoute = new ResourceTemplate();
+    private ResourceTemplate statefulset;
+    private ResourceTemplate pod;
+    private ResourceTemplate bootstrapService;
+    private ResourceTemplate brokersService;
+    private ResourceTemplate externalBootstrapService;
+    private ResourceTemplate perPodService;
+    private ResourceTemplate externalBootstrapRoute;
+    private ResourceTemplate perPodRoute;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka `StatefulSet`.")

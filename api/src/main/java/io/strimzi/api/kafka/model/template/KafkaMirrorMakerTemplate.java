@@ -29,8 +29,8 @@ import java.util.Map;
 public class KafkaMirrorMakerTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate deployment = new ResourceTemplate();
-    private ResourceTemplate pod = new ResourceTemplate();
+    private ResourceTemplate deployment;
+    private ResourceTemplate pod;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Mirror Maker `Deployment`.")

@@ -184,8 +184,16 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         if (kafkaMirrorMaker.getSpec().getTemplate() != null) {
             KafkaMirrorMakerTemplate template = kafkaMirrorMaker.getSpec().getTemplate();
-            kafkaMirrorMakerCluster.setDeploymentTemplate(template.getDeployment());
-            kafkaMirrorMakerCluster.setPodTemplate(template.getPod());
+
+            if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
+                kafkaMirrorMakerCluster.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                kafkaMirrorMakerCluster.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+            }
+
+            if (template.getPod() != null && template.getPod().getMetadata() != null)  {
+                kafkaMirrorMakerCluster.templatePodLabels = template.getPod().getMetadata().getLabels();
+                kafkaMirrorMakerCluster.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+            }
         }
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);

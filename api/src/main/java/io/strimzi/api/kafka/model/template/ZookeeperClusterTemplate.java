@@ -29,10 +29,10 @@ import java.util.Map;
 public class ZookeeperClusterTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate statefulset = new ResourceTemplate();
-    private ResourceTemplate pod = new ResourceTemplate();
-    private ResourceTemplate clientService = new ResourceTemplate();
-    private ResourceTemplate nodesService = new ResourceTemplate();
+    private ResourceTemplate statefulset;
+    private ResourceTemplate pod;
+    private ResourceTemplate clientService;
+    private ResourceTemplate nodesService;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Zookeeper `StatefulSet`.")

@@ -143,8 +143,16 @@ public class EntityOperator extends AbstractModel {
 
             if (entityOperatorSpec.getTemplate() != null) {
                 EntityOperatorTemplate template = entityOperatorSpec.getTemplate();
-                result.setDeploymentTemplate(template.getDeployment());
-                result.setPodTemplate(template.getPod());
+
+                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
+                    result.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                    result.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+                }
+
+                if (template.getPod() != null && template.getPod().getMetadata() != null)  {
+                    result.templatePodLabels = template.getPod().getMetadata().getLabels();
+                    result.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+                }
             }
         }
         return result;

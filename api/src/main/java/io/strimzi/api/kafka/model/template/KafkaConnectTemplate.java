@@ -29,9 +29,9 @@ import java.util.Map;
 public class KafkaConnectTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate deployment = new ResourceTemplate();
-    private ResourceTemplate pod = new ResourceTemplate();
-    private ResourceTemplate apiService = new ResourceTemplate();
+    private ResourceTemplate deployment;
+    private ResourceTemplate pod;
+    private ResourceTemplate apiService;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Connect `Deployment`.")

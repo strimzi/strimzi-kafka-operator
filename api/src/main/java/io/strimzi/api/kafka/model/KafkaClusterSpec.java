@@ -76,7 +76,7 @@ public class KafkaClusterSpec implements Serializable {
     private List<Toleration> tolerations;
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
-    private KafkaClusterTemplate template = new KafkaClusterTemplate();
+    private KafkaClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)

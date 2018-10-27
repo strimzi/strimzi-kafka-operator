@@ -29,7 +29,7 @@ import java.util.Map;
 public class ResourceTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private MetadataTemplate metadata = new MetadataTemplate();
+    private MetadataTemplate metadata;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata which should be applied to the resource.")
