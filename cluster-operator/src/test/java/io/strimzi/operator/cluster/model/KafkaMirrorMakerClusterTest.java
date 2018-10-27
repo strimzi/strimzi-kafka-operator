@@ -34,6 +34,7 @@ import java.util.Map;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class KafkaMirrorMakerClusterTest {
     private final String namespace = "test";
@@ -381,5 +382,43 @@ public class KafkaMirrorMakerClusterTest {
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
         assertEquals(1, resource.getMetadata().getOwnerReferences().size());
         assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
+    }
+
+    @Test
+    public void testTemplate() {
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewDeployment()
+                            .withNewMetadata()
+                                .withLabels(depLabels)
+                                .withAnnotations(depAnots)
+                            .endMetadata()
+                        .endDeployment()
+                        .withNewPod()
+                            .withNewMetadata()
+                                .withLabels(podLabels)
+                                .withAnnotations(podAnots)
+                            .endMetadata()
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource);
+
+        // Check Deployment
+        Deployment dep = mmc.generateDeployment(Collections.EMPTY_MAP, true);
+        assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
+        assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
+
+        // Check Pods
+        assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
+        assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
     }
 }

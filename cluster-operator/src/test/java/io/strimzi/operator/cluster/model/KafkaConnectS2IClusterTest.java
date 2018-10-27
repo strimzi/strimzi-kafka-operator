@@ -409,4 +409,56 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(1, resource.getMetadata().getOwnerReferences().size());
         assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
     }
+
+    @Test
+    public void testTemplate() {
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+
+        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewDeployment()
+                            .withNewMetadata()
+                                .withLabels(depLabels)
+                                .withAnnotations(depAnots)
+                            .endMetadata()
+                        .endDeployment()
+                        .withNewPod()
+                            .withNewMetadata()
+                                .withLabels(podLabels)
+                                .withAnnotations(podAnots)
+                            .endMetadata()
+                        .endPod()
+                        .withNewApiService()
+                            .withNewMetadata()
+                                .withLabels(svcLabels)
+                                .withAnnotations(svcAnots)
+                            .endMetadata()
+                        .endApiService()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+
+        // Check Deployment
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
+        assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
+
+        // Check Pods
+        assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
+        assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+
+        // Check Service
+        Service svc = kc.generateService();
+        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()));
+        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()));
+    }
 }
