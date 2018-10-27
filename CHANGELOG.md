@@ -2,7 +2,7 @@
 
 ## 0.9.0
 
-* Work in Progress
+* Add possibility to label and annotate different resources (#1093)
 
 ## 0.8.1
 
