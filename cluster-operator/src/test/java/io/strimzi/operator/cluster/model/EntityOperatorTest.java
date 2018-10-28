@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.test.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class EntityOperatorTest {
 
@@ -118,6 +120,49 @@ public class EntityOperatorTest {
     @Test
     public void withAffinity() throws IOException {
         helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void testTemplate() {
+        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+
+        Kafka resource =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                            .withNewEntityOperator()
+                                .withTopicOperator(entityTopicOperatorSpec)
+                                .withUserOperator(entityUserOperatorSpec)
+                                .withNewTemplate()
+                                    .withNewDeployment()
+                                        .withNewMetadata()
+                                            .withLabels(depLabels)
+                                            .withAnnotations(depAnots)
+                                        .endMetadata()
+                                    .endDeployment()
+                                    .withNewPod()
+                                        .withNewMetadata()
+                                            .withLabels(podLabels)
+                                            .withAnnotations(podAnots)
+                                        .endMetadata()
+                                    .endPod()
+                                .endTemplate()
+                            .endEntityOperator()
+                        .endSpec()
+                        .build();
+        EntityOperator entityOperator = EntityOperator.fromCrd(resource);
+
+        // Check Deployment
+        Deployment dep = entityOperator.generateDeployment(true);
+        assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
+        assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
+
+        // Check Pods
+        assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
+        assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
     }
 
     @AfterClass

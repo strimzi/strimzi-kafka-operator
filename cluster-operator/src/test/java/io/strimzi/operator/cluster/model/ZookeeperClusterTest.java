@@ -261,4 +261,73 @@ public class ZookeeperClusterTest {
                 new HashSet<Object>(cert.getSubjectAlternativeNames()));
 
     }
+
+    @Test
+    public void testTemplate() {
+        Map<String, String> ssLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> ssAnots = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+
+        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
+
+        Map<String, String> hSvcLabels = TestUtils.map("l7", "v7", "l8", "v8");
+        Map<String, String> hSvcAnots = TestUtils.map("a7", "v7", "a8", "v8");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewStatefulset()
+                                .withNewMetadata()
+                                    .withLabels(ssLabels)
+                                    .withAnnotations(ssAnots)
+                                .endMetadata()
+                            .endStatefulset()
+                            .withNewPod()
+                                .withNewMetadata()
+                                    .withLabels(podLabels)
+                                    .withAnnotations(podAnots)
+                                .endMetadata()
+                            .endPod()
+                            .withNewClientService()
+                                .withNewMetadata()
+                                    .withLabels(svcLabels)
+                                    .withAnnotations(svcAnots)
+                                .endMetadata()
+                            .endClientService()
+                            .withNewNodesService()
+                                .withNewMetadata()
+                                    .withLabels(hSvcLabels)
+                                    .withAnnotations(hSvcAnots)
+                                .endMetadata()
+                            .endNodesService()
+                        .endTemplate()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly);
+
+        // Check StatefulSet
+        StatefulSet ss = zc.generateStatefulSet(true);
+        assertTrue(ss.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()));
+        assertTrue(ss.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()));
+
+        // Check Pods
+        assertTrue(ss.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
+        assertTrue(ss.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+
+        // Check Service
+        Service svc = zc.generateService();
+        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()));
+        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()));
+
+        // Check Headless Service
+        svc = zc.generateHeadlessService();
+        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(hSvcLabels.entrySet()));
+        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnots.entrySet()));
+    }
 }

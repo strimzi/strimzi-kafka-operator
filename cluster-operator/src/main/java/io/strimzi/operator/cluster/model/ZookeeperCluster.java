@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
 
@@ -181,6 +182,31 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setUserAffinity(zookeeperClusterSpec.getAffinity());
         zk.setTolerations(zookeeperClusterSpec.getTolerations());
         zk.setTlsSidecar(zookeeperClusterSpec.getTlsSidecar());
+
+        if (zookeeperClusterSpec.getTemplate() != null) {
+            ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
+
+            if (template.getStatefulset() != null && template.getStatefulset().getMetadata() != null)  {
+                zk.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
+                zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
+            }
+
+            if (template.getPod() != null && template.getPod().getMetadata() != null)  {
+                zk.templatePodLabels = template.getPod().getMetadata().getLabels();
+                zk.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+            }
+
+            if (template.getClientService() != null && template.getClientService().getMetadata() != null)  {
+                zk.templateServiceLabels = template.getClientService().getMetadata().getLabels();
+                zk.templateServiceAnnotations = template.getClientService().getMetadata().getAnnotations();
+            }
+
+            if (template.getNodesService() != null && template.getNodesService().getMetadata() != null)  {
+                zk.templateHeadlessServiceLabels = template.getNodesService().getMetadata().getLabels();
+                zk.templateHeadlessServiceAnnotations = template.getNodesService().getMetadata().getAnnotations();
+            }
+        }
+
         return zk;
     }
 
@@ -191,7 +217,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
         ports.add(createServicePort(CLIENT_PORT_NAME, CLIENT_PORT, CLIENT_PORT, "TCP"));
 
-        return createService("ClusterIP", ports, getPrometheusAnnotations());
+        return createService("ClusterIP", ports, mergeAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
     }
 
     public static String policyName(String cluster) {

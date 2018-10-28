@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -178,7 +179,27 @@ public class KafkaConnectCluster extends AbstractModel {
                     }
                 }
             }
+
+            if (spec.getTemplate() != null) {
+                KafkaConnectTemplate template = spec.getTemplate();
+
+                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
+                    kafkaConnect.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                    kafkaConnect.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+                }
+
+                if (template.getPod() != null && template.getPod().getMetadata() != null)  {
+                    kafkaConnect.templatePodLabels = template.getPod().getMetadata().getLabels();
+                    kafkaConnect.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+                }
+
+                if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
+                    kafkaConnect.templateServiceLabels = template.getApiService().getMetadata().getLabels();
+                    kafkaConnect.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
+                }
+            }
         }
+
         return kafkaConnect;
     }
 
@@ -189,7 +210,7 @@ public class KafkaConnectCluster extends AbstractModel {
             ports.add(createServicePort(METRICS_PORT_NAME, METRICS_PORT, METRICS_PORT, "TCP"));
         }
 
-        return createService("ClusterIP", ports, getPrometheusAnnotations());
+        return createService("ClusterIP", ports, mergeAnnotations(getPrometheusAnnotations(), templateServiceAnnotations));
     }
 
     protected List<ContainerPort> getContainerPortList() {

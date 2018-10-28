@@ -4,12 +4,16 @@
  */
 package io.strimzi.api.kafka.model.template;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Representation of a template for Kafka cluster resources.
@@ -33,6 +37,7 @@ public class KafkaClusterTemplate implements Serializable {
     private ResourceTemplate perPodService;
     private ResourceTemplate externalBootstrapRoute;
     private ResourceTemplate perPodRoute;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -112,5 +117,15 @@ public class KafkaClusterTemplate implements Serializable {
 
     public void setPerPodRoute(ResourceTemplate perPodRoute) {
         this.perPodRoute = perPodRoute;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

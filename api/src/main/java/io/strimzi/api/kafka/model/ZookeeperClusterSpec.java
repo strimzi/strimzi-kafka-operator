@@ -65,8 +65,8 @@ public class ZookeeperClusterSpec implements Serializable {
     private Map<String, Object> metrics = new HashMap<>(0);
     private Affinity affinity;
     private List<Toleration> tolerations;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
     private ZookeeperClusterTemplate template;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

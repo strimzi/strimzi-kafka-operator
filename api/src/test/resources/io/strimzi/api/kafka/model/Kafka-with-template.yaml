@@ -36,7 +36,7 @@ spec:
           annotations:
             key1: label1
             key2: label2
-      getBrokersService:
+      brokersService:
         metadata:
           labels:
             key1: label1
@@ -106,6 +106,26 @@ spec:
             key1: label1
             key2: label2
       nodesService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+    template:
+      deployment:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            key1: label1
+            key2: label2
+      pod:
         metadata:
           labels:
             key1: label1

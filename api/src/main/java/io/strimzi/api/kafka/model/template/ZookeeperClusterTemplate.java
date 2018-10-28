@@ -4,12 +4,16 @@
  */
 package io.strimzi.api.kafka.model.template;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Representation of a template for Zookeeper cluster resources.
@@ -29,6 +33,7 @@ public class ZookeeperClusterTemplate implements Serializable {
     private ResourceTemplate pod;
     private ResourceTemplate clientService;
     private ResourceTemplate nodesService;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Zookeeper `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -68,5 +73,15 @@ public class ZookeeperClusterTemplate implements Serializable {
 
     public void setNodesService(ResourceTemplate nodesService) {
         this.nodesService = nodesService;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

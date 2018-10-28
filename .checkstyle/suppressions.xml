@@ -21,11 +21,17 @@
     <suppress checks="ClassFanOutComplexity|JavaNCSS"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperatorTest.java"/>
 
-    <suppress checks="ClassFanOutComplexity"
+    <suppress checks="ClassFanOutComplexity|NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaCluster.java"/>
 
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperator.java"/>
+
+    <suppress checks="NPathComplexity"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]ZookeeperCluster.java"/>
+
+    <suppress checks="NPathComplexity|CyclomaticComplexity"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaConnectCluster.java"/>
 
     <!-- topic operator -->
     <suppress checks="NPathComplexity|CyclomaticComplexity"

@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
 
@@ -139,6 +140,20 @@ public class EntityOperator extends AbstractModel {
             result.setTopicOperator(EntityTopicOperator.fromCrd(kafkaAssembly));
             result.setUserOperator(EntityUserOperator.fromCrd(kafkaAssembly));
             result.setDeployed(result.getTopicOperator() != null || result.getUserOperator() != null);
+
+            if (entityOperatorSpec.getTemplate() != null) {
+                EntityOperatorTemplate template = entityOperatorSpec.getTemplate();
+
+                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
+                    result.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                    result.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+                }
+
+                if (template.getPod() != null && template.getPod().getMetadata() != null)  {
+                    result.templatePodLabels = template.getPod().getMetadata().getLabels();
+                    result.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+                }
+            }
         }
         return result;
     }

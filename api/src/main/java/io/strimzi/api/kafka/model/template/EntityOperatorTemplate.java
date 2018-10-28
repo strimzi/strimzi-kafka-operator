@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for Kafka Connect and Kafka Connect S2I resources.
+ * Representation of a template for Entity Operator resources.
  */
 @Buildable(
         editableEnabled = false,
@@ -25,16 +25,15 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pod", "apiService"})
-public class KafkaConnectTemplate implements Serializable {
+        "deployment", "pod"})
+public class EntityOperatorTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private ResourceTemplate deployment;
     private ResourceTemplate pod;
-    private ResourceTemplate apiService;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Template for Kafka Connect `Deployment`.")
+    @Description("Template for Entity Operator `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getDeployment() {
         return deployment;
@@ -44,7 +43,7 @@ public class KafkaConnectTemplate implements Serializable {
         this.deployment = deployment;
     }
 
-    @Description("Template for Kafka Connect `Pods`.")
+    @Description("Template for Entity Operator `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getPod() {
         return pod;
@@ -52,16 +51,6 @@ public class KafkaConnectTemplate implements Serializable {
 
     public void setPod(ResourceTemplate pod) {
         this.pod = pod;
-    }
-
-    @Description("Template for Kafka Connect API `Service`.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getApiService() {
-        return apiService;
-    }
-
-    public void setApiService(ResourceTemplate apiService) {
-        this.apiService = apiService;
     }
 
     @JsonAnyGetter

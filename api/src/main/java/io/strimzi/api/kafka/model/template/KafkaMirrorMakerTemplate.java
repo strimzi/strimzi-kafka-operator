@@ -4,12 +4,16 @@
  */
 package io.strimzi.api.kafka.model.template;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Representation of a template for Kafka Mirror Maker resources.
@@ -27,6 +31,7 @@ public class KafkaMirrorMakerTemplate implements Serializable {
 
     private ResourceTemplate deployment;
     private ResourceTemplate pod;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Mirror Maker `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -46,5 +51,15 @@ public class KafkaMirrorMakerTemplate implements Serializable {
 
     public void setPod(ResourceTemplate pod) {
         this.pod = pod;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

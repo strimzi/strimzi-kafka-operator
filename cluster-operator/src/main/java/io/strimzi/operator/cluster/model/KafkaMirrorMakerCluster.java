@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -180,6 +181,20 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         setClientAuth(kafkaMirrorMakerCluster, kafkaMirrorMaker.getSpec().getConsumer());
         setClientAuth(kafkaMirrorMakerCluster, kafkaMirrorMaker.getSpec().getProducer());
+
+        if (kafkaMirrorMaker.getSpec().getTemplate() != null) {
+            KafkaMirrorMakerTemplate template = kafkaMirrorMaker.getSpec().getTemplate();
+
+            if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
+                kafkaMirrorMakerCluster.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                kafkaMirrorMakerCluster.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+            }
+
+            if (template.getPod() != null && template.getPod().getMetadata() != null)  {
+                kafkaMirrorMakerCluster.templatePodLabels = template.getPod().getMetadata().getLabels();
+                kafkaMirrorMakerCluster.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+            }
+        }
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
         return kafkaMirrorMakerCluster;

@@ -684,4 +684,133 @@ public class KafkaClusterTest {
         kc.generateCertificates(kafkaAssembly, clusterCa, externalBootstrapAddress, externalAddresses);
         return kc.generateBrokersSecret();
     }
+
+    @Test
+    public void testTemplate() {
+        Map<String, String> ssLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> ssAnots = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+
+        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
+
+        Map<String, String> hSvcLabels = TestUtils.map("l7", "v7", "l8", "v8");
+        Map<String, String> hSvcAnots = TestUtils.map("a7", "v7", "a8", "v8");
+
+        Map<String, String> exSvcLabels = TestUtils.map("l9", "v9", "l10", "v10");
+        Map<String, String> exSvcAnots = TestUtils.map("a9", "v9", "a10", "v10");
+
+        Map<String, String> perPodSvcLabels = TestUtils.map("l11", "v11", "l12", "v12");
+        Map<String, String> perPodSvcAnots = TestUtils.map("a11", "v11", "a12", "v12");
+
+        Map<String, String> exRouteLabels = TestUtils.map("l13", "v13", "l14", "v14");
+        Map<String, String> exRouteAnots = TestUtils.map("a13", "v13", "a14", "v14");
+
+        Map<String, String> perPodRouteLabels = TestUtils.map("l15", "v15", "l16", "v16");
+        Map<String, String> perPodRouteAnots = TestUtils.map("a15", "v15", "a16", "v16");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                        .withNewKafkaListenerExternalRouteExternal()
+                        .endKafkaListenerExternalRouteExternal()
+                        .endListeners()
+                        .withNewTemplate()
+                            .withNewStatefulset()
+                                .withNewMetadata()
+                                    .withLabels(ssLabels)
+                                    .withAnnotations(ssAnots)
+                                .endMetadata()
+                            .endStatefulset()
+                            .withNewPod()
+                                .withNewMetadata()
+                                    .withLabels(podLabels)
+                                    .withAnnotations(podAnots)
+                                .endMetadata()
+                            .endPod()
+                            .withNewBootstrapService()
+                                .withNewMetadata()
+                                    .withLabels(svcLabels)
+                                    .withAnnotations(svcAnots)
+                                .endMetadata()
+                            .endBootstrapService()
+                            .withNewBrokersService()
+                                .withNewMetadata()
+                                    .withLabels(hSvcLabels)
+                                    .withAnnotations(hSvcAnots)
+                                .endMetadata()
+                            .endBrokersService()
+                            .withNewExternalBootstrapService()
+                                .withNewMetadata()
+                                    .withLabels(exSvcLabels)
+                                    .withAnnotations(exSvcAnots)
+                                .endMetadata()
+                            .endExternalBootstrapService()
+                            .withNewPerPodService()
+                                .withNewMetadata()
+                                    .withLabels(perPodSvcLabels)
+                                    .withAnnotations(perPodSvcAnots)
+                                .endMetadata()
+                            .endPerPodService()
+                            .withNewExternalBootstrapRoute()
+                                .withNewMetadata()
+                                .withLabels(exRouteLabels)
+                                .withAnnotations(exRouteAnots)
+                                .endMetadata()
+                            .endExternalBootstrapRoute()
+                            .withNewPerPodRoute()
+                                .withNewMetadata()
+                                .withLabels(perPodRouteLabels)
+                                .withAnnotations(perPodRouteAnots)
+                                .endMetadata()
+                            .endPerPodRoute()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+
+        // Check StatefulSet
+        StatefulSet ss = kc.generateStatefulSet(true);
+        assertTrue(ss.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()));
+        assertTrue(ss.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()));
+
+        // Check Pods
+        assertTrue(ss.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
+        assertTrue(ss.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+
+        // Check Service
+        Service svc = kc.generateService();
+        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()));
+        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()));
+
+        // Check Headless Service
+        svc = kc.generateHeadlessService();
+        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(hSvcLabels.entrySet()));
+        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnots.entrySet()));
+
+        // Check External Bootstrap service
+        svc = kc.generateExternalBootstrapService();
+        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(exSvcLabels.entrySet()));
+        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(exSvcAnots.entrySet()));
+
+        // Check per pod service
+        svc = kc.generateExternalService(0);
+        assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(perPodSvcLabels.entrySet()));
+        assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(perPodSvcAnots.entrySet()));
+
+        // Check Bootstrap Route
+        Route rt = kc.generateExternalBootstrapRoute();
+        assertTrue(rt.getMetadata().getLabels().entrySet().containsAll(exRouteLabels.entrySet()));
+        assertTrue(rt.getMetadata().getAnnotations().entrySet().containsAll(exRouteAnots.entrySet()));
+
+        // Check PerPodRoute
+        rt = kc.generateExternalRoute(0);
+        assertTrue(rt.getMetadata().getLabels().entrySet().containsAll(perPodRouteLabels.entrySet()));
+        assertTrue(rt.getMetadata().getAnnotations().entrySet().containsAll(perPodRouteAnots.entrySet()));
+    }
 }
