@@ -39,7 +39,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        log.info("UserOperator is starting");
+        log.info("UserOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
         Vertx vertx = Vertx.vertx();
         KubernetesClient client = new DefaultKubernetesClient();

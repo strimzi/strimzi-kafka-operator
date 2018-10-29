@@ -67,7 +67,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        log.info("ClusterOperator is starting");
+        log.info("ClusterOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
         Vertx vertx = Vertx.vertx();
         KubernetesClient client = new DefaultKubernetesClient();

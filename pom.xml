@@ -31,6 +31,7 @@
         <sonatype.nexus.staging>1.6.3</sonatype.nexus.staging>
         <jacoco.version>0.7.9</jacoco.version>
         <license.maven.version>2.11</license.maven.version>
+        <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
 
         <fabric8.kubernetes-client.version>3.1.8</fabric8.kubernetes-client.version>
         <fabric8.openshift-client.version>3.1.0</fabric8.openshift-client.version>
@@ -457,6 +458,19 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven-jar-plugin.version}</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
     </build>

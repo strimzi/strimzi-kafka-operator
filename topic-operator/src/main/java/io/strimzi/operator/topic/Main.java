@@ -23,6 +23,7 @@ public class Main {
     private final static Logger LOGGER = LogManager.getLogger(Main.class);
 
     public static void main(String[] args) {
+        LOGGER.info("TopicOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         Main main = new Main();
         main.run();
     }
