@@ -549,8 +549,7 @@ public class KafkaST extends AbstractST {
     }
 
     /**
-     * Greps logs from a pod which ran kafka-verifiable-producer.sh and
-     * kafka-verifiable-consumer.sh
+     * Greps logs from a pod which ran kafka-verifiable-consumer.sh
      */
     private void checkRecordsForConsumer(int messagesCount, Job job) {
         String podName = jobPodName(job);
