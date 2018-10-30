@@ -15,6 +15,7 @@ public class Main {
 
     public static void main(String[] args) {
 
+        log.info("Init-kafka {} is starting", Main.class.getPackage().getImplementationVersion());
         InitWriterConfig config = InitWriterConfig.fromMap(System.getenv());
         KubernetesClient client = new DefaultKubernetesClient();
 
