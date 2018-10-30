@@ -308,20 +308,20 @@ public class Resources {
         });
     }
 
-    DoneableKafkaMirrorMaker kafkaMirrorMaker(String name, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
-        return kafkaMirrorMaker(defaultMirrorMaker(name, groupId, mirrorMakerReplicas, tlsListener).build());
+    DoneableKafkaMirrorMaker kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
+        return kafkaMirrorMaker(defaultMirrorMaker(name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener).build());
     }
 
-    private KafkaMirrorMakerBuilder defaultMirrorMaker(String name, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
+    private KafkaMirrorMakerBuilder defaultMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
         return new KafkaMirrorMakerBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
                 .withNewConsumer()
-                    .withBootstrapServers(tlsListener ? name + "-kafka-bootstrap:9093" : name + "-kafka-bootstrap:9092")
+                    .withBootstrapServers(tlsListener ? sourceBootstrapServer + "-kafka-bootstrap:9093" : sourceBootstrapServer + "-kafka-bootstrap:9092")
                     .withGroupId(groupId)
                 .endConsumer()
                 .withNewProducer()
-                    .withBootstrapServers(tlsListener ? name + "-kafka-bootstrap:9093" : name + "-kafka-bootstrap:9092")
+                    .withBootstrapServers(tlsListener ? targetBootstrapServer + "-kafka-bootstrap:9093" : targetBootstrapServer + "-kafka-bootstrap:9092")
                 .endProducer()
             .withReplicas(mirrorMakerReplicas)
             .withWhitelist(".*")
@@ -344,8 +344,7 @@ public class Resources {
                     }
                 }
             );
-            return waitFor(deleteLater(
-                    k));
+            return waitFor(deleteLater(k));
         });
     }
 
