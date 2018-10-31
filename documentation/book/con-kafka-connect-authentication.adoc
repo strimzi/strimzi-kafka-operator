@@ -44,11 +44,13 @@ spec:
 
 == SCRAM-SHA-512 authentication
 
-To use the authentication using the SCRAM-SHA-512 SASL mechanism, set the `type` property to the value `scram-sha-512`.
-SCRAM-SHA-512 uses a username and password to authenticate.
-Specify the username in the `username` property.
-Specify the password as a link to a `Secret` containing the password in the `passwordSecret` property.
-It has to specify the name of the `Secret` containing the password and the name of the key under which the password is stored inside the `Secret`.
+To configure Kafka Connect to use SCRAM-SHA-512 authentication, set the `type` property to `scram-sha-512`.
+This authentication mechanism requires a username and password.
+
+* Specify the username in the `username` property.
+* In the `passwordSecret` property, specify a link to a `Secret` containing the password. The `secretName` property contains the name of such a `Secret` and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
+
+WARNING: Do not specify the actual password in the `password` field.
 
 .An example showing SCRAM-SHA-512 client authentication configuration
 [source,yaml,subs=attributes+]
@@ -64,6 +66,6 @@ spec:
     username: my-connect-user
     passwordSecret:
       secretName: my-connect-user
-      password: password
+      password: my-connect-password-key
   # ...
 ----

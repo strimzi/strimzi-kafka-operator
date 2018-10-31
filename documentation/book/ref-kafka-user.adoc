@@ -76,7 +76,7 @@ spec:
 ----
 
 When the user is created by the User Operator, the User Operator will create a new secret with the same name as the `KafkaUser` resource.
-The secret will contain the generated password.
+The secret will contain the generated password in the `password` key.
 
 .An example of the `Secret` with user credentials
 [source,yaml,subs="attributes+"]
