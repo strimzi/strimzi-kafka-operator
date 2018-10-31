@@ -50,6 +50,8 @@ Specify the username in the `username` property.
 Specify the password as a link to a `Secret` containing the password in the `passwordSecret` property.
 It has to specify the name of the `Secret` in the `secretName` property and the name of the key under which the password is stored inside the `Secret` in the `password` property.
 
+WARNING: The `password` field should not contain the actual password. It should contain the key under which it is stored in the `Secret`!
+
 .An example showing SCRAM-SHA-512 client authentication configuration
 [source,yaml,subs=attributes+]
 ----
