@@ -559,8 +559,8 @@ public class KafkaST extends AbstractST {
         boolean consumerSuccess = false;
         while (m.find()) {
             String json = m.group();
-            String name2 = getValueFromJson(json, "$.name");
-            if ("records_consumed".equals(name2)) {
+            String name = getValueFromJson(json, "$.name");
+            if ("records_consumed".equals(name)) {
                 assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.count"));
                 consumerSuccess = true;
             }
@@ -729,7 +729,7 @@ public class KafkaST extends AbstractST {
         }
 
         if (tlsListener) {
-            String clusterCaSecretName = CLUSTER_NAME + "-cluster-ca-cert";
+            String clusterCaSecretName = clusterCaCertSecretName(CLUSTER_NAME);
             String clusterCaSecretVolumeName = "ca-cert";
             String caSecretMountPoint = "/opt/kafka/cluster-ca";
             cb.addNewVolumeMount()
@@ -1101,12 +1101,12 @@ public class KafkaST extends AbstractST {
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
         certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(kafkaSourceName + "-cluster-ca-cert");
+        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaSourceName));
 
         // Initialize CertSecretSource with certificate and secret names for producer
         CertSecretSource certSecretTarget = new CertSecretSource();
         certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(kafkaTargetName + "-cluster-ca-cert");
+        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
@@ -1303,7 +1303,7 @@ public class KafkaST extends AbstractST {
         }
 
         if (tlsListener) {
-            String clusterCaSecretName = bootstrapServer + "-cluster-ca-cert";
+            String clusterCaSecretName = clusterCaCertSecretName(bootstrapServer);
             String clusterCaSecretVolumeName = "ca-cert";
             String caSecretMountPoint = "/opt/kafka/cluster-ca";
             cb.addNewVolumeMount()
@@ -1419,7 +1419,7 @@ public class KafkaST extends AbstractST {
         }
 
         if (tlsListener) {
-            String clusterCaSecretName = bootstrapServer + "-cluster-ca-cert";
+            String clusterCaSecretName = clusterCaCertSecretName(bootstrapServer);
             String clusterCaSecretVolumeName = "ca-cert";
             String caSecretMountPoint = "/opt/kafka/cluster-ca";
             cb.addNewVolumeMount()
