@@ -52,6 +52,8 @@ import java.util.stream.IntStream;
 public class Resources {
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
+    private static final long TIMEOUT_FOR_CREATION = 60_000;
+    private static final long TIMEOUT_INTERVAL_FOR_CREATION = 5_000;
 
     private final NamespacedKubernetesClient client;
 
@@ -215,7 +217,7 @@ public class Resources {
 
     DoneableKafka kafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
-            TestUtils.waitFor("Kafka creation", 60000, 5000,
+            TestUtils.waitFor("Kafka creation", TIMEOUT_FOR_CREATION, TIMEOUT_INTERVAL_FOR_CREATION,
                 () -> {
                     try {
                         kafka().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -249,7 +251,7 @@ public class Resources {
 
     private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
         return new DoneableKafkaConnect(kafkaConnect, kC -> {
-            TestUtils.waitFor("KafkaConnect creation", 60000, 5000,
+            TestUtils.waitFor("KafkaConnect creation", TIMEOUT_FOR_CREATION, TIMEOUT_INTERVAL_FOR_CREATION,
                 () -> {
                     try {
                         kafkaConnect().inNamespace(client().getNamespace()).createOrReplace(kC);
@@ -289,7 +291,7 @@ public class Resources {
 
     private DoneableKafkaConnectS2I kafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I) {
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kCS2I -> {
-            TestUtils.waitFor("KafkaConnectS2I creation", 60000, 5000,
+            TestUtils.waitFor("KafkaConnectS2I creation", TIMEOUT_FOR_CREATION, TIMEOUT_INTERVAL_FOR_CREATION,
                 () -> {
                     try {
                         kafkaConnectS2I().inNamespace(client().getNamespace()).createOrReplace(kCS2I);
@@ -330,7 +332,7 @@ public class Resources {
 
     private DoneableKafkaMirrorMaker kafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker) {
         return new DoneableKafkaMirrorMaker(kafkaMirrorMaker, k -> {
-            TestUtils.waitFor("Kafka Mirror Maker creation", 60000, 5000,
+            TestUtils.waitFor("Kafka Mirror Maker creation", TIMEOUT_FOR_CREATION, TIMEOUT_INTERVAL_FOR_CREATION,
                 () -> {
                     try {
                         kafkaMirrorMaker().inNamespace(client().getNamespace()).createOrReplace(k);
