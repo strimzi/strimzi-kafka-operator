@@ -71,6 +71,7 @@ spec:
                             - topic
                             - group
                             - cluster
+                            - transactionalID
                         required:
                         - type
                       type:
