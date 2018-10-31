@@ -1,0 +1,28 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-customizing-deployments.adoc
+
+[id='con-customizing-labels-and-annotations-{context}']
+= Labels and Annotations
+
+For every resource, you can configure additional `Labels` and `Annotations`.
+The `Labels` and `Annotations` are configured in the `metadata` property.
+For example:
+
+[source,yaml,subs=attributes+]
+----
+# ...
+template:
+    statefulset:
+        metadata:
+            labels:
+                label1: value1
+                label2: value2
+            annotations:
+                annotation1: value1
+                annotation2: value2
+# ...
+----
+
+The `labels` and `annotations` fields can contain any labels or annotations which do not contain the string `strimzi.io`.
+Labels and annotations containing `strimzi.io` are used internally by {ProductName} and cannot be configured by the user.

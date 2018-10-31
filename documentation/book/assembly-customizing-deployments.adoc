@@ -1,0 +1,18 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='assembly-customizing-deployments-{context}']
+= Customizing deployments
+
+The {ProductPlatformName} resources (such as `Deployments`, `StatefulSets`, `Pods` or `Services`) created by {ProductName} can be always modified only by the operators managing them.
+When the user tries to change the manually, the operators will always revert them back to the original state.
+However, there are many situations when the user might want to modify them.
+For example, to add custom labels or annotations which control how are the `Pods` treated by other services such as Istio or how are the `Loadbalancer` type `Services` created by the cluster.
+{ProductName} allows to modify some of these aspects using the `template` properties in the {ProductName} custom resources.
+
+include::con-customizing-template-properties.adoc[leveloffset=+1]
+
+include::con-customizing-labels-and-annotations.adoc[leveloffset=+1]
+
+include::proc-customizing-deployments.adoc[leveloffset=+1]
