@@ -99,9 +99,6 @@ class KafkaST extends AbstractST {
     private static final String TOPIC_NAME = "test-topic";
 
     static KubernetesClient client = new DefaultKubernetesClient();
-    private static String operationID;
-    private static String testClass;
-    private static String testName;
 
     private Random rng = new Random();
 
@@ -127,7 +124,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testKafkaAndZookeeperScaleUpScaleDown() {
-        operationID = startTimeMeasuring();
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
@@ -187,7 +184,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     void testZookeeperScaleUpScaleDown() {
-        operationID = startTimeMeasuring();
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
@@ -1523,10 +1520,5 @@ class KafkaST extends AbstractST {
     @BeforeEach
     void setTestName(TestInfo testInfo) {
         testName = testInfo.getTestMethod().get().getName();
-    }
-
-    private String startTimeMeasuring() {
-        TimeMeasuringSystem.setTestName(testClass, testName);
-        return TimeMeasuringSystem.startOperation(Operation.TEST_EXECUTION);
     }
 }
