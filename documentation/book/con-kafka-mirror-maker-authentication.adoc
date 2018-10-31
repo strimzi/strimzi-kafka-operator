@@ -58,7 +58,7 @@ It is possible to use it only if the broker listener, clients are connecting to,
 SCRAM-SHA-512 uses a username and password to authenticate.
 Specify the username in the `username` property.
 Specify the password as a link to a `Secret` containing the password in the `passwordSecret` property.
-It has to specify the name of the `Secret` containing the password and the name of the key under which the password is stored inside the `Secret`.
+It has to specify the name of the `Secret` in the `secretName` property and the name of the key under which the password is stored inside the `Secret` in the `password` property.
 
 .An example showing SCRAM-SHA-512 client authentication configuration
 [source,yaml,subs=attributes+]
@@ -75,7 +75,7 @@ spec:
       username: my-source-user
       passwordSecret:
         secretName: my-source-user
-        password: password
+        password: my-source-password-key
   # ...
   producer:
     authentication:
@@ -83,6 +83,6 @@ spec:
       username: my-producer-user
       passwordSecret:
         secretName: my-producer-user
-        password: password
+        password: my-producer-password-key
   # ...
 ----
