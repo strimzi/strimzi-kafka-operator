@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.8.2
+
+* Run images under group 0 to avoid storage issues
+
 ## 0.8.1
 
 * Fix certificate renewal issues
