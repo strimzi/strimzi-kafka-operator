@@ -10,10 +10,12 @@ import io.fabric8.kubernetes.api.model.Job;
 import io.fabric8.kubernetes.api.model.JobBuilder;
 import io.fabric8.kubernetes.api.model.JobStatus;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
@@ -23,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
@@ -546,6 +549,29 @@ public class KafkaST extends AbstractST {
     }
 
     /**
+     * Greps logs from a pod which ran kafka-verifiable-consumer.sh
+     */
+    private void checkRecordsForConsumer(int messagesCount, Job job) {
+        String podName = jobPodName(job);
+        String log = podLog(podName);
+        Pattern p = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
+        Matcher m = p.matcher(log);
+        boolean consumerSuccess = false;
+        while (m.find()) {
+            String json = m.group();
+            String name = getValueFromJson(json, "$.name");
+            if ("records_consumed".equals(name)) {
+                assertEquals(String.valueOf(messagesCount), getValueFromJson(json, "$.count"));
+                consumerSuccess = true;
+            }
+        }
+        if (!consumerSuccess) {
+            LOGGER.info("log from pod {}:\n----\n{}\n----", podName, indent(log));
+        }
+        assertTrue("The consumer didn't consume any messages (no records_consumed message)", consumerSuccess);
+    }
+
+    /**
      * Waits for a job to complete successfully, {@link org.junit.Assert#fail()}ing
      * if it completes with any failed pods.
      * @throws TimeoutException if the job doesn't complete quickly enough.
@@ -703,7 +729,7 @@ public class KafkaST extends AbstractST {
         }
 
         if (tlsListener) {
-            String clusterCaSecretName = CLUSTER_NAME + "-cluster-ca-cert";
+            String clusterCaSecretName = clusterCaCertSecretName(CLUSTER_NAME);
             String clusterCaSecretVolumeName = "ca-cert";
             String caSecretMountPoint = "/opt/kafka/cluster-ca";
             cb.addNewVolumeMount()
@@ -985,5 +1011,474 @@ public class KafkaST extends AbstractST {
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics2.contains("my-topic");
         });
+    }
+
+    @Test
+    @JUnitGroup(name = "regression")
+    public void testMirrorMaker() {
+        String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
+        String nameProducerSource = "send-messages-producer-source";
+        String nameConsumerSource = "send-messages-consumer-source";
+        String nameConsumerTarget = "send-messages-consumer-target";
+        String kafkaSourceName = CLUSTER_NAME + "-source";
+        String kafkaTargetName = CLUSTER_NAME + "-target";
+        int messagesCount = 20;
+
+        // Deploy source kafka
+        resources().kafkaEphemeral(kafkaSourceName, 3).done();
+        // Deploy target kafka
+        resources().kafkaEphemeral(kafkaTargetName, 3).done();
+        // Deploy Topic
+        resources().topic(kafkaSourceName, topicSourceName).done();
+        // Deploy Mirror Maker
+        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
+
+        // Wait when Mirror Maker will join group
+        waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
+            !kubeClient.searchInLog("deploy", "my-cluster-mirror-maker", stopwatch.runtime(SECONDS),  "\"Successfully joined group\"").isEmpty()
+        );
+
+        // Create job to send 20 records using Kafka producer for source cluster
+        waitForJobSuccess(sendRecordsToClusterJob(kafkaSourceName, nameProducerSource, topicSourceName, messagesCount, null, false));
+        // Create job to read 20 records using Kafka producer for source cluster
+        waitForJobSuccess(readMessagesFromClusterJob(kafkaSourceName, nameConsumerSource, topicSourceName, messagesCount, null, false));
+        // Create job to read 20 records using Kafka consumer for target cluster
+        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(kafkaTargetName, nameConsumerTarget, topicSourceName, messagesCount, null, false));
+        // Check consumed messages in target cluster
+        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+    }
+
+    /**
+     * Test mirroring messages by Mirror Maker over tls transport using mutual tls auth
+     */
+    @Test
+    @JUnitGroup(name = "regression")
+    public void testMirrorMakerTlsAuthenticated() {
+        String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
+        String nameProducerSource = "send-messages-producer-source";
+        String nameConsumerSource = "send-messages-consumer-source";
+        String nameConsumerTarget = "send-messages-consumer-target";
+        String kafkaUser = "my-user";
+        String kafkaSourceName = CLUSTER_NAME + "-source";
+        String kafkaTargetName = CLUSTER_NAME + "-target";
+        int messagesCount = 20;
+
+        KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
+        KafkaListenerTls listenerTls = new KafkaListenerTls();
+        listenerTls.setAuth(auth);
+
+        // Deploy source kafka with tls listener and mutual tls auth
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-source", 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withTls(listenerTls)
+                            .withNewTls()
+                            .endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().build()).done();
+
+        // Deploy target kafka with tls listener and mutual tls auth
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-target", 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withTls(listenerTls)
+                            .withNewTls()
+                            .endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().build()).done();
+
+        // Deploy topic
+        resources().topic(kafkaSourceName, topicSourceName).done();
+
+        // Create Kafka user
+        KafkaUser user = resources().tlsUser(kafkaUser).done();
+        waitTillSecretExists(kafkaUser);
+
+        // Initialize CertSecretSource with certificate and secret names for consumer
+        CertSecretSource certSecretSource = new CertSecretSource();
+        certSecretSource.setCertificate("ca.crt");
+        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaSourceName));
+
+        // Initialize CertSecretSource with certificate and secret names for producer
+        CertSecretSource certSecretTarget = new CertSecretSource();
+        certSecretTarget.setCertificate("ca.crt");
+        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
+
+        // Deploy Mirror Maker with tls listener and mutual tls auth
+        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
+                .editSpec()
+                .editConsumer()
+                    .withNewTls()
+                        .withTrustedCertificates(certSecretSource)
+                    .endTls()
+                .endConsumer()
+                .editProducer()
+                    .withNewTls()
+                        .withTrustedCertificates(certSecretTarget)
+                    .endTls()
+                .endProducer()
+                .endSpec()
+                .done();
+
+        // Wait when Mirror Maker will join the group
+        waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
+            !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", stopwatch.runtime(SECONDS),  "\"Successfully joined group\"").isEmpty()
+        );
+
+        // Create job to send 20 records using Kafka producer for source cluster
+        waitForJobSuccess(sendRecordsToClusterJob(kafkaSourceName, nameProducerSource, topicSourceName, messagesCount, user, true));
+        // Create job to read 20 records using Kafka producer for source cluster
+        waitForJobSuccess(readMessagesFromClusterJob(kafkaSourceName, nameConsumerSource, topicSourceName, messagesCount, user, true));
+        // Create job to read 20 records using Kafka consumer for target cluster
+        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(kafkaTargetName, nameConsumerTarget, topicSourceName, messagesCount, user, true));
+        // Check consumed messages in target cluster
+        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+    }
+
+    /**
+     * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
+     */
+    @Test
+    @JUnitGroup(name = "regression")
+    public void testMirrorMakerTlsScramSha() {
+        String kafkaUserSource = "my-user-source";
+        String kafkaUserTarget = "my-user-target";
+        String nameProducerSource = "send-messages-producer-source";
+        String nameConsumerSource = "read-messages-consumer-source";
+        String nameConsumerTarget = "read-messages-consumer-target";
+        String kafkaSourceName = CLUSTER_NAME + "-source";
+        String kafkaTargetName = CLUSTER_NAME + "-target";
+        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
+        int messagesCount = 20;
+
+
+        // Deploy source kafka with tls listener and SCRAM-SHA authentication
+        resources().kafka(resources().defaultKafka(kafkaSourceName, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().build()).done();
+
+        // Deploy target kafka with tls listener and SCRAM-SHA authentication
+        resources().kafka(resources().defaultKafka(kafkaTargetName, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                          .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
+                        .endListeners()
+                    .endKafka()
+                .endSpec().build()).done();
+
+        // Deploy topic
+        resources().topic(kafkaSourceName, topicName).done();
+
+        // Create Kafka user for source cluster
+        KafkaUser userSource = resources().scramShaUser(kafkaUserSource).done();
+        waitTillSecretExists(kafkaUserSource);
+
+        // Create Kafka user for target cluster
+        KafkaUser userTarget = resources().scramShaUser(kafkaUserTarget).done();
+        waitTillSecretExists(kafkaUserTarget);
+
+        // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
+        PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
+        passwordSecretSource.setSecretName(kafkaUserSource);
+        passwordSecretSource.setPassword("password");
+
+        // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
+        PasswordSecretSource passwordSecretTarget = new PasswordSecretSource();
+        passwordSecretTarget.setSecretName(kafkaUserTarget);
+        passwordSecretTarget.setPassword("password");
+
+        // Initialize CertSecretSource with certificate and secret names for consumer
+        CertSecretSource certSecretSource = new CertSecretSource();
+        certSecretSource.setCertificate("ca.crt");
+        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaSourceName));
+
+        // Initialize CertSecretSource with certificate and secret names for producer
+        CertSecretSource certSecretTarget = new CertSecretSource();
+        certSecretTarget.setCertificate("ca.crt");
+        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
+
+        // Deploy Mirror Maker with TLS and ScramSha512
+        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
+                .editSpec()
+                    .editConsumer()
+                        .withNewKafkaMirrorMakerAuthenticationScramSha512Authentication()
+                            .withUsername(kafkaUserSource)
+                            .withPasswordSecret(passwordSecretSource)
+                        .endKafkaMirrorMakerAuthenticationScramSha512Authentication()
+                        .withNewTls()
+                            .withTrustedCertificates(certSecretSource)
+                        .endTls()
+                    .endConsumer()
+                .editProducer()
+                    .withNewKafkaMirrorMakerAuthenticationScramSha512Authentication()
+                        .withUsername(kafkaUserTarget)
+                        .withPasswordSecret(passwordSecretTarget)
+                    .endKafkaMirrorMakerAuthenticationScramSha512Authentication()
+                    .withNewTls()
+                        .withTrustedCertificates(certSecretTarget)
+                    .endTls()
+                .endProducer()
+                .endSpec().done();
+
+        // Wait when Mirror Maker will join group
+        waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
+            !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", stopwatch.runtime(SECONDS),  "\"Successfully joined group\"").isEmpty()
+        );
+
+        // Create job to send 20 records using Kafka producer for source cluster
+        waitForJobSuccess(sendRecordsToClusterJob(CLUSTER_NAME + "-source", nameProducerSource, topicName, messagesCount, userSource, true));
+        // Create job to read 20 records using Kafka consumer for source cluster
+        waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-source", nameConsumerSource, topicName, messagesCount, userSource, true));
+        // Create job to read 20 records using Kafka consumer for target cluster
+        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-target", nameConsumerTarget, topicName, messagesCount, userTarget, true));
+        // Check consumed messages in target cluster
+        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+    }
+
+
+    private PodSpecBuilder createPodSpecForProducer(ContainerBuilder cb, KafkaUser kafkaUser, boolean tlsListener, String bootstrapServer) {
+        PodSpecBuilder podSpecBuilder = new PodSpecBuilder()
+                .withRestartPolicy("OnFailure");
+
+        String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
+        boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
+        boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
+
+        String producerConfiguration = "acks=all\n";
+        if (tlsListener) {
+            if (scramShaUser) {
+                producerConfiguration += "security.protocol=SASL_SSL\n";
+                producerConfiguration += saslConfigs(kafkaUser);
+            } else {
+                producerConfiguration += "security.protocol=SSL\n";
+            }
+            producerConfiguration +=
+                    "ssl.truststore.location=/tmp/truststore.p12\n" +
+                            "ssl.truststore.type=pkcs12\n";
+        } else {
+            if (scramShaUser) {
+                producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                producerConfiguration += saslConfigs(kafkaUser);
+            } else {
+                producerConfiguration += "security.protocol=PLAINTEXT\n";
+            }
+        }
+
+        if (tlsUser) {
+            producerConfiguration +=
+                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                            "ssl.keystore.type=pkcs12\n";
+            cb.addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv();
+
+            String userSecretVolumeName = "tls-cert";
+            String userSecretMountPoint = "/opt/kafka/user-secret";
+            cb.addNewVolumeMount()
+                    .withName(userSecretVolumeName)
+                    .withMountPath(userSecretMountPoint)
+                    .endVolumeMount()
+                    .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv();
+            podSpecBuilder
+                    .addNewVolume()
+                    .withName(userSecretVolumeName)
+                    .withNewSecret()
+                    .withSecretName(kafkaUserName)
+                    .endSecret()
+                    .endVolume();
+        }
+
+        cb.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
+
+        if (kafkaUserName != null) {
+            cb.addNewEnv().withName("KAFKA_USER").withValue(kafkaUserName).endEnv();
+        }
+
+        if (tlsListener) {
+            String clusterCaSecretName = clusterCaCertSecretName(bootstrapServer);
+            String clusterCaSecretVolumeName = "ca-cert";
+            String caSecretMountPoint = "/opt/kafka/cluster-ca";
+            cb.addNewVolumeMount()
+                    .withName(clusterCaSecretVolumeName)
+                    .withMountPath(caSecretMountPoint)
+                    .endVolumeMount()
+                    .addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
+                    .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
+                    .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv();
+            if (tlsUser) {
+                cb.addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
+            }
+            podSpecBuilder
+                    .addNewVolume()
+                    .withName(clusterCaSecretVolumeName)
+                    .withNewSecret()
+                    .withSecretName(clusterCaSecretName)
+                    .endSecret()
+                    .endVolume();
+        }
+
+        return podSpecBuilder.withContainers(cb.build());
+    }
+
+    private Job sendRecordsToClusterJob(String bootstrapServer, String name, String topic, int messagesCount, KafkaUser kafkaUser, boolean tlsListener) {
+
+        String connect = tlsListener ? bootstrapServer + "-kafka-bootstrap:9093" : bootstrapServer + "-kafka-bootstrap:9092";
+
+        ContainerBuilder cb = new ContainerBuilder()
+            .withName("send-records")
+            .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))
+            .addNewEnv().withName("PRODUCER_OPTS").withValue(
+                "--broker-list " + connect + " " +
+                    "--topic " + topic + " " +
+                    "--max-messages " + messagesCount).endEnv()
+            .withCommand("/opt/kafka/producer.sh");
+
+        PodSpec producerPodSpec = createPodSpecForProducer(cb, kafkaUser, tlsListener, bootstrapServer).build();
+
+        Job job = resources().deleteLater(namespacedClient().extensions().jobs().create(new JobBuilder()
+            .withNewMetadata()
+                .withName(name)
+            .endMetadata()
+            .withNewSpec()
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .withName(name)
+                        .addToLabels("job", name)
+                    .endMetadata()
+                .withSpec(producerPodSpec)
+                .endTemplate()
+            .endSpec()
+            .build()));
+        LOGGER.info("Created Job {}", job);
+        return job;
+    }
+
+    private PodSpecBuilder createPodSpecForConsumer(ContainerBuilder cb, KafkaUser kafkaUser, boolean tlsListener, String bootstrapServer) {
+
+        PodSpecBuilder podSpecBuilder = new PodSpecBuilder()
+                .withRestartPolicy("OnFailure");
+
+        String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
+        boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
+        boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
+
+        String consumerConfiguration = "auto.offset.reset=earliest\n";
+        if (tlsListener) {
+            if (scramShaUser) {
+                consumerConfiguration += "security.protocol=SASL_SSL\n";
+                consumerConfiguration += saslConfigs(kafkaUser);
+            } else {
+                consumerConfiguration += "security.protocol=SSL\n";
+            }
+            consumerConfiguration += "auto.offset.reset=earliest\n" +
+                    "ssl.truststore.location=/tmp/truststore.p12\n" +
+                    "ssl.truststore.type=pkcs12\n";
+        } else {
+            if (scramShaUser) {
+                consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                consumerConfiguration += saslConfigs(kafkaUser);
+            } else {
+                consumerConfiguration += "security.protocol=PLAINTEXT\n";
+            }
+        }
+
+        if (tlsUser) {
+            consumerConfiguration += "auto.offset.reset=earliest\n" +
+                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                    "ssl.keystore.type=pkcs12\n";
+            cb.addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv();
+
+            String userSecretVolumeName = "tls-cert";
+            String userSecretMountPoint = "/opt/kafka/user-secret";
+            cb.addNewVolumeMount()
+                    .withName(userSecretVolumeName)
+                    .withMountPath(userSecretMountPoint)
+                    .endVolumeMount()
+                    .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv();
+            podSpecBuilder
+                    .addNewVolume()
+                    .withName(userSecretVolumeName)
+                    .withNewSecret()
+                    .withSecretName(kafkaUserName)
+                    .endSecret()
+                    .endVolume();
+        }
+
+        cb.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
+
+        if (kafkaUserName != null) {
+            cb.addNewEnv().withName("KAFKA_USER").withValue(kafkaUserName).endEnv();
+        }
+
+        if (tlsListener) {
+            String clusterCaSecretName = clusterCaCertSecretName(bootstrapServer);
+            String clusterCaSecretVolumeName = "ca-cert";
+            String caSecretMountPoint = "/opt/kafka/cluster-ca";
+            cb.addNewVolumeMount()
+                    .withName(clusterCaSecretVolumeName)
+                    .withMountPath(caSecretMountPoint)
+                    .endVolumeMount()
+                    .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv()
+                    .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
+                    .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv();
+            if (tlsUser) {
+                cb.addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
+            }
+            podSpecBuilder
+                    .addNewVolume()
+                    .withName(clusterCaSecretVolumeName)
+                    .withNewSecret()
+                    .withSecretName(clusterCaSecretName)
+                    .endSecret()
+                    .endVolume();
+        }
+        return podSpecBuilder.withContainers(cb.build());
+    }
+
+    private Job readMessagesFromClusterJob(String bootstrapServer, String name, String topic, int messagesCount, KafkaUser kafkaUser, boolean tlsListener) {
+
+        String connect = tlsListener ? bootstrapServer + "-kafka-bootstrap:9093" : bootstrapServer + "-kafka-bootstrap:9092";
+        ContainerBuilder cb = new ContainerBuilder()
+                .withName("read-messages")
+                .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))
+                .addNewEnv().withName("CONSUMER_OPTS").withValue(
+                        "--broker-list " + connect + " " +
+                                "--group-id " + name + "-" + "my-group" + " " +
+                                "--verbose " +
+                                "--topic " + topic + " " +
+                                "--max-messages " + messagesCount).endEnv()
+                .withCommand("/opt/kafka/consumer.sh");
+
+
+        PodSpec consumerPodSpec = createPodSpecForConsumer(cb, kafkaUser, tlsListener, bootstrapServer).build();
+
+        Job job = resources().deleteLater(namespacedClient().extensions().jobs().create(new JobBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .withName(name)
+                            .addToLabels("job", name)
+                        .endMetadata()
+                        .withSpec(consumerPodSpec)
+                    .endTemplate()
+                .endSpec()
+                .build()));
+        LOGGER.info("Created Job {}", job);
+        return job;
+    }
+
+    private String clusterCaCertSecretName(String cluster)  {
+        return cluster + "-cluster-ca-cert";
     }
 }
