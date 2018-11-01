@@ -13,7 +13,7 @@
 .Procedure
 
 . Edit the `template` property in the `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `KafkaMirrorMaker` resource.
-For example to modify the labels for the Kafka broker `StatefulSet`, use:
+For example, to modify the labels for the Kafka broker `StatefulSet`, use:
 +
 [source,yaml,subs=attributes+]
 ----

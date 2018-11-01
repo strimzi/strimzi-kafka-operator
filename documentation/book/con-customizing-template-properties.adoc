@@ -5,8 +5,8 @@
 [id='con-customizing-template-properties-{context}']
 = Template properties
 
-The `template` property allows you to configure selected aspects of how are the resources created by {ProductName} configured.
-The `template` property can be used in following resources / properties:
+The `template` property allows you to configure selected aspects of how resources are created by {ProductName}.
+The `template` property can be used in the following resources / properties:
 
 * Kafka.spec.kafka
 * Kafka.spec.zookeeper
@@ -15,7 +15,7 @@ The `template` property can be used in following resources / properties:
 * KafkaConnectS2I.spec
 * KafkaMirrorMakerSpec
 
-The following example shows the `template` being used to modify labels of Kafka broker `StatefulSet`:
+The following example shows the `template` being used to modify labels of the Kafka broker `StatefulSet`:
 
 [source,yaml,subs=attributes+]
 ----

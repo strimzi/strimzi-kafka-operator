@@ -5,11 +5,11 @@
 [id='assembly-customizing-deployments-{context}']
 = Customizing deployments
 
-The {ProductPlatformName} resources (such as `Deployments`, `StatefulSets`, `Pods` or `Services`) created by {ProductName} can be always modified only by the operators managing them.
-When the user tries to change the manually, the operators will always revert them back to the original state.
+The {ProductPlatformName} resources (such as `Deployments`, `StatefulSets`, `Pods` or `Services`) created by {ProductName} can only be modified by the operators managing them.
+When the user tries to change them manually, the operators will always revert them back to the original state.
 However, there are many situations when the user might want to modify them.
-For example, to add custom labels or annotations which control how are the `Pods` treated by other services such as Istio or how are the `Loadbalancer` type `Services` created by the cluster.
-{ProductName} allows to modify some of these aspects using the `template` properties in the {ProductName} custom resources.
+For example, when adding custom labels or annotations which control how `Pods` are treated by other services such as Istio or how `Loadbalancer` type `Services` are created by the cluster.
+{ProductName} allows users to modify some of these aspects using the `template` properties in the {ProductName} custom resources.
 
 include::con-customizing-template-properties.adoc[leveloffset=+1]
 
