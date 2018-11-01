@@ -8,7 +8,7 @@
 
 [id='assembly-zookeeper-replicas-{context}']
 
-= Replicas
+= Zookeeper replicas
 
 Zookeeper clusters or ensembles usually run with an odd number of nodes and always requires the majority of the nodes to be available in order to maintain a quorum.
 Maintaining a quorum is important because when the Zookeeper cluster loses a quorum, it will stop responding to clients.

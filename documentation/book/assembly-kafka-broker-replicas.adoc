@@ -8,7 +8,7 @@
 
 [id='assembly-kafka-broker-replicas-{context}']
 
-= Replicas
+= Kafka broker replicas
 
 A Kafka cluster can run with many brokers.
 You can configure the number of brokers used for the Kafka cluster in `Kafka.spec.kafka.replicas`.
