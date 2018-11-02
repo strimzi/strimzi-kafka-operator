@@ -108,7 +108,7 @@ public class TopicDiff {
 
         @Override
         protected void apply(Topic.Builder builder) {
-            builder.withNumPartitions(this.newNumReplicas);
+            builder.withNumReplicas(this.newNumReplicas);
         }
     }
 
