@@ -6,7 +6,7 @@
 = Labels and Annotations
 
 For every resource, you can configure additional `Labels` and `Annotations`.
-The `Labels` and `Annotations` are configured in the `metadata` property.
+`Labels` and `Annotations` are configured in the `metadata` property.
 For example:
 
 [source,yaml,subs=attributes+]
@@ -24,5 +24,5 @@ template:
 # ...
 ----
 
-The `labels` and `annotations` fields can contain any labels or annotations which do not contain the reserved string `strimzi.io`.
+The `labels` and `annotations` fields can contain any labels or annotations that do not contain the reserved string `strimzi.io`.
 Labels and annotations containing `strimzi.io` are used internally by {ProductName} and cannot be configured by the user.

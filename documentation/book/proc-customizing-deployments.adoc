@@ -5,10 +5,12 @@
 [id='proc-customizing-deployments-{context}']
 = Customizing deployments
 
+This procedure describes how to customize `Labels` of a Kafka cluster.
+
 .Prerequisites
 
-* An {ProductPlatformName} cluster
-* A running Cluster Operator
+* An {ProductPlatformName} cluster.
+* A running Cluster Operator.
 
 .Procedure
 
@@ -37,20 +39,20 @@ spec:
 . Create or update the resource.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName}, use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 +
-Or using `kubectl edit`:
+Alternatively, use `kubectl edit`:
 [source,shell,subs=+quotes]
 kubectl edit _Resource_ _ClusterName_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName}, use `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
 +
-Or using `oc edit`:
+Alternatively, use `oc edit`:
 [source,shell,subs=+quotes]
 oc edit _Resource_ _ClusterName_
