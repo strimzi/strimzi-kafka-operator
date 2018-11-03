@@ -46,7 +46,7 @@ When defined in a Kafka cluster, the `template` object can have the following fi
 `brokersService`:: Configures the headless service.
 `externalBootstrapService`:: Configures the bootstrap service used by clients connecting to Kafka brokers from outside of {ProductPlatformName}.
 `perPodService`:: Configures the per-Pod services used by clients connecting to the Kafka broker from outside {ProductPlatformName} to access individual brokers.
-`externalBootstrapRoute`:: Configures the bootstrap route used by clients connecting to Kafka brokers from outside of {OpenShiftName} using {OpenShiftName} `Routes`.
+`externalBootstrapRoute`:: Configures the bootstrap route used by clients connecting to the Kafka brokers from outside of {OpenShiftName} using {OpenShiftName} `Routes`.
 `perPodRoute`:: Configures the per-Pod routes used by clients connecting to the Kafka broker from outside {OpenShiftName} to access individual brokers using {OpenShiftName} `Routes`.
 
 .Supported resources in Zookeeper cluster
