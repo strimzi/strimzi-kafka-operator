@@ -1,0 +1,81 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-customizing-deployments.adoc
+
+[id='con-customizing-template-properties-{context}']
+= Template properties
+
+You can use the `template` property to configure aspects of the resource creation process.
+You can include it in the following resources and properties:
+
+* Kafka.spec.kafka
+* Kafka.spec.zookeeper
+* Kafka.spec.entityOperator
+* KafkaConnect.spec
+* KafkaConnectS2I.spec
+* KafkaMirrorMakerSpec
+
+In the following example, the `template` property is used to modify the labels in a Kafka broker's `StatefulSet`:
+
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  labels:
+    app: my-cluster
+spec:
+  kafka:
+    # ...
+    template:
+      statefulset:
+        metadata:
+          labels:
+            mylabel: myvalue
+    # ...
+----
+
+.Supported resources in Kafka cluster
+
+When defined in a Kafka cluster, the `template` object can have the following fields:
+
+`statefulset`:: Configures the `StatefulSet` used by the Kafka broker.
+`pod`:: Configures the Kafka broker `Pods` created by the `StatefulSet`.
+`bootstrapService`:: Configures the bootstrap service used by clients running within {ProductPlatformName} to connect to the Kafka broker.
+`brokersService`:: Configures the headless service.
+`externalBootstrapService`:: Configures the bootstrap service used by clients connecting to Kafka brokers from outside of {ProductPlatformName}.
+`perPodService`:: Configures the per-Pod services used by clients connecting to the Kafka broker from outside {ProductPlatformName} to access individual brokers.
+`externalBootstrapRoute`:: Configures the bootstrap route used by clients connecting to the Kafka brokers from outside of {OpenShiftName} using {OpenShiftName} `Routes`.
+`perPodRoute`:: Configures the per-Pod routes used by clients connecting to the Kafka broker from outside {OpenShiftName} to access individual brokers using {OpenShiftName} `Routes`.
+
+.Supported resources in Zookeeper cluster
+
+When defined in a Zookeeper cluster, the `template` object can have the following fields:
+
+`statefulset`:: Configures the Zookeeper `StatefulSet`.
+`pod`:: Configures the Zookeeper `Pods` created by the `StatefulSet`.
+`clientsService`:: Configures the service used by clients to access Zookeeper.
+`nodesService`:: Configures the headless service.
+
+.Supported resources in Entity Operator
+
+When defined in an Entity Operator , the template object can have the following fields:
+
+`deployment`:: Configures the Deployment used by the Entity Operator.
+`pod`:: Configures the Entity Operator `Pod` created by the `Deployment`.
+
+.Supported resources in Kafka Connect and Kafka Connect with Source2Image support
+
+When used with Kafka Connect and Kafka Connect with Source2Image support , the template object can have the following fields:
+
+`deployment`:: Configures the Kafka Connect `Deployment`.
+`pod`:: Configures the Kafka Connect `Pods` created by the `Deployment`.
+`apiService`:: Configures the service used by the Kafka Connect REST API.
+
+.Supported resource in Kafka Mirror Maker
+
+When used with Kafka Mirror Maker , the template object can have the following fields:
+
+`deployment`:: Configures the Kafka Mirror Maker `Deployment`.
+`pod`:: Configures the Kafka Mirror Maker `Pods` created by the `Deployment`.
