@@ -6,21 +6,21 @@ then
 fi
 
 if [ "$STRIMZI_TLS_ENABLED" = "true" ]; then
+    if [ -z "$STRIMZI_TRUSTSTORE_LOCATION" ] && [ -z "$STRIMZI_KEYSTORE_LOCATION" ]; then
+        # Generate temporary keystore password
+        export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
 
-    # Generate temporary keystore password
-    export CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
+        mkdir -p /tmp/topic-operator
 
-    mkdir -p /tmp/topic-operator
+        # Import certificates into keystore and truststore
+        /bin/tls_prepare_certificates.sh
 
-    # Import certificates into keystore and truststore
-    /bin/tls_prepare_certificates.sh
+        export STRIMZI_TRUSTSTORE_LOCATION=/tmp/topic-operator/replication.truststore.p12
+        export STRIMZI_TRUSTSTORE_PASSWORD=$CERTS_STORE_PASSWORD
 
-    export STRIMZI_TRUSTSTORE_LOCATION=/tmp/topic-operator/replication.truststore.p12
-    export STRIMZI_TRUSTSTORE_PASSWORD=$CERTS_STORE_PASSWORD
-
-    export STRIMZI_KEYSTORE_LOCATION=/tmp/topic-operator/replication.keystore.p12
-    export STRIMZI_KEYSTORE_PASSWORD=$CERTS_STORE_PASSWORD
-
+        export STRIMZI_KEYSTORE_LOCATION=/tmp/topic-operator/replication.keystore.p12
+        export STRIMZI_KEYSTORE_PASSWORD=$CERTS_STORE_PASSWORD
+    fi
 fi
 
 exec /bin/launch_java.sh $1
