@@ -5,6 +5,6 @@ ENV STRIMZI_VERSION ${strimzi_version}
 
 ADD target/cluster-operator-${strimzi_version}.jar /
 
-USER strimzi:strimzi
+USER 1001
 
 CMD /bin/launch_java.sh /cluster-operator-${STRIMZI_VERSION}.jar
