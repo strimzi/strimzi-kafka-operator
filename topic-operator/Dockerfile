@@ -7,6 +7,6 @@ COPY ./scripts/ /bin
 
 ADD target/topic-operator-${strimzi_version}.jar /
 
-USER strimzi:strimzi
+USER 1001
 
 CMD /bin/topic_operator_run.sh /topic-operator-${STRIMZI_VERSION}.jar

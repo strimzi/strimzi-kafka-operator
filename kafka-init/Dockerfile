@@ -5,6 +5,6 @@ ENV STRIMZI_VERSION ${strimzi_version}
 
 ADD target/kafka-init-${strimzi_version}.jar /
 
-USER strimzi:strimzi
+USER 1001
 
 CMD /bin/launch_java.sh /kafka-init-${STRIMZI_VERSION}.jar
