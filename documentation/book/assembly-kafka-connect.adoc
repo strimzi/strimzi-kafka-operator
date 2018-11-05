@@ -9,13 +9,15 @@
 [id='kafka-connect-{context}']
 = Kafka Connect
 
-The Cluster Operator deploys a link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] cluster, which can be used with your Kafka broker deployment.
-It is implemented as a `Deployment` with a configurable number of workers.
-The default image currently contains only the `FileStreamSinkConnector` and `FileStreamSourceConnector` connectors.
-The REST interface for managing the Kafka Connect cluster is exposed internally within the {ProductPlatformName} cluster as a `kafka-connect` service on port `8083`.
+link:https://kafka.apache.org/documentation/#connect[Kafka Connect^], a core component of Apache Kafka, is a tool for streaming high volumes of data into and out of your Kafka cluster. It provides a framework for building your own connectors (a type of plugin) for your Kafka cluster, a REST API for managing connectors, and more. Two built-in connectors are provided:
 
-Example `KafkaConnect` resources and the details about the `KafkaConnect` format for deploying Kafka Connect can be found in
-xref:assembly-deployment-configuration-kafka-connect-str[Kafka Connect cluster configuration]
+- A source connector, named `FileStreamSourceConnector`
+
+- A sink connector, named `FileStreamSyncConnector`
+
+Using the Cluster Operator in {ProductName}, you can deploy a Kafka Connect cluster to your {ProductPlatformName} cluster. The Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers. The REST API is available within your {ProductPlatformName} cluster on port 8083, as the `kafka-connect` service.
+
+For more information on configuring the `KafkaConnect` resource, see xref:assembly-deployment-configuration-kafka-connect-str[Kafka Connect cluster configuration]
 and
 xref:assembly-deployment-configuration-kafka-connect-s2i-str[Kafka Connect cluster with Source2Image support].
 
