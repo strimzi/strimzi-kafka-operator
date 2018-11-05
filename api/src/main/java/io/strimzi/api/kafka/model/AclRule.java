@@ -45,8 +45,8 @@ public class AclRule implements Serializable {
         this.operation = operation;
     }
 
-    @Description("The type of the rule." +
-            "Currently the only supported type is `allow`." +
+    @Description("The type of the rule. " +
+            "Currently the only supported type is `allow`. " +
             "ACL rules with type `allow` are used to allow user to execute the specified operations. " +
             "Default value is `allow`.")
     @DefaultValue("allow")

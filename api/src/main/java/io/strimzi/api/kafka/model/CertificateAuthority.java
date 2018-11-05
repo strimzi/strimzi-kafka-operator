@@ -16,7 +16,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-@Description("Configuration of how TLS certificates are used within the cluster." +
+@Description("Configuration of how TLS certificates are used within the cluster. " +
         "This applies to certificates used for both internal communication within the cluster and to certificates " +
         "used for client access via `Kafka.spec.kafka.listeners.tls`.")
 @Buildable(
@@ -57,7 +57,7 @@ public class CertificateAuthority implements Serializable {
     }
 
     @Description("The number of days in the certificate renewal period. " +
-            "This is the number of days before the a certificate expires during which renewal actions may be performed." +
+            "This is the number of days before the a certificate expires during which renewal actions may be performed. " +
             "When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. " +
             "When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. " +
             "Default is 30.")

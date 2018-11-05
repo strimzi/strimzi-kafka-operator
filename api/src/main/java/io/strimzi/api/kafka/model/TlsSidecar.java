@@ -29,7 +29,7 @@ public class TlsSidecar extends Sidecar {
     private TlsSidecarLogLevel logLevel = TlsSidecarLogLevel.NOTICE;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The log level for the TLS sidecar." +
+    @Description("The log level for the TLS sidecar. " +
             "Default value is `notice`.")
     @DefaultValue("notice")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
