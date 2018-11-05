@@ -124,7 +124,6 @@ public class AvailabilityVerifier {
                     result.publishProducerStats(sent, producerErrors);
                 }
             }
-            //producerStats.publishProducerStats(sent, producerErrors);
         });
         this.consumer = new KafkaConsumer<>(consumerProperties);
         this.receiver = new Thread(() -> {
@@ -150,7 +149,6 @@ public class AvailabilityVerifier {
                     result.publishConsumerStats(received, maxLatencyNs, consumerErrors);
                 }
             }
-            //consumerStats.publishConsumerStats(received, maxLatencyNs, consumerErrors);
         });
         this.startTime = System.currentTimeMillis();
         this.sender.start();
