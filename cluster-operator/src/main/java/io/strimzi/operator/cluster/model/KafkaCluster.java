@@ -43,6 +43,7 @@ import io.strimzi.api.kafka.model.KafkaListenerExternalLoadBalancer;
 import io.strimzi.api.kafka.model.KafkaListenerExternalNodePort;
 import io.strimzi.api.kafka.model.KafkaListenerExternalRoute;
 import io.strimzi.api.kafka.model.KafkaListeners;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
@@ -117,15 +118,9 @@ public class KafkaCluster extends AbstractModel {
     protected static final String TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
 
     private static final String NAME_SUFFIX = "-kafka";
-    private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-bootstrap";
-    private static final String HEADLESS_SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-brokers";
 
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
-    private static final String SECRET_CLIENTS_CA_KEY_SUFFIX = "-clients-ca";
-    private static final String SECRET_CLIENTS_CA_SUFFIX = "-clients-ca-cert";
-
-    protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
 
     // Kafka configuration
     private String zookeeperConnect;
@@ -191,15 +186,15 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String kafkaClusterName(String cluster) {
-        return cluster + KafkaCluster.NAME_SUFFIX;
+        return KafkaResources.kafkaStatefulSetName(cluster);
     }
 
     public static String metricAndLogConfigsName(String cluster) {
-        return cluster + KafkaCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
+        return KafkaResources.kafkaMetricsAndLogConfigMapName(cluster);
     }
 
     public static String serviceName(String cluster) {
-        return cluster + KafkaCluster.SERVICE_NAME_SUFFIX;
+        return KafkaResources.internalBootstrapServiceName(cluster);
     }
 
     /**
@@ -209,7 +204,7 @@ public class KafkaCluster extends AbstractModel {
      * @return
      */
     public static String externalBootstrapServiceName(String cluster) {
-        return kafkaClusterName(cluster) + "-external-bootstrap";
+        return KafkaResources.externalBootstrapServiceName(cluster);
     }
 
     /**
@@ -224,7 +219,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String headlessServiceName(String cluster) {
-        return cluster + KafkaCluster.HEADLESS_SERVICE_NAME_SUFFIX;
+        return KafkaResources.brokersServiceName(cluster);
     }
 
     public static String kafkaPodName(String cluster, int pod) {
@@ -232,7 +227,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String clientsCaKeySecretName(String cluster) {
-        return cluster + KafkaCluster.SECRET_CLIENTS_CA_KEY_SUFFIX;
+        return KafkaResources.clientsCaKeySecretName(cluster);
     }
 
     public static String brokersSecretName(String cluster) {
@@ -240,7 +235,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String clientsCaCertSecretName(String cluster) {
-        return cluster + KafkaCluster.SECRET_CLIENTS_CA_SUFFIX;
+        return KafkaResources.clientsCaCertificateSecretName(cluster);
     }
 
     public static KafkaCluster fromCrd(Kafka kafkaAssembly) {

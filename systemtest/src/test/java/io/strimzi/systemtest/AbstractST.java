@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
@@ -92,7 +93,7 @@ public class AbstractST {
     }
 
     static String kafkaClusterName(String clusterName) {
-        return clusterName + "-kafka";
+        return KafkaResources.kafkaStatefulSetName(clusterName);
     }
 
     static String kafkaConnectName(String clusterName) {
@@ -100,27 +101,27 @@ public class AbstractST {
     }
 
     static String kafkaPodName(String clusterName, int podId) {
-        return kafkaClusterName(clusterName) + "-" + podId;
+        return KafkaResources.kafkaPodName(clusterName, podId);
     }
 
     static String kafkaServiceName(String clusterName) {
-        return kafkaClusterName(clusterName) + "-bootstrap";
+        return KafkaResources.internalBootstrapServiceName(clusterName);
     }
 
     static String kafkaHeadlessServiceName(String clusterName) {
-        return kafkaClusterName(clusterName) + "-brokers";
+        return KafkaResources.brokersServiceName(clusterName);
     }
 
     static String kafkaMetricsConfigName(String clusterName) {
-        return kafkaClusterName(clusterName) + "-config";
+        return KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName);
     }
 
     static String zookeeperClusterName(String clusterName) {
-        return clusterName + "-zookeeper";
+        return KafkaResources.zookeeperStatefulSetName(clusterName);
     }
 
     static String zookeeperPodName(String clusterName, int podId) {
-        return zookeeperClusterName(clusterName) + "-" + podId;
+        return KafkaResources.zookeeperPodName(clusterName, podId);
     }
 
     static String zookeeperServiceName(String clusterName) {
@@ -132,7 +133,7 @@ public class AbstractST {
     }
 
     static String zookeeperMetricsConfigName(String clusterName) {
-        return zookeeperClusterName(clusterName) + "-config";
+        return KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName);
     }
 
     static String zookeeperPVCName(String clusterName, int podId) {
@@ -140,7 +141,7 @@ public class AbstractST {
     }
 
     static String entityOperatorDeploymentName(String clusterName) {
-        return clusterName + "-entity-operator";
+        return KafkaResources.entityOperatorDeploymentName(clusterName);
     }
 
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
@@ -225,7 +226,7 @@ public class AbstractST {
     public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
-                clusterName + "-kafka-bootstrap:9092 --topic " + topic + " --max-messages " + messagesCount + "";
+                KafkaResources.internalPlainBootstrapConnection(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
@@ -235,8 +236,8 @@ public class AbstractST {
     public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
         LOGGER.info("Consuming messages");
         String output = kubeClient.execInPod(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
-                "bin/kafka-verifiable-consumer.sh --broker-list " + clusterName +
-                        "-kafka-bootstrap:9092 --topic " + topic + " --group-id " + groupID + " & sleep "
+                "bin/kafka-verifiable-consumer.sh --broker-list " +
+                        KafkaResources.internalPlainBootstrapConnection(clusterName) + " --topic " + topic + " --group-id " + groupID + " & sleep "
                         + timeout + "; kill %1").out();
         output = "[" + output.replaceAll("\n", ",") + "]";
         LOGGER.info("Output for kafka-verifiable-consumer.sh {}", output);

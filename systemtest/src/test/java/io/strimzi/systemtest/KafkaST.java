@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.KafkaListenerTls;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
@@ -643,7 +644,7 @@ public class KafkaST extends AbstractST {
      */
     private Job pingJob(String name, String topic, int messagesCount, KafkaUser kafkaUser, boolean tlsListener) {
 
-        String connect = tlsListener ? CLUSTER_NAME + "-kafka-bootstrap:9093" : CLUSTER_NAME + "-kafka-bootstrap:9092";
+        String connect = tlsListener ? KafkaResources.internalTlsBootstrapConnection(CLUSTER_NAME) : KafkaResources.internalPlainBootstrapConnection(CLUSTER_NAME);
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("ping")
                 .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))
