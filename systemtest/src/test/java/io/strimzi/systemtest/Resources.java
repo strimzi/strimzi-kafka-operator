@@ -50,10 +50,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static io.strimzi.api.kafka.model.KafkaResources.entityOperatorDeploymentName;
-import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
-import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
-
 public class Resources {
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
@@ -359,9 +355,9 @@ public class Resources {
         String name = kafka.getMetadata().getName();
         LOGGER.info("Waiting for Kafka {}", name);
         String namespace = kafka.getMetadata().getNamespace();
-        waitForStatefulSet(namespace, zookeeperStatefulSetName(name));
-        waitForStatefulSet(namespace, kafkaStatefulSetName(name));
-        waitForDeployment(namespace, entityOperatorDeploymentName(name));
+        waitForStatefulSet(namespace, KafkaResources.zookeeperStatefulSetName(name));
+        waitForStatefulSet(namespace, KafkaResources.kafkaStatefulSetName(name));
+        waitForDeployment(namespace, KafkaResources.entityOperatorDeploymentName(name));
         return kafka;
     }
 
