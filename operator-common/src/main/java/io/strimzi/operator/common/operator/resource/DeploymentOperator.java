@@ -21,6 +21,8 @@ import java.util.HashMap;
  */
 public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
 
+    private static final int INIT_GENERATION = 0;
+
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -87,4 +89,15 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
 
         return super.internalPatch(namespace, name, current, desired, cascading);
     }
+
+    @Override
+    protected Future<ReconcileResult<Deployment>> internalCreate(String namespace, String name, Deployment desired) {
+        setGeneration(desired, INIT_GENERATION);
+        return super.internalCreate(namespace, name, desired);
+    }
+
+    protected void setGeneration(Deployment desired, int nextGeneration) {
+        desired.getSpec().getTemplate().getMetadata().getAnnotations().put(ANNOTATION_GENERATION, String.valueOf(nextGeneration));
+    }
+
 }

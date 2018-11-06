@@ -46,6 +46,11 @@ public class DeploymentOperatorTest extends
 
     @Override
     protected DeploymentOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new DeploymentOperator(vertx, mockClient);
+        return new DeploymentOperator(vertx, mockClient) {
+            @Override
+            protected void setGeneration(Deployment desired, int nextGeneration) {
+
+            }
+        };
     }
 }
