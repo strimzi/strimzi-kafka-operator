@@ -4,12 +4,8 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.Namespace;
@@ -29,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.strimzi.api.kafka.model.KafkaResources.clientsCaCertificateSecretName;
@@ -43,7 +38,6 @@ import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
-import static java.util.Collections.unmodifiableMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -167,71 +161,7 @@ class SecurityST extends AbstractST {
         }
     }
 
-    private Map<String, String> ssSnapshot(String namespace, String name) {
-        StatefulSet statefulSet = client.apps().statefulSets().inNamespace(namespace).withName(name).get();
-        LabelSelector selector = statefulSet.getSpec().getSelector();
-        List<Pod> pods = client.pods().inNamespace(namespace).withLabels(selector.getMatchLabels()).list().getItems();
-        return unmodifiableMap(pods.stream()
-                .collect(
-                    Collectors.toMap(pod -> pod.getMetadata().getName(),
-                        pod -> pod.getMetadata().getResourceVersion())));
-    }
 
-    private Map<String, String> depSnapshot(String namespace, String name) {
-        Deployment deployment = client.extensions().deployments().inNamespace(namespace).withName(name).get();
-        LabelSelector selector = deployment.getSpec().getSelector();
-        List<Pod> pods = client.pods().inNamespace(namespace).withLabels(selector.getMatchLabels()).list().getItems();
-        return unmodifiableMap(pods.stream()
-                .collect(
-                    Collectors.toMap(pod -> pod.getMetadata().getName(),
-                        pod -> pod.getMetadata().getResourceVersion())));
-    }
-
-    private boolean ssHasRolled(String namespace, String name, Map<String, String> snapshot) {
-        return podsHaveRolled(namespace, snapshot,
-                client.apps().statefulSets().inNamespace(namespace).withName(name).get().getSpec().getSelector());
-    }
-
-    private boolean depHasRolled(String namespace, String name, Map<String, String> snapshot) {
-        return podsHaveRolled(namespace, snapshot,
-                client.extensions().deployments().inNamespace(namespace).withName(name).get().getSpec().getSelector());
-    }
-
-    private boolean podsHaveRolled(String namespace, Map<String, String> snapshot, LabelSelector selector) {
-        List<Pod> pods = client.pods().inNamespace(namespace).withLabels(selector.getMatchLabels()).list().getItems();
-        Map<String, String> map = pods.stream().collect(Collectors.toMap(pod -> pod.getMetadata().getName(),
-            pod -> pod.getMetadata().getResourceVersion()));
-        // rolled when all the pods in snapshot have a different version in map
-        map.keySet().retainAll(snapshot.keySet());
-        for (Map.Entry<String, String> e : map.entrySet()) {
-            String currentResourceVersion = e.getValue();
-            String resourceName = e.getKey();
-            String oldResourceVersion = snapshot.get(resourceName);
-            if (oldResourceVersion.equals(currentResourceVersion)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private Map<String, String> waitTillSsHasRolled(String namespace, String name, Map<String, String> snapshot) {
-        TestUtils.waitFor("SS roll of " + name,
-                1_000, 450_000, () -> {
-                try {
-                    return ssHasRolled(namespace, name, snapshot);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return false;
-                }
-            });
-        return ssSnapshot(namespace, name);
-    }
-
-    private Map<String, String> waitTillDepHasRolled(String namespace, String name, Map<String, String> snapshot) {
-        TestUtils.waitFor("Deployment roll of " + name,
-                1_000, 300_000, () -> depHasRolled(namespace, name, snapshot));
-        return depSnapshot(namespace, name);
-    }
 
     @Test
     @OpenShiftOnly
@@ -249,8 +179,8 @@ class SecurityST extends AbstractST {
         AvailabilityVerifier mp = waitForInitialAvailability(userName);
 
         // Get all pods, and their resource versions
-        Map<String, String> zkPods = ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        Map<String, String> kafkaPods = ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> zkPods = StUtils.ssSnapshot(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(client, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaCerts = new HashMap<>();
@@ -271,12 +201,12 @@ class SecurityST extends AbstractST {
             client.secrets().inNamespace(NAMESPACE).withName(secretName).patch(annotated);
         }
 
-        Map<String, String> eoPod = depSnapshot(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        Map<String, String> eoPod = StUtils.depSnapshot(client, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Wait for zk to rolling restart (2)..");
-        waitTillSsHasRolled(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
+        StUtils.waitTillSsHasRolled(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
         LOGGER.info("Wait for kafka to rolling restart (2)...");
-        waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
+        StUtils.waitTillSsHasRolled(client, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
@@ -383,13 +313,13 @@ class SecurityST extends AbstractST {
         Map<String, String>[] kafkaPods = new Map[1];
         Map<String, String>[] eoPods = new Map[1];
         AtomicInteger count = new AtomicInteger();
-        zkPods[0] = ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        kafkaPods[0] = ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
-        eoPods[0] = depSnapshot(NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
+        zkPods[0] = StUtils.ssSnapshot(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+        kafkaPods[0] = StUtils.ssSnapshot(client, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
+        eoPods[0] = StUtils.depSnapshot(client, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
         TestUtils.waitFor("Cluster stable and ready", 1_000, 1_200_000, () -> {
-            Map<String, String> zkSnapshot = ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-            Map<String, String> kafkaSnaptop = ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
-            Map<String, String> eoSnapshot = depSnapshot(NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
+            Map<String, String> zkSnapshot = StUtils.ssSnapshot(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+            Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(client, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
+            Map<String, String> eoSnapshot = StUtils.depSnapshot(client, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);

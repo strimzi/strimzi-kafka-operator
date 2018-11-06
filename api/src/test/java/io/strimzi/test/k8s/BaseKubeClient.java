@@ -107,7 +107,18 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K create(File... files) {
         try (Context context = defaultContext()) {
-            KubeClusterException error = execRecursive(CREATE, files, (f1, f2) -> f1.getName().compareTo(f2.getName()));
+            KubeClusterException error = execRecursive(CREATE, files, Comparator.comparing(File::getName));
+            if (error != null) {
+                throw error;
+            }
+            return (K) this;
+        }
+    }
+
+    @Override
+    public K apply(File... files) {
+        try (Context context = defaultContext()) {
+            KubeClusterException error = execRecursive(APPLY, files, Comparator.comparing(File::getName));
             if (error != null) {
                 throw error;
             }
@@ -118,7 +129,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public K delete(File... files) {
         try (Context context = defaultContext()) {
-            KubeClusterException error = execRecursive(DELETE, files, (f1, f2) -> f2.getName().compareTo(f1.getName()));
+            KubeClusterException error = execRecursive(DELETE, files, Comparator.comparing(File::getName).reversed());
             if (error != null) {
                 throw error;
             }

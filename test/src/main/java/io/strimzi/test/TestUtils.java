@@ -8,8 +8,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +40,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -273,7 +277,7 @@ public final class TestUtils {
     public static <T> String toYamlString(T instance) {
         ObjectMapper mapper = new YAMLMapper()
                 .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         try {
             return mapper.writeValueAsString(instance);
         } catch (JsonProcessingException e) {
@@ -340,4 +344,37 @@ public final class TestUtils {
             }
         }
     }
+
+    /**
+     * Changes the {@code subject} of the RoleBinding in the given YAML resource to be the
+     * {@code strimzi-cluster-operator} {@code ServiceAccount} in the given namespace.
+     * @param roleBindingFile
+     * @param namespace
+     * @return
+     */
+    public static String changeRoleBindingSubject(File roleBindingFile, String namespace) {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            JsonNode node = mapper.readTree(roleBindingFile);
+            ArrayNode subjects = (ArrayNode) node.get("subjects");
+            ObjectNode subject = (ObjectNode) subjects.get(0);
+            subject.put("kind", "ServiceAccount")
+                    .put("name", "strimzi-cluster-operator")
+                    .put("namespace", namespace);
+            return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String getContent(File file, Function<JsonNode, String> edit) {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            JsonNode node = mapper.readTree(file);
+            return edit.apply(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
 }
