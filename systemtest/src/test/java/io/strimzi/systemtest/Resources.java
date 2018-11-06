@@ -112,24 +112,28 @@ public class Resources {
         switch (resource.getKind()) {
             case Kafka.RESOURCE_KIND:
                 resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                     waitForDeletion((Kafka) resource);
                 });
                 break;
             case KafkaConnect.RESOURCE_KIND:
                 resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                     waitForDeletion((KafkaConnect) resource);
                 });
                 break;
             case KafkaConnectS2I.RESOURCE_KIND:
                 resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
                 break;
             default :
                 resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                 });
         }
@@ -351,6 +355,9 @@ public class Resources {
         });
     }
 
+    /**
+     * Wait until the ZK, Kafka and EO are all ready
+     */
     private Kafka waitFor(Kafka kafka) {
         String name = kafka.getMetadata().getName();
         LOGGER.info("Waiting for Kafka {}", name);
@@ -382,6 +389,9 @@ public class Resources {
         return kafkaMirrorMaker;
     }
 
+    /**
+     * Wait until the SS is ready and all of its Pods are also ready
+     */
     private void waitForStatefulSet(String namespace, String name) {
         LOGGER.info("Waiting for StatefulSet {}", name);
         TestUtils.waitFor("statefulset " + name, 1000, 300000,
@@ -397,6 +407,9 @@ public class Resources {
         LOGGER.info("StatefulSet {} is ready", name);
     }
 
+    /**
+     * Wait until the deployment is ready
+     */
     private void waitForDeployment(String namespace, String name) {
         LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, 1000, 300000,
