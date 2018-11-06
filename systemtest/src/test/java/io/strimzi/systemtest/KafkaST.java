@@ -1038,9 +1038,9 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag("regression")
-    public void testMirrorMaker() {
-        operationID = startTimeMeasuring();
+    @Tag(REGRESSION)
+    void testMirrorMaker() {
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String nameProducerSource = "send-messages-producer-source";
         String nameConsumerSource = "send-messages-consumer-source";
@@ -1078,9 +1078,9 @@ class KafkaST extends AbstractST {
      * Test mirroring messages by Mirror Maker over tls transport using mutual tls auth
      */
     @Test
-    @Tag("regression")
-    public void testMirrorMakerTlsAuthenticated() {
-        operationID = startTimeMeasuring();
+    @Tag(REGRESSION)
+    void testMirrorMakerTlsAuthenticated() {
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String nameProducerSource = "send-messages-producer-source";
         String nameConsumerSource = "send-messages-consumer-source";
@@ -1171,9 +1171,9 @@ class KafkaST extends AbstractST {
      * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
      */
     @Test
-    @Tag("regression")
-    public void testMirrorMakerTlsScramSha() {
-        operationID = startTimeMeasuring();
+    @Tag(REGRESSION)
+    void testMirrorMakerTlsScramSha() {
+        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
         String nameProducerSource = "send-messages-producer-source";
