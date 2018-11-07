@@ -31,23 +31,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static io.strimzi.test.StrimziExtension.REGRESSION;
 import static io.strimzi.api.kafka.model.KafkaResources.clientsCaCertificateSecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.clientsCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.clusterCaCertificateSecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static java.util.Collections.unmodifiableMap;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(SecurityST.NAMESPACE)
@@ -227,7 +226,6 @@ class SecurityST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
     public void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException {
         createCluster();
 
@@ -273,8 +271,8 @@ class SecurityST extends AbstractST {
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
             Secret secret = client.secrets().inNamespace(NAMESPACE).withName(secretName).get();
-            assertNotNull("Secret " + secretName + " should exist", secret);
-            assertNotNull("CA cert in " + secretName + " should have non-null 'data'", secret.getData());
+            assertNotNull(secret, "Secret " + secretName + " should exist");
+            assertNotNull(secret.getData(), "CA cert in " + secretName + " should have non-null 'data'");
             String value = secret.getData().get("ca.crt");
             assertNotEquals("CA cert in " + secretName + " should have changed",
                     initialCaCerts.get(secretName), value);
@@ -343,7 +341,6 @@ class SecurityST extends AbstractST {
     }
 
     @Test
-    @JUnitGroup(name = "regression")
     public void testAutoRenewCaCertsTriggerByExpiredCertificate() throws InterruptedException {
         // 1. Create the Secrets already, and a certificate that's already expired
         String clusterCaKey = createSecret("cluster-ca.key", clusterCaKeySecretName(CLUSTER_NAME), "ca.key");
@@ -442,7 +439,6 @@ class SecurityST extends AbstractST {
      * Test the case where the cluster is initial created with manual CA
      */
     @Test
-    @JUnitGroup(name = "regression")
     public void testManualCaCertFromScratch() {
         // TODO
     }
@@ -451,7 +447,6 @@ class SecurityST extends AbstractST {
      * Test the case where the cluster is initial created with manual CA and we transition to auto CA
      */
     @Test
-    @JUnitGroup(name = "regression")
     public void testAutoCaCertFromManual() {
         // TODO
     }
@@ -460,13 +455,11 @@ class SecurityST extends AbstractST {
      * Test the case where the cluster is initial auto CA and we transition to manual CA
      */
     @Test
-    @JUnitGroup(name = "regression")
     public void testManualCaCertFromAuto() {
         // TODO
     }
 
     @Test
-    @JUnitGroup(name = "regression")
     public void testManualCaCertRenewal() {
 
     }
