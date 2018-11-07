@@ -59,11 +59,11 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      */
     public Future<Void> rollingUpdate(String namespace, String name, long operationTimeoutMs) {
         return getAsync(namespace, name)
-                .compose(deployment -> killPod(namespace, name))
+                .compose(deployment -> deletePod(namespace, name))
                 .compose(ignored -> readiness(namespace, name, 1_000, operationTimeoutMs));
     }
 
-    public Future<ReconcileResult<Pod>> killPod(String namespace, String name) {
+    public Future<ReconcileResult<Pod>> deletePod(String namespace, String name) {
         Labels labels = Labels.fromMap(null).withName(name);
         String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();
         return podOperations.reconcile(namespace, podName, null);
