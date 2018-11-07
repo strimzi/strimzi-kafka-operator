@@ -194,7 +194,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String serviceName(String cluster) {
-        return KafkaResources.internalBootstrapServiceName(cluster);
+        return KafkaResources.bootstrapServiceName(cluster);
     }
 
     /**

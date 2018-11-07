@@ -101,30 +101,30 @@ public class KafkaResources {
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding bootstrap {@code Service}.
      */
-    public static String internalBootstrapServiceName(String clusterName) {
+    public static String bootstrapServiceName(String clusterName) {
         return clusterName + "-kafka-bootstrap";
     }
 
     /**
-     * Returns the socket address (<em>&lt;host&gt;</em>:<em>&lt;port&gt;</em>)
+     * Returns the address (<em>&lt;host&gt;</em>:<em>&lt;port&gt;</em>)
      * of the internal plain bootstrap {@code Service} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The socket address of the corresponding bootstrap {@code Service}.
-     * @see #internalTlsBootstrapConnection(String)
+     * @return The address of the corresponding bootstrap {@code Service}.
+     * @see #tlsBootstrapConnection(String)
      */
-    public static String internalPlainBootstrapConnection(String clusterName) {
-        return internalBootstrapServiceName(clusterName) + ":9092";
+    public static String plainBootstrapConnection(String clusterName) {
+        return bootstrapServiceName(clusterName) + ":9092";
     }
 
     /**
-     * Returns the socket address (<em>&lt;host&gt;</em>:<em>&lt;port&gt;</em>)
+     * Returns the address (<em>&lt;host&gt;</em>:<em>&lt;port&gt;</em>)
      * of the internal TLS bootstrap {@code Service} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The socket address of the corresponding bootstrap {@code Service}.
-     * @see #internalPlainBootstrapConnection(String)
+     * @return The address of the corresponding bootstrap {@code Service}.
+     * @see #plainBootstrapConnection(String)
      */
-    public static String internalTlsBootstrapConnection(String clusterName) {
-        return internalBootstrapServiceName(clusterName) + ":9093";
+    public static String tlsBootstrapConnection(String clusterName) {
+        return bootstrapServiceName(clusterName) + ":9093";
     }
 
     /**
@@ -136,10 +136,6 @@ public class KafkaResources {
         return clusterName + "-kafka-brokers";
     }
 
-    public static String brokerConnection(String clusterName) {
-        return brokersServiceName(clusterName) + ":9092";
-    }
-
     /**
      * Returns the name of the external bootstrap {@code Service} for a {@code Kafka} cluster of the given name.
      * This {@code Service} will only exist if {@code Kafka.spec.kafka.listeners.external} is configured for a
@@ -149,22 +145,6 @@ public class KafkaResources {
      */
     public static String externalBootstrapServiceName(String clusterName) {
         return clusterName + "-kafka-external-bootstrap";
-    }
-
-    /**
-     * Returns the socket address (<em>&lt;host&gt;</em>:<em>&lt;port&gt;</em>)
-     * of the external bootstrap {@code Service} for a {@code Kafka} cluster of the given name.
-     * This {@code Service} will only exist if {@code Kafka.spec.kafka.listeners.external} is configured for a
-     * loadbalancer or NodePort in the {@code Kafka} resource with the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The socket address of the corresponding bootstrap {@code Service}.
-     */
-    public static String externalBootstrapConnection(String clusterName) {
-        return externalBootstrapServiceName(clusterName) + ":9094";
-    }
-
-    public static String externalServiceName(String cluster, int pod) {
-        return cluster + "-kafka-" + pod;
     }
 
     /**

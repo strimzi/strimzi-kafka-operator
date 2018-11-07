@@ -644,7 +644,7 @@ public class KafkaST extends AbstractST {
      */
     private Job pingJob(String name, String topic, int messagesCount, KafkaUser kafkaUser, boolean tlsListener) {
 
-        String connect = tlsListener ? KafkaResources.internalTlsBootstrapConnection(CLUSTER_NAME) : KafkaResources.internalPlainBootstrapConnection(CLUSTER_NAME);
+        String connect = tlsListener ? KafkaResources.tlsBootstrapConnection(CLUSTER_NAME) : KafkaResources.plainBootstrapConnection(CLUSTER_NAME);
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("ping")
                 .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))

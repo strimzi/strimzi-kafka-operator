@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -89,7 +90,7 @@ public class EntityOperator extends AbstractModel {
     }
 
     public static String entityOperatorName(String cluster) {
-        return cluster + NAME_SUFFIX;
+        return KafkaResources.entityOperatorDeploymentName(cluster);
     }
 
     protected static String defaultZookeeperConnect(String cluster) {

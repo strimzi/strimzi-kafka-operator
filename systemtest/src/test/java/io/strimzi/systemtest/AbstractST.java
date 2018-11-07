@@ -105,7 +105,7 @@ public class AbstractST {
     }
 
     static String kafkaServiceName(String clusterName) {
-        return KafkaResources.internalBootstrapServiceName(clusterName);
+        return KafkaResources.bootstrapServiceName(clusterName);
     }
 
     static String kafkaHeadlessServiceName(String clusterName) {
@@ -226,7 +226,7 @@ public class AbstractST {
     public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
-                KafkaResources.internalPlainBootstrapConnection(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
+                KafkaResources.plainBootstrapConnection(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
@@ -237,7 +237,7 @@ public class AbstractST {
         LOGGER.info("Consuming messages");
         String output = kubeClient.execInPod(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
                 "bin/kafka-verifiable-consumer.sh --broker-list " +
-                        KafkaResources.internalPlainBootstrapConnection(clusterName) + " --topic " + topic + " --group-id " + groupID + " & sleep "
+                        KafkaResources.plainBootstrapConnection(clusterName) + " --topic " + topic + " --group-id " + groupID + " & sleep "
                         + timeout + "; kill %1").out();
         output = "[" + output.replaceAll("\n", ",") + "]";
         LOGGER.info("Output for kafka-verifiable-consumer.sh {}", output);
