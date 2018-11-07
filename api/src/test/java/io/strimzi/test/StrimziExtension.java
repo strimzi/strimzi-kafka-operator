@@ -674,6 +674,31 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         return last;
     }
 
+    private void applyMultipleNamespacesWatcher(List<Namespace> namespaces) {
+        String defaultNamespace  = namespaces.get(0).value();
+        for (Namespace namespace: namespaces) {
+            if (namespace.value().matches(defaultNamespace)) {
+                continue;
+            }
+            Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles((file, name) -> name.matches("[0-9]*-RoleBinding.*"))).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
+
+                ArrayNode subjects = (ArrayNode) node.get("subjects");
+                ObjectNode subject = (ObjectNode) subjects.get(0);
+                subject.put("kind", "ServiceAccount")
+                        .put("name", "strimzi-cluster-operator")
+                        .put("namespace", defaultNamespace);
+
+            }), (x, y) -> x, LinkedHashMap::new));
+
+            for (Map.Entry<File, String> entry : yamls.entrySet()) {
+                LOGGER.info("Apply {} into namespace {}", entry.getKey(), namespace.value());
+                kubeClient().namespace(namespace.value());
+                kubeClient().clientWithAdmin().applyContent(entry.getValue());
+            }
+        }
+        kubeClient().namespace(defaultNamespace);
+    }
+
     @SuppressWarnings("unchecked")
     private Statement installOperatorFromExamples(AnnotatedElement element, Statement last, ClusterOperator cc) {
         Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
@@ -711,6 +736,16 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                             ((ObjectNode) envVar).put("value", envVariable.value());
                         }
                     }
+
+                    if (varName.matches("STRIMZI_NAMESPACE")) {
+                        List<Namespace> namespaces = annotations(element, Namespace.class);
+                        List<String> test = new ArrayList<>();
+                        ((ObjectNode) envVar).remove("valueFrom");
+                        for (Namespace namespace : namespaces) {
+                            test.add(namespace.value());
+                        }
+                        ((ObjectNode) envVar).put("value", String.join(",", test));
+                    }
                 }
             }
 
@@ -735,9 +770,12 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 for (Map.Entry<File, String> entry : yamls.entrySet()) {
                     LOGGER.info("creating possibly modified version of {}", entry.getKey());
                     deletable.push(entry.getValue());
+
                     kubeClient().namespace(annotations(element, Namespace.class).get(0).value());
                     kubeClient().clientWithAdmin().applyContent(entry.getValue());
                 }
+                List<Namespace> namespaces = annotations(element, Namespace.class);
+                applyMultipleNamespacesWatcher(namespaces);
                 kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME, 1);
             }
 

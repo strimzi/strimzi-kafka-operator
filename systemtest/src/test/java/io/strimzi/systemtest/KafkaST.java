@@ -91,6 +91,7 @@ import static io.strimzi.test.StrimziExtension.ACCEPTANCE;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(KafkaST.NAMESPACE)
+@Namespace(value = "topic-operator-namespace", use = false)
 @ClusterOperator
 class KafkaST extends AbstractST {
 
@@ -1015,7 +1016,6 @@ class KafkaST extends AbstractST {
      */
     @Test
     @Tag(REGRESSION)
-    @Namespace(value = "topic-operator-namespace", use = false)
     void testWatchingOtherNamespace() throws InterruptedException {
         resources().kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
