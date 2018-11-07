@@ -116,8 +116,8 @@ public class KafkaSetOperatorTest {
     @Test
     public void testNeedsRollingUpdateEnvZkConnect() {
         String envVar = ENV_VAR_KAFKA_ZOOKEEPER_CONNECT;
-        a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
-                containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
+        a.getSpec().getTemplate().getSpec().getContainers().get(1).getEnv().add(new EnvVar(envVar,
+                containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(1)).get(envVar) + "-foo", null));
         assertTrue(KafkaSetOperator.needsRollingUpdate(diff()));
     }
 
