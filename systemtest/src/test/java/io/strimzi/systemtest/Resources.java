@@ -245,7 +245,7 @@ public class Resources {
         return new KafkaConnectBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
-                .withBootstrapServers(KafkaResources.plainBootstrapConnection(name))
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectReplicas)
             .endSpec();
     }
@@ -285,7 +285,7 @@ public class Resources {
         return new KafkaConnectS2IBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
-                .withBootstrapServers(KafkaResources.plainBootstrapConnection(name))
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectS2IReplicas)
             .endSpec();
     }

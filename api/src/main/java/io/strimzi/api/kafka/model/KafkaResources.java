@@ -110,9 +110,9 @@ public class KafkaResources {
      * of the internal plain bootstrap {@code Service} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The address of the corresponding bootstrap {@code Service}.
-     * @see #tlsBootstrapConnection(String)
+     * @see #tlsBootstrapAddress(String)
      */
-    public static String plainBootstrapConnection(String clusterName) {
+    public static String plainBootstrapAddress(String clusterName) {
         return bootstrapServiceName(clusterName) + ":9092";
     }
 
@@ -121,9 +121,9 @@ public class KafkaResources {
      * of the internal TLS bootstrap {@code Service} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The address of the corresponding bootstrap {@code Service}.
-     * @see #plainBootstrapConnection(String)
+     * @see #plainBootstrapAddress(String)
      */
-    public static String tlsBootstrapConnection(String clusterName) {
+    public static String tlsBootstrapAddress(String clusterName) {
         return bootstrapServiceName(clusterName) + ":9093";
     }
 

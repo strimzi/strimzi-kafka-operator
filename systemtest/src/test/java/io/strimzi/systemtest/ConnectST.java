@@ -48,7 +48,7 @@ public class ConnectST extends AbstractST {
 
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
-    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KafkaResources.plainBootstrapConnection(KAFKA_CLUSTER_NAME);
+    public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME);
     private static final String EXPECTED_CONFIG = "group.id=connect-cluster\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
             "internal.key.converter.schemas.enable=false\n" +
