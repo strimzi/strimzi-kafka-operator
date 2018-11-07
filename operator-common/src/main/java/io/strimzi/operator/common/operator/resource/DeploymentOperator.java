@@ -4,13 +4,14 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
 import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -21,7 +22,7 @@ import java.util.HashMap;
  */
 public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
 
-    private static final int INIT_GENERATION = 0;
+    private final PodOperator podOperations;
 
     /**
      * Constructor
@@ -29,7 +30,12 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * @param client The Kubernetes client
      */
     public DeploymentOperator(Vertx vertx, KubernetesClient client) {
+        this(vertx, client, new PodOperator(vertx, client));
+    }
+
+    public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations) {
         super(vertx, client, "Deployment");
+        this.podOperations = podOperations;
     }
 
     @Override
@@ -53,26 +59,14 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      */
     public Future<Void> rollingUpdate(String namespace, String name, long operationTimeoutMs) {
         return getAsync(namespace, name)
-                .compose(deployment -> reconcile(namespace, name, incrementGeneration(deployment)))
+                .compose(deployment -> killPod(namespace, name))
                 .compose(ignored -> readiness(namespace, name, 1_000, operationTimeoutMs));
     }
 
-    private Deployment incrementGeneration(Deployment deployment) {
-        String generationStr = deployment.getSpec().getTemplate().getMetadata().getAnnotations().get(ANNOTATION_GENERATION);
-        int generation = 0;
-        if (generationStr != null && !generationStr.isEmpty()) {
-            generation = Integer.parseInt(generationStr);
-            generation++;
-        }
-        return new DeploymentBuilder(deployment)
-                .editSpec()
-                    .editTemplate()
-                        .editMetadata()
-                            .addToAnnotations(ANNOTATION_GENERATION, Integer.toString(generation))
-                        .endMetadata()
-                    .endTemplate()
-                .endSpec()
-            .build();
+    public Future<ReconcileResult<Pod>> killPod(String namespace, String name) {
+        Labels labels = Labels.fromMap(null).withName(name);
+        String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();
+        return podOperations.reconcile(namespace, podName, null);
     }
 
     @Override
@@ -89,15 +83,4 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
 
         return super.internalPatch(namespace, name, current, desired, cascading);
     }
-
-    @Override
-    protected Future<ReconcileResult<Deployment>> internalCreate(String namespace, String name, Deployment desired) {
-        setGeneration(desired, INIT_GENERATION);
-        return super.internalCreate(namespace, name, desired);
-    }
-
-    protected void setGeneration(Deployment desired, int nextGeneration) {
-        desired.getSpec().getTemplate().getMetadata().getAnnotations().put(ANNOTATION_GENERATION, String.valueOf(nextGeneration));
-    }
-
 }
