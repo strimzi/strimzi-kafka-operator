@@ -91,7 +91,6 @@ import static io.strimzi.test.StrimziExtension.ACCEPTANCE;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(KafkaST.NAMESPACE)
-@Namespace(value = "topic-operator-namespace", use = false)
 @ClusterOperator
 class KafkaST extends AbstractST {
 
@@ -162,7 +161,7 @@ class KafkaST extends AbstractST {
 
         // scale down
         LOGGER.info("Scaling down");
-        //client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(CLUSTER_NAME)).scale(initialReplicas, true);
+        //client.apps().statefulSets().inNamespace(DEFAULT_NAMESPACE).withName(kafkaStatefulSetName(CLUSTER_NAME)).scale(initialReplicas, true);
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setReplicas(initialReplicas);
         });

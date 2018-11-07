@@ -369,13 +369,9 @@ public class AbstractST {
     }
 
     @BeforeEach
-    public void createResources() {
+    public void createResources(TestInfo testInfo) {
         LOGGER.info("Creating resources before the test");
         resources = new Resources(namespacedClient());
-    }
-
-    @BeforeEach
-    void setTestName(TestInfo testInfo) {
         testName = testInfo.getTestMethod().get().getName();
     }
 
