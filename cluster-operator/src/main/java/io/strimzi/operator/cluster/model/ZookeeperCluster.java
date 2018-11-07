@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
@@ -83,11 +84,11 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String ENV_VAR_TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     public static String zookeeperClusterName(String cluster) {
-        return cluster + ZookeeperCluster.NAME_SUFFIX;
+        return KafkaResources.zookeeperStatefulSetName(cluster);
     }
 
     public static String zookeeperMetricAndLogConfigsName(String cluster) {
-        return cluster + ZookeeperCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
+        return KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster);
     }
 
     public static String logConfigsName(String cluster) {
@@ -103,7 +104,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public static String zookeeperPodName(String cluster, int pod) {
-        return zookeeperClusterName(cluster) + "-" + pod;
+        return KafkaResources.zookeeperPodName(cluster, pod);
     }
 
     public static String getPersistentVolumeClaimName(String clusterName, int podId) {

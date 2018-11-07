@@ -37,6 +37,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -244,7 +245,7 @@ public class Resources {
         return new KafkaConnectBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
-                .withBootstrapServers(name + "-kafka-bootstrap:9092")
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectReplicas)
             .endSpec();
     }
@@ -284,7 +285,7 @@ public class Resources {
         return new KafkaConnectS2IBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
-                .withBootstrapServers(name + "-kafka-bootstrap:9092")
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectS2IReplicas)
             .endSpec();
     }
@@ -351,11 +352,12 @@ public class Resources {
     }
 
     private Kafka waitFor(Kafka kafka) {
-        LOGGER.info("Waiting for Kafka {}", kafka.getMetadata().getName());
+        String name = kafka.getMetadata().getName();
+        LOGGER.info("Waiting for Kafka {}", name);
         String namespace = kafka.getMetadata().getNamespace();
-        waitForStatefulSet(namespace, kafka.getMetadata().getName() + "-zookeeper");
-        waitForStatefulSet(namespace, kafka.getMetadata().getName() + "-kafka");
-        waitForDeployment(namespace, kafka.getMetadata().getName() + "-entity-operator");
+        waitForStatefulSet(namespace, KafkaResources.zookeeperStatefulSetName(name));
+        waitForStatefulSet(namespace, KafkaResources.kafkaStatefulSetName(name));
+        waitForDeployment(namespace, KafkaResources.entityOperatorDeploymentName(name));
         return kafka;
     }
 

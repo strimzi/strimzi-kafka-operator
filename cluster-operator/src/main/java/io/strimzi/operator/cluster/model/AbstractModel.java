@@ -54,6 +54,7 @@ import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
@@ -1086,11 +1087,11 @@ public abstract class AbstractModel {
     }
 
     public static String clusterCaCertSecretName(String cluster)  {
-        return cluster + "-cluster-ca-cert";
+        return KafkaResources.clusterCaCertificateSecretName(cluster);
     }
 
     public static String clusterCaKeySecretName(String cluster)  {
-        return cluster + "-cluster-ca";
+        return KafkaResources.clusterCaKeySecretName(cluster);
     }
 
     protected static Map<String, String> mergeAnnotations(Map<String, String> internal, Map<String, String> template) {
