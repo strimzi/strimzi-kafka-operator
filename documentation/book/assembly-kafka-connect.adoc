@@ -9,17 +9,13 @@
 [id='kafka-connect-{context}']
 = Kafka Connect
 
-link:https://kafka.apache.org/documentation/#connect[Kafka Connect^], a core component of Apache Kafka, is a tool for streaming high volumes of data into and out of your Kafka cluster. It provides a framework for building your own connectors (a type of plugin) for your Kafka cluster, a REST API for managing connectors, and more. Two built-in connectors are provided:
+link:https://kafka.apache.org/documentation/#connect[Kafka Connect^], a core component of Apache Kafka, is a tool for streaming high volumes of data into and out of your Kafka cluster. It provides a framework for building connectors for your Kafka cluster, a REST API for managing connectors, and more. Two built-in connectors are provided:
 
 - A source connector, named `FileStreamSourceConnector`
 
 - A sink connector, named `FileStreamSyncConnector`
 
-Using the Cluster Operator in {ProductName}, you can deploy a Kafka Connect cluster to your {ProductPlatformName} cluster. The Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers. The REST API is available within your {ProductPlatformName} cluster on port 8083, as the `kafka-connect` service.
-
-For more information on configuring the `KafkaConnect` resource, see xref:assembly-deployment-configuration-kafka-connect-str[Kafka Connect cluster configuration]
-and
-xref:assembly-deployment-configuration-kafka-connect-s2i-str[Kafka Connect cluster with Source2Image support].
+In {ProductName}, you can use the Cluster Operator to deploy a Kafka Connect cluster to your {ProductPlatformName} cluster. The Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers. The REST API is available within your {ProductPlatformName} cluster on port 8083, as the `kafka-connect` service.
 
 ifdef::Kubernetes[]
 include::proc-deploying-kafka-connect-kubernetes.adoc[leveloffset=+1]
