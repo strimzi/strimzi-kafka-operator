@@ -3,6 +3,7 @@
 ## 0.9.0
 
 * Add possibility to label and annotate different resources (#1093)
+* Add new KafkaResources to the api module to encapsulate resource naming (#1066)
 
 ## 0.8.2
 
