@@ -1,12 +1,20 @@
+/*
+ * Copyright 2018, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Job;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -29,8 +37,12 @@ class MultipleNamespaceST extends AbstractST {
     static final String DEFAULT_NAMESPACE = "multiple-namespace-test";
     static final String SECOND_NAMESPACE = "topic-operator-namespace";
     private static final String TOPIC = "my-topic";
-
     private static final String TOPIC_INSTALL_DIR = "../examples/topic/kafka-topic.yaml";
+    private static final int MESSAGE_COUNT = 20;
+
+    private static Resources classResources;
+    private static Resources secondNamespaceResources;
+
 
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
@@ -38,7 +50,80 @@ class MultipleNamespaceST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     void testWatchingOtherNamespace() throws InterruptedException {
-        resources().kafkaEphemeral(CLUSTER_NAME, 1)
+        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        assertThat(topics, not(hasItems(TOPIC)));
+
+        deployNewTopic();
+        deleteNewTopic();
+    }
+
+    /**
+     * Test the case where messages are sent to topic in different namespace
+     */
+    @Test
+    @Tag(REGRESSION)
+    void testCollectMessagesFromOtherNamespaceTopic() throws InterruptedException {
+        String nameProducerSource = "send-messages-producer-source";
+        String nameConsumerSource = "send-messages-consumer-source";
+
+        deployNewTopic();
+
+        // Create job to send 100 records using Kafka producer for source cluster
+        LOGGER.info("Sending {} messages to topic: {}", MESSAGE_COUNT, TOPIC);
+        waitForJobSuccess(
+                sendRecordsToClusterJob(CLUSTER_NAME, nameProducerSource, TOPIC, MESSAGE_COUNT, null, false)
+        );
+        LOGGER.info("Trying to receive {} messages from topic: {}", MESSAGE_COUNT, TOPIC);
+        // Create job to read 100 records using Kafka producer for source cluster
+        Job jobReadMessagesForTarget = waitForJobSuccess(
+                readMessagesFromClusterJob(CLUSTER_NAME, nameConsumerSource, TOPIC, MESSAGE_COUNT, null, false)
+        );
+
+        checkRecordsForConsumer(MESSAGE_COUNT, jobReadMessagesForTarget);
+        deleteNewTopic();
+    }
+
+    /**
+     * Test the case when Kafka will be deployed in different namespace
+     */
+    @Test
+    @Tag(REGRESSION)
+    void testDeployKafkaToOtherNamespace() throws InterruptedException {
+        String kafkaName = kafkaClusterName(CLUSTER_NAME + "-second");
+
+        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3).done();
+
+        LOGGER.info("Waiting for creation {} in namespace {}", kafkaName, SECOND_NAMESPACE);
+        kubeClient.namespace(SECOND_NAMESPACE);
+        kubeClient.waitForStatefulSet(kafkaName, 3);
+    }
+
+
+    /**
+     * Test the case when MirrorMaker will be deployed in different namespace across multiple namespaces
+     */
+    @Test
+    @Tag(REGRESSION)
+    void testDeployMirrorMakerAcrossMultipleNamespace() throws InterruptedException {
+        String kafkaName = CLUSTER_NAME + "-target";
+        String kafkaSourceName = kafkaClusterName(CLUSTER_NAME);
+        String kafkaTargetName = kafkaClusterName(kafkaName);
+
+        secondNamespaceResources.kafkaEphemeral(kafkaName, 3).done();
+        secondNamespaceResources.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
+
+        LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
+        kubeClient.namespace(SECOND_NAMESPACE);
+        kubeClient.waitForDeployment(CLUSTER_NAME + "-mirror-maker", 1);
+    }
+
+
+
+    @BeforeAll
+    static void createClassResources(TestInfo testInfo) {
+        LOGGER.info("Creating resources before the test class");
+        classResources = new Resources(namespacedClient());
+        classResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -48,21 +133,48 @@ class MultipleNamespaceST extends AbstractST {
             .endSpec()
             .done();
 
-        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
-        assertThat(topics, not(hasItems(TOPIC)));
+        testClass = testInfo.getTestClass().get().getSimpleName();
+    }
 
+    @AfterAll
+    static void deleteClassResources() {
+        LOGGER.info("Deleting resources after the test class");
+        classResources.deleteResources();
+        classResources = null;
+    }
+
+    @BeforeEach
+    void createSecondNamespaceResources() {
+        kubeClient.namespace(SECOND_NAMESPACE);
+        secondNamespaceResources = new Resources(namespacedClient());
+        kubeClient.namespace(DEFAULT_NAMESPACE);
+    }
+
+    @AfterEach
+    void deleteSecondNamespaceResources() {
+        secondNamespaceResources.deleteResources();
+        kubeClient.namespace(DEFAULT_NAMESPACE);
+    }
+
+    private static Resources classResources() {
+        return classResources;
+    }
+
+    private void deployNewTopic() {
         LOGGER.info("Creating topic {} in namespace {}", TOPIC, SECOND_NAMESPACE);
-        String origNamespace = kubeClient.namespace(SECOND_NAMESPACE);
+        kubeClient.namespace(SECOND_NAMESPACE);
         kubeClient.create(new File(TOPIC_INSTALL_DIR));
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 120000, 5000, () -> {
-            kubeClient.namespace(origNamespace);
+            kubeClient.namespace(DEFAULT_NAMESPACE);
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics2.contains(TOPIC);
         });
     }
 
-    @BeforeAll
-    static void createClassResources(TestInfo testInfo) {
-        testClass = testInfo.getTestClass().get().getSimpleName();
+    private void deleteNewTopic() {
+        LOGGER.info("Deleting topic {} in namespace {}", TOPIC, SECOND_NAMESPACE);
+        kubeClient.namespace(SECOND_NAMESPACE);
+        kubeClient.deleteByName("KafkaTopic", TOPIC);
+        kubeClient.namespace(DEFAULT_NAMESPACE);
     }
 }
