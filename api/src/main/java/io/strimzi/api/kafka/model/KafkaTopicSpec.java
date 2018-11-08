@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Maximum;
@@ -56,9 +57,9 @@ public class KafkaTopicSpec implements Serializable {
             "This cannot be decreased after topic creation. " +
             "It can be increased after topic creation, " +
             "but it is important to understand the consequences that has, " +
-            "especially for topics with semantic partitioning. " +
-            "If unspecified this will default to the broker's `num.partitions` config.")
+            "especially for topics with semantic partitioning.")
     @Minimum(1)
+    @JsonProperty(required = true)
     public Integer getPartitions() {
         return partitions;
     }
@@ -67,10 +68,10 @@ public class KafkaTopicSpec implements Serializable {
         this.partitions = partitions;
     }
 
-    @Description("The number of replicas the topic should have. " +
-            "If unspecified this will default to the broker's `default.replication.factor` config.")
+    @Description("The number of replicas the topic should have.")
     @Minimum(1)
     @Maximum(Short.MAX_VALUE)
+    @JsonProperty(required = true)
     public Integer getReplicas() {
         return replicas;
     }

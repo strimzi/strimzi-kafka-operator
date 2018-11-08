@@ -32,3 +32,6 @@ spec:
               type: object
             topicName:
               type: string
+          required:
+          - partitions
+          - replicas

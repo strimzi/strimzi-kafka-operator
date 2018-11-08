@@ -8,8 +8,11 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -37,5 +40,15 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaTopicWithExtraProperty() {
         createDelete(KafkaTopic.class, "KafkaTopic-with-extra-property.yaml");
+    }
+
+    @Test
+    public void testKafkaTopicWithMissingProperty() {
+        try {
+            createDelete(KafkaTopic.class, "KafkaTopic-with-missing-property.yaml");
+        } catch (KubeClusterException.InvalidResource e) {
+            assertTrue(e.getMessage().contains("spec.partitions in body is required"));
+            assertTrue(e.getMessage().contains("spec.replicas in body is required"));
+        }
     }
 }
