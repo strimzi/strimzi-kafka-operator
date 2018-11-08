@@ -571,7 +571,7 @@ public class TopicOperator {
                     if (merged.changesReplicationFactor()) {
                         LOGGER.error("Changes replication factor");
                         enqueue(new ChangeReplicationFactor(result, involvedObject, res -> LOGGER.error(
-                                "Changing replication factor not implemented yet")));
+                                "Changing replication factor is not supported")));
                     }
                     // TODO What if we increase min.in.sync.replicas and the number of replicas,
                     // such that the old number of replicas < the new min isr? But likewise

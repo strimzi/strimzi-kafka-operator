@@ -45,7 +45,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     @Test
     public void testKafkaTopicWithMissingProperty() {
         try {
-            createDelete(KafkaTopic.class, "KafkaTopic-with-missing-property.yaml");
+            createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("spec.partitions in body is required"));
             assertTrue(e.getMessage().contains("spec.replicas in body is required"));
