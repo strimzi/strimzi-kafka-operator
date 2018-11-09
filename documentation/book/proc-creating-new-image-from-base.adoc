@@ -9,8 +9,11 @@ A container image for running Kafka Connect using {ProductName} is available on 
 
 .Prerequisites
 
-NEED TO ADD CONDITIONALIZED LINKS TO THE PROCEDURES FOR DEPLOYING THE CLUSTER OPERATOR TO OCP OR KUBERNETES.
+ifdef::Kubernetes[]
+* xref:deploying-cluster-operator-kubernetes-{context}[Deploying the Cluster Operator to {KubernetesName}]
+endif::Kubernetes[]
 
+* xref:deploying-cluster-operator-openshift-{context}[Deploying the Cluster Operator to {OpenShiftName}]
 
 .Procedure
 
@@ -32,9 +35,9 @@ USER {DockerImageUser}
 
 . Perform one of the following tasks:
 
-* Set the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource to point to the new container image.
+* Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource to point to the new container image.
 
-* Set the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image.
+* Edit the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image.
 
 .Additional resources
 * For more information on the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable, see xref:ref-operators-cluster-operator-configuration-deploying-co[].
