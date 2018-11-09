@@ -9,7 +9,7 @@ To allow you to build connectors for your Kafka cluster, you can deploy a Kafka 
 
 .Prerequisites
 
-* xref:deploying-cluster-operator-kubernetes-{context}[Deploying the Cluster Operator to {KubernetesName}]
+* xref:deploying-cluster-operator-kubernetes-str[Deploying the Cluster Operator to {KubernetesName}]
 
 .Procedure
 

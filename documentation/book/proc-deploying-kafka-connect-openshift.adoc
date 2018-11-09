@@ -9,7 +9,7 @@ To allow you to build connectors for your Kafka cluster, you can deploy a Kafka 
 
 .Prerequisites
 
-* xref:deploying-cluster-operator-openshift-{context}[Deploying the Cluster Operator to {OpenShiftName}]
+* xref:deploying-cluster-operator-openshift-str[Deploying the Cluster Operator to {OpenShiftName}]
 
 .Procedure
 

@@ -5,19 +5,19 @@
 [id='creating-new-image-from-base-{context}']
 = Creating a Docker image from the Kafka Connect base image
 
-A container image for running Kafka Connect using {ProductName} is available on {DockerRepository} as `{DockerKafkaConnect}`. You can use this as a base image when creating your own custom image with additional plug-ins. 
+A container image for running Kafka Connect using {ProductName} is available on {DockerRepository} as `{DockerKafkaConnect}`. You can use this as a base image for creating your own custom image with additional plug-ins. 
+
+This procedure describes how to create a custom image and add your connector to the `/opt/kafka/plugins` directory.
 
 .Prerequisites
 
 ifdef::Kubernetes[]
-* xref:deploying-cluster-operator-kubernetes-{context}[Deploying the Cluster Operator to {KubernetesName}]
+* xref:deploying-cluster-operator-kubernetes-str[Deploying the Cluster Operator to {KubernetesName}]
 endif::Kubernetes[]
 
-* xref:deploying-cluster-operator-openshift-{context}[Deploying the Cluster Operator to {OpenShiftName}]
+* xref:deploying-cluster-operator-openshift-str[Deploying the Cluster Operator to {OpenShiftName}]
 
 .Procedure
-
-To create a custom image and add your connector to the `/opt/kafka/plugins` directory:
 
 . Create a new `Dockerfile` using `{DockerKafkaConnect}` as the base image:
 +
