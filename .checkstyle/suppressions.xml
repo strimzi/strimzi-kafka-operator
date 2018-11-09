@@ -33,6 +33,9 @@
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaConnectCluster.java"/>
 
+    <suppress checks="ClassFanOutComplexity"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]resource[/\\]StatefulSetOperator.java"/>
+
     <!-- topic operator -->
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicOperator.java"/>

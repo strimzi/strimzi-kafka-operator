@@ -131,8 +131,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkNodesSecret())
                 .compose(state -> state.zkNetPolicy())
                 .compose(state -> state.zkStatefulSet())
-                .compose(state -> state.zkRollingUpdate())
                 .compose(state -> state.zkScaleUp())
+                .compose(state -> state.zkRollingUpdate())
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
 

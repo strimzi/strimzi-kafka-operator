@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -14,20 +15,58 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, Predicate)}
@@ -78,10 +117,37 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         final int replicas = ss.getSpec().getReplicas();
         log.debug("Considering rolling update of {}/{}", namespace, name);
         Future<Void> f = Future.succeededFuture();
-        // Then for each replica, maybe restart it
-        for (int i = 0; i < replicas; i++) {
-            String podName = name + "-" + i;
-            f = f.compose(ignored -> maybeRestartPod(ss, podName, podRestart));
+
+        if (ss.getMetadata().getLabels().get("strimzi.io/name").endsWith("zookeeper")) { //todo do we need to check everytime or just when scaleup?
+            Future<Integer> leader = zookeeperLeader(namespace, name, replicas);
+
+            f = leader.compose(lead -> { // we have a leader, so we can roll up all other zk pods
+                if (lead == -1) {
+                    log.error("Could not determine who the zookeeper leader is");
+                    return Future.failedFuture("Could not determine who the zookeeper leader is");
+                }
+                log.debug("Zookeeper leader is pod: " + lead);
+                List<Future> nonLeaders = new ArrayList<>();
+                for (int i = 0; i < replicas; i++) {
+                    String podName = name + "-" + i;
+                    if (i != lead) {
+                        log.debug("maybe restarting non leader pod " + i);
+                        // old followers can be restarted at the same time
+                        nonLeaders.add(maybeRestartPod(ss, podName, podRestart));
+                    }
+                }
+                return CompositeFuture.join(nonLeaders).compose(ar -> {
+                    // the leader is restarted as the last
+                    log.debug("maybe restarting leader pod " + lead);
+                    return maybeRestartPod(ss, name + "-" + lead, podRestart);
+                });
+            });
+        } else {
+            // Then for each replica, maybe restart it
+            for (int i = 0; i < replicas; i++) {
+                String podName = name + "-" + i;
+                f = f.compose(ignored -> maybeRestartPod(ss, podName, podRestart));
+            }
         }
         return f;
     }
@@ -118,6 +184,177 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             }
         });
         return f;
+    }
+
+    private KeyStore setupKeyStore(Secret clusterSecretKey, CertificateFactory x509, char[] password, X509Certificate clientCert, CertAndKey kafkaCertKey) {
+        Base64.Decoder decoder = Base64.getDecoder();
+
+        KeyStore keyStore = null;
+        try {
+            keyStore = KeyStore.getInstance("PKCS12");
+            keyStore.load(null, password);
+
+            String keyText = new String(decoder.decode(clusterSecretKey.getData().get("ca.key")), StandardCharsets.ISO_8859_1);
+            Pattern parse = Pattern.compile("^---*BEGIN.*---*$(.*)^---*END.*---*$.*", Pattern.MULTILINE | Pattern.DOTALL);
+            Matcher matcher = parse.matcher(keyText);
+            if (!matcher.find()) {
+                throw new RuntimeException("Bad client (CO) key");
+            }
+            PrivateKey clientKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(
+                    Base64.getMimeDecoder().decode(matcher.group(1))));
+
+
+            keyStore.setEntry("tls-probe",
+                new KeyStore.PrivateKeyEntry(clientKey,
+                        new Certificate[]{clientCert}),
+                new KeyStore.PasswordProtection(password));
+
+            X509Certificate kafkaCert = (X509Certificate) x509.generateCertificate(new ByteArrayInputStream(kafkaCertKey.cert()));
+
+            String keyText2 = new String(kafkaCertKey.key(), StandardCharsets.ISO_8859_1);
+            Matcher matcher2 = parse.matcher(keyText2);
+            if (!matcher2.find()) {
+                throw new RuntimeException("Bad kafka key");
+            }
+            PrivateKey kafkaKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(
+                        Base64.getMimeDecoder().decode(matcher2.group(1))));
+
+            keyStore.setEntry("tls-probe2",
+                    new KeyStore.PrivateKeyEntry(kafkaKey,
+                            new Certificate[]{kafkaCert}),
+                    new KeyStore.PasswordProtection(password));
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+        return keyStore;
+    }
+
+    private KeyStore setupTrustStore(X509Certificate caCertKafka, char[] password, X509Certificate caCertCO) {
+        KeyStore trustStore = null;
+        try {
+            trustStore = KeyStore.getInstance("PKCS12");
+            trustStore.load(null, password);
+
+            trustStore.setEntry(caCertKafka.getSubjectDN().getName(), new KeyStore.TrustedCertificateEntry(caCertKafka), null);
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            trustStore.store(stream, password);
+            trustStore.load(new ByteArrayInputStream(stream.toByteArray()), password);
+
+            trustStore.setEntry(caCertCO.getSubjectDN().getName(), new KeyStore.TrustedCertificateEntry(caCertCO), null);
+            ByteArrayOutputStream stream2 = new ByteArrayOutputStream();
+            trustStore.store(stream2, password);
+            trustStore.load(new ByteArrayInputStream(stream2.toByteArray()), password);
+        } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException e) {
+            e.printStackTrace();
+        }
+        return trustStore;
+    }
+
+    public Future<Integer> zookeeperLeader(String namespace, String name, int replicas) {
+        Future<Integer> resu = Future.future();
+
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(f -> {
+            int result = -1;
+            for (int i = 0; i < replicas; i++) {
+                if (result != -1) {
+                    break;
+                }
+                log.debug("Checking ZookeeperLeader " + i);
+                SSLSocketFactory factory;
+                try {
+                    CertificateFactory x509 = CertificateFactory.getInstance("X.509");
+                    Base64.Decoder decoder = Base64.getDecoder();
+                    char[] password = "password".toCharArray();
+
+                    // hack
+                    Pod pod = podOperations.get(namespace, name + "-" + i);
+                    SecretOperator secretOperations = new SecretOperator(vertx, client);
+                    String cluster = pod.getMetadata().getLabels().get("strimzi.io/cluster");
+                    Secret clusterSecret = secretOperations.get(namespace,  cluster + "-kafka-brokers");
+                    Secret clusterSecretKey = secretOperations.get(namespace, cluster + "-cluster-ca");
+                    Secret clusterSecretCert = secretOperations.get(namespace, cluster + "-cluster-ca-cert");
+                    CertAndKey kafkaCertKey = Ca.asCertAndKey(clusterSecret, cluster + "-kafka-0.key", cluster + "-kafka-0.crt");
+                    X509Certificate caCertCO = (X509Certificate) x509.generateCertificate(new ByteArrayInputStream(decoder.decode(clusterSecretCert.getData().get("ca.crt"))));
+                    X509Certificate caCertKafka = (X509Certificate) x509.generateCertificate(new ByteArrayInputStream(kafkaCertKey.cert()));
+
+                    KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+                    kmf.init(setupKeyStore(clusterSecretKey, x509, password, caCertCO, kafkaCertKey), password);
+
+
+                    TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
+                    tmf.init(setupTrustStore(caCertKafka, password, caCertCO));
+                    SSLContext ctx = SSLContext.getInstance("TLS");
+                    ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+                    factory = ctx.getSocketFactory();
+
+                    String host = pod.getStatus().getPodIP();
+                    int port = 2181;
+
+                    SSLSocket socket = (SSLSocket) factory.createSocket();
+                    log.debug("Connecting client to {}:{}", host, port);
+                    try {
+                        socket.connect(new InetSocketAddress(host, port), 10_000);
+                    } catch (ConnectException | SocketTimeoutException e) {
+                        log.error("Could not connect " + e.getMessage());
+                    }
+                    try {
+                        log.debug("Starting handshake with {}", socket.getRemoteSocketAddress());
+                        try {
+                            socket.startHandshake();
+                            PrintWriter out = new PrintWriter(
+                                    new BufferedWriter(
+                                            new OutputStreamWriter(
+                                                    socket.getOutputStream(), StandardCharsets.UTF_8)));
+
+                            out.println("stat");
+                            out.flush();
+
+                            BufferedReader in = new BufferedReader(
+                                    new InputStreamReader(
+                                            socket.getInputStream(), StandardCharsets.UTF_8));
+
+                            String inputLine;
+                            while ((inputLine = in.readLine()) != null) {
+                                log.debug(inputLine);
+                                if (inputLine.equals("Mode: leader")) {
+                                    result = i;
+                                }
+                            }
+                            in.close();
+                            out.close();
+                        } catch (SSLHandshakeException e) {
+                            log.error("handshake exception - " + e.getMessage());
+                            e.printStackTrace();
+                        } catch (SocketException w) {
+
+                        }
+                    } finally {
+                        socket.close();
+                    }
+                } catch (NullPointerException
+                        | IOException
+                        | KeyStoreException
+                        | NoSuchAlgorithmException
+                        | CertificateException
+                        | UnrecoverableKeyException
+                        | KeyManagementException e) {
+                    //e.printStackTrace();
+                    result = 0;
+                    log.error("Error while getting Zookeeper leader");
+                }
+            }
+            f.complete(result);
+        }, true, resu.completer());
+        return resu;
     }
 
     public Future<Void> maybeRestartPod(StatefulSet ss, String podName, Predicate<Pod> podRestart) {
