@@ -271,19 +271,12 @@ class SecurityST extends AbstractST {
             client.secrets().inNamespace(NAMESPACE).withName(secretName).patch(annotated);
         }
 
-//        LOGGER.info("Wait for zk to rolling restart (1)...");
-//        zkPods = waitTillSsHasRolled(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
-//        LOGGER.info("Wait for kafka to rolling restart (1)...");
-//        kafkaPods = waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
-
         Map<String, String> eoPod = depSnapshot(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Wait for zk to rolling restart (2)..");
         waitTillSsHasRolled(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
         LOGGER.info("Wait for kafka to rolling restart (2)...");
         waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
-        //LOGGER.info("Wait for eo to rolling restart...");
-        //waitTillDepHasRolled(NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME), eoPod);
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
