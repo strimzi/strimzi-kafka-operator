@@ -5,8 +5,13 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.model.KafkaResources;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -14,10 +19,22 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,8 +44,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class AvailabilityVerifier {
+
+    private static final Logger LOGGER = LogManager.getLogger(AvailabilityVerifier.class);
 
     private final Properties consumerProperties;
     private KafkaProducer<Long, Long> producer;
@@ -43,13 +63,14 @@ public class AvailabilityVerifier {
     private volatile Result consumerStats;
     private long startTime;
 
-    public AvailabilityVerifier(KubernetesClient client, String namespace, String clusterName) {
+    public AvailabilityVerifier(KubernetesClient client, String namespace, String clusterName, String userName) {
         producerProperties = new Properties();
         producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 getExternalBootstrapConnect(client, namespace, clusterName));
         producerProperties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
         producerProperties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
-
+        producerProperties.setProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG, "1000");
+        producerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
 
         consumerProperties = new Properties();
         consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
@@ -58,10 +79,99 @@ public class AvailabilityVerifier {
                 getExternalBootstrapConnect(client, namespace, clusterName));
         consumerProperties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         consumerProperties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
+        consumerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
+
+        try {
+            String clusterCaCert = client.secrets().inNamespace(namespace).withName(KafkaResources.clusterCaCertificateSecretName(clusterName)).get().getData().get("ca.crt");
+            String tsPassword = "foo";
+            KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
+            ts.load(null, tsPassword.toCharArray());
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(clusterCaCert)));
+            ts.setCertificateEntry("cluster-ca", cert);
+            producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
+            consumerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
+            File tsFile = File.createTempFile(getClass().getName(), ".truststore");
+            FileOutputStream tsOs = new FileOutputStream(tsFile);
+            try {
+                producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
+                consumerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
+                ts.store(tsOs, tsPassword.toCharArray());
+            } finally {
+                tsOs.close();
+            }
+            producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());
+            consumerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        try {
+
+            Secret userSecret = client.secrets().inNamespace(namespace).withName(userName).get();
+
+            String clientsCaCert = userSecret.getData().get("ca.crt");
+            LOGGER.info(clientsCaCert);
+
+            String userCaCert = userSecret.getData().get("user.crt");
+            String userCaKey = userSecret.getData().get("user.key");
+            String ksPassword = "foo";
+            producerProperties.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ksPassword);
+            consumerProperties.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ksPassword);
+            LOGGER.info(userCaCert);
+            LOGGER.info(userCaKey);
+            File ksFile = createKeystore(Base64.getDecoder().decode(clientsCaCert),
+                    Base64.getDecoder().decode(userCaCert),
+                    Base64.getDecoder().decode(userCaKey),
+                    ksPassword);
+            producerProperties.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ksFile.getAbsolutePath());
+            consumerProperties.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ksFile.getAbsolutePath());
+
+            producerProperties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
+            consumerProperties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+
+
+
 
     }
 
+    private File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
+        File caFile = File.createTempFile(getClass().getName(), ".crt");
+        Files.write(caFile.toPath(), ca);
+        File certFile = File.createTempFile(getClass().getName(), ".crt");
+        Files.write(certFile.toPath(), cert);
+        File keyFile = File.createTempFile(getClass().getName(), ".key");
+        Files.write(keyFile.toPath(), key);
+        File keystore = File.createTempFile(getClass().getName(), ".keystore");
+        keystore.delete(); // Note horrible race condition, but this is only for testing
+        //keystore.deleteOnExit();
+        // RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $HOSTNAME -password pass:$2 -out $1
+        if (new ProcessBuilder("openssl",
+                "pkcs12",
+                "-export",
+                "-in", certFile.getAbsolutePath(),
+                "-inkey", keyFile.getAbsolutePath(),
+                "-chain",
+                "-CAfile", caFile.getAbsolutePath(),
+                "-name", "dfbdbd",
+                "-password", "pass:" + password,
+                "-out", keystore.getAbsolutePath()).inheritIO().start().waitFor() != 0) {
+            fail();
+        }
+        return keystore;
+    }
+
     private static String getExternalBootstrapConnect(KubernetesClient client, String namespace, String clusterName) {
+        if (client.isAdaptable(OpenShiftClient.class)) {
+            Route route = client.adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
+            if (route != null && !route.getStatus().getIngress().isEmpty()) {
+                return route.getStatus().getIngress().get(0).getHost() + ":443";
+            }
+        }
+
         Service extBootstrapService = client.services()
                 .inNamespace(namespace)
                 .withName(externalBootstrapServiceName(clusterName))
@@ -74,7 +184,7 @@ public class AvailabilityVerifier {
         if (result == null) {
             result = loadBalancerIngress.getIp();
         }
-        return result + ":" + 9094;
+        return result + ":9094";
     }
 
     /**
@@ -109,7 +219,7 @@ public class AvailabilityVerifier {
             long sent = 0;
             while (go) {
                 try {
-                    producer.send(new ProducerRecord<Long, Long>("my-topic", msgId++, System.nanoTime()), (recordMeta, error) -> {
+                    producer.send(new ProducerRecord<>("my-topic", msgId++, System.nanoTime()), (recordMeta, error) -> {
                         if (error != null) {
                             incrementErrCount(error, producerErrors);
                         }
@@ -191,13 +301,13 @@ public class AvailabilityVerifier {
         }
 
         public double maxLatencyMs() {
-            return maxLatencyNs * 1e6;
+            return maxLatencyNs / 1e6;
         }
 
         @Override
         public String toString() {
             return "Result{" +
-                    ", runtime/s=" + runtimeSeconds() +
+                    "runtime/s=" + runtimeSeconds() +
                     ", sent=" + sent +
                     ", sendRate/s⁻¹=" + sendRatePerSecond() +
                     ", received=" + received +
@@ -217,7 +327,7 @@ public class AvailabilityVerifier {
         }
 
         private double runtimeSeconds() {
-            return runtimeNs * 1e9;
+            return runtimeNs / 1e9;
         }
 
         public void publishConsumerStats(long received, long maxLatencyNs, Map<Class, Integer> hashMap) {
