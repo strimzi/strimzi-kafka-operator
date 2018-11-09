@@ -15,7 +15,6 @@ import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.OpenShift;
 import io.strimzi.test.k8s.Minishift;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -720,14 +719,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 Path pathToChart = new File(HELM_CHART).toPath();
                 String oldNamespace = kubeClient().namespace("kube-system");
                 InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
-
-                String helmServiceAccount = null;
-                try {
-                    helmServiceAccount = IOUtils.toString(helmAccountAsStream, "UTF-8");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
+                String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
                 kubeClient().applyContent(helmServiceAccount);
                 helmClient().init();
                 kubeClient().namespace(oldNamespace);

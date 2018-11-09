@@ -15,10 +15,15 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -154,6 +159,26 @@ public final class TestUtils {
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Read loaded resource as an InputStream and return the content as a String
+     * @param stream Loaded resource
+     * @return The resource content
+     */
+    public static String readResource(InputStream stream) {
+        StringBuilder textBuilder = new StringBuilder();
+        try (Reader reader = new BufferedReader(new InputStreamReader(
+                stream, Charset.forName(StandardCharsets.UTF_8.name()))
+        )) {
+            int character = 0;
+            while ((character = reader.read()) != -1) {
+                textBuilder.append((char) character);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return textBuilder.toString();
     }
 
     public static String readFile(File file) {
