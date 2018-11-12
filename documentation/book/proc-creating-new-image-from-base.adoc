@@ -32,14 +32,17 @@ USER {DockerImageUser}
 
 . Build the container image.
 
-. Upload your custom image to the appropriate container image repository.
+. Upload your custom image to your container registry.
 
 . Perform one of the following tasks:
 
 * Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource to point to the new container image.
 
-* Edit the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image.
+* In the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image.
 
 .Additional resources
-* For more information on the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable, see xref:ref-operators-cluster-operator-configuration-deploying-co[].
+
 * For more information on the `KafkaConnect.spec.image property`, see xref:assembly-configuring-container-images-deployment-configuration-kafka-connect[].
+
+
+* For more information on the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable, see xref:ref-operators-cluster-operator-configuration-deploying-co[].
