@@ -22,7 +22,7 @@ import static io.strimzi.operator.cluster.model.ZookeeperCluster.ENV_VAR_ZOOKEEP
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class ZookeeperSetOperatiorTest {
+public class ZookeeperSetOperatorTest {
 
     //public static final Map<String, Object> METRICS_CONFIG = singletonMap("foo", "bar");
     //public static final Map<String, Object> LOG_ZOOKEEPER_CONFIG = singletonMap("zookeeper.root.logger", "INFO");
