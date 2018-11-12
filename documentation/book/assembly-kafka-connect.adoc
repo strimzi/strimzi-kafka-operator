@@ -9,14 +9,18 @@
 [id='kafka-connect-{context}']
 = Kafka Connect
 
-link:https://kafka.apache.org/documentation/#connect[Kafka Connect^], a core component of Apache Kafka, is a tool for streaming high volumes of data into and out of your Kafka cluster. It provides a framework for building connectors (a type of plug-in) for your Kafka cluster, a REST API for managing connectors, and more. Two built-in connectors are provided:
+link:https://kafka.apache.org/documentation/#connect[Kafka Connect^], a core component of Apache Kafka, is a tool for streaming high volumes of data into and out of your Kafka cluster. It provides a framework for building connectors (types of plug-ins) for your Kafka cluster, a REST API for managing connectors, and more. It includes two built-in connectors:
 
-* A file source connector, named `FileStreamSourceConnector`.
-* A file sink connector, named `FileStreamSinkConnector`.
+|===
+| *Connector* | *Description*
+| `FileStreamSourceConnector` | Transfers data to your Kafka cluster from an external file (the source).
+| `FileStreamSinkConnector` | Transfers data from your Kafka cluster to an external file (the sink).
+|===
 
-These connectors transfer data into and out of a Kafka cluster by using external files for sending and receiving messages. Both connectors are available for use in {ProductName}.
+In {ProductName}, you can use the Cluster Operator to deploy a Kafka Connect cluster to your {ProductPlatformName} cluster. Within your {ProductPlatformName} cluster:
 
-You can use the Cluster Operator to deploy a Kafka Connect cluster to your {ProductPlatformName} cluster. The Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers. The REST API is available within your {ProductPlatformName} cluster on port 8083, as the `kafka-connect` service.
+* A Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers.
+* The Kafka Connect REST API is available on port 8083, as the `kafka-connect` service.
 
 ifdef::Kubernetes[]
 include::proc-deploying-kafka-connect-kubernetes.adoc[leveloffset=+1]

@@ -9,7 +9,7 @@
 [id='using-kafka-connect-with-plug-ins-{context}']
 = Extending Kafka Connect with plug-ins
 
-At startup, Kafka Connect loads any third-party plug-ins, including connectors, contained in the `/opt/kafka/plugins` directory. You can add your own connectors to this directory in one of two ways:
+The {ProductName} container images for Kafka Connect include the two built-in connectors: `FileStreamSourceConnector` and `FileStreamSinkConnector`. You can add your own connectors by using one of the following methods:
 
 * Create a Docker image from the Kafka Connect base image.
 * Create a container image using {OpenShiftName} builds.

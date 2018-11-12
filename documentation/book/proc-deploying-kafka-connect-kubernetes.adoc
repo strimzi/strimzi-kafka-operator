@@ -5,7 +5,7 @@
 [id='deploying-kafka-connect-kubernetes-{context}']
 = Deploying Kafka Connect to your {KubernetesName} cluster
 
-To allow you to build connectors for your Kafka cluster, you can deploy a Kafka Connect cluster to your {KubernetesName} cluster by using the Cluster Operator.
+You can deploy a Kafka Connect cluster to your {KubernetesName} cluster by using the Cluster Operator.
 
 .Prerequisites
 
