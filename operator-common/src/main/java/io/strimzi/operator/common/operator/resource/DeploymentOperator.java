@@ -4,13 +4,17 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
 import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -23,6 +27,7 @@ import java.util.HashMap;
 public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> {
 
     private final PodOperator podOperations;
+    private final SecretOperator secretOperations;
 
     /**
      * Constructor
@@ -30,12 +35,13 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * @param client The Kubernetes client
      */
     public DeploymentOperator(Vertx vertx, KubernetesClient client) {
-        this(vertx, client, new PodOperator(vertx, client));
+        this(vertx, client, new PodOperator(vertx, client), new SecretOperator(vertx, client));
     }
 
-    public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations) {
+    public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations, SecretOperator secretOperations) {
         super(vertx, client, "Deployment");
         this.podOperations = podOperations;
+        this.secretOperations = secretOperations;
     }
 
     @Override
@@ -70,6 +76,12 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
     }
 
     @Override
+    protected Future<ReconcileResult<Deployment>> internalCreate(String namespace, String name, Deployment desired) {
+        copyClusterCaCertGeneration(namespace, desired);
+        return super.internalCreate(namespace, name, desired);
+    }
+
+    @Override
     protected Future<ReconcileResult<Deployment>> internalPatch(String namespace, String name, Deployment current, Deployment desired, boolean cascading) {
         if (current.getMetadata().getAnnotations() != null) {
             String k8sRev = current.getMetadata().getAnnotations().get("deployment.kubernetes.io/revision");
@@ -81,6 +93,18 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
             }
         }
 
+        copyClusterCaCertGeneration(namespace, desired);
         return super.internalPatch(namespace, name, current, desired, cascading);
+    }
+
+    private static ObjectMeta templateMetadata(Deployment resource) {
+        return resource.getSpec().getTemplate().getMetadata();
+    }
+
+    private void copyClusterCaCertGeneration(String namespace, Deployment desired) {
+        String clusterName = desired.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        Secret clusterCaCertSecret = secretOperations.get(namespace, KafkaResources.clusterCaCertificateSecretName(clusterName));
+        templateMetadata(desired).getAnnotations()
+                .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, clusterCaCertSecret.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
     }
 }

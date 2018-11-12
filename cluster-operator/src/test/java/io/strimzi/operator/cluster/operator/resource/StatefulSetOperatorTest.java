@@ -8,6 +8,7 @@ import io.strimzi.operator.common.operator.resource.AbstractResourceOperatorTest
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ScalableResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
@@ -124,6 +125,9 @@ public class StatefulSetOperatorTest
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
+        SecretOperator secretOperator = mock(SecretOperator.class);
+        when(secretOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
 
@@ -133,7 +137,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator, secretOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -162,6 +166,9 @@ public class StatefulSetOperatorTest
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
+        SecretOperator secretOperator = mock(SecretOperator.class);
+        when(secretOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
 
@@ -171,7 +178,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator, secretOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -203,6 +210,9 @@ public class StatefulSetOperatorTest
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
+        SecretOperator secretOperator = mock(SecretOperator.class);
+        when(secretOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
 
@@ -212,7 +222,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator, secretOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -243,6 +253,9 @@ public class StatefulSetOperatorTest
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
+        SecretOperator secretOperator = mock(SecretOperator.class);
+        when(secretOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
 
@@ -252,7 +265,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator, secretOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;

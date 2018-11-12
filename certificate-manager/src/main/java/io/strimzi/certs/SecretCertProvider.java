@@ -33,11 +33,13 @@ public class SecretCertProvider {
      * @param keyFile private key to store
      * @param certFile certificate to store
      * @param labels Labels to add to the Secret
+     * @param annotations annotations to add to the Secret
+     * @param ownerReference owner of the Secret
      * @return the Secret
      * @throws IOException
      */
-    public Secret createSecret(String namespace, String name, File keyFile, File certFile, Map<String, String> labels, OwnerReference ownerReference) throws IOException {
-        return createSecret(namespace, name, DEFAULT_KEY_KEY, DEFAULT_KEY_CERT, keyFile, certFile, labels, ownerReference);
+    public Secret createSecret(String namespace, String name, File keyFile, File certFile, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) throws IOException {
+        return createSecret(namespace, name, DEFAULT_KEY_KEY, DEFAULT_KEY_CERT, keyFile, certFile, labels, annotations, ownerReference);
     }
 
     /**
@@ -50,14 +52,16 @@ public class SecretCertProvider {
      * @param keyFile private key to store
      * @param certFile certificate to store
      * @param labels Labels to add to the Secret
+     * @param annotations annotations to add to the Secret
+     * @param ownerReference owner of the Secret
      * @return the Secret
      * @throws IOException
      */
-    public Secret createSecret(String namespace, String name, String keyKey, String certKey, File keyFile, File certFile, Map<String, String> labels, OwnerReference ownerReference) throws IOException {
+    public Secret createSecret(String namespace, String name, String keyKey, String certKey, File keyFile, File certFile, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) throws IOException {
         byte[] key = Files.readAllBytes(keyFile.toPath());
         byte[] cert = Files.readAllBytes(certFile.toPath());
 
-        return createSecret(namespace, name, keyKey, certKey, key, cert, labels, ownerReference);
+        return createSecret(namespace, name, keyKey, certKey, key, cert, labels, annotations, ownerReference);
     }
 
     /**
@@ -70,9 +74,11 @@ public class SecretCertProvider {
      * @param key private key to store
      * @param cert certificate to store
      * @param labels Labels to add to the Secret
+     * @param annotations annotations to add to the Secret
+     * @param ownerReference owner of the Secret
      * @return the Secret
      */
-    public Secret createSecret(String namespace, String name, String keyKey, String certKey, byte[] key, byte[] cert, Map<String, String> labels, OwnerReference ownerReference) {
+    public Secret createSecret(String namespace, String name, String keyKey, String certKey, byte[] key, byte[] cert, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) {
         Map<String, String> data = new HashMap<>();
 
         Base64.Encoder encoder = Base64.getEncoder();
@@ -80,7 +86,7 @@ public class SecretCertProvider {
         data.put(keyKey, encoder.encodeToString(key));
         data.put(certKey, encoder.encodeToString(cert));
 
-        return createSecret(namespace, name, data, labels, ownerReference);
+        return createSecret(namespace, name, data, labels, annotations, ownerReference);
     }
 
     /**
@@ -90,14 +96,17 @@ public class SecretCertProvider {
      * @param name Secret name
      * @param data Map with secret data / files
      * @param labels Labels to add to the Secret
+     * @param annotations annotations to add to the Secret
+     * @param ownerReference owner of the Secret
      * @return the Secret
      */
-    public Secret createSecret(String namespace, String name, Map<String, String> data, Map<String, String> labels, OwnerReference ownerReference) {
+    public Secret createSecret(String namespace, String name, Map<String, String> data, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) {
         Secret secret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
                     .withLabels(labels)
+                    .withAnnotations(annotations)
                     .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withData(data)

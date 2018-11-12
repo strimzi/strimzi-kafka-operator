@@ -50,7 +50,7 @@ public class SecretCertProviderTest {
 
         ssl.generateSelfSignedCert(key, cert, 365);
 
-        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap(), ownerReference);
+        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap(), Collections.emptyMap(), ownerReference);
 
         assertEquals("my-secret", secret.getMetadata().getName());
         assertEquals("my-namespace", secret.getMetadata().getNamespace());
@@ -74,7 +74,7 @@ public class SecretCertProviderTest {
 
         ssl.generateSelfSignedCert(key, cert, 365);
 
-        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap(), ownerReference);
+        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap(), Collections.emptyMap(), ownerReference);
 
         File addedKey = File.createTempFile("added-key-", ".key");
         File addedCert = File.createTempFile("added-crt-", ".crt");

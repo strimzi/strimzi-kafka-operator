@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -79,6 +80,8 @@ public abstract class Ca {
     public static final String CA_CRT = "ca.crt";
     public static final String IO_STRIMZI = "io.strimzi";
     public static final String ANNO_STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
+    public static final String ANNO_STRIMZI_IO_CA_CERT_GENERATION = "strimzi.io/ca-cert-generation";
+    private static final int INIT_GENERATION = 0;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
@@ -277,12 +280,12 @@ public abstract class Ca {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
-        boolean shouldCreateOrRenew = shouldCreateOrRenew(currentCert, namespace, clusterName);
         if (!generateCa) {
             certData = caCertSecret != null ? caCertSecret.getData() : emptyMap();
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
             certsRemoved = false;
         } else {
+            boolean shouldCreateOrRenew = shouldCreateOrRenew(currentCert, namespace, clusterName);
             if (shouldCreateOrRenew) {
                 try {
                     Map<String, String>[] newData = createOrRenewCert(currentCert);
@@ -306,8 +309,24 @@ public abstract class Ca {
             log.info("{}: Certificates renewed", this);
         }
 
-        caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, labels, ownerRef);
-        caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels, ownerRef);
+        // cluster CA certificate generation annotation handling
+        int caCertGeneration = INIT_GENERATION;
+        if (caCertSecret != null && caCertSecret.getData().get(CA_CRT) != null) {
+            String caCertGenerationAnnotation = caCertSecret.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_CA_CERT_GENERATION);
+            if (caCertGenerationAnnotation != null) {
+                caCertGeneration = Integer.parseInt(caCertGenerationAnnotation);
+                if (caRenewed) {
+                    caCertGeneration++;
+                }
+            }
+        }
+
+        // TODO: handling cluster CA key generation annotation
+
+        caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, labels,
+                Collections.singletonMap(ANNO_STRIMZI_IO_CA_CERT_GENERATION, String.valueOf(caCertGeneration)), ownerRef);
+        caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels,
+                Collections.emptyMap(), ownerRef);
     }
 
     private boolean shouldCreateOrRenew(X509Certificate currentCert, String namespace, String clusterName) {
