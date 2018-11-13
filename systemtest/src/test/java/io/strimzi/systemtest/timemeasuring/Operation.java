@@ -7,4 +7,5 @@ package io.strimzi.systemtest.timemeasuring;
 
 public enum Operation {
     TEST_EXECUTION,
+    CLASS_EXECUTION,
 }

@@ -166,6 +166,10 @@ public class TimeMeasuringSystem {
         return measuringMap.get(testClass).get(testName).get(operationID).duration;
     }
 
+    private long getTestStartTime(String testClass, String testName, String operationID) {
+        return measuringMap.get(testClass).get(testName).get(operationID).startTime;
+    }
+
     public static void setTestName(String testClass, String testName) {
         TimeMeasuringSystem.getInstance().setTestName(testName);
         TimeMeasuringSystem.getInstance().setTestClass(testClass);
@@ -191,6 +195,11 @@ public class TimeMeasuringSystem {
 
     public static int getDurationInSecconds(String testClass, String testName, String operationID) {
         return (int) (TimeMeasuringSystem.getInstance().getTestDuration(testClass, testName, operationID) / 1000);
+    }
+
+    public static int getCurrentDuration(String testClass, String testName, String operationID) {
+        long duration = System.currentTimeMillis() - TimeMeasuringSystem.getInstance().getTestStartTime(testClass, testName, operationID);
+        return (int) (duration / 1000);
     }
 
     public static long getDuration(String testClass, String testName, String operationID) {
