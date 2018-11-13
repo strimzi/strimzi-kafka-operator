@@ -29,6 +29,7 @@ import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
@@ -43,7 +44,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Stack;
 import java.util.LinkedHashMap;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -718,8 +718,8 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 LOGGER.info("Creating cluster operator with Helm Chart {} before test per @ClusterOperator annotation on {}", cc, name(element));
                 Path pathToChart = new File(HELM_CHART).toPath();
                 String oldNamespace = kubeClient().namespace("kube-system");
-                String pathToHelmServiceAccount = Objects.requireNonNull(getClass().getClassLoader().getResource("helm/helm-service-account.yaml")).getPath();
-                String helmServiceAccount = TestUtils.getFileAsString(pathToHelmServiceAccount);
+                InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
+                String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
                 kubeClient().applyContent(helmServiceAccount);
                 helmClient().init();
                 kubeClient().namespace(oldNamespace);
