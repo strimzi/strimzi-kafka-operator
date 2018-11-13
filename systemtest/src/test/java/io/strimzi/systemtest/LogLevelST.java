@@ -147,7 +147,7 @@ class LogLevelST extends AbstractST {
 
     @BeforeEach
     void logTest(TestInfo testInfo) {
-        LOGGER.info("Running {} in namespace {}", NAMESPACE, testInfo.getDisplayName());
+        LOGGER.info("Running {} in namespace {}", testInfo.getDisplayName(), NAMESPACE);
     }
 
     @BeforeAll
