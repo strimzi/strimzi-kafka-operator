@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.systemtest.logging.LogCollector;
 import io.strimzi.systemtest.timemeasuring.Operation;
 import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.TestUtils;
@@ -38,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.platform.engine.TestExecutionResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,6 +83,7 @@ public class AbstractST {
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
     static KubeClient<?> kubeClient = cluster.client();
+    private LogCollector logCollector = new LogCollector(namespacedClient());
 
     private Resources resources;
     static String operationID;
@@ -381,7 +384,25 @@ public class AbstractST {
     }
 
     @AfterEach
-    public void deleteResources() {
+    public void afterEachTest(TestExecutionResult result) {
+        // Print cluster information to log
+
+        switch (result.getStatus()) {
+            case FAILED:
+                logCollector.collectConfigMaps();
+                logCollector.collectEvents();
+                logCollector.collectLogsTerminatedPods();
+                break;
+            case SUCCESSFUL:
+
+                break;
+        }
+
+        // Deleting resources
+        deleteResources();
+    }
+
+    private void deleteResources() {
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
         resources = null;
