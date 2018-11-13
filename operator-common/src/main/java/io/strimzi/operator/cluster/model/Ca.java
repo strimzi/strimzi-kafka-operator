@@ -292,7 +292,6 @@ public abstract class Ca {
                     throw new RuntimeException(e);
                 }
             } else {
-                log.debug("{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
                 certData = caCertSecret.getData();
                 keyData = caKeySecret.getData();
             }
@@ -335,9 +334,12 @@ public abstract class Ca {
             result = true;
             this.caRenewed = true;
         }
+
         if (this.caRenewed) {
             log.log(!generateCa ? Level.WARN : Level.INFO,
                     "{}: CA certificate in secret {} needs to be renewed: {}", this, caCertSecretName, reason);
+        } else {
+            log.debug("{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
         }
         if (!generateCa) {
             if (caRenewed) {
@@ -443,7 +445,7 @@ public abstract class Ca {
     }
 
     static X509Certificate cert(Secret secret, String key)  {
-        if (secret == null || secret.getData().get(key) == null) {
+        if (secret == null || secret.getData() == null || secret.getData().get(key) == null) {
             return null;
         }
         Base64.Decoder decoder = Base64.getDecoder();

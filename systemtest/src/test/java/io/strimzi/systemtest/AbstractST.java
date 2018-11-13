@@ -79,7 +79,7 @@ public class AbstractST {
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
 
     public static KubeClusterResource cluster = new KubeClusterResource();
-    private static DefaultKubernetesClient client = new DefaultKubernetesClient();
+    protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
     static KubeClient<?> kubeClient = cluster.client();
 
     private Resources resources;
