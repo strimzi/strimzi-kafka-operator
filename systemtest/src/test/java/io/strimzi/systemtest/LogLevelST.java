@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,12 +22,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(LogLevelST.NAMESPACE)
 @ClusterOperator
+@Tag(REGRESSION)
 class LogLevelST extends AbstractST {
     static final String NAMESPACE = "log-level-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LogLevelST.class);
