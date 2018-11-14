@@ -1,4 +1,4 @@
-![Strimzi](./documentation/logo/strimzi.png)
+[![Strimzi](./documentation/logo/strimzi.png)](http://strimzi.io/)
 
 # Running Apache Kafka on Kubernetes and OpenShift
 
