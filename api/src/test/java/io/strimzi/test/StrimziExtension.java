@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
@@ -40,8 +39,10 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -57,6 +58,7 @@ import java.util.stream.Stream;
 import static io.strimzi.test.TestUtils.entriesToMap;
 import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.TestUtils.indent;
+import static io.strimzi.test.TestUtils.writeFile;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -97,6 +99,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private static final String DEFAULT_TAG = "";
     private static final String TAG_LIST_NAME = "junitTags";
     private static final String START_TIME = "start time";
+    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "/tmp/strimzi");
 
     /** Tags */
     public static final String ACCEPTANCE = "acceptance";
@@ -183,7 +186,10 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     @Override
     public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
         if (throwable instanceof AssertionError || throwable instanceof TimeoutException || throwable instanceof KubeClusterException) {
-            LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient().namespace()));
+            // Get current date to create a unique folder
+            String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+
+            LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient().namespace()), new File(TEST_LOG_DIR + currentDate));
             logCollector.collectEvents();
             logCollector.collectLogsForPods();
         }
@@ -193,10 +199,13 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private class LogCollector {
         NamespacedKubernetesClient client;
         String namespace;
+        File logDir;
 
-        private LogCollector(NamespacedKubernetesClient client) {
+        private LogCollector(NamespacedKubernetesClient client, File logDir) {
             this.client = client;
             this.namespace = client.getNamespace();
+            this.logDir = logDir;
+            logDir.mkdir();
         }
 
         private void collectLogsForPods() {
@@ -204,34 +213,28 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
             client.pods().list().getItems().forEach(pod -> {
                 String podName = pod.getMetadata().getName();
-                try {
-                    LOGGER.info("Logs for pod {} {}{}", podName, System.lineSeparator(), client.pods().withName(podName).getLog());
-                } catch (KubernetesClientException e) {
-                    if (e.getStatus().getReason().equals("BadRequest") && e.getMessage().contains("a container name must be specified")) {
-                        String containers = TestUtils.matchFirstGroup(e.getMessage(),
-                                "a container name must be specified for pod " + podName + ", choose one of: \\[(.*?)\\]");
-                        if (containers != null) {
-                            String[] containersArray = containers.split(" ");
-                            Arrays.stream(containersArray).forEach(container -> {
-                                try {
-                                    LOGGER.info("Logs for container {} from pod {}{}{}", container, podName, System.lineSeparator(),
-                                        client.pods().withName(podName).inContainer(container).getLog());
-                                } catch (KubernetesClientException ke) {
-                                    LOGGER.info("Reading logs for pod {} failed by {}", podName, ke.getMessage());
-                                }
-                            });
-                        }
+
+                client.pods().withName(podName).get().getStatus().getContainerStatuses().forEach(containerStatus -> {
+                    String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
+                    // Print container logs to console
+                    LOGGER.info("Logs for container {} from pod {}{}{}", containerStatus.getName(), podName, System.lineSeparator(), log);
+
+                    // Write logs from containers to files
+                    writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".txt", log);
                     }
-                }
+                );
             });
         }
 
         private void collectEvents() {
             LOGGER.info("Collecting events in namespace {}", namespace);
-            client.events().list().getItems().forEach(e -> {
-                LOGGER.info("Event name: {} \nTimestamp: {} \nCount: {} \nReason: {} \nMessage: {} {}",
-                    e.getMetadata().getName(), e.getLastTimestamp(), e.getCount(), e.getReason(), e.getMessage(), System.lineSeparator());
-            });
+            String events = kubeClient().exec("oc", "get", "events").out();
+
+            // Print events to console
+            LOGGER.info("Events for namspace {}{}{}", namespace, System.lineSeparator(), events);
+
+            // Write events to file
+            writeFile(logDir + "/" + "events-in-namespace" + kubeClient().namespace() + ".txt", events);
         }
     }
 

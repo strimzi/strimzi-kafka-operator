@@ -16,11 +16,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -33,8 +37,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -318,13 +320,24 @@ public final class TestUtils {
         return Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue);
     }
 
-    /** Regex matcher for first group */
-    public static String matchFirstGroup(String text, String pattern) {
-        Pattern p = Pattern.compile(pattern);
-        Matcher matcher = p.matcher(text);
-        if (matcher.find()) {
-            return matcher.group(1);
+    /** Method to create and write file */
+    public static void writeFile(String filePath, String text) {
+        Writer writer = null;
+        try {
+            writer = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(filePath), StandardCharsets.UTF_8));
+            writer.write(text);
+        } catch (IOException e) {
+            LOGGER.info("Exception during writing text in file");
+            e.printStackTrace();
+        } finally {
+            try {
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
-        return null;
     }
 }
