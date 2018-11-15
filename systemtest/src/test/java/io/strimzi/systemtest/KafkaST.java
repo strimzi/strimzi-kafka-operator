@@ -126,15 +126,7 @@ class KafkaST extends AbstractST {
     @Tag(ACCEPTANCE)
     void testKafkaAndZookeeperScaleUpScaleDown() {
         operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
-        resources().kafkaEphemeral(CLUSTER_NAME, 1).done();
-
-        assertTrue(false);
-
-        // I debugged loggining
-
-        // I changed my solution for loggining
-        // ALL PODS ARE TERMINATED
-        //
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed

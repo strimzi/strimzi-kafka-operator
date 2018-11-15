@@ -33,6 +33,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -314,5 +316,15 @@ public final class TestUtils {
 
     public static <K, U> Collector<Map.Entry<K, U>, ?, Map<K, U>> entriesToMap() {
         return Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue);
+    }
+
+    /** Regex matcher for first group */
+    public static String matchFirstGroup(String text, String pattern) {
+        Pattern p = Pattern.compile(pattern);
+        Matcher matcher = p.matcher(text);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 }

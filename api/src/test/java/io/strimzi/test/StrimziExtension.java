@@ -9,23 +9,28 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.KubeClient;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.strimzi.test.k8s.HelmClient;
-import io.strimzi.test.k8s.OpenShift;
+import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeClusterException;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
+import io.strimzi.test.k8s.OpenShift;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,13 +40,15 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.LinkedHashMap;
 import java.util.function.Consumer;
@@ -49,9 +56,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.entriesToMap;
 import static io.strimzi.test.TestUtils.entry;
+import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -64,7 +71,7 @@ import static java.util.Collections.singletonList;
  * test classes and/or test methods.
  */
 public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, AfterEachCallback, BeforeEachCallback,
-        ExecutionCondition {
+        ExecutionCondition, TestExecutionExceptionHandler {
     private static final Logger LOGGER = LogManager.getLogger(StrimziExtension.class);
 
     /**
@@ -96,6 +103,8 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     /** Tags */
     public static final String ACCEPTANCE = "acceptance";
     public static final String REGRESSION = "regression";
+
+    private static DefaultKubernetesClient client = new DefaultKubernetesClient();
 
     private KubeClusterResource clusterResource;
     private Class testClass;
@@ -170,6 +179,61 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
+        }
+    }
+
+    @Override
+    public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
+        if (throwable instanceof AssertionError || throwable instanceof TimeoutException || throwable instanceof KubeClusterException) {
+            LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient().namespace()));
+            logCollector.collectEvents();
+            logCollector.collectLogsForPods();
+        }
+        throw throwable;
+    }
+
+    private class LogCollector {
+        NamespacedKubernetesClient client;
+        String namespace;
+
+        private LogCollector(NamespacedKubernetesClient client) {
+            this.client = client;
+            this.namespace = client.getNamespace();
+        }
+
+        private void collectLogsForPods() {
+            LOGGER.info("Collecting logs for pods in namespace {}", namespace);
+
+            client.pods().list().getItems().forEach(pod -> {
+                String podName = pod.getMetadata().getName();
+                try {
+                    LOGGER.info("Logs for pod {} {}{}", podName, System.lineSeparator(), client.pods().withName(podName).getLog());
+                } catch (KubernetesClientException e) {
+                    if (e.getStatus().getReason().equals("BadRequest") && e.getMessage().contains("a container name must be specified")) {
+                        String containers = TestUtils.matchFirstGroup(e.getMessage(),
+                                "a container name must be specified for pod " + podName + ", choose one of: \\[(.*?)\\]");
+                        if (containers != null) {
+                            String[] containersArray = containers.split(" ");
+                            Arrays.stream(containersArray).forEach(container -> {
+                                try {
+                                    LOGGER.info("Logs for container {} from pod {}{}{}", container, podName, System.lineSeparator(),
+                                        client.pods().withName(podName).inContainer(container).getLog());
+                                } catch (KubernetesClientException ke) {
+                                    LOGGER.info("Reading logs for pod {} failed by {}", podName, ke.getMessage());
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        private void collectEvents() {
+            LOGGER.info("Collecting events in namespace {}", namespace);
+            client.events().list().getItems().forEach(e -> {
+                LOGGER.info("Event name: {} \nTimestamp: {} \nCount: {} \nReason: {} \nMessage: {} {}",
+                    e.getMetadata().getName(), e.getLastTimestamp(), e.getCount(), e.getReason(), e.getMessage(), System.lineSeparator());
+            });
         }
     }
 
