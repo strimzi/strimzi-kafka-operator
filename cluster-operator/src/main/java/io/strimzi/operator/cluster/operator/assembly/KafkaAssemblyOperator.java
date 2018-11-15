@@ -21,8 +21,10 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
@@ -447,7 +449,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkStatefulSet() {
-            return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkCluster.generateStatefulSet(isOpenShift)));
+
+            Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaResources.clusterCaCertificateSecretName(name));
+            return secretFuture.compose(s -> {
+                StatefulSet zkSs = zkCluster.generateStatefulSet(isOpenShift);
+                zkSs.getSpec().getTemplate().getMetadata().getAnnotations()
+                        .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, s.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+                return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSs));
+            });
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
@@ -898,7 +907,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaStatefulSet() {
             kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generateStatefulSet(isOpenShift)));
+            Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaResources.clusterCaCertificateSecretName(name));
+            return secretFuture.compose(s -> {
+                StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(isOpenShift);
+                kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations()
+                        .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, s.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+                return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaSs));
+            });
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
@@ -1097,16 +1112,25 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorDeployment() {
-            return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment)
-                .compose(reconcileResult -> {
-                    if (this.entityOperator != null && this.clusterCa.certRenewed() && reconcileResult instanceof ReconcileResult.Noop<?>) {
-                        // roll the EO if the cluster CA was renewed and reconcile hasn't rolled it
-                        log.debug("{}: Restarting Entity Operator due to Cluster CA renewal", reconciliation);
-                        return deploymentOperations.rollingUpdate(namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs);
-                    } else {
-                        return Future.succeededFuture();
-                    }
-                }));
+
+            Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaResources.clusterCaCertificateSecretName(name));
+            secretFuture.compose(s -> {
+
+                eoDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
+                        .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, s.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+
+                return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment)
+                        .compose(reconcileResult -> {
+                            if (this.entityOperator != null && this.clusterCa.certRenewed() && reconcileResult instanceof ReconcileResult.Noop<?>) {
+                                // roll the EO if the cluster CA was renewed and reconcile hasn't rolled it
+                                log.debug("{}: Restarting Entity Operator due to Cluster CA renewal", reconciliation);
+                                return deploymentOperations.rollingUpdate(namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs);
+                            } else {
+                                return Future.succeededFuture();
+                            }
+                        }));
+            });
+            return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> entityOperatorSecret() {

@@ -137,7 +137,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator, secretOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -178,7 +178,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator, secretOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -222,7 +222,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator, secretOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
@@ -265,7 +265,7 @@ public class StatefulSetOperatorTest
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator, secretOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;

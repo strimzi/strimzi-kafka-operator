@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
@@ -15,15 +14,11 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.Ca;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -47,7 +42,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     private static final Logger log = LogManager.getLogger(StatefulSetOperator.class.getName());
     private final PodOperator podOperations;
     private final PvcOperator pvcOperations;
-    private final SecretOperator secretOperations;
     private final long operationTimeoutMs;
 
     /**
@@ -56,15 +50,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param client The Kubernetes client
      */
     public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
-        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client), new PvcOperator(vertx, client), new SecretOperator(vertx, client));
+        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client), new PvcOperator(vertx, client));
     }
 
-    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, PodOperator podOperator, PvcOperator pvcOperator, SecretOperator secretOperator) {
+    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, PodOperator podOperator, PvcOperator pvcOperator) {
         super(vertx, client, "StatefulSet");
         this.podOperations = podOperator;
         this.operationTimeoutMs = operationTimeoutMs;
         this.pvcOperations = pvcOperator;
-        this.secretOperations = secretOperator;
     }
 
     @Override
@@ -195,13 +188,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         templateMetadata(desired).getAnnotations().put(ANNOTATION_GENERATION, String.valueOf(nextGeneration));
     }
 
-    private void copyClusterCaCertGeneration(String namespace, StatefulSet desired) {
-        String clusterName = desired.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        Secret clusterCaCertSecret = secretOperations.get(namespace, KafkaResources.clusterCaCertificateSecretName(clusterName));
-        templateMetadata(desired).getAnnotations()
-                .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, clusterCaCertSecret.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
-    }
-
     private static int getGeneration(ObjectMeta objectMeta) {
         if (objectMeta.getAnnotations().get(ANNOTATION_GENERATION) == null) {
             return NO_GENERATION;
@@ -241,7 +227,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         // Create the SS...
         Future<ReconcileResult<StatefulSet>> result = Future.future();
         setGeneration(desired, INIT_GENERATION);
-        copyClusterCaCertGeneration(namespace, desired);
         Future<ReconcileResult<StatefulSet>> crt = super.internalCreate(namespace, name, desired);
 
         // ... then wait for the SS to be ready...
@@ -277,8 +262,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         } else {
             setGeneration(desired, getSsGeneration(current));
         }
-
-        copyClusterCaCertGeneration(namespace, desired);
 
         // Don't scale via patch
         desired.getSpec().setReplicas(current.getSpec().getReplicas());
