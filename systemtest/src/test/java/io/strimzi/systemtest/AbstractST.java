@@ -26,7 +26,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.systemtest.logging.LogCollector;
 import io.strimzi.systemtest.timemeasuring.Operation;
 import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.TestUtils;
@@ -53,11 +52,10 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
 import static java.util.Arrays.asList;
-
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class AbstractST {
@@ -83,7 +81,6 @@ public class AbstractST {
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
     static KubeClient<?> kubeClient = cluster.client();
-    private LogCollector logCollector = new LogCollector(namespacedClient());
 
     private Resources resources;
     static String operationID;
@@ -381,25 +378,6 @@ public class AbstractST {
     @BeforeEach
     void setTestName(TestInfo testInfo) {
         testName = testInfo.getTestMethod().get().getName();
-    }
-
-    @AfterEach
-    public void afterEachTest(TestExecutionResult result) {
-        // Print cluster information to log
-
-        switch (result.getStatus()) {
-            case FAILED:
-                logCollector.collectConfigMaps();
-                logCollector.collectEvents();
-                logCollector.collectLogsTerminatedPods();
-                break;
-            case SUCCESSFUL:
-
-                break;
-        }
-
-        // Deleting resources
-        deleteResources();
     }
 
     private void deleteResources() {
