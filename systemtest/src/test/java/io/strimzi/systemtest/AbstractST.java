@@ -380,7 +380,7 @@ public class AbstractST {
     }
 
     @AfterEach
-    private void deleteResources() {
+    public void deleteResources() {
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
         resources = null;
