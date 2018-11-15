@@ -1103,8 +1103,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorDeployment() {
-            eoDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
-                    .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, clusterCa.caCertSecret().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+            if (this.entityOperator != null) {
+                eoDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
+                        .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, clusterCa.caCertSecret().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+            }
 
             return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment)
                     .compose(reconcileResult -> {
