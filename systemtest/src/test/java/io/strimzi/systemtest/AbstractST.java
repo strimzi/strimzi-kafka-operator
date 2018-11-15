@@ -38,7 +38,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.platform.engine.TestExecutionResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -380,6 +379,7 @@ public class AbstractST {
         testName = testInfo.getTestMethod().get().getName();
     }
 
+    @AfterEach
     private void deleteResources() {
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();

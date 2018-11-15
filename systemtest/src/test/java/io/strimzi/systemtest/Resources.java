@@ -400,7 +400,7 @@ public class Resources {
         for (int pod = 0; pod < replicas; pod++) {
             String podName = name + "-" + pod;
             LOGGER.info("Waiting for Pod {}", podName);
-            TestUtils.waitFor("pod " + name, 1, 1,
+            TestUtils.waitFor("pod " + name, 1000, 300000,
                 () -> client().pods().inNamespace(namespace).withName(podName).isReady());
             LOGGER.info("Pod {} is ready", podName);
         }
