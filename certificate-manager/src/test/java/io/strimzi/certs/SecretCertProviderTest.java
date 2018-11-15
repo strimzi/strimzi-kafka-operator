@@ -16,10 +16,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static java.util.Collections.emptyMap;
 
 public class SecretCertProviderTest {
 
@@ -50,7 +50,8 @@ public class SecretCertProviderTest {
 
         ssl.generateSelfSignedCert(key, cert, 365);
 
-        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap(), Collections.emptyMap(), ownerReference);
+        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert,
+                emptyMap(), emptyMap(), ownerReference);
 
         assertEquals("my-secret", secret.getMetadata().getName());
         assertEquals("my-namespace", secret.getMetadata().getNamespace());
@@ -74,7 +75,8 @@ public class SecretCertProviderTest {
 
         ssl.generateSelfSignedCert(key, cert, 365);
 
-        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert, Collections.emptyMap(), Collections.emptyMap(), ownerReference);
+        Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret", key, cert,
+                emptyMap(), emptyMap(), ownerReference);
 
         File addedKey = File.createTempFile("added-key-", ".key");
         File addedCert = File.createTempFile("added-crt-", ".crt");

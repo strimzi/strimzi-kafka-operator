@@ -100,7 +100,8 @@ public class SecretCertProvider {
      * @param ownerReference owner of the Secret
      * @return the Secret
      */
-    public Secret createSecret(String namespace, String name, Map<String, String> data, Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) {
+    public Secret createSecret(String namespace, String name, Map<String, String> data,
+                               Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) {
         Secret secret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(name)
