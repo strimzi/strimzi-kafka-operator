@@ -99,7 +99,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private static final String DEFAULT_TAG = "";
     private static final String TAG_LIST_NAME = "junitTags";
     private static final String START_TIME = "start time";
-    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/");
+    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
 
     /** Tags */
     public static final String ACCEPTANCE = "acceptance";
@@ -208,7 +208,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             this.client = client;
             this.namespace = client.getNamespace();
             this.logDir = logDir;
-            logDir.mkdir();
+            logDir.mkdirs();
         }
 
         private void collectLogsForPods() {
