@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, boolean)}
@@ -71,7 +72,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
      * before the process proceeds with the pod with the next higher number.
      */
-    public Future<Void> maybeRollingUpdate(StatefulSet ss, boolean forceRestart) {
+    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> p) {
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         final int replicas = ss.getSpec().getReplicas();
@@ -80,7 +81,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         // Then for each replica, maybe restart it
         for (int i = 0; i < replicas; i++) {
             String podName = name + "-" + i;
-            f = f.compose(ignored -> maybeRestartPod(ss, podName, forceRestart));
+            f = f.compose(ignored -> maybeRestartPod(ss, podName, p));
         }
         return f;
     }
@@ -98,7 +99,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             String value = pod.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_DELETE_POD_AND_PVC);
             if (value != null && Boolean.valueOf(value)) {
                 f = f.compose(ignored -> deletePvc(ss, pvcName))
-                        .compose(ignored -> maybeRestartPod(ss, podName, true));
+                        .compose(ignored -> maybeRestartPod(ss, podName, p -> true));
 
             }
         }
@@ -119,12 +120,13 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return f;
     }
 
-    public Future<Void> maybeRestartPod(StatefulSet ss, String podName, boolean forceRestart) {
+    public Future<Void> maybeRestartPod(StatefulSet ss, String podName, Predicate<Pod> p) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
-        if (isPodUpToDate(ss, podName) && !forceRestart) {
+        Pod pod = podOperations.get(ss.getMetadata().getNamespace(), podName);
+        if (isPodUpToDate(ss, podName) && !p.test(pod)) {
             log.debug("Rolling update of {}/{}: pod {} has {}={}; no need to roll",
                     namespace, name, podName, ANNOTATION_GENERATION, getSsGeneration(ss));
             return Future.succeededFuture();

@@ -150,7 +150,7 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
+        Future result = op.maybeRestartPod(resource, "my-pod-0", p -> false);
         assertTrue(result.succeeded());
     }
     @Test
@@ -194,7 +194,7 @@ public class StatefulSetOperatorTest
 
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
+        Future result = op.maybeRestartPod(resource, "my-pod-0", p -> false);
         assertTrue(result.failed());
         assertTrue(result.cause() instanceof TimeoutException);
     }
@@ -239,7 +239,7 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
+        Future result = op.maybeRestartPod(resource, "my-pod-0", p-> false);
         assertTrue(result.failed());
         assertTrue(result.cause() instanceof TimeoutException);
     }
@@ -284,7 +284,7 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
+        Future result = op.maybeRestartPod(resource, "my-pod-0", p -> false);
         assertTrue(result.failed());
         assertTrue(result.cause().getMessage().equals("reconcile failed"));
     }
