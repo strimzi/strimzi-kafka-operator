@@ -239,7 +239,7 @@ public class StatefulSetOperatorTest
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", p-> false);
+        Future result = op.maybeRestartPod(resource, "my-pod-0", p -> false);
         assertTrue(result.failed());
         assertTrue(result.cause() instanceof TimeoutException);
     }
