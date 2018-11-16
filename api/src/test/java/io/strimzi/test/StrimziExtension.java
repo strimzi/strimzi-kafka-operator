@@ -188,8 +188,11 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         if (throwable instanceof AssertionError || throwable instanceof TimeoutException || throwable instanceof KubeClusterException) {
             // Get current date to create a unique folder
             String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+            String logDir = context.getTestMethod().isPresent() ?
+                    TEST_LOG_DIR + context.getTestMethod().get().getDeclaringClass().getSimpleName() + "." + context.getTestMethod().get().getName() + "_" + currentDate
+                    : TEST_LOG_DIR + currentDate;
 
-            LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient().namespace()), new File(TEST_LOG_DIR + currentDate));
+            LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient().namespace()), new File(logDir));
             logCollector.collectEvents();
             logCollector.collectLogsForPods();
         }
