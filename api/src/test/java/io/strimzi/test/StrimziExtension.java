@@ -99,7 +99,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private static final String DEFAULT_TAG = "";
     private static final String TAG_LIST_NAME = "junitTags";
     private static final String START_TIME = "start time";
-    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "/tmp/strimzi");
+    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/");
 
     /** Tags */
     public static final String ACCEPTANCE = "acceptance";
@@ -220,7 +220,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     LOGGER.info("Logs for container {} from pod {}{}{}", containerStatus.getName(), podName, System.lineSeparator(), log);
 
                     // Write logs from containers to files
-                    writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".txt", log);
+                    writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
                     }
                 );
             });
@@ -234,7 +234,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             LOGGER.info("Events for namspace {}{}{}", namespace, System.lineSeparator(), events);
 
             // Write events to file
-            writeFile(logDir + "/" + "events-in-namespace" + kubeClient().namespace() + ".txt", events);
+            writeFile(logDir + "/" + "events-in-namespace" + kubeClient().namespace() + ".log", events);
         }
     }
 
