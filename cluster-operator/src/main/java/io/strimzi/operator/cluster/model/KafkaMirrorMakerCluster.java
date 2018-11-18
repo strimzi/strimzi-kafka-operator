@@ -173,7 +173,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             kafkaMirrorMakerCluster.setLogging(kafkaMirrorMaker.getSpec().getLogging());
 
             Map<String, Object> metrics = kafkaMirrorMaker.getSpec().getMetrics();
-            if (metrics != null && !metrics.isEmpty()) {
+            if (metrics != null) {
                 kafkaMirrorMakerCluster.setMetricsEnabled(true);
                 kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
             }
