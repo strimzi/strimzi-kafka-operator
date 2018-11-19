@@ -308,15 +308,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaManualRollingUpdate() {
-            String reason = "manual rolling update";
             Future<StatefulSet> futss = kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
             if (futss != null) {
                 return futss.compose(ss -> {
                     if (ss != null) {
                         String value = ss.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_RESTART);
                         if (value != null && value.equals("true")) {
-                            log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                            return kafkaSetOperations.maybeRollingUpdate(ss, pod -> true);
+                            return kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
+
+                                log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
+                                        reconciliation, pod.getMetadata().getName());
+                                return true;
+                            });
                         }
                     }
                     return Future.succeededFuture();
@@ -326,15 +329,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkManualRollingUpdate() {
-            String reason = "manual rolling update";
             Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
             if (futss != null) {
                 return futss.compose(ss -> {
                     if (ss != null) {
                         String value = ss.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_RESTART);
                         if (value != null && value.equals("true")) {
-                            log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                            return zkSetOperations.maybeRollingUpdate(ss, pod -> true);
+
+                            return zkSetOperations.maybeRollingUpdate(ss, pod -> {
+
+                                log.debug("{}: Rolling Zookeeper pod {} to manual rolling update",
+                                        reconciliation, pod.getMetadata().getName());
+                                return true;
+                            });
                         }
                     }
                     return Future.succeededFuture();
@@ -442,23 +449,26 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
-            if (log.isDebugEnabled()) {
-                String reason = "";
-                if (this.clusterCa.certRenewed()) {
-                    reason += "cluster CA certificate renewal, ";
+            return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod -> {
+
+                if (log.isDebugEnabled()) {
+                    String reason = "";
+                    if (this.clusterCa.certRenewed()) {
+                        reason += "cluster CA certificate renewal, ";
+                    }
+                    if (this.clusterCa.certsRemoved()) {
+                        reason += "cluster CA certificate removal, ";
+                    }
+                    if (zkAncillaryCmChange) {
+                        reason += "ancillary CM change, ";
+                    }
+                    if (!reason.isEmpty()) {
+                        log.debug("{}: Rolling Zookeeper pod {} due to {}",
+                                reconciliation, pod.getMetadata().getName(), reason.substring(0, reason.length() - 2));
+                    }
                 }
-                if (this.clusterCa.certsRemoved()) {
-                    reason += "cluster CA certificate removal, ";
-                }
-                if (zkAncillaryCmChange) {
-                    reason += "ancillary CM change, ";
-                }
-                if (!reason.isEmpty()) {
-                    log.debug("{}: Rolling ZK SS due to {}", reconciliation, reason.substring(0, reason.length() - 2));
-                }
-            }
-            return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(),
-                pod -> zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved()));
+                return zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved();
+            }));
         }
 
         Future<ReconciliationState> zkScaleUp() {
@@ -906,23 +916,26 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
-            if (log.isDebugEnabled()) {
-                String reason = "";
-                if (this.clusterCa.certRenewed()) {
-                    reason += "cluster CA certificate renewal, ";
+            return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod -> {
+
+                if (log.isDebugEnabled()) {
+                    String reason = "";
+                    if (this.clusterCa.certRenewed()) {
+                        reason += "cluster CA certificate renewal, ";
+                    }
+                    if (this.clusterCa.certsRemoved()) {
+                        reason += "cluster CA certificate removal, ";
+                    }
+                    if (kafkaAncillaryCmChange) {
+                        reason += "ancillary CM change, ";
+                    }
+                    if (!reason.isEmpty()) {
+                        log.debug("{}: Rolling Kafka pod {} due to {}",
+                                pod.getMetadata().getName(), reconciliation, reason.substring(0, reason.length() - 2));
+                    }
                 }
-                if (this.clusterCa.certsRemoved()) {
-                    reason += "cluster CA certificate removal, ";
-                }
-                if (kafkaAncillaryCmChange) {
-                    reason += "ancillary CM change, ";
-                }
-                if (!reason.isEmpty()) {
-                    log.debug("{}: Rolling Kafka SS due to {}", reconciliation, reason.substring(0, reason.length() - 2));
-                }
-            }
-            return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(),
-                pod -> kafkaAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved()));
+                return kafkaAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved();
+            }));
         }
 
         Future<ReconciliationState> kafkaScaleUp() {
