@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, boolean)}
+ * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, Predicate)}
  * in addition to the usual operations.
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
@@ -72,7 +72,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
      * before the process proceeds with the pod with the next higher number.
      */
-    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> p) {
+    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart) {
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         final int replicas = ss.getSpec().getReplicas();
@@ -81,7 +81,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         // Then for each replica, maybe restart it
         for (int i = 0; i < replicas; i++) {
             String podName = name + "-" + i;
-            f = f.compose(ignored -> maybeRestartPod(ss, podName, p));
+            f = f.compose(ignored -> maybeRestartPod(ss, podName, podRestart));
         }
         return f;
     }
@@ -120,13 +120,13 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return f;
     }
 
-    public Future<Void> maybeRestartPod(StatefulSet ss, String podName, Predicate<Pod> p) {
+    public Future<Void> maybeRestartPod(StatefulSet ss, String podName, Predicate<Pod> podRestart) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         Pod pod = podOperations.get(ss.getMetadata().getNamespace(), podName);
-        if (isPodUpToDate(ss, podName) && !p.test(pod)) {
+        if (isPodUpToDate(ss, podName) && !podRestart.test(pod)) {
             log.debug("Rolling update of {}/{}: pod {} has {}={}; no need to roll",
                     namespace, name, podName, ANNOTATION_GENERATION, getSsGeneration(ss));
             return Future.succeededFuture();

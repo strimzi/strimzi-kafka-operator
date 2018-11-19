@@ -316,7 +316,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         String value = ss.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_RESTART);
                         if (value != null && value.equals("true")) {
                             log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                            return kafkaSetOperations.maybeRollingUpdate(ss, p -> true);
+                            return kafkaSetOperations.maybeRollingUpdate(ss, pod -> true);
                         }
                     }
                     return Future.succeededFuture();
@@ -334,7 +334,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         String value = ss.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_RESTART);
                         if (value != null && value.equals("true")) {
                             log.debug("{}: Rolling StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                            return zkSetOperations.maybeRollingUpdate(ss, p -> true);
+                            return zkSetOperations.maybeRollingUpdate(ss, pod -> true);
                         }
                     }
                     return Future.succeededFuture();
@@ -458,7 +458,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
             }
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(),
-                p -> zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved()));
+                pod -> zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved()));
         }
 
         Future<ReconciliationState> zkScaleUp() {
@@ -922,7 +922,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
             }
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(),
-                p -> kafkaAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved()));
+                pod -> kafkaAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved()));
         }
 
         Future<ReconciliationState> kafkaScaleUp() {
