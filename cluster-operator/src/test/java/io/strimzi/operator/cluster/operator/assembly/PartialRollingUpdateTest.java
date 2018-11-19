@@ -149,7 +149,6 @@ public class PartialRollingUpdateTest {
     @Test
     public void testReconcileOfPartiallyRolledKafkaCluster(TestContext context) {
         kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "3");
-        zkPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "3");
         kafkaPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "3");
         kafkaPod1.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "3");
         kafkaPod2.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "2");
