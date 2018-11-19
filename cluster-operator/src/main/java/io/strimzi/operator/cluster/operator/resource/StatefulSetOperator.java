@@ -27,9 +27,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
- * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, boolean)}
+ * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(StatefulSet, Predicate)}
  * in addition to the usual operations.
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> {
@@ -71,7 +72,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
      * before the process proceeds with the pod with the next higher number.
      */
-    public Future<Void> maybeRollingUpdate(StatefulSet ss, boolean forceRestart) {
+    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart) {
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         final int replicas = ss.getSpec().getReplicas();
@@ -80,7 +81,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         // Then for each replica, maybe restart it
         for (int i = 0; i < replicas; i++) {
             String podName = name + "-" + i;
-            f = f.compose(ignored -> maybeRestartPod(ss, podName, forceRestart));
+            f = f.compose(ignored -> maybeRestartPod(ss, podName, podRestart));
         }
         return f;
     }
@@ -98,7 +99,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             String value = pod.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_DELETE_POD_AND_PVC);
             if (value != null && Boolean.valueOf(value)) {
                 f = f.compose(ignored -> deletePvc(ss, pvcName))
-                        .compose(ignored -> maybeRestartPod(ss, podName, true));
+                        .compose(ignored -> maybeRestartPod(ss, podName, p -> true));
 
             }
         }
@@ -119,16 +120,13 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return f;
     }
 
-    public Future<Void> maybeRestartPod(StatefulSet ss, String podName, boolean forceRestart) {
+    public Future<Void> maybeRestartPod(StatefulSet ss, String podName, Predicate<Pod> podRestart) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
-        if (isPodUpToDate(ss, podName) && !forceRestart) {
-            log.debug("Rolling update of {}/{}: pod {} has {}={}; no need to roll",
-                    namespace, name, podName, ANNOTATION_GENERATION, getSsGeneration(ss));
-            return Future.succeededFuture();
-        } else {
+        Pod pod = podOperations.get(ss.getMetadata().getNamespace(), podName);
+        if (podRestart.test(pod)) {
             Future<Void> result = Future.future();
             Future<ReconcileResult<Pod>> deleteFinished = Future.future();
             log.info("Rolling update of {}/{}: Rolling pod {}", namespace, name, podName);
@@ -162,18 +160,10 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             });
             deleteFinished.compose(ix -> podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs)).setHandler(result);
             return result;
+        } else {
+            log.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
+            return Future.succeededFuture();
         }
-    }
-
-    protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-        final int ssGeneration = getSsGeneration(ss);
-        // TODO this call is sync
-        int podGeneration = getPodGeneration(podOperations.get(ss.getMetadata().getNamespace(), podName));
-        log.debug("Rolling update of {}/{}: pod {} has {}={}; ss has {}={}",
-                ss.getMetadata().getNamespace(), ss.getMetadata().getName(), podName,
-                ANNOTATION_GENERATION, podGeneration,
-                ANNOTATION_GENERATION, ssGeneration);
-        return ssGeneration == podGeneration;
     }
 
     @Override
@@ -218,14 +208,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     protected abstract boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired);
 
-    private static int getSsGeneration(StatefulSet resource) {
+    public static int getSsGeneration(StatefulSet resource) {
         if (resource == null) {
             return NO_GENERATION;
         }
         return getGeneration(templateMetadata(resource));
     }
 
-    private static int getPodGeneration(Pod resource) {
+    public static int getPodGeneration(Pod resource) {
         if (resource == null) {
             return NO_GENERATION;
         }

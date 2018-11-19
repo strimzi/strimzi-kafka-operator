@@ -140,17 +140,12 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-                return false;
-            }
-
-            @Override
             protected Future<String> getUid(String namespace, String podName) {
                 return Future.succeededFuture(UUID.randomUUID().toString());
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
+        Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
         assertTrue(result.succeeded());
     }
     @Test
@@ -183,18 +178,13 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-                return false;
-            }
-
-            @Override
             protected Future<String> getUid(String namespace, String podName) {
                 return Future.succeededFuture(UUID.randomUUID().toString());
             }
 
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
+        Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
         assertTrue(result.failed());
         assertTrue(result.cause() instanceof TimeoutException);
     }
@@ -229,17 +219,12 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-                return false;
-            }
-
-            @Override
             protected Future<String> getUid(String namespace, String podName) {
                 return Future.succeededFuture(UUID.randomUUID().toString());
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
+        Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
         assertTrue(result.failed());
         assertTrue(result.cause() instanceof TimeoutException);
     }
@@ -274,17 +259,12 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-                return false;
-            }
-
-            @Override
             protected Future<String> getUid(String namespace, String podName) {
                 return Future.succeededFuture(UUID.randomUUID().toString());
             }
         };
 
-        Future result = op.maybeRestartPod(resource, "my-pod-0", false);
+        Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
         assertTrue(result.failed());
         assertTrue(result.cause().getMessage().equals("reconcile failed"));
     }

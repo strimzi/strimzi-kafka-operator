@@ -80,6 +80,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.set;
@@ -88,7 +89,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -310,11 +310,11 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockZsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockZsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockZsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
         when(mockZsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockKsOps.reconcile(anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockKsOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockKsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
         when(mockKsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockPolicyOps.reconcile(anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
@@ -717,8 +717,8 @@ public class KafkaAssemblyOperatorTest {
             StatefulSet ss = invocation.getArgument(2);
             return Future.succeededFuture(ReconcileResult.patched(ss));
         });
-        when(mockZsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
-        when(mockKsOps.maybeRollingUpdate(any(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockZsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
+        when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet scaleUp
         ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);
