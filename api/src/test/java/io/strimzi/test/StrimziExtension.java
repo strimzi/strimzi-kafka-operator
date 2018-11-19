@@ -518,11 +518,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             return getResources(new ResourceMatcher("statefulset", pattern));
         }
 
-        public ResourceAction logs(String pattern, String container) {
-            list.add(new DumpLogsErrorAction(new ResourceMatcher("pod", pattern), container));
-            return this;
-        }
-
         /**
          * Gets a result.
          *
@@ -563,26 +558,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     .filter(name -> name.matches(namePattern))
                     .map(name -> new ResourceName(kind, name))
                     .collect(Collectors.toList());
-        }
-    }
-
-    class DumpLogsErrorAction implements Consumer<Throwable> {
-
-        private final Supplier<List<ResourceName>> podNameSupplier;
-        private final String container;
-
-        public DumpLogsErrorAction(Supplier<List<ResourceName>> podNameSupplier, String container) {
-            this.podNameSupplier = podNameSupplier;
-            this.container = container;
-        }
-
-        @Override
-        public void accept(Throwable t) {
-            for (ResourceName pod : podNameSupplier.get()) {
-                if (pod.kind.equals("pod") || pod.kind.equals("pods") || pod.kind.equals("po")) {
-                    LOGGER.info("Logs from pod {}:{}{}", pod.name, System.lineSeparator(), indent(kubeClient().logs(pod.name, container)));
-                }
-            }
         }
     }
 
@@ -724,7 +699,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             }
         }), (x, y) -> x, LinkedHashMap::new));
         last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
-                .logs(CO_DEPLOYMENT_NAME + ".*", "strimzi-cluster-operator")
                 .getDep(CO_DEPLOYMENT_NAME)) {
             Stack<String> deletable = new Stack<>();
 
@@ -778,7 +752,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 .collect(entriesToMap());
 
         last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
-                .logs(CO_DEPLOYMENT_NAME + ".*", null)
                 .getDep(CO_DEPLOYMENT_NAME)) {
             @Override
             protected void before() {
