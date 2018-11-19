@@ -9,23 +9,27 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.KubeClient;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.strimzi.test.k8s.HelmClient;
-import io.strimzi.test.k8s.OpenShift;
+import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeClusterException;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
+import io.strimzi.test.k8s.OpenShift;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,23 +39,26 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.LinkedHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.entriesToMap;
 import static io.strimzi.test.TestUtils.entry;
+import static io.strimzi.test.TestUtils.indent;
+import static io.strimzi.test.TestUtils.writeFile;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -64,7 +71,7 @@ import static java.util.Collections.singletonList;
  * test classes and/or test methods.
  */
 public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, AfterEachCallback, BeforeEachCallback,
-        ExecutionCondition {
+        ExecutionCondition, TestExecutionExceptionHandler {
     private static final Logger LOGGER = LogManager.getLogger(StrimziExtension.class);
 
     /**
@@ -92,10 +99,13 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private static final String DEFAULT_TAG = "";
     private static final String TAG_LIST_NAME = "junitTags";
     private static final String START_TIME = "start time";
+    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
 
     /** Tags */
     public static final String ACCEPTANCE = "acceptance";
     public static final String REGRESSION = "regression";
+
+    private static DefaultKubernetesClient client = new DefaultKubernetesClient();
 
     private KubeClusterResource clusterResource;
     private Class testClass;
@@ -170,6 +180,64 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
+        }
+    }
+
+    @Override
+    public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
+        if (throwable instanceof AssertionError || throwable instanceof TimeoutException || throwable instanceof KubeClusterException) {
+            // Get current date to create a unique folder
+            String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+            String logDir = context.getTestMethod().isPresent() ?
+                    TEST_LOG_DIR + context.getTestMethod().get().getDeclaringClass().getSimpleName() + "." + context.getTestMethod().get().getName() + "_" + currentDate
+                    : TEST_LOG_DIR + currentDate;
+
+            LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient().namespace()), new File(logDir));
+            logCollector.collectEvents();
+            logCollector.collectLogsForPods();
+        }
+        throw throwable;
+    }
+
+    private class LogCollector {
+        NamespacedKubernetesClient client;
+        String namespace;
+        File logDir;
+
+        private LogCollector(NamespacedKubernetesClient client, File logDir) {
+            this.client = client;
+            this.namespace = client.getNamespace();
+            this.logDir = logDir;
+            logDir.mkdirs();
+        }
+
+        private void collectLogsForPods() {
+            LOGGER.info("Collecting logs for pods in namespace {}", namespace);
+
+            client.pods().list().getItems().forEach(pod -> {
+                String podName = pod.getMetadata().getName();
+
+                client.pods().withName(podName).get().getStatus().getContainerStatuses().forEach(containerStatus -> {
+                    String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
+                    // Print container logs to console
+                    LOGGER.info("Logs for container {} from pod {}{}{}", containerStatus.getName(), podName, System.lineSeparator(), log);
+
+                    // Write logs from containers to files
+                    writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+                    }
+                );
+            });
+        }
+
+        private void collectEvents() {
+            LOGGER.info("Collecting events in namespace {}", namespace);
+            String events = kubeClient().exec("oc", "get", "events").out();
+
+            // Print events to console
+            LOGGER.info("Events for namspace {}{}{}", namespace, System.lineSeparator(), events);
+
+            // Write events to file
+            writeFile(logDir + "/" + "events-in-namespace" + kubeClient().namespace() + ".log", events);
         }
     }
 
