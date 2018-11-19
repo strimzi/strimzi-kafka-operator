@@ -1135,8 +1135,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return ssGeneration == podGeneration;
         }
 
+        private boolean isPodCaCertUpToDate(Pod pod) {
+            final int caCertGeneration =
+                    Integer.parseInt(clusterCa.caCertSecret().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+            final int podCaCertGeneration =
+                    Integer.parseInt(pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+            return caCertGeneration == podCaCertGeneration;
+        }
+
         private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange, boolean isCaCertRenewed, boolean isCaCertRemoved) {
             boolean isPodUpToDate = isPodUpToDate(ss, pod);
+            boolean isPodCaCertUpToDate = isPodCaCertUpToDate(pod);
             if (log.isDebugEnabled()) {
                 String reason = "";
                 if (isCaCertRenewed) {
@@ -1151,12 +1160,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 if (!isPodUpToDate) {
                     reason += "Pod has old generation, ";
                 }
+                if (!isPodCaCertUpToDate) {
+                    reason += "Pod has old cluster CA certificate generation";
+                }
                 if (!reason.isEmpty()) {
                     log.debug("{}: Rolling pod {} due to {}",
                             reconciliation, pod.getMetadata().getName(), reason.substring(0, reason.length() - 2));
                 }
             }
-            return !isPodUpToDate || isAncillaryCmChange || isCaCertRenewed || isCaCertRemoved;
+            return !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertRenewed || isCaCertRemoved;
         }
     }
 
