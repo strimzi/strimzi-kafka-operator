@@ -140,11 +140,6 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-                return false;
-            }
-
-            @Override
             protected Future<String> getUid(String namespace, String podName) {
                 return Future.succeededFuture(UUID.randomUUID().toString());
             }
@@ -180,11 +175,6 @@ public class StatefulSetOperatorTest
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
-            }
-
-            @Override
-            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-                return false;
             }
 
             @Override
@@ -229,11 +219,6 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-                return false;
-            }
-
-            @Override
             protected Future<String> getUid(String namespace, String podName) {
                 return Future.succeededFuture(UUID.randomUUID().toString());
             }
@@ -271,11 +256,6 @@ public class StatefulSetOperatorTest
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
-            }
-
-            @Override
-            protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-                return false;
             }
 
             @Override

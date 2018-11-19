@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
@@ -33,6 +34,7 @@ import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -451,6 +453,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkRollingUpdate() {
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod -> {
 
+                boolean isPodUpToDate = isPodUpToDate(zkDiffs.resource(), pod);
+
                 if (log.isDebugEnabled()) {
                     String reason = "";
                     if (this.clusterCa.certRenewed()) {
@@ -462,12 +466,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (zkAncillaryCmChange) {
                         reason += "ancillary CM change, ";
                     }
+                    if (!isPodUpToDate) {
+                        reason += "Pod has old generation, ";
+                    }
                     if (!reason.isEmpty()) {
                         log.debug("{}: Rolling Zookeeper pod {} due to {}",
                                 reconciliation, pod.getMetadata().getName(), reason.substring(0, reason.length() - 2));
                     }
                 }
-                return zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved();
+                return !isPodUpToDate || zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved();
             }));
         }
 
@@ -918,6 +925,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaRollingUpdate() {
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod -> {
 
+                boolean isPodUpToDate = isPodUpToDate(kafkaDiffs.resource(), pod);
+
                 if (log.isDebugEnabled()) {
                     String reason = "";
                     if (this.clusterCa.certRenewed()) {
@@ -929,12 +938,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (kafkaAncillaryCmChange) {
                         reason += "ancillary CM change, ";
                     }
+                    if (!isPodUpToDate) {
+                        reason += "Pod has old generation, ";
+                    }
                     if (!reason.isEmpty()) {
                         log.debug("{}: Rolling Kafka pod {} due to {}",
                                 pod.getMetadata().getName(), reconciliation, reason.substring(0, reason.length() - 2));
                     }
                 }
-                return kafkaAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved();
+                return !isPodUpToDate || kafkaAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved();
             }));
         }
 
@@ -1142,6 +1154,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorSecret() {
             return withVoid(secretOperations.reconcile(namespace, EntityOperator.secretName(name),
                     entityOperator == null ? null : entityOperator.generateSecret(clusterCa)));
+        }
+
+        private boolean isPodUpToDate(StatefulSet ss, Pod pod) {
+            final int ssGeneration = StatefulSetOperator.getSsGeneration(ss);
+            final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
+            log.debug("Rolling update of {}/{}: pod {} has {}={}; ss has {}={}",
+                    ss.getMetadata().getNamespace(), ss.getMetadata().getName(), pod.getMetadata().getName(),
+                    StatefulSetOperator.ANNOTATION_GENERATION, podGeneration,
+                    StatefulSetOperator.ANNOTATION_GENERATION, ssGeneration);
+            return ssGeneration == podGeneration;
         }
     }
 

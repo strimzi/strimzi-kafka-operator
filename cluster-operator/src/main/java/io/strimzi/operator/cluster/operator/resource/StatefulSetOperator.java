@@ -126,11 +126,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         Pod pod = podOperations.get(ss.getMetadata().getNamespace(), podName);
-        if (isPodUpToDate(ss, podName) && !podRestart.test(pod)) {
-            log.debug("Rolling update of {}/{}: pod {} has {}={}; no need to roll",
-                    namespace, name, podName, ANNOTATION_GENERATION, getSsGeneration(ss));
-            return Future.succeededFuture();
-        } else {
+        if (podRestart.test(pod)) {
             Future<Void> result = Future.future();
             Future<ReconcileResult<Pod>> deleteFinished = Future.future();
             log.info("Rolling update of {}/{}: Rolling pod {}", namespace, name, podName);
@@ -164,18 +160,10 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             });
             deleteFinished.compose(ix -> podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs)).setHandler(result);
             return result;
+        } else {
+            log.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
+            return Future.succeededFuture();
         }
-    }
-
-    protected boolean isPodUpToDate(StatefulSet ss, String podName) {
-        final int ssGeneration = getSsGeneration(ss);
-        // TODO this call is sync
-        int podGeneration = getPodGeneration(podOperations.get(ss.getMetadata().getNamespace(), podName));
-        log.debug("Rolling update of {}/{}: pod {} has {}={}; ss has {}={}",
-                ss.getMetadata().getNamespace(), ss.getMetadata().getName(), podName,
-                ANNOTATION_GENERATION, podGeneration,
-                ANNOTATION_GENERATION, ssGeneration);
-        return ssGeneration == podGeneration;
     }
 
     @Override
@@ -220,14 +208,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
     protected abstract boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired);
 
-    private static int getSsGeneration(StatefulSet resource) {
+    public static int getSsGeneration(StatefulSet resource) {
         if (resource == null) {
             return NO_GENERATION;
         }
         return getGeneration(templateMetadata(resource));
     }
 
-    private static int getPodGeneration(Pod resource) {
+    public static int getPodGeneration(Pod resource) {
         if (resource == null) {
             return NO_GENERATION;
         }
