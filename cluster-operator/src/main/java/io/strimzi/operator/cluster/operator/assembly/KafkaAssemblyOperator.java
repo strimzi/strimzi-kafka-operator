@@ -451,31 +451,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
-            return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod -> {
-
-                boolean isPodUpToDate = isPodUpToDate(zkDiffs.resource(), pod);
-
-                if (log.isDebugEnabled()) {
-                    String reason = "";
-                    if (this.clusterCa.certRenewed()) {
-                        reason += "cluster CA certificate renewal, ";
-                    }
-                    if (this.clusterCa.certsRemoved()) {
-                        reason += "cluster CA certificate removal, ";
-                    }
-                    if (zkAncillaryCmChange) {
-                        reason += "ancillary CM change, ";
-                    }
-                    if (!isPodUpToDate) {
-                        reason += "Pod has old generation, ";
-                    }
-                    if (!reason.isEmpty()) {
-                        log.debug("{}: Rolling Zookeeper pod {} due to {}",
-                                reconciliation, pod.getMetadata().getName(), reason.substring(0, reason.length() - 2));
-                    }
-                }
-                return !isPodUpToDate || zkAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved();
-            }));
+            return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
+                isPodToRestart(zkDiffs.resource(), pod,
+                        zkAncillaryCmChange, this.clusterCa.certRenewed(), this.clusterCa.certsRemoved())
+            ));
         }
 
         Future<ReconciliationState> zkScaleUp() {
@@ -923,31 +902,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
-            return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod -> {
-
-                boolean isPodUpToDate = isPodUpToDate(kafkaDiffs.resource(), pod);
-
-                if (log.isDebugEnabled()) {
-                    String reason = "";
-                    if (this.clusterCa.certRenewed()) {
-                        reason += "cluster CA certificate renewal, ";
-                    }
-                    if (this.clusterCa.certsRemoved()) {
-                        reason += "cluster CA certificate removal, ";
-                    }
-                    if (kafkaAncillaryCmChange) {
-                        reason += "ancillary CM change, ";
-                    }
-                    if (!isPodUpToDate) {
-                        reason += "Pod has old generation, ";
-                    }
-                    if (!reason.isEmpty()) {
-                        log.debug("{}: Rolling Kafka pod {} due to {}",
-                                pod.getMetadata().getName(), reconciliation, reason.substring(0, reason.length() - 2));
-                    }
-                }
-                return !isPodUpToDate || kafkaAncillaryCmChange || this.clusterCa.certRenewed() || this.clusterCa.certsRemoved();
-            }));
+            return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod ->
+                isPodToRestart(kafkaDiffs.resource(), pod,
+                        kafkaAncillaryCmChange, this.clusterCa.certRenewed(), this.clusterCa.certsRemoved())
+            ));
         }
 
         Future<ReconciliationState> kafkaScaleUp() {
@@ -1164,6 +1122,30 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     StatefulSetOperator.ANNOTATION_GENERATION, podGeneration,
                     StatefulSetOperator.ANNOTATION_GENERATION, ssGeneration);
             return ssGeneration == podGeneration;
+        }
+
+        private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange, boolean isCaCertRenewed, boolean isCaCertRemoved) {
+            boolean isPodUpToDate = isPodUpToDate(ss, pod);
+            if (log.isDebugEnabled()) {
+                String reason = "";
+                if (isCaCertRenewed) {
+                    reason += "cluster CA certificate renewal, ";
+                }
+                if (isCaCertRemoved) {
+                    reason += "cluster CA certificate removal, ";
+                }
+                if (isAncillaryCmChange) {
+                    reason += "ancillary CM change, ";
+                }
+                if (!isPodUpToDate) {
+                    reason += "Pod has old generation, ";
+                }
+                if (!reason.isEmpty()) {
+                    log.debug("{}: Rolling pod {} due to {}",
+                            reconciliation, pod.getMetadata().getName(), reason.substring(0, reason.length() - 2));
+                }
+            }
+            return !isPodUpToDate || isAncillaryCmChange || isCaCertRenewed || isCaCertRemoved;
         }
     }
 
