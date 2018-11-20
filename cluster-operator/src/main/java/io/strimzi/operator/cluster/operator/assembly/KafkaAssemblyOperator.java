@@ -456,7 +456,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkRollingUpdate() {
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, this.clusterCa, this.clientsCa)
+                isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, this.clusterCa)
             ));
         }
 
@@ -1140,40 +1140,38 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return caCertGeneration == podCaCertGeneration;
         }
 
-        private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange, Ca clusterCa, Ca clientsCa) {
+        private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange, Ca... cas) {
             boolean isPodUpToDate = isPodUpToDate(ss, pod);
             boolean isPodCaCertUpToDate = isPodCaCertUpToDate(pod);
+            boolean isCaCertsChanged = false;
+            for (Ca ca: cas) {
+                isCaCertsChanged = isCaCertsChanged || ca.certRenewed() || ca.certsRemoved();
+            }
+
             if (log.isDebugEnabled()) {
-                String reason = "";
-                if (clusterCa.certRenewed()) {
-                    reason += "cluster CA certificate renewal, ";
-                }
-                if (clusterCa.certsRemoved()) {
-                    reason += "cluster CA certificate removal, ";
-                }
-                if (clientsCa.certRenewed()) {
-                    reason += "clients CA certificate renewal, ";
-                }
-                if (clientsCa.certsRemoved()) {
-                    reason += "clients CA certificate removal, ";
+                List<String> reasons = new ArrayList<>();
+                for (Ca ca: cas) {
+                    if (ca.certRenewed()) {
+                        reasons.add(ca + " certificate renewal");
+                    }
+                    if (ca.certsRemoved()) {
+                        reasons.add(ca + " certificate removal");
+                    }
                 }
                 if (isAncillaryCmChange) {
-                    reason += "ancillary CM change, ";
+                    reasons.add("ancillary CM change");
                 }
                 if (!isPodUpToDate) {
-                    reason += "Pod has old generation, ";
+                    reasons.add("Pod has old generation");
                 }
                 if (!isPodCaCertUpToDate) {
-                    reason += "Pod has old cluster CA certificate generation";
+                    reasons.add("Pod has old cluster CA certificate generation");
                 }
-                if (!reason.isEmpty()) {
+                if (!reasons.isEmpty()) {
                     log.debug("{}: Rolling pod {} due to {}",
-                            reconciliation, pod.getMetadata().getName(), reason.substring(0, reason.length() - 2));
+                            reconciliation, pod.getMetadata().getName(), reasons);
                 }
             }
-            boolean isCaCertsChanged = clusterCa.certRenewed() || clusterCa.certsRemoved() ||
-                                        clientsCa.certRenewed() || clientsCa.certsRemoved();
-
             return !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertsChanged;
         }
 
