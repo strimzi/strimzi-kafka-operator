@@ -321,8 +321,6 @@ public abstract class Ca {
             }
         }
 
-        // TODO: handling cluster CA key generation annotation
-
         caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, labels,
                 Collections.singletonMap(ANNO_STRIMZI_IO_CA_CERT_GENERATION, String.valueOf(caCertGeneration)), ownerRef);
         caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels,
