@@ -456,9 +456,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkRollingUpdate() {
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                isPodToRestart(zkDiffs.resource(), pod,
-                        zkAncillaryCmChange, this.clusterCa.certRenewed(), this.clusterCa.certsRemoved(),
-                        this.clientsCa.certRenewed(), this.clientsCa.certsRemoved())
+                isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, this.clusterCa, this.clientsCa)
             ));
         }
 
@@ -910,9 +908,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaRollingUpdate() {
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod ->
-                isPodToRestart(kafkaDiffs.resource(), pod,
-                        kafkaAncillaryCmChange, this.clusterCa.certRenewed(), this.clusterCa.certsRemoved(),
-                        this.clientsCa.certRenewed(), this.clusterCa.certsRemoved())
+                isPodToRestart(kafkaDiffs.resource(), pod, kafkaAncillaryCmChange, this.clusterCa, this.clientsCa)
             ));
         }
 
@@ -1144,23 +1140,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return caCertGeneration == podCaCertGeneration;
         }
 
-        private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange,
-                                       boolean isClusterCaCertRenewed, boolean isClusterCaCertRemoved,
-                                       boolean isClientsCaCertRenewed, boolean isClientsCaCertRemoved) {
+        private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange, Ca clusterCa, Ca clientsCa) {
             boolean isPodUpToDate = isPodUpToDate(ss, pod);
             boolean isPodCaCertUpToDate = isPodCaCertUpToDate(pod);
             if (log.isDebugEnabled()) {
                 String reason = "";
-                if (isClusterCaCertRenewed) {
+                if (clusterCa.certRenewed()) {
                     reason += "cluster CA certificate renewal, ";
                 }
-                if (isClusterCaCertRemoved) {
+                if (clusterCa.certsRemoved()) {
                     reason += "cluster CA certificate removal, ";
                 }
-                if (isClientsCaCertRenewed) {
+                if (clientsCa.certRenewed()) {
                     reason += "clients CA certificate renewal, ";
                 }
-                if (isClientsCaCertRemoved) {
+                if (clientsCa.certsRemoved()) {
                     reason += "clients CA certificate removal, ";
                 }
                 if (isAncillaryCmChange) {
@@ -1177,8 +1171,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             reconciliation, pod.getMetadata().getName(), reason.substring(0, reason.length() - 2));
                 }
             }
-            boolean isCaCertsChanged = isClusterCaCertRenewed || isClusterCaCertRemoved ||
-                                        isClientsCaCertRenewed || isClientsCaCertRemoved;
+            boolean isCaCertsChanged = clusterCa.certRenewed() || clusterCa.certsRemoved() ||
+                                        clientsCa.certRenewed() || clientsCa.certsRemoved();
 
             return !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertsChanged;
         }
