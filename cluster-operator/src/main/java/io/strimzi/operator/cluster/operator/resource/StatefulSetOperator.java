@@ -262,6 +262,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         } else {
             setGeneration(desired, getSsGeneration(current));
         }
+
         // Don't scale via patch
         desired.getSpec().setReplicas(current.getSpec().getReplicas());
         if (log.isTraceEnabled()) {
