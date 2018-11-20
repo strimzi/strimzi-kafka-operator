@@ -39,7 +39,7 @@ public class StrimziUpgradeST extends AbstractST {
 
     public static final String NAMESPACE = "strimzi-upgrade-test";
 
-    private void copyAndModify(File root) {
+    private void copyModifyApply(File root) {
         Arrays.stream(root.listFiles()).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 kubeClient.applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
@@ -63,9 +63,8 @@ public class StrimziUpgradeST extends AbstractST {
             File dir = downloadAndUnzip(url);
 
             coDir = new File(dir, "strimzi-0.8.2/install/cluster-operator/");
-            //kubeClient.create(coDir);
             // Modify + apply installation files
-            copyAndModify(coDir);
+            copyModifyApply(coDir);
 
             LOGGER.info("Waiting for CO deployment");
             kubeClient.waitForDeployment("strimzi-cluster-operator", 1);
@@ -101,9 +100,7 @@ public class StrimziUpgradeST extends AbstractST {
 
             // Upgrade the CO, to current HEAD,
             LOGGER.info("Updating");
-            copyAndModify(new File("../install/cluster-operator"));
-            //copyFiles(new File("../install"), Files.createTempDirectory(getClass().getName()));
-            //kubeClient.apply(new File("../install/cluster-operator"));
+            copyModifyApply(new File("../install/cluster-operator"));
             LOGGER.info("Waiting for CO redeployment");
             kubeClient.waitForDeployment("strimzi-cluster-operator", 1);
 
