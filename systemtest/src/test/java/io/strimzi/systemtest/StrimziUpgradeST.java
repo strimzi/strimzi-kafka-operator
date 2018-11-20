@@ -17,16 +17,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import static io.strimzi.test.StrimziExtension.REGRESSION;
 
@@ -60,7 +54,7 @@ public class StrimziUpgradeST extends AbstractST {
             // Deploy a 0.8.2 cluster operator
             // https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.8.2/strimzi-0.8.2.zip
             String url = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.8.2/strimzi-0.8.2.zip";
-            File dir = downloadAndUnzip(url);
+            File dir = StUtils.downloadAndUnzip(url);
 
             coDir = new File(dir, "strimzi-0.8.2/install/cluster-operator/");
             // Modify + apply installation files
@@ -157,27 +151,5 @@ public class StrimziUpgradeST extends AbstractST {
         });
     }
 
-    private File downloadAndUnzip(String url) throws IOException {
-        InputStream bais = (InputStream) URI.create(url).toURL().getContent();
-        File dir = Files.createTempDirectory(getClass().getName()).toFile();
-        ZipInputStream zin = new ZipInputStream(bais);
-        ZipEntry entry = zin.getNextEntry();
-        byte[] buffer = new byte[8 * 1024];
-        int len;
-        while (entry != null) {
-            LOGGER.debug("Unzipping {}", entry.getName());
-            File file = new File(dir, entry.getName());
-            if (entry.isDirectory()) {
-                file.mkdirs();
-            } else {
-                FileOutputStream fout = new FileOutputStream(file);
-                while ((len = zin.read(buffer)) != -1) {
-                    fout.write(buffer, 0, len);
-                }
-                fout.close();
-            }
-            entry = zin.getNextEntry();
-        }
-        return dir;
-    }
+
 }

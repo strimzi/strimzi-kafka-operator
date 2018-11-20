@@ -11,9 +11,17 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.TestUtils;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class StUtils {
 
@@ -93,5 +101,28 @@ public class StUtils {
         TestUtils.waitFor("Deployment roll of " + name,
             1_000, 300_000, () -> depHasRolled(client, namespace, name, snapshot));
         return depSnapshot(client, namespace, name);
+    }
+
+    public static File downloadAndUnzip(String url) throws IOException {
+        InputStream bais = (InputStream) URI.create(url).toURL().getContent();
+        File dir = Files.createTempDirectory(StUtils.class.getName()).toFile();
+        ZipInputStream zin = new ZipInputStream(bais);
+        ZipEntry entry = zin.getNextEntry();
+        byte[] buffer = new byte[8 * 1024];
+        int len;
+        while (entry != null) {
+            File file = new File(dir, entry.getName());
+            if (entry.isDirectory()) {
+                file.mkdirs();
+            } else {
+                FileOutputStream fout = new FileOutputStream(file);
+                while ((len = zin.read(buffer)) != -1) {
+                    fout.write(buffer, 0, len);
+                }
+                fout.close();
+            }
+            entry = zin.getNextEntry();
+        }
+        return dir;
     }
 }
