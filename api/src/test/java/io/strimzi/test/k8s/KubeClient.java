@@ -159,6 +159,12 @@ public interface KubeClient<K extends KubeClient<K>> {
      */
     String get(String resource, String resourceName);
 
+    /**
+     * Get a list of events in a given namespace
+     * @return List of events
+     */
+    String getEvents();
+
     K waitForResourceDeletion(String resourceType, String resourceName);
 
     List<String> list(String resourceType);

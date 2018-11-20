@@ -230,10 +230,10 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
         private void collectEvents() {
             LOGGER.info("Collecting events in namespace {}", namespace);
-            String events = kubeClient().exec("oc", "get", "events").out();
+            String events = kubeClient().getEvents();
 
             // Print events to console
-            LOGGER.info("Events for namspace {}{}{}", namespace, System.lineSeparator(), events);
+            LOGGER.info("Events for namespace {}{}{}", namespace, System.lineSeparator(), events);
 
             // Write events to file
             writeFile(logDir + "/" + "events-in-namespace" + kubeClient().namespace() + ".log", events);

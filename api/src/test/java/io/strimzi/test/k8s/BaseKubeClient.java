@@ -105,6 +105,11 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
+    public String getEvents() {
+        return Exec.exec(namespacedCommand("get", "events")).out();
+    }
+
+    @Override
     public K create(File... files) {
         try (Context context = defaultContext()) {
             KubeClusterException error = execRecursive(CREATE, files, Comparator.comparing(File::getName));
