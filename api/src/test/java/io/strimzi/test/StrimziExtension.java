@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.strimzi.test.k8s.HelmClient;
@@ -32,7 +31,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -471,17 +469,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         return clusterResource().helmClient();
     }
 
-    private String getContent(File file, Consumer<JsonNode> edit) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(file);
-            edit.accept(node);
-            return mapper.writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     class ResourceAction<T extends ResourceAction<T>> implements Supplier<Consumer<Throwable>> {
 
         protected List<Consumer<Throwable>> list = new ArrayList<>();
@@ -687,14 +674,14 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             }
             Map<File, String> configYamlFiles = Arrays.stream(
                     Objects.requireNonNull(new File(CO_INSTALL_DIR).listFiles((file, name) -> name.matches("[0-9]*-RoleBinding.*")))
-            ).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
+            ).sorted().collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, node -> {
 
                 ArrayNode subjects = (ArrayNode) node.get("subjects");
                 ObjectNode subject = (ObjectNode) subjects.get(0);
                 subject.put("kind", "ServiceAccount")
                         .put("name", "strimzi-cluster-operator")
                         .put("namespace", defaultNamespace);
-
+                return TestUtils.toYamlString(node);
             }), (x, y) -> x, LinkedHashMap::new));
 
             for (Map.Entry<File, String> entry : configYamlFiles.entrySet()) {
@@ -708,9 +695,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
     @SuppressWarnings("unchecked")
     private Statement installOperatorFromExamples(AnnotatedElement element, Statement last, ClusterOperator cc) {
-        Map<File, String> yamls = Arrays.stream(
-                Objects.requireNonNull(new File(CO_INSTALL_DIR).listFiles())
-        ).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
+        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, node -> {
             // Change the docker org of the images in the 04-deployment.yaml
             if ("050-Deployment-strimzi-cluster-operator.yaml".equals(f.getName())) {
                 ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
@@ -760,12 +745,9 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
             if (f.getName().matches(".*RoleBinding.*")) {
                 String ns = annotations(element, Namespace.class).get(0).value();
-                ArrayNode subjects = (ArrayNode) node.get("subjects");
-                ObjectNode subject = (ObjectNode) subjects.get(0);
-                subject.put("kind", "ServiceAccount")
-                        .put("name", "strimzi-cluster-operator")
-                        .put("namespace", ns);
+                return TestUtils.changeRoleBindingSubject(f, ns);
             }
+            return TestUtils.toYamlString(node);
         }), (x, y) -> x, LinkedHashMap::new));
         last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
                 .logs(CO_DEPLOYMENT_NAME + ".*", "strimzi-cluster-operator")
