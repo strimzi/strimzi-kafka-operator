@@ -456,8 +456,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkRollingUpdate() {
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
-                isPodToRestart(zkDiffs.resource(), pod,
-                        zkAncillaryCmChange, this.clusterCa.certRenewed(), this.clusterCa.certsRemoved())
+                isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, this.clusterCa)
             ));
         }
 
@@ -909,8 +908,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaRollingUpdate() {
             return withVoid(kafkaSetOperations.maybeRollingUpdate(kafkaDiffs.resource(), pod ->
-                isPodToRestart(kafkaDiffs.resource(), pod,
-                        kafkaAncillaryCmChange, this.clusterCa.certRenewed(), this.clusterCa.certsRemoved())
+                isPodToRestart(kafkaDiffs.resource(), pod, kafkaAncillaryCmChange, this.clusterCa, this.clientsCa)
             ));
         }
 
@@ -1142,32 +1140,39 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return caCertGeneration == podCaCertGeneration;
         }
 
-        private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange, boolean isCaCertRenewed, boolean isCaCertRemoved) {
+        private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange, Ca... cas) {
             boolean isPodUpToDate = isPodUpToDate(ss, pod);
             boolean isPodCaCertUpToDate = isPodCaCertUpToDate(pod);
+            boolean isCaCertsChanged = false;
+            for (Ca ca: cas) {
+                isCaCertsChanged = isCaCertsChanged || ca.certRenewed() || ca.certsRemoved();
+            }
+
             if (log.isDebugEnabled()) {
-                String reason = "";
-                if (isCaCertRenewed) {
-                    reason += "cluster CA certificate renewal, ";
-                }
-                if (isCaCertRemoved) {
-                    reason += "cluster CA certificate removal, ";
+                List<String> reasons = new ArrayList<>();
+                for (Ca ca: cas) {
+                    if (ca.certRenewed()) {
+                        reasons.add(ca + " certificate renewal");
+                    }
+                    if (ca.certsRemoved()) {
+                        reasons.add(ca + " certificate removal");
+                    }
                 }
                 if (isAncillaryCmChange) {
-                    reason += "ancillary CM change, ";
+                    reasons.add("ancillary CM change");
                 }
                 if (!isPodUpToDate) {
-                    reason += "Pod has old generation, ";
+                    reasons.add("Pod has old generation");
                 }
                 if (!isPodCaCertUpToDate) {
-                    reason += "Pod has old cluster CA certificate generation";
+                    reasons.add("Pod has old cluster CA certificate generation");
                 }
-                if (!reason.isEmpty()) {
+                if (!reasons.isEmpty()) {
                     log.debug("{}: Rolling pod {} due to {}",
-                            reconciliation, pod.getMetadata().getName(), reason.substring(0, reason.length() - 2));
+                            reconciliation, pod.getMetadata().getName(), reasons);
                 }
             }
-            return !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertRenewed || isCaCertRemoved;
+            return !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertsChanged;
         }
 
         private int getClusterCaCertGeneration() {
