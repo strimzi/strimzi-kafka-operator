@@ -312,9 +312,10 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     /**
-     * Generate the Secret containing CA self-signed certificate for internal communication.
-     * It also contains the private key-certificate (signed by internal CA) for each brokers for communicating
-     * internally within the cluster
+     * Generate the Secret containing the Zookeeper nodes certificates signed by the cluster CA certificate used for TLS based
+     * internal communication with Kafka.
+     * It also contains the related Zookeeper nodes private keys.
+     *
      * @return The generated Secret
      */
     public Secret generateNodesSecret(ClusterCa clusterCa, Kafka kafka) {
