@@ -46,6 +46,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -53,8 +54,13 @@ import java.util.stream.IntStream;
 public class Resources {
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
-    private static final long TIMEOUT_FOR_CREATION = 60_000;
-    private static final long TIMEOUT_INTERVAL_FOR_CREATION = 5_000;
+    private static final long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(5).toMillis();
+    private static final long POLL_INTERVAL_FOR_RESOURCE_READINESS = Duration.ofSeconds(1).toMillis();
+    /* Timeout for deployment config is bigger than the timeout for default resource readiness because of creating a new image
+    during the deployment process.*/
+    private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
+    private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(1).toMillis();
+    private static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(5).toMillis();
 
     private final NamespacedKubernetesClient client;
 
@@ -222,7 +228,7 @@ public class Resources {
 
     DoneableKafka kafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
-            TestUtils.waitFor("Kafka creation", TIMEOUT_FOR_CREATION, TIMEOUT_INTERVAL_FOR_CREATION,
+            TestUtils.waitFor("Kafka creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         kafka().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -256,7 +262,7 @@ public class Resources {
 
     private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
         return new DoneableKafkaConnect(kafkaConnect, kC -> {
-            TestUtils.waitFor("KafkaConnect creation", TIMEOUT_FOR_CREATION, TIMEOUT_INTERVAL_FOR_CREATION,
+            TestUtils.waitFor("KafkaConnect creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         kafkaConnect().inNamespace(client().getNamespace()).createOrReplace(kC);
@@ -296,7 +302,7 @@ public class Resources {
 
     private DoneableKafkaConnectS2I kafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I) {
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kCS2I -> {
-            TestUtils.waitFor("KafkaConnectS2I creation", TIMEOUT_FOR_CREATION, TIMEOUT_INTERVAL_FOR_CREATION,
+            TestUtils.waitFor("KafkaConnectS2I creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         kafkaConnectS2I().inNamespace(client().getNamespace()).createOrReplace(kCS2I);
@@ -337,7 +343,7 @@ public class Resources {
 
     private DoneableKafkaMirrorMaker kafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker) {
         return new DoneableKafkaMirrorMaker(kafkaMirrorMaker, k -> {
-            TestUtils.waitFor("Kafka Mirror Maker creation", TIMEOUT_FOR_CREATION, TIMEOUT_INTERVAL_FOR_CREATION,
+            TestUtils.waitFor("Kafka Mirror Maker creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         kafkaMirrorMaker().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -394,13 +400,13 @@ public class Resources {
      */
     private void waitForStatefulSet(String namespace, String name) {
         LOGGER.info("Waiting for StatefulSet {}", name);
-        TestUtils.waitFor("statefulset " + name, 1000, 300000,
+        TestUtils.waitFor("statefulset " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client().apps().statefulSets().inNamespace(namespace).withName(name).isReady());
         int replicas = client().apps().statefulSets().inNamespace(namespace).withName(name).get().getSpec().getReplicas();
         for (int pod = 0; pod < replicas; pod++) {
             String podName = name + "-" + pod;
             LOGGER.info("Waiting for Pod {}", podName);
-            TestUtils.waitFor("pod " + name, 1000, 300000,
+            TestUtils.waitFor("pod " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
                 () -> client().pods().inNamespace(namespace).withName(podName).isReady());
             LOGGER.info("Pod {} is ready", podName);
         }
@@ -412,14 +418,14 @@ public class Resources {
      */
     private void waitForDeployment(String namespace, String name) {
         LOGGER.info("Waiting for Deployment {}", name);
-        TestUtils.waitFor("deployment " + name, 1000, 300000,
+        TestUtils.waitFor("deployment " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client().extensions().deployments().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment {} is ready", name);
     }
 
     private void waitForDeploymentConfig(String namespace, String name) {
         LOGGER.info("Waiting for Deployment Config {}", name);
-        TestUtils.waitFor("deployment config " + name, 1000, 300000,
+        TestUtils.waitFor("deployment config " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS,
             () -> client().adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment Config {} is ready", name);
     }
@@ -455,7 +461,7 @@ public class Resources {
 
     private void waitForPodDeletion(String namespace, String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
-        TestUtils.waitFor("statefulset " + name, 1000, 300000,
+        TestUtils.waitFor("statefulset " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client().pods().inNamespace(namespace).withName(name).get() == null);
     }
 
