@@ -568,9 +568,9 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generate the Secret containing CA self-signed certificate for TLS communication.
-     * It also contains the private key-certificate (signed by cluster CA) for each brokers as well as for communicating
-     * with Zookeeper as well
+     * Generate the Secret containing the Kafka brokers certificates signed by the cluster CA certificate used for TLS based
+     * internal communication with Zookeeper as well.
+     * It also contains the related Kafka brokers private keys.
      *
      * @return The generated Secret
      */

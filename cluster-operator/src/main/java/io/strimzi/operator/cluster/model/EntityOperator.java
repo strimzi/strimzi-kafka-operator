@@ -233,8 +233,10 @@ public class EntityOperator extends AbstractModel {
     }
 
     /**
-     * Generate the Secret containing CA self-signed certificates for internal communication
-     * It also contains the private key-certificate (signed by internal CA) for communicating with Zookeeper and Kafka
+     * Generate the Secret containing the Entity Operator certificate signed by the cluster CA certificate used for TLS based
+     * internal communication with Kafka and Zookeeper.
+     * It also contains the related Entity Operator private key.
+     *
      * @return The generated Secret
      */
     public Secret generateSecret(ClusterCa clusterCa) {
