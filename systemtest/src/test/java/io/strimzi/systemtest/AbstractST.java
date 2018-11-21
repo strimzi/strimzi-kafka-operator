@@ -97,6 +97,8 @@ public class AbstractST {
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
+    private static final long GET_BROKER_API_TIMEOUT = 120_000L;
+    private static final long GET_BROKER_API_INTERVAL = 5_000L;
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
@@ -186,7 +188,7 @@ public class AbstractST {
 
     String getBrokerApiVersions(String podName) {
         AtomicReference<String> versions = new AtomicReference<>();
-        TestUtils.waitFor("kafka-broker-api-versions.sh success", 1_000L, 30_000L, () -> {
+        TestUtils.waitFor("kafka-broker-api-versions.sh success", GET_BROKER_API_INTERVAL, GET_BROKER_API_TIMEOUT, () -> {
             try {
                 String output = kubeClient.execInPod(podName,
                         "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();

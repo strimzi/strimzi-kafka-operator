@@ -133,7 +133,7 @@ class MultipleNamespaceST extends AbstractST {
         LOGGER.info("Creating topic {} in namespace {}", topic, namespace);
         kubeClient.namespace(namespace);
         kubeClient.create(new File(TOPIC_INSTALL_DIR));
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 120000, 5000, () -> {
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 5000, 120000, () -> {
             kubeClient.namespace(DEFAULT_NAMESPACE);
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics2.contains(topic);

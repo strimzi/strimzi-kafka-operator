@@ -84,8 +84,9 @@ class KafkaST extends AbstractST {
 
     static KubernetesClient client = new DefaultKubernetesClient();
 
-    private static final long MIRROR_MAKER_INTERVAL = 1_000;
+    private static final long WAIT_INTERVAL = 1_000;
     private static final long MIRROR_MAKER_TIMEOUT = 240_000;
+    private static final long TOPIC_CREATE_TIMEOUT = 120_000;
 
     @Test
     @Tag(REGRESSION)
@@ -595,6 +596,11 @@ class KafkaST extends AbstractST {
 
         //Creating topics for testing
         kubeClient.create(TOPIC_CM);
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", WAIT_INTERVAL, TOPIC_CREATE_TIMEOUT, () -> {
+            List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+            return topics.contains("my-topic");
+        });
+
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem("my-topic"));
 
         createTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
@@ -727,7 +733,7 @@ class KafkaST extends AbstractST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", MIRROR_MAKER_INTERVAL, MIRROR_MAKER_TIMEOUT, () ->
+        waitFor("Mirror Maker will join group", WAIT_INTERVAL, MIRROR_MAKER_TIMEOUT, () ->
             !kubeClient.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
@@ -820,7 +826,7 @@ class KafkaST extends AbstractST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join the group
-        waitFor("Mirror Maker will join group", MIRROR_MAKER_INTERVAL, MIRROR_MAKER_TIMEOUT, () ->
+        waitFor("Mirror Maker will join group", WAIT_INTERVAL, MIRROR_MAKER_TIMEOUT, () ->
             !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
@@ -928,7 +934,7 @@ class KafkaST extends AbstractST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", MIRROR_MAKER_INTERVAL, MIRROR_MAKER_TIMEOUT, () ->
+        waitFor("Mirror Maker will join group", WAIT_INTERVAL, MIRROR_MAKER_TIMEOUT, () ->
             !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
