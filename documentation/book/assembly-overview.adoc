@@ -11,7 +11,7 @@
 
 {ProductName} makes it easy to run Apache Kafka on {ProductPlatformName}. Apache Kafka is a popular platform for streaming data delivery and processing. For more information about Apache Kafka, see the http://kafka.apache.org[Apache Kafka website^].
 
-{ProductName} is based on Apache Kafka 2.0.0 and consists of three main components:
+{ProductName} is based on Apache Kafka 2.0.1 and consists of three main components:
 
 Cluster Operator:: Responsible for deploying and managing Apache Kafka clusters within {ProductPlatformName} cluster.
 Topic Operator:: Responsible for managing Kafka topics within a Kafka cluster running within {ProductPlatformName} cluster.

@@ -11,11 +11,11 @@ RUN useradd -r -m -u 1001 -g 0 kafka
 
 # Set Scala and Kafka version
 ENV SCALA_VERSION=2.12
-ENV KAFKA_VERSION=2.0.0
+ENV KAFKA_VERSION=2.0.1
 ENV JMX_EXPORTER_VERSION=0.1.0
 
 # Set Kafka (SHA512) and Prometheus JMX exporter (SHA1) checksums
-ENV KAFKA_CHECKSUM="b28e81705e30528f1abb6766e22dfe9dae50b1e1e93330c880928ff7a08e6b38ee71cbfc96ec14369b2dfd24293938702cab422173c8e01955a9d1746ae43f98  kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
+ENV KAFKA_CHECKSUM="9773a85ef2898b4bae20481df4cfd5488bd195fffd700fcc874a9fa55065f6873f2ee12f46d2f6a6ccb5d5a93ddb7dec19227aef5d39d4f72b545ec63b24bb2f  kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
 ENV JMX_EXPORTER_CHECKSUM="6ab370edccc2eeb3985f4c95769c26c090d0e052 jmx_prometheus_javaagent-0.1.0.jar"
 
 # Downloading/extracting Apache Kafka
