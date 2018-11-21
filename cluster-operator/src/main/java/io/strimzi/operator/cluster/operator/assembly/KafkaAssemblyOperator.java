@@ -450,7 +450,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkStatefulSet() {
             StatefulSet zkSs = zkCluster.generateStatefulSet(isOpenShift);
             zkSs.getSpec().getTemplate().getMetadata().getAnnotations()
-                    .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, String.valueOf(getClusterCaCertGeneration()));
+                    .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getClusterCaCertGeneration()));
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSs));
         }
 
@@ -902,7 +902,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaStatefulSet() {
             StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(isOpenShift);
             kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations()
-                    .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, String.valueOf(getClusterCaCertGeneration()));
+                    .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getClusterCaCertGeneration()));
             return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaSs));
         }
 
@@ -1103,7 +1103,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorDeployment() {
             if (this.entityOperator != null) {
                 eoDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
-                        .put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, String.valueOf(getClusterCaCertGeneration()));
+                        .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getClusterCaCertGeneration()));
             }
 
             return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment)
@@ -1136,7 +1136,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean isPodCaCertUpToDate(Pod pod) {
             final int caCertGeneration = getClusterCaCertGeneration();
             final int podCaCertGeneration =
-                    Integer.parseInt(pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+                    Integer.parseInt(pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION));
             return caCertGeneration == podCaCertGeneration;
         }
 

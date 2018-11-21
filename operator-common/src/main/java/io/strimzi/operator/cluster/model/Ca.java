@@ -81,6 +81,8 @@ public abstract class Ca {
     public static final String IO_STRIMZI = "io.strimzi";
     public static final String ANNO_STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
     public static final String ANNO_STRIMZI_IO_CA_CERT_GENERATION = "strimzi.io/ca-cert-generation";
+    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION = "strimzi.io/cluster-ca-cert-generation";
+    public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = "strimzi.io/clients-ca-cert-generation";
     private static final int INIT_GENERATION = 0;
 
     /**
