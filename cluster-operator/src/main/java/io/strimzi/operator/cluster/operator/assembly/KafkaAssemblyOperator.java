@@ -450,7 +450,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkStatefulSet() {
             StatefulSet zkSs = zkCluster.generateStatefulSet(isOpenShift);
             zkSs.getSpec().getTemplate().getMetadata().getAnnotations()
-                    .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getClusterCaCertGeneration()));
+                    .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSs));
         }
 
@@ -902,7 +902,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaStatefulSet() {
             StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(isOpenShift);
             kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations()
-                    .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getClusterCaCertGeneration()));
+                    .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
+            kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations()
+                    .put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clientsCa)));
             return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaSs));
         }
 
@@ -1103,7 +1105,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorDeployment() {
             if (this.entityOperator != null) {
                 eoDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
-                        .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getClusterCaCertGeneration()));
+                        .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             }
 
             return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment)
@@ -1133,19 +1135,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return ssGeneration == podGeneration;
         }
 
-        private boolean isPodCaCertUpToDate(Pod pod) {
-            final int caCertGeneration = getClusterCaCertGeneration();
+        private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
+            final int caCertGeneration = getCaCertGeneration(ca);
+            String podAnnotation = ca instanceof ClientsCa ?
+                    Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION :
+                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
             final int podCaCertGeneration =
-                    Integer.parseInt(pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION));
+                    Integer.parseInt(pod.getMetadata().getAnnotations().get(podAnnotation));
             return caCertGeneration == podCaCertGeneration;
         }
 
         private boolean isPodToRestart(StatefulSet ss, Pod pod, boolean isAncillaryCmChange, Ca... cas) {
             boolean isPodUpToDate = isPodUpToDate(ss, pod);
-            boolean isPodCaCertUpToDate = isPodCaCertUpToDate(pod);
+            boolean isPodCaCertUpToDate = true;
             boolean isCaCertsChanged = false;
             for (Ca ca: cas) {
                 isCaCertsChanged = isCaCertsChanged || ca.certRenewed() || ca.certsRemoved();
+                isPodCaCertUpToDate = isPodCaCertUpToDate && isPodCaCertUpToDate(pod, ca);
             }
 
             if (log.isDebugEnabled()) {
@@ -1157,15 +1163,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (ca.certsRemoved()) {
                         reasons.add(ca + " certificate removal");
                     }
+                    if (!isPodCaCertUpToDate(pod, ca)) {
+                        reasons.add("Pod has old " + ca + " certificate generation");
+                    }
                 }
                 if (isAncillaryCmChange) {
                     reasons.add("ancillary CM change");
                 }
                 if (!isPodUpToDate) {
                     reasons.add("Pod has old generation");
-                }
-                if (!isPodCaCertUpToDate) {
-                    reasons.add("Pod has old cluster CA certificate generation");
                 }
                 if (!reasons.isEmpty()) {
                     log.debug("{}: Rolling pod {} due to {}",
@@ -1175,8 +1181,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertsChanged;
         }
 
-        private int getClusterCaCertGeneration() {
-            return Integer.parseInt(clusterCa.caCertSecret().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+        private int getCaCertGeneration(Ca ca) {
+            return Integer.parseInt(ca.caCertSecret().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
         }
     }
 
