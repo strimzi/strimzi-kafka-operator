@@ -1150,8 +1150,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             boolean isPodCaCertUpToDate = true;
             boolean isCaCertsChanged = false;
             for (Ca ca: cas) {
-                isCaCertsChanged = isCaCertsChanged || ca.certRenewed() || ca.certsRemoved();
-                isPodCaCertUpToDate = isPodCaCertUpToDate && isPodCaCertUpToDate(pod, ca);
+                isCaCertsChanged |= ca.certRenewed() || ca.certsRemoved();
+                isPodCaCertUpToDate &= isPodCaCertUpToDate(pod, ca);
             }
 
             if (log.isDebugEnabled()) {
