@@ -468,7 +468,7 @@ public class AbstractST {
         // Wait for the job to succeed
         try {
             LOGGER.debug("Waiting for Job completion: {}", job);
-            waitFor("Job completion", 5000, 150000, () -> {
+            waitFor("Job completion", 5000, 300000, () -> {
                 Job jobs = namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get();
                 JobStatus status;
                 if (jobs == null || (status = jobs.getStatus()) == null) {

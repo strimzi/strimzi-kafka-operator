@@ -59,8 +59,8 @@ public class Resources {
     /* Timeout for deployment config is bigger than the timeout for default resource readiness because of creating a new image
     during the deployment process.*/
     private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(8).toMillis();
-    private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(1).toMillis();
-    private static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(5).toMillis();
+    private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(4).toMillis();
+    private static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(8).toMillis();
 
     private final NamespacedKubernetesClient client;
 
