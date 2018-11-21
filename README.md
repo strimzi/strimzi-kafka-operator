@@ -10,6 +10,10 @@ Strimzi provides a way to run an [Apache Kafka][kafka] cluster on
 [Kubernetes][k8s] or [OpenShift][os] in various deployment configurations.
 See our [website][strimzi] for more details about the project.
 
+## Quickstart
+
+To get up and running quickly, check our Quickstart guides for [OKD (OpenShift Origin)](http://strimzi.io/quickstarts/okd/) and [Minikube](http://strimzi.io/quickstarts/minikube/). 
+
 ## Documentation
 
 Documentation to the current _master_ branch as well as all releases can be found on our [website][strimzi].
