@@ -51,8 +51,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +71,7 @@ import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.TestUtils.writeFile;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -391,6 +395,7 @@ public class AbstractST {
 
     @AfterEach
     public void deleteResources() {
+        collectLogs();
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
         resources = null;
@@ -932,4 +937,55 @@ public class AbstractST {
         LOGGER.info("Created Job {}", job);
         return job;
     }
+
+
+    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
+
+    private void collectLogs() {
+        // Get current date to create a unique folder
+        String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+        String logDir = !testName.isEmpty() ?
+                TEST_LOG_DIR + testClass + "." + testName + "_" + currentDate
+                : TEST_LOG_DIR + currentDate;
+
+        LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient.namespace()), new File(logDir));
+        logCollector.collectEvents();
+        logCollector.collectLogsForPods();
+    }
+
+    private class LogCollector {
+        NamespacedKubernetesClient client;
+        String namespace;
+        File logDir;
+
+        private LogCollector(NamespacedKubernetesClient client, File logDir) {
+            this.client = client;
+            this.namespace = client.getNamespace();
+            this.logDir = logDir;
+            logDir.mkdirs();
+        }
+
+        private void collectLogsForPods() {
+            LOGGER.info("Collecting logs for pods in namespace {}", namespace);
+
+            client.pods().list().getItems().forEach(pod -> {
+                String podName = pod.getMetadata().getName();
+
+                client.pods().withName(podName).get().getStatus().getContainerStatuses().forEach(containerStatus -> {
+                        String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
+                        // Write logs from containers to files
+                        writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+                    }
+                );
+            });
+        }
+
+        private void collectEvents() {
+            LOGGER.info("Collecting events in namespace {}", namespace);
+            String events = kubeClient.getEvents();
+            // Write events to file
+            writeFile(logDir + "/" + "events-in-namespace" + kubeClient.namespace() + ".log", events);
+        }
+    }
+
 }
