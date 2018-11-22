@@ -1000,16 +1000,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> topicOperatorDeployment() {
-            return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment)
-                .compose(reconcileResult -> {
-                    if (this.topicOperator != null && this.clusterCa.certRenewed()  && reconcileResult instanceof ReconcileResult.Noop<?>) {
-                        // roll the TO if the cluster CA was renewed and reconcile hasn't rolled it
-                        log.debug("{}: Restarting Topic Operator due to Cluster CA renewal", reconciliation);
-                        return deploymentOperations.rollingUpdate(namespace, TopicOperator.topicOperatorName(name), operationTimeoutMs);
-                    } else {
-                        return Future.succeededFuture();
-                    }
-                }));
+            if (this.toDeployment != null) {
+                toDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
+                        .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
+            }
+            return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
         }
 
         Future<ReconciliationState> topicOperatorSecret() {
@@ -1107,17 +1102,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 eoDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
                         .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             }
-
-            return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment)
-                    .compose(reconcileResult -> {
-                        if (this.entityOperator != null && this.clusterCa.certRenewed() && reconcileResult instanceof ReconcileResult.Noop<?>) {
-                            // roll the EO if the cluster CA was renewed and reconcile hasn't rolled it
-                            log.debug("{}: Restarting Entity Operator due to Cluster CA renewal", reconciliation);
-                            return deploymentOperations.rollingUpdate(namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs);
-                        } else {
-                            return Future.succeededFuture();
-                        }
-                    }));
+            return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
         }
 
         Future<ReconciliationState> entityOperatorSecret() {
