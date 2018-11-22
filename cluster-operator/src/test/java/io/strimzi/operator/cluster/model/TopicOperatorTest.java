@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.certs.CertManager;
@@ -171,10 +172,12 @@ public class TopicOperatorTest {
         assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT, containers.get(0).getVolumeMounts().get(1).getMountPath());
         assertLoggingConfig(dep);
         // checks on the TLS sidecar container
-        assertEquals(TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE, containers.get(1).getImage());
-        assertEquals(TopicOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(containers.get(1)).get(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT));
-        assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, containers.get(1).getVolumeMounts().get(0).getName());
-        assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT, containers.get(1).getVolumeMounts().get(0).getMountPath());
+        Container tlsSidecarContainer = containers.get(1);
+        assertEquals(TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
+        assertEquals(TopicOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(tlsSidecarContainer).get(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT));
+        assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_TLS_SIDECAR_LOG_LEVEL));
+        assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, tlsSidecarContainer.getVolumeMounts().get(0).getName());
+        assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT, tlsSidecarContainer.getVolumeMounts().get(0).getMountPath());
     }
 
     @Test
