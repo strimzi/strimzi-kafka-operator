@@ -43,6 +43,7 @@ import io.fabric8.kubernetes.api.model.extensions.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSetStatus;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -350,7 +351,9 @@ public class MockKube {
                     checkNotExists(resourceName);
                     StatefulSet argument = cinvocation.getArgument(0);
                     LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
-                    ssDb.put(resourceName, copyResource(argument));
+                    StatefulSet value = copyResource(argument);
+                    value.setStatus(new StatefulSetStatus());
+                    ssDb.put(resourceName, value);
                     for (int i = 0; i < argument.getSpec().getReplicas(); i++) {
                         final int podNum = i;
                         String podName = argument.getMetadata().getName() + "-" + podNum;

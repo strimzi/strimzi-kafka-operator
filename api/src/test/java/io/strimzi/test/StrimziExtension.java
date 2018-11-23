@@ -702,6 +702,10 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                         String value = envVar.get("value").textValue();
                         ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTag(value));
                     }
+                    if (varName.matches("STRIMZI_KAFKA_IMAGE_MAP")) {
+                        String value = envVar.get("value").textValue();
+                        ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTagInImageMap(value));
+                    }
                     // Set log level
                     if (varName.equals("STRIMZI_LOG_LEVEL")) {
                         String logLevel = System.getenv().getOrDefault("TEST_STRIMZI_LOG_LEVEL", OPERATOR_LOG_LEVEL);

@@ -44,7 +44,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.parseImageMap;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 
 public class ZookeeperCluster extends AbstractModel {
 
@@ -82,6 +84,8 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
     public static final String ENV_VAR_ZOOKEEPER_LOG_CONFIGURATION = "ZOOKEEPER_LOG_CONFIGURATION";
     public static final String ENV_VAR_TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
+
+    public static final Map<String, String> IMAGE_MAP = parseImageMap(System.getenv().get("STRIMZI_ZOOKEEPER_IMAGE_MAP"));
 
     public static String zookeeperClusterName(String cluster) {
         return KafkaResources.zookeeperStatefulSetName(cluster);
@@ -146,7 +150,7 @@ public class ZookeeperCluster extends AbstractModel {
         this.validLoggerFields = getDefaultLogConfig();
     }
 
-    public static ZookeeperCluster fromCrd(Kafka kafkaAssembly) {
+    public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
         zk.setOwnerReference(kafkaAssembly);
@@ -156,7 +160,11 @@ public class ZookeeperCluster extends AbstractModel {
             replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
         zk.setReplicas(replicas);
+        String version = versions.defaultVersion().version();
         String image = zookeeperClusterSpec.getImage();
+        if (image == null) {
+            image = IMAGE_MAP.get(version);
+        }
         if (image == null) {
             image = ZookeeperClusterSpec.DEFAULT_IMAGE;
         }
@@ -302,6 +310,7 @@ public class ZookeeperCluster extends AbstractModel {
     public StatefulSet generateStatefulSet(boolean isOpenShift) {
 
         return createStatefulSet(
+                emptyMap(),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getVolumeMounts(),

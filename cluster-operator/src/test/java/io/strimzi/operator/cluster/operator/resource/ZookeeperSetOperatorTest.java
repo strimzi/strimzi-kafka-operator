@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.operator.MockCertManager;
 import org.junit.Before;
@@ -34,8 +35,9 @@ public class ZookeeperSetOperatorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        a = ZookeeperCluster.fromCrd(getResource()).generateStatefulSet(true);
-        b = ZookeeperCluster.fromCrd(getResource()).generateStatefulSet(true);
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup();
+        a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true);
+        b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true);
     }
 
     private Kafka getResource() {

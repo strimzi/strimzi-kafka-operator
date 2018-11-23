@@ -37,6 +37,7 @@ import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -108,6 +109,8 @@ public class KafkaAssemblyOperatorTest {
     public static final InlineLogging LOG_KAFKA_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_ZOOKEEPER_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_CONNECT_CONFIG = new InlineLogging();
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup();
+
     static {
         LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));
         LOG_ZOOKEEPER_CONFIG.setLoggers(singletonMap("zookeeper.root.logger", "INFO"));
@@ -281,8 +284,8 @@ public class KafkaAssemblyOperatorTest {
         ClusterCa clusterCa = new ClusterCa(new MockCertManager(), clusterCm.getMetadata().getName(),
                 ModelUtils.findSecretWithName(secrets, AbstractModel.clusterCaCertSecretName(clusterCm.getMetadata().getName())),
                 ModelUtils.findSecretWithName(secrets, AbstractModel.clusterCaKeySecretName(clusterCm.getMetadata().getName())));
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm);
-        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(clusterCm);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm, VERSIONS);
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(clusterCm, VERSIONS);
         TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm);
         EntityOperator entityOperator = EntityOperator.fromCrd(clusterCm);
 
@@ -376,7 +379,19 @@ public class KafkaAssemblyOperatorTest {
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
-                supplier);
+                supplier,
+                VERSIONS,
+                emptyMap()) {
+            @Override
+            public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
+                return new ReconciliationState(r, ka) {
+                    @Override
+                    public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
+                        return Future.succeededFuture(null);
+                    }
+                };
+            }
+        };
 
         // Now try to create a KafkaCluster based on this CM
         Async async = context.async();
@@ -578,10 +593,10 @@ public class KafkaAssemblyOperatorTest {
     }
 
     private void updateCluster(TestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
-        KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(originalAssembly);
-        KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(updatedAssembly);
-        ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(originalAssembly);
-        ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(updatedAssembly);
+        KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(originalAssembly, VERSIONS);
+        KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(updatedAssembly, VERSIONS);
+        ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(originalAssembly, VERSIONS);
+        ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(updatedAssembly, VERSIONS);
         TopicOperator originalTopicOperator = TopicOperator.fromCrd(originalAssembly);
         EntityOperator originalEntityOperator = EntityOperator.fromCrd(originalAssembly);
 
@@ -747,11 +762,25 @@ public class KafkaAssemblyOperatorTest {
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
-                supplier);
+                supplier,
+                VERSIONS,
+                emptyMap()) {
+            @Override
+            public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
+                return new ReconciliationState(r, ka) {
+                    @Override
+                    public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
+                        return Future.succeededFuture(originalKafkaCluster.generateStatefulSet(openShift));
+                    }
+                };
+            }
+        };
 
         // Now try to update a KafkaCluster based on this CM
         Async async = context.async();
-        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, clusterNamespace, clusterName), updatedAssembly).setHandler(createResult -> {
+        ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, clusterNamespace, clusterName) {
+
+        }, updatedAssembly).setHandler(createResult -> {
             if (createResult.failed()) createResult.cause().printStackTrace();
             context.assertTrue(createResult.succeeded());
 
@@ -819,7 +848,7 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromCrd(bar).generateStatefulSet(openShift))
+                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift))
         );
 
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
@@ -829,7 +858,7 @@ public class KafkaAssemblyOperatorTest {
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
-        KafkaCluster barCluster = KafkaCluster.fromCrd(bar);
+        KafkaCluster barCluster = KafkaCluster.fromCrd(bar, VERSIONS);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
                 asList(barCluster.generateStatefulSet(openShift))
         );
@@ -849,7 +878,9 @@ public class KafkaAssemblyOperatorTest {
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
-                supplier) {
+                supplier,
+                VERSIONS,
+                emptyMap()) {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 createdOrUpdated.add(kafkaAssembly.getMetadata().getName());

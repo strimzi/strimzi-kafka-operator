@@ -44,7 +44,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     private static final Logger log = LogManager.getLogger(StatefulSetOperator.class.getName());
     private final PodOperator podOperations;
     private final PvcOperator pvcOperations;
-    private final long operationTimeoutMs;
+    protected final long operationTimeoutMs;
 
     /**
      * Constructor

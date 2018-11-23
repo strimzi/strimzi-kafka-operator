@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSetStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -28,6 +29,7 @@ import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -62,6 +64,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
 import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 import static io.strimzi.api.kafka.model.Storage.deleteClaim;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertNotNull;
@@ -223,7 +226,7 @@ public class KafkaAssemblyOperatorMockTest {
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ResourceOperatorSupplier supplier = supplierWithMocks();
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                new MockCertManager(), supplier);
+                new MockCertManager(), supplier, new KafkaVersion.Lookup(), emptyMap());
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
@@ -231,6 +234,7 @@ public class KafkaAssemblyOperatorMockTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             StatefulSet kafkaSs = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
+            kafkaSs.setStatus(new StatefulSetStatus());
             context.assertNotNull(kafkaSs);
             context.assertEquals("0", kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION));
             context.assertEquals("0", kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION));

@@ -57,6 +57,7 @@ import static org.junit.Assert.assertTrue;
 
 public class KafkaClusterTest {
 
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup();
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -73,7 +74,7 @@ public class KafkaClusterTest {
     }
 
     private final Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, configuration, kafkaLog, zooLog);
-    private final KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+    private final KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
     @Rule
     public ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, KafkaCluster::fromCrd);
@@ -166,7 +167,7 @@ public class KafkaClusterTest {
                 .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         StatefulSet ss = kc.generateStatefulSet(false);
         assertEquals(selector, ss.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector().getMatchLabels());
     }
@@ -181,7 +182,7 @@ public class KafkaClusterTest {
                 .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         StatefulSet ss = kc.generateStatefulSet(false);
         assertEquals(null, ss.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector());
     }
@@ -196,7 +197,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         StatefulSet ss = kc.generateStatefulSet(true);
         checkStatefulSet(ss, kafkaAssembly, true);
     }
@@ -212,7 +213,7 @@ public class KafkaClusterTest {
                                 .withNewRack().withTopologyKey("rack-key").endRack()
                             .endKafka()
                         .endSpec().build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
         StatefulSet ss = kc.generateStatefulSet(false);
         checkStatefulSet(ss, kafkaAssembly, false);
     }
@@ -297,7 +298,7 @@ public class KafkaClusterTest {
     public void testDeleteClaim() {
         Kafka assembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
-        KafkaCluster kc = KafkaCluster.fromCrd(assembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(assembly, VERSIONS);
         StatefulSet ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
@@ -309,7 +310,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(assembly);
+        kc = KafkaCluster.fromCrd(assembly, VERSIONS);
         ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
@@ -321,7 +322,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(assembly);
+        kc = KafkaCluster.fromCrd(assembly, VERSIONS);
         ss = kc.generateStatefulSet(true);
         assertTrue(KafkaCluster.deleteClaim(ss));
     }
@@ -395,7 +396,7 @@ public class KafkaClusterTest {
 
         ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
 
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
         addresses.put(0, "my-address-0");
@@ -470,7 +471,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
         addresses.put(0, "my-address-0");
@@ -524,7 +525,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
         addresses.put(0, "my-address-0");
@@ -557,7 +558,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
         addresses.put(0, "32123");
@@ -611,7 +612,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
         addresses.put(0, "32123");
@@ -774,7 +775,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly);
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check StatefulSet
         StatefulSet ss = kc.generateStatefulSet(true);

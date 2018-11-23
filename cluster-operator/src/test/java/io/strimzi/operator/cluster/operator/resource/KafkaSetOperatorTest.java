@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.operator.MockCertManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,8 +41,9 @@ public class KafkaSetOperatorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        a = KafkaCluster.fromCrd(getResource()).generateStatefulSet(true);
-        b = KafkaCluster.fromCrd(getResource()).generateStatefulSet(true);
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup();
+        a = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true);
+        b = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true);
     }
 
     private Kafka getResource() {

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.InvalidConfigurationException;
 
 import java.util.HashSet;
@@ -22,6 +23,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
     public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
+    public static final String STRIMZI_KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGE_MAP";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
@@ -32,6 +34,8 @@ public class ClusterOperatorConfig {
     private final long operationTimeoutMs;
     private final boolean createClusterRoles;
 
+    private final Map<String, String> imageMap;
+
     /**
      * Constructor
      *
@@ -39,11 +43,12 @@ public class ClusterOperatorConfig {
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      */
-    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles) {
+    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, Map<String, String> imageMap) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
         this.createClusterRoles = createClusterRoles;
+        this.imageMap = imageMap;
     }
 
     /**
@@ -80,7 +85,9 @@ public class ClusterOperatorConfig {
             createClusterRoles = Boolean.parseBoolean(createClusterRolesEnvVar);
         }
 
-        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles);
+        Map<String, String> imageMap = ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_IMAGE_MAP));
+
+        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, imageMap);
     }
 
 
@@ -112,6 +119,10 @@ public class ClusterOperatorConfig {
         return createClusterRoles;
     }
 
+    public Map<String, String> getImageMap() {
+        return imageMap;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -119,6 +130,7 @@ public class ClusterOperatorConfig {
                 ",reconciliationIntervalMs=" + reconciliationIntervalMs +
                 ",operationTimeoutMs=" + operationTimeoutMs +
                 ",createClusterRoles=" + createClusterRoles +
+                ",imageMap=" + imageMap +
                 ")";
     }
 }

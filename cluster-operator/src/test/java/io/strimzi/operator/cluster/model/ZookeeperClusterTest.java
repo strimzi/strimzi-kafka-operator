@@ -42,6 +42,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ZookeeperClusterTest {
 
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup();
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -59,7 +60,7 @@ public class ZookeeperClusterTest {
     private final Map<String, Object> zooConfigurationJson = singletonMap("foo", "bar");
 
     private final Kafka ka = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson);
-    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka);
+    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
     @Rule
     public ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, ZookeeperCluster::fromCrd);
@@ -185,7 +186,7 @@ public class ZookeeperClusterTest {
                     .endKafka()
                 .endSpec()
             .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
         StatefulSet ss = zc.generateStatefulSet(true);
         assertFalse(ZookeeperCluster.deleteClaim(ss));
 
@@ -196,7 +197,7 @@ public class ZookeeperClusterTest {
                     .endKafka()
                 .endSpec()
             .build();
-        zc = ZookeeperCluster.fromCrd(ka);
+        zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
         ss = zc.generateStatefulSet(true);
         assertFalse(ZookeeperCluster.deleteClaim(ss));
 
@@ -207,7 +208,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
             .build();
-        zc = ZookeeperCluster.fromCrd(ka);
+        zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
         ss = zc.generateStatefulSet(true);
         assertTrue(ZookeeperCluster.deleteClaim(ss));
     }
@@ -310,7 +311,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check StatefulSet
         StatefulSet ss = zc.generateStatefulSet(true);

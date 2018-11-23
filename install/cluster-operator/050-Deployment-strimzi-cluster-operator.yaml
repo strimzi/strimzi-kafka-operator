@@ -27,8 +27,11 @@ spec:
           value: "300000"
         - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
           value: strimzi/zookeeper:latest
-        - name: STRIMZI_DEFAULT_KAFKA_IMAGE
-          value: strimzi/kafka:latest
+        - name: STRIMZI_KAFKA_IMAGE_MAP
+          value: |
+            2.0.0=strimzi/kafka:latest-kafka-2.0.0
+            2.0.1=strimzi/kafka:latest-kafka-2.0.1
+            2.1.0=strimzi/kafka:latest-kafka-2.1.0
         - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
           value: strimzi/kafka-connect:latest
         - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE

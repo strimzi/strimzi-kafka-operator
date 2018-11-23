@@ -10,8 +10,6 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.common.operator.MockCertManager;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
@@ -30,31 +28,20 @@ import static org.junit.Assert.fail;
 
 class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements MethodRule {
 
-    private final Class<R> cls;
+    private Class<R> cls;
     private String prefix;
     private M model;
-    private Function<R, M> fromK8sResource;
+    private BiFunction<R, KafkaVersion.Lookup, M> fromK8sResource;
     private String resourceName;
 
-    ResourceTester(Class<R> cls, Function<R, M> fromK8sResource) {
+    ResourceTester(Class<R> cls, BiFunction<R, KafkaVersion.Lookup, M> fromK8sResource) {
         this.cls = cls;
         this.fromK8sResource = fromK8sResource;
     }
 
-    ResourceTester(Class<R> cls, BiFunction<R, ClusterCa, M> fromResource) {
+    ResourceTester(Class<R> cls, Function<R, M> fromK8sResource) {
         this.cls = cls;
-        this.fromK8sResource = resource -> {
-            return fromResource.apply(resource,
-                    new ClusterCa(new MockCertManager(), resource.getMetadata().getName(),
-                            ResourceUtils.createInitialCaCertSecret(resource.getMetadata().getNamespace(),
-                                    resource.getMetadata().getName(),
-                                    AbstractModel.clusterCaCertSecretName(resource.getMetadata().getName()),
-                                    MockCertManager.clusterCaCert()),
-                            ResourceUtils.createInitialCaKeySecret(resource.getMetadata().getNamespace(),
-                                    resource.getMetadata().getName(),
-                                    AbstractModel.clusterCaKeySecretName(resource.getMetadata().getName()),
-                                    MockCertManager.clusterCaKey())));
-        };
+        this.fromK8sResource = (x, y) -> fromK8sResource.apply(x);
     }
 
     static <T> T fromYaml(URL url, Class<T> c) {
@@ -128,7 +115,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
         } else {
             R cm = fromYaml(resource, cls);
             // Construct the desired resources from the CM
-            model = fromK8sResource.apply(cm);
+            model = fromK8sResource.apply(cm, new KafkaVersion.Lookup());
         }
         return base;
     }

@@ -22,7 +22,7 @@ kafka:
   image:
     repository: strimzi
     name: kafka
-    tag: latest
+    tagPrefix: latest
 kafkaConnect:
   image:
     repository: strimzi

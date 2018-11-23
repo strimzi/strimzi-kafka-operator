@@ -20,6 +20,7 @@ helm_lint:
 	helm lint --debug $(CHART_PATH)
 
 helm_template:
+	./kafka-version-tpl.sh strimzi-kafka-operator/templates/_kafka_image_map.tpl
 	# Generating rendered template files to: $(CHART_RENDERED_TEMPLATES_TMP)
 	mkdir -p $(CHART_RENDERED_TEMPLATES_TMP)
 	helm template --namespace myproject --output-dir $(CHART_RENDERED_TEMPLATES_TMP) $(CHART_PATH)

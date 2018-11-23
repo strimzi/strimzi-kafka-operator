@@ -1,0 +1,27 @@
+# This file is used to specify the versions of Kafka which will be built
+# and supported by the Cluster Operator. It affects both compile time and runtime:
+#   * The docker images built (see docker-images/build.sh)
+#   * The KAFKA_IMAGE_MAP configuring the CO in the helm-charts (see helm-charts/kafka-version-tpl.sh)
+#   * The io.strimzi.operator.cluster.model.KafkaVersion's loaded at runtime
+# The idea is that this is the single place you need to update when changing the supported Kafka versions
+
+# Format of this file:
+# blank lines are ignored
+# lines starting with # are comments
+# non-comment lines are whitespace separated and have the format
+#   <version>  <default>  <proto>   <msg>   <sha512>
+# where:
+#   <version> is the kafka version number
+#   <default> is default if this is the default Kafka version, or empty otherwise
+#   <proto> is the Kafka protocol version used by this Kafka version
+#   <msg> is the Kafka message version used by this Kafka version
+#   <sha512> is the SHA512 checksum
+
+# NOTICE: If you change the default here, you should also change it in documentation/book/common/attributes.adoc
+
+# version default  proto   msg   sha512
+#1.0.2              1.0     1.0   4CBCDAF8CCC4EFE3D1B6275F3F2C32CF8F2F1A62104B5DD0BD9E2974160AB89D85A6E1791AF8B948A413B99ED696B06EA9D4299B27EA63C3F7318DABF5761144
+#1.1.1              1.1     1.1   2A1EB9A7C8C8337C424EEFED7BAAE26B3DACBA6A4AB8B64D9A7D5C6EE2CDB66CFA76C5B366F23435941569B89BF02482625189016296B2EA2A05FD0F38F6B709
+2.0.0     default  2.0     2.0   b28e81705e30528f1abb6766e22dfe9dae50b1e1e93330c880928ff7a08e6b38ee71cbfc96ec14369b2dfd24293938702cab422173c8e01955a9d1746ae43f98
+2.0.1              2.0     2.0   9773A85EF2898B4BAE20481DF4CFD5488BD195FFFD700FCC874A9FA55065F6873F2EE12F46D2F6A6CCB5D5A93DDB7DEC19227AEF5D39D4F72B545EC63B24BB2F
+2.1.0              2.1     2.1   05A07E928C439B1084A6B3F6835F067F9636AC47F9473DCAAF7040D339CBD0A4561B7478531B237AA69E27F50FE3A2E7F4D0F2BA99A6422592A89ECF1187FA25

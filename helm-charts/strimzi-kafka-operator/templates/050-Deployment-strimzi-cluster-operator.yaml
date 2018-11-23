@@ -37,8 +37,7 @@ spec:
               value: {{ .Values.operationTimeoutMs | quote }}
             - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
               value: "{{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tag .Values.imageTagOverride }}"
-            - name: STRIMZI_DEFAULT_KAFKA_IMAGE
-              value: "{{ default .Values.kafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafka.image.name }}:{{ default .Values.kafka.image.tag .Values.imageTagOverride }}"
+            {{- template "strimzi.kafka.image.map" . }}
             - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
               value: "{{ default .Values.kafkaConnect.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.kafkaConnect.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE

@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 
@@ -48,7 +49,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testReconciliationInterval() {
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false);
+        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, emptyMap());
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(60_000, config.getReconciliationIntervalMs());
