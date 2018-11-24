@@ -17,7 +17,8 @@
 :ProductLongName: Strimzi
 :ProductName: Strimzi
 :ContextProduct: strimzi
-:ProductVersion: master
+:ProductVersion: latest
+:GithubVersion: master
 :OpenShiftName: OpenShift
 :OpenShiftLongName: OpenShift Origin
 :OpenShiftVersion: 3.9 and later

@@ -2,9 +2,14 @@ TOPDIR=$(dir $(lastword $(MAKEFILE_LIST)))
 
 include ./Makefile.os
 
+GITHUB_VERSION ?= master
 RELEASE_VERSION ?= latest
 CHART_PATH ?= ./helm-charts/strimzi-kafka-operator/
 CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | tr A-Z a-z)
+
+ifneq ($(RELEASE_VERSION),latest)
+  GITHUB_VERSION = $(RELEASE_VERSION)
+endif
 
 SUBDIRS=docker-images helm-charts test crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init install examples metrics
 DOCKER_TARGETS=docker_build docker_push docker_tag
@@ -71,15 +76,15 @@ helm_pkg:
 docu_html: docu_htmlclean docu_check
 	mkdir -p documentation/html
 	$(CP) -vrL documentation/book/images documentation/html/images
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) documentation/book/master.adoc -o documentation/html/index.html
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/book/master.adoc -o documentation/html/index.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
 
 
 docu_htmlnoheader: docu_htmlnoheaderclean docu_check
 	mkdir -p documentation/htmlnoheader
 	$(CP) -vrL documentation/book/images documentation/htmlnoheader/images
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -s documentation/book/master.adoc -o documentation/htmlnoheader/master.html
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -s documentation/contributing/master.adoc -o documentation/htmlnoheader/contributing.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/book/master.adoc -o documentation/htmlnoheader/master.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/contributing/master.adoc -o documentation/htmlnoheader/contributing.html
 
 docu_check:
 	./.travis/check_docs.sh
