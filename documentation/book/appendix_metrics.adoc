@@ -15,7 +15,7 @@ endif::InstallationAppendix[]
 === Kafka Metrics Configuration
 
 Strimzi uses the https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter] to export JMX metrics from Kafka and ZooKeeper to a Prometheus HTTP metrics endpoint that is scraped by Prometheus server.
-The Grafana dashboard relies on the Kafka and ZooKeeper Prometheus JMX Exporter relabeling rules defined in the example `Kafka` resource configuration in https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/kafka/kafka-metrics.yaml[`kafka-metrics.yaml`].
+The Grafana dashboard relies on the Kafka and ZooKeeper Prometheus JMX Exporter relabeling rules defined in the example `Kafka` resource configuration in https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml[`kafka-metrics.yaml`].
 Copy this configuration to your own `Kafka` resource definition, or run this example, in order to use the provided Grafana dashboards.
 
 ==== Deploying on {OpenShiftName}
@@ -23,7 +23,7 @@ Copy this configuration to your own `Kafka` resource definition, or run this exa
 To deploy the example Kafka cluster the following command should be executed:
 
 [source,shell,subs=attributes+]
-oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/kafka/kafka-metrics.yaml
+oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml
 
 ifdef::Kubernetes[]
 ==== Deploying on {KubernetesName}
@@ -31,13 +31,13 @@ ifdef::Kubernetes[]
 To deploy the example Kafka cluster the following command should be executed:
 
 [source,shell,subs=attributes+]
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/kafka/kafka-metrics.yaml
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml
 
 endif::Kubernetes[]
 
 === Prometheus
 
-The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/prometheus/kubernetes.yaml[`kubernetes.yaml`] YAML file describes all the resources required by Prometheus in order to effectively monitor a Strimzi Kafka & ZooKeeper cluster.
+The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml[`kubernetes.yaml`] YAML file describes all the resources required by Prometheus in order to effectively monitor a Strimzi Kafka & ZooKeeper cluster.
 These resources lack important production configuration to run a healthy and highly available Prometheus server.
 They should only be used to demonstrate this Grafana dashboard example.
 
@@ -56,7 +56,7 @@ To deploy all these resources you can run the following.  Note that this file cr
 
 [source,shell,subs=attributes+]
 oc login -u system:admin
-oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/prometheus/kubernetes.yaml
+oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml
 
 ifdef::Kubernetes[]
 ==== Deploying on {KubernetesName}
@@ -64,7 +64,7 @@ ifdef::Kubernetes[]
 To deploy all these resources you can run the following.  Note that this file creates a `ClusterRoleBinding` in the `myproject` namespace.  If you're not using this namespace then download the resource file locally and update it.
 
 [source,shell,subs=attributes+]
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/prometheus/kubernetes.yaml
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml
 
 endif::Kubernetes[]
 
@@ -77,7 +77,7 @@ A Grafana server is necessary to get a visualisation of the Prometheus metrics. 
 To deploy Grafana the following commands should be executed:
 
 [source,shell,subs=attributes+]
-oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/grafana/kubernetes.yaml
+oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/kubernetes.yaml
 
 ifdef::Kubernetes[]
 ==== Deploying on {KubernetesName}
@@ -85,7 +85,7 @@ ifdef::Kubernetes[]
 To deploy Grafana the following commands should be executed:
 
 [source,shell,subs=attributes+]
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{ProductVersion}/metrics/examples/grafana/kubernetes.yaml
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/kubernetes.yaml
 
 endif::Kubernetes[]
 
