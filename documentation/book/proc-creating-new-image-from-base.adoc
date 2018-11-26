@@ -33,6 +33,8 @@ USER {DockerImageUser}
 
 . Push your custom image to your container registry.
 
+//Why are we offering two options? Do they achieve the same thing? If so I say we should be more prescriptive. YOU ASKED PAOLO FOR HELP ON GCHAT.
+
 . Perform one of the following tasks:
 
 * Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource to point to the new container image.
