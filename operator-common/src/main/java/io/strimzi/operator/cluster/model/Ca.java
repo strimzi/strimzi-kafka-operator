@@ -11,6 +11,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.Util;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,7 +84,7 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CA_CERT_GENERATION = "strimzi.io/ca-cert-generation";
     public static final String ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION = "strimzi.io/cluster-ca-cert-generation";
     public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = "strimzi.io/clients-ca-cert-generation";
-    private static final int INIT_GENERATION = 0;
+    public static final int INIT_GENERATION = 0;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
@@ -314,7 +315,7 @@ public abstract class Ca {
         // cluster CA certificate generation annotation handling
         int caCertGeneration = INIT_GENERATION;
         if (caCertSecret != null && caCertSecret.getData().get(CA_CRT) != null) {
-            String caCertGenerationAnnotation = caCertSecret.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_CA_CERT_GENERATION);
+            String caCertGenerationAnnotation = Util.annotations(caCertSecret).get(ANNO_STRIMZI_IO_CA_CERT_GENERATION);
             if (caCertGenerationAnnotation != null) {
                 caCertGeneration = Integer.parseInt(caCertGenerationAnnotation);
                 if (caRenewed) {

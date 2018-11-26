@@ -38,6 +38,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -1125,8 +1126,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             String podAnnotation = ca instanceof ClientsCa ?
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION :
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
-            final int podCaCertGeneration =
-                    Integer.parseInt(pod.getMetadata().getAnnotations().get(podAnnotation));
+            String generation = Util.annotations(pod).get(podAnnotation);
+            final int podCaCertGeneration = generation != null ?
+                    Integer.parseInt(generation) : Ca.INIT_GENERATION;
             return caCertGeneration == podCaCertGeneration;
         }
 
