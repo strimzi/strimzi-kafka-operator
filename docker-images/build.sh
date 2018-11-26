@@ -27,23 +27,16 @@ function build {
     for image in $(echo "$java_images $stunnel_images"); do
         make -C "$image" "$targets"
     done
-    #if [ "$targets" != "docker_build" ]; then
-        # Images depending on Kafka version (possibly indirectly thru FROM)
-        for kafka_version in ${!checksums[@]}; do
-            sha=${checksums[$kafka_version]}
-            for image in $(echo "$kafka_images"); do
-                #if [ "$targets" == "docker_tag" ]; then
-                #    DOCKER_BUILD_ARGS="--build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_SHA512=${sha} ${build_args}" \
-                #    DOCKER_TAG="${strimzi_version}-kafka-${kafka_version}" \
-                #    make -C "$image" "docker_build"
-                #fi
-                DOCKER_BUILD_ARGS="--build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_SHA512=${sha} ${build_args}" \
-                DOCKER_TAG="${strimzi_version}-kafka-${kafka_version}" \
-                BUILD_TAG="build-kafka-${kafka_version}" \
-                make -C "$image" "$targets"
-            done
+    # Images depending on Kafka version (possibly indirectly thru FROM)
+    for kafka_version in ${!checksums[@]}; do
+        sha=${checksums[$kafka_version]}
+        for image in $(echo "$kafka_images"); do
+            DOCKER_BUILD_ARGS="--build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_SHA512=${sha} ${build_args}" \
+            DOCKER_TAG="${strimzi_version}-kafka-${kafka_version}" \
+            BUILD_TAG="build-kafka-${kafka_version}" \
+            make -C "$image" "$targets"
         done
-    #fi
+    done
 }
 
 load_checksums
