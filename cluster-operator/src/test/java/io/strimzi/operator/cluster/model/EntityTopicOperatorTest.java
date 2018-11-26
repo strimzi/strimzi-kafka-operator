@@ -99,7 +99,7 @@ public class EntityTopicOperatorTest {
         assertEquals(toZookeeperSessionTimeout * 1000, entityTopicOperator.getZookeeperSessionTimeoutMs());
         assertEquals(EntityTopicOperator.defaultZookeeperConnect(cluster), entityTopicOperator.getZookeeperConnect());
         assertEquals(EntityTopicOperator.defaultBootstrapServers(cluster), entityTopicOperator.getKafkaBootstrapServers());
-        assertEquals(ModelUtils.defaultResourceLabels(cluster), entityTopicOperator.getTopicConfigMapLabels());
+        assertEquals(ModelUtils.defaultResourceLabels(cluster), entityTopicOperator.getResourceLabels());
         assertEquals(toTopicMetadataMaxAttempts, entityTopicOperator.getTopicMetadataMaxAttempts());
         assertEquals(topicOperatorLogging.getType(), entityTopicOperator.getLogging().getType());
         assertEquals(topicOperatorLogging.getLoggers(), ((InlineLogging) entityTopicOperator.getLogging()).getLoggers());
@@ -127,7 +127,7 @@ public class EntityTopicOperatorTest {
         assertEquals(EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS, entityTopicOperator.getTopicMetadataMaxAttempts());
         assertEquals(EntityTopicOperator.defaultZookeeperConnect(cluster), entityTopicOperator.getZookeeperConnect());
         assertEquals(EntityTopicOperator.defaultBootstrapServers(cluster), entityTopicOperator.getKafkaBootstrapServers());
-        assertEquals(ModelUtils.defaultResourceLabels(cluster), entityTopicOperator.getTopicConfigMapLabels());
+        assertEquals(ModelUtils.defaultResourceLabels(cluster), entityTopicOperator.getResourceLabels());
         assertNull(entityTopicOperator.getLogging());
     }
 
