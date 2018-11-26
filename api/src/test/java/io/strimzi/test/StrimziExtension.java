@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
@@ -218,14 +219,21 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 String podName = pod.getMetadata().getName();
 
                 client.pods().withName(podName).get().getStatus().getContainerStatuses().forEach(containerStatus -> {
-                    String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
-                    // Print container logs to console
-                    LOGGER.info("Logs for container {} from pod {}{}{}", containerStatus.getName(), podName, System.lineSeparator(), log);
+                    try {
+                        String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
+                        // Print container logs to console
+                        LOGGER.info("Logs for container {} from pod {}{}{}", containerStatus.getName(), podName, System.lineSeparator(), log);
 
-                    // Write logs from containers to files
-                    writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+                        // Write logs from containers to files
+                        writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().equals("container \"" + containerStatus.getName() + "\" in pod \"" + podName + "\" is terminated")) {
+                            LOGGER.info("Container {} in pod {} is terminated before teardown", containerStatus.getName(), podName);
+                        } else {
+                            throw e;
+                        }
                     }
-                );
+                });
             });
         }
 
