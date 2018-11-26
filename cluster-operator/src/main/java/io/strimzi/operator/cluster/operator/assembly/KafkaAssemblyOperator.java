@@ -316,7 +316,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (futss != null) {
                 return futss.compose(ss -> {
                     if (ss != null) {
-                        String value = ss.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_RESTART);
+                        String value = Util.annotations(ss).get(ANNOTATION_MANUAL_RESTART);
                         if (value != null && value.equals("true")) {
                             return kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
 
@@ -337,7 +337,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (futss != null) {
                 return futss.compose(ss -> {
                     if (ss != null) {
-                        String value = ss.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_RESTART);
+                        String value = Util.annotations(ss).get(ANNOTATION_MANUAL_RESTART);
                         if (value != null && value.equals("true")) {
 
                             return zkSetOperations.maybeRollingUpdate(ss, pod -> {
@@ -1170,7 +1170,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         private int getCaCertGeneration(Ca ca) {
-            return Integer.parseInt(ca.caCertSecret().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION));
+            String generation = Util.annotations(ca.caCertSecret()).get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
+            return generation != null ? Integer.parseInt(generation) : Ca.INIT_GENERATION;
         }
     }
 

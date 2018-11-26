@@ -344,8 +344,7 @@ public abstract class Ca {
             result = true;
             this.caRenewed = caKeySecret != null;
         } else if (this.caCertSecret.getMetadata() != null
-                && this.caCertSecret.getMetadata().getAnnotations() != null
-                && "true".equals(this.caCertSecret.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FORCE_RENEW))) {
+                && "true".equals(Util.annotations(this.caCertSecret).get(ANNO_STRIMZI_IO_FORCE_RENEW))) {
             reason = "CA certificate secret " + caCertSecretName + " is annotated with " + ANNO_STRIMZI_IO_FORCE_RENEW;
             result = true;
             this.caRenewed = true;

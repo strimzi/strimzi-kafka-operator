@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -71,16 +72,11 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
 
     @Override
     protected Future<ReconcileResult<Deployment>> internalPatch(String namespace, String name, Deployment current, Deployment desired, boolean cascading) {
-        if (current.getMetadata().getAnnotations() != null) {
-            String k8sRev = current.getMetadata().getAnnotations().get("deployment.kubernetes.io/revision");
-            if (k8sRev != null) {
-                if (desired.getMetadata().getAnnotations() == null) {
-                    desired.getMetadata().setAnnotations(new HashMap<>(1));
-                }
-                desired.getMetadata().getAnnotations().put("deployment.kubernetes.io/revision", k8sRev);
-            }
+        String k8sRev = Util.annotations(current).get("deployment.kubernetes.io/revision");
+        if (desired.getMetadata().getAnnotations() == null) {
+            desired.getMetadata().setAnnotations(new HashMap<>(1));
         }
-
+        desired.getMetadata().getAnnotations().put("deployment.kubernetes.io/revision", k8sRev);
         return super.internalPatch(namespace, name, current, desired, cascading);
     }
 }
