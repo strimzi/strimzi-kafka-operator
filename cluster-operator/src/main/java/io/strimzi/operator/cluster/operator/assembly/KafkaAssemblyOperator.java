@@ -901,6 +901,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
+            kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
             StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(isOpenShift);
             kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations()
                     .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
