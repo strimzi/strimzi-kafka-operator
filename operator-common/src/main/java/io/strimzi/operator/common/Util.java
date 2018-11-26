@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -11,11 +12,19 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Map;
 import java.util.function.BooleanSupplier;
+
+import static java.util.Collections.emptyMap;
 
 public class Util {
 
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
+
+    public static Map<String, String> annotations(HasMetadata resource) {
+        Map<String, String> annotations = resource.getMetadata().getAnnotations();
+        return annotations != null ? annotations : emptyMap();
+    }
 
     /**
      * Returns a future that completes when the given {@code ready} indicates readiness.
