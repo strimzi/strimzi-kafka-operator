@@ -77,7 +77,7 @@ public class EntityTopicOperator extends AbstractModel {
         this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
         this.zookeeperSessionTimeoutMs = EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
-        this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
+        this.topicConfigMapLabels = ModelUtils.defaultResourceLabels(cluster);
         this.topicMetadataMaxAttempts = EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
 
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
@@ -148,11 +148,6 @@ public class EntityTopicOperator extends AbstractModel {
 
     protected static String defaultBootstrapServers(String cluster) {
         return KafkaCluster.serviceName(cluster) + ":" + EntityTopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
-    }
-
-    protected static String defaultTopicConfigMapLabels(String cluster) {
-        return String.format("%s=%s",
-                Labels.STRIMZI_CLUSTER_LABEL, cluster);
     }
 
     public static String topicOperatorName(String cluster) {

@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.operator.common.model.Labels;
 
 import java.util.List;
 
@@ -31,5 +32,16 @@ public class ModelUtils {
 
     public static int getRenewalDays(CertificateAuthority certificateAuthority) {
         return certificateAuthority != null ? certificateAuthority.getRenewalDays() : 30;
+    }
+
+    /**
+     * Generate labels used by entity-operators to find the resources related to given cluster
+     *
+     * @param cluster   Name of the cluster
+     * @return  Map with label definition
+     */
+    public static String defaultResourceLabels(String cluster) {
+        return String.format("%s=%s",
+                Labels.STRIMZI_CLUSTER_LABEL, cluster);
     }
 }
