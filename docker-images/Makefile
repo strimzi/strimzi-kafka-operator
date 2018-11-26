@@ -14,7 +14,7 @@ docker_build:
 docker_tag:
 	./build.sh docker_tag
 
-docker_push: docker_tag
+docker_push:
 	./build.sh docker_push
 
 all: docker_build docker_push
