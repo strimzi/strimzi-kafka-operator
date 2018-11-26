@@ -32,9 +32,9 @@ m¦FileStreamSinkConnector
 
 |===
 
-In {ProductName}, you can use the Cluster Operator to deploy a Kafka Connect or a Kafka Connect Source-2-Image (S2I) cluster to your {ProductPlatformName} cluster.
+In {ProductName}, you can use the Cluster Operator to deploy a Kafka Connect or Kafka Connect Source-2-Image (S2I) cluster to your {ProductPlatformName} cluster.
 
-The Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers. The Kafka Connect REST API is available on port 8083, as the `kafka-connect` service.
+A Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers. The Kafka Connect REST API is available on port 8083, as the `kafka-connect` service.
 
 For more information on deploying a Kafka Connect S2I cluster, see xref:using-openshift-s2i-create-image-str[Creating a container image using {OpenShiftName} builds and Source-to-Image].
 
