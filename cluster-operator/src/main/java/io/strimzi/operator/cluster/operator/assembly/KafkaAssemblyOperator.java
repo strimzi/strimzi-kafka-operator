@@ -55,11 +55,15 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.quartz.CronExpression;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.SortedMap;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
 
@@ -125,7 +129,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
-                .compose(state -> state.getZookeeperState())
+                .compose(state -> state.getZookeeperDescription())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
@@ -354,7 +358,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return Future.succeededFuture(this);
         }
 
-        Future<ReconciliationState> getZookeeperState() {
+        Future<ReconciliationState> getZookeeperDescription() {
             Future<ReconciliationState> fut = Future.future();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -1002,11 +1006,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> topicOperatorDeployment() {
-            if (this.toDeployment != null) {
-                toDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
-                        .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
+
+            if (this.topicOperator != null) {
+
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.topicOperator.getName());
+                if (future != null) {
+                    return future.compose(dep -> {
+                        // getting the current cluster CA generation from the current deployment, if exists
+                        int caCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
+                        // if maintenance windows are satisfied, the cluster CA generation could be changed
+                        // and EO needs a rolling update updating the related annotation
+                        boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied();
+                        if (isSatisfiedBy) {
+                            caCertGeneration = getCaCertGeneration(this.clusterCa);
+                        }
+                        toDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
+                                .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                        return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
+                    }).map(i -> this);
+                }
             }
-            return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
+            return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> topicOperatorSecret() {
@@ -1100,11 +1120,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorDeployment() {
+
             if (this.entityOperator != null) {
-                eoDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
-                        .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
+
+                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
+                if (future != null) {
+                    return future.compose(dep -> {
+                        // getting the current cluster CA generation from the current deployment, if exists
+                        int caCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
+                        // if maintenance windows are satisfied, the cluster CA generation could be changed
+                        // and EO needs a rolling update updating the related annotation
+                        boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied();
+                        if (isSatisfiedBy) {
+                            caCertGeneration = getCaCertGeneration(this.clusterCa);
+                        }
+                        eoDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
+                                .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                        return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
+                    }).map(i -> this);
+                }
             }
-            return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
+            return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> entityOperatorSecret() {
@@ -1124,9 +1160,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
             final int caCertGeneration = getCaCertGeneration(ca);
-            String podAnnotation = ca instanceof ClientsCa ?
-                    Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION :
-                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
+            String podAnnotation = getCaCertAnnotation(ca);
             String generation = Util.annotations(pod).get(podAnnotation);
             final int podCaCertGeneration = generation != null ?
                     Integer.parseInt(generation) : Ca.INIT_GENERATION;
@@ -1140,6 +1174,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             for (Ca ca: cas) {
                 isCaCertsChanged |= ca.certRenewed() || ca.certsRemoved();
                 isPodCaCertUpToDate &= isPodCaCertUpToDate(pod, ca);
+            }
+
+            boolean isPodToRestart = !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertsChanged;
+            boolean isSatisfiedBy = true;
+            // it makes sense to check maintenance windows if pod restarting is needed
+            if (isPodToRestart) {
+                isSatisfiedBy = isMaintenanceTimeWindowsSatisfied();
             }
 
             if (log.isDebugEnabled()) {
@@ -1162,16 +1203,64 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     reasons.add("Pod has old generation");
                 }
                 if (!reasons.isEmpty()) {
-                    log.debug("{}: Rolling pod {} due to {}",
-                            reconciliation, pod.getMetadata().getName(), reasons);
+                    if (isSatisfiedBy) {
+                        log.debug("{}: Rolling pod {} due to {}",
+                                reconciliation, pod.getMetadata().getName(), reasons);
+                    } else {
+                        log.debug("{}: Potential pod {} rolling due to {} but maintenance time windows not satisfied",
+                                reconciliation, pod.getMetadata().getName(), reasons);
+                    }
                 }
             }
-            return !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertsChanged;
+            return isSatisfiedBy && isPodToRestart;
+        }
+
+        private boolean isMaintenanceTimeWindowsSatisfied() {
+            try {
+                boolean isSatisfiedBy = getMaintenanceTimeWindows() == null || getMaintenanceTimeWindows().isEmpty();
+                if (!isSatisfiedBy) {
+                    Date date = new Date();
+                    for (String cron : getMaintenanceTimeWindows()) {
+                        CronExpression cronExpression = new CronExpression(cron);
+                        // the user defines the cron expression in "his" timezone but CO pod
+                        // can be running on a different one, so setting it on the cron expression
+                        cronExpression.setTimeZone(TimeZone.getDefault());
+                        if (cronExpression.isSatisfiedBy(date)) {
+                            isSatisfiedBy = true;
+                            break;
+                        }
+                    }
+                }
+                return isSatisfiedBy;
+            } catch (ParseException e) {
+                log.warn("The provided maintenance time windows list contains a not valid cron expression");
+                return false;
+            }
+        }
+
+        private List<String> getMaintenanceTimeWindows() {
+            return kafkaAssembly.getSpec().getMaintenanceTimeWindows();
+        }
+
+        private int getDeploymentCaCertGeneration(Deployment dep, Ca ca) {
+            int caCertGeneration = 0;
+            if (dep != null) {
+                String depAnnotation = getCaCertAnnotation(ca);
+                caCertGeneration =
+                        Integer.parseInt(dep.getSpec().getTemplate().getMetadata().getAnnotations().get(depAnnotation));
+            }
+            return caCertGeneration;
         }
 
         private int getCaCertGeneration(Ca ca) {
             String generation = Util.annotations(ca.caCertSecret()).get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
             return generation != null ? Integer.parseInt(generation) : Ca.INIT_GENERATION;
+        }
+
+        private String getCaCertAnnotation(Ca ca) {
+            return ca instanceof ClientsCa ?
+                    Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION :
+                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
         }
     }
 
