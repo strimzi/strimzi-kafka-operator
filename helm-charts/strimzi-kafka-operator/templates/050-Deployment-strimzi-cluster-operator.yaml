@@ -36,14 +36,14 @@ spec:
             - name: STRIMZI_OPERATION_TIMEOUT_MS
               value: {{ .Values.operationTimeoutMs | quote }}
             - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
-              value: "{{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tag .Values.imageTagOverride }}"
+              value: "{{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tag .Values.imageTagOverride }}-kafka-2.0.0"
             {{- template "strimzi.kafka.image.map" . }}
             - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
-              value: "{{ default .Values.kafkaConnect.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.kafkaConnect.image.tag .Values.imageTagOverride }}"
+              value: "{{ default .Values.kafkaConnect.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.kafkaConnect.image.tag .Values.imageTagOverride }}-kafka-2.0.0"
             - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
-              value: "{{ default .Values.kafkaConnects2i.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnects2i.image.name }}:{{ default .Values.kafkaConnects2i.image.tag .Values.imageTagOverride }}"
+              value: "{{ default .Values.kafkaConnects2i.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaConnects2i.image.name }}:{{ default .Values.kafkaConnects2i.image.tag .Values.imageTagOverride }}-kafka-2.0.0"
             - name: STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE
-              value: "{{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tag .Values.imageTagOverride }}"
+              value: "{{ default .Values.kafkaMirrorMaker.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tag .Values.imageTagOverride }}-kafka-2.0.0"
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
               value: "{{ default .Values.topicOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.topicOperator.image.name }}:{{ default .Values.topicOperator.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
