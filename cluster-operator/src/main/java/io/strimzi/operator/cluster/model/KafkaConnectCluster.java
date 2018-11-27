@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTls;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
@@ -40,10 +41,6 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final int REST_API_PORT = 8083;
     protected static final String REST_API_PORT_NAME = "rest-api";
 
-    private static final String NAME_SUFFIX = "-connect";
-    private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
-
-    private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/connect-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/kafka/connect-password/";
 
@@ -99,15 +96,15 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     public static String kafkaConnectClusterName(String cluster) {
-        return cluster + KafkaConnectCluster.NAME_SUFFIX;
+        return KafkaConnectResources.kafkaConnectDeploymentName(cluster);
     }
 
     public static String serviceName(String cluster) {
-        return cluster + KafkaConnectCluster.SERVICE_NAME_SUFFIX;
+        return KafkaConnectResources.kafkaConnectRestApiServiceName(cluster);
     }
 
     public static String logAndMetricsConfigName(String cluster) {
-        return cluster + KafkaConnectCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
+        return KafkaConnectResources.kafkaConnectMetricsAndLogConfigMapName(cluster);
     }
 
     public static KafkaConnectCluster fromCrd(KafkaConnect kafkaConnect) {
