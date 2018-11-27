@@ -700,11 +700,15 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
                     if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
                         String value = envVar.get("value").textValue();
-                        ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTag(value));
+                        String v = TestUtils.changeOrgAndTag(value);
+                        LOGGER.info("{}={}", varName, v);
+                        ((ObjectNode) envVar).put("value", v);
                     }
                     if (varName.matches("STRIMZI_KAFKA_IMAGE_MAP")) {
                         String value = envVar.get("value").textValue();
-                        ((ObjectNode) envVar).put("value", TestUtils.changeOrgAndTagInImageMap(value));
+                        String v = TestUtils.changeOrgAndTagInImageMap(value);
+                        LOGGER.info("STRIMZI_KAFKA_IMAGE_MAP={}", v);
+                        ((ObjectNode) envVar).put("value", v);
                     }
                     // Set log level
                     if (varName.equals("STRIMZI_LOG_LEVEL")) {
