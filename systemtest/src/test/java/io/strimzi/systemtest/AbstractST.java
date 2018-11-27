@@ -355,7 +355,7 @@ public class AbstractST {
 
     public Map<String, String> getImagesFromConfig(String configJson) {
         Map<String, String> images = new HashMap<>();
-        for (Container c : client.extensions().deployments().withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : client.extensions().deployments().inNamespace(kubeClient.namespace()).withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }
