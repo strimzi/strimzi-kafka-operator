@@ -8,6 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Job;
 import io.fabric8.kubernetes.api.model.JobBuilder;
@@ -69,10 +70,10 @@ import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class AbstractST {
@@ -353,23 +354,13 @@ public class AbstractST {
     }
 
     public Map<String, String> getImagesFromConfig(String configJson) {
-        kubeClient.getResourceAsJson("deployment", "strimzi-cluster-operator");
         Map<String, String> images = new HashMap<>();
-        images.put(ZK_IMAGE, getImageNameFromJSON(configJson, ZK_IMAGE));
-        images.put(KAFKA_IMAGE_MAP, getImageNameFromJSON(configJson, KAFKA_IMAGE_MAP));
-        images.put(CONNECT_IMAGE, getImageNameFromJSON(configJson, CONNECT_IMAGE));
-        images.put(S2I_IMAGE, getImageNameFromJSON(configJson, S2I_IMAGE));
-        images.put(TO_IMAGE, getImageNameFromJSON(configJson, TO_IMAGE));
-        images.put(UO_IMAGE, getImageNameFromJSON(configJson, UO_IMAGE));
-        images.put(KAFKA_INIT_IMAGE, getImageNameFromJSON(configJson, KAFKA_INIT_IMAGE));
-        images.put(TLS_SIDECAR_ZOOKEEPER_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_ZOOKEEPER_IMAGE));
-        images.put(TLS_SIDECAR_KAFKA_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_KAFKA_IMAGE));
-        images.put(TLS_SIDECAR_EO_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_EO_IMAGE));
+        for (Container c : client.extensions().deployments().withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
+            for (EnvVar envVar : c.getEnv()) {
+                images.put(envVar.getName(), envVar.getValue());
+            }
+        }
         return images;
-    }
-
-    private String getImageNameFromJSON(String json, String image) {
-        return JsonPath.parse(json).read("$.spec.template.spec.containers[*].env[?(@.name =='" + image + "')].value").toString().replaceAll("[\"\\[\\]\\\\]", "");
     }
 
     public String getContainerImageNameFromPod(String podName) {
