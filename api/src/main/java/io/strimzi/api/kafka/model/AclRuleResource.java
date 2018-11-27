@@ -34,7 +34,7 @@ public abstract class AclRuleResource implements Serializable {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Resource type. " +
-            "The available resource types are `topic`, `group`, `cluster` and `transactionalID`.")
+            "The available resource types are `topic`, `group`, `cluster`, and `transactionalID`.")
     public abstract String getType();
 
     @JsonAnyGetter

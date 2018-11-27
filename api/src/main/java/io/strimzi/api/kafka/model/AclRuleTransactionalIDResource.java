@@ -47,7 +47,7 @@ public class AclRuleTransactionalIDResource extends AclRuleResource {
 
     @Description("Describes the pattern used in the resource field. " +
             "The supported types are `literal` and `prefix`. " +
-            "With `literal` pattern type, the resource field will be used as a definition of a full topic name. " +
+            "With `literal` pattern type, the resource field will be used as a definition of a full name. " +
             "With `prefix` pattern type, the resource name will be used only as a prefix. " +
             "Default value is `literal`.")
     @DefaultValue("literal")

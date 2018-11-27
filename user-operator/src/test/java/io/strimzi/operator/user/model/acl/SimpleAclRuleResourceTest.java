@@ -132,7 +132,7 @@ public class SimpleAclRuleResourceTest {
         Resource kafka = new Resource(TransactionalId$.MODULE$, "my-transactionalID", PatternType.LITERAL);
         assertEquals(kafka, strimzi.toKafkaResource());
 
-        // Prefixed trsndsctionalID
+        // Prefixed transactionalID
         strimzi = new SimpleAclRuleResource("my-", SimpleAclRuleResourceType.TRANSACTIONAL_ID, AclResourcePatternType.PREFIX);
         kafka = new Resource(TransactionalId$.MODULE$, "my-", PatternType.PREFIXED);
         assertEquals(kafka, strimzi.toKafkaResource());

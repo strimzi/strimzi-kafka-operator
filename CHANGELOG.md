@@ -3,6 +3,7 @@
 ## 0.9.0
 
 * Add possibility to label and annotate different resources (#1093)
+* Add support for TransactionalID in KafkaUser resource
 * Update to Kafka 2.0.1
 
 ## 0.8.2
