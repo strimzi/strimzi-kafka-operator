@@ -647,6 +647,7 @@ public class KafkaClusterTest {
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-bootstrap"),
                 asList(2, "foo-kafka-bootstrap.test"),
+                asList(2, "foo-kafka-bootstrap.test.svc"),
                 asList(2, "foo-kafka-bootstrap.test.svc.cluster.local")),
                 new HashSet<Object>(cert.getSubjectAlternativeNames()));
 
@@ -671,6 +672,7 @@ public class KafkaClusterTest {
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-bootstrap"),
                 asList(2, "foo-kafka-bootstrap.test"),
+                asList(2, "foo-kafka-bootstrap.test.svc"),
                 asList(2, "foo-kafka-bootstrap.test.svc.cluster.local"),
                 asList(7, "123.10.125.140"),
                 asList(7, "123.10.125.130")),

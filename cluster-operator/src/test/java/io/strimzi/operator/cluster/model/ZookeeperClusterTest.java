@@ -257,6 +257,7 @@ public class ZookeeperClusterTest {
                 asList(2, "foo-zookeeper-0.foo-zookeeper-nodes.test.svc.cluster.local"),
                 asList(2, "foo-zookeeper-client"),
                 asList(2, "foo-zookeeper-client.test"),
+                asList(2, "foo-zookeeper-client.test.svc"),
                 asList(2, "foo-zookeeper-client.test.svc.cluster.local")),
                 new HashSet<Object>(cert.getSubjectAlternativeNames()));
 
