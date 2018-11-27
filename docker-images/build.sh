@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-if [ -n "$RELEASE_VERSION" ]; then
-    strimzi_version="$RELEASE_VERSION"
-else
-    strimzi_version="latest"
-fi
+#if [ -n "$RELEASE_VERSION" ]; then
+#    strimzi_version="$RELEASE_VERSION"
+#else
+#    strimzi_version="latest"
+#fi
 
 java_images="java-base"
 # Note dependency order of the following images
@@ -23,6 +23,7 @@ function load_checksums {
 function build {
     targets="$@"
     build_args="$DOCKER_BUILD_ARGS"
+    tag="$DOCKER_TAG"
     # Images not depending on Kafka version
     for image in $(echo "$java_images $stunnel_images"); do
         make -C "$image" "$targets"
@@ -32,7 +33,7 @@ function build {
         sha=${checksums[$kafka_version]}
         for image in $(echo "$kafka_images"); do
             DOCKER_BUILD_ARGS="--build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_SHA512=${sha} ${build_args}" \
-            DOCKER_TAG="${strimzi_version}-kafka-${kafka_version}" \
+            DOCKER_TAG="${tag}-kafka-${kafka_version}" \
             BUILD_TAG="build-kafka-${kafka_version}" \
             make -C "$image" "$targets"
         done
