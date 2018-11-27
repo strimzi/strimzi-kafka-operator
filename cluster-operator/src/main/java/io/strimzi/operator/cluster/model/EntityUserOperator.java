@@ -35,6 +35,7 @@ public class EntityUserOperator extends AbstractModel {
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
 
     // User Operator configuration keys
+    public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_LABELS";
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
@@ -44,6 +45,7 @@ public class EntityUserOperator extends AbstractModel {
 
     private String zookeeperConnect;
     private String watchedNamespace;
+    private String resourceLabels;
     private long reconciliationIntervalMs;
     private long zookeeperSessionTimeoutMs;
 
@@ -68,6 +70,7 @@ public class EntityUserOperator extends AbstractModel {
         this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
         this.zookeeperSessionTimeoutMs = EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
+        this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
@@ -188,6 +191,7 @@ public class EntityUserOperator extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
+        varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Long.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));

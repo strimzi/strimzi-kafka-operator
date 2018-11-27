@@ -52,7 +52,7 @@ public class EntityTopicOperator extends AbstractModel {
     private String watchedNamespace;
     private int reconciliationIntervalMs;
     private int zookeeperSessionTimeoutMs;
-    private String topicConfigMapLabels;
+    private String resourceLabels;
     private int topicMetadataMaxAttempts;
 
     /**
@@ -77,7 +77,7 @@ public class EntityTopicOperator extends AbstractModel {
         this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
         this.zookeeperSessionTimeoutMs = EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
-        this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
+        this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
         this.topicMetadataMaxAttempts = EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
 
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
@@ -94,12 +94,12 @@ public class EntityTopicOperator extends AbstractModel {
         return watchedNamespace;
     }
 
-    public void setTopicConfigMapLabels(String topicConfigMapLabels) {
-        this.topicConfigMapLabels = topicConfigMapLabels;
+    public void setResourceLabels(String resourceLabels) {
+        this.resourceLabels = resourceLabels;
     }
 
-    public String getTopicConfigMapLabels() {
-        return topicConfigMapLabels;
+    public String getResourceLabels() {
+        return resourceLabels;
     }
 
     public void setReconciliationIntervalMs(int reconciliationIntervalMs) {
@@ -148,11 +148,6 @@ public class EntityTopicOperator extends AbstractModel {
 
     protected static String defaultBootstrapServers(String cluster) {
         return KafkaCluster.serviceName(cluster) + ":" + EntityTopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
-    }
-
-    protected static String defaultTopicConfigMapLabels(String cluster) {
-        return String.format("%s=%s",
-                Labels.STRIMZI_CLUSTER_LABEL, cluster);
     }
 
     public static String topicOperatorName(String cluster) {
@@ -231,7 +226,7 @@ public class EntityTopicOperator extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, topicConfigMapLabels));
+        varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
