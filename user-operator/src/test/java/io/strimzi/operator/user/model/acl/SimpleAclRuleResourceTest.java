@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.AclRuleGroupResource;
 import io.strimzi.api.kafka.model.AclRuleResource;
 import io.strimzi.api.kafka.model.AclRuleTopicResource;
 
-import io.strimzi.api.kafka.model.AclRuleTransactionalIDResource;
+import io.strimzi.api.kafka.model.AclRuleTransactionalIdResource;
 import kafka.security.auth.Cluster$;
 import kafka.security.auth.Group$;
 import kafka.security.auth.Resource;
@@ -69,13 +69,13 @@ public class SimpleAclRuleResourceTest {
     }
 
     @Test
-    public void testTransactionalIDFromCrd()   {
-        // Regular transactionalID
-        AclRuleResource resource = new AclRuleTransactionalIDResource();
+    public void testTransactionalIdFromCrd()   {
+        // Regular transactionalId
+        AclRuleResource resource = new AclRuleTransactionalIdResource();
 
-        ((AclRuleTransactionalIDResource) resource).setName("my-transactionalID");
+        ((AclRuleTransactionalIdResource) resource).setName("my-transactionalId");
         SimpleAclRuleResource simple = SimpleAclRuleResource.fromCrd(resource);
-        assertEquals("my-transactionalID", simple.getName());
+        assertEquals("my-transactionalId", simple.getName());
         assertEquals(SimpleAclRuleResourceType.TRANSACTIONAL_ID, simple.getType());
         assertEquals(AclResourcePatternType.LITERAL, simple.getPattern());
     }
@@ -126,13 +126,13 @@ public class SimpleAclRuleResourceTest {
     }
 
     @Test
-    public void testTransactionalIDToKafka()  {
-        // Regular transactionalID
-        SimpleAclRuleResource strimzi = new SimpleAclRuleResource("my-transactionalID", SimpleAclRuleResourceType.TRANSACTIONAL_ID, null);
-        Resource kafka = new Resource(TransactionalId$.MODULE$, "my-transactionalID", PatternType.LITERAL);
+    public void testTransactionalIdToKafka()  {
+        // Regular transactionalId
+        SimpleAclRuleResource strimzi = new SimpleAclRuleResource("my-transactionalId", SimpleAclRuleResourceType.TRANSACTIONAL_ID, null);
+        Resource kafka = new Resource(TransactionalId$.MODULE$, "my-transactionalId", PatternType.LITERAL);
         assertEquals(kafka, strimzi.toKafkaResource());
 
-        // Prefixed transactionalID
+        // Prefixed transactionalId
         strimzi = new SimpleAclRuleResource("my-", SimpleAclRuleResourceType.TRANSACTIONAL_ID, AclResourcePatternType.PREFIX);
         kafka = new Resource(TransactionalId$.MODULE$, "my-", PatternType.PREFIXED);
         assertEquals(kafka, strimzi.toKafkaResource());
@@ -173,13 +173,13 @@ public class SimpleAclRuleResourceTest {
     }
 
     @Test
-    public void testTransactionalIDFromKafka()  {
-        // Regular transactionalID
-        SimpleAclRuleResource strimzi = new SimpleAclRuleResource("my-transactionalID", SimpleAclRuleResourceType.TRANSACTIONAL_ID, AclResourcePatternType.LITERAL);
-        Resource kafka = new Resource(TransactionalId$.MODULE$, "my-transactionalID", PatternType.LITERAL);
+    public void testTransactionalIdFromKafka()  {
+        // Regular transactionalId
+        SimpleAclRuleResource strimzi = new SimpleAclRuleResource("my-transactionalId", SimpleAclRuleResourceType.TRANSACTIONAL_ID, AclResourcePatternType.LITERAL);
+        Resource kafka = new Resource(TransactionalId$.MODULE$, "my-transactionalId", PatternType.LITERAL);
         assertEquals(strimzi, SimpleAclRuleResource.fromKafkaResource(kafka));
 
-        // Prefixed transactionalID
+        // Prefixed transactionalId
         strimzi = new SimpleAclRuleResource("my-", SimpleAclRuleResourceType.TRANSACTIONAL_ID, AclResourcePatternType.PREFIX);
         kafka = new Resource(TransactionalId$.MODULE$, "my-", PatternType.PREFIXED);
         assertEquals(strimzi, SimpleAclRuleResource.fromKafkaResource(kafka));
@@ -268,11 +268,11 @@ public class SimpleAclRuleResourceTest {
     }
 
     @Test
-    public void testTransactionalIDPassthrough()  {
-        // Regular transactionalID
-        AclRuleResource resource = new AclRuleTransactionalIDResource();
-        ((AclRuleTransactionalIDResource) resource).setName("my-transactionalID");
-        Resource kafka = new Resource(TransactionalId$.MODULE$, "my-transactionalID", PatternType.LITERAL);
+    public void testTransactionalIdPassthrough()  {
+        // Regular transactionalId
+        AclRuleResource resource = new AclRuleTransactionalIdResource();
+        ((AclRuleTransactionalIdResource) resource).setName("my-transactionalId");
+        Resource kafka = new Resource(TransactionalId$.MODULE$, "my-transactionalId", PatternType.LITERAL);
         assertEquals(kafka, SimpleAclRuleResource.fromCrd(resource).toKafkaResource());
     }
 }

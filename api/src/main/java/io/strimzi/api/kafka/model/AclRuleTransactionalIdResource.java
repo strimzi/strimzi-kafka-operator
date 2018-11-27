@@ -20,10 +20,10 @@ import io.vertx.core.cli.annotations.DefaultValue;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "name", "patternType"})
-public class AclRuleTransactionalIDResource extends AclRuleResource {
+public class AclRuleTransactionalIdResource extends AclRuleResource {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_TRANSACTIONAL_ID = "transactionalID";
+    public static final String TYPE_TRANSACTIONAL_ID = "transactionalId";
 
     private AclResourcePatternType patternType = AclResourcePatternType.LITERAL;
 

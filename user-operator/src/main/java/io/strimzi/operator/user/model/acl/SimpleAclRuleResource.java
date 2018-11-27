@@ -9,7 +9,7 @@ import io.strimzi.api.kafka.model.AclRuleClusterResource;
 import io.strimzi.api.kafka.model.AclRuleGroupResource;
 import io.strimzi.api.kafka.model.AclRuleResource;
 import io.strimzi.api.kafka.model.AclRuleTopicResource;
-import io.strimzi.api.kafka.model.AclRuleTransactionalIDResource;
+import io.strimzi.api.kafka.model.AclRuleTransactionalIdResource;
 
 import kafka.security.auth.Cluster$;
 import kafka.security.auth.Group$;
@@ -231,8 +231,8 @@ public class SimpleAclRuleResource {
             return new SimpleAclRuleResource(adapted.getName(), SimpleAclRuleResourceType.GROUP, adapted.getPatternType());
         } else if (resource instanceof AclRuleClusterResource)   {
             return new SimpleAclRuleResource("kafka-cluster", SimpleAclRuleResourceType.CLUSTER, AclResourcePatternType.LITERAL);
-        } else if (resource instanceof AclRuleTransactionalIDResource)   {
-            AclRuleTransactionalIDResource adapted = (AclRuleTransactionalIDResource) resource;
+        } else if (resource instanceof AclRuleTransactionalIdResource)   {
+            AclRuleTransactionalIdResource adapted = (AclRuleTransactionalIdResource) resource;
             return new SimpleAclRuleResource(adapted.getName(), SimpleAclRuleResourceType.TRANSACTIONAL_ID, adapted.getPatternType());
         } else  {
             throw new IllegalArgumentException("Invalid Acl resource class: " + resource.getClass());
