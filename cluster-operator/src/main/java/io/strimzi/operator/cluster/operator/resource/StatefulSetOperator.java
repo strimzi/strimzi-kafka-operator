@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -96,7 +97,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             String podName = name + "-" + i;
             String pvcName = AbstractModel.getPersistentVolumeClaimName(name, i);
             Pod pod = podOperations.get(namespace, podName);
-            String value = pod.getMetadata().getAnnotations().get(ANNOTATION_MANUAL_DELETE_POD_AND_PVC);
+            String value = Util.annotations(pod).get(ANNOTATION_MANUAL_DELETE_POD_AND_PVC);
             if (value != null && Boolean.valueOf(value)) {
                 f = f.compose(ignored -> deletePvc(ss, pvcName))
                         .compose(ignored -> maybeRestartPod(ss, podName, p -> true));

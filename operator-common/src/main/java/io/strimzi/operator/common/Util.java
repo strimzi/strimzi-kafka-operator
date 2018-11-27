@@ -22,8 +22,13 @@ public class Util {
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
 
     public static Map<String, String> annotations(HasMetadata resource) {
-        Map<String, String> annotations = resource.getMetadata().getAnnotations();
-        return annotations != null ? annotations : emptyMap();
+        Map<String, String> annotations;
+        if (resource.getMetadata() != null) {
+            annotations = resource.getMetadata().getAnnotations();
+            return annotations != null ? annotations : emptyMap();
+        } else {
+            return emptyMap();
+        }
     }
 
     /**
