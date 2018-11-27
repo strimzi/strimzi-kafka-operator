@@ -54,13 +54,13 @@ import java.util.stream.IntStream;
 public class Resources {
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
-    private static final long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(5).toMillis();
+    private static final long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(3).toMillis();
     private static final long POLL_INTERVAL_FOR_RESOURCE_READINESS = Duration.ofSeconds(1).toMillis();
     /* Timeout for deployment config is bigger than the timeout for default resource readiness because of creating a new image
     during the deployment process.*/
-    private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(8).toMillis();
-    private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(4).toMillis();
-    private static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(8).toMillis();
+    private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(5).toMillis();
+    private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(3).toMillis();
+    private static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(5).toMillis();
 
     private final NamespacedKubernetesClient client;
 
@@ -206,10 +206,20 @@ public class Resources {
                                 .withInitialDelaySeconds(15)
                                 .withTimeoutSeconds(5)
                             .endLivenessProbe()
+                            .withNewResources()
+                                .withNewRequests()
+                                    .withMemory("1G")
+                                .endRequests()
+                            .endResources()
                         .endKafka()
                         .withNewZookeeper()
-                            .withReplicas(1)
-                .withNewReadinessProbe()
+                            .withReplicas(3)
+                            .withNewResources()
+                                .withNewRequests()
+                                    .withMemory("1G")
+                                .endRequests()
+                                .endResources()
+                            .withNewReadinessProbe()
                 .withInitialDelaySeconds(15)
                 .withTimeoutSeconds(5)
                 .endReadinessProbe()
@@ -257,6 +267,11 @@ public class Resources {
             .withNewSpec()
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectReplicas)
+                .withNewResources()
+                    .withNewRequests()
+                        .withMemory("1G")
+                    .endRequests()
+                .endResources()
             .endSpec();
     }
 
@@ -336,6 +351,11 @@ public class Resources {
                 .withNewProducer()
                     .withBootstrapServers(tlsListener ? targetBootstrapServer + "-kafka-bootstrap:9093" : targetBootstrapServer + "-kafka-bootstrap:9092")
                 .endProducer()
+                .withNewResources()
+                    .withNewRequests()
+                        .withMemory("1G")
+                    .endRequests()
+                .endResources()
             .withReplicas(mirrorMakerReplicas)
             .withWhitelist(".*")
             .endSpec();
@@ -461,6 +481,7 @@ public class Resources {
 
     private void waitForPodDeletion(String namespace, String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
+        LOGGER.info("Available pods: {}", client().pods().inNamespace(namespace).toString());
         TestUtils.waitFor("statefulset " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client().pods().inNamespace(namespace).withName(name).get() == null);
     }
