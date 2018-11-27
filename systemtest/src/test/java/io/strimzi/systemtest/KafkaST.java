@@ -108,7 +108,7 @@ class KafkaST extends AbstractST {
         operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
+        testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 3, false);
         // kafka cluster already deployed
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
         //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
@@ -681,7 +681,7 @@ class KafkaST extends AbstractST {
                 .endKafka()
             .endSpec().done();
 
-        testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
+        testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 3, true);
 
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
         kubeClient.waitForPod(kafkaPodName);

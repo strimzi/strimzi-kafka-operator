@@ -208,7 +208,7 @@ public class Resources {
                             .endLivenessProbe()
                         .endKafka()
                         .withNewZookeeper()
-                            .withReplicas(1)
+                            .withReplicas(3)
                 .withNewReadinessProbe()
                 .withInitialDelaySeconds(15)
                 .withTimeoutSeconds(5)
