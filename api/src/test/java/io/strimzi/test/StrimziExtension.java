@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
@@ -217,14 +218,21 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 String podName = pod.getMetadata().getName();
 
                 client.pods().withName(podName).get().getStatus().getContainerStatuses().forEach(containerStatus -> {
-                    String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
-                    // Print container logs to console
-                    LOGGER.info("Logs for container {} from pod {}{}{}", containerStatus.getName(), podName, System.lineSeparator(), log);
+                    try {
+                        String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
+                        // Print container logs to console
+                        LOGGER.info("Logs for container {} from pod {}{}{}", containerStatus.getName(), podName, System.lineSeparator(), log);
 
-                    // Write logs from containers to files
-                    writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+                        // Write logs from containers to files
+                        writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().equals("container \"" + containerStatus.getName() + "\" in pod \"" + podName + "\" is terminated")) {
+                            LOGGER.info("Container {} in pod {} is terminated before teardown", containerStatus.getName(), podName);
+                        } else {
+                            throw e;
+                        }
                     }
-                );
+                });
             });
         }
 
@@ -506,11 +514,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             return getResources(new ResourceMatcher("statefulset", pattern));
         }
 
-        public ResourceAction logs(String pattern, String container) {
-            list.add(new DumpLogsErrorAction(new ResourceMatcher("pod", pattern), container));
-            return this;
-        }
-
         /**
          * Gets a result.
          *
@@ -551,26 +554,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     .filter(name -> name.matches(namePattern))
                     .map(name -> new ResourceName(kind, name))
                     .collect(Collectors.toList());
-        }
-    }
-
-    class DumpLogsErrorAction implements Consumer<Throwable> {
-
-        private final Supplier<List<ResourceName>> podNameSupplier;
-        private final String container;
-
-        public DumpLogsErrorAction(Supplier<List<ResourceName>> podNameSupplier, String container) {
-            this.podNameSupplier = podNameSupplier;
-            this.container = container;
-        }
-
-        @Override
-        public void accept(Throwable t) {
-            for (ResourceName pod : podNameSupplier.get()) {
-                if (pod.kind.equals("pod") || pod.kind.equals("pods") || pod.kind.equals("po")) {
-                    LOGGER.info("Logs from pod {}:{}{}", pod.name, System.lineSeparator(), indent(kubeClient().logs(pod.name, container)));
-                }
-            }
         }
     }
 
@@ -750,7 +733,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             return TestUtils.toYamlString(node);
         }), (x, y) -> x, LinkedHashMap::new));
         last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
-                .logs(CO_DEPLOYMENT_NAME + ".*", "strimzi-cluster-operator")
                 .getDep(CO_DEPLOYMENT_NAME)) {
             Stack<String> deletable = new Stack<>();
 
@@ -806,7 +788,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 .collect(entriesToMap());
 
         last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
-                .logs(CO_DEPLOYMENT_NAME + ".*", null)
                 .getDep(CO_DEPLOYMENT_NAME)) {
             @Override
             protected void before() {
