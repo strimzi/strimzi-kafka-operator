@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Job;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationScramSha512;
@@ -37,10 +38,12 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -647,7 +650,11 @@ class KafkaST extends AbstractST {
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
             String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "kafka");
-            assertEquals(imgFromDeplConf.get(KAFKA_IMAGE), imgFromPod);
+            String kafkaVersion = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getVersion();
+            if (kafkaVersion == null) {
+                kafkaVersion = "2.0.0";
+            }
+            assertEquals(parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), imgFromPod);
             imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "tls-sidecar");
             assertEquals(imgFromDeplConf.get(TLS_SIDECAR_KAFKA_IMAGE), imgFromPod);
             if (rackAwareEnabled) {
@@ -667,6 +674,23 @@ class KafkaST extends AbstractST {
         assertEquals(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE), imgFromPod);
 
         LOGGER.info("Docker images verified");
+    }
+
+    public static Map<String, String> parseImageMap(String str) {
+        if (str != null) {
+            StringTokenizer tok = new StringTokenizer(str, ", \t\n\r");
+            HashMap<String, String> map = new HashMap<>();
+            while (tok.hasMoreTokens()) {
+                String versionImage = tok.nextToken();
+                int endIndex = versionImage.indexOf('=');
+                String version = versionImage.substring(0, endIndex);
+                String image = versionImage.substring(endIndex + 1);
+                map.put(version.trim(), image.trim());
+            }
+            return Collections.unmodifiableMap(map);
+        } else {
+            return Collections.emptyMap();
+        }
     }
 
     @Test

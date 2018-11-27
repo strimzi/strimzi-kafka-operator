@@ -84,7 +84,7 @@ public class AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
-    protected static final String KAFKA_IMAGE = "STRIMZI_DEFAULT_KAFKA_IMAGE";
+    protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGE_MAP";
     protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
     protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
@@ -356,7 +356,7 @@ public class AbstractST {
         kubeClient.getResourceAsJson("deployment", "strimzi-cluster-operator");
         Map<String, String> images = new HashMap<>();
         images.put(ZK_IMAGE, getImageNameFromJSON(configJson, ZK_IMAGE));
-        images.put(KAFKA_IMAGE, getImageNameFromJSON(configJson, KAFKA_IMAGE));
+        images.put(KAFKA_IMAGE_MAP, getImageNameFromJSON(configJson, KAFKA_IMAGE_MAP));
         images.put(CONNECT_IMAGE, getImageNameFromJSON(configJson, CONNECT_IMAGE));
         images.put(S2I_IMAGE, getImageNameFromJSON(configJson, S2I_IMAGE));
         images.put(TO_IMAGE, getImageNameFromJSON(configJson, TO_IMAGE));
@@ -814,7 +814,7 @@ public class AbstractST {
         String connect = tlsListener ? KafkaResources.tlsBootstrapAddress(CLUSTER_NAME) : KafkaResources.plainBootstrapAddress(CLUSTER_NAME);
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("ping")
-                .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))
+                .withImage(TestUtils.changeOrgAndTag(TestUtils.changeOrgAndTag("strimzi/test-client:latest-kafka-2.0.0")))
                 .addNewEnv().withName("PRODUCER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                                 "--topic " + topic + " " +
