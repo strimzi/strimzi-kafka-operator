@@ -60,8 +60,22 @@ public class CronTest {
         // the pod is running on a "Pacific/Easter" timezone data center, so cron expression needs the right timezone for evaluation
         cronExpression.setTimeZone(TimeZone.getTimeZone(ZoneId.of("Europe/Rome")));
 
-        // it's really 20:00 in "Pacific/Easter" but 14:00 for "user"
+        // it's really 08:00 in "Pacific/Easter" but 14:00 for "user"
         Date d = Date.from(LocalDateTime.of(2018, 11, 26, 8, 00, 0).atZone(ZoneId.of("Pacific/Easter")).toInstant());
+        assertTrue(cronExpression.isSatisfiedBy(d));
+    }
+
+    @Test
+    public void testUtcTimeZone() throws ParseException {
+        // the "user" writes the cron expression in UTC timezone, but let's imagine he is in Europe/Rome timezone
+        // every second, every minute, hour 15 to 16 every day --> from 15:00 to 15:59
+        CronExpression cronExpression = new CronExpression("* * 14-15 * * ?");
+
+        // the pod is running on a "Pacific/Easter" timezone data center, so cron expression needs the right timezone for evaluation
+        cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        // it's really 09:00 in "Pacific/Easter" but 15:00 for "user" so 14:00 in UTC
+        Date d = Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("Pacific/Easter")).toInstant());
         assertTrue(cronExpression.isSatisfiedBy(d));
     }
 }

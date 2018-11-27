@@ -1216,15 +1216,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         private boolean isMaintenanceTimeWindowsSatisfied() {
+            String currentCron = null;
             try {
                 boolean isSatisfiedBy = getMaintenanceTimeWindows() == null || getMaintenanceTimeWindows().isEmpty();
                 if (!isSatisfiedBy) {
                     Date date = new Date();
                     for (String cron : getMaintenanceTimeWindows()) {
+                        currentCron = cron;
                         CronExpression cronExpression = new CronExpression(cron);
-                        // the user defines the cron expression in "his" timezone but CO pod
+                        // the user defines the cron expression in "UTC/GMT" timezone but CO pod
                         // can be running on a different one, so setting it on the cron expression
-                        cronExpression.setTimeZone(TimeZone.getDefault());
+                        cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
                         if (cronExpression.isSatisfiedBy(date)) {
                             isSatisfiedBy = true;
                             break;
@@ -1233,7 +1235,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 return isSatisfiedBy;
             } catch (ParseException e) {
-                log.warn("The provided maintenance time windows list contains a not valid cron expression");
+                log.warn("The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
                 return false;
             }
         }
