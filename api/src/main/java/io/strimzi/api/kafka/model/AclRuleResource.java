@@ -25,6 +25,7 @@ import java.util.Map;
         @JsonSubTypes.Type(name = AclRuleTopicResource.TYPE_TOPIC, value = AclRuleTopicResource.class),
         @JsonSubTypes.Type(name = AclRuleGroupResource.TYPE_GROUP, value = AclRuleGroupResource.class),
         @JsonSubTypes.Type(name = AclRuleClusterResource.TYPE_CLUSTER, value = AclRuleClusterResource.class),
+        @JsonSubTypes.Type(name = AclRuleTransactionalIdResource.TYPE_TRANSACTIONAL_ID, value = AclRuleTransactionalIdResource.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class AclRuleResource implements Serializable {
@@ -33,7 +34,7 @@ public abstract class AclRuleResource implements Serializable {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Resource type. " +
-            "The available resource types are `topic`, `group` and `cluster`.")
+            "The available resource types are `topic`, `group`, `cluster`, and `transactionalId`.")
     public abstract String getType();
 
     @JsonAnyGetter

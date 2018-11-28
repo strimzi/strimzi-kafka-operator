@@ -10,7 +10,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 /**
- * A representation of a group resource for ACLs
+ * A representation of a cluster resource for ACLs
  */
 @Buildable(
         editableEnabled = false,
