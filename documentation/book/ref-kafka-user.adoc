@@ -138,17 +138,18 @@ NOTE: Not every operation can be combined with every resource.
 Use `\*` to allow or deny the operation from all hosts.
 The `host` field is optional and when not specified, the value `*` will be used as default.
 
-`resource`:: Specifies the resource for which does the rule apply.
-Simple Authorization supports 3 different resource types:
+`resource`:: Specifies the resource for which the rule applies.
+Simple Authorization supports four different resource types:
 +
 * Topics
 * Consumer Groups
 * Clusters
+* Transactional IDs
 +
 The resource type can be specified in the `type` property.
-Use `topic` for Topics, `group` for Consumer Groups and `cluster` for clusters.
+Use `topic` for Topics, `group` for Consumer Groups, `cluster` for clusters, and `transactionalId` for Transactional IDs.
 +
-Topic and Group resources additionally allow to specify the name of the resource for which the rule applies.
+Additionally, Topic, Group, and Transactional ID resources allow you to specify the name of the resource for which the rule applies.
 The name can be specified in the `name` property.
 The name can be either specified as literal or as a prefix.
 To specify the name as literal, set the `patternType` property to the value `literal`.
