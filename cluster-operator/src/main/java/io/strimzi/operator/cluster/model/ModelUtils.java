@@ -10,11 +10,8 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
-<<<<<<< HEAD
 import io.strimzi.operator.common.model.Labels;
-=======
 import io.strimzi.operator.cluster.KafkaUpgradeException;
->>>>>>> Support for upgrading between Kafka verions. Fixes #1103
 
 import java.util.ArrayList;
 import java.util.Collections;
