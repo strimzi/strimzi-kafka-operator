@@ -48,7 +48,7 @@ class UserST extends AbstractST {
                 .endKafka()
             .endSpec().build()).done();
 
-        KafkaUser user = resources().tlsUser(kafkaUser).done();
+        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         kubeClient.waitForResourceCreation("secret", kafkaUser);
 
         String kafkaUserSecret = kubeClient.getResourceAsJson("secret", kafkaUser);

@@ -485,11 +485,12 @@ public class Resources {
         });
     }
 
-    DoneableKafkaUser tlsUser(String name) {
+    DoneableKafkaUser tlsUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
                         .withName(name)
                         .withNamespace(client().getNamespace())
+                        .addToLabels("strimzi.io/cluster", clusterName)
                         .build())
                 .withNewSpec()
                     .withNewKafkaUserTlsClientAuthenticationAuthentication()
@@ -498,11 +499,12 @@ public class Resources {
                 .build());
     }
 
-    DoneableKafkaUser scramShaUser(String name) {
+    DoneableKafkaUser scramShaUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
                         .withName(name)
                         .withNamespace(client().getNamespace())
+                        .addToLabels("strimzi.io/cluster", clusterName)
                         .build())
                 .withNewSpec()
                     .withNewKafkaUserScramSha512ClientAuthenticationAuthentication()

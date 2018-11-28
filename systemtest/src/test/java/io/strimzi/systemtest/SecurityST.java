@@ -168,7 +168,7 @@ class SecurityST extends AbstractST {
     public void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException {
         createCluster();
         String userName = "alice";
-        resources().tlsUser(userName).done();
+        resources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("", 1_000, 60_000, () -> {
             return client.secrets().inNamespace(NAMESPACE).withName("alice").get() != null;
         },
@@ -223,7 +223,7 @@ class SecurityST extends AbstractST {
         AvailabilityVerifier.Result result = mp.stop(30_000);
         LOGGER.info("Producer/consumer stats during cert renewal {}", result);
     }
-
+    
     private AvailabilityVerifier waitForInitialAvailability(String userName) {
         AvailabilityVerifier mp = new AvailabilityVerifier(client, NAMESPACE, CLUSTER_NAME, userName);
         mp.start();
@@ -291,7 +291,7 @@ class SecurityST extends AbstractST {
         // 2. Now create a cluster
         createCluster();
         String userName = "alice";
-        resources().tlsUser(userName).done();
+        resources().tlsUser(CLUSTER_NAME, userName).done();
 
         AvailabilityVerifier mp = waitForInitialAvailability(userName);
 
