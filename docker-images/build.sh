@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-#if [ -n "$RELEASE_VERSION" ]; then
-#    strimzi_version="$RELEASE_VERSION"
-#else
-#    strimzi_version="latest"
-#fi
-
 java_images="java-base"
 # Note dependency order of the following images
 stunnel_images="stunnel-base zookeeper-stunnel kafka-stunnel entity-operator-stunnel"
