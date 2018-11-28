@@ -147,7 +147,7 @@ Simple Authorization supports 4 different resource types:
 * Transactional IDs
 +
 The resource type can be specified in the `type` property.
-Use `topic` for Topics, `group` for Consumer Groups, `cluster` for clusters, and `transactionId` for Transactional IDs.
+Use `topic` for Topics, `group` for Consumer Groups, `cluster` for clusters, and `transactionalId` for Transactional IDs.
 +
 Topic, Group, and Transactional ID resources additionally allow to specify the name of the resource for which the rule applies.
 The name can be specified in the `name` property.
