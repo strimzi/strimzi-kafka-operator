@@ -382,7 +382,7 @@ class KafkaST extends AbstractST {
                     .endKafka()
                 .endSpec().build()).done();
         resources().topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = resources().tlsUser(kafkaUser).done();
+        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
         // Create ping job
@@ -417,7 +417,7 @@ class KafkaST extends AbstractST {
                     .endKafka()
                 .endSpec().build()).done();
         resources().topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = resources().scramShaUser(kafkaUser).done();
+        KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
         String brokerPodLog = podLog(CLUSTER_NAME + "-kafka-0", "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUser) + ".*$", Pattern.MULTILINE);
@@ -473,7 +473,7 @@ class KafkaST extends AbstractST {
                     .endKafka()
                 .endSpec().build()).done();
         resources().topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = resources().scramShaUser(kafkaUser).done();
+        KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
         // Create ping job
@@ -782,7 +782,7 @@ class KafkaST extends AbstractST {
         resources().topic(kafkaSourceName, topicSourceName).done();
 
         // Create Kafka user
-        KafkaUser user = resources().tlsUser(kafkaUser).done();
+        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
@@ -869,11 +869,11 @@ class KafkaST extends AbstractST {
         resources().topic(kafkaSourceName, topicName).done();
 
         // Create Kafka user for source cluster
-        KafkaUser userSource = resources().scramShaUser(kafkaUserSource).done();
+        KafkaUser userSource = resources().scramShaUser(CLUSTER_NAME, kafkaUserSource).done();
         waitTillSecretExists(kafkaUserSource);
 
         // Create Kafka user for target cluster
-        KafkaUser userTarget = resources().scramShaUser(kafkaUserTarget).done();
+        KafkaUser userTarget = resources().scramShaUser(CLUSTER_NAME, kafkaUserTarget).done();
         waitTillSecretExists(kafkaUserTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
