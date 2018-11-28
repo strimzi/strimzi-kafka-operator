@@ -101,7 +101,12 @@ public final class TestUtils {
         LOGGER.debug("Waiting for {}", description);
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (true) {
-            boolean result = ready.getAsBoolean();
+            boolean result;
+            try {
+                result = ready.getAsBoolean();
+            } catch (Exception e) {
+                result = false;
+            }
             long timeLeft = deadline - System.currentTimeMillis();
             if (result) {
                 return timeLeft;

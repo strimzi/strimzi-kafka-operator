@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
@@ -35,7 +36,7 @@ public class ClusterCa extends Ca {
     private final Pattern ipv4Address = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
 
     public ClusterCa(CertManager certManager, String clusterName, Secret caCertSecret, Secret caKeySecret) {
-        this(certManager, clusterName, caCertSecret, caKeySecret, 365, 30, true);
+        this(certManager, clusterName, caCertSecret, caKeySecret, 365, 30, true, null);
     }
 
     public ClusterCa(CertManager certManager,
@@ -44,13 +45,14 @@ public class ClusterCa extends Ca {
                      Secret clusterCaKey,
                      int validityDays,
                      int renewalDays,
-                     boolean generateCa) {
+                     boolean generateCa,
+                     CertificateExpirationPolicy policy) {
         super(certManager, "cluster-ca",
                 AbstractModel.clusterCaCertSecretName(clusterName),
                 forceRenewal(clusterCaCert, clusterCaKey, "cluster-ca.key"),
                 AbstractModel.clusterCaKeySecretName(clusterName),
                 adapt060ClusterCaSecret(clusterCaKey),
-                validityDays, renewalDays, generateCa);
+                validityDays, renewalDays, generateCa, policy);
         this.clusterName = clusterName;
     }
 

@@ -53,6 +53,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,12 +68,12 @@ public class Resources {
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
     private static final long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(3).toMillis();
-    private static final long POLL_INTERVAL_FOR_RESOURCE_READINESS = Duration.ofSeconds(1).toMillis();
+    public static final long POLL_INTERVAL_FOR_RESOURCE_READINESS = Duration.ofSeconds(1).toMillis();
     /* Timeout for deployment config is bigger than the timeout for default resource readiness because of creating a new image
     during the deployment process.*/
     private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
     private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(3).toMillis();
-    private static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
+    public static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
@@ -459,19 +460,8 @@ public class Resources {
     /**
      * Wait until the SS is ready and all of its Pods are also ready
      */
-    private void waitForStatefulSet(String namespace, String name) {
-        LOGGER.info("Waiting for StatefulSet {}", name);
-        TestUtils.waitFor("statefulset " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client().apps().statefulSets().inNamespace(namespace).withName(name).isReady());
-        int replicas = client().apps().statefulSets().inNamespace(namespace).withName(name).get().getSpec().getReplicas();
-        for (int pod = 0; pod < replicas; pod++) {
-            String podName = name + "-" + pod;
-            LOGGER.info("Waiting for Pod {}", podName);
-            TestUtils.waitFor("pod " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
-                () -> client().pods().inNamespace(namespace).withName(podName).isReady());
-            LOGGER.info("Pod {} is ready", podName);
-        }
-        LOGGER.info("StatefulSet {} is ready", name);
+    public void waitForStatefulSet(String namespace, String name) {
+        StUtils.waitForAllStatefulSetPodsReady(client(), namespace, name);
     }
 
     /**
@@ -479,8 +469,7 @@ public class Resources {
      */
     private void waitForDeployment(String namespace, String name) {
         LOGGER.info("Waiting for Deployment {} in namespace {}", name, namespace);
-        TestUtils.waitFor("deployment " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client().apps().deployments().inNamespace(namespace).withName(name).isReady());
+        StUtils.waitForDeploymentReady(client(), namespace, name);
         LOGGER.info("Deployment {} is ready", name);
     }
 

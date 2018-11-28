@@ -171,6 +171,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         }
     }
 
+    @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
         if (context.getElement().get() instanceof Class) {
             saveTestingClassInfo(context);

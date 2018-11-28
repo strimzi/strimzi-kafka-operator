@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -138,7 +139,7 @@ public class ResourceUtils {
                 initialClientsCaCert,
                 KafkaCluster.clientsCaKeySecretName(clusterName),
                 initialClientsCaKey,
-                365, 30, true);
+                365, 30, true, null);
     }
 
     public static Secret createInitialCaCertSecret(String clusterNamespace, String clusterName, String secretName, String caCert) {
@@ -146,6 +147,7 @@ public class ResourceUtils {
                 .withNewMetadata()
                     .withName(secretName)
                     .withNamespace(clusterNamespace)
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0")
                     .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.crt", caCert)
@@ -157,6 +159,7 @@ public class ResourceUtils {
                 .withNewMetadata()
                     .withName(secretName)
                     .withNamespace(clusterNamespace)
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0")
                     .withLabels(Labels.forCluster(clusterName).withKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.key", caKey)

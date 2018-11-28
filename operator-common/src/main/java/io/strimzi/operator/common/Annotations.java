@@ -55,8 +55,31 @@ public class Annotations {
         return str != null ? parseInt(str) : defaultValue;
     }
 
+    public static int incrementIntAnnotation(PodTemplateSpec podSpec, String annotation, int defaultValue, String... deprecatedAnnotations) {
+        ObjectMeta metadata = podSpec.getMetadata();
+        return incrementIntAnnotation(annotation, defaultValue, metadata, deprecatedAnnotations);
+    }
+
+    public static int incrementIntAnnotation(HasMetadata podSpec, String annotation, int defaultValue, String... deprecatedAnnotations) {
+        ObjectMeta metadata = podSpec.getMetadata();
+        return incrementIntAnnotation(annotation, defaultValue, metadata, deprecatedAnnotations);
+    }
+
+    private static int incrementIntAnnotation(String annotation, int defaultValue, ObjectMeta metadata, String[] deprecatedAnnotations) {
+        Map<String, String> annos = annotations(metadata);
+        String str = annotation(annotation, null, deprecatedAnnotations, annos);
+        int v = str != null ? parseInt(str) : defaultValue;
+        v++;
+        annos.put(annotation, Integer.toString(v));
+        return v;
+    }
+
     private static String annotation(String annotation, String defaultValue, ObjectMeta metadata, String[] deprecatedAnnotations) {
         Map<String, String> annotations = annotations(metadata);
+        return annotation(annotation, defaultValue, deprecatedAnnotations, annotations);
+    }
+
+    private static String annotation(String annotation, String defaultValue, String[] deprecatedAnnotations, Map<String, String> annotations) {
         String value = annotations.get(annotation);
         if (value == null) {
             for (String deprecated : deprecatedAnnotations) {
