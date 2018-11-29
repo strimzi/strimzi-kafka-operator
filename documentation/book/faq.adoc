@@ -37,7 +37,7 @@ However, because of the privilege escalation prevention, the Cluster Operator ca
 In order to do this the broker pod needs to be able to get information about the `Node` it is running on.
 A `Node` is a cluster-scoped resource, so access to it can only be granted via a `ClusterRoleBinding` (not a namespace-scoped `RoleBinding`). 
 Therefore the Cluster Operator need to be able to create `ClusterRoleBindings`.
-But again, because of the privilege escalation prevention, the Cluster Operator cannot grant privileges it does not have itself (so it cannot, for example, create a `ClusterRoleBinding` to a `ClusterRole` which the Cluster Operator isn't already bound to via some other `ClusterRoleBinding`).
+But again, because of the privilege escalation prevention, the Cluster Operator cannot grant privileges it does not have itself (so it cannot, for example, create a `ClusterRoleBinding` to a `ClusterRole` which the Cluster Operator is not already bound to via some other `ClusterRoleBinding`).
 
 
 === Why can normal {PlatformProductName} users not create the custom resource (`Kafka`, `KafkaTopic` and so on)?
