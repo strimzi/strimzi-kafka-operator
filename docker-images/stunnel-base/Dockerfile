@@ -1,6 +1,9 @@
 FROM centos:7
 
-RUN yum -y install stunnel && yum clean all -y
+RUN yum -y install https://centos7.iuscommunity.org/ius-release.rpm && \
+    yum -y update && \
+    yum -y install stunnel5u && \
+    yum clean all -y
 
 # set Stunnel home folder
 ENV STUNNEL_HOME=/opt/stunnel
