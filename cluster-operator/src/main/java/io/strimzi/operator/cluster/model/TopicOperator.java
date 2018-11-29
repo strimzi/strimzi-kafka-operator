@@ -19,17 +19,14 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
-import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.cluster.operator.assembly.SecretGenerator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -368,24 +365,8 @@ public class TopicOperator extends AbstractModel {
      * @return The generated Secret
      */
     public Secret generateSecret(ClusterCa clusterCa) {
-        Map<String, String> data = new HashMap<>();
         Secret topicOperatorSecret = clusterCa.topicOperatorSecret();
-        if (topicOperatorSecret == null || clusterCa.certRenewed()) {
-            log.debug("Generating certificates");
-            try {
-                log.debug("Topic Operator certificate to generate");
-                CertAndKey toCertAndKey = clusterCa.generateSignedCert(name, Ca.IO_STRIMZI);
-                data.put("entity-operator.crt", toCertAndKey.certAsBase64String());
-                data.put("entity-operator.key", toCertAndKey.keyAsBase64String());
-            } catch (IOException e) {
-                log.warn("Error while generating certificates", e);
-            }
-            log.debug("End generating certificates");
-        } else {
-            data.put("entity-operator.crt", topicOperatorSecret.getData().get("entity-operator.crt"));
-            data.put("entity-operator.key", topicOperatorSecret.getData().get("entity-operator.key"));
-        }
-        return createSecret(TopicOperator.secretName(cluster), data);
+        return SecretGenerator.generateSecret(clusterCa, topicOperatorSecret, namespace, TopicOperator.secretName(cluster), "entity-operator", labels, createOwnerReference());
     }
 
     protected void setTlsSidecar(TlsSidecar tlsSidecar) {

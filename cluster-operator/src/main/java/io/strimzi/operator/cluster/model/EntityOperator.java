@@ -19,14 +19,12 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
+import io.strimzi.operator.cluster.operator.assembly.SecretGenerator;
 import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -251,25 +249,8 @@ public class EntityOperator extends AbstractModel {
         if (!isDeployed()) {
             return null;
         }
-        Map<String, String> data = new HashMap<>();
         Secret secret = clusterCa.entityOperatorSecret();
-        if (secret == null || clusterCa.certRenewed()) {
-            log.debug("Generating certificates");
-            try {
-                Ca.log.debug("Entity Operator certificate to generate");
-                CertAndKey eoCertAndKey = clusterCa.generateSignedCert(name, Ca.IO_STRIMZI);
-                data.put("entity-operator.key", eoCertAndKey.keyAsBase64String());
-                data.put("entity-operator.crt", eoCertAndKey.certAsBase64String());
-            } catch (IOException e) {
-                log.warn("Error while generating certificates", e);
-            }
-
-            log.debug("End generating certificates");
-        } else {
-            data.put("entity-operator.key", secret.getData().get("entity-operator.key"));
-            data.put("entity-operator.crt", secret.getData().get("entity-operator.crt"));
-        }
-        return createSecret(EntityOperator.secretName(cluster), data);
+        return SecretGenerator.generateSecret(clusterCa, secret, namespace, EntityOperator.secretName(cluster), "entity-operator", labels, createOwnerReference());
     }
 
     /**

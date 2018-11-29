@@ -31,6 +31,16 @@ public class KafkaResources {
     }
 
     /**
+     * Returns the name of the Zookeeper {@code Pod} for a {@code Kafka} cluster of the given name.
+     * @param ssName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @param podNum The number of the Zookeeper pod
+     * @return The name of the corresponding Zookeeper {@code Pod}.
+     */
+    public static String zookeeperPodNameSufix(String ssName, int podNum) {
+        return ssName + "-" + podNum;
+    }
+
+    /**
      * Returns the name of the Kafka {@code StatefulSet} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Kafka {@code StatefulSet}.

@@ -31,6 +31,7 @@ import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -333,7 +334,8 @@ public class KafkaAssemblyOperatorTest {
                 KafkaCluster.clusterCaCertSecretName(clusterCmName),
                 KafkaCluster.clusterCaKeySecretName(clusterCmName),
                 KafkaCluster.brokersSecretName(clusterCmName),
-                ZookeeperCluster.nodesSecretName(clusterCmName));
+                ZookeeperCluster.nodesSecretName(clusterCmName),
+                ClusterOperator.secretName(clusterCmName));
         expectedSecrets.addAll(secrets.stream().map(s -> s.getMetadata().getName()).collect(Collectors.toSet()));
         if (toConfig != null) {
             // it's expected only when the Topic Operator is deployed by the Cluster Operator
