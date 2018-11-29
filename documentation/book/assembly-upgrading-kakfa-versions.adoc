@@ -1,0 +1,22 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+
+[id='assembly-upgrading-kafka-versions-{context}']
+
+= Upgrading and Downgrading Kafka versions
+
+This version of {ProductName} supports running Kafka clusters using versions {SupportedKafkaVersionList} of Kafka with the default version being {DefaultKafkaVersion}.
+
+include::con-versions-and-images.adoc[leveloffset=+1]
+
+include::con-the-upgrade-process.adoc[leveloffset=+1]
+
+include::ref-kafka-versions.adoc[leveloffset=+1]
+
+include::proc-upgrading-brokers-newer-kafka.adoc[leveloffset=+1]
+
+include::the-downgrade-process.adoc[leveloffset=+1]
+
+include::proc-downgrading-brokers-newer-kafka.adoc[leveloffset=+1]

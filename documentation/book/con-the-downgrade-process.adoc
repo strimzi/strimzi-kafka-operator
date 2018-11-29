@@ -1,0 +1,16 @@
+// This module is included in the following assemblies:
+//
+// assembly-upgrading-kafka-versions.adoc
+
+[id='con-the-downgrade-process-{context}']
+= The downgrade process
+
+Depending on the difference between the version being upgraded from and to, downgrade may, or may not always be possible.
+
+If the downgraded version of Kafka has the same log message format version then downgrade is always possible.
+In this case the Cluster Operator will be able to downgrade by performing a single rolling restart of the brokers.
+
+If the downgraded version of Kafka has a different log message format version, then downgrade is only possible in running cluster has
+_always_ had `log.message.format.version` set to the version used by the downgraded version. 
+This is typically only the case when the upgrade procedure has been aborted before the `log.message.format.version` was changed.
+In this case the downgrade will require two rolling restart of the brokers if the interbroker protocol of the two versions is different, or a single rolling restart if they are te same.

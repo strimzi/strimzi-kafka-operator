@@ -28,9 +28,9 @@ The level for printing logging messages. The value can be set to: `ERROR`, `WARN
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default: 300000 ms. The timeout for internal operations, in milliseconds. This value should be
 increased when using {ProductName} on clusters where regular {ProductPlatformName} operations take longer than usual (because of slow downloading of Docker images, for example).
 
-`STRIMZI_DEFAULT_KAFKA_IMAGE`:: Optional, default `strimzi/kafka:latest`.
-The image name to use as the default when deploying Kafka, if
-no image is specified as the `Kafka.spec.kafka.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+`STRIMZI_KAFKA_IMAGE_MAP`:: Required.
+This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version. The required syntax is whitespace separated `_<version>_=_<image>_` pairs.
+This is used when a `Kafka.spec.kafka.version` property is specified but not the `Kafka.spec.kafka.image`, as descrbied in xref:assembly-configuring-container-images-deployment-configuration-kafka[].
 
 `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `strimzi/kafka-init:latest`.
 The image name to use as default for the init container started before the broker for initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].

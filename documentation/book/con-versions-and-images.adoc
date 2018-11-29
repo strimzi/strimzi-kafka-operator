@@ -1,0 +1,16 @@
+// This module is included in the following assemblies:
+//
+// assembly-upgrading-kafka-versions.adoc
+
+[id='con-versions-and-images-{context}']
+= Versions and Images
+
+The Cluster Operator embeds knowledge of different Kafka versions, but not of the corresponding images in which those versions are provided.
+Using the `STRIMZI_KAFKA_IMAGES` environment variable the Cluster Operator is configured with a mapping between Kafka version and the image to be used when that version is requested in a given `Kafka` resource.
+
+Each `Kafka` resource can be configured with a `Kafka.spec.kafka.version`. 
+If `Kafka.spec.kafka.image` is not configured then the default image for the given version will be used. 
+If `Kafka.spec.kafka.image` is given, this overrides the default.
+
+WARNING: The Cluster Operator is not able to validate that an image does actually contain a Kafka broker of the expected version. 
+Take care to ensure that the given image corresponds to the given version.

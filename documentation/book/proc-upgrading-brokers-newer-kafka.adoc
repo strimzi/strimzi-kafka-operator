@@ -1,0 +1,81 @@
+// This module is included in the following assemblies:
+//
+// assembly-upgrading-kafka-versions.adoc
+
+[id='proc-upgrading-brokers-newer-kafka-{context}']
+
+= Upgrading brokers to a newer Kafka version
+
+This procedure will describe how to upgrade a {ProductName} Kafka cluster from one version to a higher version, for example 2.0.0 to 2.1.0.
+
+.Prerequisites
+
+* The Cluster Operator which supports both versions of Kafka is up and running.
+* A `Kafka` resource to be upgraded.
+* You have checked that your `Kafka.spec.kafka.config` contains no options which are not supported in the version of Kafka being upgraded to.
+
+.Procedure
+
+. Ensure the `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the version being upgraded _from_.
+For example, if upgrading from 2.0.0:
++
+[source,yaml]
+----
+apiVersion: v1alpha1
+kind: Kafka
+spec:
+  # ...
+  kafka:
+    version: 2.0.0
+    config:
+      log.message.format.version=2.0
+      # ...
+----
++
+If this config is unset then set it and wait for the resulting rolling restart of the Kafka cluster to complete.
+
+. Change the `Kafka.spec.kafka.version` to specify the version being upgraded _to_.
+If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's
+`STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image`.
+For example, if upgrading from Kafka 2.0.0 to 2.1.0:
++
+[source,yaml]
+----
+apiVersion: v1alpha1
+kind: Kafka
+spec:
+  # ...
+  kafka:
+    version: 2.1.0
+    config:
+      log.message.format.version=2.0
+      # ...
+----
+
+. Wait for the Cluster Operator to upgrade the cluster
+**TODO** How will the user know when it is finished?
+
+. Upgrade each client application to use the new version of the client libraries.
++
+NOTE: If, for whatever reason, you need to revert the update at this point, follow the procedure xref:proc-downgradings-brokers-older-kafka-{context}[]. 
+You will not be able to downgrade after this step.
+
+. Change the `log.message.format.version` in `Kafka.spec.kafka.config` to the default version for the new version of Kafka now being used.
+For example, if upgrading to 2.1.0:
++
+[source,yaml]
+----
+apiVersion: v1alpha1
+kind: Kafka
+spec:
+  # ...
+  kafka:
+    version: 2.1.0
+    config:
+      log.message.format.version=2.1
+      # ...
+----
+
+. Wait for the Cluster Operator to update the cluster
+
+.Additional resources

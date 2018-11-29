@@ -1,0 +1,47 @@
+// This module is included in the following assemblies:
+//
+// assembly-upgrading-kafka-versions.adoc
+
+
+[id='proc-downgrading-brokers-older-kafka-{context}']
+
+= Downgrading brokers to an older Kafka version
+
+This procedure will describe how to downgrade a {ProductName} Kafka cluster from one version to a lower version, for example 2.1.0 to 2.0.0.
+
+IMPORTANT: Downgrading is not possible if the version being downgraded _from_ has ever used a `log.message.format.version` that's not supported by the version being downgraded _to_. 
+For example if a 2.1.0 cluster has _always_ been configured with `log.message.format.version=2.0` then downgrading to 2.0 is possible, but downgrading to 1.1.0 is not possible.
+
+.Prerequisites
+
+* The Cluster Operator up and running.
+* A `Kafka` resource to be downgraded.
+* The `Kafka.spec.kafka.config` has a `log.message.format.version` that is supported by the version being downgraded to.
+* You have checked that your `Kafka.spec.kafka.config` contains no options which are not supported in the version of Kafka being downgraded to.
+
+.Procedure
+
+. Change the `Kafka.spec.kafka.version` to specify the version being upgraded _to_.
+If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's
+`STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image`.
+For example, if downgrading from Kafka 2.1.0 to 2.0.0:
++
+[source,yaml]
+----
+apiVersion: v1alpha1
+kind: Kafka
+spec:
+  # ...
+  kafka:
+    version: 2.0.0
+    config:
+      log.message.format.version=2.0
+      # ...
+----
+
+. Wait for the Cluster Operator to downgrade the cluster
+**TODO** How will the user know when it is finished?
+
+. Downgrade each client application to use the old version of the client libraries.
+
+.Additional resources
