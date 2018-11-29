@@ -7,17 +7,17 @@
 
 When installing {ProductName} you need to have the ability to create Custom Resource Definitions (CRDs). 
 These are the resources that tell {PlatformProductName} about the {ProductName}-specific resources, such as `Kafka`, `KafkaConnect` and so on.
-Because CRDs are a cluster-scoped resource (rather than being scoped to a particular {PlatformProductName} namespace) typically cluster admin priviledges are required to be able to do this.
+Because CRDs are a cluster-scoped resource (rather than being scoped to a particular {PlatformProductName} namespace) typically cluster admin privileges are required to be able to do this.
 
 Installation of {ProductName} also requires the ability to create some `ClusterRoles` and `ClusterRoleBindings`, similarly to CRDs these are cluster-scoped resources and so, again, typically cluster admin privileges are required to be able to do this.
 
 The cluster administrator can inspect all the resources being installed (in the `/install/` directory) to assure themselves that the `ClusterRoles` do not grant unnecessary privileges. For more information about why the Cluster Operator installation resources grant the ability to create `ClusterRoleBindings` see the following question.
 
-After installation, the Cluster Operator will run as a normal workload: Since it is just a regular `Deployment` a non-admin user with privileges to access the `Deployment` can configure it.
+After installation, the Cluster Operator will run as a regular `Deployment`; any non-admin user with privileges to access the `Deployment` can configure it.
 
 [id='normal-user-access-custom-resources']
 By default, normal users will not have the privileges necessary to manipulate the custom resources, such as `Kafka`, `KafkaConnect` and so on, which the Cluster Operator deals with.
-These privileges can be granted using normal RBAC resources by the cluster administrator.
+These privileges can be granted using normal RBAC resources by the cluster administrator. See http://strimzi.io/docs/master/full.html#assembly-getting-started-strimzi-admin-str for the procedure for doing this.
 
 
 === Why does the Cluster Operator require the ability to create `ClusterRoleBindings`? Is that not a security risk?
