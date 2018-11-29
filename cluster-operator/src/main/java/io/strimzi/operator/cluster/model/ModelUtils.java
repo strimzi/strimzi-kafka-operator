@@ -56,13 +56,14 @@ public class ModelUtils {
     }
 
     /**
-     * Parse an image map. It has the structure:
-     *
+     * <p>Parse an image map. It has the structure:</p>
+     * <pre><code>
      * imageMap ::= versionImage ( ',' versionImage )*
      * versionImage ::= version '=' image
      * version ::= [0-9.]+
-     * image ::= [^,]+
-     *
+     * image ::= [, \t\r\n]+
+     * </code></pre>
+     * For example {@code 2.0.0=strimzi/kafka:latest-kafka-2.0.0, 2.1.0=strimzi/kafka:latest-kafka-2.1.0}.
      * @param str
      * @return
      */

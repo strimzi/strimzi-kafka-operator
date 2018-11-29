@@ -427,7 +427,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     } else {
                         fromVersion = currentVersion;
                     }
-                    log.debug("SS {} is upgrading from version {}", ss.getMetadata().getName(), fromVersion);
+                    log.debug("SS {} is from version {}", ss.getMetadata().getName(), fromVersion);
                     String toVersionAnno = ss.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION);
                     KafkaVersion toVersion;
                     if (toVersionAnno != null) { // We're mid-upgrade
@@ -435,7 +435,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     } else {
                         toVersion = versions.version(kafkaAssembly.getSpec().getKafka().getVersion());
                     }
-                    log.debug("SS {} is upgrading to version {}", ss.getMetadata().getName(), toVersion);
+                    log.debug("SS {} is to version {}", ss.getMetadata().getName(), toVersion);
                     KafkaUpgrade upgrade = new KafkaUpgrade(fromVersion, toVersion);
                     log.debug("Kafka upgrade {}", upgrade);
                     if (upgrade.isNoop()) {

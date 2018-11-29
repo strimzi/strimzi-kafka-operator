@@ -42,6 +42,8 @@ public class ClusterOperatorConfig {
      * @param namespaces namespace in which the operator will run and create resources
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
+     * @param createClusterRoles true to create the cluster roles
+     * @param imageMap The mapping of Kafka version to image name
      */
     public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, Map<String, String> imageMap) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));

@@ -19,7 +19,7 @@ docker_build:
 	# Build Docker image ...
 	docker build -q $(DOCKER_BUILD_ARGS) --build-arg strimzi_version=$(RELEASE_VERSION) -t strimzi/$(PROJECT_NAME):latest $(DOCKERFILE_DIR)
 #   The Dockerfiles all use FROM ...:latest, so it is necessary to tag images with latest (-t above)
-#   But because we generate Kafka images for different verions we also need to tag with something
+#   But because we generate Kafka images for different versions we also need to tag with something
 #   including the kafka version number. This BUILD_TAG is used by the docker_tag target.
 	# Also tag with $(BUILD_TAG)
 	docker tag strimzi/$(PROJECT_NAME):latest strimzi/$(PROJECT_NAME):$(BUILD_TAG)
