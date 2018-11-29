@@ -91,7 +91,7 @@ endif::Kubernetes[]
 
 === Grafana dashboard
 
-As an example, and in order to visualize the exported metrics in Grafana, two sample dashboards are provided https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-kafka.json[`strimzi-kafka.json`] and https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-zookeeper.json[`strimzi-zookeeper.json`].
+As an example, and in order to visualize the exported metrics in Grafana, two sample dashboards are provided https://github.com/strimzi/strimzi-kafka-operator/blob/{GithubVersion}/metrics/examples/grafana/strimzi-kafka.json[`strimzi-kafka.json`] and https://github.com/strimzi/strimzi-kafka-operator/blob/{GithubVersion}/metrics/examples/grafana/strimzi-zookeeper.json[`strimzi-zookeeper.json`].
 These dashboards represent a good starting point for key metrics to monitor Kafka and ZooKeeper clusters, but depending on your infrastructure you may need to update or add to them.
 Please note that they are not representative of all the metrics available.
 No alerting rules are defined.
@@ -112,7 +112,7 @@ image::grafana_home.png[Grafana home]
 +
 image::grafana_prometheus_data_source.png[Add Prometheus data source]
 
-. From the top left menu, click on "Dashboards" and then "Import" to open the "Import Dashboard" window where the provided https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-kafka.json[`strimzi-kafka.json`] and https://github.com/strimzi/strimzi-kafka-operator/blob/{ProductVersion}/metrics/examples/grafana/strimzi-zookeeper.json[`strimzi-zookeeper.json`] files can be imported or their content pasted.
+. From the top left menu, click on "Dashboards" and then "Import" to open the "Import Dashboard" window where the provided https://github.com/strimzi/strimzi-kafka-operator/blob/{GithubVersion}/metrics/examples/grafana/strimzi-kafka.json[`strimzi-kafka.json`] and https://github.com/strimzi/strimzi-kafka-operator/blob/{GithubVersion}/metrics/examples/grafana/strimzi-zookeeper.json[`strimzi-zookeeper.json`] files can be imported or their content pasted.
 +
 image::grafana_import_dashboard.png[Add Grafana dashboard]
 
