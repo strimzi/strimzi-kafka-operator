@@ -82,7 +82,7 @@ public class EntityTopicOperator extends AbstractModel {
 
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-topic-operator-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/entity-topic-operator/custom-config/";
+        this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
     }
 
