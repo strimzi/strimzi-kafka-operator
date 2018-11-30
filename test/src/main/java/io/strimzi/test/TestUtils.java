@@ -255,25 +255,6 @@ public final class TestUtils {
         }
     }
 
-    public static <T> T fromYamlFile(String filename, Class<T> c) {
-        return fromYamlFile(new File(filename), c, false);
-    }
-
-    public static <T> T fromYamlFile(String filename, Class<T> c, boolean ignoreUnknownProperties) {
-        return fromYamlFile(new File(filename), c, ignoreUnknownProperties);
-    }
-
-    public static <T> T fromYamlFile(File yamlFile, Class<T> c, boolean ignoreUnknownProperties) {
-        ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
-        try {
-            return mapper.readValue(yamlFile, c);
-        } catch (InvalidFormatException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static <T> String toYamlString(T instance) {
         ObjectMapper mapper = new YAMLMapper()
                 .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
