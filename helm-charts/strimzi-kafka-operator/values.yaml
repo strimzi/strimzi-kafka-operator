@@ -27,12 +27,12 @@ kafkaConnect:
   image:
     repository: strimzi
     name: kafka-connect
-    tag: latest
+    tagPrefix: latest
 kafkaConnects2i:
   image:
     repository: strimzi
     name: kafka-connect-s2i
-    tag: latest
+    tagPrefix: latest
 topicOperator:
   image:
     repository: strimzi

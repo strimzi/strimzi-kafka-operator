@@ -32,10 +32,16 @@ spec:
             2.0.0=strimzi/kafka:latest-kafka-2.0.0
             2.0.1=strimzi/kafka:latest-kafka-2.0.1
             2.1.0=strimzi/kafka:latest-kafka-2.1.0
-        - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
-          value: strimzi/kafka-connect:latest-kafka-2.0.0
-        - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
-          value: strimzi/kafka-connect-s2i:latest-kafka-2.0.0
+        - name: STRIMZI_KAFKA_CONNECT_IMAGE_MAP
+          value: |
+            2.0.0=strimzi/kafka-connect:latest-kafka-2.0.0
+            2.0.1=strimzi/kafka-connect:latest-kafka-2.0.1
+            2.1.0=strimzi/kafka-connect:latest-kafka-2.1.0
+        - name: STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP
+          value: |
+            2.0.0=strimzi/kafka-connect-s2i:latest-kafka-2.0.0
+            2.0.1=strimzi/kafka-connect-s2i:latest-kafka-2.0.1
+            2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0
         - name: STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE
           value: strimzi/kafka-mirror-maker:latest-kafka-2.0.0
         - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
