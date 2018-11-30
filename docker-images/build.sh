@@ -17,7 +17,7 @@ function load_checksums {
 function build {
     targets="$@"
     build_args="$DOCKER_BUILD_ARGS"
-    tag="$DOCKER_TAG"
+    tag="${DOCKER_TAG:-latest}"
     # Images not depending on Kafka version
     for image in $(echo "$java_images $stunnel_images"); do
         make -C "$image" "$targets"
