@@ -200,21 +200,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final Kafka kafkaAssembly;
         private final Reconciliation reconciliation;
 
-        ClusterCa clusterCa; /* test */
-        private ClientsCa clientsCa;
+        /* test */ ClusterCa clusterCa;
+        /* test */ ClientsCa clientsCa;
 
         private ZookeeperCluster zkCluster;
         private Service zkService;
         private Service zkHeadlessService;
         private ConfigMap zkMetricsAndLogsConfigMap;
-        ReconcileResult<StatefulSet> zkDiffs; /* test */
+        /* test */ ReconcileResult<StatefulSet> zkDiffs;
         private boolean zkAncillaryCmChange;
 
         private KafkaCluster kafkaCluster = null;
         private Service kafkaService;
         private Service kafkaHeadlessService;
         private ConfigMap kafkaMetricsAndLogsConfigMap;
-        private ReconcileResult<StatefulSet> kafkaDiffs;
+        /* test */ ReconcileResult<StatefulSet> kafkaDiffs;
         private String kafkaExternalBootstrapDnsName = null;
         private SortedMap<Integer, String> kafkaExternalAddresses = new TreeMap<>();
         private SortedMap<Integer, String> kafkaExternalDnsNames = new TreeMap<>();
