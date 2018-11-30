@@ -35,10 +35,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -381,6 +383,23 @@ public final class TestUtils {
             return edit.apply(node);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static Map<String, String> parseImageMap(String str) {
+        if (str != null) {
+            StringTokenizer tok = new StringTokenizer(str, ", \t\n\r");
+            HashMap<String, String> map = new HashMap<>();
+            while (tok.hasMoreTokens()) {
+                String versionImage = tok.nextToken();
+                int endIndex = versionImage.indexOf('=');
+                String version = versionImage.substring(0, endIndex);
+                String image = versionImage.substring(endIndex + 1);
+                map.put(version.trim(), image.trim());
+            }
+            return Collections.unmodifiableMap(map);
+        } else {
+            return Collections.emptyMap();
         }
     }
     

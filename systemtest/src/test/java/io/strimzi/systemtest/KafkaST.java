@@ -38,12 +38,10 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,20 +57,20 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
+import static io.strimzi.test.StrimziExtension.ACCEPTANCE;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 import static io.strimzi.test.StrimziExtension.TOPIC_CM;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
-import static io.strimzi.test.StrimziExtension.REGRESSION;
-import static io.strimzi.test.StrimziExtension.ACCEPTANCE;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(KafkaST.NAMESPACE)
@@ -636,8 +634,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
 
-        Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
-                "deployment", "strimzi-cluster-operator"));
+        Map<String, String> imgFromDeplConf = getImagesFromConfig();
 
         //Verifying docker image for zookeeper pods
         for (int i = 0; i < zkPods; i++) {
@@ -654,7 +651,7 @@ class KafkaST extends AbstractST {
             if (kafkaVersion == null) {
                 kafkaVersion = "2.0.0";
             }
-            assertEquals(parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), imgFromPod);
+            assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), imgFromPod);
             imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "tls-sidecar");
             assertEquals(imgFromDeplConf.get(TLS_SIDECAR_KAFKA_IMAGE), imgFromPod);
             if (rackAwareEnabled) {
@@ -674,23 +671,6 @@ class KafkaST extends AbstractST {
         assertEquals(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE), imgFromPod);
 
         LOGGER.info("Docker images verified");
-    }
-
-    public static Map<String, String> parseImageMap(String str) {
-        if (str != null) {
-            StringTokenizer tok = new StringTokenizer(str, ", \t\n\r");
-            HashMap<String, String> map = new HashMap<>();
-            while (tok.hasMoreTokens()) {
-                String versionImage = tok.nextToken();
-                int endIndex = versionImage.indexOf('=');
-                String version = versionImage.substring(0, endIndex);
-                String image = versionImage.substring(endIndex + 1);
-                map.put(version.trim(), image.trim());
-            }
-            return Collections.unmodifiableMap(map);
-        } else {
-            return Collections.emptyMap();
-        }
     }
 
     @Test

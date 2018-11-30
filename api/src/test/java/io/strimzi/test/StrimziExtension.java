@@ -710,6 +710,18 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                         LOGGER.info("STRIMZI_KAFKA_IMAGE_MAP={}", v);
                         ((ObjectNode) envVar).put("value", v);
                     }
+                    if (varName.matches("STRIMZI_KAFKA_CONNECT_IMAGE_MAP")) {
+                        String value = envVar.get("value").textValue();
+                        String v = TestUtils.changeOrgAndTagInImageMap(value);
+                        LOGGER.info("STRIMZI_KAFKA_CONNECT_IMAGE_MAP={}", v);
+                        ((ObjectNode) envVar).put("value", v);
+                    }
+                    if (varName.matches("STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP")) {
+                        String value = envVar.get("value").textValue();
+                        String v = TestUtils.changeOrgAndTagInImageMap(value);
+                        LOGGER.info("STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP={}", v);
+                        ((ObjectNode) envVar).put("value", v);
+                    }
                     // Set log level
                     if (varName.equals("STRIMZI_LOG_LEVEL")) {
                         String logLevel = System.getenv().getOrDefault("TEST_STRIMZI_LOG_LEVEL", OPERATOR_LOG_LEVEL);
