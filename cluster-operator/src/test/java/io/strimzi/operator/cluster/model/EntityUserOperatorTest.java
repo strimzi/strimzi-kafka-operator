@@ -159,7 +159,7 @@ public class EntityUserOperatorTest {
         assertEquals(new Integer(EntityUserOperator.HEALTHCHECK_PORT), container.getPorts().get(0).getContainerPort());
         assertEquals(EntityUserOperator.HEALTHCHECK_PORT_NAME, container.getPorts().get(0).getName());
         assertEquals("TCP", container.getPorts().get(0).getProtocol());
-        assertEquals("/opt/entity-user-operator/custom-config/", container.getVolumeMounts().get(0).getMountPath());
+        assertEquals("/opt/user-operator/custom-config/", container.getVolumeMounts().get(0).getMountPath());
         assertEquals("entity-user-operator-metrics-and-logging", container.getVolumeMounts().get(0).getName());
     }
 }

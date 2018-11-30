@@ -74,7 +74,7 @@ public class EntityUserOperator extends AbstractModel {
 
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/entity-user-operator/custom-config/";
+        this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
     }
 
