@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.EphemeralStorage;
@@ -199,7 +200,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .endSpec()
                 .build();
 
-        CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(TestUtils.CRD_KAFKA, CustomResourceDefinition.class);
+        CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
 
         mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();

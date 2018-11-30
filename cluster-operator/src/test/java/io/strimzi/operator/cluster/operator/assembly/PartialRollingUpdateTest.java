@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.Kafka;
@@ -24,7 +25,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -48,7 +48,6 @@ public class PartialRollingUpdateTest {
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
-    public static final String KAFKA_CRD_FILE = TestUtils.CRD_KAFKA;
 
     private Vertx vertx;
     private Kafka cluster;
@@ -101,7 +100,7 @@ public class PartialRollingUpdateTest {
                 .endSpec()
                 .build();
 
-        CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(KAFKA_CRD_FILE, CustomResourceDefinition.class);
+        CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
 
         KubernetesClient bootstrapClient = new MockKube()
                 .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
@@ -139,7 +138,7 @@ public class PartialRollingUpdateTest {
     }
 
     private void startKube() {
-        CustomResourceDefinition kafkaAssemblyCrd = TestUtils.fromYamlFile(KAFKA_CRD_FILE, CustomResourceDefinition.class);
+        CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
 
         this.mockClient = new MockKube()
                 .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
