@@ -109,7 +109,7 @@ public class KafkaAssemblyOperatorTest {
     public static final InlineLogging LOG_KAFKA_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_ZOOKEEPER_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_CONNECT_CONFIG = new InlineLogging();
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup();
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap());
 
     static {
         LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));
@@ -380,8 +380,7 @@ public class KafkaAssemblyOperatorTest {
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
-                VERSIONS,
-                emptyMap()) {
+                VERSIONS) {
             @Override
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
@@ -763,8 +762,7 @@ public class KafkaAssemblyOperatorTest {
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
-                VERSIONS,
-                emptyMap()) {
+                VERSIONS) {
             @Override
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
@@ -879,8 +877,7 @@ public class KafkaAssemblyOperatorTest {
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
-                VERSIONS,
-                emptyMap()) {
+                VERSIONS) {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 createdOrUpdated.add(kafkaAssembly.getMetadata().getName());

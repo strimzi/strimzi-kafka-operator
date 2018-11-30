@@ -64,7 +64,12 @@ public class KafkaUpdateTest {
             new StringReader(
                     "2.0.0  default  2.0  2.0  1234567890abcdef\n" +
                     "2.0.1           2.0  2.0  1234567890abcdef\n" +
-                    "2.1.0           2.1  2.1  1234567890abcdef\n")) { };
+                    "2.1.0           2.1  2.1  1234567890abcdef\n"),
+            map("2.0.0", "strimzi/kafka:0.8.0-kafka-2.0.0",
+                    "2.0.1", "strimzi/kafka:0.8.0-kafka-2.0.1",
+                    "2.1.0", "strimzi/kafka:0.8.0-kafka-2.1.0"),
+            singletonMap("2.0.0", "kafka-connect"),
+            singletonMap("2.0.0", "kafka-connect-s2i")) { };
 
     public static EnvVar findEnv(List<EnvVar> env, String envVar) {
         EnvVar value = null;
@@ -145,8 +150,7 @@ public class KafkaUpdateTest {
                 new ResourceOperatorSupplier(null, null, null,
                         kso, null, null, null, null,
                         null, null, null, null, null),
-                lookup,
-                versionMap);
+                lookup);
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
         Async async = context.async();

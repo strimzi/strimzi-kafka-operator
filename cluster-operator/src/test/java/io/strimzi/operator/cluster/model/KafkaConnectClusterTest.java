@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -25,6 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,10 +32,15 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class KafkaConnectClusterTest {
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"), emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 2;
@@ -79,10 +84,10 @@ public class KafkaConnectClusterTest {
             .withBootstrapServers(bootstrapServers)
             .endSpec()
             .build();
-    private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
+    private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
     @Rule
-    public ResourceTester<KafkaConnect, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnect.class, KafkaConnectCluster::fromCrd);
+    public ResourceTester<KafkaConnect, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnect.class, VERSIONS, KafkaConnectCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {
@@ -121,9 +126,9 @@ public class KafkaConnectClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster));
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster), VERSIONS);
 
-        assertEquals(KafkaConnectSpec.DEFAULT_IMAGE, kc.image);
+        assertEquals("strimzi/kafka-connect:latest-kafka-2.0.0", kc.image);
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, kc.replicas);
         assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessInitialDelay);
         assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessTimeout);
@@ -216,8 +221,8 @@ public class KafkaConnectClusterTest {
                 .endTls()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
-        Deployment dep = kc.generateDeployment(Collections.emptyMap(), true);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kc.generateDeployment(emptyMap(), true);
 
         assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
         assertEquals("my-another-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
@@ -250,8 +255,8 @@ public class KafkaConnectClusterTest {
                                 .build())
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
-        Deployment dep = kc.generateDeployment(Collections.emptyMap(), true);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kc.generateDeployment(emptyMap(), true);
 
         assertEquals("user-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
 
@@ -283,8 +288,8 @@ public class KafkaConnectClusterTest {
                                 .build())
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
-        Deployment dep = kc.generateDeployment(Collections.emptyMap(), true);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kc.generateDeployment(emptyMap(), true);
 
         // 2 = 1 volume from logging/metrics + just 1 from above certs Secret
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getVolumes().size());
@@ -304,8 +309,8 @@ public class KafkaConnectClusterTest {
                     .endKafkaConnectAuthenticationScramSha512Authentication()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
-        Deployment dep = kc.generateDeployment(Collections.emptyMap(), true);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kc.generateDeployment(emptyMap(), true);
 
         assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
 
@@ -355,7 +360,7 @@ public class KafkaConnectClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(Collections.EMPTY_MAP, true);

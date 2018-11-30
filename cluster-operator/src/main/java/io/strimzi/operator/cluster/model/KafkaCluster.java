@@ -256,16 +256,9 @@ public class KafkaCluster extends AbstractModel {
         result.setOwnerReference(kafkaAssembly);
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
         result.setReplicas(kafkaClusterSpec.getReplicas());
-        String version = kafkaClusterSpec.getVersion();
-        if (version == null) {
-            version = versions.defaultVersion().version();
-        }
-        String image = kafkaClusterSpec.getImage();
+        String image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
         if (image == null) {
-            image = IMAGE_MAP.get(version);
-        }
-        if (image == null) {
-            image = IMAGE_MAP.get(versions.defaultVersion().version());
+            throw new InvalidResourceException("Version is not supported");
         }
         result.setImage(image);
         if (kafkaClusterSpec.getReadinessProbe() != null) {

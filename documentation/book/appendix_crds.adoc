@@ -696,6 +696,8 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-Resources-{context}[`Resources`]
 |tls               1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
+|version           1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
 |====
 
 [id='type-KafkaConnectTemplate-{context}']
@@ -867,6 +869,8 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
+|version                   1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
 |====
 
 [id='type-KafkaTopic-{context}']

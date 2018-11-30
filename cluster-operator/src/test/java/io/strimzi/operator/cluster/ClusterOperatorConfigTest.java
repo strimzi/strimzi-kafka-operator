@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
-
 import org.junit.Test;
 
 import java.util.Collections;
@@ -49,7 +49,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testReconciliationInterval() {
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, emptyMap());
+        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap()));
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(60_000, config.getReconciliationIntervalMs());

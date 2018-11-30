@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -39,6 +40,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,6 +50,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -60,6 +64,9 @@ import static org.mockito.Mockito.when;
 @RunWith(VertxUnitRunner.class)
 public class KafkaConnectS2IAssemblyOperatorTest {
 
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            emptyMap(), emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0")) { };
     protected static Vertx vertx;
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
     public static final String LOGGING_CONFIG = "#Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.\n" +
@@ -119,9 +126,9 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, VERSIONS);
 
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -183,7 +190,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmNamespace = "test";
 
         KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(new HashMap<String, String>(), true));
@@ -227,7 +234,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, VERSIONS);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -272,7 +279,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmNamespace = "test";
 
         KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
@@ -334,13 +341,13 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, VERSIONS);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            KafkaConnectS2ICluster compareTo = KafkaConnectS2ICluster.fromCrd(clusterCm);
+            KafkaConnectS2ICluster compareTo = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
             // Vertify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -398,7 +405,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmNamespace = "test";
 
         KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
         clusterCm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
@@ -444,7 +451,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, VERSIONS);
 
 
         Async async = context.async();
@@ -472,7 +479,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmNamespace = "test";
 
         KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
@@ -502,7 +509,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, VERSIONS);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -531,7 +538,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         String clusterCmNamespace = "test";
 
         KafkaConnectS2I clusterCm = ResourceUtils.createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName);
-        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm);
+        KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
@@ -561,7 +568,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, VERSIONS);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -598,12 +605,12 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
         Labels newLabels = Labels.forKind(KafkaConnectS2I.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaConnectS2ICluster.fromCrd(bar).generateDeploymentConfig(new HashMap<String, String>(), true)));
+                asList(KafkaConnectS2ICluster.fromCrd(bar, VERSIONS).generateDeploymentConfig(new HashMap<String, String>(), true)));
 
         // providing the list DeploymentConfigs for already "existing" Kafka Connect S2I clusters
         Labels barLabels = Labels.forCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
-                asList(KafkaConnectS2ICluster.fromCrd(bar).generateDeploymentConfig(new HashMap<String, String>(), true))
+                asList(KafkaConnectS2ICluster.fromCrd(bar, VERSIONS).generateDeploymentConfig(new HashMap<String, String>(), true))
         );
 
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
@@ -615,7 +622,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator) {
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, VERSIONS) {
 
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2IAssembly) {

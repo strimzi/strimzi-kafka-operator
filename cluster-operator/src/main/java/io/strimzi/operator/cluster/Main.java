@@ -110,14 +110,14 @@ public class Main {
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift,
                 config.getOperationTimeoutMs(), certManager,
                 new ResourceOperatorSupplier(vertx, client, isOpenShift, config.getOperationTimeoutMs()),
-                new KafkaVersion.Lookup(),
-                config.getImageMap());
-        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations, networkPolicyOperator);
+                config.versions());
+        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations, networkPolicyOperator,
+                config.versions());
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
         CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2I> kafkaConnectS2iCrdOperator = null;
         if (isOpenShift) {
-            kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations, configMapOperations, secretOperations, certManager);
+            kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations, configMapOperations, secretOperations, certManager, config.versions());
         } else {
             maybeLogS2iOnKubeWarning(vertx, client);
         }
@@ -163,7 +163,7 @@ public class Main {
         }
     }
 
-    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, boolean isOpenShift, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager) {
+    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, boolean isOpenShift, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, KafkaVersion.Lookup versions) {
         ImageStreamOperator imagesStreamOperations;
         BuildConfigOperator buildConfigOperations;
         DeploymentConfigOperator deploymentConfigOperations;
@@ -180,7 +180,7 @@ public class Main {
                 certManager,
                 kafkaConnectS2iCrdOperator,
                  configMapOperations, deploymentConfigOperations,
-                serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations, networkPolicyOperator);
+                serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations, networkPolicyOperator, versions);
         return kafkaConnectS2IClusterOperations;
     }
 

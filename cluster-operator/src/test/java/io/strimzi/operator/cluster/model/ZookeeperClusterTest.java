@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ZookeeperClusterTest {
 
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup();
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap());
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -63,7 +63,7 @@ public class ZookeeperClusterTest {
     private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
     @Rule
-    public ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, ZookeeperCluster::fromCrd);
+    public ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, ZookeeperCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {

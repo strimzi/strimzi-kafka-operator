@@ -73,14 +73,18 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         public static final String KAFKA_VERSIONS_RESOURCE = "kafka-versions";
         private final Map<String, KafkaVersion> map;
         private final KafkaVersion defaultVersion;
+        private final Map<String, String> kafkaImages;
+        private final Map<String, String> kafkaConnectImages;
+        private final Map<String, String> kafkaConnectS2iImages;
 
-        public Lookup() {
+        public Lookup(Map<String, String> kafkaImages, Map<String, String> kafkaConnectImages, Map<String, String> kafkaConnectS2iImages) {
             this(new InputStreamReader(
                     KafkaVersion.class.getResourceAsStream("/" + KAFKA_VERSIONS_RESOURCE),
-                    StandardCharsets.UTF_8));
+                    StandardCharsets.UTF_8),
+                    kafkaImages, kafkaConnectImages, kafkaConnectS2iImages);
         }
 
-        protected Lookup(Reader reader) {
+        protected Lookup(Reader reader, Map<String, String> kafkaImages, Map<String, String> kafkaConnectImages, Map<String, String> kafkaConnectS2iImages) {
             map = new HashMap<>(5);
             try {
                 try (LineNumberReader lnReader = new LineNumberReader(reader)) {
@@ -89,6 +93,9 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             } catch (Exception e) {
                 throw new RuntimeException("Error reading " + KAFKA_VERSIONS_RESOURCE, e);
             }
+            this.kafkaImages = kafkaImages;
+            this.kafkaConnectImages = kafkaConnectImages;
+            this.kafkaConnectS2iImages = kafkaConnectS2iImages;
         }
 
         public KafkaVersion defaultVersion() {
@@ -114,6 +121,62 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
         public Set<String> supportedVersions() {
             return new TreeSet<>(map.keySet());
+        }
+
+        private String image(final String crImage, final String crVersion, Map<String, String> images) {
+            final String image;
+            if (crImage == null) {
+                if (crVersion == null) {
+                    image = images.get(defaultVersion().version());
+                    if (image == null) {
+                        throw new IllegalStateException("The images map is invalid: It lacks an image for the default version " + defaultVersion());
+                    }
+                } else {
+                    image = images.get(crVersion);
+                }
+            } else {
+                image = crImage;
+            }
+            return image;
+        }
+
+        public String kafkaImage(String image, String version) {
+            return image(image, version, kafkaImages);
+        }
+
+        public String kafkaConnectVersion(String image, String version) {
+            return image(image,
+                    version,
+                    kafkaConnectImages);
+        }
+
+        public String kafkaConnectS2iVersion(String image, String version) {
+            return image(image,
+                    version,
+                    kafkaConnectS2iImages);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("versions{");
+            boolean first = true;
+            for (String v : supportedVersions()) {
+                if (!first) {
+                    sb.append(", ");
+                }
+                first = false;
+                KafkaVersion version = version(v);
+                sb.append(v).append("=")
+                        .append("{proto: ").append(version.protocolVersion)
+                        .append(" msg: ").append(version.messageVersion)
+                        .append(" kafka-image: ").append(kafkaImages.get(v))
+                        .append(" connect-image: ").append(kafkaConnectImages.get(v))
+                        .append(" connects2i-image: ").append(kafkaConnectS2iImages.get(v))
+                        .append("}");
+
+            }
+            sb.append("}");
+            return sb.toString();
         }
     }
 

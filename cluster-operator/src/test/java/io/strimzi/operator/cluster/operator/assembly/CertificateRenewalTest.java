@@ -6,9 +6,9 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
@@ -92,8 +92,7 @@ public class CertificateRenewalTest {
                 new ResourceOperatorSupplier(null, null, null,
                         null, null, secretOps, null, null,
                         null, null, null, null, null),
-                new KafkaVersion.Lookup(),
-                emptyMap());
+                new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap()));
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
         Kafka kafka = new KafkaBuilder()

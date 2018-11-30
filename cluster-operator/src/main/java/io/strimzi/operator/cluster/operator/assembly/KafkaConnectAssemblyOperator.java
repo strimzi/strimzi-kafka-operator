@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -47,6 +48,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     private final ServiceOperator serviceOperations;
     private final DeploymentOperator deploymentOperations;
     private final ConfigMapOperator configMapOperations;
+    private final KafkaVersion.Lookup versions;
 
     /**
      * @param vertx The Vertx instance
@@ -63,11 +65,13 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                                         DeploymentOperator deploymentOperations,
                                         ServiceOperator serviceOperations,
                                         SecretOperator secretOperations,
-                                        NetworkPolicyOperator networkPolicyOperator) {
+                                        NetworkPolicyOperator networkPolicyOperator,
+                                        KafkaVersion.Lookup versions) {
         super(vertx, isOpenShift, ResourceType.CONNECT, certManager, connectOperator, secretOperations, networkPolicyOperator);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
+        this.versions = versions;
     }
 
     @Override
@@ -80,7 +84,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
             return Future.failedFuture("Spec cannot be null");
         }
         try {
-            connect = KafkaConnectCluster.fromCrd(kafkaConnect);
+            connect = KafkaConnectCluster.fromCrd(kafkaConnect, versions);
         } catch (Exception e) {
             return Future.failedFuture(e);
         }

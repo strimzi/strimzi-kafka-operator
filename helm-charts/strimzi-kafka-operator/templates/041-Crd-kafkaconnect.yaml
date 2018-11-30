@@ -360,5 +360,7 @@ spec:
                     - secretName
               required:
               - trustedCertificates
+            version:
+              type: string
           required:
           - bootstrapServers

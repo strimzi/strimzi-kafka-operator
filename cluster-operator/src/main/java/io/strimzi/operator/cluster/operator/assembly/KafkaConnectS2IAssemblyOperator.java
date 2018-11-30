@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -52,6 +53,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     private final ImageStreamOperator imagesStreamOperations;
     private final BuildConfigOperator buildConfigOperations;
     private final ConfigMapOperator configMapOperations;
+    private final KafkaVersion.Lookup versions;
 
     /**
      * @param vertx                      The Vertx instance
@@ -72,13 +74,15 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                                            ImageStreamOperator imagesStreamOperations,
                                            BuildConfigOperator buildConfigOperations,
                                            SecretOperator secretOperations,
-                                           NetworkPolicyOperator networkPolicyOperator) {
+                                           NetworkPolicyOperator networkPolicyOperator,
+                                           KafkaVersion.Lookup versions) {
         super(vertx, isOpenShift, ResourceType.CONNECT_S2I, certManager, connectOperator, secretOperations, networkPolicyOperator);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.imagesStreamOperations = imagesStreamOperations;
         this.buildConfigOperations = buildConfigOperations;
+        this.versions = versions;
     }
 
     @Override
@@ -91,7 +95,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
         if (isOpenShift) {
             KafkaConnectS2ICluster connect;
             try {
-                connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2I);
+                connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2I, versions);
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }

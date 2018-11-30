@@ -21,6 +21,7 @@ import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.AbstractModel.containerEnvVars;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ENV_VAR_KAFKA_ZOOKEEPER_CONNECT;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -41,7 +42,7 @@ public class KafkaSetOperatorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        KafkaVersion.Lookup versions = new KafkaVersion.Lookup();
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap());
         a = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true);
         b = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true);
     }

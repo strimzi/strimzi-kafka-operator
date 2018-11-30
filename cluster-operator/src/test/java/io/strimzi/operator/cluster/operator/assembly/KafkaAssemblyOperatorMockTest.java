@@ -53,6 +53,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -79,6 +80,10 @@ public class KafkaAssemblyOperatorMockTest {
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
+
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap()) { };
 
     private final int zkReplicas;
     private final Storage zkStorage;
@@ -226,7 +231,7 @@ public class KafkaAssemblyOperatorMockTest {
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ResourceOperatorSupplier supplier = supplierWithMocks();
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                new MockCertManager(), supplier, new KafkaVersion.Lookup(), emptyMap());
+                new MockCertManager(), supplier, VERSIONS);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();

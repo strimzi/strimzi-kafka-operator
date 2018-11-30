@@ -110,7 +110,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final ServiceAccountOperator serviceAccountOperator;
     private final RoleBindingOperator roleBindingOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
-    private final Map<String, String> versionMap;
 
     private final KafkaVersion.Lookup versions;
 
@@ -122,8 +121,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                  long operationTimeoutMs,
                                  CertManager certManager,
                                  ResourceOperatorSupplier supplier,
-                                 KafkaVersion.Lookup versions,
-                                 Map<String, String> versionMap) {
+                                 KafkaVersion.Lookup versions) {
         super(vertx, isOpenShift, ResourceType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations, supplier.networkPolicyOperator);
         this.operationTimeoutMs = operationTimeoutMs;
         this.serviceOperations = supplier.serviceOperations;
@@ -137,7 +135,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.roleBindingOperator = supplier.roleBindingOperator;
         this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
         this.versions = versions;
-        this.versionMap = versionMap;
     }
 
     @Override
@@ -442,7 +439,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         log.debug("Kafka.spec.kafka.version unchanged");
                         result = Future.succeededFuture();
                     } else {
-                        String image = imageForVersion(toVersion);
+                        String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), toVersion.version());
                         Future<StatefulSet> f = Future.succeededFuture(ss);
                         if (upgrade.isUpgrade()) {
                             if (currentVersion.equals(fromVersion)) {
@@ -459,14 +456,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     }
                     return result.map(this);
                 });
-        }
-
-        private String imageForVersion(KafkaVersion toVersion) {
-            String i = kafkaAssembly.getSpec().getKafka().getImage();
-            if (i == null) {
-                i = versionMap.get(toVersion.version());
-            }
-            return i;
         }
 
         /**

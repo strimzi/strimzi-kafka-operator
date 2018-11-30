@@ -35,6 +35,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
@@ -57,7 +58,9 @@ import static org.junit.Assert.assertTrue;
 
 public class KafkaClusterTest {
 
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup();
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -77,7 +80,7 @@ public class KafkaClusterTest {
     private final KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
     @Rule
-    public ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, KafkaCluster::fromCrd);
+    public ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, KafkaCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {

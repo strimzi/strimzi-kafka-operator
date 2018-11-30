@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -34,12 +35,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.StringReader;
 import java.util.Collections;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
 public class KafkaConnectAssemblyOperatorMockTest {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectAssemblyOperatorMockTest.class);
+
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"), emptyMap()) { };
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-connect-cluster";
@@ -86,7 +95,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 connectOperator,
-                cmops, depops, svcops, secretops, policyops);
+                cmops, depops, svcops, secretops, policyops, VERSIONS);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
