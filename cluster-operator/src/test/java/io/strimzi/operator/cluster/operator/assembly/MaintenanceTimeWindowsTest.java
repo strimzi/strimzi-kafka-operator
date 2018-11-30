@@ -184,12 +184,12 @@ public class MaintenanceTimeWindowsTest {
         Async async = context.async();
 
         testZkRollingUpdate(null,
-                () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
-                r -> {
-                    String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
-                    context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
-                    async.complete();
-                });
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            });
 
         async.await();
     }
@@ -200,12 +200,12 @@ public class MaintenanceTimeWindowsTest {
         Async async = context.async();
 
         testZkRollingUpdate(Arrays.asList("* * 8-10 * * ?", "* * 14-15 * * ?"),
-                () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
-                r -> {
-                    String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
-                    context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
-                    async.complete();
-                });
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            });
 
         async.await();
     }
@@ -216,12 +216,12 @@ public class MaintenanceTimeWindowsTest {
         Async async = context.async();
 
         testKafkaRollingUpdate(null,
-                () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
-                r -> {
-                    String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
-                    context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
-                    async.complete();
-                });
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            });
 
         async.await();
     }
@@ -232,12 +232,12 @@ public class MaintenanceTimeWindowsTest {
         Async async = context.async();
 
         testZkRollingUpdate(Collections.singletonList("* * 14-15 * * ?"),
-                () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("Pacific/Easter")).toInstant()),
-                r -> {
-                    String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
-                    context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
-                    async.complete();
-                });
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("Pacific/Easter")).toInstant()),
+            r -> {
+                String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            });
 
         async.await();
     }
