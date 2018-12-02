@@ -59,7 +59,7 @@ public class Main {
         SecretOperator secretOperations = new SecretOperator(vertx, client);
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList, DoneableKafkaUser> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
         SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, authorizer);
-        ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeperConnect());
+        ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
         ScramShaCredentialsOperator scramShaCredentialsOperator = new ScramShaCredentialsOperator(vertx, scramShaCredentials);
 
         KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,

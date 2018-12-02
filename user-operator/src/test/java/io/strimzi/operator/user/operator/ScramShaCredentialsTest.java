@@ -33,47 +33,42 @@ public class ScramShaCredentialsTest {
 
     @Before
     public void createSS() {
-        ss = new ScramShaCredentials(zkServer.getZkConnectString());
+        ss = new ScramShaCredentials(zkServer.getZkConnectString(), 6_000);
     }
 
     @Test
     public void normalCreate() {
-        ss.createOrUpdate("normalCreate", "foo-password", 10000);
+        ss.createOrUpdate("normalCreate", "foo-password");
     }
 
     @Test
     public void doubleCreate() {
-        ss.createOrUpdate("doubleCreate", "foo-password", 10000);
-        ss.createOrUpdate("doubleCreate", "foo-password", 10000);
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void tooFewIterations() {
-        ss.createOrUpdate("tooFewIterations", "foo-password", 1);
+        ss.createOrUpdate("doubleCreate", "foo-password");
+        ss.createOrUpdate("doubleCreate", "foo-password");
     }
 
     @Test
     public void normalDelete() {
-        ss.createOrUpdate("normalDelete", "foo-password", 10000);
+        ss.createOrUpdate("normalDelete", "foo-password");
         ss.delete("normalDelete");
     }
 
     @Test
     public void doubleDelete() {
-        ss.createOrUpdate("doubleDelete", "foo-password", 10000);
+        ss.createOrUpdate("doubleDelete", "foo-password");
         ss.delete("doubleDelete");
         ss.delete("doubleDelete");
     }
 
     @Test
     public void changePassword() {
-        ss.createOrUpdate("changePassword", "changePassword-password", 10000);
-        ss.createOrUpdate("changePassword", "changePassword-password2", 10000);
+        ss.createOrUpdate("changePassword", "changePassword-password");
+        ss.createOrUpdate("changePassword", "changePassword-password2");
     }
 
     @Test
     public void userExists() {
-        ss.createOrUpdate("userExists", "foo-password", 10000);
+        ss.createOrUpdate("userExists", "foo-password");
         assertTrue(ss.exists("userExists"));
 
     }
@@ -85,7 +80,7 @@ public class ScramShaCredentialsTest {
 
     @Test
     public void listSome() {
-        ss.createOrUpdate("listSome", "foo-password", 10000);
+        ss.createOrUpdate("listSome", "foo-password");
         assertTrue(ss.list().contains("listSome"));
     }
 
