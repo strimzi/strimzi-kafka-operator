@@ -85,7 +85,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaWithTemplate() {
+    public void testKafkaConnectWithTemplate() {
         createDelete(KafkaConnect.class, "KafkaConnect-with-template.yaml");
     }
 }
