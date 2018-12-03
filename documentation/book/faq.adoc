@@ -3,13 +3,13 @@
 
 == Cluster Operator
 
-=== Why does {ProductName} cluster admin privileges to install?
+=== Why do I need cluster admin privileges to install {ProductName}?
 
-When installing {ProductName} you need to have the ability to create Custom Resource Definitions (CRDs). 
-These are the resources that tell {PlatformProductName} about the {ProductName}-specific resources, such as `Kafka`, `KafkaConnect` and so on.
-Because CRDs are a cluster-scoped resource (rather than being scoped to a particular {PlatformProductName} namespace) typically cluster admin privileges are required to be able to do this.
+To install {ProductName}, you must have the ability to create Custom Resource Definitions (CRDs).
+CRDs instruct {ProductPlatformName} about resources that are specific to {ProductName}, such as Kafka, KafkaConnect, and so on.
+Because CRDs are a cluster-scoped resource rather than being scoped to a particular {PlatformProductName} namespace, they typically require cluster admin privileges to install.
 
-Installation of {ProductName} also requires the ability to create some `ClusterRoles` and `ClusterRoleBindings`, similarly to CRDs these are cluster-scoped resources and so, again, typically cluster admin privileges are required to be able to do this.
+In addition, you must also have the ability to create ClusterRoles and ClusterRoleBindings. Like CRDs, these are cluster-scoped resources that typically require cluster admin privileges.
 
 The cluster administrator can inspect all the resources being installed (in the `/install/` directory) to assure themselves that the `ClusterRoles` do not grant unnecessary privileges. For more information about why the Cluster Operator installation resources grant the ability to create `ClusterRoleBindings` see the following question.
 
@@ -33,16 +33,17 @@ The Cluster Operator therefore needs to be able to grant them this access, which
 For this reason the Cluster Operator itself needs to be able to create `Roles` and `RoleBindings` in the namespace that those operators will run in.
 However, because of the privilege escalation prevention, the Cluster Operator cannot grant privileges it does not have itself (in particular it cannot grant such privileges in namespace it cannot access).
 
-. When using rack aware partition assignment, {ProductName} needs to be able to discover the failure domain (for example, the Availability Zone in AWS) of the node on which a broker pod is assigned.
-In order to do this the broker pod needs to be able to get information about the `Node` it is running on.
+. When using rack-aware partition assignment, {ProductName} needs to be able to discover the failure domain (for example, the Availability Zone in AWS) of the node on which a broker pod is assigned.
+To do this the broker pod needs to be able to get information about the `Node` it is running on.
 A `Node` is a cluster-scoped resource, so access to it can only be granted via a `ClusterRoleBinding` (not a namespace-scoped `RoleBinding`). 
-Therefore the Cluster Operator need to be able to create `ClusterRoleBindings`.
-But again, because of the privilege escalation prevention, the Cluster Operator cannot grant privileges it does not have itself (so it cannot, for example, create a `ClusterRoleBinding` to a `ClusterRole` which the Cluster Operator is not already bound to via some other `ClusterRoleBinding`).
+Therefore the Cluster Operator needs to be able to create `ClusterRoleBindings`.
+But again, because of privilege escalation prevention, the Cluster Operator cannot grant privileges it does not have itself (so it cannot, for example, create a `ClusterRoleBinding` to a `ClusterRole` which the Cluster Operator is not already bound to via some other `ClusterRoleBinding`).
 
 
-=== Why can normal {PlatformProductName} users not create the custom resource (`Kafka`, `KafkaTopic` and so on)?
+=== Why can standard {PlatformProductName} users not create the custom resource (`Kafka`, `KafkaTopic`, and so on)?
 
-This is because the {PlatformProductName} cluster administrator has not granted the necessary privileges to normal users when installing {ProductName}. 
+Because, when they installed {ProductName}, the {PlatformProductName} cluster administrator did not grant the necessary privileges to standard users.
+
 See xref:normal-user-access-custom-resources-{context}[this FAQ answer] for more details.
 
 
