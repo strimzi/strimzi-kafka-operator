@@ -27,7 +27,7 @@ public class ScramShaCredentialsOperator {
             future -> {
                 boolean exists = credsManager.exists(username);
                 if (password != null) {
-                    credsManager.createOrUpdate(username, password, -1);
+                    credsManager.createOrUpdate(username, password);
                     future.complete(exists ? ReconcileResult.created(null) : ReconcileResult.patched(null));
                 } else  {
                     if (exists) {

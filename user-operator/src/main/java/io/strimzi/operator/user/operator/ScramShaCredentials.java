@@ -4,199 +4,233 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.strimzi.operator.common.process.ProcessHelper;
-import kafka.admin.ConfigCommand;
+import io.vertx.core.json.JsonObject;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
+import org.apache.kafka.common.security.scram.ScramCredential;
+import org.apache.kafka.common.security.scram.internals.ScramCredentialUtils;
+import org.apache.kafka.common.security.scram.internals.ScramFormatter;
 import org.apache.kafka.common.security.scram.internals.ScramMechanism;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.CharBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
-
+/**
+ * Utility class for managing Scram credentials
+ */
 public class ScramShaCredentials {
-
     private static final Logger log = LogManager.getLogger(SimpleAclOperator.class.getName());
 
+    private final static int ITERATIONS = 4096;
+    private final static int CONNECTION_TIMEOUT = 30_000;
+
     private final ScramMechanism mechanism = ScramMechanism.SCRAM_SHA_512;
+    private ZkClient zkClient;
 
-    private final String zookeeper;
-
-    public ScramShaCredentials(String zookeeper) {
-        this.zookeeper = zookeeper;
+    public ScramShaCredentials(String zookeeperUrl, int zookeeperSessionTimeout) {
+        zkClient = new ZkClient(zookeeperUrl, zookeeperSessionTimeout, CONNECTION_TIMEOUT, new BytesPushThroughSerializer());
     }
 
     /**
      * Create or update the SCRAM-SHA credentials for the given user.
-     * @param iterations If &lt;= 0 the default number of iterations will be used.
+     *
+     * @param username The name of the user which should be created or updated
+     * @param password The desired user password
      */
-    public void createOrUpdate(String username, String password, int iterations) {
-        if (0 < iterations && iterations < mechanism.minIterations()) {
-            throw new RuntimeException("Given number of iterations (" + iterations + ") " +
-                    "is less than minimum iterations for mechanism (" + mechanism.minIterations() + ")");
+    public void createOrUpdate(String username, String password) {
+        byte[] data = zkClient.readData("/config/users/" + username, true);
+
+        if (data != null)   {
+            log.debug("Updating {} credentials for user {}", mechanism.mechanismName(), username);
+            zkClient.writeData("/config/users/" + username, updateUserJson(data, password));
+        } else {
+            log.debug("Creating {} credentials for user {}", mechanism.mechanismName(), username);
+            ensurePath("/config/users");
+            zkClient.createPersistent("/config/users/" + username, createUserJson(password));
         }
-        StringBuilder value = new StringBuilder(mechanism.mechanismName()).append("=[");
-        if (iterations > 0) {
-            value.append("iterations=").append(iterations).append(',');
-        }
-        value.append("password=").append(password).append(']');
-        try (ProcessHelper.ProcessResult pr = exec(asList(
-                    "--zookeeper", zookeeper,
-                    "--alter",
-                    "--entity-name", username,
-                    "--entity-type", "users",
-                    "--add-config", value.toString()))) {
-            Pattern compile = Pattern.compile("Completed Updating config for entity: user-principal '.*'\\.");
-            if (!matchResult(pr, pr.standardOutput(), 0, compile)) {
-                throw unexpectedOutput(pr);
-            }
-        }
+
+        notifyChanges(username);
     }
 
     /**
      * Delete the SCRAM-SHA credentials for the given user.
      * It is not an error if the user doesn't exist, or doesn't currently have any SCRAM-SHA credentials.
+     *
+     * @param username Name of the user
      */
     public void delete(String username) {
-        try (ProcessHelper.ProcessResult pr = exec(asList(
-                "--zookeeper", zookeeper,
-                "--alter",
-                "--entity-name", username,
-                "--entity-type", "users",
-                "--delete-config", mechanism.mechanismName()))) {
-            if (!matchResult(pr, pr.standardOutput(), 0,
-                    Pattern.compile("Completed Updating config for entity: user-principal '.*'\\."))
-                    && !matchResult(pr, pr.standardError(), 1,
-                    Pattern.compile(Pattern.quote("Invalid config(s): " + mechanism.mechanismName())))) {
-                throw unexpectedOutput(pr);
-            }
+        byte[] data = zkClient.readData("/config/users/" + username, true);
+
+        if (data != null)   {
+            log.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
+            zkClient.writeData("/config/users/" + username, deleteUserJson(data));
+            notifyChanges(username);
+        } else {
+            log.warn("Credentials for user {} already don't exist", username);
         }
     }
 
     /**
      * Determine whether the given user has SCRAM-SHA credentials.
+     *
+     * @param username Name of the user
+     *
+     * @return True if the user exists and is configured for given mechanism
      */
     public boolean exists(String username) {
-        try (ProcessHelper.ProcessResult pr = exec(asList("kafka-configs.sh",
-            "--zookeeper", zookeeper,
-            "--describe",
-            "--entity-name", username,
-            "--entity-type", "users"))) {
-            if (matchResult(pr, pr.standardOutput(), 0,
-                    Pattern.compile("Configs for user-principal '.*?' are .*" + mechanism.mechanismName() + "=salt=[a-zA-Z0-9=]+,stored_key=([a-zA-Z0-9/+=]+),server_key=([a-zA-Z0-9/+=]+),iterations=[0-9]+"))) {
-                return true;
-            } else if (matchResult(pr, pr.standardOutput(), 0,
-                    Pattern.compile("Configs for user-principal '.*?' are .*(?!" + mechanism.mechanismName() + "=salt=[a-zA-Z0-9=]+,stored_key=([a-zA-Z0-9/+=]+),server_key=([a-zA-Z0-9/+=]+),iterations=[0-9]+)"))) {
-                return false;
-            } else {
-                throw unexpectedOutput(pr);
+        byte[] data = zkClient.readData("/config/users/" + username, true);
+
+        if (data != null)   {
+            String jsonString = new String(data, Charset.defaultCharset());
+            JsonObject json = new JsonObject(jsonString);
+            validateJsonVersion(json);
+            JsonObject config = json.getJsonObject("config");
+
+            if (config != null) {
+                String scramCredentials = config.getString(mechanism.mechanismName());
+
+                if (scramCredentials != null) {
+                    try {
+                        ScramCredentialUtils.credentialFromString(scramCredentials);
+                        return true;
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
+                    }
+                }
             }
         }
+
+        return false;
     }
 
     /**
      * List users with SCRAM-SHA credentials
+     *
+     * @return List of usernames configured for given mechanism
      */
     public List<String> list() {
         List<String> result = new ArrayList<>();
-        try (ProcessHelper.ProcessResult pr = exec(asList("kafka-configs.sh",
-                "--zookeeper", zookeeper,
-                "--describe",
-                "--entity-type", "users"))) {
-            if (pr.exitCode() == 0) {
-                Pattern pattern = Pattern.compile("Configs for user-principal '(.*?)' are .*" + mechanism.mechanismName() + "=salt=[a-zA-Z0-9=]+,stored_key=([a-zA-Z0-9/+=]+),server_key=([a-zA-Z0-9/+=]+),iterations=[0-9]+");
-                try {
-                    try (FileChannel channel = new FileInputStream(pr.standardOutput()).getChannel()) {
-                        MappedByteBuffer byteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, (int) channel.size());
-                        CharBuffer cs = Charset.defaultCharset().newDecoder().decode(byteBuffer);
-                        Matcher m = pattern.matcher(cs);
-                        while (m.find()) {
-                            result.add(m.group(1));
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+
+        if (zkClient.exists("/config/users"))   {
+            List<String> nodes = zkClient.getChildren("/config/users");
+
+            for (String node : nodes)   {
+                if (exists(node))   {
+                    result.add(node);
                 }
             }
         }
+
         return result;
     }
 
-    private RuntimeException unexpectedOutput(ProcessHelper.ProcessResult pr) {
-        log.debug("{} standard output:\n~~~\n{}\n~~~", pr, getFile(pr.standardOutput()));
-        log.debug("{} standard error:\n~~~\n{}\n~~~", pr, getFile(pr.standardError()));
-        return new RuntimeException(pr + " exited with code " + pr.exitCode() + " and is missing expected output");
+    /**
+     * This notifies Kafka about the changes we have made
+     *
+     * @param username  Name of the user whose configuration changed
+     */
+    private void notifyChanges(String username) {
+        log.debug("Notifying changes for user {}", username);
+
+        ensurePath("/config/changes");
+
+        JsonObject json = new JsonObject().put("version", 2).put("entity_path", "users/" + username);
+        zkClient.createPersistentSequential("/config/changes/config_change_", json.encode().getBytes(Charset.defaultCharset()));
     }
 
-    boolean matchResult(ProcessHelper.ProcessResult pr, File file, int expectedExitCode, Pattern pattern) {
-        try {
-            if (pr.exitCode() == expectedExitCode) {
-                try (FileChannel channel = new FileInputStream(file).getChannel()) {
-                    MappedByteBuffer byteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, (int) channel.size());
-                    CharBuffer cs = Charset.defaultCharset().newDecoder().decode(byteBuffer);
-                    Matcher m = pattern.matcher(cs);
-                    if (m.find()) {
-                        log.debug("Found output indicating success: {}", m.group());
-                        return true;
-                    }
-                }
-            }
-            return false;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    /**
+     * Ensures that the path in Zookeeper exists.
+     * It checks whether it already exists and in case it doesn't, it will create the path.
+     *
+     * @param path The Zookeeper path which should exist
+     */
+    private void ensurePath(String path)    {
+        if (!zkClient.exists(path))   {
+            zkClient.createPersistent(path, true);
         }
     }
 
-    private static ProcessHelper.ProcessResult exec(List<String> kafkaConfigsOptions) {
-        String cp = System.getProperty("java.class.path");
-        File home = new File(System.getProperty("java.home"));
-        List<String> arguments = new ArrayList(asList(
-                new File(home, "bin/java").getAbsolutePath(),
-                "-cp", cp,
-                ConfigCommand.class.getName()));
-        arguments.addAll(kafkaConfigsOptions);
-
+    /**
+     * Generates the JSON with the credentials
+     *
+     * @param password  Password in String format
+     * @return  Returns the geenrated JSON as byte array
+     */
+    protected byte[] createUserJson(String password)   {
         try {
-            return ProcessHelper.executeSubprocess(arguments, args -> args.stream()
-                    .map(arg ->
-                        arg.replaceAll("password=[^]]+", "[password=***]")
-                    )
-                    .collect(Collectors.toList()));
+            ScramFormatter formatter = new ScramFormatter(mechanism);
+            ScramCredential credentials = formatter.generateCredential(password, ITERATIONS);
 
-        } catch (IOException e) {
-            throw new RuntimeException("Error starting subprocess " + arguments, e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        throw new RuntimeException("Error starting subprocess " + arguments);
-    }
+            JsonObject json = new JsonObject()
+                    .put("version", 1)
+                    .put("config", new JsonObject().put(mechanism.mechanismName(), ScramCredentialUtils.credentialToString(credentials)));
 
-    private static String getFile(File out) {
-        try {
-            return new String(Files.readAllBytes(out.toPath()), Charset.defaultCharset());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
+            return json.encode().getBytes(Charset.defaultCharset());
+        } catch (NoSuchAlgorithmException e)    {
+            throw new RuntimeException("Failed to generate credentials", e);
         }
     }
 
-    public static void main(String[] args) {
-        ScramShaCredentials scramSha = new ScramShaCredentials("localhost:2181");
-        scramSha.createOrUpdate("tom", "password", -1);
-        scramSha.createOrUpdate("tom", "password", 4096);
-        scramSha.delete("tom");
+    /**
+     * Updates the SCRAM credentials in existing JSON
+     *
+     * @param user JSON string with existing user configuration as byte[]
+     * @param password  Password in String format
+     *
+     * @return  Returns the updated JSON as byte array
+     */
+    protected byte[] updateUserJson(byte[] user, String password)   {
+        JsonObject json = new JsonObject(new String(user, Charset.defaultCharset()));
+
+        validateJsonVersion(json);
+
+        if (json.getJsonObject("config") == null)   {
+            json.put("config", new JsonObject());
+        }
+
+        try {
+            ScramFormatter formatter = new ScramFormatter(mechanism);
+            ScramCredential credentials = formatter.generateCredential(password, ITERATIONS);
+
+            json.getJsonObject("config").put(mechanism.mechanismName(), ScramCredentialUtils.credentialToString(credentials));
+
+            return json.encode().getBytes(Charset.defaultCharset());
+        } catch (NoSuchAlgorithmException e)    {
+            throw new RuntimeException("Failed to generate credentials", e);
+        }
+    }
+
+    /**
+     * Deletes the SCRAM credentials from existing JSON
+     *
+     * @param user JSON string with existing user configuration as byte[]
+     *
+     * @return  Returns the updated JSON without the SCRAM credentials as byte array
+     */
+    protected byte[] deleteUserJson(byte[] user)   {
+        JsonObject json = new JsonObject(new String(user, Charset.defaultCharset()));
+
+        validateJsonVersion(json);
+
+        if (json.getJsonObject("config") == null)   {
+            json.put("config", new JsonObject());
+        }
+
+        if (json.getJsonObject("config").getString(mechanism.mechanismName()) != null) {
+            json.getJsonObject("config").remove(mechanism.mechanismName());
+        }
+
+        return json.encode().getBytes(Charset.defaultCharset());
+    }
+
+    protected void validateJsonVersion(JsonObject json)   {
+        if (json.getInteger("version") != 1)    {
+            throw new RuntimeException("Failed to validate the user JSON. The version is missing or has an invalid value.");
+        }
     }
 }
 
