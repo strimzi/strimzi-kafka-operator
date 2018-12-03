@@ -26,7 +26,7 @@ public class EmbeddedZooKeeper {
 
     private void start(InetSocketAddress addr) throws IOException, InterruptedException {
         factory = new NIOServerCnxnFactory();
-        factory.configure(addr, 10);
+        factory.configure(addr, 20);
         factory.startup(zk);
     }
 

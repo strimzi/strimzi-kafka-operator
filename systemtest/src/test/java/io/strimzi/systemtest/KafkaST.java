@@ -415,6 +415,11 @@ class KafkaST extends AbstractST {
                             .withPlain(listenerTls)
                         .endListeners()
                     .endKafka()
+                    .editEntityOperator()
+                        .editUserOperator()
+                            .withImage("scholzj/user-operator:latest")
+                        .endUserOperator()
+                    .endEntityOperator()
                 .endSpec().build()).done();
         resources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();

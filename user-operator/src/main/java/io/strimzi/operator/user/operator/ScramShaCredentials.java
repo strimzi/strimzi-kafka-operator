@@ -46,11 +46,11 @@ public class ScramShaCredentials {
 
         if (data != null)   {
             log.debug("Updating {} credentials for user {}", mechanism.mechanismName(), username);
-            zkClient.writeData("/config/users/" + username, encodeUser(password));
+            zkClient.writeData("/config/users/" + username, updateUserJson(data, password));
         } else {
             log.debug("Creating {} credentials for user {}", mechanism.mechanismName(), username);
             ensurePath("/config/users");
-            zkClient.createPersistent("/config/users/" + username, encodeUser(password));
+            zkClient.createPersistent("/config/users/" + username, createUserJson(password));
         }
 
         notifyChanges(username);
@@ -67,12 +67,7 @@ public class ScramShaCredentials {
 
         if (data != null)   {
             log.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
-
-            JsonObject json = new JsonObject()
-                    .put("version", 1)
-                    .put("config", new JsonObject());
-
-            zkClient.writeData("/config/users/" + username, json.encode().getBytes(Charset.defaultCharset()));
+            zkClient.writeData("/config/users/" + username, deleteUserJson(data));
             notifyChanges(username);
         } else {
             log.warn("Credentials for user {} already don't exist", username);
@@ -92,15 +87,19 @@ public class ScramShaCredentials {
         if (data != null)   {
             String jsonString = new String(data, Charset.defaultCharset());
             JsonObject json = new JsonObject(jsonString);
+            validateJsonVersion(json);
             JsonObject config = json.getJsonObject("config");
-            String scramCredentials = config.getString(mechanism.mechanismName());
 
-            if (scramCredentials != null) {
-                try {
-                    ScramCredentialUtils.credentialFromString(scramCredentials);
-                    return true;
-                } catch (IllegalArgumentException e)    {
-                    log.warn("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
+            if (config != null) {
+                String scramCredentials = config.getString(mechanism.mechanismName());
+
+                if (scramCredentials != null) {
+                    try {
+                        ScramCredentialUtils.credentialFromString(scramCredentials);
+                        return true;
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
+                    }
                 }
             }
         }
@@ -161,7 +160,7 @@ public class ScramShaCredentials {
      * @param password  Password in String format
      * @return  Returns the geenrated JSON as byte array
      */
-    private byte[] encodeUser(String password)   {
+    protected byte[] createUserJson(String password)   {
         try {
             ScramFormatter formatter = new ScramFormatter(mechanism);
             ScramCredential credentials = formatter.generateCredential(password, ITERATIONS);
@@ -173,6 +172,64 @@ public class ScramShaCredentials {
             return json.encode().getBytes(Charset.defaultCharset());
         } catch (NoSuchAlgorithmException e)    {
             throw new RuntimeException("Failed to generate credentials", e);
+        }
+    }
+
+    /**
+     * Updates the SCRAM credentials in existing JSON
+     *
+     * @param user JSON string with existing user configuration as byte[]
+     * @param password  Password in String format
+     *
+     * @return  Returns the updated JSON as byte array
+     */
+    protected byte[] updateUserJson(byte[] user, String password)   {
+        JsonObject json = new JsonObject(new String(user, Charset.defaultCharset()));
+
+        validateJsonVersion(json);
+
+        if (json.getJsonObject("config") == null)   {
+            json.put("config", new JsonObject());
+        }
+
+        try {
+            ScramFormatter formatter = new ScramFormatter(mechanism);
+            ScramCredential credentials = formatter.generateCredential(password, ITERATIONS);
+
+            json.getJsonObject("config").put(mechanism.mechanismName(), ScramCredentialUtils.credentialToString(credentials));
+
+            return json.encode().getBytes(Charset.defaultCharset());
+        } catch (NoSuchAlgorithmException e)    {
+            throw new RuntimeException("Failed to generate credentials", e);
+        }
+    }
+
+    /**
+     * Deletes the SCRAM credentials from existing JSON
+     *
+     * @param user JSON string with existing user configuration as byte[]
+     *
+     * @return  Returns the updated JSON without the SCRAM credentials as byte array
+     */
+    protected byte[] deleteUserJson(byte[] user)   {
+        JsonObject json = new JsonObject(new String(user, Charset.defaultCharset()));
+
+        validateJsonVersion(json);
+
+        if (json.getJsonObject("config") == null)   {
+            json.put("config", new JsonObject());
+        }
+
+        if (json.getJsonObject("config").getString(mechanism.mechanismName()) != null) {
+            json.getJsonObject("config").remove(mechanism.mechanismName());
+        }
+
+        return json.encode().getBytes(Charset.defaultCharset());
+    }
+
+    protected void validateJsonVersion(JsonObject json)   {
+        if (json.getInteger("version") != 1)    {
+            throw new RuntimeException("Failed to validate the user JSON. The version is missing or has an invalid value.");
         }
     }
 }
