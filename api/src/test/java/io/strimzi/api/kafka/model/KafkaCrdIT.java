@@ -79,6 +79,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
         }
     }
 
+    @Test
     public void testKafkaWithTemplate() {
         createDelete(Kafka.class, "Kafka-with-template.yaml");
     }

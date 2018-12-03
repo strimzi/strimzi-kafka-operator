@@ -64,7 +64,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaWithTlsAuthWithMissingRequired() {
+    void testKafkaMirrorMakerWithTlsAuthWithMissingRequired() {
         try {
             createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml");
         } catch (KubeClusterException.InvalidResource e) {
@@ -74,12 +74,13 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaWithScramSha512Auth() {
+    void testKafkaMirrorMakerWithScramSha512Auth() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-scram-sha-512-auth.yaml");
     }
 
+    @Test
     public void testKafkaMirrorMakerWithTemplate() {
-        createDelete(Kafka.class, "KafkaMIrrorMaker-with-template.yaml");
+        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-template.yaml");
     }
 }
 
