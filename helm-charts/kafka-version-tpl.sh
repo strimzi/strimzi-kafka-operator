@@ -31,7 +31,7 @@ cat >"$out" <<EOF
               value: | ${kafka_connect_versions}
             - name: STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP
               value: | ${kafka_connect_s2i_versions}
-            - name: STRIMZI_MIRROR_MAKER_IMAGE_MAP
+            - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGE_MAP
               value: | ${kafka_mirror_maker_versions}
 {{- end -}}
 EOF
