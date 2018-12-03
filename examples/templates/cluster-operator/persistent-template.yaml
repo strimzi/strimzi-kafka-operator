@@ -26,6 +26,11 @@ parameters:
   name: KAFKA_NODE_COUNT
   required: true
   value: "3"
+- description: The Kafka version to use for this cluster.
+  displayName: The Kafka version to use
+  name: KAFKA_VERSION
+  required: true
+  value: "2.0.0"
 - description: Volume space available for Zookeeper data, e.g. 512Mi, 2Gi.
   displayName: Zookeeper Volume Capacity
   name: ZOOKEEPER_VOLUME_CAPACITY
@@ -71,6 +76,7 @@ objects:
     name: ${CLUSTER_NAME}
   spec:
     kafka:
+      version: ${{KAFKA_VERSION}}
       replicas: ${{KAFKA_NODE_COUNT}}
       listeners:
         plain: {}
