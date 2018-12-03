@@ -42,7 +42,7 @@ spec:
             2.0.0=strimzi/kafka-connect-s2i:latest-kafka-2.0.0
             2.0.1=strimzi/kafka-connect-s2i:latest-kafka-2.0.1
             2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0
-        - name: STRIMZI_MIRROR_MAKER_IMAGE_MAP
+        - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGE_MAP
           value: |
             2.0.0=strimzi/kafka-mirror-maker:latest-kafka-2.0.0
             2.0.1=strimzi/kafka-mirror-maker:latest-kafka-2.0.1
