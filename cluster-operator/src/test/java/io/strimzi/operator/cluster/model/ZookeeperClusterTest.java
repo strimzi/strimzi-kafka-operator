@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ZookeeperClusterTest {
 
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap());
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;

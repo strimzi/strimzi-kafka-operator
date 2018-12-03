@@ -19,13 +19,13 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,10 +33,16 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class KafkaMirrorMakerClusterTest {
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            emptyMap(), emptyMap(), emptyMap(),
+            singletonMap("2.0.0", "strimzi/kafka-mirror-maker:latest-kafka-2.0.0")) { };
     private final String namespace = "test";
     private final String cluster = "mirror";
     private final int replicas = 2;
@@ -76,10 +82,11 @@ public class KafkaMirrorMakerClusterTest {
             .endSpec()
             .build();
 
-    private final KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource);
+    private final KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource,
+            VERSIONS);
 
     @Rule
-    public ResourceTester<KafkaMirrorMaker, KafkaMirrorMakerCluster> resourceTester = new ResourceTester<>(KafkaMirrorMaker.class, KafkaMirrorMakerCluster::fromCrd);
+    public ResourceTester<KafkaMirrorMaker, KafkaMirrorMakerCluster> resourceTester = new ResourceTester<>(KafkaMirrorMaker.class, VERSIONS, KafkaMirrorMakerCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {
@@ -140,8 +147,8 @@ public class KafkaMirrorMakerClusterTest {
                     .withConsumer(consumer)
                 .endSpec()
                 .build();
-        KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource);
-        assertEquals(KafkaMirrorMakerSpec.DEFAULT_IMAGE, mm.image);
+        KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+        assertEquals("strimzi/kafka-mirror-maker:latest-kafka-2.0.0", mm.image);
         assertEquals(defaultConsumerConfiguration,
                 new KafkaMirrorMakerConsumerConfiguration(mm.consumer.getConfig().entrySet()).getConfiguration());
         assertEquals(defaultProducerConfiguration,
@@ -202,8 +209,8 @@ public class KafkaMirrorMakerClusterTest {
                 .endProducer()
                 .endSpec()
                 .build();
-        KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(resource);
-        Deployment dep = kc.generateDeployment(Collections.emptyMap(), true);
+        KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kc.generateDeployment(emptyMap(), true);
 
         assertEquals("my-secret-p", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
         assertEquals("my-another-secret-p", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
@@ -262,8 +269,8 @@ public class KafkaMirrorMakerClusterTest {
                 .endProducer()
                 .endSpec()
                 .build();
-        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource);
-        Deployment dep = mmc.generateDeployment(Collections.emptyMap(), true);
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = mmc.generateDeployment(emptyMap(), true);
 
         assertEquals("user-secret-c", dep.getSpec().getTemplate().getSpec().getVolumes().get(4).getName());
 
@@ -320,8 +327,8 @@ public class KafkaMirrorMakerClusterTest {
                 .endProducer()
                 .endSpec()
                 .build();
-        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource);
-        Deployment dep = mmc.generateDeployment(Collections.emptyMap(), true);
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = mmc.generateDeployment(emptyMap(), true);
 
         assertEquals(3, dep.getSpec().getTemplate().getSpec().getVolumes().size());
         assertEquals("my-secret-p", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
@@ -352,8 +359,8 @@ public class KafkaMirrorMakerClusterTest {
                 .endConsumer()
                 .endSpec()
                 .build();
-        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource);
-        Deployment dep = mmc.generateDeployment(Collections.emptyMap(), true);
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = mmc.generateDeployment(emptyMap(), true);
 
         assertEquals("producer-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
 
@@ -410,7 +417,7 @@ public class KafkaMirrorMakerClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource);
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
 
         // Check Deployment
         Deployment dep = mmc.generateDeployment(Collections.EMPTY_MAP, true);

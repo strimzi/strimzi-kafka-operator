@@ -109,7 +109,7 @@ public class KafkaAssemblyOperatorTest {
     public static final InlineLogging LOG_KAFKA_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_ZOOKEEPER_CONFIG = new InlineLogging();
     public static final InlineLogging LOG_CONNECT_CONFIG = new InlineLogging();
-    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap());
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
 
     static {
         LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));

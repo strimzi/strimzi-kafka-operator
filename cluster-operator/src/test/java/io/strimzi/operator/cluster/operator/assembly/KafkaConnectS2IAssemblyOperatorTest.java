@@ -66,7 +66,8 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
-            emptyMap(), emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0")) { };
+            emptyMap(), emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"),
+            emptyMap()) { };
     protected static Vertx vertx;
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
     public static final String LOGGING_CONFIG = "#Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.\n" +

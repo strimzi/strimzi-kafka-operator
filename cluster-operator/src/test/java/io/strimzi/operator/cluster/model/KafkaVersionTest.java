@@ -19,7 +19,7 @@ public class KafkaVersionTest {
 
     @Test
     public void load() {
-        KafkaVersion.Lookup loaded = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap());
+        KafkaVersion.Lookup loaded = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
         assertTrue(loaded.supportedVersions().contains("2.0.0"));
         assertTrue(loaded.supportedVersions().contains("2.0.1"));
         assertEquals("2.0.0", loaded.version("2.0.0").version());

@@ -42,7 +42,7 @@ public class KafkaSetOperatorTest {
     @Before
     public void before() {
         MockCertManager certManager = new MockCertManager();
-        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap());
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
         a = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true);
         b = KafkaCluster.fromCrd(getResource(), versions).generateStatefulSet(true);
     }

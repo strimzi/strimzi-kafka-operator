@@ -69,7 +69,8 @@ public class KafkaUpdateTest {
                     "2.0.1", "strimzi/kafka:0.8.0-kafka-2.0.1",
                     "2.1.0", "strimzi/kafka:0.8.0-kafka-2.1.0"),
             singletonMap("2.0.0", "kafka-connect"),
-            singletonMap("2.0.0", "kafka-connect-s2i")) { };
+            singletonMap("2.0.0", "kafka-connect-s2i"),
+            singletonMap("2.0.0", "kafka-mirror-maker-s2i")) { };
 
     public static EnvVar findEnv(List<EnvVar> env, String envVar) {
         EnvVar value = null;

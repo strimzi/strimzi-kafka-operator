@@ -48,7 +48,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
-            emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"), emptyMap()) { };
+            emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"), emptyMap(), emptyMap()) { };
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-connect-cluster";

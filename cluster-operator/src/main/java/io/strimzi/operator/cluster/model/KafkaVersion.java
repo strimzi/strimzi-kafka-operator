@@ -76,15 +76,22 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         private final Map<String, String> kafkaImages;
         private final Map<String, String> kafkaConnectImages;
         private final Map<String, String> kafkaConnectS2iImages;
+        private final Map<String, String> kafkaMirrorMakerImages;
 
-        public Lookup(Map<String, String> kafkaImages, Map<String, String> kafkaConnectImages, Map<String, String> kafkaConnectS2iImages) {
+        public Lookup(Map<String, String> kafkaImages,
+                      Map<String, String> kafkaConnectImages,
+                      Map<String, String> kafkaConnectS2iImages,
+                      Map<String, String> kafkaMirrorMakerImages) {
             this(new InputStreamReader(
                     KafkaVersion.class.getResourceAsStream("/" + KAFKA_VERSIONS_RESOURCE),
                     StandardCharsets.UTF_8),
-                    kafkaImages, kafkaConnectImages, kafkaConnectS2iImages);
+                    kafkaImages, kafkaConnectImages, kafkaConnectS2iImages, kafkaMirrorMakerImages);
         }
 
-        protected Lookup(Reader reader, Map<String, String> kafkaImages, Map<String, String> kafkaConnectImages, Map<String, String> kafkaConnectS2iImages) {
+        protected Lookup(Reader reader, Map<String, String> kafkaImages,
+                         Map<String, String> kafkaConnectImages,
+                         Map<String, String> kafkaConnectS2iImages,
+                         Map<String, String> kafkaMirrorMakerImages) {
             map = new HashMap<>(5);
             try {
                 try (LineNumberReader lnReader = new LineNumberReader(reader)) {
@@ -96,6 +103,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             this.kafkaImages = kafkaImages;
             this.kafkaConnectImages = kafkaConnectImages;
             this.kafkaConnectS2iImages = kafkaConnectS2iImages;
+            this.kafkaMirrorMakerImages = kafkaMirrorMakerImages;
         }
 
         public KafkaVersion defaultVersion() {
@@ -156,6 +164,12 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                     kafkaConnectS2iImages);
         }
 
+        public String kafkaMirrorMakerImage(String image, String version) {
+            return image(image,
+                    version,
+                    kafkaMirrorMakerImages);
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder("versions{");
@@ -172,6 +186,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                         .append(" kafka-image: ").append(kafkaImages.get(v))
                         .append(" connect-image: ").append(kafkaConnectImages.get(v))
                         .append(" connects2i-image: ").append(kafkaConnectS2iImages.get(v))
+                        .append(" mirrormaker-image: ").append(kafkaMirrorMakerImages.get(v))
                         .append("}");
 
             }

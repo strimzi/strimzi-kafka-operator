@@ -123,7 +123,7 @@ public class Main {
         }
 
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
-                new KafkaMirrorMakerAssemblyOperator(vertx, isOpenShift, certManager, kmmo, secretOperations, configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations);
+                new KafkaMirrorMakerAssemblyOperator(vertx, isOpenShift, certManager, kmmo, secretOperations, configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations, config.versions());
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {

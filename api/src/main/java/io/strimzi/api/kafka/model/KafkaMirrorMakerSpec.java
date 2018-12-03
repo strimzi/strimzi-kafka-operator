@@ -37,10 +37,8 @@ public class KafkaMirrorMakerSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE", "strimzi/kafka-mirror-maker:latest");
-
     private int replicas;
+    private String version;
     private String image;
     private String whitelist;
     private KafkaMirrorMakerConsumerSpec consumer;
@@ -63,6 +61,16 @@ public class KafkaMirrorMakerSpec implements Serializable {
 
     public void setReplicas(int replicas) {
         this.replicas = replicas;
+    }
+
+    @Description("The kafka mirror maker version. Defaults to {DefaultKafkaVersion}. " +
+            "Consult the user documentation to understand the process required to upgrade or downgrade the version.")
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     @Description("The docker image for the pods.")

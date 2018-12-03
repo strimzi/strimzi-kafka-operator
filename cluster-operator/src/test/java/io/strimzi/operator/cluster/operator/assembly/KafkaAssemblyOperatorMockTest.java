@@ -83,7 +83,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
-            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap()) { };
+            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap(), emptyMap()) { };
 
     private final int zkReplicas;
     private final Storage zkStorage;
