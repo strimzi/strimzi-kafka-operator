@@ -119,7 +119,7 @@ public class MaintenanceTimeWindowsTest {
 
         Async async = context.async();
 
-        testZkRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
+        doZkRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
             () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
             r -> {
                 String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
@@ -135,7 +135,7 @@ public class MaintenanceTimeWindowsTest {
 
         Async async = context.async();
 
-        testZkRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
+        doZkRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
             () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
             r -> {
                 String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
@@ -151,7 +151,7 @@ public class MaintenanceTimeWindowsTest {
 
         Async async = context.async();
 
-        testKafkaRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
+        doKafkaRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
             () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
             r -> {
                 String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
@@ -167,7 +167,7 @@ public class MaintenanceTimeWindowsTest {
 
         Async async = context.async();
 
-        testKafkaRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
+        doKafkaRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
             () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
             r -> {
                 String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
@@ -183,7 +183,7 @@ public class MaintenanceTimeWindowsTest {
 
         Async async = context.async();
 
-        testZkRollingUpdate(null,
+        doZkRollingUpdate(null,
             () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
             r -> {
                 String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
@@ -199,7 +199,7 @@ public class MaintenanceTimeWindowsTest {
 
         Async async = context.async();
 
-        testZkRollingUpdate(Arrays.asList("* * 8-10 * * ?", "* * 14-15 * * ?"),
+        doZkRollingUpdate(Arrays.asList("* * 8-10 * * ?", "* * 14-15 * * ?"),
             () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
             r -> {
                 String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
@@ -215,7 +215,7 @@ public class MaintenanceTimeWindowsTest {
 
         Async async = context.async();
 
-        testKafkaRollingUpdate(null,
+        doKafkaRollingUpdate(null,
             () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
             r -> {
                 String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
@@ -231,7 +231,7 @@ public class MaintenanceTimeWindowsTest {
 
         Async async = context.async();
 
-        testZkRollingUpdate(Collections.singletonList("* * 14-15 * * ?"),
+        doZkRollingUpdate(Collections.singletonList("* * 14-15 * * ?"),
             () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("Pacific/Easter")).toInstant()),
             r -> {
                 String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
@@ -247,8 +247,8 @@ public class MaintenanceTimeWindowsTest {
         return pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
     }
 
-    private void testZkRollingUpdate(List<String> maintenanceTimeWindows, Supplier<Date> dateSupplier,
-                                    Handler<AsyncResult<KafkaAssemblyOperator.ReconciliationState>> handler) {
+    private void doZkRollingUpdate(List<String> maintenanceTimeWindows, Supplier<Date> dateSupplier,
+                                   Handler<AsyncResult<KafkaAssemblyOperator.ReconciliationState>> handler) {
 
         this.init(maintenanceTimeWindows);
 
@@ -272,8 +272,8 @@ public class MaintenanceTimeWindowsTest {
         this.reconciliationState.zkRollingUpdate(dateSupplier).setHandler(handler);
     }
 
-    private void testKafkaRollingUpdate(List<String> maintenanceTimeWindows, Supplier<Date> dateSupplier,
-                                     Handler<AsyncResult<KafkaAssemblyOperator.ReconciliationState>> handler) {
+    private void doKafkaRollingUpdate(List<String> maintenanceTimeWindows, Supplier<Date> dateSupplier,
+                                      Handler<AsyncResult<KafkaAssemblyOperator.ReconciliationState>> handler) {
 
         this.init(maintenanceTimeWindows);
 
