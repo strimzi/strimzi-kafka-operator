@@ -113,7 +113,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         ArrayList<Pod> pods = new ArrayList<>();
         String cluster = ss.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         for (int o = 0; o < replicas; o++) {
-            Pod pod = podOperations.get(ss.getMetadata().getNamespace(), KafkaResources.zookeeperPodNameSufix(name, o));
+            Pod pod = podOperations.get(ss.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, o));
             zkRoll |= podRestart.test(pod);
             pods.add(pod);
         }
@@ -124,7 +124,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                 log.debug("Zookeeper leader is pod: " + lead);
                 Future<Void> f2 = Future.succeededFuture();
                 for (int i = 0; i < replicas; i++) {
-                    String podName = KafkaResources.zookeeperPodNameSufix(name, i);
+                    String podName = KafkaResources.zookeeperPodName(cluster, i);
                     if (i != lead) {
                         log.debug("maybe restarting non leader pod " + i);
                         // roll the pod and wait until it is ready
@@ -136,7 +136,9 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                 return f2.compose(ar -> {
                     // the leader is rolled as the last
                     log.debug("maybe restarting leader pod " + lead);
-                    return maybeRestartPod(ss, name + "-" + lead, podRestart);
+                    return maybeRestartPod(ss, name + "-" + lead, podRestart)
+                            .compose(ignore -> podOperations.readiness(namespace,
+                                    KafkaResources.zookeeperPodName(cluster, lead), 1_000, operationTimeoutMs));
                 });
             });
         }
