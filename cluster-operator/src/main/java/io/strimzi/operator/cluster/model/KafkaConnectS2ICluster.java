@@ -34,8 +34,8 @@ import java.util.Map;
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
     // Kafka Connect S2I configuration
-    protected String sourceImageBaseName; // = KafkaConnectS2ISpec.DEFAULT_IMAGE.substring(0, KafkaConnectS2ISpec.DEFAULT_IMAGE.lastIndexOf(":"));
-    protected String sourceImageTag; // = KafkaConnectS2ISpec.DEFAULT_IMAGE.substring(KafkaConnectS2ISpec.DEFAULT_IMAGE.lastIndexOf(":") + 1);
+    protected String sourceImageBaseName;
+    protected String sourceImageTag;
     protected String tag = "latest";
     protected boolean insecureSourceRepository = false;
 
@@ -47,7 +47,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      */
     private KafkaConnectS2ICluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
-        //setImage(KafkaConnectS2ISpec.DEFAULT_IMAGE);
         this.validLoggerFields = getDefaultLogConfig();
     }
 
