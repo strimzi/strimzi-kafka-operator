@@ -42,8 +42,10 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
     public static final String ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
+    public static final String ENV_VAR_STRIMZI_LOG_SETTINGS_HASH = "STRIMZI_LOG_SETTINGS_HASH";
 
     private String zookeeperConnect;
+    private String loggingConfigHash;
     private String watchedNamespace;
     private String resourceLabels;
     private long reconciliationIntervalMs;
@@ -104,6 +106,14 @@ public class EntityUserOperator extends AbstractModel {
 
     protected static String defaultZookeeperConnect(String cluster) {
         return String.format("%s:%d", "localhost", EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_PORT);
+    }
+
+    public void setLoggingConfigurationHash(String loggingConfigHash) {
+        this.loggingConfigHash = loggingConfigHash;
+    }
+
+    public String getLoggingConfigHash() {
+        return loggingConfigHash;
     }
 
     public void setZookeeperConnect(String zookeeperConnect) {
@@ -198,6 +208,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_LOG_SETTINGS_HASH, loggingConfigHash));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Long.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));

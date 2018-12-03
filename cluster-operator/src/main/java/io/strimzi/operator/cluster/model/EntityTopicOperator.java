@@ -44,10 +44,12 @@ public class EntityTopicOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+    public static final String ENV_VAR_STRIMZI_LOG_SETTINGS_HASH = "STRIMZI_LOG_SETTINGS_HASH";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
     private String zookeeperConnect;
+    private String loggingConfigHash;
 
     private String watchedNamespace;
     private int reconciliationIntervalMs;
@@ -146,6 +148,14 @@ public class EntityTopicOperator extends AbstractModel {
         return zookeeperConnect;
     }
 
+    public void setLoggingConfigurationHash(String loggingConfigHash) {
+        this.loggingConfigHash = loggingConfigHash;
+    }
+
+    public String getLoggingConfigHash() {
+        return loggingConfigHash;
+    }
+
     protected static String defaultBootstrapServers(String cluster) {
         return KafkaCluster.serviceName(cluster) + ":" + EntityTopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
@@ -236,6 +246,7 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_LOG_SETTINGS_HASH, loggingConfigHash));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));

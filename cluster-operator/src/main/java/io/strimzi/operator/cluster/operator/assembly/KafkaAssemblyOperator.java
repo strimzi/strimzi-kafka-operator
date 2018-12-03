@@ -1459,6 +1459,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName()) :
                                             null) : null;
 
+                            int topicLogSettings = topicOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties").hashCode();
+                            topicOperator.setLoggingConfigurationHash(String.valueOf(topicLogSettings));
+
+                            int userLogSettings = userOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties").hashCode();
+                            userOperator.setLoggingConfigurationHash(String.valueOf(userLogSettings));
+
                             this.entityOperator = entityOperator;
                             this.eoDeployment = entityOperator.generateDeployment(isOpenShift);
                             this.topicOperatorMetricsAndLogsConfigMap = topicOperatorLogAndMetricsConfigMap;
