@@ -85,8 +85,8 @@ class KafkaST extends AbstractST {
     static KubernetesClient client = new DefaultKubernetesClient();
 
     private static final long WAIT_INTERVAL = 1_000;
-    private static final long MIRROR_MAKER_TIMEOUT = 240_000;
-    private static final long TOPIC_CREATE_TIMEOUT = 120_000;
+    private static final long MIRROR_MAKER_TIMEOUT = 120_000;
+    private static final long TOPIC_CREATE_TIMEOUT = 60_000;
 
     @Test
     @Tag(REGRESSION)

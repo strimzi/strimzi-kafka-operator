@@ -101,8 +101,10 @@ public class AbstractST {
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
-    private static final long GET_BROKER_API_TIMEOUT = 120_000L;
+    private static final long GET_BROKER_API_TIMEOUT = 60_000L;
     private static final long GET_BROKER_API_INTERVAL = 5_000L;
+    private static final long JOB_TIMEOUT = 300000;
+    private static final long JOB_INTERVAL = 5000;
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
@@ -475,7 +477,7 @@ public class AbstractST {
         // Wait for the job to succeed
         try {
             LOGGER.debug("Waiting for Job completion: {}", job);
-            waitFor("Job completion", 5000, 300000, () -> {
+            waitFor("Job completion", JOB_INTERVAL, JOB_TIMEOUT, () -> {
                 Job jobs = namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get();
                 JobStatus status;
                 if (jobs == null || (status = jobs.getStatus()) == null) {

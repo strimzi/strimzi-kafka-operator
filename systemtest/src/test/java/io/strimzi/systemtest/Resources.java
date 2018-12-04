@@ -48,6 +48,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -211,6 +212,7 @@ public class Resources {
                                     .withMemory("1G")
                                 .endRequests()
                             .endResources()
+                            .withMetrics(new HashMap<>())
                         .endKafka()
                         .withNewZookeeper()
                             .withReplicas(3)
@@ -218,7 +220,8 @@ public class Resources {
                                 .withNewRequests()
                                     .withMemory("1G")
                                 .endRequests()
-                                .endResources()
+                            .endResources()
+                            .withMetrics(new HashMap<>())
                             .withNewReadinessProbe()
                 .withInitialDelaySeconds(15)
                 .withTimeoutSeconds(5)
@@ -272,6 +275,7 @@ public class Resources {
                         .withMemory("1G")
                     .endRequests()
                 .endResources()
+                .withMetrics(new HashMap<>())
             .endSpec();
     }
 
@@ -356,6 +360,7 @@ public class Resources {
                         .withMemory("1G")
                     .endRequests()
                 .endResources()
+                .withMetrics(new HashMap<>())
             .withReplicas(mirrorMakerReplicas)
             .withWhitelist(".*")
             .endSpec();
