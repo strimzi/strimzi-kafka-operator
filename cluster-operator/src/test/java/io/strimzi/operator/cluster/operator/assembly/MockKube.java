@@ -310,10 +310,9 @@ public class MockKube {
                         mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(newPodName).create(newPod);
                         newPodNames.add(newPodName);
 
-                        // delete one "old" Pod
-                        String podToDelete = podsForDeployments.get(deployment.getMetadata().getName()).get(i);
+                        // delete the first one "old" Pod
+                        String podToDelete = podsForDeployments.get(deployment.getMetadata().getName()).remove(0);
                         mockPods.inNamespace(deployment.getMetadata().getNamespace()).withName(podToDelete).delete();
-                        podsForDeployments.get(deployment.getMetadata().getName()).remove(i);
                     }
                     podsForDeployments.get(deployment.getMetadata().getName()).addAll(newPodNames);
 
