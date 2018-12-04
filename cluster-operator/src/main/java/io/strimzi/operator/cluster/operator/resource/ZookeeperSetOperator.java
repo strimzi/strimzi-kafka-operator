@@ -112,8 +112,8 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         boolean zkRoll = false;
         ArrayList<Pod> pods = new ArrayList<>();
         String cluster = ss.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        for (int o = 0; o < replicas; o++) {
-            Pod pod = podOperations.get(ss.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, o));
+        for (int i = 0; i < replicas; i++) {
+            Pod pod = podOperations.get(ss.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, i));
             zkRoll |= podRestart.test(pod);
             pods.add(pod);
         }
