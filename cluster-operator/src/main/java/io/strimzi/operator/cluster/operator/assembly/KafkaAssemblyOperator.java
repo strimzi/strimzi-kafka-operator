@@ -220,8 +220,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private SortedMap<Integer, String> kafkaExternalDnsNames = new TreeMap<>();
         private boolean kafkaAncillaryCmChange;
 
-        private TopicOperator topicOperator;
-        private Deployment toDeployment = null;
+        /* test */ TopicOperator topicOperator;
+        /* test */ Deployment toDeployment = null;
         private ConfigMap toMetricsAndLogsConfigMap = null;
 
         /* test */ EntityOperator entityOperator;
