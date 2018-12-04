@@ -1,9 +1,53 @@
-[appendix]
-== Frequently Asked Questions
 
-=== Cluster Operator
+= Frequently Asked Questions
 
-==== Log contains warnings about failing to acquire lock
+== Cluster Operator
+
+=== Why do I need cluster admin privileges to install {ProductName}?
+
+To install {ProductName}, you must have the ability to create Custom Resource Definitions (CRDs).
+CRDs instruct {ProductPlatformName} about resources that are specific to {ProductName}, such as Kafka, KafkaConnect, and so on.
+Because CRDs are a cluster-scoped resource rather than being scoped to a particular {PlatformProductName} namespace, they typically require cluster admin privileges to install.
+
+In addition, you must also have the ability to create ClusterRoles and ClusterRoleBindings. Like CRDs, these are cluster-scoped resources that typically require cluster admin privileges.
+
+The cluster administrator can inspect all the resources being installed (in the `/install/` directory) to assure themselves that the `ClusterRoles` do not grant unnecessary privileges. For more information about why the Cluster Operator installation resources grant the ability to create `ClusterRoleBindings` see the following question.
+
+After installation, the Cluster Operator will run as a regular `Deployment`; any non-admin user with privileges to access the `Deployment` can configure it.
+
+[id='normal-user-access-custom-resources-{context}']
+By default, normal users will not have the privileges necessary to manipulate the custom resources, such as `Kafka`, `KafkaConnect` and so on, which the Cluster Operator deals with.
+These privileges can be granted using normal RBAC resources by the cluster administrator. See xref:assembly-getting-started-strimzi-admin-str[this procedure] for more details of how to do this.
+
+
+=== Why does the Cluster Operator require the ability to create `ClusterRoleBindings`? Is that not a security risk?
+
+{PlatformProductName} has built-in link:https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping[privilege escalation prevention^]. 
+That means that the Cluster Operator cannot grant privileges it does not have itself. 
+Which in turn means that the Cluster Operator needs to have the privileges necessary for _all_ the components it orchestrates.
+
+In the context of this question there are two places where the Cluster Operator needs to create bindings to `ClusterRoleBindings` to `ServiceAccounts`:
+
+. The Topic Operator and User Operator need to be able to manipulate `KafkaTopics` and `KafkaUsers`, respectively.
+The Cluster Operator therefore needs to be able to grant them this access, which it does by creating a `Role` and `RoleBinding`.
+For this reason the Cluster Operator itself needs to be able to create `Roles` and `RoleBindings` in the namespace that those operators will run in.
+However, because of the privilege escalation prevention, the Cluster Operator cannot grant privileges it does not have itself (in particular it cannot grant such privileges in namespace it cannot access).
+
+. When using rack-aware partition assignment, {ProductName} needs to be able to discover the failure domain (for example, the Availability Zone in AWS) of the node on which a broker pod is assigned.
+To do this the broker pod needs to be able to get information about the `Node` it is running on.
+A `Node` is a cluster-scoped resource, so access to it can only be granted via a `ClusterRoleBinding` (not a namespace-scoped `RoleBinding`). 
+Therefore the Cluster Operator needs to be able to create `ClusterRoleBindings`.
+But again, because of privilege escalation prevention, the Cluster Operator cannot grant privileges it does not have itself (so it cannot, for example, create a `ClusterRoleBinding` to a `ClusterRole` to grant privileges that the Cluster Operator does not not already have).
+
+
+=== Why can standard {PlatformProductName} users not create the custom resource (`Kafka`, `KafkaTopic`, and so on)?
+
+Because, when they installed {ProductName}, the {PlatformProductName} cluster administrator did not grant the necessary privileges to standard users.
+
+See xref:normal-user-access-custom-resources-{context}[this FAQ answer] for more details.
+
+
+=== Log contains warnings about failing to acquire lock
 
 For each cluster, the Cluster Operator always executes only one operation at a time. The Cluster Operator uses locks
 to make sure that there are never two parallel operations running for the same cluster. In case an operation requires

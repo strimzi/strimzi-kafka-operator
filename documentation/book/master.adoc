@@ -18,7 +18,8 @@ include::assembly-using-the-user-operator.adoc[leveloffset=+1]
 
 include::assembly-security.adoc[leveloffset=+1]
 
-include::faq.adoc[]
+[appendix]
+include::faq.adoc[leveloffset=+1]
 
 ifdef::InstallationAppendix[]
 include::appendix_deploying_kubernetes_openshift_cluster.adoc[]
