@@ -8,17 +8,23 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.EntityOperatorSpec;
+import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
+import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
+import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -62,6 +68,13 @@ public class MaintenanceTimeWindowsTest {
         // setting up the Kafka CRD and a related Kafka cluster resource
         CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
 
+        EntityTopicOperatorSpec entityTopicOperatorSpec = new EntityTopicOperatorSpecBuilder()
+                .build();
+
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+                .withTopicOperator(entityTopicOperatorSpec)
+                .build();
+
         this.kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
@@ -74,6 +87,7 @@ public class MaintenanceTimeWindowsTest {
                     .withNewZookeeper()
                         .withReplicas(1)
                     .endZookeeper()
+                    .withEntityOperator(entityOperatorSpec)
                     .withMaintenanceTimeWindows(maintenanceTimeWindows)
                 .endSpec()
                 .build();
@@ -231,10 +245,78 @@ public class MaintenanceTimeWindowsTest {
 
         Async async = context.async();
 
-        doZkRollingUpdate(Collections.singletonList("* * 14-15 * * ?"),
+        doKafkaRollingUpdate(Collections.singletonList("* * 14-15 * * ?"),
             () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("Pacific/Easter")).toInstant()),
             r -> {
-                String generation = getClusterCaGenerationPod(ZookeeperCluster.zookeeperPodName(NAME, 0));
+                String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            });
+
+        async.await();
+    }
+
+    @Test
+    public void testEntityOperatorRollingUpdateMaintenanceSatisfied(TestContext context) {
+
+        Async async = context.async();
+
+        doEntityOperatorRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                Pod pod = this.mockClient.pods().inNamespace(NAMESPACE).list().getItems().get(0);
+                String generation = getClusterCaGenerationPod(pod.getMetadata().getName());
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            });
+
+        async.await();
+    }
+
+    @Test
+    public void testEntityOperatorRollingUpdateMaintenanceNotSatisfied(TestContext context) {
+
+        Async async = context.async();
+
+        doEntityOperatorRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                Pod pod = this.mockClient.pods().inNamespace(NAMESPACE).list().getItems().get(0);
+                String generation = getClusterCaGenerationPod(pod.getMetadata().getName());
+                context.assertEquals("0", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            });
+
+        async.await();
+    }
+
+    @Test
+    public void testEntityOperatorRollingUpdateNoMaintenance(TestContext context) {
+
+        Async async = context.async();
+
+        doEntityOperatorRollingUpdate(null,
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                Pod pod = this.mockClient.pods().inNamespace(NAMESPACE).list().getItems().get(0);
+                String generation = getClusterCaGenerationPod(pod.getMetadata().getName());
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            });
+
+        async.await();
+    }
+
+    @Test
+    public void testEntityOperatorRollingUpdateMaintenanceSatisfiedDifferentTz(TestContext context) {
+
+        Async async = context.async();
+
+        doEntityOperatorRollingUpdate(Collections.singletonList("* * 14-15 * * ?"),
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("Pacific/Easter")).toInstant()),
+            r -> {
+                Pod pod = this.mockClient.pods().inNamespace(NAMESPACE).list().getItems().get(0);
+                String generation = getClusterCaGenerationPod(pod.getMetadata().getName());
                 context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
                 async.complete();
             });
@@ -304,5 +386,28 @@ public class MaintenanceTimeWindowsTest {
         this.mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(NAME)).patch(k);
 
         this.reconciliationState.kafkaRollingUpdate(dateSupplier).setHandler(handler);
+    }
+
+    private void doEntityOperatorRollingUpdate(List<String> maintenanceTimeWindows, Supplier<Date> dateSupplier,
+                                               Handler<AsyncResult<KafkaAssemblyOperator.ReconciliationState>> handler) {
+
+        this.init(maintenanceTimeWindows);
+
+        EntityOperator eo = EntityOperator.fromCrd(this.kafka);
+        Deployment eoDep = eo.generateDeployment(false);
+        eoDep.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0");
+        this.mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(KafkaResources.entityOperatorDeploymentName(NAME)).create(eoDep);
+
+        this.reconciliationState.entityOperator = eo;
+        this.reconciliationState.eoDeployment = eoDep;
+        this.reconciliationState.clusterCa = new ClusterCa(null, null, this.clusterCaSecret, null) {
+
+            @Override
+            public boolean certRenewed() {
+                return true;
+            }
+        };
+
+        this.reconciliationState.entityOperatorDeployment(dateSupplier).setHandler(handler);
     }
 }

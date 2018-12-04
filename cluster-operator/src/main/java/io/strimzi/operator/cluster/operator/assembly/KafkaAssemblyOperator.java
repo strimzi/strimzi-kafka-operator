@@ -224,8 +224,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Deployment toDeployment = null;
         private ConfigMap toMetricsAndLogsConfigMap = null;
 
-        private EntityOperator entityOperator;
-        private Deployment eoDeployment = null;
+        /* test */ EntityOperator entityOperator;
+        /* test */ Deployment eoDeployment = null;
         private ConfigMap topicOperatorMetricsAndLogsConfigMap = null;
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
 
