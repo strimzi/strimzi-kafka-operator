@@ -12,11 +12,11 @@
 
 The are different scenarios for which the Kafka and the Zookeeper clusters need a rolling update.
 It means having nodes shut down and then restarted one by one.
-One of this scenarios, supported by {ProductName}, is the cluster CA certificate renewal.
-In such a scenario, when the cluster CA certificate is renewed due to the coming expiration date, each node needs to be updated with the new one.
+One of this scenarios, supported by {ProductName}, is the CA certificates renewal (both cluster and clients CA).
+In such a scenario, when the a CA certificate is renewed due to the coming expiration date, each node needs to be updated with the new one.
 
 In order to have much control on the rolling update, the user has the possibility to specify some maintenance time windows.
-Each time window defines when rolling updates, due to cluster CA certificate renewal, should be started.
+Each time window defines when rolling updates, due to CA certificate renewal, should be started.
 When a periodic reconciliation is triggered, the current time is checked in order to get if it falls in the specified time windows.
 If the outcome is positive, the rolling update is started otherwise not.
 
