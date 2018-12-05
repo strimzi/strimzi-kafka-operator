@@ -5,6 +5,7 @@
 * Add possibility to label and annotate different resources (#1093)
 * Add support for TransactionalID in KafkaUser resource
 * Update to Kafka 2.0.1
+* Add maintenance time windows support for allowing CA certificates renewal rolling update started only in specific times (#1117)  
 
 ## 0.8.2
 
