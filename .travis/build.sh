@@ -8,8 +8,8 @@ export DOCKER_ORG=${DOCKER_ORG:-strimzici}
 export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
 
-./.travis/check_docs.sh
-
+make docu_check
+make findbugs
 make docker_build
 
 if [ ! -e  documentation/book/appendix_crds.adoc ] ; then

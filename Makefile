@@ -89,6 +89,9 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_check
 docu_check:
 	./.travis/check_docs.sh
 
+findbugs:
+	mvn org.codehaus.mojo:findbugs-maven-plugin:check
+
 docu_pushtowebsite: docu_htmlnoheader docu_html
 	./.travis/docu-push-to-website.sh
 
@@ -116,4 +119,4 @@ helm_install: helm-charts
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests
+.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests findbugs docu_check
