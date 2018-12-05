@@ -60,6 +60,8 @@ include::proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+1]
 
 include::proc-manual-delete-pod-pvc-zookeeper.adoc[leveloffset=+1]
 
+include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
+
 include::ref-list-of-kafka-cluster-resources.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.

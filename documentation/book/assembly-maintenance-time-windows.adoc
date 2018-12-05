@@ -1,0 +1,27 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+// Save the context of the assembly that is including this one.
+// This is necessary for including assemblies in assemblies.
+// See also the complementary step on the last line of this file.
+
+[id='assembly-maintenance-time-windows-{context}']
+
+= Maintenance time windows
+
+The are different scenarios for which the Kafka and the Zookeeper clusters need a rolling update.
+It means having nodes shut down and then restarted one by one.
+One of this scenarios, supported by {ProductName}, is the cluster CA certificate renewal.
+In such a scenario, when the cluster CA certificate is renewed due to the coming expiration date, each node needs to be updated with the new one.
+
+In order to have much control on the rolling update, the user has the possibility to specify some maintenance time windows.
+Each time window defines when rolling updates, due to cluster CA certificate renewal, should be started.
+When a periodic reconciliation is triggered, the current time is checked in order to get if it falls in the specified time windows.
+If the outcome is positive, the rolling update is started otherwise not.
+
+The maintenance time windows are described by {CronExpressions}.
+
+include::ref-maintenance-time-windows.adoc[leveloffset=+1]
+
+include::proc-configuring-maintenance-time-windows.adoc[leveloffset=+1]
