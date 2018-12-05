@@ -121,6 +121,9 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         if (zkRoll) {
             Future<Integer> leader = zookeeperLeader(cluster, namespace, pods);
             f = leader.compose(lead -> { // we know a leader, so we can roll up all other zk pods
+                if (lead == -1) {
+                    return Future.failedFuture("Zookeeper leader could not be found");
+                }
                 log.debug("Zookeeper leader is pod: " + lead);
                 Future<Void> f2 = Future.succeededFuture();
                 for (int i = 0; i < replicas; i++) {
@@ -146,7 +149,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     private KeyStore setupKeyStore(Secret clusterSecretKey, CertificateFactory x509, char[] password,
-                                   X509Certificate clientCert, CertAndKey coCertKey) {
+                                   X509Certificate clientCert, CertAndKey coCertKey) throws CertificateException {
         Base64.Decoder decoder = Base64.getDecoder();
         KeyStore keyStore = null;
         try {
@@ -182,7 +185,6 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                             new Certificate[]{coCert}),
                     new KeyStore.PasswordProtection(password));
         } catch (KeyStoreException
-                | CertificateException
                 | NoSuchAlgorithmException
                 | IOException
                 | InvalidKeySpecException e) {
@@ -207,7 +209,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         return trustStore;
     }
 
-    private SSLSocketFactory socketFactory(String cluster, String namespace) {
+    private SSLSocketFactory socketFactory(String cluster, String namespace) throws CertificateException {
         SSLSocketFactory factory = null;
         try {
             CertificateFactory x509 = CertificateFactory.getInstance("X.509");
@@ -227,8 +229,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
             SSLContext ctx = SSLContext.getInstance("TLS");
             ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             factory = ctx.getSocketFactory();
-        } catch (CertificateException
-                | NoSuchAlgorithmException
+        } catch (NoSuchAlgorithmException
                 | UnrecoverableKeyException
                 | KeyStoreException
                 | KeyManagementException e) {
@@ -242,7 +243,8 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         boolean leader = false;
         try {
             if (pod.getStatus() == null) {
-                return false;
+                log.debug("Pod has no status (test run)");
+                return true;
             }
             String host = pod.getStatus().getPodIP();
 
@@ -303,11 +305,16 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     public Future<Integer> zookeeperLeader(String cluster, String namespace, ArrayList<Pod> pods) {
         Future<Integer> result = Future.future();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(f -> {
-            int leader = 0;
+            int leader = -1;
             if (pods.size() == 1) { // standalone
                 leader = 0;
             } else {
-                SSLSocketFactory factory = socketFactory(cluster, namespace);
+                SSLSocketFactory factory = null;
+                try {
+                    factory = socketFactory(cluster, namespace);
+                } catch (CertificateException e) {
+                    leader = -1;
+                }
                 for (int i = 0; i < pods.size(); i++) {
                     log.debug("Checking ZookeeperLeader " + i);
                     if (isLeader(pods.get(i), factory)) {
