@@ -287,7 +287,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [id='type-Probe-{context}']
 ### `Probe` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -388,12 +388,16 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type
 
 [options="header"]
 |====
-|Field             |Description
-|image      1.2+<.<|The docker image for the container.
+|Field                  |Description
+|image           1.2+<.<|The docker image for the container.
 |string
-|logLevel   1.2+<.<|The log level for the TLS sidecar. Default value is `notice`.
+|livenessProbe   1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|logLevel        1.2+<.<|The log level for the TLS sidecar. Default value is `notice`.
 |string (one of [emerg, debug, crit, err, alert, warning, notice, info])
-|resources  1.2+<.<|Resource constraints (limits and requests).
+|readinessProbe  1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
+|resources       1.2+<.<|Resource constraints (limits and requests).
 |xref:type-Resources-{context}[`Resources`]
 |====
 

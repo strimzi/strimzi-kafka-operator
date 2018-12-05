@@ -83,4 +83,9 @@ public class KafkaCrdIT extends AbstractCrdIT {
     public void testKafkaWithTemplate() {
         createDelete(Kafka.class, "Kafka-with-template.yaml");
     }
+
+    @Test
+    public void testKafkaWithTlsSidecarWithCustomConfiguration() {
+        createDelete(Kafka.class, "Kafka-with-tls-sidecar-with-custom-configuration.yaml");
+    }
 }

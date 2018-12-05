@@ -27,6 +27,9 @@ public class Sidecar implements Serializable {
 
     private Resources resources;
 
+    private Probe livenessProbe;
+    private Probe readinessProbe;
+
     @Description("The docker image for the container")
     public String getImage() {
         return image;
@@ -43,5 +46,25 @@ public class Sidecar implements Serializable {
 
     public void setResources(Resources resources) {
         this.resources = resources;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod liveness checking.")
+    public Probe getLivenessProbe() {
+        return livenessProbe;
+    }
+
+    public void setLivenessProbe(Probe livenessProbe) {
+        this.livenessProbe = livenessProbe;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @Description("Pod readiness checking.")
+    public Probe getReadinessProbe() {
+        return readinessProbe;
+    }
+
+    public void setReadinessProbe(Probe readinessProbe) {
+        this.readinessProbe = readinessProbe;
     }
 }
