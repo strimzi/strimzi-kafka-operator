@@ -13,7 +13,6 @@
 .Procedure
 
 . Edit the `maintenanceTimeWindows` property in the `Kafka` resource.
-For example:
 +
 [source,yaml,subs=attributes+]
 ----

@@ -3,10 +3,9 @@
 // assembly-maintenance-time-windows.adoc
 
 [id='ref-maintenance-time-windows-{context}']
-= Maintenance time windows configurations
+= Maintenance time windows configuration
 
-The maintenance time windows can be configured using the `Kafka.spec.maintenanceTimeWindows` property.
-It's an array of strings containing one or more {CronExpressions}.
+Maintenance time windows can be configured by entering an array of strings containing one or more {CronExpressions} in the `Kafka.spec.maintenanceTimeWindows` property.
 
 .An example of maintenance time windows configuration
 [source,yaml,subs="attributes+"]
