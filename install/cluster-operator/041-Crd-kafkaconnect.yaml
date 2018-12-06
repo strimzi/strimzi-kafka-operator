@@ -265,6 +265,8 @@ spec:
                   - external
               required:
               - type
+            gcLogging:
+              type: string
             metrics:
               type: object
             template:

@@ -293,6 +293,8 @@ spec:
               type: string
             config:
               type: object
+            gcLogging:
+              type: string
             insecureSourceRepository:
               type: boolean
             logging:

@@ -29,7 +29,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "tolerations", "logging", "metrics", "template"})
+        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "tolerations", "logging", "gcLogging", "metrics", "template"})
 public class KafkaConnectSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -42,6 +42,7 @@ public class KafkaConnectSpec implements Serializable {
     private Map<String, Object> config = new HashMap<>(0);
 
     private Logging logging;
+    private String gcLogging;
     private int replicas;
     private String image;
     private Resources resources;
@@ -218,5 +219,15 @@ public class KafkaConnectSpec implements Serializable {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @Description("Logging configuration for Kafka Connect GC")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getGcLogging() {
+        return gcLogging;
+    }
+
+    public void setLogging(String gcLogging) {
+        this.gcLogging = gcLogging;
     }
 }

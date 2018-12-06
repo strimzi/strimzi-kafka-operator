@@ -38,7 +38,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-        "metrics", "logging", "tlsSidecar", "template"})
+        "metrics", "logging", "gcLogging", "tlsSidecar", "template"})
 public class KafkaClusterSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -63,6 +63,7 @@ public class KafkaClusterSpec implements Serializable {
     private Rack rack;
 
     private Logging logging;
+    private String gcLogging;
 
     private TlsSidecar tlsSidecar;
     private int replicas;
@@ -273,5 +274,15 @@ public class KafkaClusterSpec implements Serializable {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @Description("Logging configuration for Kafka GC")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getGcLogging() {
+        return gcLogging;
+    }
+
+    public void setLogging(String gcLogging) {
+        this.gcLogging = gcLogging;
     }
 }

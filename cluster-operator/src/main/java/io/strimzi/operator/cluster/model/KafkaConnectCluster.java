@@ -96,6 +96,7 @@ public class KafkaConnectCluster extends AbstractModel {
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
+        this.gcLoggingConfig = DEFAULT_GC_LOGGING;
     }
 
     public static String kafkaConnectClusterName(String cluster) {
@@ -134,6 +135,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             kafkaConnect.setResources(spec.getResources());
             kafkaConnect.setLogging(spec.getLogging());
+            kafkaConnect.setGcLoggingConfig(spec.getGcLogging());
             kafkaConnect.setJvmOptions(spec.getJvmOptions());
             if (spec.getReadinessProbe() != null) {
                 kafkaConnect.setReadinessInitialDelay(spec.getReadinessProbe().getInitialDelaySeconds());
@@ -318,6 +320,7 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_GC_LOG_OPTS, gcLoggingConfig == null ? DEFAULT_GC_LOGGING : gcLoggingConfig));
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
         if (trustedCertificates != null && trustedCertificates.size() > 0) {

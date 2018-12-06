@@ -35,4 +35,11 @@ public class KafkaConnectS2ISpec extends KafkaConnectSpec {
     public void setInsecureSourceRepository(boolean insecureSourceRepository) {
         this.insecureSourceRepository = insecureSourceRepository;
     }
+
+    @Description("Logging configuration for Kafka Connect S2I GC")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Override
+    public String getGcLogging() {
+        return super.getGcLogging();
+    }
 }

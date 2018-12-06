@@ -102,9 +102,12 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
+    public static final String ENV_VAR_KAFKA_GC_LOG_OPTS = "KAFKA_GC_LOG_OPTS";
 
     private static final String DELETE_CLAIM_ANNOTATION =
             ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
+
+    protected static final String DEFAULT_GC_LOGGING = "-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps";
 
     protected final String cluster;
     protected final String namespace;
@@ -133,6 +136,8 @@ public abstract class AbstractModel {
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected String ancillaryConfigName;
     protected String logConfigName;
+
+    protected String gcLoggingConfig;
 
     protected Storage storage;
 
@@ -259,6 +264,19 @@ public abstract class AbstractModel {
 
     protected void setMetricsEnabled(boolean isMetricsEnabled) {
         this.isMetricsEnabled = isMetricsEnabled;
+    }
+
+    public String getGcLoggingConfig() {
+        return gcLoggingConfig;
+    }
+
+    protected void setGcLoggingConfig(String gcLoggingConfig) {
+        if (gcLoggingConfig != null && gcLoggingConfig.length() == 0) {
+            // empty string causes infinite rolling
+            this.gcLoggingConfig = " ";
+        } else {
+            this.gcLoggingConfig = gcLoggingConfig;
+        }
     }
 
 
