@@ -10,8 +10,9 @@
 
 = Maintenance time windows
 
-Using maintenance time windows you can control when Kafka and Zookeeper clusters start rolling updates.
 Rolling updates allow clusters updates to take place with zero downtime by incrementally updating pods instances with new ones.
+However there may be times when it would be inconvenient for a rolling update to happen.
+Using maintenance time windows you can control when Kafka and Zookeeper clusters start rolling updates.
 
 IMPORTANT: Currently, maintenance time windows are only supported for CA certificates renewals.
 

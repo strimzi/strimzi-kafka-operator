@@ -6,6 +6,7 @@
 = Maintenance time windows configuration
 
 Maintenance time windows can be configured by entering an array of strings containing one or more {CronExpressions} in the `Kafka.spec.maintenanceTimeWindows` property.
+Such a Cron Expressions have to be defined in UTC.
 
 .An example of maintenance time windows configuration
 [source,yaml,subs="attributes+"]
