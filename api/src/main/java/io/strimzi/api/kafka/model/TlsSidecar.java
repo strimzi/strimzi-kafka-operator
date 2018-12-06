@@ -27,6 +27,8 @@ public class TlsSidecar extends Sidecar {
     private static final long serialVersionUID = 1L;
 
     private TlsSidecarLogLevel logLevel = TlsSidecarLogLevel.NOTICE;
+    private Probe livenessProbe;
+    private Probe readinessProbe;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The log level for the TLS sidecar. " +
@@ -39,6 +41,26 @@ public class TlsSidecar extends Sidecar {
 
     public void setLogLevel(TlsSidecarLogLevel logLevel) {
         this.logLevel = logLevel;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod liveness checking.")
+    public Probe getLivenessProbe() {
+        return livenessProbe;
+    }
+
+    public void setLivenessProbe(Probe livenessProbe) {
+        this.livenessProbe = livenessProbe;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @Description("Pod readiness checking.")
+    public Probe getReadinessProbe() {
+        return readinessProbe;
+    }
+
+    public void setReadinessProbe(Probe readinessProbe) {
+        this.readinessProbe = readinessProbe;
     }
 
     @JsonAnyGetter
