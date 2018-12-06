@@ -769,9 +769,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Future<ReconciliationState> fut = Future.future();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                future -> {
-                    try {
-                        this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions);
+                    future -> {
+                        try {
+                            this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions);
 
                         ConfigMap logAndMetricsConfigMap = zkCluster.generateMetricsAndLogConfigMap(zkCluster.getLogging() instanceof ExternalLogging ?
                                 configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName()) :
