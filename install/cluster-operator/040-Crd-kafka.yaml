@@ -748,6 +748,8 @@ spec:
                       - external
                   required:
                   - type
+                gcLogging:
+                  type: string
                 tlsSidecar:
                   type: object
                   properties:

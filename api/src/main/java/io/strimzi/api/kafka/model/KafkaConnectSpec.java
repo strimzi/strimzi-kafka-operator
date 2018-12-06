@@ -227,7 +227,7 @@ public class KafkaConnectSpec implements Serializable {
         return gcLogging;
     }
 
-    public void setLogging(String gcLogging) {
+    public void setGcLogging(String gcLogging) {
         this.gcLogging = gcLogging;
     }
 }

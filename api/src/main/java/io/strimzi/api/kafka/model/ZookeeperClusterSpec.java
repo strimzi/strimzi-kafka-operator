@@ -36,7 +36,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-         "metrics", "logging", "tlsSidecar", "template"})
+         "metrics", "logging", "gcLogging", "tlsSidecar", "template"})
 public class ZookeeperClusterSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -54,6 +54,7 @@ public class ZookeeperClusterSpec implements Serializable {
     private Map<String, Object> config = new HashMap<>(0);
 
     private Logging logging;
+    private String gcLogging;
 
     private TlsSidecar tlsSidecar;
     private int replicas;
@@ -221,5 +222,15 @@ public class ZookeeperClusterSpec implements Serializable {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @Description("Logging configuration for Zookeeper GC")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getGcLogging() {
+        return gcLogging;
+    }
+
+    public void setLogging(String gcLogging) {
+        this.gcLogging = gcLogging;
     }
 }

@@ -144,6 +144,7 @@ public class ZookeeperCluster extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "zookeeper-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
+        this.gcLoggingConfig = DEFAULT_GC_LOGGING;
     }
 
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly) {
@@ -171,6 +172,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
         Logging logging = zookeeperClusterSpec.getLogging();
         zk.setLogging(logging == null ? new InlineLogging() : logging);
+        zk.setGcLoggingConfig(zookeeperClusterSpec.getGcLogging());
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
             zk.setMetricsEnabled(true);
@@ -388,6 +390,7 @@ public class ZookeeperCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_GC_LOG_OPTS, gcLoggingConfig == null ? DEFAULT_GC_LOGGING : gcLoggingConfig));
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));

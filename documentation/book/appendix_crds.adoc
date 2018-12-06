@@ -474,6 +474,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |map
 |logging         1.2+<.<|Logging configuration for Zookeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|gcLogging       1.2+<.<|Logging configuration for Zookeeper GC.
+|string
 |tlsSidecar      1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template        1.2+<.<|Template for Zookeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
