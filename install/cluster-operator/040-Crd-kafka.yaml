@@ -392,6 +392,15 @@ spec:
                   properties:
                     image:
                       type: string
+                    livenessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     logLevel:
                       type: string
                       enum:
@@ -403,6 +412,15 @@ spec:
                       - notice
                       - info
                       - debug
+                    readinessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     resources:
                       type: object
                       properties:
@@ -751,6 +769,15 @@ spec:
                   properties:
                     image:
                       type: string
+                    livenessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     logLevel:
                       type: string
                       enum:
@@ -762,6 +789,15 @@ spec:
                       - notice
                       - info
                       - debug
+                    readinessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     resources:
                       type: object
                       properties:
@@ -1025,6 +1061,15 @@ spec:
                   properties:
                     image:
                       type: string
+                    livenessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     logLevel:
                       type: string
                       enum:
@@ -1036,6 +1081,15 @@ spec:
                       - notice
                       - info
                       - debug
+                    readinessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     resources:
                       type: object
                       properties:
@@ -1375,6 +1429,15 @@ spec:
                   properties:
                     image:
                       type: string
+                    livenessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     logLevel:
                       type: string
                       enum:
@@ -1386,6 +1449,15 @@ spec:
                       - notice
                       - info
                       - debug
+                    readinessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     resources:
                       type: object
                       properties:
