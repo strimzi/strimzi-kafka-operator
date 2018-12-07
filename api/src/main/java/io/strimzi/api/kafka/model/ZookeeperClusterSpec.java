@@ -224,7 +224,7 @@ public class ZookeeperClusterSpec implements Serializable {
         this.additionalProperties.put(name, value);
     }
 
-    @Description("Logging configuration for Zookeeper GC")
+    @Description("Garbage collection logging configuration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getGcLogging() {
         return gcLogging;

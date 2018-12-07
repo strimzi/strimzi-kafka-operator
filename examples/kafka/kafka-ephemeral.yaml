@@ -15,7 +15,7 @@ spec:
     storage:
       type: ephemeral
   zookeeper:
-    replicas: 3
+    replicas: 5
     storage:
       type: ephemeral
   entityOperator:

@@ -276,7 +276,7 @@ public class KafkaClusterSpec implements Serializable {
         this.additionalProperties.put(name, value);
     }
 
-    @Description("Logging configuration for Kafka GC")
+    @Description("Garbage collection logging configuration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getGcLogging() {
         return gcLogging;

@@ -82,7 +82,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |map
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|gcLogging            1.2+<.<|Logging configuration for Kafka GC.
+|gcLogging            1.2+<.<|Garbage collection logging configuration.
 |string
 |tlsSidecar           1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
@@ -474,7 +474,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |map
 |logging         1.2+<.<|Logging configuration for Zookeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|gcLogging       1.2+<.<|Logging configuration for Zookeeper GC.
+|gcLogging       1.2+<.<|Garbage collection logging configuration.
 |string
 |tlsSidecar      1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
@@ -530,7 +530,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|gcLogging                       1.2+<.<|Logging configuration for Entity Operator GC.
+|gcLogging                       1.2+<.<|Garbage collection logging configuration.
 |string
 |====
 
@@ -584,7 +584,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |integer
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|gcLogging                       1.2+<.<|Logging configuration for Entity Operator GC.
+|gcLogging                       1.2+<.<|Garbage collection logging configuration.
 |string
 |====
 
@@ -609,7 +609,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |xref:type-Resources-{context}[`Resources`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|gcLogging                       1.2+<.<|Logging configuration for User Operator GC.
+|gcLogging                       1.2+<.<|Garbage collection logging configuration.
 |string
 |====
 
@@ -686,7 +686,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
 |logging           1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|gcLogging         1.2+<.<|Logging configuration for Kafka Connect (S2I) GC.
+|gcLogging         1.2+<.<|Garbage collection logging configuration.
 |string
 |metrics           1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
@@ -853,7 +853,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |logging                   1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|gcLogging                 1.2+<.<|Logging configuration for Kafka Connect (S2I) GC.
+|gcLogging                 1.2+<.<|Garbage collection logging configuration.
 |string
 |metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
@@ -1115,7 +1115,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |logging      1.2+<.<|Logging configuration for Mirror Maker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|gcLogging    1.2+<.<|Logging configuration for Kafka Mirror Maker GC.
+|gcLogging    1.2+<.<|Garbage collection logging configuration.
 |string
 |metrics      1.2+<.<|The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map
