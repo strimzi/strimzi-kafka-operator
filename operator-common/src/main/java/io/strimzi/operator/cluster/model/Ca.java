@@ -526,7 +526,7 @@ public abstract class Ca {
 
         Base64.Decoder decoder = Base64.getDecoder();
         byte[] bytes = decoder.decode(caKeySecret.getData().get(CA_KEY));
-        File keyFile = File.createTempFile("ererver", "dffbvd");
+        File keyFile = File.createTempFile("tls", commonName + "-key");
         try {
             Files.write(keyFile.toPath(), bytes);
             File certFile = File.createTempFile("tls", commonName + "-cert");
