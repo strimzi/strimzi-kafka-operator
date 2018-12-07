@@ -17,3 +17,6 @@ java_install: java_install_root
 java_clean:
 	echo "Cleaning Maven build ..."
 	mvn clean
+
+findbugs:
+	mvn org.codehaus.mojo:findbugs-maven-plugin:check

@@ -9,4 +9,4 @@ release:
 	$(CP) -r ./user-operator $(RELEASE_PATH)/
 	$(CP) -r ./topic-operator $(RELEASE_PATH)/
 
-.PHONY: all build clean docker_build docker_push docker_tag
+.PHONY: all build clean docker_build docker_push docker_tag findbugs

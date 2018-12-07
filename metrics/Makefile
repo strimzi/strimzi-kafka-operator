@@ -8,4 +8,4 @@ release:
 	$(CP) -r ./examples/kafka/* $(RELEASE_PATH)/
 	$(CP) -r ./examples/grafana/*.json $(RELEASE_PATH)/grafana-dashboards/
 
-.PHONY: all build clean docker_build docker_push docker_tag
+.PHONY: all build clean docker_build docker_push docker_tag findbugs

@@ -89,8 +89,7 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_check
 docu_check:
 	./.travis/check_docs.sh
 
-findbugs:
-	mvn org.codehaus.mojo:findbugs-maven-plugin:check
+findbugs: $(SUBDIRS)
 
 docu_pushtowebsite: docu_htmlnoheader docu_html
 	./.travis/docu-push-to-website.sh
