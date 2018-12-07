@@ -236,6 +236,22 @@ spec:
                               type: string
                           topologyKey:
                             type: string
+            logging:
+              type: object
+              properties:
+                loggers:
+                  type: object
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum:
+                  - inline
+                  - external
+              required:
+              - type
+            gcLogging:
+              type: string
             metrics:
               type: object
             template:
@@ -289,24 +305,8 @@ spec:
               type: string
             config:
               type: object
-            gcLogging:
-              type: string
             insecureSourceRepository:
               type: boolean
-            logging:
-              type: object
-              properties:
-                loggers:
-                  type: object
-                name:
-                  type: string
-                type:
-                  type: string
-                  enum:
-                  - inline
-                  - external
-              required:
-              - type
             resources:
               type: object
               properties:

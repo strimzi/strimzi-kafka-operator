@@ -46,6 +46,7 @@ public class EntityUserOperatorSpec implements Serializable {
     private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     private Resources resources;
     private Logging logging;
+    private String gcLogging;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the User Operator should watch.")
@@ -114,5 +115,15 @@ public class EntityUserOperatorSpec implements Serializable {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @Description("Logging configuration for User Operator GC")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getGcLogging() {
+        return gcLogging;
+    }
+
+    public void setLogging(String gcLogging) {
+        this.gcLogging = gcLogging;
     }
 }

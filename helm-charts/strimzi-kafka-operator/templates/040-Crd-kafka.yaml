@@ -1079,6 +1079,8 @@ spec:
                       - external
                   required:
                   - type
+                gcLogging:
+                  type: string
             entityOperator:
               type: object
               properties:
@@ -1133,6 +1135,8 @@ spec:
                           - external
                       required:
                       - type
+                    gcLogging:
+                      type: string
                 userOperator:
                   type: object
                   properties:
@@ -1181,6 +1185,8 @@ spec:
                           - external
                       required:
                       - type
+                    gcLogging:
+                      type: string
                 affinity:
                   type: object
                   properties:

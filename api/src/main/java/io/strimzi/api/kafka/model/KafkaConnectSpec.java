@@ -221,7 +221,7 @@ public class KafkaConnectSpec implements Serializable {
         this.additionalProperties.put(name, value);
     }
 
-    @Description("Logging configuration for Kafka Connect GC")
+    @Description("Logging configuration for Kafka Connect (S2I) GC")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getGcLogging() {
         return gcLogging;

@@ -16,7 +16,7 @@ import io.sundr.builder.annotations.Buildable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics", "template"})
+        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "logging", "gcLogging", "metrics", "template"})
 public class KafkaConnectS2ISpec extends KafkaConnectSpec {
 
     private static final long serialVersionUID = 1L;
@@ -34,12 +34,5 @@ public class KafkaConnectS2ISpec extends KafkaConnectSpec {
 
     public void setInsecureSourceRepository(boolean insecureSourceRepository) {
         this.insecureSourceRepository = insecureSourceRepository;
-    }
-
-    @Description("Logging configuration for Kafka Connect S2I GC")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Override
-    public String getGcLogging() {
-        return super.getGcLogging();
     }
 }
