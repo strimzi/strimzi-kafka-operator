@@ -3,12 +3,14 @@
 // assembly-maintenance-time-windows.adoc
 
 [id='proc-configuring-maintenance-time-windows-{context}']
-= Configuring maintenance time windows
+= Configuring a maintenance time window
+
+You can configure a maintenance time window for rolling updates triggered by supported processes.
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
-* A running Cluster Operator
+* An {ProductPlatformName} cluster.
+* The Cluster Operator is running.
 
 .Procedure
 
@@ -38,7 +40,12 @@ On {KubernetesName} this can be done using `kubectl apply`:
 kubectl apply -f _your-file_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName}, use `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
+
+.Additional resources
+
+* Performing a rolling update of a Kafka cluster, see xref:proc-manual-rolling-update-kafka-{context}[]
+* Performing a rolling update of a Zookeeper cluster, see xref:proc-manual-rolling-update-zookeeper-{context}[]
