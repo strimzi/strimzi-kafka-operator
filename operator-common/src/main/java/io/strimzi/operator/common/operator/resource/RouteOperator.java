@@ -54,7 +54,7 @@ public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Rou
         Resource<Route, DoneableRoute> resourceOp = operation().inNamespace(namespace).withName(name);
         Route resource = resourceOp.get();
 
-        if (resource != null && resource.getStatus() != null && resource.getStatus().getIngress() != null && resource.getStatus().getIngress() != null && resource.getStatus().getIngress().size() > 0) {
+        if (resource != null && resource.getStatus() != null && resource.getStatus().getIngress() != null && resource.getStatus().getIngress().size() > 0) {
             if (resource.getStatus().getIngress().get(0).getHost() != null) {
                 return true;
             }
