@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
-        "resources", "logging"})
+        "resources", "logging", "gcLogging"})
 public class EntityUserOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -123,7 +123,7 @@ public class EntityUserOperatorSpec implements Serializable {
         return gcLogging;
     }
 
-    public void setLogging(String gcLogging) {
+    public void setGcLogging(String gcLogging) {
         this.gcLogging = gcLogging;
     }
 }
