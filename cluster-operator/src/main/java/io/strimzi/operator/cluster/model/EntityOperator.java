@@ -25,6 +25,7 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -197,16 +198,35 @@ public class EntityOperator extends AbstractModel {
             containers.addAll(userOperator.getContainers());
         }
 
-        String tlsSidecarImage = (tlsSidecar != null && tlsSidecar.getImage() != null) ?
-                tlsSidecar.getImage() : EntityOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
+        String tlsSidecarImage = EntityOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
+        Resources tlsSidecarResources = null;
+        TlsSidecarLogLevel tlsSidecarLogLevel = TlsSidecarLogLevel.NOTICE;
+        int tlsSidecarReadinessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
+        int tlsSidecarReadinessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
+        int tlsSidecarLivenessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
+        int tlsSidecarLivenessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
 
-        Resources tlsSidecarResources = (tlsSidecar != null) ? tlsSidecar.getResources() : null;
-
-        TlsSidecarLogLevel tlsSidecarLogLevel = (tlsSidecar != null) ? tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE;
+        if (tlsSidecar != null) {
+            if (tlsSidecar.getImage() != null) {
+                tlsSidecarImage = tlsSidecar.getImage();
+            }
+            tlsSidecarResources = tlsSidecar.getResources();
+            tlsSidecarLogLevel = tlsSidecar.getLogLevel();
+            if (tlsSidecar.getReadinessProbe() != null) {
+                tlsSidecarReadinessInitialDelay = tlsSidecar.getReadinessProbe().getInitialDelaySeconds();
+                tlsSidecarReadinessTimeout = tlsSidecar.getReadinessProbe().getTimeoutSeconds();
+            }
+            if (tlsSidecar.getLivenessProbe() != null) {
+                tlsSidecarLivenessInitialDelay = tlsSidecar.getLivenessProbe().getInitialDelaySeconds();
+                tlsSidecarLivenessTimeout = tlsSidecar.getLivenessProbe().getTimeoutSeconds();
+            }
+        }
 
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
+                .withLivenessProbe(createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessInitialDelay, tlsSidecarLivenessTimeout))
+                .withReadinessProbe(createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarReadinessInitialDelay, tlsSidecarReadinessTimeout))
                 .withResources(resources(tlsSidecarResources))
                 .withEnv(asList(buildEnvVar(ENV_VAR_TLS_SIDECAR_LOG_LEVEL, tlsSidecarLogLevel.toValue()),
                         buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
