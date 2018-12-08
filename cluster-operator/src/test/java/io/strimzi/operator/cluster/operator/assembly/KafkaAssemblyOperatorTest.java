@@ -884,9 +884,11 @@ public class KafkaAssemblyOperatorTest {
             when(supplier.routeOperations.hasAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
             when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
                 return new RouteBuilder()
-                        .withNewSpec()
+                        .withNewStatus()
+                        .addNewIngress()
                         .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
-                        .endSpec()
+                        .endIngress()
+                        .endStatus()
                         .build();
             });
         }

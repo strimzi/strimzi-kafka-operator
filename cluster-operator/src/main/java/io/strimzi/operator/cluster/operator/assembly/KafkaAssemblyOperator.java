@@ -791,7 +791,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     address.setHandler(res -> {
                         if (res.succeeded()) {
-                            String bootstrapAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
+                            String bootstrapAddress = routeOperations.get(namespace, routeName).getStatus().getIngress().get(0).getHost();
                             this.kafkaExternalBootstrapDnsName = bootstrapAddress;
 
                             if (log.isTraceEnabled()) {
@@ -835,7 +835,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         address.setHandler(res -> {
                             if (res.succeeded()) {
-                                String routeAddress = routeOperations.get(namespace, routeName).getSpec().getHost();
+                                String routeAddress = routeOperations.get(namespace, routeName).getStatus().getIngress().get(0).getHost();
                                 this.kafkaExternalAddresses.put(podNumber, routeAddress);
                                 this.kafkaExternalDnsNames.put(podNumber, routeAddress);
 
