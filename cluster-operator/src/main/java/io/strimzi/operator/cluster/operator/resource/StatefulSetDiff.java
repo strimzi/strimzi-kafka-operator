@@ -52,6 +52,8 @@ public class StatefulSetDiff {
             "/spec/template/spec/volumes/[0-9]+/configMap/defaultMode",
             "/spec/template/spec/volumes/[0-9]+/secret/defaultMode",
             "/spec/volumeClaimTemplates/[0-9]+/status",
+            "/spec/volumeClaimTemplates/[0-9]+/spec/volumeMode",
+            "/spec/volumeClaimTemplates/[0-9]+/spec/dataSource",
             "/spec/template/spec/serviceAccount",
             "/status").stream().map(Pattern::compile).collect(Collectors.toList());
     }
