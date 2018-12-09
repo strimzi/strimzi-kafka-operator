@@ -97,11 +97,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             String podName = name + "-" + i;
             String pvcName = AbstractModel.getPersistentVolumeClaimName(name, i);
             Pod pod = podOperations.get(namespace, podName);
-            String value = Util.annotations(pod).get(ANNOTATION_MANUAL_DELETE_POD_AND_PVC);
-            if (value != null && Boolean.valueOf(value)) {
-                f = f.compose(ignored -> deletePvc(ss, pvcName))
-                        .compose(ignored -> maybeRestartPod(ss, podName, p -> true));
 
+            if (pod != null) {
+                String value = Util.annotations(pod).get(ANNOTATION_MANUAL_DELETE_POD_AND_PVC);
+                if (value != null && Boolean.valueOf(value)) {
+                    f = f.compose(ignored -> deletePvc(ss, pvcName))
+                            .compose(ignored -> maybeRestartPod(ss, podName, p -> true));
+
+                }
             }
         }
         return f;
