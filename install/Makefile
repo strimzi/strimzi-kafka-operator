@@ -1,5 +1,7 @@
 PROJECT_NAME=install
 
+include ../Makefile.os
+
 RELEASE_VERSION ?= latest
 RELEASE_PATH ?= ../strimzi-$(RELEASE_VERSION)/$(PROJECT_NAME)
 

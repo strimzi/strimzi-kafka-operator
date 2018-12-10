@@ -1,4 +1,7 @@
 PROJECT_NAME=metrics
+
+include ../Makefile.os
+
 RELEASE_VERSION ?= latest
 RELEASE_PATH ?= ../strimzi-$(RELEASE_VERSION)/examples/$(PROJECT_NAME)
 

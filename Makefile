@@ -33,9 +33,9 @@ release_prepare:
 release_version:
 	# TODO: This would be replaced ideally once Helm Chart templating is used for cluster and topic operator examples
 	echo "Changing Docker image tags to :$(RELEASE_VERSION)"
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?strimzi\/[a-zA-Z0-9_-.]\+:[a-zA-Z0-9_-.]\+"\?/s/:[a-zA-Z0-9_-.]\+/:$(RELEASE_VERSION)/g' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_-.]\+/value: $(RELEASE_VERSION)/}' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_-.]\+/:$(RELEASE_VERSION)/}' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_.-]\+/value: $(RELEASE_VERSION)/}' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
 
 release_maven:
 	echo "Update pom versions to $(RELEASE_VERSION)"
