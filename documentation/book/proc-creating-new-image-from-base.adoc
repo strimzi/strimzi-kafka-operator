@@ -33,13 +33,9 @@ USER {DockerImageUser}
 
 . Push your custom image to your container registry.
 
-//Why are we offering two options? Do they achieve the same thing? If so I say we should be more prescriptive. YOU ASKED PAOLO FOR HELP ON GCHAT.
+. Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource to point to the new container image. If set, this property overrides the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable referred to in the next step. 
 
-. Perform one of the following tasks:
-
-* Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource to point to the new container image.
-
-* In the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image.
+. In the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image.
 
 .Additional resources
 

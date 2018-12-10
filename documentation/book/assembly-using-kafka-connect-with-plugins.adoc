@@ -9,7 +9,7 @@
 [id='using-kafka-connect-with-plug-ins-{context}']
 = Extending Kafka Connect with plug-ins
 
-The {ProductName} container images for Kafka Connect include the two built-in connectors: `FileStreamSourceConnector` and `FileStreamSinkConnector`. You can add your own connectors by using one of the following methods:
+The {ProductName} container images for Kafka Connect include the two built-in file connectors: `FileStreamSourceConnector` and `FileStreamSinkConnector`. You can add your own connectors by using one of the following methods:
 
 * Create a Docker image from the Kafka Connect base image.
 * Create a container image using {OpenShiftName} builds and Source-to-Image (S2I).
