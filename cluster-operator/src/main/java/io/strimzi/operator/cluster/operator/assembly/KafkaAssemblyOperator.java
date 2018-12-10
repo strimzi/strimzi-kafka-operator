@@ -1247,10 +1247,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private int getDeploymentCaCertGeneration(Deployment dep, Ca ca) {
             int caCertGeneration = 0;
-            if (dep != null) {
+            if (dep != null && dep.getSpec().getTemplate().getMetadata().getAnnotations() != null) {
                 String depAnnotation = getCaCertAnnotation(ca);
-                caCertGeneration =
-                        Integer.parseInt(dep.getSpec().getTemplate().getMetadata().getAnnotations().get(depAnnotation));
+
+                if (dep.getSpec().getTemplate().getMetadata().getAnnotations().get(depAnnotation) != null) {
+                    caCertGeneration =
+                            Integer.parseInt(dep.getSpec().getTemplate().getMetadata().getAnnotations().get(depAnnotation));
+                }
             }
             return caCertGeneration;
         }
