@@ -197,7 +197,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Long.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaCluster.clientsCaCertSecretName(cluster)));
-        varList.add(buildEnvVar(ENV_VAR_EO_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_EO_GC_LOGGING));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_EO_GC_LOGGING));
         return varList;
     }
 

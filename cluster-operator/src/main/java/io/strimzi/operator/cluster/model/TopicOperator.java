@@ -307,7 +307,7 @@ public class TopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
-        varList.add(buildEnvVar(ENV_VAR_EO_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_EO_GC_LOGGING));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_EO_GC_LOGGING));
 
         return varList;
     }

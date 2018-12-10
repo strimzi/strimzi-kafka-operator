@@ -88,7 +88,7 @@ public class TopicOperatorTest {
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS).withValue(String.valueOf(tcZookeeperSessionTimeout * 1000)).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS).withValue(String.valueOf(tcTopicMetadataMaxAttempts)).build());
         expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_TLS_ENABLED).withValue(Boolean.toString(true)).build());
-        expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_EO_GC_LOG_OPTS).withValue(TopicOperator.DEFAULT_EO_GC_LOGGING).build());
+        expected.add(new EnvVarBuilder().withName(TopicOperator.ENV_VAR_STRIMZI_GC_LOG_OPTS).withValue(TopicOperator.DEFAULT_EO_GC_LOGGING).build());
 
         return expected;
     }
