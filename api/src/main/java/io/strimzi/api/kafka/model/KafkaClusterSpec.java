@@ -38,7 +38,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-        "metrics", "logging", "gcLogging", "tlsSidecar", "template"})
+        "metrics", "logging", "gcLoggingDisabled", "tlsSidecar", "template"})
 public class KafkaClusterSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -63,7 +63,7 @@ public class KafkaClusterSpec implements Serializable {
     private Rack rack;
 
     private Logging logging;
-    private String gcLogging;
+    private boolean gcLoggingDisabled;
 
     private TlsSidecar tlsSidecar;
     private int replicas;
@@ -276,13 +276,13 @@ public class KafkaClusterSpec implements Serializable {
         this.additionalProperties.put(name, value);
     }
 
-    @Description("Garbage collection logging configuration")
+    @Description("Disable garbage collection logging")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String getGcLogging() {
-        return gcLogging;
+    public boolean isGcLoggingDisabled() {
+        return gcLoggingDisabled;
     }
 
-    public void setGcLogging(String gcLogging) {
-        this.gcLogging = gcLogging;
+    public void setGcLoggingDisabled(boolean gcLoggingDisabled) {
+        this.gcLoggingDisabled = gcLoggingDisabled;
     }
 }

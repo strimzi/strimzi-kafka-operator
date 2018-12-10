@@ -399,8 +399,8 @@ spec:
                   - external
               required:
               - type
-            gcLogging:
-              type: string
+            gcLoggingDisabled:
+              type: boolean
             metrics:
               type: object
             template:

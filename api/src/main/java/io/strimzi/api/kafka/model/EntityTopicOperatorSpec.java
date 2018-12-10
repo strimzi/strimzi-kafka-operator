@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
-        "resources", "topicMetadataMaxAttempts", "logging", "gcLogging"})
+        "resources", "topicMetadataMaxAttempts", "logging", "gcLoggingDisabled"})
 public class EntityTopicOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -50,7 +50,7 @@ public class EntityTopicOperatorSpec implements Serializable {
     protected int topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     protected Resources resources;
     protected Logging logging;
-    protected String gcLogging;
+    protected boolean gcLoggingDisabled;
     protected Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the Topic Operator should watch.")
@@ -131,13 +131,13 @@ public class EntityTopicOperatorSpec implements Serializable {
         this.additionalProperties.put(name, value);
     }
 
-    @Description("Garbage collection logging configuration")
+    @Description("Disable garbage collection logging")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String getGcLogging() {
-        return gcLogging;
+    public boolean isGcLoggingDisabled() {
+        return gcLoggingDisabled;
     }
 
-    public void setGcLogging(String gcLogging) {
-        this.gcLogging = gcLogging;
+    public void setGcLoggingDisabled(boolean gcLoggingDisabled) {
+        this.gcLoggingDisabled = gcLoggingDisabled;
     }
 }

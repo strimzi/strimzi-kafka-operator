@@ -84,7 +84,6 @@ public class EntityTopicOperator extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "entity-topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
-        this.gcLoggingConfig = DEFAULT_EO_GC_LOGGING;
     }
 
     public void setWatchedNamespace(String watchedNamespace) {
@@ -203,7 +202,7 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setZookeeperSessionTimeoutMs(topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
                 result.setLogging(topicOperatorSpec.getLogging());
-                result.setGcLoggingConfig(topicOperatorSpec.getGcLogging());
+                result.setGcLoggingDisabled(topicOperatorSpec.isGcLoggingDisabled());
                 result.setResources(topicOperatorSpec.getResources());
             }
         }
@@ -236,7 +235,7 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
-        varList.add(buildEnvVar(ENV_VAR_EO_GC_LOG_OPTS, gcLoggingConfig == null ? DEFAULT_EO_GC_LOGGING : gcLoggingConfig));
+        varList.add(buildEnvVar(ENV_VAR_EO_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_EO_GC_LOGGING));
         return varList;
     }
 

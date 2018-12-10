@@ -76,7 +76,6 @@ public class EntityUserOperator extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
         this.validLoggerFields = getDefaultLogConfig();
-        this.gcLoggingConfig = DEFAULT_EO_GC_LOGGING;
     }
 
     public void setWatchedNamespace(String watchedNamespace) {
@@ -166,7 +165,7 @@ public class EntityUserOperator extends AbstractModel {
                 result.setReconciliationIntervalMs(userOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
                 result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setLogging(userOperatorSpec.getLogging());
-                result.setGcLoggingConfig(userOperatorSpec.getGcLogging());
+                result.setGcLoggingDisabled(userOperatorSpec.isGcLoggingDisabled());
                 result.setResources(userOperatorSpec.getResources());
             }
         }
@@ -198,7 +197,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Long.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaCluster.clientsCaCertSecretName(cluster)));
-        varList.add(buildEnvVar(ENV_VAR_EO_GC_LOG_OPTS, gcLoggingConfig == null ? DEFAULT_EO_GC_LOGGING : gcLoggingConfig));
+        varList.add(buildEnvVar(ENV_VAR_EO_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_EO_GC_LOGGING));
         return varList;
     }
 

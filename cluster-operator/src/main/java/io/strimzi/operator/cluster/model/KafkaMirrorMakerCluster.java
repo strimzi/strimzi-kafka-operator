@@ -110,7 +110,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
-        this.gcLoggingConfig = DEFAULT_GC_LOGGING;
     }
 
     public static String kafkaMirrorMakerClusterName(String cluster) {
@@ -172,7 +171,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             String image = kafkaMirrorMaker.getSpec().getImage();
             kafkaMirrorMakerCluster.setImage(image == null ? KafkaMirrorMakerSpec.DEFAULT_IMAGE : image);
             kafkaMirrorMakerCluster.setLogging(kafkaMirrorMaker.getSpec().getLogging());
-            kafkaMirrorMakerCluster.setGcLoggingConfig(kafkaMirrorMaker.getSpec().getGcLogging());
+            kafkaMirrorMakerCluster.setGcLoggingDisabled(kafkaMirrorMaker.getSpec().isGcLoggingDisabled());
 
             Map<String, Object> metrics = kafkaMirrorMaker.getSpec().getMetrics();
             if (metrics != null) {
@@ -352,7 +351,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         if (consumer.getNumStreams() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS, Integer.toString(consumer.getNumStreams())));
         }
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_GC_LOG_OPTS, gcLoggingConfig == null ? DEFAULT_GC_LOGGING : gcLoggingConfig));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_GC_LOGGING));
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);

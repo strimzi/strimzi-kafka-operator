@@ -139,7 +139,6 @@ public abstract class AbstractModel {
     protected String ancillaryConfigName;
     protected String logConfigName;
 
-    protected String gcLoggingConfig;
 
     protected Storage storage;
 
@@ -159,6 +158,7 @@ public abstract class AbstractModel {
     protected Map validLoggerFields;
     private String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
     private Logging logging;
+    protected boolean gcLoggingDisabled;
 
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
@@ -268,17 +268,12 @@ public abstract class AbstractModel {
         this.isMetricsEnabled = isMetricsEnabled;
     }
 
-    public String getGcLoggingConfig() {
-        return gcLoggingConfig;
+    public boolean isGcLoggingDisabled() {
+        return gcLoggingDisabled;
     }
 
-    protected void setGcLoggingConfig(String gcLoggingConfig) {
-        if (gcLoggingConfig != null && gcLoggingConfig.length() == 0) {
-            // empty string causes infinite rolling
-            this.gcLoggingConfig = " ";
-        } else {
-            this.gcLoggingConfig = gcLoggingConfig;
-        }
+    protected void setGcLoggingDisabled(boolean gcLoggingDisabled) {
+        this.gcLoggingDisabled = gcLoggingDisabled;
     }
 
 
