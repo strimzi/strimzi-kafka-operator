@@ -9,15 +9,34 @@
 [id='kafka-connect-{context}']
 = Kafka Connect
 
-The Cluster Operator deploys a link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] cluster, which can be used with your Kafka broker deployment.
-It is implemented as a `Deployment` with a configurable number of workers.
-The default image currently contains only the `FileStreamSinkConnector` and `FileStreamSourceConnector` connectors.
-The REST interface for managing the Kafka Connect cluster is exposed internally within the {ProductPlatformName} cluster as a `kafka-connect` service on port `8083`.
+link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] is a tool for streaming data between Apache Kafka and external systems. It provides a framework for moving large amounts of data into and out of your Kafka cluster while maintaining scalability and reliability. Kafka Connect is typically used to integrate Kafka with external databases and storage and messaging systems.
 
-Example `KafkaConnect` resources and the details about the `KafkaConnect` format for deploying Kafka Connect can be found in
-xref:assembly-deployment-configuration-kafka-connect-str[Kafka Connect cluster configuration]
-and
-xref:assembly-deployment-configuration-kafka-connect-s2i-str[Kafka Connect cluster with Source2Image support].
+You can use Kafka Connect to:
+
+* Build connector plug-ins (as JAR files) for your Kafka cluster
+* Run connectors
+
+Kafka Connect includes the following built-in connectors for moving file-based data into and out of your Kafka cluster.
+
+[cols="2*",options="header",stripes="none",separator=¦]
+|===
+
+¦File Connector
+¦Description
+
+m¦FileStreamSourceConnector
+¦Transfers data to your Kafka cluster from a file (the source).
+
+m¦FileStreamSinkConnector
+¦Transfers data from your Kafka cluster to a file (the sink).
+
+|===
+
+In {ProductName}, you can use the Cluster Operator to deploy a Kafka Connect or Kafka Connect Source-2-Image (S2I) cluster to your {ProductPlatformName} cluster.
+
+A Kafka Connect cluster is implemented as a `Deployment` with a configurable number of workers. The Kafka Connect REST API is available on port 8083, as the `<connect-cluster-name>-connect-api` service.
+
+For more information on deploying a Kafka Connect S2I cluster, see xref:using-openshift-s2i-create-image-str[Creating a container image using {OpenShiftName} builds and Source-to-Image].
 
 ifdef::Kubernetes[]
 include::proc-deploying-kafka-connect-kubernetes.adoc[leveloffset=+1]

@@ -3,17 +3,17 @@
 // assembly-kafka-connect.adoc
 
 [id='deploying-kafka-connect-openshift-{context}']
-= Deploying Kafka Connect to {OpenShiftName}
+= Deploying Kafka Connect to your {OpenShiftName} cluster
 
-On {OpenShiftName}, Kafka Connect is provided in the form of a template. It can be deployed from the template using the command-line or through the {OpenShiftName} console.
+You can deploy a Kafka Connect cluster to your {OpenShiftName} cluster by using the Cluster Operator. Kafka Connect is provided as an {OpenShiftName} template that you can deploy from the command line or the {OpenShiftName} console.
 
 .Prerequisites
 
-* Before deploying Kafka Connect, the Cluster Operator must be deployed.
+* xref:deploying-cluster-operator-openshift-str[Deploying the Cluster Operator to {OpenShiftName}]
 
 .Procedure
 
-* Create a Kafka Connect cluster from the command-line:
+* Use the `oc apply` command to create a `KafkaConnect` resource based on the `kafka-connect.yaml` file:
 +
 [source,shell]
 ----
@@ -21,4 +21,5 @@ oc apply -f examples/kafka-connect/kafka-connect.yaml
 ----
 
 .Additional resources
-* For more information about deploying the Cluster Operator, see xref:cluster-operator-str[]
+* xref:assembly-deployment-configuration-kafka-connect-str[Kafka Connect cluster configuration]
+* xref:assembly-deployment-configuration-kafka-connect-s2i-str[Kafka Connect cluster with Source2Image support]

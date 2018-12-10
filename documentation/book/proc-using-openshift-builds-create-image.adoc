@@ -4,28 +4,22 @@
 // assembly-deployment-configuration-kafka-connect-s2i.adoc
 
 [id='using-openshift-s2i-create-image-{context}']
-= Using {OpenShiftName} builds and S2I to create new images
+= Creating a container image using {OpenShiftName} builds and Source-to-Image
 
-{OpenShiftName} supports link:https://docs.openshift.org/3.9/dev_guide/builds/index.html[builds^], which can be used together with the link:https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)^] framework to create new container images.
-An {OpenShiftName} build takes a builder image with S2I support together with the connector plugin binaries provided by the user and uses them to build a new container image.
-The newly created container image is stored in {OpenShiftName}'s local container image repository and can be used in deployments.
+You can use {OpenShiftName} link:https://docs.openshift.org/3.9/dev_guide/builds/index.html[builds^] and the  link:https://docs.openshift.org/3.9/creating_images/s2i.html#creating-images-s2i[Source-to-Image (S2I)^] framework to create new container images. An OpenShift build takes a builder image with S2I support, together with source code and binaries provided by the user, and uses them to build a new container image. Once built, container images are stored in {OpenShiftName}'s local container image repository and are available for use in deployments.
 
-{ProductName} provides a Kafka Connect builder image, which can be found on {DockerRepository} as `{DockerKafkaConnectS2I}` with this S2I support.
-The S2I image takes user-provided binaries (with plugins and connectors), places them in the `/tmp/kafka-plugins/s2i` directory, and creates a new Kafka Connect image with them.
-This enhanced Kafka Connect image can be used with the Kafka Connect deployment.
-When Kafka Connect is started using the new image, it will automatically load all plugins or connectors from the `/tmp/kafka-plugins/s2i` directory.
+A Kafka Connect builder image with S2I support is provided by {ProductName} on the {DockerRepository} as `{DockerKafkaConnectS2I}`. This S2I image takes your binaries (with plug-ins and connectors) and stores them in the `/tmp/kafka-plugins/s2i` directory. It creates a new Kafka Connect image from this directory, which can then be used with the Kafka Connect deployment. When started using the enhanced image, Kafka Connect loads any third-party plug-ins from the `/tmp/kafka-plugins/s2i` directory.
 
 .Procedure
 
-. Create a Kafka Connect S2I cluster from the command-line
+. On the command line, use the `oc apply` command to create and deploy a Kafka Connect S2I cluster:
 +
 [source,subs="+quotes"]
 ----
 oc apply -f examples/kafka-connect/kafka-connect-s2i.yaml
 ----
 
-. Once the cluster is deployed, a new build can be triggered from the command-line by creating a directory
-with Kafka Connect plugins:
+. Create a directory with Kafka Connect plug-ins:
 +
 [source,subs="+quotes"]
 ----
@@ -65,11 +59,11 @@ $ tree ./_my-plugins_/
     └── README.md
 ----
 
-. Start a new image build using the prepared directory:
+. Use the `oc start-build` command to start a new build of the image using the prepared directory:
 +
 [source,subs="+quotes"]
 oc start-build _my-connect-cluster-connect_ --from-dir ./_my-plugins_/
 +
-NOTE: The name of the build will be changed according to the cluster name of the deployed Kafka Connect cluster.
+NOTE: The name of the build is the same as the name of the deployed Kafka Connect cluster.
 
-. Once the build is finished, the new image will be used automatically by the Kafka Connect deployment.
+. Once the build has finished, the new image is used automatically by the Kafka Connect deployment.

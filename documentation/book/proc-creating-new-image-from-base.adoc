@@ -3,14 +3,19 @@
 // assembly-using-kafka-connect-with-plugins.adoc
 
 [id='creating-new-image-from-base-{context}']
-= Create a new image based on our base image
+= Creating a Docker image from the Kafka Connect base image
 
-{ProductName} provides its own container image for running Kafka Connect, which can be found on {DockerRepository} as
-`{DockerKafkaConnect}`.
-The `{DockerKafkaConnect}` image is configured to automatically load all plugins or connectors that are present in the `/opt/kafka/plugins` directory during startup.
-This image can be used as a base image for building a new custom image with additional plugins.
+A container image for running Kafka Connect using {ProductName} is available on {DockerRepository} as `{DockerKafkaConnect}`. You can use this as a base image for creating your own custom image with additional connector plug-ins. 
 
-The following procedure describes the process for creating such a custom image and adding the connector plugins to the the `/opt/kafka/plugins` directory.
+The following procedure explains how to create your custom image and add it to the `/opt/kafka/plugins` directory. At startup, the AMQ Streams version of Kafka Connect loads any third-party connector plug-ins contained in the `/opt/kafka/plugins` directory.
+
+.Prerequisites
+
+ifdef::Kubernetes[]
+* xref:deploying-cluster-operator-kubernetes-str[Deploying the Cluster Operator to {KubernetesName}]
+endif::Kubernetes[]
+
+* xref:deploying-cluster-operator-openshift-str[Deploying the Cluster Operator to {OpenShiftName}]
 
 .Procedure
 
@@ -24,10 +29,27 @@ COPY ./_my-plugins_/ /opt/kafka/plugins/
 USER {DockerImageUser}
 ----
 
-. Build the container image and upload it to the appropriate container image repository.
+. Build the container image.
 
-. Set the `KafkaConnect.spec.image` property of the KafkaConnect custom resource or the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image.
+. Push your custom image to your container registry.
+
+. Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource to point to the new container image. If set, this property overrides the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable referred to in the next step. 
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  #...
+  image: my-new-container-image 
+----
+
+. In the `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable to point to the new container image.
 
 .Additional resources
-* For more information about the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable, see xref:ref-operators-cluster-operator-configuration-deploying-co[].
-* For more information about the `KafkaConnect.spec.image property`, see xref:assembly-configuring-container-images-deployment-configuration-kafka-connect[].
+
+* For more information on the `KafkaConnect.spec.image property`, see xref:assembly-configuring-container-images-deployment-configuration-kafka-connect[].
+
+* For more information on the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` variable, see xref:ref-operators-cluster-operator-configuration-deploying-co[].
