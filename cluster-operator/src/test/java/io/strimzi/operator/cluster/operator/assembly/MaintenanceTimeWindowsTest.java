@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -43,6 +44,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.StringReader;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -51,11 +53,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
+
 @RunWith(VertxUnitRunner.class)
 public class MaintenanceTimeWindowsTest {
 
     private static final String NAMESPACE = "test-maintenance-time-windows";
     private static final String NAME = "my-kafka";
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"),
+            emptyMap(), emptyMap(), emptyMap()) { };
 
     private Vertx vertx;
     private Kafka kafka;
@@ -100,7 +109,7 @@ public class MaintenanceTimeWindowsTest {
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(this.vertx, this.mockClient, false, 60_000L);
 
-        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(this.vertx, false, 2_000, null, ros);
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(this.vertx, false, 2_000, null, ros, VERSIONS);
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
@@ -432,7 +441,7 @@ public class MaintenanceTimeWindowsTest {
 
         this.init(maintenanceTimeWindows);
 
-        StatefulSet zkSS = ZookeeperCluster.fromCrd(this.kafka).generateStatefulSet(false);
+        StatefulSet zkSS = ZookeeperCluster.fromCrd(this.kafka, VERSIONS).generateStatefulSet(false);
         zkSS.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0");
         this.mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(NAME)).create(zkSS);
 
@@ -457,7 +466,7 @@ public class MaintenanceTimeWindowsTest {
 
         this.init(maintenanceTimeWindows);
 
-        StatefulSet kafkaSS = KafkaCluster.fromCrd(this.kafka).generateStatefulSet(false);
+        StatefulSet kafkaSS = KafkaCluster.fromCrd(this.kafka, VERSIONS).generateStatefulSet(false);
         kafkaSS.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0");
         kafkaSS.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0");
         this.mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(NAME)).create(kafkaSS);
