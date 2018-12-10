@@ -93,7 +93,7 @@ public abstract class AbstractModel {
     private static final String VOLUME_MOUNT_HACK_IMAGE = "busybox";
     protected static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
     private static final Long VOLUME_MOUNT_HACK_USERID = 1001L;
-    private static final Long VOLUME_MOUNT_HACK_GROUPID = 0L;
+    private static final Long VOLUME_MOUNT_HACK_GROUPID = 1001L;
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";
     public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
