@@ -9,10 +9,11 @@ import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import org.I0Itec.zkclient.exception.ZkNoNodeException;
+import org.I0Itec.zkclient.exception.ZkNodeExistsException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.ACL;
 
 import java.util.List;
@@ -32,18 +33,25 @@ public class ZkTopicStore implements TopicStore {
     public ZkTopicStore(Zk zk) {
         this.zk = zk;
         acl = new AclBuilder().setWorld(AclBuilder.Permission.values()).build();
-        createParent("/strimzi");
-        createParent(TOPICS_PATH);
+        createParent();
     }
 
-    private void createParent(String path) {
-        zk.create(path, null, acl, CreateMode.PERSISTENT, result -> {
+    private void createParent() {
+        zk.create("/strimzi", null, acl, CreateMode.PERSISTENT, result -> {
             if (result.failed()) {
-                if (!(result.cause() instanceof KeeperException.NodeExistsException)) {
-                    LOGGER.error("Error creating {}", path, result.cause());
+                if (!(result.cause() instanceof ZkNodeExistsException)) {
+                    LOGGER.error("Error creating {}", "/strimzi", result.cause());
                     throw new RuntimeException(result.cause());
                 }
             }
+            zk.create(TOPICS_PATH, null, acl, CreateMode.PERSISTENT, result2 -> {
+                if (result.failed()) {
+                    if (!(result.cause() instanceof ZkNodeExistsException)) {
+                        LOGGER.error("Error creating {}", TOPICS_PATH, result.cause());
+                        throw new RuntimeException(result.cause());
+                    }
+                }
+            });
         });
     }
 
@@ -59,11 +67,15 @@ public class ZkTopicStore implements TopicStore {
         zk.getData(topicPath, result -> {
             final AsyncResult<Topic> fut;
             if (result.succeeded()) {
+                LOGGER.info("succeeded znode {}", topicPath);
                 fut = Future.succeededFuture(TopicSerialization.fromJson(result.result()));
             } else {
-                if (result.cause() instanceof KeeperException.NoNodeException) {
+                LOGGER.debug("failed znode {}", topicPath);
+                if (result.cause() instanceof ZkNoNodeException) {
+                    LOGGER.info("nonode znode {}", topicPath);
                     fut = Future.succeededFuture(null);
                 } else {
+                    LOGGER.info("WTF {}", topicPath);
                     fut = result.map((Topic) null);
                 }
             }
@@ -77,7 +89,7 @@ public class ZkTopicStore implements TopicStore {
         String topicPath = getTopicPath(topic.getTopicName());
         LOGGER.debug("create znode {}", topicPath);
         zk.create(topicPath, data, acl, CreateMode.PERSISTENT, result -> {
-            if (result.failed() && result.cause() instanceof KeeperException.NodeExistsException) {
+            if (result.failed() && result.cause() instanceof ZkNodeExistsException) {
                 handler.handle(Future.failedFuture(new EntityExistsException()));
             } else {
                 handler.handle(result);
@@ -100,7 +112,7 @@ public class ZkTopicStore implements TopicStore {
         String topicPath = getTopicPath(topicName);
         LOGGER.debug("delete znode {}", topicPath);
         zk.delete(topicPath, -1, result -> {
-            if (result.failed() && result.cause() instanceof KeeperException.NoNodeException) {
+            if (result.failed() && result.cause() instanceof ZkNoNodeException) {
                 handler.handle(Future.failedFuture(new NoSuchEntityExistsException()));
             } else {
                 handler.handle(result);

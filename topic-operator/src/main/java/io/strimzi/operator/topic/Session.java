@@ -7,8 +7,8 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
@@ -20,7 +20,6 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -91,22 +90,23 @@ public class Session extends AbstractVerticle {
             }
             LOGGER.debug("Stopping kafka {}", kafka);
             kafka.stop();
-            try {
-                LOGGER.debug("Disconnecting from zookeeper {}", zk);
-                zk.disconnect();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            LOGGER.debug("Closing AdminClient {}", adminClient);
-            adminClient.close(timeout - (System.currentTimeMillis() - t0), TimeUnit.MILLISECONDS);
 
-            HttpServer healthServer = this.healthServer;
-            if (healthServer != null) {
-                healthServer.close();
-            }
+            LOGGER.debug("Disconnecting from zookeeper {}", zk);
+            zk.disconnect(zkResult -> {
+                if (zkResult.failed()) {
+                    LOGGER.warn("Error disconnecting from zookeeper: {}", String.valueOf(zkResult.cause()));
+                }
+                LOGGER.debug("Closing AdminClient {}", adminClient);
+                adminClient.close(timeout - (System.currentTimeMillis() - t0), TimeUnit.MILLISECONDS);
 
-            LOGGER.info("Stopped");
-            blockingResult.complete();
+                HttpServer healthServer = this.healthServer;
+                if (healthServer != null) {
+                    healthServer.close();
+                }
+
+                LOGGER.info("Stopped");
+                blockingResult.complete();
+            });
         }, stopFuture);
     }
 
@@ -136,7 +136,9 @@ public class Session extends AbstractVerticle {
         this.k8s = new K8sImpl(vertx, kubeClient, resourcePredicate, namespace);
         LOGGER.debug("Using k8s {}", k8s);
 
-        this.zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT), this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue());
+        this.zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT),
+                this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
+                this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue());
         LOGGER.debug("Using ZooKeeper {}", zk);
 
         ZkTopicStore topicStore = new ZkTopicStore(zk);

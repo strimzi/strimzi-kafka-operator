@@ -9,7 +9,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Stat;
 
 import java.util.List;
 
@@ -18,14 +17,14 @@ import java.util.List;
  */
 public interface Zk {
 
-    public static Zk create(Vertx vertx, String zkConnectionString, int sessionTimeout) {
-        return new ZkImpl(vertx, zkConnectionString, sessionTimeout, false);
+    public static Zk create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
+        return new ZkImpl(vertx, zkConnectionString, sessionTimeout, connectionTimeout);
     }
 
     /**
-     * Disconnect from the ZooKeeper server, synchronously.
+     * Disconnect from the ZooKeeper server, asynchronously.
      */
-    Zk disconnect() throws InterruptedException;
+    Zk disconnect(Handler<AsyncResult<Void>> handler);
 
     /**
      * Asynchronously create the znode at the given path and with the given data and ACL, using the
@@ -83,26 +82,6 @@ public interface Zk {
      * Remove the data watcher, if any, for the given {@code path}.
      */
     Zk unwatchData(String path);
-
-    /**
-     * Asynchronously check whether a znode exists at the given {@code path},
-     * calling the given handler with the result.
-     * The result will be null if no znode existed at the given {@code path}.
-     */
-    Zk exists(String path, Handler<AsyncResult<Stat>> handler);
-
-    /**
-     * Set given the existence {@code watcher} on the given {@code path}.
-     * A subsequent call to {@link #exists(String, Handler)} with the same path will register the existence {@code watcher}
-     * for the given {@code path} current at that time with zookeeper so
-     * that that {@code watcher} is called when a znode at that path is created or deleted.
-     */
-    Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher);
-
-    /**
-     * Remove the existence watcher, if any, for the given {@code path}.
-     */
-    Zk unwatchExists(String path);
 
     // TODO getAcl(), setAcl(), multi()
 
