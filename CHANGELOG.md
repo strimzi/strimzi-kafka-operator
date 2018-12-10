@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## 0.10.0
+
 ## 0.9.0
 
 * Add possibility to label and annotate different resources (#1093)
