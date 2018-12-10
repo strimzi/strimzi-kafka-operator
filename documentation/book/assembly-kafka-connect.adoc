@@ -16,12 +16,12 @@ You can use Kafka Connect to:
 * Build connector plug-ins (as JAR files) for your Kafka cluster
 * Run connectors
 
-Two built-in connectors are provided:
+Kafka Connect includes the following built-in connectors for moving file-based data into and out of your Kafka cluster.
 
 [cols="2*",options="header",stripes="none",separator=¦]
 |===
 
-¦Connector
+¦File Connector
 ¦Description
 
 m¦FileStreamSourceConnector
