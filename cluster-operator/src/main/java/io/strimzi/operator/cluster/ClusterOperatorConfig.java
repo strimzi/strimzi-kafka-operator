@@ -50,6 +50,7 @@ public class ClusterOperatorConfig {
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      * @param createClusterRoles true to create the cluster roles
+     * @param versions The configured Kafka versions
      */
     public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));

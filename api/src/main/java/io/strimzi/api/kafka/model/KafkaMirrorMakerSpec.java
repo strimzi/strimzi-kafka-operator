@@ -63,7 +63,7 @@ public class KafkaMirrorMakerSpec implements Serializable {
         this.replicas = replicas;
     }
 
-    @Description("The kafka mirror maker version. Defaults to {DefaultKafkaVersion}. " +
+    @Description("The Kafka Mirror Maker version. Defaults to {DefaultKafkaVersion}. " +
             "Consult the user documentation to understand the process required to upgrade or downgrade the version.")
     public String getVersion() {
         return version;
