@@ -10,4 +10,4 @@ $(DOCKER_TARGETS): $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-.PHONY: build clean release all $(SUBDIRS) $(DOCKER_TARGETS)
+.PHONY: build clean release all $(SUBDIRS) $(DOCKER_TARGETS) findbugs
