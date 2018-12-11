@@ -10,23 +10,10 @@
 
 = Maintenance time windows for rolling updates
 
-Maintenance time windows allow you to schedule rolling updates of your Kafka and Zookeeper clusters to start at a convenient time.
-During a rolling update, pod instances in a cluster are updated incrementally, with no downtime.
+Maintenance time windows allow you to schedule certain rolling updates of your Kafka and Zookeeper clusters to start at a convenient time.
 
-You configure a maintenance time window by entering an array of strings containing one or more {CronExpressions} in the `Kafka.spec.maintenanceTimeWindows` property.
-The cron expressions are interpreted as being in UTC.
-The following example shows a typical maintenance time window:
+include::con-maintenance-time-windows.adoc[leveloffset=+1]
 
-[source,yaml,subs="attributes+"]
-----
-# ...
-maintenanceTimeWindows:
-  - "* * 8-10 * * ?"
-  - "* * 14-15 * * ?"
-# ...
-----
-
-NOTE: Currently, maintenance time windows for rolling updates are only respected by the Certificate Authority (CA) certificate renewal process.
-Other processes--for example, a rolling update triggered by configuring a Kafka cluster--do not respect maintenance time windows.
+include::con-maintenance-time-window-definition.adoc[leveloffset=+1]
 
 include::proc-configuring-maintenance-time-windows.adoc[leveloffset=+1]
