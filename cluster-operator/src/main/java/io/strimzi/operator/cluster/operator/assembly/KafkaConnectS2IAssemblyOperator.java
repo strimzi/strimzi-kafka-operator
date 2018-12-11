@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -45,6 +46,7 @@ import java.util.List;
 public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
+    public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
     private final ServiceOperator serviceOperations;
     private final DeploymentConfigOperator deploymentConfigOperations;
     private final ImageStreamOperator imagesStreamOperations;
@@ -99,7 +101,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     null);
 
             HashMap<String, String> annotations = new HashMap();
-            annotations.put("strimzi.io/logging", logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
+            annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
             return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))

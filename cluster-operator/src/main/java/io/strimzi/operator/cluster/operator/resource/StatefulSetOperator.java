@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -99,8 +99,8 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             Pod pod = podOperations.get(namespace, podName);
 
             if (pod != null) {
-                String value = Util.annotations(pod).get(ANNOTATION_MANUAL_DELETE_POD_AND_PVC);
-                if (value != null && Boolean.valueOf(value)) {
+                String value = Annotations.annotations(pod).get(ANNO_STRIMZI_IO_DELETE_POD_AND_PVC);
+                if (Boolean.parseBoolean(value)) {
                     f = f.compose(ignored -> deletePvc(ss, pvcName))
                             .compose(ignored -> maybeRestartPod(ss, podName, p -> true));
 
@@ -189,14 +189,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     }
 
     private void setGeneration(StatefulSet desired, int nextGeneration) {
-        templateMetadata(desired).getAnnotations().put(ANNOTATION_GENERATION, String.valueOf(nextGeneration));
+        templateMetadata(desired).getAnnotations().put(ANNO_STRIMZI_IO_GENERATION, String.valueOf(nextGeneration));
     }
 
     private static int getGeneration(ObjectMeta objectMeta) {
-        if (objectMeta.getAnnotations().get(ANNOTATION_GENERATION) == null) {
+        if (objectMeta.getAnnotations().get(ANNO_STRIMZI_IO_GENERATION) == null) {
             return NO_GENERATION;
         }
-        String generationAnno = objectMeta.getAnnotations().get(ANNOTATION_GENERATION);
+        String generationAnno = objectMeta.getAnnotations().get(ANNO_STRIMZI_IO_GENERATION);
         if (generationAnno == null) {
             return NO_GENERATION;
         } else {
@@ -205,7 +205,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     }
 
     protected void incrementGeneration(StatefulSet current, StatefulSet desired) {
-        final int generation = Integer.parseInt(templateMetadata(current).getAnnotations().getOrDefault(ANNOTATION_GENERATION, String.valueOf(INIT_GENERATION)));
+        final int generation = Integer.parseInt(templateMetadata(current).getAnnotations().getOrDefault(ANNO_STRIMZI_IO_GENERATION, String.valueOf(INIT_GENERATION)));
         final int nextGeneration = generation + 1;
         setGeneration(desired, nextGeneration);
     }

@@ -60,7 +60,7 @@ import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -1062,7 +1062,7 @@ public abstract class AbstractModel {
 
     public static boolean deleteClaim(StatefulSet ss) {
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
-            return Boolean.valueOf(Util.annotations(ss).getOrDefault(DELETE_CLAIM_ANNOTATION, "false"));
+            return Boolean.valueOf(Annotations.annotations(ss).getOrDefault(DELETE_CLAIM_ANNOTATION, "false"));
         } else {
             return false;
         }

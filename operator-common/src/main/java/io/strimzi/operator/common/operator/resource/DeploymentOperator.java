@@ -11,12 +11,10 @@ import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-
-import java.util.HashMap;
 
 /**
  * Operations for {@code Deployment}s.
@@ -72,11 +70,8 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
 
     @Override
     protected Future<ReconcileResult<Deployment>> internalPatch(String namespace, String name, Deployment current, Deployment desired, boolean cascading) {
-        String k8sRev = Util.annotations(current).get("deployment.kubernetes.io/revision");
-        if (desired.getMetadata().getAnnotations() == null) {
-            desired.getMetadata().setAnnotations(new HashMap<>(1));
-        }
-        desired.getMetadata().getAnnotations().put("deployment.kubernetes.io/revision", k8sRev);
+        String k8sRev = Annotations.annotations(current).get(Annotations.ANNO_DEP_KUBE_IO_REVISION);
+        Annotations.annotations(desired).put(Annotations.ANNO_DEP_KUBE_IO_REVISION, k8sRev);
         return super.internalPatch(namespace, name, current, desired, cascading);
     }
 }

@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -42,6 +43,7 @@ import java.util.Map;
 public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectAssemblyOperator.class.getName());
+    public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
     private final ServiceOperator serviceOperations;
     private final DeploymentOperator deploymentOperations;
     private final ConfigMapOperator configMapOperations;
@@ -88,7 +90,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                 null);
 
         Map<String, String> annotations = new HashMap();
-        annotations.put("strimzi.io/logging", logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
+        annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
         return deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())

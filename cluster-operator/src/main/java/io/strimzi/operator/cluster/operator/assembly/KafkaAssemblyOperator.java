@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
@@ -17,10 +18,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
@@ -37,8 +38,8 @@ import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -68,8 +69,6 @@ import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import static io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator.STRIMZI_OPERATOR_DOMAIN;
-
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
  * <ul>
@@ -94,7 +93,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final RoleBindingOperator roleBindingOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
 
-    public static final String ANNOTATION_MANUAL_RESTART = STRIMZI_OPERATOR_DOMAIN + "/manual-rolling-update";
+    public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = Annotations.STRIMZI_DOMAIN + "/manual-rolling-update";
 
     /**
      * @param vertx The Vertx instance
@@ -321,8 +320,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (futss != null) {
                 return futss.compose(ss -> {
                     if (ss != null) {
-                        String value = Util.annotations(ss).get(ANNOTATION_MANUAL_RESTART);
-                        if (value != null && value.equals("true")) {
+                        String value = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE);
+                        if (Boolean.parseBoolean(value)) {
                             return kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
 
                                 log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
@@ -342,8 +341,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (futss != null) {
                 return futss.compose(ss -> {
                     if (ss != null) {
-                        String value = Util.annotations(ss).get(ANNOTATION_MANUAL_RESTART);
-                        if (value != null && value.equals("true")) {
+                        String value = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE);
+                        if (Boolean.parseBoolean(value)) {
 
                             return zkSetOperations.maybeRollingUpdate(ss, pod -> {
 
@@ -455,8 +454,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkStatefulSet() {
             StatefulSet zkSs = zkCluster.generateStatefulSet(isOpenShift);
-            zkSs.getSpec().getTemplate().getMetadata().getAnnotations()
-                    .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
+            Annotations.annotations(zkSs.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSs));
         }
 
@@ -908,10 +906,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaStatefulSet() {
             kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
             StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(isOpenShift);
-            kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations()
-                    .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
-            kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations()
-                    .put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clientsCa)));
+            PodTemplateSpec template = kafkaSs.getSpec().getTemplate();
+            Annotations.annotations(template).put(
+                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION,
+                    String.valueOf(getCaCertGeneration(this.clusterCa)));
+            Annotations.annotations(template).put(
+                    Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION,
+                    String.valueOf(getCaCertGeneration(this.clientsCa)));
             return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), kafkaSs));
         }
 
@@ -963,7 +964,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             null);
                             this.toDeployment = topicOperator.generateDeployment(isOpenShift);
                             this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
-                            this.toDeployment.getSpec().getTemplate().getMetadata().getAnnotations().put("strimzi.io/logging", this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
+                            Annotations.annotations(this.toDeployment.getSpec().getTemplate()).put(
+                                    TopicOperator.ANNO_STRIMZI_IO_LOGGING,
+                                    this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
                         } else {
                             this.toDeployment = null;
                             this.toMetricsAndLogsConfigMap = null;
@@ -1021,8 +1024,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (isSatisfiedBy) {
                             caCertGeneration = getCaCertGeneration(this.clusterCa);
                         }
-                        toDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
-                                .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                        Annotations.annotations(toDeployment.getSpec().getTemplate()).put(
+                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
                         return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
                     }).map(i -> this);
                 }
@@ -1135,8 +1138,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (isSatisfiedBy) {
                             caCertGeneration = getCaCertGeneration(this.clusterCa);
                         }
-                        eoDeployment.getSpec().getTemplate().getMetadata().getAnnotations()
-                                .put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                        Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
+                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
                         return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
                     }).map(i -> this);
                 }
@@ -1154,15 +1157,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
             log.debug("Rolling update of {}/{}: pod {} has {}={}; ss has {}={}",
                     ss.getMetadata().getNamespace(), ss.getMetadata().getName(), pod.getMetadata().getName(),
-                    StatefulSetOperator.ANNOTATION_GENERATION, podGeneration,
-                    StatefulSetOperator.ANNOTATION_GENERATION, ssGeneration);
+                    StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, podGeneration,
+                    StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, ssGeneration);
             return ssGeneration == podGeneration;
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
             final int caCertGeneration = getCaCertGeneration(ca);
             String podAnnotation = getCaCertAnnotation(ca);
-            String generation = Util.annotations(pod).get(podAnnotation);
+            String generation = Annotations.annotations(pod).get(podAnnotation);
             final int podCaCertGeneration = generation != null ?
                     Integer.parseInt(generation) : Ca.INIT_GENERATION;
             return caCertGeneration == podCaCertGeneration;
@@ -1247,19 +1250,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private int getDeploymentCaCertGeneration(Deployment dep, Ca ca) {
             int caCertGeneration = 0;
-            if (dep != null && dep.getSpec().getTemplate().getMetadata().getAnnotations() != null) {
-                String depAnnotation = getCaCertAnnotation(ca);
-
-                if (dep.getSpec().getTemplate().getMetadata().getAnnotations().get(depAnnotation) != null) {
-                    caCertGeneration =
-                            Integer.parseInt(dep.getSpec().getTemplate().getMetadata().getAnnotations().get(depAnnotation));
-                }
+            if (dep != null) {
+                caCertGeneration =
+                        Integer.parseInt(Annotations.annotations(
+                                dep.getSpec().getTemplate()).getOrDefault(getCaCertAnnotation(ca), "0"));
             }
             return caCertGeneration;
         }
 
         private int getCaCertGeneration(Ca ca) {
-            String generation = Util.annotations(ca.caCertSecret()).get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
+            String generation = Annotations.annotations(ca.caCertSecret()).get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
             return generation != null ? Integer.parseInt(generation) : Ca.INIT_GENERATION;
         }
 
