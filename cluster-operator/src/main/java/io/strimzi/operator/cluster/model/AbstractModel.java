@@ -103,8 +103,7 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
 
-    private static final String DELETE_CLAIM_ANNOTATION =
-            ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
+    private static final String DELETE_CLAIM_ANNOTATION = Annotations.STRIMZI_DOMAIN + "/delete-claim";
 
     protected final String cluster;
     protected final String namespace;
