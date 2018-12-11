@@ -10,7 +10,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Stat;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +39,8 @@ class MockZk implements Zk {
     }
 
     @Override
-    public Zk disconnect() {
+    public Zk disconnect(Handler<AsyncResult<Void>> handler) {
+        handler.handle(Future.succeededFuture());
         return this;
     }
 
@@ -94,21 +94,6 @@ class MockZk implements Zk {
 
     @Override
     public Zk delete(String path, int version, Handler<AsyncResult<Void>> handler) {
-        return null;
-    }
-
-    @Override
-    public Zk watchExists(String path, Handler<AsyncResult<Stat>> watcher) {
-        return null;
-    }
-
-    @Override
-    public Zk unwatchExists(String path) {
-        return null;
-    }
-
-    @Override
-    public Zk exists(String path, Handler<AsyncResult<Stat>> handler) {
         return null;
     }
 }

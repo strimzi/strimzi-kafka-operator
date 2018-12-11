@@ -38,12 +38,14 @@ public class ZkImplTest {
             TimeoutException, ExecutionException {
         this.zkServer = new EmbeddedZooKeeper();
 
-        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, false);
+        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
     }
 
     @After
-    public void teardown() throws InterruptedException {
-        zk.disconnect();
+    public void teardown(TestContext context) {
+        Async async = context.async();
+        zk.disconnect(result -> async.complete());
+        async.await();
         if (this.zkServer != null) {
             this.zkServer.close();
         }
@@ -53,7 +55,7 @@ public class ZkImplTest {
     @Ignore
     @Test
     public void testReconnectOnBounce(TestContext context) throws IOException, InterruptedException {
-        ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, false);
+        ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
         zkServer.restart();
         Async async = context.async();
         zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
@@ -121,35 +123,6 @@ public class ZkImplTest {
             zk.setData("/foo", data2, -1, setResult -> {
                 done.complete();
             });
-        });
-    }
-
-    @Test
-    public void testWatchUnwatchExists(TestContext context) {
-        // Create a node
-        Async created = context.async(2);
-        Async deleted = context.async(2);
-        zk.watchExists("/foo", existsResult -> {
-            if (existsResult.result() != null) {
-                created.countDown();
-            } else {
-                deleted.countDown();
-            }
-        }).exists("/foo", null);
-        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
-            created.countDown();
-        });
-        created.await();
-
-        zk.delete("/foo", -1, deleteResult -> {
-            deleted.countDown();
-        });
-        deleted.await();
-
-        zk.unwatchExists("/foo");
-        Async created2 = context.async();
-        zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
-            created2.complete();
         });
     }
 

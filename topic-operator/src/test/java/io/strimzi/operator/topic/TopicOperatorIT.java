@@ -153,6 +153,7 @@ public class TopicOperatorIT {
                 topicsWatcher = session.topicsWatcher;
                 async.complete();
             } else {
+                ar.cause().printStackTrace();
                 context.fail("Failed to deploy session");
             }
         });

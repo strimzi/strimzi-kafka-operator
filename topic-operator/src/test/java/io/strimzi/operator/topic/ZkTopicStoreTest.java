@@ -38,13 +38,15 @@ public class ZkTopicStoreTest {
             throws IOException, InterruptedException,
             TimeoutException, ExecutionException {
         this.zkServer = new EmbeddedZooKeeper();
-        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60000, false);
+        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
         this.store = new ZkTopicStore(zk);
     }
 
     @After
-    public void teardown() throws InterruptedException {
-        zk.disconnect();
+    public void teardown(TestContext context) {
+        Async async = context.async();
+        zk.disconnect(ar -> async.complete());
+        async.await();
         if (this.zkServer != null) {
             this.zkServer.close();
         }

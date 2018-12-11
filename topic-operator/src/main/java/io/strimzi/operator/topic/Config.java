@@ -94,6 +94,7 @@ public class Config {
     public static final String TC_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String TC_ZK_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String TC_ZK_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
+    public static final String TC_ZK_CONNECTION_TIMEOUT_MS = "TC_ZK_CONNECTION_TIMEOUT_MS";
     public static final String TC_PERIODIC_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String TC_REASSIGN_THROTTLE = "STRIMZI_REASSIGN_THROTTLE";
     public static final String TC_REASSIGN_VERIFY_INTERVAL_MS = "STRIMZI_REASSIGN_VERIFY_INTERVAL_MS";
@@ -121,6 +122,9 @@ public class Config {
 
     /** The zookeeper session timeout. */
     public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value<>(TC_ZK_SESSION_TIMEOUT_MS, DURATION, "20000");
+
+    /** The zookeeper connection timeout. */
+    public static final Value<Long> ZOOKEEPER_CONNECTION_TIMEOUT_MS = new Value<>(TC_ZK_CONNECTION_TIMEOUT_MS, DURATION, "20000");
 
     /** The period between full reconciliations. */
     public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value<>(TC_PERIODIC_INTERVAL_MS, DURATION, "900000");
@@ -155,6 +159,7 @@ public class Config {
         addConfigValue(configValues, NAMESPACE);
         addConfigValue(configValues, ZOOKEEPER_CONNECT);
         addConfigValue(configValues, ZOOKEEPER_SESSION_TIMEOUT_MS);
+        addConfigValue(configValues, ZOOKEEPER_CONNECTION_TIMEOUT_MS);
         addConfigValue(configValues, FULL_RECONCILIATION_INTERVAL_MS);
         addConfigValue(configValues, REASSIGN_THROTTLE);
         addConfigValue(configValues, REASSIGN_VERIFY_INTERVAL_MS);
