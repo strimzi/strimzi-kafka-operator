@@ -14,7 +14,7 @@ Maintenance time windows allow you to schedule rolling updates of your Kafka and
 During a rolling update, pod instances in a cluster are updated incrementally, with no downtime.
 
 You configure a maintenance time window by entering an array of strings containing one or more {CronExpressions} in the `Kafka.spec.maintenanceTimeWindows` property.
-The cron expressions must be expressed in UTC.
+The cron expressions are interpreted as being in UTC.
 The following example shows a typical maintenance time window:
 
 [source,yaml,subs="attributes+"]
