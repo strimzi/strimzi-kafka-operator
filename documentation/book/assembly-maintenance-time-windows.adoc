@@ -12,7 +12,7 @@
 
 Maintenance time windows allow you to schedule certain rolling updates of your Kafka and Zookeeper clusters to start at a convenient time.
 
-include::con-maintenance-time-windows.adoc[leveloffset=+1]
+include::con-maintenance-time-windows-overview.adoc[leveloffset=+1]
 
 include::con-maintenance-time-window-definition.adoc[leveloffset=+1]
 

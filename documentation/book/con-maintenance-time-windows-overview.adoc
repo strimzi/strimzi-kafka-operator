@@ -2,16 +2,16 @@
 //
 // assembly-maintenance-time-windows.adoc
 
-[id='con-maintenance-time-windows-{context}']
-= The purpose of maintenance time windows
+[id='con-maintenance-time-windows-overview-{context}']
+= Maintenance time windows overview
 
-The Cluster Operator usually only updates Kafka and Zookeeper clusters in response to changes in the corresponding `Kafka` resource.
-This means that you can plan when to apply changes to a `Kafka` resource to minimize impact on Kafka client applications.
+In most cases, the Cluster Operator only updates your Kafka or Zookeeper clusters in response to changes to the corresponding `Kafka` resource.
+This enables you to plan when to plan when to apply changes to a `Kafka` resource to minimize the impact on Kafka client applications.
 
-However, some updates to the Kafka and Zookeeper clusters can happen without any change to the `Kafka` resource. For example, when a CA (Certificate Authority) certificate is near expiry and the Cluster Operator is managing that CA it will need to perform a rolling restart.
+However, some updates to your Kafka and Zookeeper clusters can happen without any corresponding change to the `Kafka` resource.
+For example, the Cluster Operator will need to perform a rolling restart if a CA (Certificate Authority) certificate that it manages is close to expiry.
 
 While a rolling restart of the pods should not affect _availability_ of the service (assuming correct broker and topic configurations), it could affect _performance_ of the Kafka client applications.
-
 Maintenance time windows allow you to schedule such spontaneous rolling updates of your Kafka and Zookeeper clusters to start at a convenient time.
 If maintenance time windows are not configured for a cluster then it is possible that such spontaneous rolling updates will happen at an inconvenient time, such as during a predictable period of high load.
 
