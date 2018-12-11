@@ -33,10 +33,10 @@ public class ZkTopicStore implements TopicStore {
     public ZkTopicStore(Zk zk) {
         this.zk = zk;
         acl = new AclBuilder().setWorld(AclBuilder.Permission.values()).build();
-        createParent();
+        createStrimziTopicsPath();
     }
 
-    private void createParent() {
+    private void createStrimziTopicsPath() {
         zk.create("/strimzi", null, acl, CreateMode.PERSISTENT, result -> {
             if (result.failed()) {
                 if (!(result.cause() instanceof ZkNodeExistsException)) {
@@ -45,10 +45,10 @@ public class ZkTopicStore implements TopicStore {
                 }
             }
             zk.create(TOPICS_PATH, null, acl, CreateMode.PERSISTENT, result2 -> {
-                if (result.failed()) {
-                    if (!(result.cause() instanceof ZkNodeExistsException)) {
-                        LOGGER.error("Error creating {}", TOPICS_PATH, result.cause());
-                        throw new RuntimeException(result.cause());
+                if (result2.failed()) {
+                    if (!(result2.cause() instanceof ZkNodeExistsException)) {
+                        LOGGER.error("Error creating {}", TOPICS_PATH, result2.cause());
+                        throw new RuntimeException(result2.cause());
                     }
                 }
             });
@@ -63,19 +63,14 @@ public class ZkTopicStore implements TopicStore {
     @Override
     public void read(TopicName topicName, Handler<AsyncResult<Topic>> handler) {
         String topicPath = getTopicPath(topicName);
-        LOGGER.debug("read znode {}", topicPath);
         zk.getData(topicPath, result -> {
             final AsyncResult<Topic> fut;
             if (result.succeeded()) {
-                LOGGER.info("succeeded znode {}", topicPath);
                 fut = Future.succeededFuture(TopicSerialization.fromJson(result.result()));
             } else {
-                LOGGER.debug("failed znode {}", topicPath);
                 if (result.cause() instanceof ZkNoNodeException) {
-                    LOGGER.info("nonode znode {}", topicPath);
                     fut = Future.succeededFuture(null);
                 } else {
-                    LOGGER.info("WTF {}", topicPath);
                     fut = result.map((Topic) null);
                 }
             }
