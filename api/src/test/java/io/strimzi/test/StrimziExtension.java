@@ -704,28 +704,28 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                         LOGGER.info("{}={}", varName, v);
                         ((ObjectNode) envVar).put("value", v);
                     }
-                    if (varName.matches("STRIMZI_KAFKA_IMAGE_MAP")) {
+                    if (varName.matches("STRIMZI_KAFKA_IMAGES")) {
                         String value = envVar.get("value").textValue();
                         String v = TestUtils.changeOrgAndTagInImageMap(value);
-                        LOGGER.info("STRIMZI_KAFKA_IMAGE_MAP={}", v);
+                        LOGGER.info("STRIMZI_KAFKA_IMAGES={}", v);
                         ((ObjectNode) envVar).put("value", v);
                     }
-                    if (varName.matches("STRIMZI_KAFKA_CONNECT_IMAGE_MAP")) {
+                    if (varName.matches("STRIMZI_KAFKA_CONNECT_IMAGES")) {
                         String value = envVar.get("value").textValue();
                         String v = TestUtils.changeOrgAndTagInImageMap(value);
-                        LOGGER.info("STRIMZI_KAFKA_CONNECT_IMAGE_MAP={}", v);
+                        LOGGER.info("STRIMZI_KAFKA_CONNECT_IMAGES={}", v);
                         ((ObjectNode) envVar).put("value", v);
                     }
-                    if (varName.matches("STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP")) {
+                    if (varName.matches("STRIMZI_KAFKA_CONNECT_S2I_IMAGES")) {
                         String value = envVar.get("value").textValue();
                         String v = TestUtils.changeOrgAndTagInImageMap(value);
-                        LOGGER.info("STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP={}", v);
+                        LOGGER.info("STRIMZI_KAFKA_CONNECT_S2I_IMAGES={}", v);
                         ((ObjectNode) envVar).put("value", v);
                     }
-                    if (varName.matches("STRIMZI_KAFKA_MIRROR_MAKER_IMAGE_MAP")) {
+                    if (varName.matches("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES")) {
                         String value = envVar.get("value").textValue();
                         String v = TestUtils.changeOrgAndTagInImageMap(value);
-                        LOGGER.info("STRIMZI_KAFKA_MIRROR_MAKER_IMAGE_MAP={}", v);
+                        LOGGER.info("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES={}", v);
                         ((ObjectNode) envVar).put("value", v);
                     }
                     // Set log level

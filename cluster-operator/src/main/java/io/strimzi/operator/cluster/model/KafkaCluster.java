@@ -125,7 +125,7 @@ public class KafkaCluster extends AbstractModel {
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
 
-    public static final Map<String, String> IMAGE_MAP = parseImageMap(System.getenv().get(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGE_MAP));
+    public static final Map<String, String> IMAGE_MAP = parseImageMap(System.getenv().get(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES));
     /** Records the Kafka version currently running inside Kafka StatefulSet */
     public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = "strimzi.io/kafka-version";
     /** Records the state of the Kafka upgrade process. Unset outside of upgrades. */

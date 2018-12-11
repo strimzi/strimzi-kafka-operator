@@ -28,10 +28,10 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
     public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
-    public static final String STRIMZI_KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGE_MAP";
-    public static final String STRIMZI_KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGE_MAP";
-    public static final String STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP";
-    public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGE_MAP = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGE_MAP";
+    public static final String STRIMZI_KAFKA_IMAGES = "STRIMZI_KAFKA_IMAGES";
+    public static final String STRIMZI_KAFKA_CONNECT_IMAGES = "STRIMZI_KAFKA_CONNECT_IMAGES";
+    public static final String STRIMZI_KAFKA_CONNECT_S2I_IMAGES = "STRIMZI_KAFKA_CONNECT_S2I_IMAGES";
+    public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
@@ -95,20 +95,20 @@ public class ClusterOperatorConfig {
         }
 
         KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
-                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_IMAGE_MAP)),
-                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_CONNECT_IMAGE_MAP)),
-                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP)),
-                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGE_MAP)));
+                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_IMAGES)),
+                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_CONNECT_IMAGES)),
+                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_CONNECT_S2I_IMAGES)),
+                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES)));
         for (String version : lookup.supportedVersions()) {
             if (lookup.kafkaImage(null, version) == null) {
-                LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_IMAGE_MAP, version);
+                LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_IMAGES, version);
             }
             if (lookup.kafkaConnectVersion(null, version) == null) {
-                LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_CONNECT_IMAGE_MAP, version);
+                LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_CONNECT_IMAGES, version);
             }
             // Need to know whether we're on OS to decide whether to valid s2i
             if (lookup.kafkaMirrorMakerImage(null, version) == null) {
-                LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_MIRROR_MAKER_IMAGE_MAP, version);
+                LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, version);
             }
         }
 

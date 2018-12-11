@@ -25,13 +25,13 @@ cat >"$out" <<EOF
 
 {{/* Generate the kafka image map */}}
 {{- define "strimzi.kafka.image.map" }}
-            - name: STRIMZI_KAFKA_IMAGE_MAP
+            - name: STRIMZI_KAFKA_IMAGES
               value: | ${kafka_versions}
-            - name: STRIMZI_KAFKA_CONNECT_IMAGE_MAP
+            - name: STRIMZI_KAFKA_CONNECT_IMAGES
               value: | ${kafka_connect_versions}
-            - name: STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP
+            - name: STRIMZI_KAFKA_CONNECT_S2I_IMAGES
               value: | ${kafka_connect_s2i_versions}
-            - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGE_MAP
+            - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
               value: | ${kafka_mirror_maker_versions}
 {{- end -}}
 EOF

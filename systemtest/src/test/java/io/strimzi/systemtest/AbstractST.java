@@ -85,9 +85,9 @@ public class AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
-    protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGE_MAP";
-    protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGE_MAP";
-    protected static final String KAFKA_CONNECT_S2I_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_S2I_IMAGE_MAP";
+    protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
+    protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
+    protected static final String KAFKA_CONNECT_S2I_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_S2I_IMAGES";
     protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
     protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
