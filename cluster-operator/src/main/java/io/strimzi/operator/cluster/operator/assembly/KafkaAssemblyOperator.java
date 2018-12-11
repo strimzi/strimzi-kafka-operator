@@ -415,7 +415,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Does SS {} need to be upgraded?", ss.getMetadata().getName());
                     Future<?> result;
                     // Get the current version of the cluster
-                    KafkaVersion currentVersion = versions.version(ss.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION));
+                    KafkaVersion currentVersion = versions.version(ss.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
                     log.debug("SS {} has current version {}", ss.getMetadata().getName(), currentVersion);
                     String fromVersionAnno = ss.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION);
                     KafkaVersion fromVersion;
@@ -521,8 +521,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 annotations.remove(ANNO_STRIMZI_IO_TO_VERSION);
             }
             log.info("{}: Upgrade: Setting annotation {}={}",
-                    reconciliation, KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION, upgrade.to().version());
-            annotations.put(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION, upgrade.to().version());
+                    reconciliation, ANNO_STRIMZI_IO_KAFKA_VERSION, upgrade.to().version());
+            annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, upgrade.to().version());
             // update the annotations, image and environment
             StatefulSet newSs = new StatefulSetBuilder(ss)
                     .editMetadata()
