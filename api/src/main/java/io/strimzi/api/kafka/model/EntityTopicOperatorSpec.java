@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
-        "resources", "topicMetadataMaxAttempts", "logging", "gcLoggingDisabled"})
+        "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
 public class EntityTopicOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -50,7 +50,7 @@ public class EntityTopicOperatorSpec implements Serializable {
     protected int topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     protected Resources resources;
     protected Logging logging;
-    protected boolean gcLoggingDisabled;
+    private EntityOperatorJvmOptions jvmOptions;
     protected Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the Topic Operator should watch.")
@@ -131,13 +131,13 @@ public class EntityTopicOperatorSpec implements Serializable {
         this.additionalProperties.put(name, value);
     }
 
-    @Description("Disable garbage collection logging")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public boolean isGcLoggingDisabled() {
-        return gcLoggingDisabled;
+    @Description("JVM Options for pods")
+    public EntityOperatorJvmOptions getJvmOptions() {
+        return jvmOptions;
     }
 
-    public void setGcLoggingDisabled(boolean gcLoggingDisabled) {
-        this.gcLoggingDisabled = gcLoggingDisabled;
+    public void setJvmOptions(EntityOperatorJvmOptions jvmOptions) {
+        this.jvmOptions = jvmOptions;
     }
 }

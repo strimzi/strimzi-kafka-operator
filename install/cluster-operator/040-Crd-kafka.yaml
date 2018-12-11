@@ -387,8 +387,6 @@ spec:
                       - external
                   required:
                   - type
-                gcLoggingDisabled:
-                  type: boolean
                 tlsSidecar:
                   type: object
                   properties:
@@ -748,8 +746,6 @@ spec:
                       - external
                   required:
                   - type
-                gcLoggingDisabled:
-                  type: boolean
                 tlsSidecar:
                   type: object
                   properties:
@@ -1075,8 +1071,11 @@ spec:
                       - external
                   required:
                   - type
-                gcLoggingDisabled:
-                  type: boolean
+                jvmOptions:
+                  type: object
+                  properties:
+                    gcLoggingDisabled:
+                      type: boolean
             entityOperator:
               type: object
               properties:
@@ -1131,8 +1130,11 @@ spec:
                           - external
                       required:
                       - type
-                    gcLoggingDisabled:
-                      type: boolean
+                    jvmOptions:
+                      type: object
+                      properties:
+                        gcLoggingDisabled:
+                          type: boolean
                 userOperator:
                   type: object
                   properties:
@@ -1181,8 +1183,11 @@ spec:
                           - external
                       required:
                       - type
-                    gcLoggingDisabled:
-                      type: boolean
+                    jvmOptions:
+                      type: object
+                      properties:
+                        gcLoggingDisabled:
+                          type: boolean
                 affinity:
                   type: object
                   properties:

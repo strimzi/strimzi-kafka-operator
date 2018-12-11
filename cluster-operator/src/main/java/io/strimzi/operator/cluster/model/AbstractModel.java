@@ -108,8 +108,8 @@ public abstract class AbstractModel {
     private static final String DELETE_CLAIM_ANNOTATION =
             ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
 
-    protected static final String DEFAULT_GC_LOGGING = "-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps";
-    protected static final String DEFAULT_EO_GC_LOGGING = "-XX:NativeMemoryTracking=summary -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps";
+    protected static final String DEFAULT_KAFKA_GC_LOGGING = "-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps";
+    protected static final String DEFAULT_STRIMZI_GC_LOGGING = "-XX:NativeMemoryTracking=summary -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps";
 
     protected final String cluster;
     protected final String namespace;

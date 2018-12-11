@@ -36,7 +36,7 @@ import java.util.Map;
         "affinity", "tolerations",
         "livenessProbe", "readinessProbe",
         "jvmOptions", "resources",
-         "metrics", "logging", "gcLoggingDisabled", "tlsSidecar", "template"})
+         "metrics", "logging", "tlsSidecar", "template"})
 public class ZookeeperClusterSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -54,7 +54,6 @@ public class ZookeeperClusterSpec implements Serializable {
     private Map<String, Object> config = new HashMap<>(0);
 
     private Logging logging;
-    private boolean gcLoggingDisabled;
 
     private TlsSidecar tlsSidecar;
     private int replicas;
@@ -222,15 +221,5 @@ public class ZookeeperClusterSpec implements Serializable {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
-    }
-
-    @Description("Disable garbage collection logging")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public boolean isGcLoggingDisabled() {
-        return gcLoggingDisabled;
-    }
-
-    public void setGcLoggingDisabled(boolean gcLoggingDisabled) {
-        this.gcLoggingDisabled = gcLoggingDisabled;
     }
 }

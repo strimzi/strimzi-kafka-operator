@@ -403,8 +403,6 @@ spec:
                   - external
               required:
               - type
-            gcLoggingDisabled:
-              type: boolean
             metrics:
               type: object
             template:

@@ -303,8 +303,6 @@ spec:
               type: string
             config:
               type: object
-            gcLoggingDisabled:
-              type: boolean
             insecureSourceRepository:
               type: boolean
             resources:

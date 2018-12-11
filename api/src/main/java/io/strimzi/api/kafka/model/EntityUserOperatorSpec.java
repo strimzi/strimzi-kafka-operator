@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
-        "resources", "logging", "gcLoggingDisabled"})
+        "resources", "logging", "jvmOptions"})
 public class EntityUserOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -46,7 +46,7 @@ public class EntityUserOperatorSpec implements Serializable {
     private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     private Resources resources;
     private Logging logging;
-    private boolean gcLoggingDisabled;
+    private EntityOperatorJvmOptions jvmOptions;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the User Operator should watch.")
@@ -117,13 +117,13 @@ public class EntityUserOperatorSpec implements Serializable {
         this.additionalProperties.put(name, value);
     }
 
-    @Description("Disable garbage collection logging")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public boolean isGcLoggingDisabled() {
-        return gcLoggingDisabled;
+    @Description("JVM Options for pods")
+    public EntityOperatorJvmOptions getJvmOptions() {
+        return jvmOptions;
     }
 
-    public void setGcLoggingDisabled(boolean gcLoggingDisabled) {
-        this.gcLoggingDisabled = gcLoggingDisabled;
+    public void setJvmOptions(EntityOperatorJvmOptions jvmOptions) {
+        this.jvmOptions = jvmOptions;
     }
 }

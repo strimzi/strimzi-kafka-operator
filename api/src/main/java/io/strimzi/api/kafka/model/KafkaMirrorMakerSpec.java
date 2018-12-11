@@ -32,7 +32,7 @@ import java.util.Map;
         "replicas", "image", "whitelist",
         "consumer", "producer", "resources",
         "affinity", "tolerations", "jvmOptions",
-        "logging", "gcLoggingDisabled", "metrics", "template"})
+        "logging", "metrics", "template"})
 public class KafkaMirrorMakerSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -50,7 +50,6 @@ public class KafkaMirrorMakerSpec implements Serializable {
     private List<Toleration> tolerations;
     private JvmOptions jvmOptions;
     private Logging logging;
-    private boolean gcLoggingDisabled;
     private Map<String, Object> metrics = new HashMap<>(0);
     private KafkaMirrorMakerTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -190,15 +189,5 @@ public class KafkaMirrorMakerSpec implements Serializable {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
-    }
-
-    @Description("Disable garbage collection logging")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public boolean isGcLoggingDisabled() {
-        return gcLoggingDisabled;
-    }
-
-    public void setGcLoggingDisabled(boolean gcLoggingDisabled) {
-        this.gcLoggingDisabled = gcLoggingDisabled;
     }
 }
