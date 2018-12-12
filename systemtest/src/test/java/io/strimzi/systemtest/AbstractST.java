@@ -393,6 +393,9 @@ public class AbstractST {
         LOGGER.info("Creating resources before the test");
         resources = new Resources(namespacedClient());
         testName = testInfo.getTestMethod().get().getName();
+
+        String pods = kubeClient.exec("/bin/bash", "-c", "oc get pods").out();
+        LOGGER.info("Pods before test:\n " + pods + "\n -----------------------------------------");
     }
 
     @AfterEach
@@ -401,6 +404,23 @@ public class AbstractST {
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
         resources = null;
+
+        waitForDeletion(10000);
+
+        String pods = kubeClient.exec("/bin/bash", "-c", "oc get pods").out();
+        LOGGER.info("Pods after test:\n " + pods + "\n -----------------------------------------");
+    }
+
+    private static void waitForDeletion(long time) {
+        LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
+        try {
+            Thread.sleep(time);
+            if (kubeClient.list("pods").size() > 1) {
+                throw new Exception("There are some unexpected pods! Cleanup is no finished properly!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     Resources resources() {
@@ -952,41 +972,63 @@ public class AbstractST {
 
         LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient.namespace()), new File(logDir));
         logCollector.collectEvents();
-        logCollector.collectLogsForPods();
+        logCollector.collectConfigMaps();
+        logCollector.collectLogsFromPods();
     }
 
     private class LogCollector {
         NamespacedKubernetesClient client;
         String namespace;
         File logDir;
+        File configMapDir;
+        File eventsDir;
 
         private LogCollector(NamespacedKubernetesClient client, File logDir) {
             this.client = client;
             this.namespace = client.getNamespace();
             this.logDir = logDir;
+            this.configMapDir = new File(logDir + "/events");
+            this.eventsDir = new File(logDir + "/configMaps");
             logDir.mkdirs();
+
+            if (!eventsDir.exists()) {
+                eventsDir.mkdirs();
+            }
+            if (!configMapDir.exists()) {
+                configMapDir.mkdirs();
+            }
         }
 
-        private void collectLogsForPods() {
+        private void collectLogsFromPods() {
             LOGGER.info("Collecting logs for pods in namespace {}", namespace);
 
-            client.pods().list().getItems().forEach(pod -> {
-                String podName = pod.getMetadata().getName();
-
-                client.pods().withName(podName).get().getStatus().getContainerStatuses().forEach(containerStatus -> {
+            try {
+                client.pods().list().getItems().forEach(pod -> {
+                    String podName = pod.getMetadata().getName();
+                    pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
                         String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
                         // Write logs from containers to files
                         writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
-                    }
-                );
-            });
+                    });
+                });
+            } catch (Exception allExceptions) {
+                LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
+                allExceptions.printStackTrace();
+            }
         }
 
         private void collectEvents() {
             LOGGER.info("Collecting events in namespace {}", namespace);
             String events = kubeClient.getEvents();
             // Write events to file
-            writeFile(logDir + "/" + "events-in-namespace" + kubeClient.namespace() + ".log", events);
+            writeFile(eventsDir + "/" + "events-in-namespace" + kubeClient.namespace() + ".log", events);
+        }
+
+        private void collectConfigMaps() {
+            LOGGER.info("Collecting configmaps in namespace {}", namespace);
+            client.configMaps().inNamespace(namespace).list().getItems().forEach(configMap -> {
+                writeFile(configMapDir + "/" + configMap.getMetadata().getName() + "-" + namespace + ".log", configMap.toString());
+            });
         }
     }
 
