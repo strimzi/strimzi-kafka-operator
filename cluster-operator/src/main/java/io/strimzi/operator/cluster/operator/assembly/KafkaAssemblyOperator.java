@@ -80,6 +80,10 @@ import java.util.function.Supplier;
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaAssemblyList, DoneableKafka, Resource<Kafka, DoneableKafka>> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
+    public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = Annotations.STRIMZI_DOMAIN + "/manual-rolling-update";
+    @Deprecated
+    public static final String ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE = "operator.strimzi.io/manual-rolling-update";
+
     private final long operationTimeoutMs;
 
     private final ZookeeperSetOperator zkSetOperations;
@@ -92,8 +96,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final ServiceAccountOperator serviceAccountOperator;
     private final RoleBindingOperator roleBindingOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
-
-    public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = Annotations.STRIMZI_DOMAIN + "/manual-rolling-update";
 
     /**
      * @param vertx The Vertx instance
@@ -320,8 +322,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (futss != null) {
                 return futss.compose(ss -> {
                     if (ss != null) {
-                        String value = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE);
-                        if (Boolean.parseBoolean(value)) {
+                        if (Annotations.booleanAnnotation(ss, ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+                                false, ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
                             return kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
 
                                 log.debug("{}: Rolling Kafka pod {} due to manual rolling update",
@@ -341,8 +343,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (futss != null) {
                 return futss.compose(ss -> {
                     if (ss != null) {
-                        String value = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE);
-                        if (Boolean.parseBoolean(value)) {
+                        if (Annotations.booleanAnnotation(ss, ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE,
+                                false, ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE)) {
 
                             return zkSetOperations.maybeRollingUpdate(ss, pod -> {
 
@@ -1165,9 +1167,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
             final int caCertGeneration = getCaCertGeneration(ca);
             String podAnnotation = getCaCertAnnotation(ca);
-            String generation = Annotations.annotations(pod).get(podAnnotation);
-            final int podCaCertGeneration = generation != null ?
-                    Integer.parseInt(generation) : Ca.INIT_GENERATION;
+            final int podCaCertGeneration =
+                    Annotations.intAnnotation(pod, podAnnotation, Ca.INIT_GENERATION);
             return caCertGeneration == podCaCertGeneration;
         }
 
@@ -1252,15 +1253,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             int caCertGeneration = 0;
             if (dep != null) {
                 caCertGeneration =
-                        Integer.parseInt(Annotations.annotations(
-                                dep.getSpec().getTemplate()).getOrDefault(getCaCertAnnotation(ca), "0"));
+                        Annotations.intAnnotation(
+                                dep.getSpec().getTemplate(), getCaCertAnnotation(ca), 0);
             }
             return caCertGeneration;
         }
 
         private int getCaCertGeneration(Ca ca) {
-            String generation = Annotations.annotations(ca.caCertSecret()).get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
-            return generation != null ? Integer.parseInt(generation) : Ca.INIT_GENERATION;
+            return Annotations.intAnnotation(ca.caCertSecret(), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION,
+                    Ca.INIT_GENERATION);
         }
 
         private String getCaCertAnnotation(Ca ca) {

@@ -42,7 +42,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static java.lang.Integer.parseInt;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
@@ -316,7 +315,8 @@ public abstract class Ca {
         // cluster CA certificate generation annotation handling
         int caCertGeneration = INIT_GENERATION;
         if (caCertSecret != null && caCertSecret.getData().get(CA_CRT) != null) {
-            caCertGeneration = parseInt(Annotations.annotations(caCertSecret).getOrDefault(ANNO_STRIMZI_IO_CA_CERT_GENERATION, String.valueOf(INIT_GENERATION)));
+            caCertGeneration = Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION,
+                    INIT_GENERATION);
             if (caRenewed) {
                 caCertGeneration++;
             }
@@ -342,7 +342,7 @@ public abstract class Ca {
             result = true;
             this.caRenewed = caKeySecret != null;
         } else if (this.caCertSecret.getMetadata() != null
-                && "true".equals(Annotations.annotations(this.caCertSecret).get(ANNO_STRIMZI_IO_FORCE_RENEW))) {
+                && Annotations.booleanAnnotation(this.caCertSecret, ANNO_STRIMZI_IO_FORCE_RENEW, false)) {
             reason = "CA certificate secret " + caCertSecretName + " is annotated with " + ANNO_STRIMZI_IO_FORCE_RENEW;
             result = true;
             this.caRenewed = true;
