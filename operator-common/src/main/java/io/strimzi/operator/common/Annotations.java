@@ -56,10 +56,11 @@ public class Annotations {
     }
 
     private static String annotation(String annotation, String defaultValue, ObjectMeta metadata, String[] deprecatedAnnotations) {
-        String value = annotations(metadata).get(annotation);
+        Map<String, String> annotations = annotations(metadata);
+        String value = annotations.get(annotation);
         if (value == null) {
             for (String deprecated : deprecatedAnnotations) {
-                value = annotations(metadata).get(deprecated);
+                value = annotations.get(deprecated);
                 if (value != null) {
                     break;
                 }

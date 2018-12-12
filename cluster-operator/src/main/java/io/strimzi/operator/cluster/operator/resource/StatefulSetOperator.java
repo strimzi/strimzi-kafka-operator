@@ -190,13 +190,13 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     }
 
     private void setGeneration(StatefulSet desired, int nextGeneration) {
-        Map<String, String> annotations = Annotations.annotations(desired);
+        Map<String, String> annotations = Annotations.annotations(desired.getSpec().getTemplate());
         annotations.remove(ANNO_OP_STRIMZI_IO_GENERATION);
         annotations.put(ANNO_STRIMZI_IO_GENERATION, String.valueOf(nextGeneration));
     }
 
     protected void incrementGeneration(StatefulSet current, StatefulSet desired) {
-        final int generation = Annotations.intAnnotation(current, ANNO_STRIMZI_IO_GENERATION,
+        final int generation = Annotations.intAnnotation(current.getSpec().getTemplate(), ANNO_STRIMZI_IO_GENERATION,
                 INIT_GENERATION, ANNO_OP_STRIMZI_IO_GENERATION);
         final int nextGeneration = generation + 1;
         setGeneration(desired, nextGeneration);
