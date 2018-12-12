@@ -9,15 +9,18 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 
 /**
  * Class for handling Kafka configuration passed by the user
  */
 public class KafkaConfiguration extends AbstractConfiguration {
 
-
+    public static final String INTERBROKER_PROTOCOL_VERSION = "inter.broker.protocol.version";
+    public static final String LOG_MESSAGE_FORMAT_VERSION = "log.message.format.version";
 
     private static final List<String> FORBIDDEN_OPTIONS;
 
@@ -44,5 +47,18 @@ public class KafkaConfiguration extends AbstractConfiguration {
      */
     public KafkaConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(jsonOptions, FORBIDDEN_OPTIONS);
+    }
+
+    private KafkaConfiguration(Properties properties) {
+        super(properties);
+    }
+
+    /**
+     * Returns a KafkaConfiguration created without forbidden option filtering.
+     * @param string A string representation of the Properties
+     * @return The KafkaConfiguration
+     */
+    public static KafkaConfiguration unvalidated(String string) {
+        return new KafkaConfiguration(parseProperties(string, emptyMap()));
     }
 }

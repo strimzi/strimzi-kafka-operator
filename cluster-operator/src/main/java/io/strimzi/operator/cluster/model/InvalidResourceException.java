@@ -10,5 +10,6 @@ public class InvalidResourceException extends RuntimeException {
     }
 
     protected InvalidResourceException(String s) {
+        super(s);
     }
 }

@@ -111,8 +111,9 @@ you can push the images to OpenShift's Docker repo like this:
   That can be done using the following command:
 
     ```
-    sed -Ei 's#(image|value): strimzi/([a-z0-9-]+):latest#\1: 172.30.1.1:5000/myproject/\2:latest#' \
-      install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml 
+    sed -Ei -e 's#(image|value): strimzi/([a-z0-9-]+):latest#\1: 172.30.1.1:5000/myproject/\2:latest#' \
+            -e 's#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=172.30.1.1:5000/myproject/\2#' \
+            install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml
     ```
 
     This will update `050-Deployment-strimzi-cluster-operator.yaml` replacing all the image references (in `image` and `value` properties) with ones with the same name from `172.30.1.1:5000/myproject`.

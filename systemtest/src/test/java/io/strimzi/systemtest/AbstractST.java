@@ -8,6 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Job;
 import io.fabric8.kubernetes.api.model.JobBuilder;
@@ -69,10 +70,10 @@ import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class AbstractST {
@@ -84,7 +85,9 @@ public class AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
-    protected static final String KAFKA_IMAGE = "STRIMZI_DEFAULT_KAFKA_IMAGE";
+    protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
+    protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
+    protected static final String KAFKA_CONNECT_S2I_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_S2I_IMAGES";
     protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
     protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
@@ -352,24 +355,14 @@ public class AbstractST {
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --alter --topic " + topic + " --partitions " + partitions).out();
     }
 
-    public Map<String, String> getImagesFromConfig(String configJson) {
-        kubeClient.getResourceAsJson("deployment", "strimzi-cluster-operator");
+    public Map<String, String> getImagesFromConfig() {
         Map<String, String> images = new HashMap<>();
-        images.put(ZK_IMAGE, getImageNameFromJSON(configJson, ZK_IMAGE));
-        images.put(KAFKA_IMAGE, getImageNameFromJSON(configJson, KAFKA_IMAGE));
-        images.put(CONNECT_IMAGE, getImageNameFromJSON(configJson, CONNECT_IMAGE));
-        images.put(S2I_IMAGE, getImageNameFromJSON(configJson, S2I_IMAGE));
-        images.put(TO_IMAGE, getImageNameFromJSON(configJson, TO_IMAGE));
-        images.put(UO_IMAGE, getImageNameFromJSON(configJson, UO_IMAGE));
-        images.put(KAFKA_INIT_IMAGE, getImageNameFromJSON(configJson, KAFKA_INIT_IMAGE));
-        images.put(TLS_SIDECAR_ZOOKEEPER_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_ZOOKEEPER_IMAGE));
-        images.put(TLS_SIDECAR_KAFKA_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_KAFKA_IMAGE));
-        images.put(TLS_SIDECAR_EO_IMAGE, getImageNameFromJSON(configJson, TLS_SIDECAR_EO_IMAGE));
+        for (Container c : client.extensions().deployments().inNamespace(kubeClient.namespace()).withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
+            for (EnvVar envVar : c.getEnv()) {
+                images.put(envVar.getName(), envVar.getValue());
+            }
+        }
         return images;
-    }
-
-    private String getImageNameFromJSON(String json, String image) {
-        return JsonPath.parse(json).read("$.spec.template.spec.containers[*].env[?(@.name =='" + image + "')].value").toString().replaceAll("[\"\\[\\]\\\\]", "");
     }
 
     public String getContainerImageNameFromPod(String podName) {
@@ -814,7 +807,7 @@ public class AbstractST {
         String connect = tlsListener ? KafkaResources.tlsBootstrapAddress(CLUSTER_NAME) : KafkaResources.plainBootstrapAddress(CLUSTER_NAME);
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("ping")
-                .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))
+                .withImage(TestUtils.changeOrgAndTag(TestUtils.changeOrgAndTag("strimzi/test-client:latest-kafka-2.0.0")))
                 .addNewEnv().withName("PRODUCER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                                 "--topic " + topic + " " +

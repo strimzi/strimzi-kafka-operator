@@ -1,13 +1,23 @@
-SUBDIRS=java-base kafka-base zookeeper kafka kafka-connect kafka-connect/s2i \
-        stunnel-base zookeeper-stunnel kafka-stunnel entity-operator-stunnel \
-        test-client kafka-mirror-maker
-DOCKER_TARGETS=docker_build docker_push docker_tag
+TOPDIR = $(dir $(lastword $(MAKEFILE_LIST)))
+RELEASE_VERSION ?= $(shell cat $(TOPDIR)/release.version)
+DOCKER_TARGETS = docker_build docker_push docker_tag
+DOCKER_TAG ?= latest
 
-all: $(SUBDIRS)
-clean: $(SUBDIRS)
-$(DOCKER_TARGETS): $(SUBDIRS)
+.PHONY: build clean release all $(DOCKER_TARGETS)
 
-$(SUBDIRS):
-	$(MAKE) -C $@ $(MAKECMDGOALS)
+clean:
+	./build.sh clean
+
+docker_build:
+	./build.sh docker_build
+
+docker_tag:
+	./build.sh docker_tag
+
+docker_push:
+	./build.sh docker_push
+
+all: docker_build docker_push
 
 .PHONY: build clean release all $(SUBDIRS) $(DOCKER_TARGETS) findbugs
+

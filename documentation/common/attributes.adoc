@@ -62,13 +62,15 @@
 
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html[cron expression^]
 
+:DefaultKafkaVersion: 2.0.0
+
 // Docker image names
 :DockerTag: {ProductVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]
-:DockerZookeeper: strimzi/zookeeper:{DockerTag}
-:DockerKafka: strimzi/kafka:{DockerTag}
-:DockerKafkaConnect: strimzi/kafka-connect:{DockerTag}
-:DockerKafkaConnectS2I: strimzi/kafka-connect-s2i:{DockerTag}
+:DockerZookeeper: strimzi/zookeeper:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafka: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafkaConnect: strimzi/kafka-connect:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafkaConnectS2I: strimzi/kafka-connect-s2i:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerTopicController: strimzi/topic-controller:{DockerTag}
 :DockerImageUser: kafka:kafka
 

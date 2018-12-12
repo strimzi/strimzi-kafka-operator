@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Job;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationScramSha512;
@@ -56,20 +57,20 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
+import static io.strimzi.test.StrimziExtension.ACCEPTANCE;
+import static io.strimzi.test.StrimziExtension.REGRESSION;
 import static io.strimzi.test.StrimziExtension.TOPIC_CM;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
-import static io.strimzi.test.StrimziExtension.REGRESSION;
-import static io.strimzi.test.StrimziExtension.ACCEPTANCE;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(KafkaST.NAMESPACE)
@@ -633,8 +634,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
 
-        Map<String, String> imgFromDeplConf = getImagesFromConfig(kubeClient.getResourceAsJson(
-                "deployment", "strimzi-cluster-operator"));
+        Map<String, String> imgFromDeplConf = getImagesFromConfig();
 
         //Verifying docker image for zookeeper pods
         for (int i = 0; i < zkPods; i++) {
@@ -647,7 +647,11 @@ class KafkaST extends AbstractST {
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
             String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "kafka");
-            assertEquals(imgFromDeplConf.get(KAFKA_IMAGE), imgFromPod);
+            String kafkaVersion = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getVersion();
+            if (kafkaVersion == null) {
+                kafkaVersion = "2.0.0";
+            }
+            assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), imgFromPod);
             imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "tls-sidecar");
             assertEquals(imgFromDeplConf.get(TLS_SIDECAR_KAFKA_IMAGE), imgFromPod);
             if (rackAwareEnabled) {

@@ -34,15 +34,14 @@ public class KafkaConnectSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE", "strimzi/kafka-connect:latest");
-
     public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers";
 
     private Map<String, Object> config = new HashMap<>(0);
 
     private Logging logging;
     private int replicas;
+
+    private String version;
     private String image;
     private Resources resources;
     private Probe livenessProbe;
@@ -84,6 +83,16 @@ public class KafkaConnectSpec implements Serializable {
 
     public void setReplicas(int replicas) {
         this.replicas = replicas;
+    }
+
+    @Description("The Kafka Connect version. Defaults to {DefaultKafkaVersion}. " +
+            "Consult the user documentation to understand the process required to upgrade or downgrade the version.")
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     @Description("The docker image for the pods.")

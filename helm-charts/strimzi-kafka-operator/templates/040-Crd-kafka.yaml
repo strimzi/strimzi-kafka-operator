@@ -475,6 +475,8 @@ spec:
                     perPodService:
                       type: object
                       properties: {}
+                version:
+                  type: string
               required:
               - replicas
               - storage

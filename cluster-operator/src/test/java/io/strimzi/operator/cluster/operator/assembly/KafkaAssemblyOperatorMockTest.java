@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.StatefulSetStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -28,6 +29,7 @@ import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -51,6 +53,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -62,6 +65,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
 import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 import static io.strimzi.api.kafka.model.Storage.deleteClaim;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertNotNull;
@@ -76,6 +80,10 @@ public class KafkaAssemblyOperatorMockTest {
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
+
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap(), emptyMap()) { };
 
     private final int zkReplicas;
     private final Storage zkStorage;
@@ -223,7 +231,7 @@ public class KafkaAssemblyOperatorMockTest {
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ResourceOperatorSupplier supplier = supplierWithMocks();
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                new MockCertManager(), supplier);
+                new MockCertManager(), supplier, VERSIONS);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
@@ -231,6 +239,7 @@ public class KafkaAssemblyOperatorMockTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             StatefulSet kafkaSs = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
+            kafkaSs.setStatus(new StatefulSetStatus());
             context.assertNotNull(kafkaSs);
             context.assertEquals("0", kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION));
             context.assertEquals("0", kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION));

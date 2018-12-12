@@ -21,6 +21,11 @@ parameters:
   name: INSTANCES
   required: true
   value: "1"
+- description: The Kafka version to use for this Kafka connect cluster.
+  displayName: The Kafka version to use
+  name: KAFKA_VERSION
+  required: true
+  value: "2.1.0"
 - description: A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
   displayName: Kafka bootstrap servers
   name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
@@ -75,6 +80,7 @@ objects:
   metadata:
     name: ${CLUSTER_NAME}
   spec:
+    version: ${{KAFKA_VERSION}}
     replicas: ${{INSTANCES}}
     livenessProbe:
       initialDelaySeconds: ${{HEALTHCHECK_DELAY}}

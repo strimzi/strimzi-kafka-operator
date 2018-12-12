@@ -35,12 +35,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -135,16 +139,40 @@ public final class TestUtils {
         return "";
     }
 
-    public static String changeOrgAndTag(String image, String newOrg, String newTag) {
-        return image.replaceFirst("^strimzi/", newOrg + "/").replaceFirst(":[^:]+$", ":" + newTag);
+    public static String changeOrgAndTag(String image, String newOrg, String newTag, String kafkaVersion) {
+        image = image.replaceFirst("^strimzi/", newOrg + "/");
+        Pattern p = Pattern.compile(":([^:]*?)-kafka-([0-9.]+)$");
+        Matcher m = p.matcher(image);
+        StringBuffer sb = new StringBuffer();
+        if (m.find()) {
+            m.appendReplacement(sb, ":" + newTag + "-kafka-" + kafkaVersion);
+            m.appendTail(sb);
+            image = sb.toString();
+        } else {
+            image = image.replaceFirst(":[^:]+$", ":" + newTag);
+        }
+        return image;
     }
 
     public static String changeOrgAndTag(String image) {
         String strimziOrg = "strimzi";
         String strimziTag = "latest";
+        String kafkaVersion = "2.0.0";
         String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", strimziOrg);
         String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", strimziTag);
-        return changeOrgAndTag(image, dockerOrg, dockerTag);
+        kafkaVersion = System.getenv().getOrDefault("KAFKA_VERSION", kafkaVersion);
+        return changeOrgAndTag(image, dockerOrg, dockerTag, kafkaVersion);
+    }
+
+    public static String changeOrgAndTagInImageMap(String imageMap) {
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
+        Matcher m = p.matcher(imageMap);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            m.appendReplacement(sb, m.group("version") + "=" + TestUtils.changeOrgAndTag(m.group("image")));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     /**
@@ -355,6 +383,23 @@ public final class TestUtils {
             return edit.apply(node);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static Map<String, String> parseImageMap(String str) {
+        if (str != null) {
+            StringTokenizer tok = new StringTokenizer(str, ", \t\n\r");
+            HashMap<String, String> map = new HashMap<>();
+            while (tok.hasMoreTokens()) {
+                String versionImage = tok.nextToken();
+                int endIndex = versionImage.indexOf('=');
+                String version = versionImage.substring(0, endIndex);
+                String image = versionImage.substring(endIndex + 1);
+                map.put(version.trim(), image.trim());
+            }
+            return Collections.unmodifiableMap(map);
+        } else {
+            return Collections.emptyMap();
         }
     }
     

@@ -48,7 +48,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |Field                       |Description
 |replicas             1.2+<.<|The number of pods in the cluster.
 |integer
-|image                1.2+<.<|The docker image for the pods.
+|image                1.2+<.<|The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.
 |string
 |storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim].
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
@@ -86,6 +86,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
+|version              1.2+<.<|The kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
 |====
 
 [id='type-EphemeralStorage-{context}']
@@ -715,6 +717,8 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |xref:type-Resources-{context}[`Resources`]
 |tls               1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
+|version           1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
 |====
 
 [id='type-KafkaConnectTemplate-{context}']
@@ -886,6 +890,8 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[Toleration] array
+|version                   1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
 |====
 
 [id='type-KafkaTopic-{context}']
@@ -1130,6 +1136,8 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |map
 |template     1.2+<.<|Template for Kafka Mirror Maker resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
 |xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
+|version      1.2+<.<|The Kafka Mirror Maker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
 |====
 
 [id='type-KafkaMirrorMakerConsumerSpec-{context}']

@@ -73,14 +73,17 @@ helm_pkg:
 	mv strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
 	rm -rf strimzi-$(RELEASE_VERSION)/charts/
 
-docu_html: docu_htmlclean docu_check
+docu_versions:
+	documentation/supported-version.sh kafka-versions > documentation/common/supported-kafka-versions.adoc
+
+docu_html: docu_htmlclean docu_check docu_versions
 	mkdir -p documentation/html
 	$(CP) -vrL documentation/book/images documentation/html/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/book/master.adoc -o documentation/html/index.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
 
 
-docu_htmlnoheader: docu_htmlnoheaderclean docu_check
+docu_htmlnoheader: docu_htmlnoheaderclean docu_check docu_versions
 	mkdir -p documentation/htmlnoheader
 	$(CP) -vrL documentation/book/images documentation/htmlnoheader/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/book/master.adoc -o documentation/htmlnoheader/master.html
@@ -118,4 +121,4 @@ helm_install: helm-charts
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests findbugs docu_check
+.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions findbugs docu_check

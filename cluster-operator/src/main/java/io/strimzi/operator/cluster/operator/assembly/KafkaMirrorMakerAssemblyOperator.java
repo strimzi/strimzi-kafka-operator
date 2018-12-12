@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -48,6 +49,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
     private final DeploymentOperator deploymentOperations;
     private final ConfigMapOperator configMapOperations;
     private final ServiceOperator serviceOperations;
+    private final KafkaVersion.Lookup versions;
 
     /**
      * @param vertx                      The Vertx instance
@@ -64,11 +66,13 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                                             ConfigMapOperator configMapOperations,
                                             NetworkPolicyOperator networkPolicyOperator,
                                             DeploymentOperator deploymentOperations,
-                                            ServiceOperator serviceOperations) {
+                                            ServiceOperator serviceOperations,
+                                            KafkaVersion.Lookup versions) {
         super(vertx, isOpenShift, ResourceType.MIRRORMAKER, certManager, mirrorMakerOperator, secretOperations, networkPolicyOperator);
         this.deploymentOperations = deploymentOperations;
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
+        this.versions = versions;
     }
 
     @Override
@@ -81,7 +85,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
             return Future.failedFuture("Spec cannot be null");
         }
         try {
-            mirror = KafkaMirrorMakerCluster.fromCrd(assemblyResource);
+            mirror = KafkaMirrorMakerCluster.fromCrd(assemblyResource, versions);
         } catch (Exception e) {
             return Future.failedFuture(e);
         }

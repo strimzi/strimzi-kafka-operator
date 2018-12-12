@@ -30,6 +30,11 @@ parameters:
   name: KAFKA_NODE_COUNT
   required: true
   value: "3"
+- description: The Kafka version to use for this cluster.
+  displayName: The Kafka version to use
+  name: KAFKA_VERSION
+  required: true
+  value: "2.1.0"
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Zookeeper healthcheck initial delay
   name: ZOOKEEPER_HEALTHCHECK_DELAY
@@ -65,6 +70,7 @@ objects:
     name: ${CLUSTER_NAME}
   spec:
     kafka:
+      version: ${{KAFKA_VERSION}}
       replicas: ${{KAFKA_NODE_COUNT}}
       listeners:
         plain: {}

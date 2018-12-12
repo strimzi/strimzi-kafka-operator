@@ -22,17 +22,17 @@ kafka:
   image:
     repository: strimzi
     name: kafka
-    tag: latest
+    tagPrefix: latest
 kafkaConnect:
   image:
     repository: strimzi
     name: kafka-connect
-    tag: latest
+    tagPrefix: latest
 kafkaConnects2i:
   image:
     repository: strimzi
     name: kafka-connect-s2i
-    tag: latest
+    tagPrefix: latest
 topicOperator:
   image:
     repository: strimzi
@@ -67,7 +67,7 @@ kafkaMirrorMaker:
   image:
     repository: strimzi
     name: kafka-mirror-maker
-    tag: latest
+    tagPrefix: latest
 resources:
   limits:
     memory: 256Mi

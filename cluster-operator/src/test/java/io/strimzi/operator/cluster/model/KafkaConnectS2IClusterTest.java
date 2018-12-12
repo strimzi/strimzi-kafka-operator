@@ -21,7 +21,6 @@ import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -29,6 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -43,6 +45,10 @@ import static org.junit.Assert.assertTrue;
 
 
 public class KafkaConnectS2IClusterTest {
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            emptyMap(), emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect-s2i:latest-kafka-2.0.0"),
+            emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 2;
@@ -80,11 +86,11 @@ public class KafkaConnectS2IClusterTest {
     private final KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers);
 
-    private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+    private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
     @Rule
     public ResourceTester<KafkaConnectS2I, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2I.class,
-        x -> KafkaConnectS2ICluster.fromCrd(x));
+        x -> KafkaConnectS2ICluster.fromCrd(x, VERSIONS));
 
 
     @Test
@@ -122,11 +128,11 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2ICluster(namespace, cluster));
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2ICluster(namespace, cluster), VERSIONS);
 
         assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", kc.image);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_REPLICAS, kc.replicas);
-        assertEquals(KafkaConnectS2ISpec.DEFAULT_IMAGE, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
+        assertEquals("strimzi/kafka-connect-s2i:latest-kafka-2.0.0", kc.sourceImageBaseName + ":" + kc.sourceImageTag);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessInitialDelay);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessTimeout);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessInitialDelay);
@@ -248,7 +254,7 @@ public class KafkaConnectS2IClusterTest {
     @Test
     public void testInsecureSourceRepo() {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout,  metricsCmJson, configurationJson, true, bootstrapServers));
+                healthDelay, healthTimeout,  metricsCmJson, configurationJson, true, bootstrapServers), VERSIONS);
 
         assertTrue(kc.isInsecureSourceRepository());
 
@@ -300,7 +306,7 @@ public class KafkaConnectS2IClusterTest {
                 .endTls()
                 .endSpec()
                 .build();
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true);
 
         assertEquals("my-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
@@ -334,7 +340,7 @@ public class KafkaConnectS2IClusterTest {
                                 .build())
                 .endSpec()
                 .build();
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true);
 
         assertEquals("user-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
@@ -367,7 +373,7 @@ public class KafkaConnectS2IClusterTest {
                                 .build())
                 .endSpec()
                 .build();
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true);
 
         // 2 = 1 volume from logging/metrics + just 1 from above certs Secret
@@ -390,7 +396,7 @@ public class KafkaConnectS2IClusterTest {
                 )
                 .endSpec()
                 .build();
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.emptyMap(), true);
 
         assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
@@ -446,7 +452,7 @@ public class KafkaConnectS2IClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource);
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         // Check Deployment
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
