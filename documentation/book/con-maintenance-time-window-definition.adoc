@@ -8,7 +8,7 @@
 You configure maintenance time windows by entering an array of strings in the `Kafka.spec.maintenanceTimeWindows` property.
 Each string is a {CronExpression} interpreted as being in UTC (Coordinated Universal Time, which for practical purposes is the same as Greenwich Mean Time).
 
-The following example would configure a single maintenance time window that starts at midnight and ends at 01:59am (UTC), on Sundays, Mondays, Tuesdays, Wednesdays, and Thursdays:
+The following example configures a single maintenance time window that starts at midnight and ends at 01:59am (UTC), on Sundays, Mondays, Tuesdays, Wednesdays, and Thursdays:
 
 [source,yaml,subs="attributes+"]
 ----
