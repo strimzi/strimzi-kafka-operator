@@ -15,7 +15,7 @@ The old annotations are deprecated, but still functional.
 * Add support for TransactionalID in KafkaUser resource
 * Update to Kafka 2.0.1
 * Add maintenance time windows support for allowing CA certificates renewal rolling update started only in specific times (#1117)  
-* Add support for upgrading between Kafka versions (#1103). This removes support for `STRIMZI_DEFAULT_KAFKA_IMAGE` environment variable in the Cluster Operator, replacing it with `STRIMZI_KAFKA_IMAGE_MAP`.  
+* Add support for upgrading between Kafka versions (#1103). This removes support for `STRIMZI_DEFAULT_KAFKA_IMAGE` environment variable in the Cluster Operator, replacing it with `STRIMZI_KAFKA_IMAGES`.  
 
 
 ## 0.8.2

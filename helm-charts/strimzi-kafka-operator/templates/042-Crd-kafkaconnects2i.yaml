@@ -362,5 +362,7 @@ spec:
                     type: integer
                   value:
                     type: string
+            version:
+              type: string
           required:
           - bootstrapServers

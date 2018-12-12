@@ -172,7 +172,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     @Test
     public void creationThrows(TestContext context) {
         T resource = resource();
-        RuntimeException ex = new RuntimeException();
+        RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(null);
@@ -277,7 +277,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     @Test
     public void deletionThrows(TestContext context) {
         T resource = resource();
-        RuntimeException ex = new RuntimeException();
+        RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);

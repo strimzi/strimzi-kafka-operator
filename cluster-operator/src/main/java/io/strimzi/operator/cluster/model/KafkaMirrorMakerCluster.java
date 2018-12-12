@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerClientSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.operator.common.model.Labels;
@@ -97,7 +96,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.serviceName = serviceName(cluster);
         this.validLoggerFields = getDefaultLogConfig();
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
-        this.image = KafkaMirrorMakerSpec.DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
@@ -157,7 +155,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         }
     }
 
-    public static KafkaMirrorMakerCluster fromCrd(KafkaMirrorMaker kafkaMirrorMaker) {
+    public static KafkaMirrorMakerCluster fromCrd(KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
         KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(kafkaMirrorMaker.getMetadata().getNamespace(),
                 kafkaMirrorMaker.getMetadata().getName(),
                 Labels.fromResource(kafkaMirrorMaker).withKind(kafkaMirrorMaker.getKind()));
@@ -168,8 +166,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             kafkaMirrorMakerCluster.setWhitelist(kafkaMirrorMaker.getSpec().getWhitelist());
             kafkaMirrorMakerCluster.setProducer(kafkaMirrorMaker.getSpec().getProducer());
             kafkaMirrorMakerCluster.setConsumer(kafkaMirrorMaker.getSpec().getConsumer());
-            String image = kafkaMirrorMaker.getSpec().getImage();
-            kafkaMirrorMakerCluster.setImage(image == null ? KafkaMirrorMakerSpec.DEFAULT_IMAGE : image);
+            kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(
+                    kafkaMirrorMaker.getSpec().getImage(),
+                    kafkaMirrorMaker.getSpec().getVersion()));
             kafkaMirrorMakerCluster.setLogging(kafkaMirrorMaker.getSpec().getLogging());
 
             Map<String, Object> metrics = kafkaMirrorMaker.getSpec().getMetrics();

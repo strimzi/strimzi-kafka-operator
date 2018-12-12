@@ -125,7 +125,7 @@ public class KafkaCluster extends AbstractModel {
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
 
-    public static final Map<String, String> IMAGE_MAP = parseImageMap(System.getenv().get(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGE_MAP));
+    public static final Map<String, String> IMAGE_MAP = parseImageMap(System.getenv().get(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES));
     /** Records the Kafka version currently running inside Kafka StatefulSet */
     public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = "strimzi.io/kafka-version";
     /** Records the state of the Kafka upgrade process. Unset outside of upgrades. */
@@ -256,16 +256,9 @@ public class KafkaCluster extends AbstractModel {
         result.setOwnerReference(kafkaAssembly);
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
         result.setReplicas(kafkaClusterSpec.getReplicas());
-        String version = kafkaClusterSpec.getVersion();
-        if (version == null) {
-            version = versions.defaultVersion().version();
-        }
-        String image = kafkaClusterSpec.getImage();
+        String image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
         if (image == null) {
-            image = IMAGE_MAP.get(version);
-        }
-        if (image == null) {
-            image = IMAGE_MAP.get(versions.defaultVersion().version());
+            throw new InvalidResourceException("Version is not supported");
         }
         result.setImage(image);
         if (kafkaClusterSpec.getReadinessProbe() != null) {

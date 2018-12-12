@@ -27,6 +27,11 @@ parameters:
   name: MIRROR_MAKER_NODE_COUNT
   required: true
   value: "1"
+- description: The Kafka version to use for this Kafka mirror maker instance.
+  displayName: The Kafka version to use
+  name: KAFKA_VERSION
+  required: true
+  value: "2.1.0"
 - description: The consumer group id to which this consumer belongs
   displayName: The consumer group id
   name: MIRROR_MAKER_GROUP_ID
@@ -43,6 +48,7 @@ objects:
   metadata:
     name: mirror-maker
   spec:
+    version: ${{KAFKA_VERSION}}
     replicas: ${{MIRROR_MAKER_NODE_COUNT}}
     consumer:
       bootstrapServers: ${{MIRROR_MAKER_SOURCE}}
