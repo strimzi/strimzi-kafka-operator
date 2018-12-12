@@ -58,6 +58,8 @@ spec:
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
+                gcLoggingDisabled:
+                  type: boolean
             affinity:
               type: object
               properties:
@@ -240,6 +242,20 @@ spec:
                               type: string
                           topologyKey:
                             type: string
+            logging:
+              type: object
+              properties:
+                loggers:
+                  type: object
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum:
+                  - inline
+                  - external
+              required:
+              - type
             metrics:
               type: object
             template:
@@ -295,20 +311,6 @@ spec:
               type: object
             insecureSourceRepository:
               type: boolean
-            logging:
-              type: object
-              properties:
-                loggers:
-                  type: object
-                name:
-                  type: string
-                type:
-                  type: string
-                  enum:
-                  - inline
-                  - external
-              required:
-              - type
             resources:
               type: object
               properties:

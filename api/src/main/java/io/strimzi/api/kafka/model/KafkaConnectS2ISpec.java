@@ -16,7 +16,7 @@ import io.sundr.builder.annotations.Buildable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics", "template"})
+        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "logging", "metrics", "template"})
 public class KafkaConnectS2ISpec extends KafkaConnectSpec {
 
     private static final long serialVersionUID = 1L;

@@ -175,6 +175,11 @@ public class EntityTopicOperator extends AbstractModel {
         return "log4j2.properties";
     }
 
+    @Override
+    public String getGcLoggingOptions() {
+        return gcLoggingDisabled ? " " : DEFAULT_STRIMZI_GC_LOGGING;
+    }
+
     /**
      * Create an Entity Topic Operator from given desired resource
      *
@@ -202,6 +207,7 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setZookeeperSessionTimeoutMs(topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
                 result.setLogging(topicOperatorSpec.getLogging());
+                result.setGcLoggingDisabled(topicOperatorSpec.getJvmOptions() == null ? false : topicOperatorSpec.getJvmOptions().isGcLoggingDisabled());
                 result.setResources(topicOperatorSpec.getResources());
             }
         }
@@ -234,6 +240,7 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_OPTS, getGcLoggingOptions()));
         return varList;
     }
 

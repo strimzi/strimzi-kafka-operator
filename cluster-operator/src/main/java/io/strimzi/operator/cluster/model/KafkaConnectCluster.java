@@ -134,6 +134,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             kafkaConnect.setResources(spec.getResources());
             kafkaConnect.setLogging(spec.getLogging());
+            kafkaConnect.setGcLoggingDisabled(spec.getJvmOptions() == null ? false : spec.getJvmOptions().isGcLoggingDisabled());
             kafkaConnect.setJvmOptions(spec.getJvmOptions());
             if (spec.getReadinessProbe() != null) {
                 kafkaConnect.setReadinessInitialDelay(spec.getReadinessProbe().getInitialDelaySeconds());
@@ -318,6 +319,7 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_GC_LOG_OPTS, getGcLoggingOptions()));
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
         if (trustedCertificates != null && trustedCertificates.size() > 0) {

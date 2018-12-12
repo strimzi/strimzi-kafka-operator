@@ -101,10 +101,15 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
+    public static final String ENV_VAR_KAFKA_GC_LOG_OPTS = "KAFKA_GC_LOG_OPTS";
+    public static final String ENV_VAR_STRIMZI_GC_LOG_OPTS = "STRIMZI_GC_LOG_OPTS";
 
     private static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
     @Deprecated
     private static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
+
+    protected static final String DEFAULT_KAFKA_GC_LOGGING = "-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps";
+    protected static final String DEFAULT_STRIMZI_GC_LOGGING = "-XX:NativeMemoryTracking=summary -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps";
 
     protected final String cluster;
     protected final String namespace;
@@ -134,6 +139,7 @@ public abstract class AbstractModel {
     protected String ancillaryConfigName;
     protected String logConfigName;
 
+
     protected Storage storage;
 
     protected AbstractConfiguration configuration;
@@ -152,6 +158,7 @@ public abstract class AbstractModel {
     protected Map validLoggerFields;
     private String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
     private Logging logging;
+    protected boolean gcLoggingDisabled;
 
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
@@ -259,6 +266,14 @@ public abstract class AbstractModel {
 
     protected void setMetricsEnabled(boolean isMetricsEnabled) {
         this.isMetricsEnabled = isMetricsEnabled;
+    }
+
+    public String getGcLoggingOptions() {
+        return gcLoggingDisabled ? " " : DEFAULT_KAFKA_GC_LOGGING;
+    }
+
+    protected void setGcLoggingDisabled(boolean gcLoggingDisabled) {
+        this.gcLoggingDisabled = gcLoggingDisabled;
     }
 
 

@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
-        "resources", "logging"})
+        "resources", "logging", "jvmOptions"})
 public class EntityUserOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -46,6 +46,7 @@ public class EntityUserOperatorSpec implements Serializable {
     private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     private Resources resources;
     private Logging logging;
+    private EntityOperatorJvmOptions jvmOptions;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the User Operator should watch.")
@@ -114,5 +115,15 @@ public class EntityUserOperatorSpec implements Serializable {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("JVM Options for pods")
+    public EntityOperatorJvmOptions getJvmOptions() {
+        return jvmOptions;
+    }
+
+    public void setJvmOptions(EntityOperatorJvmOptions jvmOptions) {
+        this.jvmOptions = jvmOptions;
     }
 }

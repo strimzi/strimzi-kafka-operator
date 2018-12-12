@@ -267,6 +267,7 @@ public class KafkaCluster extends AbstractModel {
         result.setInitImage(initImage);
         Logging logging = kafkaClusterSpec.getLogging();
         result.setLogging(logging == null ? new InlineLogging() : logging);
+        result.setGcLoggingDisabled(kafkaClusterSpec.getJvmOptions() == null ? false : kafkaClusterSpec.getJvmOptions().isGcLoggingDisabled());
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
         result.setConfiguration(new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet()));
         Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
@@ -760,6 +761,8 @@ public class KafkaCluster extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_GC_LOG_OPTS, getGcLoggingOptions()));
+
         heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
 
