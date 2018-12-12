@@ -6,7 +6,7 @@
 = Maintenance time windows overview
 
 In most cases, the Cluster Operator only updates your Kafka or Zookeeper clusters in response to changes to the corresponding `Kafka` resource.
-This enables you to plan when to plan when to apply changes to a `Kafka` resource to minimize the impact on Kafka client applications.
+This enables you to plan when to apply changes to a `Kafka` resource to minimize the impact on Kafka client applications.
 
 However, some updates to your Kafka and Zookeeper clusters can happen without any corresponding change to the `Kafka` resource.
 For example, the Cluster Operator will need to perform a rolling restart if a CA (Certificate Authority) certificate that it manages is close to expiry.
