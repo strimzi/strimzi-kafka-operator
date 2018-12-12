@@ -158,12 +158,12 @@ public class PartialRollingUpdateTest {
 
     @Test
     public void testReconcileOfPartiallyRolledKafkaCluster(TestContext context) {
-        kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "3");
-        kafkaPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "3");
-        kafkaPod1.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "3");
-        kafkaPod2.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "2");
-        kafkaPod3.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "1");
-        kafkaPod4.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "1");
+        kafkaSs.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        kafkaPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        kafkaPod1.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        kafkaPod2.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "2");
+        kafkaPod3.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");
+        kafkaPod4.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");
 
         // Now start the KafkaAssemblyOperator with those pods and that statefulset
         startKube();
@@ -174,7 +174,7 @@ public class PartialRollingUpdateTest {
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 4; i++) {
                 Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaPodName(CLUSTER_NAME, i)).get();
-                String generation = pod.getMetadata().getAnnotations().get(StatefulSetOperator.ANNOTATION_GENERATION);
+                String generation = pod.getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION);
                 context.assertEquals("3", generation,
                         "Pod " + i + " had unexpected generation " + generation);
             }
@@ -184,10 +184,10 @@ public class PartialRollingUpdateTest {
 
     @Test
     public void testReconcileOfPartiallyRolledZookeeperCluster(TestContext context) {
-        zkSs.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "3");
-        zkPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "3");
-        zkPod1.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "2");
-        zkPod2.getMetadata().getAnnotations().put(StatefulSetOperator.ANNOTATION_GENERATION, "1");
+        zkSs.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        zkPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        zkPod1.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "2");
+        zkPod2.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");
 
         // Now start the KafkaAssemblyOperator with those pods and that statefulset
         startKube();
@@ -199,7 +199,7 @@ public class PartialRollingUpdateTest {
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 2; i++) {
                 Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, i)).get();
-                String generation = pod.getMetadata().getAnnotations().get(StatefulSetOperator.ANNOTATION_GENERATION);
+                String generation = pod.getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION);
                 context.assertEquals("3", generation,
                         "Pod " + i + " had unexpected generation " + generation);
             }

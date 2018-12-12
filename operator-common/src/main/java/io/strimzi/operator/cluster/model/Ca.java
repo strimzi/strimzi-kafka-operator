@@ -11,7 +11,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.Annotations;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,10 +80,10 @@ public abstract class Ca {
     public static final String CA_KEY = "ca.key";
     public static final String CA_CRT = "ca.crt";
     public static final String IO_STRIMZI = "io.strimzi";
-    public static final String ANNO_STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
-    public static final String ANNO_STRIMZI_IO_CA_CERT_GENERATION = "strimzi.io/ca-cert-generation";
-    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION = "strimzi.io/cluster-ca-cert-generation";
-    public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = "strimzi.io/clients-ca-cert-generation";
+    public static final String ANNO_STRIMZI_IO_FORCE_RENEW = Annotations.STRIMZI_DOMAIN + "/force-renew";
+    public static final String ANNO_STRIMZI_IO_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "/ca-cert-generation";
+    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "/cluster-ca-cert-generation";
+    public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "/clients-ca-cert-generation";
     public static final int INIT_GENERATION = 0;
 
     /**
@@ -315,12 +315,10 @@ public abstract class Ca {
         // cluster CA certificate generation annotation handling
         int caCertGeneration = INIT_GENERATION;
         if (caCertSecret != null && caCertSecret.getData().get(CA_CRT) != null) {
-            String caCertGenerationAnnotation = Util.annotations(caCertSecret).get(ANNO_STRIMZI_IO_CA_CERT_GENERATION);
-            if (caCertGenerationAnnotation != null) {
-                caCertGeneration = Integer.parseInt(caCertGenerationAnnotation);
-                if (caRenewed) {
-                    caCertGeneration++;
-                }
+            caCertGeneration = Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION,
+                    INIT_GENERATION);
+            if (caRenewed) {
+                caCertGeneration++;
             }
         }
 
@@ -344,7 +342,7 @@ public abstract class Ca {
             result = true;
             this.caRenewed = caKeySecret != null;
         } else if (this.caCertSecret.getMetadata() != null
-                && "true".equals(Util.annotations(this.caCertSecret).get(ANNO_STRIMZI_IO_FORCE_RENEW))) {
+                && Annotations.booleanAnnotation(this.caCertSecret, ANNO_STRIMZI_IO_FORCE_RENEW, false)) {
             reason = "CA certificate secret " + caCertSecretName + " is annotated with " + ANNO_STRIMZI_IO_FORCE_RENEW;
             result = true;
             this.caRenewed = true;

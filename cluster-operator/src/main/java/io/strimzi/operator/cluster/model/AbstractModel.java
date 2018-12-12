@@ -59,8 +59,7 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Storage;
-import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -103,8 +102,9 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
 
-    private static final String DELETE_CLAIM_ANNOTATION =
-            ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
+    private static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
+    @Deprecated
+    private static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
 
     protected final String cluster;
     protected final String namespace;
@@ -773,7 +773,7 @@ public abstract class AbstractModel {
 
         Map<String, String> annotations = new HashMap<>();
 
-        annotations.put(DELETE_CLAIM_ANNOTATION,
+        annotations.put(ANNO_STRIMZI_IO_DELETE_CLAIM,
                 String.valueOf(storage instanceof PersistentClaimStorage
                         && ((PersistentClaimStorage) storage).isDeleteClaim()));
 
@@ -1062,7 +1062,8 @@ public abstract class AbstractModel {
 
     public static boolean deleteClaim(StatefulSet ss) {
         if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
-            return Boolean.valueOf(Util.annotations(ss).getOrDefault(DELETE_CLAIM_ANNOTATION, "false"));
+            return Annotations.booleanAnnotation(ss, ANNO_STRIMZI_IO_DELETE_CLAIM,
+                    false, ANNO_CO_STRIMZI_IO_DELETE_CLAIM);
         } else {
             return false;
         }

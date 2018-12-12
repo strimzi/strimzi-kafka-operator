@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.strimzi.operator.common.Annotations;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -30,9 +31,12 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
             R extends ScalableResource<T, D>>
         extends AbstractReadyResourceOperator<C, T, L, D, R> {
 
-    public static final String STRIMZI_OPERATOR_DOMAIN = "operator.strimzi.io";
-    public static final String ANNOTATION_GENERATION = STRIMZI_OPERATOR_DOMAIN + "/generation";
-    public static final String ANNOTATION_MANUAL_DELETE_POD_AND_PVC = STRIMZI_OPERATOR_DOMAIN + "/delete-pod-and-pvc";
+    public static final String ANNO_STRIMZI_IO_GENERATION = Annotations.STRIMZI_DOMAIN + "/generation";
+    @Deprecated
+    public static final String ANNO_OP_STRIMZI_IO_GENERATION = "operator.strimzi.io/generation";
+    public static final String ANNO_STRIMZI_IO_DELETE_POD_AND_PVC = Annotations.STRIMZI_DOMAIN + "/delete-pod-and-pvc";
+    @Deprecated
+    public static final String ANNO_OP_STRIMZI_IO_DELETE_POD_AND_PVC = "operator.strimzi.io/delete-pod-and-pvc";
 
     private final Logger log = LogManager.getLogger(getClass());
 

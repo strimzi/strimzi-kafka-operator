@@ -24,12 +24,12 @@ For example, if your Kafka cluster is named _my-cluster_, the corresponding `Sta
 ifdef::Kubernetes[]
 On {KubernetesName}, use `kubectl annotate`:
 [source,shell,subs=+quotes]
-kubectl annotate statefulset _cluster-name_-kafka operator.strimzi.io/manual-rolling-update=true
+kubectl annotate statefulset _cluster-name_-kafka strimzi.io/manual-rolling-update=true
 endif::Kubernetes[]
 +
 On {OpenShiftName}, use `oc annotate`:
 [source,shell,subs=+quotes]
-oc annotate statefulset _cluster-name_-kafka operator.strimzi.io/manual-rolling-update=true
+oc annotate statefulset _cluster-name_-kafka strimzi.io/manual-rolling-update=true
 +
 . Wait for the next reconciliation to occur (every two minutes by default).
 A rolling update of all pods within the annotated `StatefulSet` is triggered, as long as the annotation was detected by the reconciliation process.

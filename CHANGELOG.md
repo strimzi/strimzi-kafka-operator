@@ -2,6 +2,13 @@
 
 ## 0.10.0
 
+* Rename annotations to use the `strimzi.io` domain consistently:
+    * `cluster.operator.strimzi.io/delete-claim` → `strimzi.io/delete-claim` 
+    * `operator.strimzi.io/manual-rolling-update` → `strimzi.io/manual-rolling-update` 
+    * `operator.strimzi.io/delete-pod-and-pvc` → `strimzi.io/delete-pod-and-pvc`
+    * `operator.strimzi.io/generation` → `strimzi.io/generation`
+The old annotations are deprecated, but still functional.
+
 ## 0.9.0
 
 * Add possibility to label and annotate different resources (#1093)

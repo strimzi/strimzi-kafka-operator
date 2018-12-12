@@ -32,8 +32,6 @@ public class ClusterOperator extends AbstractVerticle {
 
     private static final Logger log = LogManager.getLogger(ClusterOperator.class.getName());
 
-    public static final String STRIMZI_CLUSTER_OPERATOR_DOMAIN = "cluster.operator.strimzi.io";
-
     private static final int HEALTH_SERVER_PORT = 8080;
 
     private final KubernetesClient client;

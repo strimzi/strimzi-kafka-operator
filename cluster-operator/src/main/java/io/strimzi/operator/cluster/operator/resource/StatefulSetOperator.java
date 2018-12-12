@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 /**
@@ -99,8 +100,8 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             Pod pod = podOperations.get(namespace, podName);
 
             if (pod != null) {
-                String value = Util.annotations(pod).get(ANNOTATION_MANUAL_DELETE_POD_AND_PVC);
-                if (value != null && Boolean.valueOf(value)) {
+                if (Annotations.booleanAnnotation(pod, ANNO_STRIMZI_IO_DELETE_POD_AND_PVC,
+                        false, ANNO_OP_STRIMZI_IO_DELETE_POD_AND_PVC)) {
                     f = f.compose(ignored -> deletePvc(ss, pvcName))
                             .compose(ignored -> maybeRestartPod(ss, podName, p -> true));
 
@@ -189,23 +190,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     }
 
     private void setGeneration(StatefulSet desired, int nextGeneration) {
-        templateMetadata(desired).getAnnotations().put(ANNOTATION_GENERATION, String.valueOf(nextGeneration));
-    }
-
-    private static int getGeneration(ObjectMeta objectMeta) {
-        if (objectMeta.getAnnotations().get(ANNOTATION_GENERATION) == null) {
-            return NO_GENERATION;
-        }
-        String generationAnno = objectMeta.getAnnotations().get(ANNOTATION_GENERATION);
-        if (generationAnno == null) {
-            return NO_GENERATION;
-        } else {
-            return Integer.parseInt(generationAnno);
-        }
+        Map<String, String> annotations = Annotations.annotations(desired.getSpec().getTemplate());
+        annotations.remove(ANNO_OP_STRIMZI_IO_GENERATION);
+        annotations.put(ANNO_STRIMZI_IO_GENERATION, String.valueOf(nextGeneration));
     }
 
     protected void incrementGeneration(StatefulSet current, StatefulSet desired) {
-        final int generation = Integer.parseInt(templateMetadata(current).getAnnotations().getOrDefault(ANNOTATION_GENERATION, String.valueOf(INIT_GENERATION)));
+        final int generation = Annotations.intAnnotation(current.getSpec().getTemplate(), ANNO_STRIMZI_IO_GENERATION,
+                INIT_GENERATION, ANNO_OP_STRIMZI_IO_GENERATION);
         final int nextGeneration = generation + 1;
         setGeneration(desired, nextGeneration);
     }
@@ -216,14 +208,16 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         if (resource == null) {
             return NO_GENERATION;
         }
-        return getGeneration(templateMetadata(resource));
+        return Annotations.intAnnotation(resource.getSpec().getTemplate(), ANNO_STRIMZI_IO_GENERATION,
+                NO_GENERATION, ANNO_OP_STRIMZI_IO_GENERATION);
     }
 
     public static int getPodGeneration(Pod resource) {
         if (resource == null) {
             return NO_GENERATION;
         }
-        return getGeneration(resource.getMetadata());
+        return Annotations.intAnnotation(resource, ANNO_STRIMZI_IO_GENERATION,
+                NO_GENERATION, ANNO_OP_STRIMZI_IO_GENERATION);
     }
 
     @Override
