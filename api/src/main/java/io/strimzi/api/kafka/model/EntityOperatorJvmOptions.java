@@ -23,7 +23,7 @@ public class EntityOperatorJvmOptions implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private boolean gcLoggingDisabled;
+    private boolean gcLoggingDisabled = false;
 
     @Description("Disable garbage collection logging")
     public boolean isGcLoggingDisabled() {

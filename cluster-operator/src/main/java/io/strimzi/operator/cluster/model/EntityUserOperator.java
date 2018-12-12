@@ -139,6 +139,11 @@ public class EntityUserOperator extends AbstractModel {
         return "log4j2.properties";
     }
 
+    @Override
+    public String getGcLoggingOptions() {
+        return gcLoggingDisabled ? " " : DEFAULT_STRIMZI_GC_LOGGING;
+    }
+
     /**
      * Create an Entity User Operator from given desired resource
      *
@@ -197,7 +202,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Long.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaCluster.clientsCaCertSecretName(cluster)));
-        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_STRIMZI_GC_LOGGING));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_OPTS, getGcLoggingOptions()));
         return varList;
     }
 

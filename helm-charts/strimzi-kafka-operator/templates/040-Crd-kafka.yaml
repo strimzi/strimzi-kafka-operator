@@ -354,6 +354,8 @@ spec:
                     -Xmx:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
+                    gcLoggingDisabled:
+                      type: boolean
                 resources:
                   type: object
                   properties:
@@ -713,6 +715,8 @@ spec:
                     -Xmx:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
+                    gcLoggingDisabled:
+                      type: boolean
                 resources:
                   type: object
                   properties:

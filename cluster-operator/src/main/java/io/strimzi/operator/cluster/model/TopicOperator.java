@@ -210,6 +210,11 @@ public class TopicOperator extends AbstractModel {
         return cluster + io.strimzi.operator.cluster.model.TopicOperator.CERTS_SUFFIX;
     }
 
+    @Override
+    public String getGcLoggingOptions() {
+        return gcLoggingDisabled ? " " : DEFAULT_STRIMZI_GC_LOGGING;
+    }
+
     /**
      * Create a Topic Operator from given desired resource
      *
@@ -307,7 +312,7 @@ public class TopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
-        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_STRIMZI_GC_LOGGING));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_OPTS, getGcLoggingOptions()));
 
         return varList;
     }

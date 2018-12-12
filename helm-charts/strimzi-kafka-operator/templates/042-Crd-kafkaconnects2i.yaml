@@ -58,6 +58,8 @@ spec:
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
+                gcLoggingDisabled:
+                  type: boolean
             affinity:
               type: object
               properties:

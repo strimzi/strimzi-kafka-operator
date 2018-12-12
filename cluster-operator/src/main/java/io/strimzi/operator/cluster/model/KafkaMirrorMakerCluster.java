@@ -351,7 +351,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         if (consumer.getNumStreams() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS, Integer.toString(consumer.getNumStreams())));
         }
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_GC_LOG_OPTS, gcLoggingDisabled ? " " : DEFAULT_KAFKA_GC_LOGGING));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_GC_LOG_OPTS, getGcLoggingOptions()));
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);

@@ -268,8 +268,8 @@ public abstract class AbstractModel {
         this.isMetricsEnabled = isMetricsEnabled;
     }
 
-    public boolean isGcLoggingDisabled() {
-        return gcLoggingDisabled;
+    public String getGcLoggingOptions() {
+        return gcLoggingDisabled ? " " : DEFAULT_KAFKA_GC_LOGGING;
     }
 
     protected void setGcLoggingDisabled(boolean gcLoggingDisabled) {
