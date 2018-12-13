@@ -39,8 +39,17 @@ spec:
       # ...
 ----
 
-. Wait for the Cluster Operator to downgrade the cluster
-**TODO** How will the user know when it is finished?
+. Wait for the Cluster Operator to downgrade the cluster, by inspecting the Cluster Operator logs and looking for a `INFO` level message like:
+`Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed` (if two rolling updates were required), or
+`Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed` (if a single rolling update was required).
+For example, using `grep`:
++
+[shell,subs="+quotes"]
+----
+oc logs -f _<co-pod-name>_ | grep -E "Kafka version downgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
+----
+
+
 
 . Downgrade each client application to use the old version of the client libraries.
 
