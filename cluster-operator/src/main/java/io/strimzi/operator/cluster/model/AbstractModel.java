@@ -156,7 +156,7 @@ public abstract class AbstractModel {
     private List<Toleration> tolerations;
 
     protected Map validLoggerFields;
-    private String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
+    private final String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
     private Logging logging;
     protected boolean gcLoggingDisabled;
 

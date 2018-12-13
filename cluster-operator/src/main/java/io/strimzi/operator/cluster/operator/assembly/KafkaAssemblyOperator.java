@@ -67,6 +67,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -82,6 +83,7 @@ import static io.strimzi.operator.cluster.model.KafkaCluster.ENV_VAR_KAFKA_CONFI
 import static io.strimzi.operator.cluster.model.KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersions;
+import static io.strimzi.operator.cluster.model.TopicOperator.ANNO_STRIMZI_IO_LOGGING;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -1365,7 +1367,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             this.toDeployment = topicOperator.generateDeployment(isOpenShift);
                             this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             Annotations.annotations(this.toDeployment.getSpec().getTemplate()).put(
-                                    TopicOperator.ANNO_STRIMZI_IO_LOGGING,
+                                    ANNO_STRIMZI_IO_LOGGING,
                                     this.toMetricsAndLogsConfigMap.getData().get("log4j2.properties"));
                         } else {
                             this.toDeployment = null;
@@ -1459,8 +1461,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName()) :
                                             null) : null;
 
+                            Map<String, String> annotations = new HashMap();
+                            annotations.put(ANNO_STRIMZI_IO_LOGGING, topicOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties") + userOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties"));
+
                             this.entityOperator = entityOperator;
-                            this.eoDeployment = entityOperator.generateDeployment(isOpenShift);
+                            this.eoDeployment = entityOperator.generateDeployment(isOpenShift, annotations);
                             this.topicOperatorMetricsAndLogsConfigMap = topicOperatorLogAndMetricsConfigMap;
                             this.userOperatorMetricsAndLogsConfigMap = userOperatorLogAndMetricsConfigMap;
                         }

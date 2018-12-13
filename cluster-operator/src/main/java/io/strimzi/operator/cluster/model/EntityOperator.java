@@ -164,7 +164,7 @@ public class EntityOperator extends AbstractModel {
         return null;
     }
 
-    public Deployment generateDeployment(boolean isOpenShift) {
+    public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations) {
 
         if (!isDeployed()) {
             log.warn("Topic and/or User Operators not declared: Entity Operator will not be deployed");
@@ -178,7 +178,7 @@ public class EntityOperator extends AbstractModel {
         return createDeployment(
                 updateStrategy,
                 Collections.emptyMap(),
-                Collections.emptyMap(),
+                annotations,
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),

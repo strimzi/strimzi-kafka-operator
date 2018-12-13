@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -67,7 +68,7 @@ public class EntityOperatorTest {
     @Test
     public void testGenerateDeployment() {
 
-        Deployment dep = entityOperator.generateDeployment(true);
+        Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -119,7 +120,7 @@ public class EntityOperatorTest {
 
     @Test
     public void withAffinity() throws IOException {
-        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
@@ -156,7 +157,7 @@ public class EntityOperatorTest {
         EntityOperator entityOperator = EntityOperator.fromCrd(resource);
 
         // Check Deployment
-        Deployment dep = entityOperator.generateDeployment(true);
+        Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP);
         assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
         assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
 
