@@ -169,7 +169,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    public void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException {
+    void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException {
         createCluster();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
@@ -238,6 +238,7 @@ class SecurityST extends AbstractST {
         return mp;
     }
 
+
     private void waitForAvailability(AvailabilityVerifier mp) {
         LOGGER.info("Checking producers and consumers still functioning");
         AvailabilityVerifier.Result stats = mp.stats();
@@ -281,7 +282,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    public void testAutoRenewCaCertsTriggerByExpiredCertificate() throws InterruptedException {
+    void testAutoRenewCaCertsTriggerByExpiredCertificate() throws InterruptedException {
         // 1. Create the Secrets already, and a certificate that's already expired
         String clusterCaKey = createSecret("cluster-ca.key", clusterCaKeySecretName(CLUSTER_NAME), "ca.key");
         String clusterCaCert = createSecret("cluster-ca.crt", clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
@@ -292,6 +293,8 @@ class SecurityST extends AbstractST {
         createCluster();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
+        // Check if user exists
+        waitTillSecretExists(userName);
 
         AvailabilityVerifier mp = waitForInitialAvailability(userName);
 
@@ -375,34 +378,5 @@ class SecurityST extends AbstractST {
             .build();
         client.secrets().inNamespace(NAMESPACE).create(secret);
         return certAsString;
-    }
-
-    /**
-     * Test the case where the cluster is initial created with manual CA
-     */
-    @Test
-    public void testManualCaCertFromScratch() {
-        // TODO
-    }
-
-    /**
-     * Test the case where the cluster is initial created with manual CA and we transition to auto CA
-     */
-    @Test
-    public void testAutoCaCertFromManual() {
-        // TODO
-    }
-
-    /**
-     * Test the case where the cluster is initial auto CA and we transition to manual CA
-     */
-    @Test
-    public void testManualCaCertFromAuto() {
-        // TODO
-    }
-
-    @Test
-    public void testManualCaCertRenewal() {
-
     }
 }

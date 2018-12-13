@@ -48,6 +48,7 @@ import io.strimzi.test.k8s.ProcessResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 
@@ -399,7 +400,7 @@ public class AbstractST {
     }
 
     @AfterEach
-    public void deleteResources() {
+    public void deleteResources() throws Exception {
         collectLogs();
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
@@ -411,15 +412,21 @@ public class AbstractST {
         LOGGER.info("Pods after test:\n " + pods + "\n -----------------------------------------");
     }
 
-    private static void waitForDeletion(long time) {
+    @BeforeAll
+    static void createClassResources(TestInfo testInfo) {
+        testClass = testInfo.getTestClass().get().getSimpleName();
+    }
+
+    private static void waitForDeletion(long time) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
-        try {
-            Thread.sleep(time);
-            if (kubeClient.list("pods").size() > 1) {
-                throw new Exception("There are some unexpected pods! Cleanup is no finished properly!");
+        Thread.sleep(time);
+        List<Pod> podList = client.pods().inNamespace(kubeClient.namespace()).list().getItems();
+        StringBuilder nonTerminated = new StringBuilder();
+        if (podList.size() > 1) {
+            for (Pod p : podList) {
+                nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase());
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
     }
 
@@ -987,8 +994,8 @@ public class AbstractST {
             this.client = client;
             this.namespace = client.getNamespace();
             this.logDir = logDir;
-            this.configMapDir = new File(logDir + "/events");
-            this.eventsDir = new File(logDir + "/configMaps");
+            this.eventsDir = new File(logDir + "/events");
+            this.configMapDir = new File(logDir + "/configMaps");
             logDir.mkdirs();
 
             if (!eventsDir.exists()) {
@@ -1013,7 +1020,6 @@ public class AbstractST {
                 });
             } catch (Exception allExceptions) {
                 LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
-                allExceptions.printStackTrace();
             }
         }
 
@@ -1032,4 +1038,20 @@ public class AbstractST {
         }
     }
 
+    void waitTillSecretExists(String secretName) {
+        waitFor("secret " + secretName + " exists", JOB_INTERVAL, JOB_TIMEOUT,
+            () -> namespacedClient().secrets().withName(secretName).get() != null);
+        try {
+            Thread.sleep(60000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void waitForPodDeletion(String namespace, String name) {
+        LOGGER.info("Waiting when Pod {} will be deleted", name);
+
+        TestUtils.waitFor("statefulset " + name, JOB_INTERVAL, JOB_TIMEOUT,
+            () -> client.pods().inNamespace(namespace).withName(name).get() == null);
+    }
 }

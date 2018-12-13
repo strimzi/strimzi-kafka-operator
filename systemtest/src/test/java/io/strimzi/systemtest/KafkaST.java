@@ -104,9 +104,16 @@ class KafkaST extends AbstractST {
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
 
+        LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
         oc.deleteByName("Kafka", clusterName);
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
+
+        client.pods().list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(clusterName))
+                .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
+
+        LOGGER.info("deleted");
     }
 
     @Test
@@ -449,16 +456,6 @@ class KafkaST extends AbstractST {
 
         // Now check the pod logs the messages were produced and consumed
         checkPings(messagesCount, job);
-    }
-
-    private void waitTillSecretExists(String secretName) {
-        waitFor("secret " + secretName + " exists", POLL_INTERVAL_SECRET_CREATION, TIMEOUT_FOR_SECRET_CREATION,
-            () -> namespacedClient().secrets().withName(secretName).get() != null);
-        try {
-            Thread.sleep(60000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     /**

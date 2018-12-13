@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,7 @@ class ConnectS2IST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
     private static Resources classResources;
 
+    @Disabled
     @Test
     @OpenShiftOnly
     @Tag(REGRESSION)
