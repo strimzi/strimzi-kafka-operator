@@ -75,6 +75,7 @@ import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -696,7 +697,7 @@ public class KafkaAssemblyOperatorTest {
         }
         if (originalEntityOperator != null) {
             when(mockDepOps.get(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    originalEntityOperator.generateDeployment(true)
+                    originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP)
             );
         }
 
