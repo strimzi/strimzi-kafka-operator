@@ -53,6 +53,7 @@ import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 
@@ -125,13 +126,12 @@ public class KafkaCluster extends AbstractModel {
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
 
-    public static final Map<String, String> IMAGE_MAP = parseImageMap(System.getenv().get(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES));
     /** Records the Kafka version currently running inside Kafka StatefulSet */
-    public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = "strimzi.io/kafka-version";
+    public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = Annotations.STRIMZI_DOMAIN + "/kafka-version";
     /** Records the state of the Kafka upgrade process. Unset outside of upgrades. */
-    public static final String ANNO_STRIMZI_IO_FROM_VERSION = "strimzi.io/from-version";
+    public static final String ANNO_STRIMZI_IO_FROM_VERSION = Annotations.STRIMZI_DOMAIN + "/from-version";
     /** Records the state of the Kafka upgrade process. Unset outside of upgrades. */
-    public static final String ANNO_STRIMZI_IO_TO_VERSION = "strimzi.io/to-version";
+    public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "/to-version";
 
     // Kafka configuration
     private String zookeeperConnect;

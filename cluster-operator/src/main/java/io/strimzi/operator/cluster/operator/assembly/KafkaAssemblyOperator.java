@@ -415,9 +415,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Does SS {} need to be upgraded?", ss.getMetadata().getName());
                     Future<?> result;
                     // Get the current version of the cluster
-                    KafkaVersion currentVersion = versions.version(ss.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_KAFKA_VERSION));
+                    KafkaVersion currentVersion = versions.version(Annotations.annotations(ss).get(ANNO_STRIMZI_IO_KAFKA_VERSION));
                     log.debug("SS {} has current version {}", ss.getMetadata().getName(), currentVersion);
-                    String fromVersionAnno = ss.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_FROM_VERSION);
+                    String fromVersionAnno = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_FROM_VERSION);
                     KafkaVersion fromVersion;
                     if (fromVersionAnno != null) { // We're mid-upgrade
                         fromVersion = versions.version(fromVersionAnno);
@@ -425,7 +425,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         fromVersion = currentVersion;
                     }
                     log.debug("SS {} is from version {}", ss.getMetadata().getName(), fromVersion);
-                    String toVersionAnno = ss.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_TO_VERSION);
+                    String toVersionAnno = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_TO_VERSION);
                     KafkaVersion toVersion;
                     if (toVersionAnno != null) { // We're mid-upgrade
                         toVersion = versions.version(toVersionAnno);
@@ -467,7 +467,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Future<StatefulSet> kafkaUpgradePhase1(StatefulSet ss, KafkaUpgrade upgrade, String upgradedImage) {
             log.info("{}: {}, phase 1", reconciliation, upgrade);
 
-            Map<String, String> annotations = ss.getMetadata().getAnnotations();
+            Map<String, String> annotations = Annotations.annotations(ss);
             Map<String, String> env = ModelUtils.getKafkaContainerEnv(ss);
             String string = env.getOrDefault(ENV_VAR_KAFKA_CONFIGURATION, "");
             log.debug("Current config {}", string);
@@ -571,7 +571,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Cluster is now using new binaries, but old proto version
             log.info("{}: {}, phase 2", reconciliation, upgrade);
             // Remove the strimzi.io/from-version and strimzi.io/to-version since this is the last phase
-            Map<String, String> annotations = ss.getMetadata().getAnnotations();
+            Map<String, String> annotations = Annotations.annotations(ss);
             log.info("{}: Upgrade: Removing annotations {}, {}",
                     reconciliation, ANNO_STRIMZI_IO_FROM_VERSION, ANNO_STRIMZI_IO_TO_VERSION);
             annotations.remove(ANNO_STRIMZI_IO_FROM_VERSION);
@@ -629,7 +629,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Future<StatefulSet> kafkaDowngradePhase1(StatefulSet ss, KafkaUpgrade upgrade) {
             log.info("{}: {}, phase 1", reconciliation, upgrade);
 
-            Map<String, String> annotations = ss.getMetadata().getAnnotations();
+            Map<String, String> annotations = Annotations.annotations(ss);
             Map<String, String> env = ModelUtils.getKafkaContainerEnv(ss);
             KafkaConfiguration currentKafkaConfig = KafkaConfiguration.unvalidated(env.getOrDefault(ENV_VAR_KAFKA_CONFIGURATION, ""));
 
@@ -713,7 +713,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             log.info("{}: {}, phase 2", reconciliation, downgrade);
             // Remove the strimzi.io/from-version and strimzi.io/to-version since this is the last phase
 
-            Map<String, String> annotations = ss.getMetadata().getAnnotations();
+            Map<String, String> annotations = Annotations.annotations(ss);
 
             log.info("{}: Upgrade: Removing annotations {}, {}",
                     reconciliation, ANNO_STRIMZI_IO_FROM_VERSION, ANNO_STRIMZI_IO_TO_VERSION);
