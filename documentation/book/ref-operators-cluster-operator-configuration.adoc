@@ -66,3 +66,9 @@ if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` i
 `STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional, default `strimzi/entity-operator-stunnel:latest`.
 The image name to use as the default when deploying the sidecar container which provides TLS support for the Entity Operator, if
 no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+ifdef::Kubernetes[]
+`STRIMZI_VOLUME_MOUNT_INIT_IMAGE`:: Optional, default `busybox`.
+The image to use as default for the init container required for volume mounting on kubernetes.
+If a persistent volume claim is requested and the running cluster is Kubernetes this image will be used to execute an "init-container" to `chown` of volume mount path to that it is accessible by the main pod container.
+endif::Kubernetes[]
