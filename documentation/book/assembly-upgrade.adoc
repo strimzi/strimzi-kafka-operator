@@ -11,6 +11,6 @@ Within a given version of {ProductName} it is possible to upgrade (and sometimes
 When a newer version of {ProductName} is available, it may provide support for newer versions of Kafka. 
 In this case it is necessary to upgrade {ProductName} first, before then upgrading to a newer Kafka version supported by the new {ProductName} version.
 
-include::proc-upgrading-cluster-operator.adoc[leveloffset=+1]
+//include::proc-upgrading-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-upgrading-kafka-versions.adoc[leveloffset=+1]
