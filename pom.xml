@@ -14,6 +14,43 @@
         </license>
     </licenses>
 
+    <name>Strimzi - Apache Kafka on Kubernetes and OpenShift</name>
+    <description>Strimzi uses the Kubernetes operator pattern to provide a way to run an Apache Kafka cluster on
+        Kubernetes or OpenShift in various deployment configurations. </description>
+    <url>http://strimzi.io/</url>
+
+    <scm>
+        <connection>scm:git:git://github.com/strimzi/strimzi-kafka-operator.git</connection>
+        <developerConnection>scm:git:ssh://github.com:strimzi/strimzi-kafka-operator.git</developerConnection>
+        <url>https://github.com/strimzi/strimzi-kafka-operator</url>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/strimzi/strimzi-kafka-operator/issues</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <name>Tom Bentley</name>
+            <email>tbentley@redhat.com</email>
+            <organization>Red Hat</organization>
+            <organizationUrl>http://www.redhat.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Paolo Patierno</name>
+            <email>ppatierno@live.com</email>
+            <organization>Red Hat</organization>
+            <organizationUrl>http://www.redhat.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Jakub Scholz</name>
+            <email>github@scholzj.com</email>
+            <organization>Red Hat</organization>
+            <organizationUrl>http://www.redhat.com</organizationUrl>
+        </developer>
+    </developers>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
