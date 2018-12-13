@@ -90,7 +90,7 @@ public abstract class AbstractModel {
     protected static final String DEFAULT_JVM_XMS = "128M";
 
     private static final String VOLUME_MOUNT_HACK_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_VOLUME_MOUNT_HACK_IMAGE", "busybox");
+            System.getenv().getOrDefault("STRIMZI_VOLUME_MOUNT_INIT_IMAGE", "busybox");
     protected static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
     private static final Long VOLUME_MOUNT_HACK_USERID = 1001L;
     private static final Long VOLUME_MOUNT_HACK_GROUPID = 0L;
