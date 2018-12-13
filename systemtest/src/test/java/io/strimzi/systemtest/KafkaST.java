@@ -84,9 +84,11 @@ class KafkaST extends AbstractST {
 
     static KubernetesClient client = new DefaultKubernetesClient();
 
-    private static final long WAIT_INTERVAL = 1_000;
-    private static final long MIRROR_MAKER_TIMEOUT = 120_000;
-    private static final long TOPIC_CREATE_TIMEOUT = 60_000;
+    private static final long POLL_INTERVAL_FOR_CREATION = 1_000;
+    private static final long TIMEOUT_FOR_MIRROR_MAKER_CREATION = 120_000;
+    private static final long TIMEOUT_FOR_TOPIC_CREATION = 60_000;
+    private static final long POLL_INTERVAL_SECRET_CREATION = 5_000;
+    private static final long TIMEOUT_FOR_SECRET_CREATION = 360_000;
 
     @Test
     @Tag(REGRESSION)
@@ -450,7 +452,7 @@ class KafkaST extends AbstractST {
     }
 
     private void waitTillSecretExists(String secretName) {
-        waitFor("secret " + secretName + " exists", 5000, 300000,
+        waitFor("secret " + secretName + " exists", POLL_INTERVAL_SECRET_CREATION, TIMEOUT_FOR_SECRET_CREATION,
             () -> namespacedClient().secrets().withName(secretName).get() != null);
         try {
             Thread.sleep(60000L);
@@ -601,7 +603,7 @@ class KafkaST extends AbstractST {
 
         //Creating topics for testing
         kubeClient.create(TOPIC_CM);
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", WAIT_INTERVAL, TOPIC_CREATE_TIMEOUT, () -> {
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
         });
@@ -738,7 +740,7 @@ class KafkaST extends AbstractST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", WAIT_INTERVAL, MIRROR_MAKER_TIMEOUT, () ->
+        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
             !kubeClient.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
@@ -831,7 +833,7 @@ class KafkaST extends AbstractST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join the group
-        waitFor("Mirror Maker will join group", WAIT_INTERVAL, MIRROR_MAKER_TIMEOUT, () ->
+        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
             !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
@@ -887,11 +889,11 @@ class KafkaST extends AbstractST {
         resources().topic(kafkaSourceName, topicName).done();
 
         // Create Kafka user for source cluster
-        KafkaUser userSource = resources().scramShaUser(CLUSTER_NAME, kafkaUserSource).done();
+        KafkaUser userSource = resources().scramShaUser(kafkaSourceName, kafkaUserSource).done();
         waitTillSecretExists(kafkaUserSource);
 
         // Create Kafka user for target cluster
-        KafkaUser userTarget = resources().scramShaUser(CLUSTER_NAME, kafkaUserTarget).done();
+        KafkaUser userTarget = resources().scramShaUser(kafkaTargetName, kafkaUserTarget).done();
         waitTillSecretExists(kafkaUserTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
@@ -939,7 +941,7 @@ class KafkaST extends AbstractST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", WAIT_INTERVAL, MIRROR_MAKER_TIMEOUT, () ->
+        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
             !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
