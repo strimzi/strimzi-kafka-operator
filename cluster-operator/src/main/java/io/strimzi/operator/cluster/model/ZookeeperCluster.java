@@ -29,9 +29,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.TlsSidecar;
-import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
@@ -39,7 +37,6 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +64,6 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String NAME_SUFFIX = "-zookeeper";
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-client";
     private static final String HEADLESS_SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-nodes";
-    private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     private static final String LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-logging";
     private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
 
@@ -83,8 +79,6 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_NODE_COUNT = "ZOOKEEPER_NODE_COUNT";
     public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
-    public static final String ENV_VAR_ZOOKEEPER_LOG_CONFIGURATION = "ZOOKEEPER_LOG_CONFIGURATION";
-    public static final String ENV_VAR_TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     public static final Map<String, String> IMAGE_MAP = parseImageMap(System.getenv().get("STRIMZI_ZOOKEEPER_IMAGE_MAP"));
 
@@ -363,42 +357,23 @@ public class ZookeeperCluster extends AbstractModel {
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createExecProbe(Collections.singletonList(livenessPath), livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createExecProbe(Collections.singletonList(readinessPath), readinessInitialDelay, readinessTimeout))
-                .withResources(resources(getResources()))
+                .withLivenessProbe(ModelUtils.createExecProbe(Collections.singletonList(livenessPath), livenessInitialDelay, livenessTimeout))
+                .withReadinessProbe(ModelUtils.createExecProbe(Collections.singletonList(readinessPath), readinessInitialDelay, readinessTimeout))
+                .withResources(ModelUtils.resources(getResources()))
                 .build();
 
         String tlsSidecarImage = ZookeeperClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;
-        Resources tlsSidecarResources = null;
-        TlsSidecarLogLevel tlsSidecarLogLevel = TlsSidecarLogLevel.NOTICE;
-        int tlsSidecarReadinessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
-        int tlsSidecarReadinessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
-        int tlsSidecarLivenessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
-        int tlsSidecarLivenessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
-
-        if (tlsSidecar != null) {
-            if (tlsSidecar.getImage() != null) {
-                tlsSidecarImage = tlsSidecar.getImage();
-            }
-            tlsSidecarResources = tlsSidecar.getResources();
-            tlsSidecarLogLevel = tlsSidecar.getLogLevel();
-            if (tlsSidecar.getReadinessProbe() != null) {
-                tlsSidecarReadinessInitialDelay = tlsSidecar.getReadinessProbe().getInitialDelaySeconds();
-                tlsSidecarReadinessTimeout = tlsSidecar.getReadinessProbe().getTimeoutSeconds();
-            }
-            if (tlsSidecar.getLivenessProbe() != null) {
-                tlsSidecarLivenessInitialDelay = tlsSidecar.getLivenessProbe().getInitialDelaySeconds();
-                tlsSidecarLivenessTimeout = tlsSidecar.getLivenessProbe().getTimeoutSeconds();
-            }
+        if (tlsSidecar != null && tlsSidecar.getImage() != null) {
+            tlsSidecarImage = tlsSidecar.getImage();
         }
 
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
-                .withLivenessProbe(createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessInitialDelay, tlsSidecarLivenessTimeout))
-                .withReadinessProbe(createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarReadinessInitialDelay, tlsSidecarReadinessTimeout))
-                .withResources(resources(tlsSidecarResources))
-                .withEnv(asList(buildEnvVar(ENV_VAR_TLS_SIDECAR_LOG_LEVEL, tlsSidecarLogLevel.toValue()),
+                .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
+                .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
+                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
                         buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas))))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_NODES_VOLUME_NAME, TLS_SIDECAR_NODES_VOLUME_MOUNT),
                         createVolumeMount(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, TLS_SIDECAR_CLUSTER_CA_VOLUME_MOUNT))

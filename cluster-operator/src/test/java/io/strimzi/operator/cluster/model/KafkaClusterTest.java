@@ -266,7 +266,7 @@ public class KafkaClusterTest {
         Container tlsSidecarContainer = containers.get(1);
         assertEquals(KafkaClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
         assertEquals(ZookeeperCluster.serviceName(cluster) + ":2181", AbstractModel.containerEnvVars(tlsSidecarContainer).get(KafkaCluster.ENV_VAR_KAFKA_ZOOKEEPER_CONNECT));
-        assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(KafkaCluster.ENV_VAR_TLS_SIDECAR_LOG_LEVEL));
+        assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL));
         assertEquals(KafkaCluster.BROKER_CERTS_VOLUME, tlsSidecarContainer.getVolumeMounts().get(0).getName());
         assertEquals(KafkaCluster.TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT, tlsSidecarContainer.getVolumeMounts().get(0).getMountPath());
         assertEquals(KafkaCluster.TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT, tlsSidecarContainer.getVolumeMounts().get(1).getMountPath());

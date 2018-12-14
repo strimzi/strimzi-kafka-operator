@@ -47,9 +47,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.TlsSidecar;
-import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
@@ -58,7 +56,6 @@ import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -94,8 +91,8 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
+
     public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
-    public static final String ENV_VAR_TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
@@ -738,41 +735,22 @@ public class KafkaCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(createTcpSocketProbe(REPLICATION_PORT, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createTcpSocketProbe(REPLICATION_PORT, readinessInitialDelay, readinessTimeout))
-                .withResources(resources(getResources()))
+                .withResources(ModelUtils.resources(getResources()))
                 .build();
 
         String tlsSidecarImage = KafkaClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;
-        Resources tlsSidecarResources = null;
-        TlsSidecarLogLevel tlsSidecarLogLevel = TlsSidecarLogLevel.NOTICE;
-        int tlsSidecarReadinessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
-        int tlsSidecarReadinessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
-        int tlsSidecarLivenessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
-        int tlsSidecarLivenessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
-
-        if (tlsSidecar != null) {
-            if (tlsSidecar.getImage() != null) {
-                tlsSidecarImage = tlsSidecar.getImage();
-            }
-            tlsSidecarResources = tlsSidecar.getResources();
-            tlsSidecarLogLevel = tlsSidecar.getLogLevel();
-            if (tlsSidecar.getReadinessProbe() != null) {
-                tlsSidecarReadinessInitialDelay = tlsSidecar.getReadinessProbe().getInitialDelaySeconds();
-                tlsSidecarReadinessTimeout = tlsSidecar.getReadinessProbe().getTimeoutSeconds();
-            }
-            if (tlsSidecar.getLivenessProbe() != null) {
-                tlsSidecarLivenessInitialDelay = tlsSidecar.getLivenessProbe().getInitialDelaySeconds();
-                tlsSidecarLivenessTimeout = tlsSidecar.getLivenessProbe().getTimeoutSeconds();
-            }
+        if (tlsSidecar != null && tlsSidecar.getImage() != null) {
+            tlsSidecarImage = tlsSidecar.getImage();
         }
 
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
-                .withLivenessProbe(createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessInitialDelay, tlsSidecarLivenessTimeout))
-                .withReadinessProbe(createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarReadinessInitialDelay, tlsSidecarReadinessTimeout))
-                .withResources(resources(tlsSidecarResources))
+                .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
+                .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
+                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
                 .withEnv(asList(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect),
-                        buildEnvVar(ENV_VAR_TLS_SIDECAR_LOG_LEVEL, tlsSidecarLogLevel.toValue())))
+                        ModelUtils.tlsSidecarLogEnvVar(tlsSidecar)))
                 .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
                         createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .build();

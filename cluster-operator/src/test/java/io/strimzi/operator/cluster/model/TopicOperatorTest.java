@@ -183,7 +183,7 @@ public class TopicOperatorTest {
         Container tlsSidecarContainer = containers.get(1);
         assertEquals(TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
         assertEquals(TopicOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(tlsSidecarContainer).get(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT));
-        assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_TLS_SIDECAR_LOG_LEVEL));
+        assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL));
         assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, tlsSidecarContainer.getVolumeMounts().get(0).getName());
         assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT, tlsSidecarContainer.getVolumeMounts().get(0).getMountPath());
         assertEquals(new Integer(tlsHealthDelay), tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds());
