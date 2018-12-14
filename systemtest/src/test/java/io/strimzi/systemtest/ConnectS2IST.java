@@ -11,7 +11,9 @@ import io.strimzi.test.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -62,6 +64,16 @@ class ConnectS2IST extends AbstractST {
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
     }
 
+    @BeforeEach
+    void setup() {
+        createResources();
+    }
+
+    @AfterEach
+    void teardown() throws Exception {
+        deleteResources();
+        waitForDeletion(10000);
+    }
 
     @BeforeAll
     static void createClassResources() {

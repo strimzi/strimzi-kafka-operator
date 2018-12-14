@@ -30,6 +30,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -112,8 +113,6 @@ class KafkaST extends AbstractST {
         client.pods().list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
                 .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
-
-        LOGGER.info("deleted");
     }
 
     @Test
@@ -952,14 +951,19 @@ class KafkaST extends AbstractST {
         checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
     }
 
+    @BeforeEach
+    void setup() {
+        createResources();
+    }
+
+    @AfterEach
+    void teardown() throws Exception {
+        deleteResources();
+        waitForDeletion(10000);
+    }
 
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
-    @BeforeEach
-    void setTestName(TestInfo testInfo) {
-        testName = testInfo.getTestMethod().get().getName();
     }
 }

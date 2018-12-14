@@ -120,9 +120,15 @@ class MultipleNamespaceST extends AbstractST {
     }
 
     @AfterEach
-    void deleteSecondNamespaceResources() {
+    void deleteSecondNamespaceResources() throws Exception {
         secondNamespaceResources.deleteResources();
+        waitForDeletion(10000);
         kubeClient.namespace(DEFAULT_NAMESPACE);
+    }
+
+    @AfterEach
+    void teardown() throws Exception {
+        deleteResources();
     }
 
     private static Resources classResources() {

@@ -47,7 +47,6 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -81,7 +80,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 
-public class AbstractST {
+public abstract class AbstractST {
 
     static {
         Crds.registerCustomKinds();
@@ -111,7 +110,7 @@ public class AbstractST {
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
     static KubeClient<?> kubeClient = cluster.client();
 
-    private Resources resources;
+    Resources resources;
     static String operationID;
     static String testClass;
     static String testName;
@@ -390,34 +389,35 @@ public class AbstractST {
     }
 
     @BeforeEach
-    public void createResources(TestInfo testInfo) {
+    void setTestName(TestInfo testInfo) {
+        testName = testInfo.getTestMethod().get().getName();
+    }
+
+    public void createResources() {
         LOGGER.info("Creating resources before the test");
         resources = new Resources(namespacedClient());
-        testName = testInfo.getTestMethod().get().getName();
 
         String pods = kubeClient.exec("/bin/bash", "-c", "oc get pods").out();
         LOGGER.info("Pods before test:\n " + pods + "\n -----------------------------------------");
     }
 
-    @AfterEach
     public void deleteResources() throws Exception {
         collectLogs();
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
         resources = null;
 
-        waitForDeletion(10000);
-
         String pods = kubeClient.exec("/bin/bash", "-c", "oc get pods").out();
         LOGGER.info("Pods after test:\n " + pods + "\n -----------------------------------------");
     }
+
 
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         testClass = testInfo.getTestClass().get().getSimpleName();
     }
 
-    private static void waitForDeletion(long time) throws Exception {
+    void waitForDeletion(long time) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
         List<Pod> podList = client.pods().inNamespace(kubeClient.namespace()).list().getItems();
@@ -970,7 +970,7 @@ public class AbstractST {
 
     private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
 
-    private void collectLogs() {
+    void collectLogs() {
         // Get current date to create a unique folder
         String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
         String logDir = !testName.isEmpty() ?

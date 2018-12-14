@@ -12,6 +12,8 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -133,6 +135,10 @@ public class StrimziUpgradeST extends AbstractST {
             }
             throw e;
         }
+
+        client.pods().list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith("my-cluster"))
+                .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
     }
 
     private void waitTillAllPodsUseImage(Map<String, String> matchLabels, String image) {
@@ -151,5 +157,14 @@ public class StrimziUpgradeST extends AbstractST {
         });
     }
 
+    @BeforeEach
+    void setup() {
+        createResources();
+    }
 
+    @AfterEach
+    void teardown() throws Exception {
+        deleteResources();
+        waitForDeletion(10000);
+    }
 }
