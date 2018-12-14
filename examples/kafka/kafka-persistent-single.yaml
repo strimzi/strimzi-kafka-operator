@@ -15,13 +15,13 @@ spec:
       transaction.state.log.min.isr: 1
     storage:
       type: persistent-claim
-      size: 1Gi
+      size: 100Gi
       deleteClaim: false
   zookeeper:
     replicas: 1
     storage:
       type: persistent-claim
-      size: 1Gi
+      size: 100Gi
       deleteClaim: false
   entityOperator:
     topicOperator: {}

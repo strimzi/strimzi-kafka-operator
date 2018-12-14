@@ -35,12 +35,12 @@ parameters:
   displayName: Zookeeper Volume Capacity
   name: ZOOKEEPER_VOLUME_CAPACITY
   required: true
-  value: 1Gi
+  value: 100Gi
 - description: Volume space available for Kafka data, e.g. 512Mi, 2Gi.
   displayName: Kafka Volume Capacity
   name: KAFKA_VOLUME_CAPACITY
   required: true
-  value: 1Gi
+  value: 100Gi
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Zookeeper healthcheck initial delay
   name: ZOOKEEPER_HEALTHCHECK_DELAY
