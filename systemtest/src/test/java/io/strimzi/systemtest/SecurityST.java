@@ -7,6 +7,8 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.utils.AvailabilityVerifier;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;

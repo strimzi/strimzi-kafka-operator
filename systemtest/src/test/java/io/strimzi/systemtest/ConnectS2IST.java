@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
