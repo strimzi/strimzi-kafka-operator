@@ -4,22 +4,34 @@
  */
 package io.strimzi.operator.cluster.model;
 
-
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.Probe;
+import io.fabric8.kubernetes.api.model.ProbeBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
-import io.strimzi.operator.common.model.Labels;
+import io.strimzi.api.kafka.model.CpuMemory;
+import io.strimzi.api.kafka.model.Resources;
+import io.strimzi.api.kafka.model.TlsSidecar;
+import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
+import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
+import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 
 public class ModelUtils {
     private ModelUtils() {}
@@ -105,5 +117,74 @@ public class ModelUtils {
             result.add(new EnvVar(entry.getKey(), entry.getValue(), null));
         }
         return result;
+    }
+
+    static Probe createExecProbe(List<String> command, int initialDelay, int timeout) {
+        Probe probe = new ProbeBuilder().withNewExec()
+                .withCommand(command)
+                .endExec()
+                .withInitialDelaySeconds(initialDelay)
+                .withTimeoutSeconds(timeout)
+                .build();
+        AbstractModel.log.trace("Created exec probe {}", probe);
+        return probe;
+    }
+
+    static Probe tlsSidecarReadinessProbe(TlsSidecar tlsSidecar) {
+        int tlsSidecarReadinessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
+        int tlsSidecarReadinessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
+        if (tlsSidecar != null && tlsSidecar.getReadinessProbe() != null) {
+            tlsSidecarReadinessInitialDelay = tlsSidecar.getReadinessProbe().getInitialDelaySeconds();
+            tlsSidecarReadinessTimeout = tlsSidecar.getReadinessProbe().getTimeoutSeconds();
+        }
+        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarReadinessInitialDelay, tlsSidecarReadinessTimeout);
+    }
+
+    static Probe tlsSidecarLivenessProbe(TlsSidecar tlsSidecar) {
+        int tlsSidecarLivenessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
+        int tlsSidecarLivenessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
+        if (tlsSidecar != null && tlsSidecar.getLivenessProbe() != null) {
+            tlsSidecarLivenessInitialDelay = tlsSidecar.getLivenessProbe().getInitialDelaySeconds();
+            tlsSidecarLivenessTimeout = tlsSidecar.getLivenessProbe().getTimeoutSeconds();
+        }
+        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessInitialDelay, tlsSidecarLivenessTimeout);
+    }
+
+    static ResourceRequirements resources(Resources resources) {
+        if (resources != null) {
+            ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
+            CpuMemory limits = resources.getLimits();
+            if (limits != null
+                    && limits.milliCpuAsInt() > 0) {
+                builder.addToLimits("cpu", new Quantity(normalizeCpu(limits.getMilliCpu())));
+            }
+            if (limits != null
+                    && limits.memoryAsLong() > 0) {
+                builder.addToLimits("memory", new Quantity(normalizeMemory(limits.getMemory())));
+            }
+            CpuMemory requests = resources.getRequests();
+            if (requests != null
+                    && requests.milliCpuAsInt() > 0) {
+                builder.addToRequests("cpu", new Quantity(normalizeCpu(requests.getMilliCpu())));
+            }
+            if (requests != null
+                    && requests.memoryAsLong() > 0) {
+                builder.addToRequests("memory", new Quantity(normalizeMemory(requests.getMemory())));
+            }
+            return builder.build();
+        }
+        return null;
+    }
+
+    static ResourceRequirements tlsSidecarResources(TlsSidecar tlsSidecar) {
+        return resources(tlsSidecar != null ? tlsSidecar.getResources() : null);
+    }
+
+    public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
+
+    static EnvVar tlsSidecarLogEnvVar(TlsSidecar tlsSidecar) {
+        return AbstractModel.buildEnvVar(TLS_SIDECAR_LOG_LEVEL,
+                (tlsSidecar != null && tlsSidecar.getLogLevel() != null ?
+                        tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 }

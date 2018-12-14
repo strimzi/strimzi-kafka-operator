@@ -189,7 +189,7 @@ public class AbstractModelTest {
             }
         };
         abstractModel.setResources(opts);
-        Assert.assertEquals("1", abstractModel.resources(opts).getLimits().get("cpu").getAmount());
+        Assert.assertEquals("1", ModelUtils.resources(opts).getLimits().get("cpu").getAmount());
     }
 
     @Test

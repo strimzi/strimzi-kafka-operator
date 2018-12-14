@@ -17,9 +17,7 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.TlsSidecar;
-import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
@@ -75,7 +73,6 @@ public class TopicOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
-    public static final String ENV_VAR_TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
     public static final String TO_CLUSTER_ROLE_NAME = "strimzi-topic-operator";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
@@ -275,22 +272,22 @@ public class TopicOperator extends AbstractModel {
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
-                .withResources(resources(getResources()))
+                .withResources(ModelUtils.resources(getResources()))
                 .withVolumeMounts(getVolumeMounts())
                 .build();
 
-        String tlsSidecarImage = (tlsSidecar != null && tlsSidecar.getImage() != null) ?
-                tlsSidecar.getImage() : TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
-
-        Resources tlsSidecarResources = (tlsSidecar != null) ? tlsSidecar.getResources() : null;
-
-        TlsSidecarLogLevel tlsSidecarLogLevel = (tlsSidecar != null) ? tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE;
+        String tlsSidecarImage = TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
+        if (tlsSidecar != null && tlsSidecar.getImage() != null) {
+            tlsSidecarImage = tlsSidecar.getImage();
+        }
 
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
-                .withResources(resources(tlsSidecarResources))
-                .withEnv(asList(buildEnvVar(ENV_VAR_TLS_SIDECAR_LOG_LEVEL, tlsSidecarLogLevel.toValue()),
+                .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
+                .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
+                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
                         buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
                         createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))

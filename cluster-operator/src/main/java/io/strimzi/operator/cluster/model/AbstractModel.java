@@ -29,8 +29,6 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
@@ -78,8 +76,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
-import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 import static java.util.Arrays.asList;
 
 public abstract class AbstractModel {
@@ -698,17 +694,6 @@ public abstract class AbstractModel {
         return s;
     }
 
-    protected Probe createExecProbe(String command, int initialDelay, int timeout) {
-        Probe probe = new ProbeBuilder().withNewExec()
-                .withCommand(command)
-                .endExec()
-                .withInitialDelaySeconds(initialDelay)
-                .withTimeoutSeconds(timeout)
-                .build();
-        log.trace("Created exec probe {}", probe);
-        return probe;
-    }
-
     protected Probe createTcpSocketProbe(int port, int initialDelay, int timeout) {
         Probe probe = new ProbeBuilder()
                 .withNewTcpSocket()
@@ -935,32 +920,6 @@ public abstract class AbstractModel {
             Collectors.toMap(EnvVar::getName, EnvVar::getValue,
                 // On duplicates, last in wins
                 (u, v) -> v));
-    }
-
-    public static ResourceRequirements resources(Resources resources) {
-        if (resources != null) {
-            ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
-            CpuMemory limits = resources.getLimits();
-            if (limits != null
-                    && limits.milliCpuAsInt() > 0) {
-                builder.addToLimits("cpu", new Quantity(normalizeCpu(limits.getMilliCpu())));
-            }
-            if (limits != null
-                    && limits.memoryAsLong() > 0) {
-                builder.addToLimits("memory", new Quantity(normalizeMemory(limits.getMemory())));
-            }
-            CpuMemory requests = resources.getRequests();
-            if (requests != null
-                    && requests.milliCpuAsInt() > 0) {
-                builder.addToRequests("cpu", new Quantity(normalizeCpu(requests.getMilliCpu())));
-            }
-            if (requests != null
-                    && requests.memoryAsLong() > 0) {
-                builder.addToRequests("memory", new Quantity(normalizeMemory(requests.getMemory())));
-            }
-            return builder.build();
-        }
-        return null;
     }
 
     public void setResources(Resources resources) {

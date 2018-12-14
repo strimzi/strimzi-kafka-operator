@@ -26,6 +26,9 @@ import java.util.Map;
 public class TlsSidecar extends Sidecar {
     private static final long serialVersionUID = 1L;
 
+    public static final int DEFAULT_HEALTHCHECK_DELAY = 15;
+    public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+
     private TlsSidecarLogLevel logLevel = TlsSidecarLogLevel.NOTICE;
     private Probe livenessProbe;
     private Probe readinessProbe;
