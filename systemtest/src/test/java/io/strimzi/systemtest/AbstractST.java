@@ -66,6 +66,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
@@ -103,8 +104,10 @@ public abstract class AbstractST {
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     private static final long GET_BROKER_API_TIMEOUT = 60_000L;
     private static final long GET_BROKER_API_INTERVAL = 5_000L;
-    private static final long JOB_TIMEOUT = 300000;
-    private static final long JOB_INTERVAL = 5000;
+    static final long GLOBAL_TIMEOUT = 300000;
+    static final long GLOBAL_POLL_INTERVAL = 5000;
+    static final long TEARDOWN_GLOBAL_WAIT = 10000;
+    static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
@@ -393,7 +396,12 @@ public abstract class AbstractST {
         testName = testInfo.getTestMethod().get().getName();
     }
 
-    public void createResources() {
+    @BeforeAll
+    static void setTestClassName(TestInfo testInfo) {
+        testClass = testInfo.getTestClass().get().getSimpleName();
+    }
+
+    protected void createResources() {
         LOGGER.info("Creating resources before the test");
         resources = new Resources(namespacedClient());
 
@@ -401,7 +409,7 @@ public abstract class AbstractST {
         LOGGER.info("Pods before test:\n " + pods + "\n -----------------------------------------");
     }
 
-    public void deleteResources() throws Exception {
+    protected void deleteResources() throws Exception {
         collectLogs();
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
@@ -409,25 +417,6 @@ public abstract class AbstractST {
 
         String pods = kubeClient.exec("/bin/bash", "-c", "oc get pods").out();
         LOGGER.info("Pods after test:\n " + pods + "\n -----------------------------------------");
-    }
-
-
-    @BeforeAll
-    static void createClassResources(TestInfo testInfo) {
-        testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
-    void waitForDeletion(long time) throws Exception {
-        LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
-        Thread.sleep(time);
-        List<Pod> podList = client.pods().inNamespace(kubeClient.namespace()).list().getItems();
-        StringBuilder nonTerminated = new StringBuilder();
-        if (podList.size() > 1) {
-            for (Pod p : podList) {
-                nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase());
-            }
-            throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
-        }
     }
 
     Resources resources() {
@@ -504,7 +493,7 @@ public abstract class AbstractST {
         // Wait for the job to succeed
         try {
             LOGGER.debug("Waiting for Job completion: {}", job);
-            waitFor("Job completion", JOB_INTERVAL, JOB_TIMEOUT, () -> {
+            waitFor("Job completion", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
                 Job jobs = namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get();
                 JobStatus status;
                 if (jobs == null || (status = jobs.getStatus()) == null) {
@@ -1039,7 +1028,7 @@ public abstract class AbstractST {
     }
 
     void waitTillSecretExists(String secretName) {
-        waitFor("secret " + secretName + " exists", JOB_INTERVAL, JOB_TIMEOUT,
+        waitFor("secret " + secretName + " exists", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
             () -> namespacedClient().secrets().withName(secretName).get() != null);
         try {
             Thread.sleep(60000L);
@@ -1051,7 +1040,22 @@ public abstract class AbstractST {
     void waitForPodDeletion(String namespace, String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        TestUtils.waitFor("statefulset " + name, JOB_INTERVAL, JOB_TIMEOUT,
+        TestUtils.waitFor("statefulset " + name, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
             () -> client.pods().inNamespace(namespace).withName(name).get() == null);
+    }
+
+    void waitForDeletion(long time, String namespace) throws Exception {
+        LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
+        Thread.sleep(time);
+        Stream<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX));
+
+        StringBuilder nonTerminated = new StringBuilder();
+        if (podStream.count() > 0) {
+            podStream.forEach(
+                p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
+            );
+            throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
+        }
     }
 }

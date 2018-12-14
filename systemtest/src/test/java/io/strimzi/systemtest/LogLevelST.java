@@ -148,7 +148,7 @@ class LogLevelST extends AbstractST {
     }
 
     @BeforeAll
-    static void deployKafkaCluster(TestInfo testInfo) {
+    static void createClassResources(TestInfo testInfo) {
         LOGGER.info("Create resources for the tests");
         testClass = testInfo.getTestClass().get().getSimpleName();
         operationID = startDeploymentMeasuring();

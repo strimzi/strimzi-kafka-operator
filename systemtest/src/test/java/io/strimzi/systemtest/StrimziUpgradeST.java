@@ -159,13 +159,13 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     @BeforeEach
-    void setup() {
+    void createTestResources() {
         createResources();
     }
 
     @AfterEach
-    void teardown() throws Exception {
+    void deleteTestResources() throws Exception {
         deleteResources();
-        waitForDeletion(10000);
+        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
     }
 }

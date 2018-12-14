@@ -31,11 +31,9 @@ import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
@@ -952,18 +950,13 @@ class KafkaST extends AbstractST {
     }
 
     @BeforeEach
-    void setup() {
+    void createTestResources() {
         createResources();
     }
 
     @AfterEach
-    void teardown() throws Exception {
+    void deleteTestResources() throws Exception {
         deleteResources();
-        waitForDeletion(10000);
-    }
-
-    @BeforeAll
-    static void createClassResources(TestInfo testInfo) {
-        testClass = testInfo.getTestClass().get().getSimpleName();
+        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
     }
 }

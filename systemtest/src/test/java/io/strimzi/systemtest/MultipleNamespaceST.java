@@ -87,6 +87,19 @@ class MultipleNamespaceST extends AbstractST {
         kubeClient.waitForDeployment(CLUSTER_NAME + "-mirror-maker", 1);
     }
 
+    @BeforeEach
+    void createSecondNamespaceResources() {
+        kubeClient.namespace(SECOND_NAMESPACE);
+        secondNamespaceResources = new Resources(namespacedClient());
+        kubeClient.namespace(DEFAULT_NAMESPACE);
+    }
+
+    @AfterEach
+    void deleteSecondNamespaceResources() throws Exception {
+        secondNamespaceResources.deleteResources();
+        waitForDeletion(TEARDOWN_GLOBAL_WAIT, SECOND_NAMESPACE);
+        kubeClient.namespace(DEFAULT_NAMESPACE);
+    }
 
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
@@ -110,25 +123,6 @@ class MultipleNamespaceST extends AbstractST {
         LOGGER.info("Deleting resources after the test class");
         classResources.deleteResources();
         classResources = null;
-    }
-
-    @BeforeEach
-    void createSecondNamespaceResources() {
-        kubeClient.namespace(SECOND_NAMESPACE);
-        secondNamespaceResources = new Resources(namespacedClient());
-        kubeClient.namespace(DEFAULT_NAMESPACE);
-    }
-
-    @AfterEach
-    void deleteSecondNamespaceResources() throws Exception {
-        secondNamespaceResources.deleteResources();
-        waitForDeletion(10000);
-        kubeClient.namespace(DEFAULT_NAMESPACE);
-    }
-
-    @AfterEach
-    void teardown() throws Exception {
-        deleteResources();
     }
 
     private static Resources classResources() {
