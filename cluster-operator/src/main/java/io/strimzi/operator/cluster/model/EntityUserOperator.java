@@ -187,7 +187,7 @@ public class EntityUserOperator extends AbstractModel {
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
-                .withResources(resources(getResources()))
+                .withResources(ModelUtils.resources(getResources()))
                 .withVolumeMounts(getVolumeMounts())
                 .build());
     }
