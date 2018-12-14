@@ -88,4 +88,13 @@ public class KafkaCrdIT extends AbstractCrdIT {
     public void testKafkaWithTlsSidecarWithCustomConfiguration() {
         createDelete(Kafka.class, "Kafka-with-tls-sidecar-with-custom-configuration.yaml");
     }
+
+    @Test
+    public void testKafkaWithTlsSidecarWithInvalidLogLevel() {
+        try {
+            createDelete(Kafka.class, "Kafka-with-tls-sidecar-invalid-loglevel.yaml");
+        } catch (KubeClusterException.InvalidResource e) {
+            assertTrue(e.getMessage().contains("spec.kafka.tlsSidecar.logLevel in body should be one of [emerg alert crit err warning notice info debug]"));
+        }
+    }
 }
