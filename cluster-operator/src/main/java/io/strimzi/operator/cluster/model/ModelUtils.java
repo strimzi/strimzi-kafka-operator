@@ -143,7 +143,7 @@ public class ModelUtils {
     static Probe tlsSidecarLivenessProbe(TlsSidecar tlsSidecar) {
         int tlsSidecarLivenessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
         int tlsSidecarLivenessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
-        if (tlsSidecar.getLivenessProbe() != null) {
+        if (tlsSidecar != null && tlsSidecar.getLivenessProbe() != null) {
             tlsSidecarLivenessInitialDelay = tlsSidecar.getLivenessProbe().getInitialDelaySeconds();
             tlsSidecarLivenessTimeout = tlsSidecar.getLivenessProbe().getTimeoutSeconds();
         }
