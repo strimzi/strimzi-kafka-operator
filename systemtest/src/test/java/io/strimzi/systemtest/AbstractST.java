@@ -404,9 +404,6 @@ public abstract class AbstractST {
     protected void createResources() {
         LOGGER.info("Creating resources before the test");
         resources = new Resources(namespacedClient());
-
-        String pods = kubeClient.exec("/bin/bash", "-c", "oc get pods").out();
-        LOGGER.info("Pods before test:\n " + pods + "\n -----------------------------------------");
     }
 
     protected void deleteResources() throws Exception {
@@ -414,9 +411,6 @@ public abstract class AbstractST {
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
         resources = null;
-
-        String pods = kubeClient.exec("/bin/bash", "-c", "oc get pods").out();
-        LOGGER.info("Pods after test:\n " + pods + "\n -----------------------------------------");
     }
 
     Resources resources() {
