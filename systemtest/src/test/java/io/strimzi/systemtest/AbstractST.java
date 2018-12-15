@@ -102,12 +102,12 @@ public abstract class AbstractST {
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
+    private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
     private static final long GET_BROKER_API_TIMEOUT = 60_000L;
     private static final long GET_BROKER_API_INTERVAL = 5_000L;
     static final long GLOBAL_TIMEOUT = 300000;
-    static final long GLOBAL_POLL_INTERVAL = 5000;
+    static final long GLOBAL_POLL_INTERVAL = 1000;
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
-    static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();

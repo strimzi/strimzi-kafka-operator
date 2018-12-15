@@ -105,14 +105,13 @@ public class StrimziUpgradeST extends AbstractST {
             StUtils.waitTillSsHasRolled(client, NAMESPACE, zkSsName, zkPods);
             LOGGER.info("Checking ZK pods using new image");
             waitTillAllPodsUseImage(client.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/zookeeper:latest");
+                    "strimzi/zookeeper:latest-kafka-2.0.0");
             LOGGER.info("Waiting for Kafka SS roll");
             StUtils.waitTillSsHasRolled(client, NAMESPACE, kafkaSsName, kafkaPods);
             LOGGER.info("Checking Kafka pods using new image");
             waitTillAllPodsUseImage(client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/kafka:latest");
+                    "strimzi/kafka:latest-kafka-2.1.0");
             LOGGER.info("Waiting for EO Dep roll");
-
             // Check the TO and UO also got upgraded
             StUtils.waitTillDepHasRolled(client, NAMESPACE, eoDepName, eoPods);
             LOGGER.info("Checking EO pod using new image");
@@ -136,10 +135,6 @@ public class StrimziUpgradeST extends AbstractST {
             }
             throw e;
         }
-
-        client.pods().list().getItems().stream()
-                .filter(p -> p.getMetadata().getName().startsWith("my-cluster"))
-                .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
     }
 
     private void waitTillAllPodsUseImage(Map<String, String> matchLabels, String image) {
@@ -147,7 +142,7 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     private void waitTillAllContainersUseImage(Map<String, String> matchLabels, int container, String image) {
-        TestUtils.waitFor("All pods matching " + matchLabels + " to have image " + image, 1_000, 300_000, () -> {
+        TestUtils.waitFor("All pods matching " + matchLabels + " to have image " + image, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
             List<Pod> pods1 = client.pods().inNamespace(NAMESPACE).withLabels(matchLabels).list().getItems();
             for (Pod pod : pods1) {
                 if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
