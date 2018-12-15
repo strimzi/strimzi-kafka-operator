@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.containsString;
 @ExtendWith(StrimziExtension.class)
 @Namespace(ConnectS2IST.NAMESPACE)
 @ClusterOperator
+@Disabled
 class ConnectS2IST extends AbstractST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
@@ -38,7 +39,6 @@ class ConnectS2IST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
     private static Resources classResources;
 
-    @Disabled
     @Test
     @OpenShiftOnly
     @Tag(REGRESSION)
