@@ -1047,7 +1047,7 @@ public abstract class AbstractST {
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
             Stream<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
-                    p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX));
+                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX));
             podStream.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
