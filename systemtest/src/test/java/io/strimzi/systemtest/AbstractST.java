@@ -1041,11 +1041,13 @@ public abstract class AbstractST {
     void waitForDeletion(long time, String namespace) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
-        Stream<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
-            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX));
+        long podCount = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
 
         StringBuilder nonTerminated = new StringBuilder();
-        if (podStream.count() > 0) {
+        if (podCount > 0) {
+            Stream<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+                    p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX));
             podStream.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
