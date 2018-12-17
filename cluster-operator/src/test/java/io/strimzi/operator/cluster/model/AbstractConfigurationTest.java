@@ -188,11 +188,8 @@ public class AbstractConfigurationTest {
     @Test
     public void testJsonWithDifferentTypes() {
         JsonObject configuration = new JsonObject().put("var1", 1).put("var2", "bbb").put("var3", new JsonObject().put("xxx", "yyy"));
-        String expectedConfiguration = defaultConfiguration +
-                "var2=bbb" + LINE_SEPARATOR +
-                "var1=1" + LINE_SEPARATOR;
         try {
-            AbstractConfiguration config = new TestConfiguration(configuration);
+            new TestConfiguration(configuration);
             fail("Expected it to throw an exception");
         } catch (InvalidConfigParameterException e) {
             assertEquals("var3", e.getKey());

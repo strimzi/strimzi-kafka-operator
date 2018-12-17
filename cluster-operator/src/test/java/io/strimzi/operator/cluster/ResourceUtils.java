@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -291,7 +290,6 @@ public class ResourceUtils {
         livenessProbe.setTimeoutSeconds(healthTimeout);
         kafkaClusterSpec.setLivenessProbe(livenessProbe);
         kafkaClusterSpec.setReadinessProbe(livenessProbe);
-        ObjectMapper om = new ObjectMapper();
         if (metricsCm != null) {
             kafkaClusterSpec.setMetrics(metricsCm);
         }

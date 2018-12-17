@@ -498,7 +498,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
-        Set<String> deleted = new CopyOnWriteArraySet<>();
 
         Async async = context.async(2);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,

@@ -87,7 +87,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     }
 
     public Future<Void> endpointReadiness(String namespace, Service desired, long pollInterval, long operationTimeoutMs) {
-        return endpointOperations.readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs);
+        return endpointOperations.readiness(namespace, desired.getMetadata().getName(), pollInterval, operationTimeoutMs);
     }
 
     /**
