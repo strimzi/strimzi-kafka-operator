@@ -115,7 +115,6 @@ public class Main {
                 config.versions());
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
-        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2I> kafkaConnectS2iCrdOperator = null;
         if (isOpenShift) {
             kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations, configMapOperations, secretOperations, certManager, config.versions());
         } else {

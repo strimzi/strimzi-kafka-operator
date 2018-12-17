@@ -11,7 +11,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.common.operator.MockCertManager;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,7 +34,6 @@ public class ZookeeperSetOperatorTest {
 
     @Before
     public void before() {
-        MockCertManager certManager = new MockCertManager();
         KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
         a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true);
         b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true);

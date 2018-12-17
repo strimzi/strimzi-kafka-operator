@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster;
 
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.InvalidConfigurationException;
-import io.strimzi.operator.common.model.Labels;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -21,12 +20,9 @@ import static org.junit.Assert.assertEquals;
 
 public class ClusterOperatorConfigTest {
 
-    private static Labels labels;
     private static Map<String, String> envVars = new HashMap<>(4);
 
     static {
-        labels = Labels.forKind("cluster");
-
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "30000");

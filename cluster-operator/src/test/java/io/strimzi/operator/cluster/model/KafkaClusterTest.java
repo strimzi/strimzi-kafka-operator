@@ -417,8 +417,6 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
 
-        ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
-
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
@@ -493,7 +491,6 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
@@ -547,7 +544,6 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
@@ -580,7 +576,6 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
@@ -634,7 +629,6 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        ClusterCa clusterCa = ResourceUtils.createInitialClusterCa(namespace, cluster);
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();

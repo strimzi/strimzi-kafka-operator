@@ -40,11 +40,6 @@ import static java.util.Collections.singletonList;
 @Deprecated
 public class TopicOperator extends AbstractModel {
 
-    /**
-     * The default kind of CMs that the Topic Operator will be configured to watch for
-     */
-    public static final String TOPIC_CM_KIND = "topic";
-
     protected static final String TOPIC_OPERATOR_NAME = "topic-operator";
     private static final String NAME_SUFFIX = "-topic-operator";
     private static final String CERTS_SUFFIX = NAME_SUFFIX + "-certs";

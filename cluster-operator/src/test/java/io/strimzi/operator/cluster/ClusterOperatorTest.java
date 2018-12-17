@@ -44,7 +44,6 @@ import static org.mockito.Mockito.when;
 @RunWith(VertxUnitRunner.class)
 public class ClusterOperatorTest {
 
-    public static final String STRIMZI_IO_KIND_CLUSTER = "strimzi.io/kind=cluster";
     private Vertx vertx;
 
     @Before
