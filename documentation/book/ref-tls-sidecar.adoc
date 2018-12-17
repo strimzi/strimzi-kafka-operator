@@ -11,11 +11,13 @@ The TLS sidecar can be configured using the `tlsSidecar` property in:
 * `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator`
 
-The TLS sidecar supports three additional options:
+The TLS sidecar supports the following additional options:
 
 * `image`
 * `resources`
 * `logLevel`
+* `readinessProbe`
+* `livenessProbe`
 
 The `resources` property can be used to specify the xref:assembly-resource-limits-and-requests-{context}[memory and CPU resources] allocated for the TLS sidecar.
 
@@ -35,6 +37,8 @@ Following logging levels are supported:
 * debug
 
 The default value is _notice_.
+
+For more information about configuring the `readinessProbe` and `livenessProbe` properties for the healthchecks, see xref:ref-healthchecks-{context}[].
 
 .Example of TLS sidecar configuration
 [source,yaml,subs=attributes+]
@@ -56,6 +60,12 @@ spec:
           cpu: 500m
           memory: 128Mi
       logLevel: debug
+      readinessProbe:
+        initialDelaySeconds: 15
+        timeoutSeconds: 5
+      livenessProbe:
+        initialDelaySeconds: 15
+        timeoutSeconds: 5
     # ...
   zookeeper:
     # ...
