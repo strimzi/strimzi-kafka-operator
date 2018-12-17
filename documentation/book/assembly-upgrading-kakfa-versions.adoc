@@ -17,6 +17,6 @@ include::ref-kafka-versions.adoc[leveloffset=+1]
 
 include::proc-upgrading-brokers-newer-kafka.adoc[leveloffset=+1]
 
-include::the-downgrade-process.adoc[leveloffset=+1]
+include::con-the-downgrade-process.adoc[leveloffset=+1]
 
 include::proc-downgrading-brokers-newer-kafka.adoc[leveloffset=+1]
