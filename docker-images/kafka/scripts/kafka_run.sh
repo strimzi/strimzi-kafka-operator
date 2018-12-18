@@ -59,5 +59,8 @@ if [ -z "$KAFKA_HEAP_OPTS" -a -n "${DYNAMIC_HEAP_FRACTION}" ]; then
     fi
 fi
 
+# exporting the GC options env var recognized by the Kafka scripts
+export KAFKA_GC_LOG_OPTS=$STRIMZI_KAFKA_GC_LOG_OPTS
+
 # starting Kafka server with final configuration
 exec $KAFKA_HOME/bin/kafka-server-start.sh /tmp/strimzi.properties

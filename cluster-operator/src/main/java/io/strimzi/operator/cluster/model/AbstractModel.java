@@ -98,7 +98,7 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
-    public static final String ENV_VAR_KAFKA_GC_LOG_OPTS = "KAFKA_GC_LOG_OPTS";
+    public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_OPTS = "STRIMZI_KAFKA_GC_LOG_OPTS";
     public static final String ENV_VAR_STRIMZI_GC_LOG_OPTS = "STRIMZI_GC_LOG_OPTS";
 
     private static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
