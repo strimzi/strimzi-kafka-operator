@@ -107,7 +107,6 @@ def runSystemTests() {
 
 def postAction(String artifactDir) {
     def status = currentBuild.result
-    storeArtifacts(artifactDir)
     //store test results from build and system tests
     junit testResults: '**/TEST-*.xml', allowEmptyResults: true
     //archive test results and openshift logs
@@ -166,7 +165,7 @@ pipeline {
                 sh 'rm -rf artifacts && mkdir -p artifacts'
             }
         }
-        stage('Start openshift') {
+        stage('Start Openshift') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     script {
