@@ -92,6 +92,7 @@ public class AvailabilityVerifier {
             producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
             consumerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
             File tsFile = File.createTempFile(getClass().getName(), ".truststore");
+            tsFile.deleteOnExit();
             FileOutputStream tsOs = new FileOutputStream(tsFile);
             try {
                 producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
@@ -140,10 +141,13 @@ public class AvailabilityVerifier {
 
     private File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
         File caFile = File.createTempFile(getClass().getName(), ".crt");
+        caFile.deleteOnExit();
         Files.write(caFile.toPath(), ca);
         File certFile = File.createTempFile(getClass().getName(), ".crt");
+        certFile.deleteOnExit();
         Files.write(certFile.toPath(), cert);
         File keyFile = File.createTempFile(getClass().getName(), ".key");
+        keyFile.deleteOnExit();
         Files.write(keyFile.toPath(), key);
         File keystore = File.createTempFile(getClass().getName(), ".keystore");
         keystore.delete(); // Note horrible race condition, but this is only for testing
@@ -161,6 +165,7 @@ public class AvailabilityVerifier {
                 "-out", keystore.getAbsolutePath()).inheritIO().start().waitFor() != 0) {
             fail();
         }
+        keystore.deleteOnExit();
         return keystore;
     }
 
