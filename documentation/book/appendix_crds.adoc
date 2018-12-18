@@ -547,7 +547,7 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 [options="header"]
 |====
 |Field                    |Description
-|gcLoggingEnabled  1.2+<.<|If the Garbage Collection logging is enabled.
+|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled.
 |boolean
 |====
 
