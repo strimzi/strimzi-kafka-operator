@@ -316,7 +316,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 |string
 |-Xmx              1.2+<.<|-Xmx option to to the JVM.
 |string
-|gcLoggingEnabled  1.2+<.<|Enable or disable Garbage Collection logging. It is enabled by default.
+|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is true.
 |boolean
 |====
 
@@ -547,7 +547,7 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 [options="header"]
 |====
 |Field                    |Description
-|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled.
+|gcLoggingEnabled  1.2+<.<|Specifies whether the Garbage Collection logging is enabled. The default is true.
 |boolean
 |====
 
@@ -657,7 +657,7 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |Field                                |Description
 |generateCertificateAuthority  1.2+<.<|If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
 |boolean
-|validityDays                  1.2+<.<|The number of days generated certificates should be valid for. Default is 365.
+|validityDays                  1.2+<.<|The number of days generated certificates should be valid for. The default is 365.
 |integer
 |renewalDays                   1.2+<.<|The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30.
 |integer

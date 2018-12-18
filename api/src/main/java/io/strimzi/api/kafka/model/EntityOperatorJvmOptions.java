@@ -25,7 +25,7 @@ public class EntityOperatorJvmOptions implements Serializable {
 
     private boolean gcLoggingEnabled = true;
 
-    @Description("Specifies whether the Garbage Collection logging is enabled")
+    @Description("Specifies whether the Garbage Collection logging is enabled. The default is true.")
     public boolean isGcLoggingEnabled() {
         return gcLoggingEnabled;
     }
