@@ -174,7 +174,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
         Logging logging = zookeeperClusterSpec.getLogging();
         zk.setLogging(logging == null ? new InlineLogging() : logging);
-        zk.setGcLoggingDisabled(zookeeperClusterSpec.getJvmOptions() == null ? false : zookeeperClusterSpec.getJvmOptions().isGcLoggingDisabled());
+        zk.setGcLoggingEnabled(zookeeperClusterSpec.getJvmOptions() == null ? true : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled());
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
             zk.setMetricsEnabled(true);

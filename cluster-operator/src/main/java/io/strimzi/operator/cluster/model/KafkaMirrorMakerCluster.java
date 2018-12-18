@@ -170,7 +170,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                     kafkaMirrorMaker.getSpec().getImage(),
                     kafkaMirrorMaker.getSpec().getVersion()));
             kafkaMirrorMakerCluster.setLogging(kafkaMirrorMaker.getSpec().getLogging());
-            kafkaMirrorMakerCluster.setGcLoggingDisabled(kafkaMirrorMaker.getSpec().getJvmOptions() == null ? false : kafkaMirrorMaker.getSpec().getJvmOptions().isGcLoggingDisabled());
+            kafkaMirrorMakerCluster.setGcLoggingEnabled(kafkaMirrorMaker.getSpec().getJvmOptions() == null ? true : kafkaMirrorMaker.getSpec().getJvmOptions().isGcLoggingEnabled());
 
             Map<String, Object> metrics = kafkaMirrorMaker.getSpec().getMetrics();
             if (metrics != null) {

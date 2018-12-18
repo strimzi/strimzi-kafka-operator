@@ -155,7 +155,7 @@ public abstract class AbstractModel {
     protected Map validLoggerFields;
     private final String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
     private Logging logging;
-    protected boolean gcLoggingDisabled;
+    protected boolean gcLoggingEnabled = true;
 
     // Templates
     protected Map<String, String> templateStatefulSetLabels;
@@ -266,11 +266,11 @@ public abstract class AbstractModel {
     }
 
     public String getGcLoggingOptions() {
-        return gcLoggingDisabled ? " " : DEFAULT_KAFKA_GC_LOGGING;
+        return gcLoggingEnabled ? DEFAULT_KAFKA_GC_LOGGING : " ";
     }
 
-    protected void setGcLoggingDisabled(boolean gcLoggingDisabled) {
-        this.gcLoggingDisabled = gcLoggingDisabled;
+    protected void setGcLoggingEnabled(boolean gcLoggingEnabled) {
+        this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
 
