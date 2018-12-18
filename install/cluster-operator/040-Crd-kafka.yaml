@@ -350,7 +350,7 @@ spec:
                     -Xmx:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
-                    gcLoggingDisabled:
+                    gcLoggingEnabled:
                       type: boolean
                 resources:
                   type: object
@@ -731,7 +731,7 @@ spec:
                     -Xmx:
                       type: string
                       pattern: '[0-9]+[mMgG]?'
-                    gcLoggingDisabled:
+                    gcLoggingEnabled:
                       type: boolean
                 resources:
                   type: object
@@ -1134,7 +1134,7 @@ spec:
                 jvmOptions:
                   type: object
                   properties:
-                    gcLoggingDisabled:
+                    gcLoggingEnabled:
                       type: boolean
             entityOperator:
               type: object
@@ -1193,7 +1193,7 @@ spec:
                     jvmOptions:
                       type: object
                       properties:
-                        gcLoggingDisabled:
+                        gcLoggingEnabled:
                           type: boolean
                 userOperator:
                   type: object
@@ -1246,7 +1246,7 @@ spec:
                     jvmOptions:
                       type: object
                       properties:
-                        gcLoggingDisabled:
+                        gcLoggingEnabled:
                           type: boolean
                 affinity:
                   type: object

@@ -205,7 +205,7 @@ public class TopicOperator extends AbstractModel {
 
     @Override
     public String getGcLoggingOptions() {
-        return gcLoggingDisabled ? " " : DEFAULT_STRIMZI_GC_LOGGING;
+        return gcLoggingEnabled ? DEFAULT_STRIMZI_GC_LOGGING : " ";
     }
 
     /**
@@ -231,7 +231,7 @@ public class TopicOperator extends AbstractModel {
             result.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeoutSeconds() * 1_000);
             result.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
             result.setLogging(tcConfig.getLogging());
-            result.setGcLoggingDisabled(tcConfig.getJvmOptions() == null ? false : tcConfig.getJvmOptions().isGcLoggingDisabled());
+            result.setGcLoggingEnabled(tcConfig.getJvmOptions() == null ? true : tcConfig.getJvmOptions().isGcLoggingEnabled());
             result.setResources(tcConfig.getResources());
             result.setUserAffinity(tcConfig.getAffinity());
             result.setTlsSidecar(tcConfig.getTlsSidecar());

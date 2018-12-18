@@ -177,7 +177,7 @@ public class EntityTopicOperator extends AbstractModel {
 
     @Override
     public String getGcLoggingOptions() {
-        return gcLoggingDisabled ? " " : DEFAULT_STRIMZI_GC_LOGGING;
+        return gcLoggingEnabled ? DEFAULT_STRIMZI_GC_LOGGING : " ";
     }
 
     /**
@@ -207,7 +207,7 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setZookeeperSessionTimeoutMs(topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
                 result.setLogging(topicOperatorSpec.getLogging());
-                result.setGcLoggingDisabled(topicOperatorSpec.getJvmOptions() == null ? false : topicOperatorSpec.getJvmOptions().isGcLoggingDisabled());
+                result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? true : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(topicOperatorSpec.getResources());
             }
         }

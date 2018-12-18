@@ -141,7 +141,7 @@ public class EntityUserOperator extends AbstractModel {
 
     @Override
     public String getGcLoggingOptions() {
-        return gcLoggingDisabled ? " " : DEFAULT_STRIMZI_GC_LOGGING;
+        return gcLoggingEnabled ? DEFAULT_STRIMZI_GC_LOGGING : " ";
     }
 
     /**
@@ -170,7 +170,7 @@ public class EntityUserOperator extends AbstractModel {
                 result.setReconciliationIntervalMs(userOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
                 result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setLogging(userOperatorSpec.getLogging());
-                result.setGcLoggingDisabled(userOperatorSpec.getJvmOptions() == null ? false : userOperatorSpec.getJvmOptions().isGcLoggingDisabled());
+                result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? true : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(userOperatorSpec.getResources());
             }
         }

@@ -32,7 +32,7 @@ public class JvmOptions implements Serializable {
     private String xmx;
     private String xms;
     private Boolean server;
-    private boolean gcLoggingDisabled;
+    private boolean gcLoggingEnabled = true;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -68,13 +68,13 @@ public class JvmOptions implements Serializable {
         this.server = server;
     }
 
-    @Description("Disable garbage collection logging")
-    public boolean isGcLoggingDisabled() {
-        return gcLoggingDisabled;
+    @Description("Enable or disable Garbage Collection logging. It's enabled by default.")
+    public boolean isGcLoggingEnabled() {
+        return gcLoggingEnabled;
     }
 
-    public void setGcLoggingDisabled(boolean gcLoggingDisabled) {
-        this.gcLoggingDisabled = gcLoggingDisabled;
+    public void setGcLoggingEnabled(boolean gcLoggingEnabled) {
+        this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
     @JsonProperty("-XX")

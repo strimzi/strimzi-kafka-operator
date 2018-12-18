@@ -389,7 +389,7 @@ spec:
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
-                gcLoggingDisabled:
+                gcLoggingEnabled:
                   type: boolean
             logging:
               type: object
