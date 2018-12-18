@@ -68,7 +68,7 @@ public class JvmOptions implements Serializable {
         this.server = server;
     }
 
-    @Description("Enable or disable Garbage Collection logging. It's enabled by default.")
+    @Description("Enable or disable Garbage Collection logging. It is enabled by default.")
     public boolean isGcLoggingEnabled() {
         return gcLoggingEnabled;
     }
