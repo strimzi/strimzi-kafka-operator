@@ -259,13 +259,34 @@ spec:
               properties:
                 deployment:
                   type: object
-                  properties: {}
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
                 pod:
                   type: object
-                  properties: {}
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
                 apiService:
                   type: object
-                  properties: {}
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
             authentication:
               type: object
               properties:

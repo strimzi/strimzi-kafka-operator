@@ -179,6 +179,9 @@ class Property implements AnnotatedElement {
 
     private static boolean hasMethod(Class<?> c, Method m) {
         try {
+            if (!c.isAssignableFrom(m.getDeclaringClass()))
+                return false;
+
             c.getDeclaredMethod(m.getName(), m.getParameterTypes());
             return true;
         } catch (NoSuchMethodException e) {
