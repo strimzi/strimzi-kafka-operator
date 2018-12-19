@@ -440,7 +440,24 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 
 [options="header"]
 |====
-|Field|Description
+|Field            |Description
+|metadata  1.2+<.<|Metadata which should be applied to the resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|====
+
+[id='type-MetadataTemplate-{context}']
+### `MetadataTemplate` schema reference
+
+Used in: xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+
+
+[options="header"]
+|====
+|Field               |Description
+|labels       1.2+<.<|Labels which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+|map
+|annotations  1.2+<.<|Annotations which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+|map
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']

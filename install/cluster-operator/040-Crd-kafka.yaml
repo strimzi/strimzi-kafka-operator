@@ -449,28 +449,84 @@ spec:
                   properties:
                     statefulset:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     pod:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     bootstrapService:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     brokersService:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     externalBootstrapRoute:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     externalBootstrapService:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     perPodRoute:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     perPodService:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                 version:
                   type: string
               required:
@@ -830,16 +886,44 @@ spec:
                   properties:
                     statefulset:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     pod:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     clientService:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     nodesService:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
               required:
               - replicas
               - storage
@@ -1505,10 +1589,24 @@ spec:
                   properties:
                     deployment:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     pod:
                       type: object
-                      properties: {}
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
             clusterCa:
               type: object
               properties:
