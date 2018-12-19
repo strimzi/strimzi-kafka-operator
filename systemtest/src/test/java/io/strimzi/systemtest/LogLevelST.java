@@ -13,7 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -148,13 +147,8 @@ class LogLevelST extends AbstractST {
         return result;
     }
 
-    @BeforeEach
-    void logTest(TestInfo testInfo) {
-        LOGGER.info("Running {} in namespace {}", testInfo.getDisplayName(), NAMESPACE);
-    }
-
     @BeforeAll
-    static void deployKafkaCluster(TestInfo testInfo) {
+    static void createClassResources(TestInfo testInfo) {
         LOGGER.info("Create resources for the tests");
         testClass = testInfo.getTestClass().get().getSimpleName();
         operationID = startDeploymentMeasuring();

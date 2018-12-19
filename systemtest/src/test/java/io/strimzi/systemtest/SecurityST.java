@@ -7,6 +7,8 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.utils.AvailabilityVerifier;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
@@ -15,6 +17,8 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,6 +59,10 @@ class SecurityST extends AbstractST {
     private static final String TLS_PROTOCOL = "Protocol  : TLSv1";
     private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
     public static final String STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
+
+    private static final long TIMEOUT_FOR_GET_SECRETS = 60_000;
+    private static final long TIMEOUT_FOR_SEND_RECEIVE_MSG = 30_000;
+    private static final long TIMEOUT_FOR_CLUSTER_STABLE = 1_200_000;
 
     @Test
     void testCertificates() {
@@ -165,16 +173,12 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    public void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException {
+    void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException {
         createCluster();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("", 1_000, 60_000, () -> {
-            return client.secrets().inNamespace(NAMESPACE).withName("alice").get() != null;
-        },
-            () -> {
-                LOGGER.error("Couldn't find user secret {}", client.secrets().inNamespace(NAMESPACE).list().getItems());
-            });
+        waitFor("", 1_000, TIMEOUT_FOR_GET_SECRETS, () -> client.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
+            () -> LOGGER.error("Couldn't find user secret {}", client.secrets().inNamespace(NAMESPACE).list().getItems()));
 
         AvailabilityVerifier mp = waitForInitialAvailability(userName);
 
@@ -220,7 +224,7 @@ class SecurityST extends AbstractST {
 
         waitForAvailability(mp);
 
-        AvailabilityVerifier.Result result = mp.stop(30_000);
+        AvailabilityVerifier.Result result = mp.stop(TIMEOUT_FOR_SEND_RECEIVE_MSG);
         LOGGER.info("Producer/consumer stats during cert renewal {}", result);
     }
     
@@ -228,7 +232,7 @@ class SecurityST extends AbstractST {
         AvailabilityVerifier mp = new AvailabilityVerifier(client, NAMESPACE, CLUSTER_NAME, userName);
         mp.start();
 
-        TestUtils.waitFor("Some messages sent received", 1_000, 30_000,
+        TestUtils.waitFor("Some messages sent received", 1_000, TIMEOUT_FOR_SEND_RECEIVE_MSG,
             () -> {
                 AvailabilityVerifier.Result stats = mp.stats();
                 LOGGER.info("{}", stats);
@@ -238,13 +242,14 @@ class SecurityST extends AbstractST {
         return mp;
     }
 
+
     private void waitForAvailability(AvailabilityVerifier mp) {
         LOGGER.info("Checking producers and consumers still functioning");
         AvailabilityVerifier.Result stats = mp.stats();
         long received = stats.received();
         long sent = stats.sent();
         TestUtils.waitFor("Some messages received after update",
-            1_000, 30_000,
+            1_000, TIMEOUT_FOR_SEND_RECEIVE_MSG,
             () -> {
                 AvailabilityVerifier.Result stats1 = mp.stats();
                 LOGGER.info("{}", stats1);
@@ -281,7 +286,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    public void testAutoRenewCaCertsTriggerByExpiredCertificate() throws InterruptedException {
+    void testAutoRenewCaCertsTriggerByExpiredCertificate() throws InterruptedException {
         // 1. Create the Secrets already, and a certificate that's already expired
         String clusterCaKey = createSecret("cluster-ca.key", clusterCaKeySecretName(CLUSTER_NAME), "ca.key");
         String clusterCaCert = createSecret("cluster-ca.crt", clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
@@ -292,6 +297,8 @@ class SecurityST extends AbstractST {
         createCluster();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
+        // Check if user exists
+        waitTillSecretExists(userName);
 
         AvailabilityVerifier mp = waitForInitialAvailability(userName);
 
@@ -303,7 +310,7 @@ class SecurityST extends AbstractST {
 
         waitForAvailability(mp);
 
-        AvailabilityVerifier.Result result = mp.stop(30_000);
+        AvailabilityVerifier.Result result = mp.stop(TIMEOUT_FOR_SEND_RECEIVE_MSG);
         LOGGER.info("Producer/consumer stats during cert renewal {}", result);
     }
 
@@ -316,7 +323,7 @@ class SecurityST extends AbstractST {
         zkPods[0] = StUtils.ssSnapshot(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
         kafkaPods[0] = StUtils.ssSnapshot(client, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
         eoPods[0] = StUtils.depSnapshot(client, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
-        TestUtils.waitFor("Cluster stable and ready", 1_000, 1_200_000, () -> {
+        TestUtils.waitFor("Cluster stable and ready", 1_000, TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Map<String, String> zkSnapshot = StUtils.ssSnapshot(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
             Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(client, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
             Map<String, String> eoSnapshot = StUtils.depSnapshot(client, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
@@ -347,7 +354,7 @@ class SecurityST extends AbstractST {
     }
 
     private void waitForCertToChange(String originalCert, String secretName) {
-        waitFor("Cert to be replaced", 1_000, 1_200_000, () -> {
+        waitFor("Cert to be replaced", 1_000, TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Secret secret = client.secrets().inNamespace(NAMESPACE).withName(secretName).get();
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
                 String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
@@ -377,32 +384,14 @@ class SecurityST extends AbstractST {
         return certAsString;
     }
 
-    /**
-     * Test the case where the cluster is initial created with manual CA
-     */
-    @Test
-    public void testManualCaCertFromScratch() {
-        // TODO
+    @BeforeEach
+    void createTestResources() {
+        createResources();
     }
 
-    /**
-     * Test the case where the cluster is initial created with manual CA and we transition to auto CA
-     */
-    @Test
-    public void testAutoCaCertFromManual() {
-        // TODO
-    }
-
-    /**
-     * Test the case where the cluster is initial auto CA and we transition to manual CA
-     */
-    @Test
-    public void testManualCaCertFromAuto() {
-        // TODO
-    }
-
-    @Test
-    public void testManualCaCertRenewal() {
-
+    @AfterEach
+    void deleteTestResources() throws Exception {
+        deleteResources();
+        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
     }
 }

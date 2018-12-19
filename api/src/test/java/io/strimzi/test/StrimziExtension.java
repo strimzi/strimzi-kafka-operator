@@ -9,11 +9,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
@@ -29,7 +26,6 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 
 import java.io.File;
 import java.io.InputStream;
@@ -38,10 +34,8 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,7 +52,6 @@ import java.util.stream.Stream;
 import static io.strimzi.test.TestUtils.entriesToMap;
 import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.TestUtils.indent;
-import static io.strimzi.test.TestUtils.writeFile;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -71,7 +64,7 @@ import static java.util.Collections.singletonList;
  * test classes and/or test methods.
  */
 public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, AfterEachCallback, BeforeEachCallback,
-        ExecutionCondition, TestExecutionExceptionHandler {
+        ExecutionCondition {
     private static final Logger LOGGER = LogManager.getLogger(StrimziExtension.class);
 
     /**
@@ -183,72 +176,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         }
     }
 
-    @Override
-    public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
-        if (throwable instanceof AssertionError || throwable instanceof TimeoutException || throwable instanceof KubeClusterException) {
-            // Get current date to create a unique folder
-            String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-            String logDir = context.getTestMethod().isPresent() ?
-                    TEST_LOG_DIR + context.getTestMethod().get().getDeclaringClass().getSimpleName() + "." + context.getTestMethod().get().getName() + "_" + currentDate
-                    : TEST_LOG_DIR + currentDate;
-
-            LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient().namespace()), new File(logDir));
-            logCollector.collectEvents();
-            logCollector.collectLogsForPods();
-        }
-        throw throwable;
-    }
-
-    private class LogCollector {
-        NamespacedKubernetesClient client;
-        String namespace;
-        File logDir;
-
-        private LogCollector(NamespacedKubernetesClient client, File logDir) {
-            this.client = client;
-            this.namespace = client.getNamespace();
-            this.logDir = logDir;
-            logDir.mkdirs();
-        }
-
-        private void collectLogsForPods() {
-            LOGGER.info("Collecting logs for pods in namespace {}", namespace);
-
-            client.pods().list().getItems().forEach(pod -> {
-                String podName = pod.getMetadata().getName();
-
-                client.pods().withName(podName).get().getStatus().getContainerStatuses().forEach(containerStatus -> {
-                    try {
-                        String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
-                        // Print container logs to console
-                        LOGGER.info("Logs for container {} from pod {}{}{}", containerStatus.getName(), podName, System.lineSeparator(), log);
-
-                        // Write logs from containers to files
-                        writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().equals("container \"" + containerStatus.getName() + "\" in pod \"" + podName + "\" is terminated")) {
-                            LOGGER.info("Container {} in pod {} is terminated before teardown", containerStatus.getName(), podName);
-                        } else {
-                            throw e;
-                        }
-                    }
-                });
-            });
-        }
-
-        private void collectEvents() {
-            LOGGER.info("Collecting events in namespace {}", namespace);
-            String events = kubeClient().getEvents();
-
-            // Print events to console
-            LOGGER.info("Events for namespace {}{}{}", namespace, System.lineSeparator(), events);
-
-            // Write events to file
-            writeFile(logDir + "/" + "events-in-namespace" + kubeClient().namespace() + ".log", events);
-        }
-    }
-
-    @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
         if (context.getElement().get() instanceof Class) {
             saveTestingClassInfo(context);

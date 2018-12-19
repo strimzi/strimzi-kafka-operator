@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
@@ -11,7 +12,10 @@ import io.strimzi.test.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +30,7 @@ import static org.hamcrest.Matchers.containsString;
 @ExtendWith(StrimziExtension.class)
 @Namespace(ConnectS2IST.NAMESPACE)
 @ClusterOperator
+@Disabled
 class ConnectS2IST extends AbstractST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
@@ -60,6 +65,16 @@ class ConnectS2IST extends AbstractST {
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
     }
 
+    @BeforeEach
+    void createTestResources() {
+        createResources();
+    }
+
+    @AfterEach
+    void deleteTestResources() throws Exception {
+        deleteResources();
+        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+    }
 
     @BeforeAll
     static void createClassResources() {

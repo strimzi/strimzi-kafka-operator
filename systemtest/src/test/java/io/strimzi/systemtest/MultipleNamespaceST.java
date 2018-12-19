@@ -87,6 +87,19 @@ class MultipleNamespaceST extends AbstractST {
         kubeClient.waitForDeployment(CLUSTER_NAME + "-mirror-maker", 1);
     }
 
+    @BeforeEach
+    void createSecondNamespaceResources() {
+        kubeClient.namespace(SECOND_NAMESPACE);
+        secondNamespaceResources = new Resources(namespacedClient());
+        kubeClient.namespace(DEFAULT_NAMESPACE);
+    }
+
+    @AfterEach
+    void deleteSecondNamespaceResources() throws Exception {
+        secondNamespaceResources.deleteResources();
+        waitForDeletion(TEARDOWN_GLOBAL_WAIT, SECOND_NAMESPACE);
+        kubeClient.namespace(DEFAULT_NAMESPACE);
+    }
 
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
@@ -112,19 +125,6 @@ class MultipleNamespaceST extends AbstractST {
         classResources = null;
     }
 
-    @BeforeEach
-    void createSecondNamespaceResources() {
-        kubeClient.namespace(SECOND_NAMESPACE);
-        secondNamespaceResources = new Resources(namespacedClient());
-        kubeClient.namespace(DEFAULT_NAMESPACE);
-    }
-
-    @AfterEach
-    void deleteSecondNamespaceResources() {
-        secondNamespaceResources.deleteResources();
-        kubeClient.namespace(DEFAULT_NAMESPACE);
-    }
-
     private static Resources classResources() {
         return classResources;
     }
@@ -133,7 +133,7 @@ class MultipleNamespaceST extends AbstractST {
         LOGGER.info("Creating topic {} in namespace {}", topic, namespace);
         kubeClient.namespace(namespace);
         kubeClient.create(new File(TOPIC_INSTALL_DIR));
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 120000, 5000, () -> {
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 5000, 120000, () -> {
             kubeClient.namespace(DEFAULT_NAMESPACE);
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics2.contains(topic);

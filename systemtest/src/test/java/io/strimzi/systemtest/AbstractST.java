@@ -47,12 +47,15 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,11 +66,13 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.TestUtils.writeFile;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -76,7 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 
-public class AbstractST {
+public abstract class AbstractST {
 
     static {
         Crds.registerCustomKinds();
@@ -97,12 +102,18 @@ public class AbstractST {
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
+    private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
+    private static final long GET_BROKER_API_TIMEOUT = 60_000L;
+    private static final long GET_BROKER_API_INTERVAL = 5_000L;
+    static final long GLOBAL_TIMEOUT = 300000;
+    static final long GLOBAL_POLL_INTERVAL = 1000;
+    static final long TEARDOWN_GLOBAL_WAIT = 10000;
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
     static KubeClient<?> kubeClient = cluster.client();
 
-    private Resources resources;
+    Resources resources;
     static String operationID;
     static String testClass;
     static String testName;
@@ -186,7 +197,7 @@ public class AbstractST {
 
     String getBrokerApiVersions(String podName) {
         AtomicReference<String> versions = new AtomicReference<>();
-        TestUtils.waitFor("kafka-broker-api-versions.sh success", 1_000L, 30_000L, () -> {
+        TestUtils.waitFor("kafka-broker-api-versions.sh success", GET_BROKER_API_INTERVAL, GET_BROKER_API_TIMEOUT, () -> {
             try {
                 String output = kubeClient.execInPod(podName,
                         "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
@@ -381,14 +392,22 @@ public class AbstractST {
     }
 
     @BeforeEach
-    public void createResources(TestInfo testInfo) {
-        LOGGER.info("Creating resources before the test");
-        resources = new Resources(namespacedClient());
+    void setTestName(TestInfo testInfo) {
         testName = testInfo.getTestMethod().get().getName();
     }
 
-    @AfterEach
-    public void deleteResources() {
+    @BeforeAll
+    static void setTestClassName(TestInfo testInfo) {
+        testClass = testInfo.getTestClass().get().getSimpleName();
+    }
+
+    protected void createResources() {
+        LOGGER.info("Creating resources before the test");
+        resources = new Resources(namespacedClient());
+    }
+
+    protected void deleteResources() throws Exception {
+        collectLogs();
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
         resources = null;
@@ -468,7 +487,7 @@ public class AbstractST {
         // Wait for the job to succeed
         try {
             LOGGER.debug("Waiting for Job completion: {}", job);
-            waitFor("Job completion", 5000, 150000, () -> {
+            waitFor("Job completion", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
                 Job jobs = namespacedClient().extensions().jobs().withName(job.getMetadata().getName()).get();
                 JobStatus status;
                 if (jobs == null || (status = jobs.getStatus()) == null) {
@@ -929,5 +948,110 @@ public class AbstractST {
                 .build()));
         LOGGER.info("Created Job {}", job);
         return job;
+    }
+
+
+    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
+
+    void collectLogs() {
+        // Get current date to create a unique folder
+        String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+        String logDir = !testName.isEmpty() ?
+                TEST_LOG_DIR + testClass + "." + testName + "_" + currentDate
+                : TEST_LOG_DIR + currentDate;
+
+        LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient.namespace()), new File(logDir));
+        logCollector.collectEvents();
+        logCollector.collectConfigMaps();
+        logCollector.collectLogsFromPods();
+    }
+
+    private class LogCollector {
+        NamespacedKubernetesClient client;
+        String namespace;
+        File logDir;
+        File configMapDir;
+        File eventsDir;
+
+        private LogCollector(NamespacedKubernetesClient client, File logDir) {
+            this.client = client;
+            this.namespace = client.getNamespace();
+            this.logDir = logDir;
+            this.eventsDir = new File(logDir + "/events");
+            this.configMapDir = new File(logDir + "/configMaps");
+            logDir.mkdirs();
+
+            if (!eventsDir.exists()) {
+                eventsDir.mkdirs();
+            }
+            if (!configMapDir.exists()) {
+                configMapDir.mkdirs();
+            }
+        }
+
+        private void collectLogsFromPods() {
+            LOGGER.info("Collecting logs for pods in namespace {}", namespace);
+
+            try {
+                client.pods().list().getItems().forEach(pod -> {
+                    String podName = pod.getMetadata().getName();
+                    pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
+                        String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
+                        // Write logs from containers to files
+                        writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+                    });
+                });
+            } catch (Exception allExceptions) {
+                LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
+            }
+        }
+
+        private void collectEvents() {
+            LOGGER.info("Collecting events in namespace {}", namespace);
+            String events = kubeClient.getEvents();
+            // Write events to file
+            writeFile(eventsDir + "/" + "events-in-namespace" + kubeClient.namespace() + ".log", events);
+        }
+
+        private void collectConfigMaps() {
+            LOGGER.info("Collecting configmaps in namespace {}", namespace);
+            client.configMaps().inNamespace(namespace).list().getItems().forEach(configMap -> {
+                writeFile(configMapDir + "/" + configMap.getMetadata().getName() + "-" + namespace + ".log", configMap.toString());
+            });
+        }
+    }
+
+    void waitTillSecretExists(String secretName) {
+        waitFor("secret " + secretName + " exists", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+            () -> namespacedClient().secrets().withName(secretName).get() != null);
+        try {
+            Thread.sleep(60000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void waitForPodDeletion(String namespace, String name) {
+        LOGGER.info("Waiting when Pod {} will be deleted", name);
+
+        TestUtils.waitFor("statefulset " + name, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+            () -> client.pods().inNamespace(namespace).withName(name).get() == null);
+    }
+
+    void waitForDeletion(long time, String namespace) throws Exception {
+        LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
+        Thread.sleep(time);
+        long podCount = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
+
+        StringBuilder nonTerminated = new StringBuilder();
+        if (podCount > 0) {
+            Stream<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX));
+            podStream.forEach(
+                p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
+            );
+            throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
+        }
     }
 }

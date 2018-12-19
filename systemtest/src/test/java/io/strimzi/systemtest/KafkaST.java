@@ -30,11 +30,10 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
@@ -84,6 +83,12 @@ class KafkaST extends AbstractST {
 
     static KubernetesClient client = new DefaultKubernetesClient();
 
+    private static final long POLL_INTERVAL_FOR_CREATION = 1_000;
+    private static final long TIMEOUT_FOR_MIRROR_MAKER_CREATION = 120_000;
+    private static final long TIMEOUT_FOR_TOPIC_CREATION = 60_000;
+    private static final long POLL_INTERVAL_SECRET_CREATION = 5_000;
+    private static final long TIMEOUT_FOR_SECRET_CREATION = 360_000;
+
     @Test
     @Tag(REGRESSION)
     @OpenShiftOnly
@@ -98,15 +103,20 @@ class KafkaST extends AbstractST {
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
 
+        LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
         oc.deleteByName("Kafka", clusterName);
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
+
+        client.pods().list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(clusterName))
+                .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
     }
 
     @Test
     @Tag(ACCEPTANCE)
     void testKafkaAndZookeeperScaleUpScaleDown() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.SCALE_UP);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
@@ -138,10 +148,12 @@ class KafkaST extends AbstractST {
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         //Test that CO doesn't have any exceptions in log
+        TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
 
         // scale down
         LOGGER.info("Scaling down");
+        operationID = startTimeMeasuring(Operation.SCALE_DOWN);
         //client.apps().statefulSets().inNamespace(DEFAULT_NAMESPACE).withName(kafkaStatefulSetName(CLUSTER_NAME)).scale(initialReplicas, true);
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setReplicas(initialReplicas);
@@ -160,13 +172,14 @@ class KafkaST extends AbstractST {
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
+        TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
     @Tag(REGRESSION)
     void testZookeeperScaleUpScaleDown() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.SCALE_UP);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
@@ -204,10 +217,12 @@ class KafkaST extends AbstractST {
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         //Test that CO doesn't have any exceptions in log
+        TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
 
         // scale down
         LOGGER.info("Scaling down");
+        operationID = startTimeMeasuring(Operation.SCALE_DOWN);
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getZookeeper().setReplicas(1);
         });
@@ -440,16 +455,6 @@ class KafkaST extends AbstractST {
         checkPings(messagesCount, job);
     }
 
-    private void waitTillSecretExists(String secretName) {
-        waitFor("secret " + secretName + " exists", 5000, 300000,
-            () -> namespacedClient().secrets().withName(secretName).get() != null);
-        try {
-            Thread.sleep(60000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
     /**
      * Test sending messages over tls transport using scram sha auth
      */
@@ -592,6 +597,11 @@ class KafkaST extends AbstractST {
 
         //Creating topics for testing
         kubeClient.create(TOPIC_CM);
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_TOPIC_CREATION, () -> {
+            List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+            return topics.contains("my-topic");
+        });
+
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem("my-topic"));
 
         createTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
@@ -724,7 +734,7 @@ class KafkaST extends AbstractST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
+        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
             !kubeClient.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
@@ -817,7 +827,7 @@ class KafkaST extends AbstractST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join the group
-        waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
+        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
             !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
@@ -873,11 +883,11 @@ class KafkaST extends AbstractST {
         resources().topic(kafkaSourceName, topicName).done();
 
         // Create Kafka user for source cluster
-        KafkaUser userSource = resources().scramShaUser(CLUSTER_NAME, kafkaUserSource).done();
+        KafkaUser userSource = resources().scramShaUser(kafkaSourceName, kafkaUserSource).done();
         waitTillSecretExists(kafkaUserSource);
 
         // Create Kafka user for target cluster
-        KafkaUser userTarget = resources().scramShaUser(CLUSTER_NAME, kafkaUserTarget).done();
+        KafkaUser userTarget = resources().scramShaUser(kafkaTargetName, kafkaUserTarget).done();
         waitTillSecretExists(kafkaUserTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
@@ -925,7 +935,7 @@ class KafkaST extends AbstractST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", 1_000, 120_000, () ->
+        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
             !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
@@ -939,14 +949,14 @@ class KafkaST extends AbstractST {
         checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
     }
 
-
-    @BeforeAll
-    static void createClassResources(TestInfo testInfo) {
-        testClass = testInfo.getTestClass().get().getSimpleName();
+    @BeforeEach
+    void createTestResources() {
+        createResources();
     }
 
-    @BeforeEach
-    void setTestName(TestInfo testInfo) {
-        testName = testInfo.getTestMethod().get().getName();
+    @AfterEach
+    void deleteTestResources() throws Exception {
+        deleteResources();
+        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
     }
 }
