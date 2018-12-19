@@ -70,6 +70,9 @@ if [ -n "$KAFKA_MIRRORMAKER_NUMSTREAMS" ]; then
     numstreams="--num.streams ${KAFKA_MIRRORMAKER_NUMSTREAMS}"
 fi
 
+# exporting the GC options env var recognized by the Kafka scripts
+export KAFKA_GC_LOG_OPTS=$STRIMZI_KAFKA_GC_LOG_OPTS
+
 # starting Kafka Mirror Maker with final configuration
 exec $KAFKA_HOME/bin/kafka-mirror-maker.sh \
 --consumer.config /tmp/strimzi-consumer.properties \
