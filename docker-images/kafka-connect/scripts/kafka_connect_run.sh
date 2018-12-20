@@ -1,4 +1,5 @@
 #!/bin/bash
+set +x
 
 if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then
 export KAFKA_CONNECT_PLUGIN_PATH="${KAFKA_HOME}/plugins"

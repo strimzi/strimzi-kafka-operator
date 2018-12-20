@@ -1,4 +1,5 @@
 #!/bin/bash
+set +x
 
 if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" ] || [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_PRODUCER" ]; then
     # Generate temporary keystore password
