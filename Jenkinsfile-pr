@@ -70,7 +70,9 @@ pipeline {
         }
         failure {
             echo "Build failed"
-            lib.sendMail(env.STRIMZI_MAILING_LIST, "failed")
+            script {
+                lib.sendMail(env.STRIMZI_MAILING_LIST, "failed")
+            }
         }
     }
 }
