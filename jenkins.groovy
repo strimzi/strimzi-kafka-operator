@@ -119,12 +119,13 @@ def postAction(String artifactDir) {
     }
     if (status == null) {
         currentBuild.result = 'SUCCESS'
+        sendMail(env.STRIMZI_MAILING_LIST, "succeeded ")
     }
     teardownEnvironment()
 }
 
-def sendMail(address) {
-    mail to:"${address}", subject:"Strimzi PR build of job ${JOB_NAME} has failed", body:"See ${BUILD_URL}"
+def sendMail(address, status) {
+    mail to:"${address}", subject:"Strimzi PR build of job ${JOB_NAME} has ${status}", body:"See ${BUILD_URL}"
 }
 
 return this

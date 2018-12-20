@@ -66,11 +66,11 @@ pipeline {
         always {
             script {
                 lib.postAction(env.ARTIFACTS_DIR)
-                lib.sendMail(env.STRIMZI_MAILING_LIST)
             }
         }
         failure {
             echo "Build failed"
+            lib.sendMail(env.STRIMZI_MAILING_LIST, "failed")
         }
     }
 }
