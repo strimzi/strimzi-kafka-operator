@@ -17,9 +17,9 @@ pipeline {
         ansiColor('xterm')
     }
     environment {
-        DOCKER_ORG="strimziqe"
+        DOCKER_ORG="strimzi"
         DOCKER_REGISTRY="docker.io"
-        DOCKER_TAG="${BUILD_TAG}"
+        DOCKER_TAG="latest"
         MVN_ARGS="-DskipTests"  // Remove this when unit tests will be stabilized TODO jstejska
         OPENSHIFT_URL="https://github.com/openshift/origin/releases/download/v3.10.0/openshift-origin-client-tools-v3.10.0-dd10d17-linux-64bit.tar.gz"
 
