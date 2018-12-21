@@ -88,4 +88,18 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     public void testKafkaConnectWithTemplate() {
         createDelete(KafkaConnect.class, "KafkaConnect-with-template.yaml");
     }
+
+    @Test
+    public void testKafkaConnectWithExternalConfiguration() {
+        createDelete(KafkaConnect.class, "KafkaConnect-with-external-configuration.yaml");
+    }
+
+    @Test
+    public void testKafkaConnectWithInvalidExternalConfiguration() {
+        try {
+            createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-external-configuration.yaml");
+        } catch (KubeClusterException.InvalidResource e) {
+            assertTrue(e.getMessage().contains("spec.externalConfiguration.env.valueFrom in body is required"));
+        }
+    }
 }

@@ -3,32 +3,20 @@ kind: KafkaConnect
 metadata:
   name: test-kafka-connect
 spec:
-  image: foo
-  replicas: 6
+  replicas: 1
   bootstrapServers: kafka:9092
-  config:
-    name: bar
-  tolerations:
-    - key: "key1"
-      operator: "Equal"
-      value: "value1"
-      effect: "NoSchedule"
-    - key: "key2"
-      operator: "Equal"
-      value: "value2"
-      effect: "NoSchedule"
   externalConfiguration:
     env:
     - name: SOME_VARIABLE
       valueFrom:
         secretKeyRef:
-          name: mysecret
+          name: myaccesskey
           key: access-key
     - name: SOME_OTHER_VARIABLE
       valueFrom:
         configMapKeyRef:
-          name: mysecret
-          key: secret-access-key
+          name: myconfig
+          key: some-property
     volumes:
     - name: secret-volume
       secret:
