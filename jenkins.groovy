@@ -98,10 +98,11 @@ def clearImages() {
 
 def buildStrimzi() {
     sh "make docker_build"
+    sh "make docker_tag"
 }
 
 def runSystemTests() {
-    sh "mvn -f ${WORKSPACE}/systemtest/pom.xml -P systemtests verify -DjunitTags=acceptance,regression -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
+    sh "mvn -f ${WORKSPACE}/systemtest/pom.xml -P systemtests verify -DjunitTags=acceptance,regression -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dit.test=KafkaST#testMirrorMaker"
 }
 
 def postAction(String artifactDir) {
