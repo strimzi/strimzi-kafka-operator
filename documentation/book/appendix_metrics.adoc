@@ -52,12 +52,11 @@ The following resources are defined:
 
 ==== Deploying on {OpenShiftName}
 
-The provided YAML file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
-If you're not using this namespace then download the resource file locally and update it as follow.
+The provided `kubernetes.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
+If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -o prometheus.yaml https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml
-sed -i 's/namespace: .\*/namespace: _my-namespace_/' prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
 
 To deploy all these resources you can run the following.
 
@@ -68,12 +67,11 @@ oc apply -f prometheus.yaml
 ifdef::Kubernetes[]
 ==== Deploying on {KubernetesName}
 
-The provided YAML file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
-If you're not using this namespace then download the resource file locally and update it as follow.
+The provided `kubernetes.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
+If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -o prometheus.yaml https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml
-sed -i 's/namespace: .\*/namespace: _my-namespace_/' prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
 
 To deploy all these resources you can run the following.
 
