@@ -294,28 +294,30 @@ public class KafkaConnectCluster extends AbstractModel {
             String name = volume.getName();
 
             if (name != null) {
-                if (volume.getConfigMap() != null && volume.getSecret() == null) {
-                    ConfigMapVolumeSource source = volume.getConfigMap();
-                    source.setDefaultMode(mode);
-
-                    Volume newVol = new VolumeBuilder()
-                            .withName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name)
-                            .withConfigMap(source)
-                            .build();
-
-                    volumeList.add(newVol);
-                } else if (volume.getConfigMap() == null && volume.getSecret() != null)    {
-                    SecretVolumeSource source = volume.getSecret();
-                    source.setDefaultMode(mode);
-
-                    Volume newVol = new VolumeBuilder()
-                            .withName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name)
-                            .withSecret(source)
-                            .build();
-
-                    volumeList.add(newVol);
-                } else {
+                if (volume.getConfigMap() != null && volume.getSecret() != null) {
                     log.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
+                } else  {
+                    if (volume.getConfigMap() != null) {
+                        ConfigMapVolumeSource source = volume.getConfigMap();
+                        source.setDefaultMode(mode);
+
+                        Volume newVol = new VolumeBuilder()
+                                .withName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name)
+                                .withConfigMap(source)
+                                .build();
+
+                        volumeList.add(newVol);
+                    } else if (volume.getSecret() != null)    {
+                        SecretVolumeSource source = volume.getSecret();
+                        source.setDefaultMode(mode);
+
+                        Volume newVol = new VolumeBuilder()
+                                .withName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name)
+                                .withSecret(source)
+                                .build();
+
+                        volumeList.add(newVol);
+                    }
                 }
             }
         }
@@ -357,16 +359,17 @@ public class KafkaConnectCluster extends AbstractModel {
         for (ExternalConfigurationVolumeSource volume : externalVolumes)    {
             String name = volume.getName();
 
-            if (name != null &&
-                    ((volume.getConfigMap() == null && volume.getSecret() != null) || (volume.getConfigMap() != null && volume.getSecret() == null))) {
-                VolumeMount volumeMount = new VolumeMountBuilder()
-                        .withName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name)
-                        .withMountPath(EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + name)
-                        .build();
+            if (name != null)   {
+                if (volume.getConfigMap() != null && volume.getSecret() != null) {
+                    log.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
+                } else  if (volume.getConfigMap() != null || volume.getSecret() != null) {
+                    VolumeMount volumeMount = new VolumeMountBuilder()
+                            .withName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name)
+                            .withMountPath(EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + name)
+                            .build();
 
-                volumeMountList.add(volumeMount);
-            } else {
-                log.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
+                    volumeMountList.add(volumeMount);
+                }
             }
         }
 
@@ -460,20 +463,22 @@ public class KafkaConnectCluster extends AbstractModel {
                 ExternalConfigurationEnvVarSource valueFrom = var.getValueFrom();
 
                 if (valueFrom != null)  {
-                    if (valueFrom.getConfigMapKeyRef() != null && valueFrom.getSecretKeyRef() == null) {
-                        EnvVarSource envVarSource = new EnvVarSourceBuilder()
-                                .withConfigMapKeyRef(var.getValueFrom().getConfigMapKeyRef())
-                                .build();
-
-                        varList.add(new EnvVarBuilder().withName(name).withValueFrom(envVarSource).build());
-                    } else if (valueFrom.getConfigMapKeyRef() == null && valueFrom.getSecretKeyRef() != null)    {
-                        EnvVarSource envVarSource = new EnvVarSourceBuilder()
-                                .withSecretKeyRef(var.getValueFrom().getSecretKeyRef())
-                                .build();
-
-                        varList.add(new EnvVarBuilder().withName(name).withValueFrom(envVarSource).build());
-                    } else {
+                    if (valueFrom.getConfigMapKeyRef() != null && valueFrom.getSecretKeyRef() != null) {
                         log.warn("Environment variable {} with external Kafka Connect configuration has to contain exactly one reference to either ConfigMap or Secret", name);
+                    } else {
+                        if (valueFrom.getConfigMapKeyRef() != null) {
+                            EnvVarSource envVarSource = new EnvVarSourceBuilder()
+                                    .withConfigMapKeyRef(var.getValueFrom().getConfigMapKeyRef())
+                                    .build();
+
+                            varList.add(new EnvVarBuilder().withName(name).withValueFrom(envVarSource).build());
+                        } else if (valueFrom.getSecretKeyRef() != null)    {
+                            EnvVarSource envVarSource = new EnvVarSourceBuilder()
+                                    .withSecretKeyRef(var.getValueFrom().getSecretKeyRef())
+                                    .build();
+
+                            varList.add(new EnvVarBuilder().withName(name).withValueFrom(envVarSource).build());
+                        }
                     }
                 }
             } else {

@@ -593,4 +593,108 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume", selectedVolumeMounths.get(0).getName());
         assertEquals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my-volume", selectedVolumeMounths.get(0).getMountPath());
     }
+
+    @Test
+    public void testExternalConfigurationInvalidVolumes() {
+        ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
+                .withName("my-volume")
+                .withConfigMap(new ConfigMapVolumeSourceBuilder().withName("my-map").build())
+                .withSecret(new SecretVolumeSourceBuilder().withSecretName("my-secret").build())
+                .build();
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                .withNewExternalConfiguration()
+                .withVolumes(volume)
+                .endExternalConfiguration()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        // Check Deployment
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
+        List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        assertEquals(0, selected.size());
+
+        List<VolumeMount> volumeMounths = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
+        List<VolumeMount> selectedVolumeMounths = volumeMounths.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        assertEquals(0, selected.size());
+    }
+
+    @Test
+    public void testNoExternalConfigurationVolumes() {
+        ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
+                .withName("my-volume")
+                .build();
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                .withNewExternalConfiguration()
+                .withVolumes(volume)
+                .endExternalConfiguration()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        // Check Deployment
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
+        List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        assertEquals(0, selected.size());
+
+        List<VolumeMount> volumeMounths = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
+        List<VolumeMount> selectedVolumeMounths = volumeMounths.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+        assertEquals(0, selected.size());
+    }
+
+    @Test
+    public void testInvalidExternalConfigurationEnvs() {
+        ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
+                .withName("MY_ENV_VAR")
+                .withNewValueFrom()
+                .withNewConfigMapKeyRef("my-map", "my-key", false)
+                .withNewSecretKeyRef("my-secret", "my-key", false)
+                .endValueFrom()
+                .build();
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                .withNewExternalConfiguration()
+                .withEnv(env)
+                .endExternalConfiguration()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        // Check Deployment
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        List<EnvVar> envs = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
+        assertEquals(0, selected.size());
+    }
+
+    @Test
+    public void testNoExternalConfigurationEnvs() {
+        ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
+                .withName("MY_ENV_VAR")
+                .withNewValueFrom()
+                .endValueFrom()
+                .build();
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                .withNewExternalConfiguration()
+                .withEnv(env)
+                .endExternalConfiguration()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        // Check Deployment
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        List<EnvVar> envs = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
+        assertEquals(0, selected.size());
+    }
 }
