@@ -40,6 +40,8 @@ include::assembly-configuring-container-images.adoc[leveloffset=+1]
 
 include::assembly-scheduling.adoc[leveloffset=+1]
 
+include::assembly-kafka-connect-external-configuration.adoc[leveloffset=+1]
+
 include::ref-list-of-kafka-connect-s2i-resources.adoc[leveloffset=+1]
 
 include::proc-using-openshift-builds-create-image.adoc[leveloffset=+1]

@@ -40,6 +40,8 @@ include::assembly-configuring-container-images.adoc[leveloffset=+1]
 
 include::assembly-scheduling.adoc[leveloffset=+1]
 
+include::assembly-kafka-connect-external-configuration.adoc[leveloffset=+1]
+
 include::ref-list-of-kafka-connect-resources.adoc[leveloffset=+1]
 
 // Restore the context to what it was before this assembly.

@@ -1,0 +1,89 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-kafka-connect-external-configuration.adoc
+
+[id='proc-kafka-connect-mounting-volumes-{context}']
+
+= Mounting Secrets as volumes
+
+This procedure shows how to use an {ProductPlatformName} Secret, mount it as volume into Kafka Connect, and use it to configure Kafka Connect connector.
+
+.Prerequisites
+
+* A running Cluster Operator.
+
+.Procedure
+
+. Create a secret containing a properties file with the configuration options we want to use in our connector configuration.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret
+type: Opaque
+stringData:
+  connector.properties: |-
+    dbUsername: my-user
+    dbPassword: my-password
+----
+
+. Create or edit the Kafka Connect resource.
+Configure the `FileConfigProvider` in the `config` section and the `externalProperties` section of the `KafkaConnect` or `KafkaConnectS2I` custom resource to reference the secret:
+For example:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  config:
+    config.providers: file
+    config.providers.file.class: org.apache.kafka.common.config.provider.FileConfigProvider
+  #...
+  externalConfiguration:
+    volumes:
+      - name: connector-config
+        secret:
+          secretName: mysecret
+----
+
+. Apply the changes to your Kafka Connect deployment.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _your-file_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _your-file_
+
+. Use the values from the mounted properties file in your JSON payload with connector configuration.
+For example:
++
+[source,json,subs="attributes+"]
+----
+{  
+   "name":"my-connector",
+   "config":{
+      "connector.class":"MyDbConnector",
+      "tasks.max":"3",
+      "database": "my-postgresql:5432"
+      "username":"${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbUsername}",
+      "password":"${file:/opt/kafka/external-configuration/connector-config/connector.properties:dbPassword}",
+      # ...
+   }
+}
+----
+
+.Additional resources
+
+* For more information about external configuration in Kafka Connect, see xref:type-ExternalConfiguration-reference[].
