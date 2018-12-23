@@ -1,17 +1,6 @@
 #!/usr/bin/env bash
 
-# Define commands for Linux and MacOS
-SED=sed
-GREP=grep
-WC=wc
-
-UNAME_S=$(uname -s)
-if [ $UNAME_S="Darwin" ];
-then
-	SED=gsed
-	GREP=ggrep
-	WC=gwc
-fi
+source $(dirname "${BASH_SOURCE[0]}")/../multi-platform-support.sh
 
 FILE=$1
 
