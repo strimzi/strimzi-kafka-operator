@@ -2,6 +2,8 @@
 
 ## 0.10.0
 
+* Support for Kafka 2.1.0
+* Support for Kafka upgrades 
 * Rename annotations to use the `strimzi.io` domain consistently:
     * `cluster.operator.strimzi.io/delete-claim` → `strimzi.io/delete-claim` 
     * `operator.strimzi.io/manual-rolling-update` → `strimzi.io/manual-rolling-update` 
