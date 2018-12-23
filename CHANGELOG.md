@@ -11,7 +11,7 @@ The old annotations are deprecated, but still functional.
 
 ## 0.9.0
 
-* Add possibility to label and annotate different resources (#1093)
+* Add possibility to label and annotate different resources (#1039)
 * Add support for TransactionalID in KafkaUser resource
 * Update to Kafka 2.0.1
 * Add maintenance time windows support for allowing CA certificates renewal rolling update started only in specific times (#1117)  
