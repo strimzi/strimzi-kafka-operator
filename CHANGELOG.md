@@ -11,6 +11,7 @@
     * `operator.strimzi.io/delete-pod-and-pvc` → `strimzi.io/delete-pod-and-pvc`
     * `operator.strimzi.io/generation` → `strimzi.io/generation`
 * Add support for mounting Secrets and Config Maps into Kafka Connect and Kafka Connect S2I
+* Add support for NetworkPolicy peers in listener configurations
 
 ## 0.9.0
 
