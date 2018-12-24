@@ -6,16 +6,16 @@
 
 = Externalizing Kafka Connect connector configuration
 
-{ProductName} lets you to mount Config Maps or Secrets into the Kafka Connect pods as either volumes or environment variables.
+{ProductName} lets you to mount ConfigMaps or Secrets into the Kafka Connect pods as either volumes or environment variables.
 The volumes and environment variables can be configured in the `externalConfiguration` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`
 
 == External configuration as environment variable
 
 The `env` property can be used to specify one or more environment variables.
-These variables can contain a value from a Config Map or from a Secret.
+These variables can contain a value from a ConfigMap or from a Secret.
 The names of the environment variables configured by the user cannot start with `KAFKA_` or `STRIMZI_`.
 
-To mount a value from a Secret to an environment variable, you have to use the `valueFrom` propert and the `secretKeyReference`
+To mount a value from a Secret to an environment variable, you have to use the `valueFrom` property and the `secretKeyReference`
 
 .Example of environment variable set to a value from a Secret
 [source,yaml,subs="attributes+"]
@@ -35,9 +35,11 @@ spec:
             key: my-key
 ----
 
-To mount a value from a Config Map use `configMapKeyRef` in the `valueFrom` property.
+A common use case for mounting Secrets into environment variables is for example when your connector needs to communicate with Amazon AWS and needs to read the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables with credentials.
 
-.Example of environment variable set to a value from a Config Map
+To mount a value from a ConfigMap use `configMapKeyRef` in the `valueFrom` property.
+
+.Example of environment variable set to a value from a ConfigMap
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -55,16 +57,14 @@ spec:
             key: my-key
 ----
 
-A common use case for mounting Secrets into environment variables is for example when your connector needs to communicate with Amazon AWS and needs to read the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables with credentials.
-
 == External configuration as volume
 
-The Config Maps and Secrets can be also mounted as volumes.
+The ConfigMaps and Secrets can be also mounted as volumes.
 Using volumes instead of environment variables migth be useful for example for:
 * Mounting truststores / keystores with TLS certificates
 * Mounting properties file which should used to configure Kafka Connect connectors
 
-The Config Maps and Secrets which should be mounted as volumes should be listed in the `volumes` property of `externalConfiguration`.
+The ConfigMaps and Secrets which should be mounted as volumes should be listed in the `volumes` property of `externalConfiguration`.
 Each volume has to specify a name in the `name` property and a reference to ConfigMap or Secret.
 
 .Example of volumes with external configuration
@@ -86,7 +86,7 @@ spec:
         secretName: connector1-certificates
 ----
 
-The volumes will be mounted inside the KAfka Connect containers in the path `/opt/kafka/external-configuration/_<volume-name>_`.
+The volumes will be mounted inside the Kafka Connect containers in the path `/opt/kafka/external-configuration/_<volume-name>_`.
 For example the files from the volume named `connector1` will be in the directory `/opt/kafka/external-configuration/connector1`.
 
 The `FileConfigProvider` has to be used to read the values from the mounted properties files in connector configurations.

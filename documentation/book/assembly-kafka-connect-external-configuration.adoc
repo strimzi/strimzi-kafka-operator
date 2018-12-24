@@ -14,7 +14,7 @@
 Kafka Connect connectors have their own configuration.
 They are configured using the REST interface.
 The connector configuration is passed to Kafka Connect as part of the HTTP requests.
-In some cases, it might make sense to externalize the configuration of Kafka Connect connectors and keep it in the regular Kubernetes resources such as Config Maps or Secrets.
+In some cases, it might make sense to externalize the configuration of Kafka Connect connectors and keep it in the regular Kubernetes resources such as ConfigMaps or Secrets.
 This applies especially to confidential data such as usernames, passwords or certificates.
 
 include::con-kafka-connect-external-configuration.adoc[leveloffset=+1]

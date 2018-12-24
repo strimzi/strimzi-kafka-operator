@@ -31,7 +31,7 @@ stringData:
 ----
 
 . Create or edit the Kafka Connect resource.
-Configure the `FileConfigProvider` in the `config` section and the `externalProperties` section of the `KafkaConnect` or `KafkaConnectS2I` custom resource to reference the secret:
+Configure the `FileConfigProvider` in the `config` section and the `externalConfiguration` section of the `KafkaConnect` or `KafkaConnectS2I` custom resource to reference the secret:
 For example:
 +
 [source,yaml,subs="attributes+"]
