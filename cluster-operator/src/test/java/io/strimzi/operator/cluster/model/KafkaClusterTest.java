@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Probe;
@@ -17,6 +18,10 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -48,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static io.strimzi.test.TestUtils.set;
@@ -833,5 +839,92 @@ public class KafkaClusterTest {
         rt = kc.generateExternalRoute(0);
         assertTrue(rt.getMetadata().getLabels().entrySet().containsAll(perPodRouteLabels.entrySet()));
         assertTrue(rt.getMetadata().getAnnotations().entrySet().containsAll(perPodRouteAnots.entrySet()));
+    }
+
+    @Test
+    public void testNetworkPolicyPeers() {
+        NetworkPolicyPeer peer1 = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                    .withMatchExpressions(new LabelSelectorRequirementBuilder().withKey("my-key1").withValues("my-value1").build())
+                .endPodSelector()
+                .build();
+
+        NetworkPolicyPeer peer2 = new NetworkPolicyPeerBuilder()
+                .withNewNamespaceSelector()
+                .withMatchExpressions(new LabelSelectorRequirementBuilder().withKey("my-key2").withValues("my-value2").build())
+                .endNamespaceSelector()
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                                .withNetworkPolicyPeers(peer1)
+                            .endPlain()
+                            .withNewTls()
+                                .withNetworkPolicyPeers(peer2)
+                            .endTls()
+                            .withNewKafkaListenerExternalRouteExternal()
+                                .withNetworkPolicyPeers(peer1, peer2)
+                            .endKafkaListenerExternalRouteExternal()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Network Policies
+        NetworkPolicy np = k.generateNetworkPolicy();
+
+        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
+        assertEquals(1, rules.size());
+        assertEquals(peer1, rules.get(0).getFrom().get(0));
+
+        rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_TLS_PORT))).collect(Collectors.toList());
+        assertEquals(1, rules.size());
+        assertEquals(peer2, rules.get(0).getFrom().get(0));
+
+        rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.EXTERNAL_PORT))).collect(Collectors.toList());
+        assertEquals(1, rules.size());
+        assertEquals(2, rules.get(0).getFrom().size());
+        assertTrue(rules.get(0).getFrom().contains(peer1));
+        assertTrue(rules.get(0).getFrom().contains(peer2));
+    }
+
+    @Test
+    public void testNoNetworkPolicyPeers() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewPlain()
+                            .endPlain()
+                            .withNewTls()
+                            .endTls()
+                            .withNewKafkaListenerExternalRouteExternal()
+                            .endKafkaListenerExternalRouteExternal()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster k = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Network Policies
+        NetworkPolicy np = k.generateNetworkPolicy();
+
+        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_PORT))).collect(Collectors.toList());
+        assertEquals(1, rules.size());
+        assertEquals(0, rules.get(0).getFrom().size());
+
+        rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CLIENT_TLS_PORT))).collect(Collectors.toList());
+        assertEquals(1, rules.size());
+        assertEquals(0, rules.get(0).getFrom().size());
+
+        rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.EXTERNAL_PORT))).collect(Collectors.toList());
+        assertEquals(1, rules.size());
+        assertEquals(0, rules.get(0).getFrom().size());
     }
 }

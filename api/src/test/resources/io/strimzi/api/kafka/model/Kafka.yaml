@@ -40,13 +40,43 @@ spec:
       plain:
         authentication:
           type: scram-sha-512
+        networkPolicyPeers:
+          - namespaceSelector:
+              matchLabels:
+                kafka-enabled: true
+            podSelector:
+              matchLabels:
+                app: kafka-consumer
+          - podSelector:
+              matchLabels:
+                app: kafka-producer
       tls:
         authentication:
           type: tls
+        networkPolicyPeers:
+          - namespaceSelector:
+              matchLabels:
+                kafka-enabled: true
+            podSelector:
+              matchLabels:
+                app: kafka-consumer
+          - podSelector:
+              matchLabels:
+                app: kafka-producer
       external:
         type: route
         authentication:
           type: tls
+        networkPolicyPeers:
+          - namespaceSelector:
+              matchLabels:
+                kafka-enabled: true
+            podSelector:
+              matchLabels:
+                app: kafka-consumer
+          - podSelector:
+              matchLabels:
+                app: kafka-producer
     authorization:
       type: simple
       superUsers:
