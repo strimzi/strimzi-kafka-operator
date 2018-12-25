@@ -40,7 +40,7 @@ import static java.util.Collections.singletonList;
                         shortNames = {KafkaConnect.SHORT_NAME}
                 ),
                 group = KafkaConnect.RESOURCE_GROUP,
-                scope = "Namespaced",
+                scope = KafkaConnect.SCOPE,
                 version = KafkaConnect.VERSION
         )
 )
@@ -56,6 +56,7 @@ public class KafkaConnect extends CustomResource {
 
     private static final long serialVersionUID = 1L;
 
+    public static final String SCOPE = "Namespaced";
     public static final String VERSION = "v1alpha1";
     public static final String RESOURCE_KIND = "KafkaConnect";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";

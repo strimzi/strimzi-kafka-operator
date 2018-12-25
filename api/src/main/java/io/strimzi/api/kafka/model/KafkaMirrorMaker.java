@@ -40,7 +40,7 @@ import static java.util.Collections.singletonList;
                         shortNames = {KafkaMirrorMaker.SHORT_NAME}
                 ),
                 group = KafkaMirrorMaker.RESOURCE_GROUP,
-                scope = "Namespaced",
+                scope = KafkaMirrorMaker.SCOPE,
                 version = KafkaMirrorMaker.VERSION
         )
 )
@@ -57,6 +57,7 @@ public class KafkaMirrorMaker extends CustomResource {
 
     private static final long serialVersionUID = 1L;
 
+    public static final String SCOPE = "Namespaced";
     public static final String VERSION = "v1alpha1";
     public static final String RESOURCE_KIND = "KafkaMirrorMaker";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";

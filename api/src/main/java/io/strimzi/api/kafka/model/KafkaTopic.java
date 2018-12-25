@@ -40,7 +40,7 @@ import static java.util.Collections.singletonList;
                         shortNames = {KafkaTopic.SHORT_NAME}
                 ),
                 group = KafkaTopic.RESOURCE_GROUP,
-                scope = "Namespaced",
+                scope = KafkaTopic.SCOPE,
                 version = KafkaTopic.VERSION
         )
 )
@@ -57,6 +57,7 @@ public class KafkaTopic extends CustomResource {
 
     private static final long serialVersionUID = 1L;
 
+    public static final String SCOPE = "Namespaced";
     public static final String VERSION = "v1alpha1";
     public static final String RESOURCE_KIND = "KafkaTopic";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
