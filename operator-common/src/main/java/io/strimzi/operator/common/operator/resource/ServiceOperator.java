@@ -10,14 +10,14 @@ import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 /**
  * Operations for {@code Service}s.
  */
-public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> {
+public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> {
 
     private final EndpointOperator endpointOperations;
     /**
@@ -31,7 +31,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     }
 
     @Override
-    protected MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> operation() {
+    protected MixedOperation<Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> operation() {
         return client.services();
     }
 
@@ -110,7 +110,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @param name The route name.
      */
     public boolean isIngressAddressReady(String namespace, String name) {
-        Resource<Service, DoneableService> resourceOp = operation().inNamespace(namespace).withName(name);
+        ServiceResource<Service, DoneableService> resourceOp = operation().inNamespace(namespace).withName(name);
         Service resource = resourceOp.get();
 
         if (resource != null && resource.getStatus() != null && resource.getStatus().getLoadBalancer() != null && resource.getStatus().getLoadBalancer().getIngress() != null && resource.getStatus().getLoadBalancer().getIngress().size() > 0) {
@@ -142,7 +142,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @param name The route name.
      */
     public boolean isNodePortReady(String namespace, String name) {
-        Resource<Service, DoneableService> resourceOp = operation().inNamespace(namespace).withName(name);
+        ServiceResource<Service, DoneableService> resourceOp = operation().inNamespace(namespace).withName(name);
         Service resource = resourceOp.get();
 
         if (resource != null && resource.getSpec() != null && resource.getSpec().getPorts() != null) {
