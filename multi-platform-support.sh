@@ -17,7 +17,7 @@ then
     # MacOS GNU versions which can be installed through Homebrew
     FIND=gfind
     CP=gcp
-	SED=gsed
-	GREP=ggrep
-	WC=gwc
+    SED=gsed
+    GREP=ggrep
+    WC=gwc
 fi
