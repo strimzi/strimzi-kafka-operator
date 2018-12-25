@@ -124,3 +124,43 @@ listeners:
 
 
 Authentication must be configured when using the User Operator to manage `KafkaUsers`.
+
+== Network Policies
+
+For every enabled listener, {ProductName} will automatically create a NetworkPolicy which will by default grant all applications access to the listener.
+You can restrict the access only to selected applications using the `networkPolicyPeers` field.
+You can use different `networkPolicyPeers` configuration for each listener.
+
+.An example where the `plain` and `tls` listeners allow connections only from selected pods
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+      plain:
+        authentication:
+          type: scram-sha-512
+        networkPolicyPeers:
+          - podSelector:
+              matchLabels:
+                app: kafka-sasl-consumer
+          - podSelector:
+              matchLabels:
+                app: kafka-sasl-producer
+      tls:
+        authentication:
+          type: tls
+        networkPolicyPeers:
+          - namespaceSelector:
+              matchLabels:
+                project: myproject
+          - namespaceSelector:
+              matchLabels:
+                project: myproject2
+# ...
+----
+
+In the example above, only applications with matching labels will be allowed to connect to the `plain` listener and only applications from the namespaces matching the labels will be allowed to connect.
+The syntax of the `networkPolicyPeers` field uses the same syntax as the `from` field in Kubernetes NetworkPolicies.
+For more information about the schema, see {K8sNetworkPolicyPeerAPI} and xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
+
+NOTE: To use NetworkPolicies, your {ProductPlatformName} needs to use SDN with Ingress NetworkPolicy support.
