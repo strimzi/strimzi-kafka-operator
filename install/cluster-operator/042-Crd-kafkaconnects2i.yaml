@@ -326,6 +326,89 @@ spec:
               type: string
             config:
               type: object
+            externalConfiguration:
+              type: object
+              properties:
+                env:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                          secretKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                    required:
+                    - name
+                    - valueFrom
+                volumes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      configMap:
+                        type: object
+                        properties:
+                          defaultMode:
+                            type: integer
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                mode:
+                                  type: integer
+                                path:
+                                  type: string
+                          name:
+                            type: string
+                          optional:
+                            type: boolean
+                      name:
+                        type: string
+                      secret:
+                        type: object
+                        properties:
+                          defaultMode:
+                            type: integer
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                mode:
+                                  type: integer
+                                path:
+                                  type: string
+                          optional:
+                            type: boolean
+                          secretName:
+                            type: string
+                    required:
+                    - name
             insecureSourceRepository:
               type: boolean
             resources:

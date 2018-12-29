@@ -5,12 +5,12 @@
 * Support for Kafka 2.1.0
 * Support for Kafka upgrades
 * Add healthchecks to TLS sidecars
-* Rename annotations to use the `strimzi.io` domain consistently:
+* Rename annotations to use the `strimzi.io` domain consistently (The old annotations are deprecated, but still functional):
     * `cluster.operator.strimzi.io/delete-claim` → `strimzi.io/delete-claim` 
     * `operator.strimzi.io/manual-rolling-update` → `strimzi.io/manual-rolling-update` 
     * `operator.strimzi.io/delete-pod-and-pvc` → `strimzi.io/delete-pod-and-pvc`
     * `operator.strimzi.io/generation` → `strimzi.io/generation`
-The old annotations are deprecated, but still functional.
+* Add support for mounting Secrets and Config Maps into Kafka Connect and Kafka Connect S2I
 
 ## 0.9.0
 

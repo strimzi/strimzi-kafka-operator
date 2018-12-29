@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Toleration;
+import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -54,6 +55,8 @@ public class KafkaConnectSpec implements Serializable {
     private KafkaConnectTls tls;
     private KafkaConnectAuthentication authentication;
     private KafkaConnectTemplate template;
+    private ExternalConfiguration externalConfiguration;
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the Kafka Connect group.")
@@ -217,6 +220,16 @@ public class KafkaConnectSpec implements Serializable {
 
     public void setTemplate(KafkaConnectTemplate template) {
         this.template = template;
+    }
+
+    @Description("Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ExternalConfiguration getExternalConfiguration() {
+        return externalConfiguration;
+    }
+
+    public void setExternalConfiguration(ExternalConfiguration externalConfiguration) {
+        this.externalConfiguration = externalConfiguration;
     }
 
     @JsonAnyGetter

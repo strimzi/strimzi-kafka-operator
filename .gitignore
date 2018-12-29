@@ -33,3 +33,6 @@ helm-charts/strimzi-kafka-operator-*.*.*.tgz
 # Connect plugin (tests)
 systemtest/*.tar.gz
 systemtest/my-plugins/
+
+# MacOS Desktop Services Store files
+**/.DS_Store
