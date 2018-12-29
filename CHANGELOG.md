@@ -2,6 +2,9 @@
 
 ## 0.10.0
 
+* Support for Kafka 2.1.0
+* Support for Kafka upgrades
+* Add healthchecks to TLS sidecars
 * Rename annotations to use the `strimzi.io` domain consistently (The old annotations are deprecated, but still functional):
     * `cluster.operator.strimzi.io/delete-claim` → `strimzi.io/delete-claim` 
     * `operator.strimzi.io/manual-rolling-update` → `strimzi.io/manual-rolling-update` 
@@ -11,7 +14,7 @@
 
 ## 0.9.0
 
-* Add possibility to label and annotate different resources (#1093)
+* Add possibility to label and annotate different resources (#1039)
 * Add support for TransactionalID in KafkaUser resource
 * Update to Kafka 2.0.1
 * Add maintenance time windows support for allowing CA certificates renewal rolling update started only in specific times (#1117)  
