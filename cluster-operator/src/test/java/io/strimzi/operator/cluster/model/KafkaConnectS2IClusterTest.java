@@ -715,7 +715,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
-        assertEquals(new Long(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
     }
 
     @Test
@@ -724,7 +724,7 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
-        assertEquals(new Long(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertEquals(Long.valueOf(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
     }
 
     @Test
@@ -773,9 +773,9 @@ public class KafkaConnectS2IClusterTest {
 
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
         assertNotNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
-        assertEquals(new Long(123), dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
-        assertEquals(new Long(456), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
-        assertEquals(new Long(789), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
+        assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
+        assertEquals(Long.valueOf(456), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
+        assertEquals(Long.valueOf(789), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
     }
 
     @Test

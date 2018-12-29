@@ -948,7 +948,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         StatefulSet ss = kc.generateStatefulSet(true);
-        assertEquals(new Long(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
     }
 
     @Test
@@ -959,7 +959,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         StatefulSet ss = kc.generateStatefulSet(true);
-        assertEquals(new Long(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertEquals(Long.valueOf(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
     }
 
     @Test
@@ -1016,9 +1016,9 @@ public class KafkaClusterTest {
 
         StatefulSet ss = kc.generateStatefulSet(true);
         assertNotNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
-        assertEquals(new Long(123), ss.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
-        assertEquals(new Long(456), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
-        assertEquals(new Long(789), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
+        assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
+        assertEquals(Long.valueOf(456), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
+        assertEquals(Long.valueOf(789), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
     }
 
     @Test

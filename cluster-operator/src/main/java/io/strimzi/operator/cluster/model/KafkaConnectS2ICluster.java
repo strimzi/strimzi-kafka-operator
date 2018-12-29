@@ -124,7 +124,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                             .withVolumes(getVolumes(isOpenShift))
                             .withTolerations(getTolerations())
                             .withAffinity(getMergedAffinity())
-                            .withTerminationGracePeriodSeconds(new Long(templateTerminationGracePeriodSeconds))
+                            .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                             .withImagePullSecrets(templateImagePullSecrets)
                             .withSecurityContext(templateSecurityContext)
                         .endSpec()
