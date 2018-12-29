@@ -314,7 +314,11 @@ spec:
 =======
                     terminationGracePeriodSeconds:
                       type: integer
+<<<<<<< HEAD
 >>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
+=======
+                      minimum: 0
+>>>>>>> Refresh CRDs with the minimum value setting
                     securityContext:
                       type: object
                       properties:
