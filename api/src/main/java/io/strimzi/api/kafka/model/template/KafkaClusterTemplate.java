@@ -30,7 +30,7 @@ public class KafkaClusterTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private ResourceTemplate statefulset;
-    private ResourceTemplate pod;
+    private PodTemplate pod;
     private ResourceTemplate bootstrapService;
     private ResourceTemplate brokersService;
     private ResourceTemplate externalBootstrapService;
@@ -51,11 +51,11 @@ public class KafkaClusterTemplate implements Serializable {
 
     @Description("Template for Kafka `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getPod() {
+    public PodTemplate getPod() {
         return pod;
     }
 
-    public void setPod(ResourceTemplate pod) {
+    public void setPod(PodTemplate pod) {
         this.pod = pod;
     }
 

@@ -37,6 +37,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -210,9 +211,17 @@ public class KafkaConnectCluster extends AbstractModel {
                     kafkaConnect.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
                 }
 
-                if (template.getPod() != null && template.getPod().getMetadata() != null)  {
-                    kafkaConnect.templatePodLabels = template.getPod().getMetadata().getLabels();
-                    kafkaConnect.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+                if (template.getPod() != null)  {
+                    PodTemplate pod = template.getPod();
+
+                    if (pod.getMetadata() != null) {
+                        kafkaConnect.templatePodLabels = pod.getMetadata().getLabels();
+                        kafkaConnect.templatePodAnnotations = pod.getMetadata().getAnnotations();
+                    }
+
+                    kafkaConnect.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
+                    kafkaConnect.templateImagePullSecrets = pod.getImagePullSecrets();
+                    kafkaConnect.templateSecurityContext = pod.getSecurityContext();
                 }
 
                 if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {

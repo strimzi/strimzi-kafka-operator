@@ -7,7 +7,9 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -41,6 +43,8 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ZookeeperClusterTest {
@@ -354,5 +358,106 @@ public class ZookeeperClusterTest {
         svc = zc.generateHeadlessService();
         assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(hSvcLabels.entrySet()));
         assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnots.entrySet()));
+    }
+
+    @Test
+    public void testGracePeriod() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withTerminationGracePeriodSeconds(123)
+                            .endPod()
+                        .endTemplate()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(true);
+        assertEquals(new Long(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+    }
+
+    @Test
+    public void testDefaultGracePeriod() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(true);
+        assertEquals(new Long(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+    }
+
+    @Test
+    public void testImagePullSecrets() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withImagePullSecrets(secret1, secret2)
+                            .endPod()
+                        .endTemplate()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(true);
+        assertEquals(2, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testDefaultImagePullSecrets() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(true);
+        assertEquals(0, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+    }
+
+    @Test
+    public void testSecurityContext() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withNewRunAsUser(789L).build())
+                            .endPod()
+                        .endTemplate()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(true);
+        assertNotNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
+        assertEquals(new Long(123), ss.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
+        assertEquals(new Long(456), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
+        assertEquals(new Long(789), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
+    }
+
+    @Test
+    public void testDefaultSecurityContext() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = zc.generateStatefulSet(true);
+        assertNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
     }
 }

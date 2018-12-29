@@ -30,7 +30,7 @@ public class KafkaConnectTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private ResourceTemplate deployment;
-    private ResourceTemplate pod;
+    private PodTemplate pod;
     private ResourceTemplate apiService;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -46,11 +46,11 @@ public class KafkaConnectTemplate implements Serializable {
 
     @Description("Template for Kafka Connect `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getPod() {
+    public PodTemplate getPod() {
         return pod;
     }
 
-    public void setPod(ResourceTemplate pod) {
+    public void setPod(PodTemplate pod) {
         this.pod = pod;
     }
 

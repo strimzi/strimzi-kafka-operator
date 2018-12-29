@@ -437,7 +437,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |statefulset               1.2+<.<|Template for Kafka `StatefulSet`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod                       1.2+<.<|Template for Kafka `Pods`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-PodTemplate-{context}[`PodTemplate`]
 |bootstrapService          1.2+<.<|Template for Kafka bootstrap `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |brokersService            1.2+<.<|Template for Kafka broker `Service`.
@@ -468,7 +468,7 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+Used in: xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 
 
 [options="header"]
@@ -478,6 +478,29 @@ Used in: xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |map
 |annotations  1.2+<.<|Annotations which should be added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
 |map
+|====
+
+[id='type-PodTemplate-{context}']
+### `PodTemplate` schema reference
+
+Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+
+
+[options="header"]
+|====
+|Field                                 |Description
+|metadata                       1.2+<.<|Metadata which should be applied to the resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|imagePullSecrets               1.2+<.<|List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#localobjectreference-v1-core[core/v1 localobjectreference].
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#localobjectreference-v1-core[LocalObjectReference] array
+|terminationGracePeriodSeconds  1.2+<.<|The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+|integer
+|securityContext                1.2+<.<|Configures pod-level security attributes and common container settings.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#podsecuritycontext-v1-core[core/v1 podsecuritycontext].
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#podsecuritycontext-v1-core[PodSecurityContext]
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']
@@ -535,7 +558,7 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |statefulset    1.2+<.<|Template for Zookeeper `StatefulSet`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod            1.2+<.<|Template for Zookeeper `Pods`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-PodTemplate-{context}[`PodTemplate`]
 |clientService  1.2+<.<|Template for Zookeeper client `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |nodesService   1.2+<.<|Template for Zookeeper nodes `Service`.
@@ -679,7 +702,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |deployment  1.2+<.<|Template for Entity Operator `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod         1.2+<.<|Template for Entity Operator `Pods`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-PodTemplate-{context}[`PodTemplate`]
 |====
 
 [id='type-CertificateAuthority-{context}']
@@ -772,7 +795,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |deployment  1.2+<.<|Template for Kafka Connect `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod         1.2+<.<|Template for Kafka Connect `Pods`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService  1.2+<.<|Template for Kafka Connect API `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
@@ -1354,6 +1377,6 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |deployment  1.2+<.<|Template for Kafka Mirror Maker `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod         1.2+<.<|Template for Kafka Mirror Maker `Pods`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-PodTemplate-{context}[`PodTemplate`]
 |====
 

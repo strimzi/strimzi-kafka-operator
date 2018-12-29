@@ -23,6 +23,14 @@ spec:
         annotations:
           key1: label1
           key2: label2
+      imagePullSecrets:
+        - name: some-secret
+        - name: some-other-secret
+      securityContext:
+        runAsUser: 1000001
+        runAsGroup: 1000001
+        fsGroup: 0
+      terminationGracePeriodSeconds: 30
     apiService:
       metadata:
         labels:

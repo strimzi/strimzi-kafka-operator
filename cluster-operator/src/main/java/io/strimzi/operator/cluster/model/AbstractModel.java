@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -168,6 +169,9 @@ public abstract class AbstractModel {
     protected Map<String, String> templateServiceAnnotations;
     protected Map<String, String> templateHeadlessServiceLabels;
     protected Map<String, String> templateHeadlessServiceAnnotations;
+    protected List<LocalObjectReference> templateImagePullSecrets;
+    protected PodSecurityContext templateSecurityContext;
+    protected int templateTerminationGracePeriodSeconds = 30;
 
     // Owner Reference information
     private String ownerApiVersion;
@@ -832,6 +836,9 @@ public abstract class AbstractModel {
                             .withContainers(containers)
                             .withVolumes(volumes)
                             .withTolerations(getTolerations())
+                            .withTerminationGracePeriodSeconds(new Long(templateTerminationGracePeriodSeconds))
+                            .withImagePullSecrets(templateImagePullSecrets)
+                            .withSecurityContext(templateSecurityContext)
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)
@@ -874,6 +881,9 @@ public abstract class AbstractModel {
                             .withContainers(containers)
                             .withVolumes(volumes)
                             .withTolerations(getTolerations())
+                            .withTerminationGracePeriodSeconds(new Long(templateTerminationGracePeriodSeconds))
+                            .withImagePullSecrets(templateImagePullSecrets)
+                            .withSecurityContext(templateSecurityContext)
                         .endSpec()
                     .endTemplate()
                 .endSpec()

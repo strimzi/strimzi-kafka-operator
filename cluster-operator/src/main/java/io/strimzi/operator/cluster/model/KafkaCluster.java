@@ -49,6 +49,7 @@ import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -313,9 +314,17 @@ public class KafkaCluster extends AbstractModel {
                 result.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
             }
 
-            if (template.getPod() != null && template.getPod().getMetadata() != null)  {
-                result.templatePodLabels = template.getPod().getMetadata().getLabels();
-                result.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+            if (template.getPod() != null)  {
+                PodTemplate pod = template.getPod();
+
+                if (pod.getMetadata() != null) {
+                    result.templatePodLabels = pod.getMetadata().getLabels();
+                    result.templatePodAnnotations = pod.getMetadata().getAnnotations();
+                }
+
+                result.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
+                result.templateImagePullSecrets = pod.getImagePullSecrets();
+                result.templateSecurityContext = pod.getSecurityContext();
             }
 
             if (template.getBootstrapService() != null && template.getBootstrapService().getMetadata() != null)  {

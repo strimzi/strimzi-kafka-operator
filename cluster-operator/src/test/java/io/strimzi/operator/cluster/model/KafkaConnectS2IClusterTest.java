@@ -10,8 +10,10 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -49,6 +51,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -489,9 +492,9 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                .withNewExternalConfiguration()
-                .withEnv(env)
-                .endExternalConfiguration()
+                    .withNewExternalConfiguration()
+                        .withEnv(env)
+                    .endExternalConfiguration()
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
@@ -516,9 +519,9 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                .withNewExternalConfiguration()
-                .withEnv(env)
-                .endExternalConfiguration()
+                    .withNewExternalConfiguration()
+                        .withEnv(env)
+                    .endExternalConfiguration()
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
@@ -541,9 +544,9 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                .withNewExternalConfiguration()
-                .withVolumes(volume)
-                .endExternalConfiguration()
+                    .withNewExternalConfiguration()
+                        .withVolumes(volume)
+                    .endExternalConfiguration()
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
@@ -604,9 +607,9 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                .withNewExternalConfiguration()
-                .withVolumes(volume)
-                .endExternalConfiguration()
+                    .withNewExternalConfiguration()
+                        .withVolumes(volume)
+                    .endExternalConfiguration()
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
@@ -630,9 +633,9 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                .withNewExternalConfiguration()
-                .withVolumes(volume)
-                .endExternalConfiguration()
+                    .withNewExternalConfiguration()
+                        .withVolumes(volume)
+                    .endExternalConfiguration()
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
@@ -660,9 +663,9 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                .withNewExternalConfiguration()
-                .withEnv(env)
-                .endExternalConfiguration()
+                    .withNewExternalConfiguration()
+                        .withEnv(env)
+                    .endExternalConfiguration()
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
@@ -684,9 +687,9 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                .withNewExternalConfiguration()
-                .withEnv(env)
-                .endExternalConfiguration()
+                    .withNewExternalConfiguration()
+                        .withEnv(env)
+                    .endExternalConfiguration()
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
@@ -696,5 +699,91 @@ public class KafkaConnectS2IClusterTest {
         List<EnvVar> envs = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
         assertEquals(0, selected.size());
+    }
+
+    @Test
+    public void testGracePeriod() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withTerminationGracePeriodSeconds(123)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        assertEquals(new Long(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+    }
+
+    @Test
+    public void testDefaultGracePeriod() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource).build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        assertEquals(new Long(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+    }
+
+    @Test
+    public void testImagePullSecrets() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withImagePullSecrets(secret1, secret2)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testDefaultImagePullSecrets() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource).build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        assertEquals(0, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+    }
+
+    @Test
+    public void testSecurityContext() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withNewRunAsUser(789L).build())
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        assertNotNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
+        assertEquals(new Long(123), dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
+        assertEquals(new Long(456), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
+        assertEquals(new Long(789), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
+    }
+
+    @Test
+    public void testDefaultSecurityContext() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource).build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
+        assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
     }
 }

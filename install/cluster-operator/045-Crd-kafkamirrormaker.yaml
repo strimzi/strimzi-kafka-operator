@@ -452,6 +452,50 @@ spec:
                           type: object
                         annotations:
                           type: object
+                    imagePullSecrets:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                    terminationGracePeriodSeconds:
+                      type: integer
+                    securityContext:
+                      type: object
+                      properties:
+                        fsGroup:
+                          type: integer
+                        runAsGroup:
+                          type: integer
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                        seLinuxOptions:
+                          type: object
+                          properties:
+                            level:
+                              type: string
+                            role:
+                              type: string
+                            type:
+                              type: string
+                            user:
+                              type: string
+                        supplementalGroups:
+                          type: array
+                          items:
+                            type: integer
+                        sysctls:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
             version:
               type: string
           required:

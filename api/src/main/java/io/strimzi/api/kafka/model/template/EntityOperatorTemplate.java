@@ -30,7 +30,7 @@ public class EntityOperatorTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private ResourceTemplate deployment;
-    private ResourceTemplate pod;
+    private PodTemplate pod;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Entity Operator `Deployment`.")
@@ -45,11 +45,11 @@ public class EntityOperatorTemplate implements Serializable {
 
     @Description("Template for Entity Operator `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getPod() {
+    public PodTemplate getPod() {
         return pod;
     }
 
-    public void setPod(ResourceTemplate pod) {
+    public void setPod(PodTemplate pod) {
         this.pod = pod;
     }
 

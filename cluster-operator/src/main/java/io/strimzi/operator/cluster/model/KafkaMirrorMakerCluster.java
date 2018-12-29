@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -190,9 +191,17 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 kafkaMirrorMakerCluster.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
             }
 
-            if (template.getPod() != null && template.getPod().getMetadata() != null)  {
-                kafkaMirrorMakerCluster.templatePodLabels = template.getPod().getMetadata().getLabels();
-                kafkaMirrorMakerCluster.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+            if (template.getPod() != null)  {
+                PodTemplate pod = template.getPod();
+
+                if (pod.getMetadata() != null) {
+                    kafkaMirrorMakerCluster.templatePodLabels = pod.getMetadata().getLabels();
+                    kafkaMirrorMakerCluster.templatePodAnnotations = pod.getMetadata().getAnnotations();
+                }
+
+                kafkaMirrorMakerCluster.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
+                kafkaMirrorMakerCluster.templateImagePullSecrets = pod.getImagePullSecrets();
+                kafkaMirrorMakerCluster.templateSecurityContext = pod.getSecurityContext();
             }
         }
 
