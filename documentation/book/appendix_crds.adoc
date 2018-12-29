@@ -495,12 +495,20 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#localobjectreference-v1-core[LocalObjectReference] array
+<<<<<<< HEAD
+=======
+|terminationGracePeriodSeconds  1.2+<.<|The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+|integer
+>>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
 |securityContext                1.2+<.<|Configures pod-level security attributes and common container settings.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#podsecuritycontext-v1-core[core/v1 podsecuritycontext].
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#podsecuritycontext-v1-core[PodSecurityContext]
+<<<<<<< HEAD
 |terminationGracePeriodSeconds  1.2+<.<|The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
 |integer
+=======
+>>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
 |====
 
 [id='type-ZookeeperClusterSpec-{context}']

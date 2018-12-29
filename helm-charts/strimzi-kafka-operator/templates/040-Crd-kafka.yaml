@@ -654,6 +654,11 @@ spec:
                             properties:
                               name:
                                 type: string
+<<<<<<< HEAD
+=======
+                        terminationGracePeriodSeconds:
+                          type: integer
+>>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
                         securityContext:
                           type: object
                           properties:
@@ -689,9 +694,12 @@ spec:
                                     type: string
                                   value:
                                     type: string
+<<<<<<< HEAD
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
+=======
+>>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
                     bootstrapService:
                       type: object
                       properties:
@@ -1162,6 +1170,11 @@ spec:
                             properties:
                               name:
                                 type: string
+<<<<<<< HEAD
+=======
+                        terminationGracePeriodSeconds:
+                          type: integer
+>>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
                         securityContext:
                           type: object
                           properties:
@@ -1197,9 +1210,12 @@ spec:
                                     type: string
                                   value:
                                     type: string
+<<<<<<< HEAD
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
+=======
+>>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
                     clientService:
                       type: object
                       properties:
@@ -1962,6 +1978,11 @@ spec:
                             properties:
                               name:
                                 type: string
+<<<<<<< HEAD
+=======
+                        terminationGracePeriodSeconds:
+                          type: integer
+>>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
                         securityContext:
                           type: object
                           properties:
@@ -1997,9 +2018,12 @@ spec:
                                     type: string
                                   value:
                                     type: string
+<<<<<<< HEAD
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
+=======
+>>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
             clusterCa:
               type: object
               properties:
