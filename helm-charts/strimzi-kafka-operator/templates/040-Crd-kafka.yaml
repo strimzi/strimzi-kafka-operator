@@ -656,6 +656,7 @@ spec:
                                 type: string
                         terminationGracePeriodSeconds:
                           type: integer
+                          minimum: 0
                         securityContext:
                           type: object
                           properties:
@@ -1163,6 +1164,7 @@ spec:
                                 type: string
                         terminationGracePeriodSeconds:
                           type: integer
+                          minimum: 0
                         securityContext:
                           type: object
                           properties:
@@ -1962,6 +1964,7 @@ spec:
                                 type: string
                         terminationGracePeriodSeconds:
                           type: integer
+                          minimum: 0
                         securityContext:
                           type: object
                           properties:
