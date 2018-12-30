@@ -318,7 +318,6 @@ public class ZookeeperCluster extends AbstractModel {
                 emptyMap(),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
-                getVolumeMounts(),
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),

@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -67,7 +66,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -86,11 +84,7 @@ public abstract class AbstractModel {
     protected static final int CERTS_EXPIRATION_DAYS = 365;
     protected static final String DEFAULT_JVM_XMS = "128M";
 
-    private static final String VOLUME_MOUNT_HACK_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_VOLUME_MOUNT_INIT_IMAGE", "busybox");
-    protected static final String VOLUME_MOUNT_HACK_NAME = "volume-mount-hack";
-    private static final Long VOLUME_MOUNT_HACK_USERID = 1001L;
-    private static final Long VOLUME_MOUNT_HACK_GROUPID = 0L;
+    private static final Long DEFAULT_FS_GROUPID = 0L;
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";
     public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
@@ -771,7 +765,6 @@ public abstract class AbstractModel {
             Map<String, String> annotations,
             List<Volume> volumes,
             List<PersistentVolumeClaim> volumeClaims,
-            List<VolumeMount> volumeMounts,
             Affinity affinity,
             List<Container> initContainers,
             List<Container> containers,
@@ -783,29 +776,14 @@ public abstract class AbstractModel {
                 String.valueOf(storage instanceof PersistentClaimStorage
                         && ((PersistentClaimStorage) storage).isDeleteClaim()));
 
-        List<Container> initContainersInternal = new ArrayList<>();
-        PodSecurityContext securityContext = null;
-        // if a persistent volume claim is requested and the running cluster is a Kubernetes one
-        // there is an hack on volume mounting which needs an "init-container"
-        if (this.storage instanceof PersistentClaimStorage && !isOpenShift) {
-            String chown = String.format("chown -R %d:%d %s",
-                    AbstractModel.VOLUME_MOUNT_HACK_USERID,
-                    AbstractModel.VOLUME_MOUNT_HACK_GROUPID,
-                    volumeMounts.get(0).getMountPath());
-            Container initContainer = new ContainerBuilder()
-                    .withName(AbstractModel.VOLUME_MOUNT_HACK_NAME)
-                    .withImage(AbstractModel.VOLUME_MOUNT_HACK_IMAGE)
-                    .withVolumeMounts(volumeMounts.get(0))
-                    .withCommand("sh", "-c", chown)
-                    .build();
-            initContainersInternal.add(initContainer);
+        PodSecurityContext securityContext = templateSecurityContext;
+
+        // if a persistent volume claim is requested and the running cluster is a Kubernetes one and we have no user configured PodSecurityContext
+        // we set the security context
+        if (this.storage instanceof PersistentClaimStorage && !isOpenShift && securityContext == null) {
             securityContext = new PodSecurityContextBuilder()
-                    .withFsGroup(AbstractModel.VOLUME_MOUNT_HACK_GROUPID)
+                    .withFsGroup(AbstractModel.DEFAULT_FS_GROUPID)
                     .build();
-        }
-        // add all the other init containers provided by the specific model implementation
-        if (initContainers != null) {
-            initContainersInternal.addAll(initContainers);
         }
 
         StatefulSet statefulSet = new StatefulSetBuilder()
@@ -831,14 +809,13 @@ public abstract class AbstractModel {
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())
                             .withAffinity(affinity)
-                            .withSecurityContext(securityContext)
-                            .withInitContainers(initContainersInternal)
+                            .withInitContainers(initContainers)
                             .withContainers(containers)
                             .withVolumes(volumes)
                             .withTolerations(getTolerations())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                             .withImagePullSecrets(templateImagePullSecrets)
-                            .withSecurityContext(templateSecurityContext)
+                            .withSecurityContext(securityContext)
                         .endSpec()
                     .endTemplate()
                     .withVolumeClaimTemplates(volumeClaims)

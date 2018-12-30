@@ -30,7 +30,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -284,20 +283,6 @@ public class KafkaClusterTest {
         assertEquals(new Integer(tlsHealthTimeout), tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(tlsHealthDelay), tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(tlsHealthTimeout), tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds());
-
-        if (cm.getSpec().getKafka().getStorage() != null) {
-            io.strimzi.api.kafka.model.Storage storage = cm.getSpec().getKafka().getStorage();
-            if (storage instanceof PersistentClaimStorage && !isOpenShift) {
-                PodSpec podSpec = ss.getSpec().getTemplate().getSpec();
-                // check that pod spec contains the volume hack container for Kubernetes
-                List<Container> initContainers = podSpec.getInitContainers();
-                assertNotNull(initContainers);
-                assertTrue(initContainers.size() > 0);
-                boolean isVolumeHack =
-                        initContainers.stream().anyMatch(container -> container.getName().equals(AbstractModel.VOLUME_MOUNT_HACK_NAME));
-                assertTrue(isVolumeHack);
-            }
-        }
 
         if (cm.getSpec().getKafka().getRack() != null) {
 

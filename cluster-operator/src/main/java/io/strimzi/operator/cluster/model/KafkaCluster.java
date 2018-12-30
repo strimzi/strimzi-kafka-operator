@@ -579,7 +579,6 @@ public class KafkaCluster extends AbstractModel {
                 singletonMap(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version()),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
-                getVolumeMounts(),
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),
