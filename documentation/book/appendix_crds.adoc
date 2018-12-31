@@ -740,7 +740,7 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |integer
 |renewalDays                   1.2+<.<|The number of days in the certificate renewal period. This is the number of days before the a certificate expires during which renewal actions may be performed. When `generateCertificateAuthority` is true, this will cause the generation of a new certificate. When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. Default is 30.
 |integer
-|certificateExpirationPolicy   1.2+<.<|How should CA certificate expiration be handled when `generateCertificateAuthority=true`. The default is for a new CA certificate to be generate (using the existing private key).
+|certificateExpirationPolicy   1.2+<.<|How should CA certificate expiration be handled when `generateCertificateAuthority=true`. The default is for a new CA certificate to be generated reusing the existing private key.
 |string (one of [replace-key, renew-certificate])
 |====
 
