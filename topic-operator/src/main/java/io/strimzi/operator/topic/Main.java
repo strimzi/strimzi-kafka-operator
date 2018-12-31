@@ -5,6 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.strimzi.api.kafka.Crds;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,6 +38,7 @@ public class Main {
 
     private void deploy(Config config) {
         DefaultKubernetesClient kubeClient = new DefaultKubernetesClient();
+        Crds.registerCustomKinds();
         Vertx vertx = Vertx.vertx();
         Session session = new Session(kubeClient, config);
         vertx.deployVerticle(session, ar -> {

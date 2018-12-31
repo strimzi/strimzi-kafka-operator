@@ -55,11 +55,12 @@ public class Crds {
      */
     public static void registerCustomKinds() {
         for (Class<? extends CustomResource> c : CRDS) {
-            KubernetesDeserializer.registerCustomKind(kind(c), c);
+            KubernetesDeserializer.registerCustomKind(apiVersion(c), kind(c), c);
         }
     }
 
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls) {
+        String scope;
         String kind;
         String crdApiVersion;
         String plural;
@@ -69,6 +70,7 @@ public class Crds {
         String group;
         List<String> shortNames = emptyList();
         if (cls.equals(Kafka.class)) {
+            scope = Kafka.SCOPE;
             kind = Kafka.RESOURCE_KIND;
             crdApiVersion = Kafka.CRD_API_VERSION;
             plural = Kafka.RESOURCE_PLURAL;
@@ -78,6 +80,7 @@ public class Crds {
             version = Kafka.VERSION;
             shortNames = Kafka.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaConnect.class)) {
+            scope = KafkaConnect.SCOPE;
             kind = KafkaConnect.RESOURCE_KIND;
             crdApiVersion = KafkaConnect.CRD_API_VERSION;
             plural = KafkaConnect.RESOURCE_PLURAL;
@@ -87,6 +90,7 @@ public class Crds {
             version = KafkaConnect.VERSION;
             shortNames = KafkaConnect.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaConnectS2I.class)) {
+            scope = KafkaConnectS2I.SCOPE;
             kind = KafkaConnectS2I.RESOURCE_KIND;
             crdApiVersion = KafkaConnectS2I.CRD_API_VERSION;
             plural = KafkaConnectS2I.RESOURCE_PLURAL;
@@ -96,6 +100,7 @@ public class Crds {
             version = KafkaConnectS2I.VERSION;
             shortNames = KafkaConnectS2I.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaTopic.class)) {
+            scope = KafkaTopic.SCOPE;
             kind = KafkaTopic.RESOURCE_KIND;
             crdApiVersion = KafkaTopic.CRD_API_VERSION;
             plural = KafkaTopic.RESOURCE_PLURAL;
@@ -105,6 +110,7 @@ public class Crds {
             version = KafkaTopic.VERSION;
             shortNames = KafkaTopic.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaUser.class)) {
+            scope = KafkaUser.SCOPE;
             kind = KafkaUser.RESOURCE_KIND;
             crdApiVersion = KafkaUser.CRD_API_VERSION;
             plural = KafkaUser.RESOURCE_PLURAL;
@@ -114,6 +120,7 @@ public class Crds {
             version = KafkaUser.VERSION;
             shortNames = KafkaUser.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaMirrorMaker.class)) {
+            scope = KafkaMirrorMaker.SCOPE;
             kind = KafkaMirrorMaker.RESOURCE_KIND;
             crdApiVersion = KafkaMirrorMaker.CRD_API_VERSION;
             plural = KafkaMirrorMaker.RESOURCE_PLURAL;
@@ -132,6 +139,7 @@ public class Crds {
                     .withName(plural + "." + group)
                 .endMetadata()
                 .withNewSpec()
+                    .withScope(scope)
                     .withGroup(group)
                     .withVersion(version)
                     .withNewNames()
@@ -205,6 +213,14 @@ public class Crds {
         try {
             return cls.newInstance().getKind();
         } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T extends CustomResource> String apiVersion(Class<T> cls) {
+        try {
+            return cls.getField("RESOURCE_GROUP").get(null) + "/" + cls.getField("VERSION").get(null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }

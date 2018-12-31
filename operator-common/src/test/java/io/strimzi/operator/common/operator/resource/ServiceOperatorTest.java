@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ServiceOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Service, ServiceList, DoneableService, Resource<Service, DoneableService>> {
+public class ServiceOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -29,8 +29,8 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Override
-    protected Class<Resource> resourceType() {
-        return Resource.class;
+    protected Class<ServiceResource> resourceType() {
+        return ServiceResource.class;
     }
 
     @Override

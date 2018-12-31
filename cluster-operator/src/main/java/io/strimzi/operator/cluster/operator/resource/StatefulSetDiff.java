@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

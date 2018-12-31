@@ -41,6 +41,19 @@ spec:
                                   type: "array"
                                   items:
                                     type: "string"
+                          matchFields:
+                            type: "array"
+                            items:
+                              type: "object"
+                              properties:
+                                key:
+                                  type: "string"
+                                operator:
+                                  type: "string"
+                                values:
+                                  type: "array"
+                                  items:
+                                    type: "string"
                       weight:
                         type: "integer"
                 requiredDuringSchedulingIgnoredDuringExecution:
@@ -52,6 +65,19 @@ spec:
                         type: "object"
                         properties:
                           matchExpressions:
+                            type: "array"
+                            items:
+                              type: "object"
+                              properties:
+                                key:
+                                  type: "string"
+                                operator:
+                                  type: "string"
+                                values:
+                                  type: "array"
+                                  items:
+                                    type: "string"
+                          matchFields:
                             type: "array"
                             items:
                               type: "object"

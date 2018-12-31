@@ -39,7 +39,7 @@ import static java.util.Collections.singletonList;
                         shortNames = {KafkaUser.SHORT_NAME}
                 ),
                 group = KafkaUser.RESOURCE_GROUP,
-                scope = "Namespaced",
+                scope = KafkaUser.SCOPE,
                 version = KafkaUser.VERSION
         )
 )
@@ -54,6 +54,7 @@ import static java.util.Collections.singletonList;
 public class KafkaUser extends CustomResource {
     private static final long serialVersionUID = 1L;
 
+    public static final String SCOPE = "Namespaced";
     public static final String VERSION = "v1alpha1";
     public static final String RESOURCE_KIND = "KafkaUser";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";

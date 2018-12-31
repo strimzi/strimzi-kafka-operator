@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.extensions.DoneableNetworkPolicy;
-import io.fabric8.kubernetes.api.model.extensions.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyList;
+import io.fabric8.kubernetes.api.model.networking.DoneableNetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;

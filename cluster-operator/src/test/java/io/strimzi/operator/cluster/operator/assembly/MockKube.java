@@ -34,16 +34,16 @@ import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.api.model.apiextensions.DoneableCustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
-import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
-import io.fabric8.kubernetes.api.model.extensions.DoneableNetworkPolicy;
-import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.extensions.NetworkPolicyList;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetStatus;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentList;
+import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.networking.DoneableNetworkPolicy;
+import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -58,6 +58,7 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
 
 import io.fabric8.openshift.api.model.DoneableRoute;
@@ -181,7 +182,7 @@ public class MockKube {
         MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockCms = buildConfigMaps();
         MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs = buildPvcs();
         MixedOperation<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> mockEndpoints = buildEndpoints();
-        MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> mockSvc = buildServices();
+        MixedOperation<Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> mockSvc = buildServices();
         MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods = buildPods();
         MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods);
         MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> mockDep = buildDeployments(mockPods);
@@ -497,12 +498,12 @@ public class MockKube {
         }.build();
     }
 
-    private MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> buildServices() {
-        return new AbstractMockBuilder<Service, ServiceList, DoneableService, Resource<Service, DoneableService>>(
-                Service.class, ServiceList.class, DoneableService.class, castClass(Resource.class), svcDb) {
+    private MixedOperation<Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> buildServices() {
+        return new AbstractMockBuilder<Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>>(
+                Service.class, ServiceList.class, DoneableService.class, castClass(ServiceResource.class), svcDb) {
 
             @Override
-            protected void nameScopedMocks(Resource<Service, DoneableService> resource, String resourceName) {
+            protected void nameScopedMocks(ServiceResource<Service, DoneableService> resource, String resourceName) {
                 mockGet(resourceName, resource);
                 //mockCreate("endpoint", endpointDb, resourceName, resource);
                 mockCascading(resource);
