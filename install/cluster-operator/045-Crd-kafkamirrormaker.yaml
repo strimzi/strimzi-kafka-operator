@@ -462,6 +462,7 @@ spec:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                     terminationGracePeriodSeconds:
                       type: integer
@@ -478,6 +479,8 @@ spec:
                       type: integer
 >>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
 >>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
+=======
+>>>>>>> Update CRD resources
                     securityContext:
                       type: object
                       properties:
@@ -516,6 +519,7 @@ spec:
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                     terminationGracePeriodSeconds:
                       type: integer
                       minimum: 0
@@ -533,6 +537,11 @@ spec:
 =======
 >>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
 >>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
+=======
+                    terminationGracePeriodSeconds:
+                      type: integer
+                      minimum: 0
+>>>>>>> Update CRD resources
             version:
               type: string
           required:
