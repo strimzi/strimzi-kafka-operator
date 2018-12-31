@@ -59,7 +59,7 @@ For example, using `grep`:
 +
 [shell,subs="+quotes"]
 ----
-oc logs -f _<co-pod-name>_ | grep -E "Kafka version upgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
+oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version upgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
 ----
 
 . Upgrade each client application to use the new version of the client libraries.

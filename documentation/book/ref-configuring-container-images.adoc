@@ -20,19 +20,19 @@ Container image which should be used for given components can be specified using
 == Configuring the `Kafka.spec.kafka.image` property
 
 The `Kafka.spec.kafka.image` property functions differently from the others, because {ProductName} supports multiple versions of Kafka, each requiring the own image.
-The `STRIMZI_KAFKA_IMAGE_MAP` environment variable of the Cluster Operator configuration is used to provide a mapping between Kafka versions and the corresponding images. 
+The `STRIMZI_KAFKA_IMAGES` environment variable of the Cluster Operator configuration is used to provide a mapping between Kafka versions and the corresponding images. 
 This is used in combination with the `Kafka.spec.kafka.image` and `Kafka.spec.kafka.version` properties as follows:
 
-* If neither `Kafka.spec.kafka.image` nor `Kafka.spec.kafka.version` are given in the custom resource then the `version` will default to the  Cluster Operator's default Kafka version, and the image will be the one corresponding to this version in the `STRIMZI_KAFKA_IMAGE_MAP`.
+* If neither `Kafka.spec.kafka.image` nor `Kafka.spec.kafka.version` are given in the custom resource then the `version` will default to the  Cluster Operator's default Kafka version, and the image will be the one corresponding to this version in the `STRIMZI_KAFKA_IMAGES`.
 
 * If `Kafka.spec.kafka.image` is given but `Kafka.spec.kafka.version` is not then the given image will be used and the `version` will be assumed to be the  Cluster Operator's default Kafka version.
 
-* If `Kafka.spec.kafka.version` is given but `Kafka.spec.kafka.image` is not then image will be the one corresponding to this version in the `STRIMZI_KAFKA_IMAGE_MAP`.
+* If `Kafka.spec.kafka.version` is given but `Kafka.spec.kafka.image` is not then image will be the one corresponding to this version in the `STRIMZI_KAFKA_IMAGES`.
 
 * Both `Kafka.spec.kafka.version` and `Kafka.spec.kafka.image` are given the given image will be used, and it will be assumed to contain a Kafka broker with the given version.
 
 WARNING: It is best to provide just `Kafka.spec.kafka.version` and leave the `Kafka.spec.kafka.image` property unspecified.
-This reduces the chances of making a mistake in configuring the `Kafka` resource. If you need to change the images used for different versions of Kafka, it is better to configure the Cluster Operator's `STRIMZI_KAFKA_IMAGE_MAP` environment variable.
+This reduces the chances of making a mistake in configuring the `Kafka` resource. If you need to change the images used for different versions of Kafka, it is better to configure the Cluster Operator's `STRIMZI_KAFKA_IMAGES` environment variable.
 
 == Configuring the `image` property in other resources
 

@@ -7,8 +7,8 @@
 
 Depending on the difference between the version being upgraded from and to, the upgrade process works in one of two ways:
 
-* A three phase update. This is typically used for upgrading between Kafka versions differing in the major or minor versions, for example 2.0.0 to 2.1.0.
-* A single phase update. This is typically used for upgrading between Kafka versions differing in the micro versions, for example 2.0.0 to 2.0.1.
+* A three phase update. This is typically used for upgrading between Kafka versions differing in the major or minor version number, for example 2.0.0 to 2.1.0.
+* A single phase update. This is typically used for upgrading between Kafka versions differing in the patch number, for example 2.0.0 to 2.0.1.
 
 == Three phase update
 
