@@ -311,6 +311,7 @@ spec:
                           name:
                             type: string
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                     terminationGracePeriodSeconds:
                       type: integer
@@ -319,6 +320,8 @@ spec:
 =======
                       minimum: 0
 >>>>>>> Refresh CRDs with the minimum value setting
+=======
+>>>>>>> Fix updated CRD definitions and docs
                     securityContext:
                       type: object
                       properties:
@@ -355,11 +358,17 @@ spec:
                               value:
                                 type: string
 <<<<<<< HEAD
+<<<<<<< HEAD
                     terminationGracePeriodSeconds:
                       type: integer
                       minimum: 0
 =======
 >>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
+=======
+                    terminationGracePeriodSeconds:
+                      type: integer
+                      minimum: 0
+>>>>>>> Fix updated CRD definitions and docs
                 apiService:
                   type: object
                   properties:
