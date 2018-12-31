@@ -532,23 +532,25 @@ public abstract class Ca {
 
     private int removeExpiredCerts(Map<String, String> newData) {
         int removed = 0;
-        Iterator<String> iter = newData.keySet().iterator();
+        Iterator<Map.Entry<String, String>> iter = newData.entrySet().iterator();
         while (iter.hasNext()) {
-            String key = iter.next();
+            Map.Entry<String, String> entry = iter.next();
+            String certName = entry.getKey();
+            String certText = entry.getValue();
             boolean remove;
             try {
-                X509Certificate cert = x509Certificate(Base64.getDecoder().decode(newData.get(key)));
+                X509Certificate cert = x509Certificate(Base64.getDecoder().decode(certText));
                 Instant expiryDate = cert.getNotAfter().toInstant();
                 remove = expiryDate.isBefore(Instant.now());
                 if (remove) {
-                    log.debug("{} in Secret expired {}; removing it", key, expiryDate);
+                    log.debug("{} in Secret expired {}; removing it", certName, expiryDate);
                 }
             } catch (CertificateException e) {
                 remove = true;
-                log.debug("{} in Secret is not an X.509 certificate; removing it", key);
+                log.debug("{} in Secret is not an X.509 certificate; removing it", certName);
             }
             if (remove) {
-                log.debug("Removing {} from Secret", key);
+                log.debug("Removing {} from Secret", certName);
                 iter.remove();
                 removed++;
             }
