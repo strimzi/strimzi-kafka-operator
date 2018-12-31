@@ -314,9 +314,6 @@ spec:
                         properties:
                           name:
                             type: string
-                    terminationGracePeriodSeconds:
-                      type: integer
-                      minimum: 0
                     securityContext:
                       type: object
                       properties:
@@ -352,6 +349,9 @@ spec:
                                 type: string
                               value:
                                 type: string
+                    terminationGracePeriodSeconds:
+                      type: integer
+                      minimum: 0
                 apiService:
                   type: object
                   properties:

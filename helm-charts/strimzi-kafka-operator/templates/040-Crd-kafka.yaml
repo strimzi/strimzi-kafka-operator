@@ -654,9 +654,6 @@ spec:
                             properties:
                               name:
                                 type: string
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
                         securityContext:
                           type: object
                           properties:
@@ -692,6 +689,9 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                        terminationGracePeriodSeconds:
+                          type: integer
+                          minimum: 0
                     bootstrapService:
                       type: object
                       properties:
@@ -1162,9 +1162,6 @@ spec:
                             properties:
                               name:
                                 type: string
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
                         securityContext:
                           type: object
                           properties:
@@ -1200,6 +1197,9 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                        terminationGracePeriodSeconds:
+                          type: integer
+                          minimum: 0
                     clientService:
                       type: object
                       properties:
@@ -1962,9 +1962,6 @@ spec:
                             properties:
                               name:
                                 type: string
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
                         securityContext:
                           type: object
                           properties:
@@ -2000,6 +1997,9 @@ spec:
                                     type: string
                                   value:
                                     type: string
+                        terminationGracePeriodSeconds:
+                          type: integer
+                          minimum: 0
             clusterCa:
               type: object
               properties:
