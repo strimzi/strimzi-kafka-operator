@@ -72,6 +72,15 @@ spec:
                           items:
                             type: object
                             properties:
+                              ipBlock:
+                                type: object
+                                properties:
+                                  cidr:
+                                    type: string
+                                  except:
+                                    type: array
+                                    items:
+                                      type: string
                               namespaceSelector:
                                 type: object
                                 properties:
@@ -126,6 +135,15 @@ spec:
                           items:
                             type: object
                             properties:
+                              ipBlock:
+                                type: object
+                                properties:
+                                  cidr:
+                                    type: string
+                                  except:
+                                    type: array
+                                    items:
+                                      type: string
                               namespaceSelector:
                                 type: object
                                 properties:
@@ -180,6 +198,15 @@ spec:
                           items:
                             type: object
                             properties:
+                              ipBlock:
+                                type: object
+                                properties:
+                                  cidr:
+                                    type: string
+                                  except:
+                                    type: array
+                                    items:
+                                      type: string
                               namespaceSelector:
                                 type: object
                                 properties:
