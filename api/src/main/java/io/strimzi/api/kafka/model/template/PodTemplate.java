@@ -31,7 +31,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "metadata", "imagePullSecrets", "securitycontext", "terminationGracePeriodSeconds"})
+        "metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds"})
 public class PodTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
