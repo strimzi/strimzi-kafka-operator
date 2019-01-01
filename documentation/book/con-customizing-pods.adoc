@@ -1,0 +1,50 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-customizing-deployments.adoc
+
+[id='con-customizing-pods-{context}']
+= Pods
+
+In addition to Labels and Annotations, every Pod has some more fields which you can customize.
+These fields affect how the Pod as created.
+They can be used with all clusters:
+
+* Kafka and Zookeeper
+* Kafka Connect and Kafka Connect with S2I support
+* Kafka Mirror Maker
+
+The following fields can be customized:
+
+:: `terminationGracePeriodSeconds`
+Time in seconds, which the Pod has to terminate gracefully.
+After the grace period, the Pod and all its containers will be killed.
+Default is `30` seconds.
+For very large Kafka clusters, you might need to increase the grace period to make sure that the Kafka brokers have enough time to hand over all work to another broker before being killed.
+
+:: `imagePullSecrets`
+List of references to {ProductPlatformName} Secrets which can be used for pulling container images from private repositories.
+For more information about how to create a Secret with the credentials, see {K8sPullingImagesFromPrivateRegistries}.
+
+:: `securityContext`
+Configures pod-level security attributes for containers running as part of given Pod.
+
+For example:
+
+[source,yaml,subs=attributes+]
+----
+# ...
+template:
+    pod:
+        metadata:
+            labels:
+                label1: value1
+        imagePullSecrets:
+             - name: my-docker-credentials
+        securityContext:
+             runAsUser: 1000001
+             fsGroup: 0
+        terminationGracePeriodSeconds: 120
+# ...
+----
+
+For more information, see xref:type-PodTemplate-reference[]

@@ -50,6 +50,8 @@
 :K8sMeaningOfMemory: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory[Meaning of memory^]
 :K8sManagingComputingResources: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/[Managing Compute Resources for Containers^]
 :K8sLivenessReadinessProbes: link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Configure Liveness and Readiness Probes^]
+:K8sPullingImagesFromPrivateRegistries: link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/[Pull an Image from a Private Registry^]
+
 
 
 :ApacheKafkaBrokerConfig: link:http://kafka.apache.org/20/documentation.html#brokerconfigs[Apache Kafka documentation^]
