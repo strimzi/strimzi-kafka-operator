@@ -62,10 +62,10 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
         this.tls = tls;
     }
 
-    @Description("List of sources which should be able to connect to this listener. " +
+    @Description("List of peers which should be able to connect to this listener. " +
             "Peers in this list are combined using a logical OR operation. " +
             "If this field is empty or missing, all connections will be allowed for this listener. " +
-            "If this field is present and contains at least on item, the listener only allows the traffic which matches at least one item in this list.")
+            "If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.")
     @KubeLink(group = "networking", version = "v1", kind = "networkpolicypeer")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<NetworkPolicyPeer> getNetworkPolicyPeers() {
