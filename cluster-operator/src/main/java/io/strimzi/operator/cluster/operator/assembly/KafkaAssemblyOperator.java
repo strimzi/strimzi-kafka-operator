@@ -151,10 +151,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .reconcileCas()
 
                 .compose(state -> state.clusterOperatorSecret())
-
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
                 .compose(state -> state.getZookeeperDescription())
+                .compose(state -> state.zkScaleUpStep())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
@@ -873,6 +873,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
                 isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, dateSupplier, this.clusterCa)
             ));
+        }
+
+        Future<ReconciliationState> zkScaleUpStep() {
+            Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            return withVoid(futss.map(ss -> ss == null ? 0 : ss.getSpec().getReplicas())
+                    .compose(currentReplicas -> {
+                        if (currentReplicas > 0 && zkCluster.getReplicas() > currentReplicas) {
+                            zkCluster.setReplicas(currentReplicas + 1);
+                        }
+                        Future<Integer> result = Future.succeededFuture(zkCluster.getReplicas() + 1);
+                        return result;
+                    }));
         }
 
         Future<ReconciliationState> zkScaleUp() {
