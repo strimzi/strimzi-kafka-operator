@@ -378,7 +378,9 @@ public class CrdGenerator {
         if (String.class.equals(elementType)) {
             itemResult.put("type", "string");
         } else if (Integer.class.equals(elementType)
-                || int.class.equals(elementType)) {
+                || int.class.equals(elementType)
+                || Long.class.equals(elementType)
+                || long.class.equals(elementType)) {
             itemResult.put("type", "integer");
         } else  {
             buildObjectSchema(itemResult, elementType, true);

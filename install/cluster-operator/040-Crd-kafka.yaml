@@ -643,6 +643,51 @@ spec:
                               type: object
                             annotations:
                               type: object
+                        imagePullSecrets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                        securityContext:
+                          type: object
+                          properties:
+                            fsGroup:
+                              type: integer
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            supplementalGroups:
+                              type: array
+                              items:
+                                type: integer
+                            sysctls:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                        terminationGracePeriodSeconds:
+                          type: integer
+                          minimum: 0
                     bootstrapService:
                       type: object
                       properties:
@@ -1106,6 +1151,51 @@ spec:
                               type: object
                             annotations:
                               type: object
+                        imagePullSecrets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                        securityContext:
+                          type: object
+                          properties:
+                            fsGroup:
+                              type: integer
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            supplementalGroups:
+                              type: array
+                              items:
+                                type: integer
+                            sysctls:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                        terminationGracePeriodSeconds:
+                          type: integer
+                          minimum: 0
                     clientService:
                       type: object
                       properties:
@@ -1861,6 +1951,51 @@ spec:
                               type: object
                             annotations:
                               type: object
+                        imagePullSecrets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                        securityContext:
+                          type: object
+                          properties:
+                            fsGroup:
+                              type: integer
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            supplementalGroups:
+                              type: array
+                              items:
+                                type: integer
+                            sysctls:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                        terminationGracePeriodSeconds:
+                          type: integer
+                          minimum: 0
             clusterCa:
               type: object
               properties:

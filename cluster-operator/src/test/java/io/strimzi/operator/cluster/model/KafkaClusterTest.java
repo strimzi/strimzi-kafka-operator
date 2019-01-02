@@ -11,7 +11,9 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -28,7 +30,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -63,6 +64,7 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class KafkaClusterTest {
@@ -281,20 +283,6 @@ public class KafkaClusterTest {
         assertEquals(new Integer(tlsHealthTimeout), tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(tlsHealthDelay), tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(tlsHealthTimeout), tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds());
-
-        if (cm.getSpec().getKafka().getStorage() != null) {
-            io.strimzi.api.kafka.model.Storage storage = cm.getSpec().getKafka().getStorage();
-            if (storage instanceof PersistentClaimStorage && !isOpenShift) {
-                PodSpec podSpec = ss.getSpec().getTemplate().getSpec();
-                // check that pod spec contains the volume hack container for Kubernetes
-                List<Container> initContainers = podSpec.getInitContainers();
-                assertNotNull(initContainers);
-                assertTrue(initContainers.size() > 0);
-                boolean isVolumeHack =
-                        initContainers.stream().anyMatch(container -> container.getName().equals(AbstractModel.VOLUME_MOUNT_HACK_NAME));
-                assertTrue(isVolumeHack);
-            }
-        }
 
         if (cm.getSpec().getKafka().getRack() != null) {
 
@@ -851,7 +839,7 @@ public class KafkaClusterTest {
 
         NetworkPolicyPeer peer2 = new NetworkPolicyPeerBuilder()
                 .withNewNamespaceSelector()
-                .withMatchExpressions(new LabelSelectorRequirementBuilder().withKey("my-key2").withValues("my-value2").build())
+                    .withMatchExpressions(new LabelSelectorRequirementBuilder().withKey("my-key2").withValues("my-value2").build())
                 .endNamespaceSelector()
                 .build();
 
@@ -926,5 +914,106 @@ public class KafkaClusterTest {
         rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.EXTERNAL_PORT))).collect(Collectors.toList());
         assertEquals(1, rules.size());
         assertEquals(0, rules.get(0).getFrom().size());
+    }
+
+    @Test
+    public void testGracePeriod() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withTerminationGracePeriodSeconds(123)
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = kc.generateStatefulSet(true);
+        assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+    }
+
+    @Test
+    public void testDefaultGracePeriod() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = kc.generateStatefulSet(true);
+        assertEquals(Long.valueOf(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+    }
+
+    @Test
+    public void testImagePullSecrets() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withImagePullSecrets(secret1, secret2)
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = kc.generateStatefulSet(true);
+        assertEquals(2, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testDefaultImagePullSecrets() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = kc.generateStatefulSet(true);
+        assertEquals(0, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+    }
+
+    @Test
+    public void testSecurityContext() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withNewRunAsUser(789L).build())
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = kc.generateStatefulSet(true);
+        assertNotNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
+        assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
+        assertEquals(Long.valueOf(456), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
+        assertEquals(Long.valueOf(789), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
+    }
+
+    @Test
+    public void testDefaultSecurityContext() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = kc.generateStatefulSet(true);
+        assertNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
     }
 }

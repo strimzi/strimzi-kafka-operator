@@ -31,6 +31,7 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
@@ -196,9 +197,17 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
             }
 
-            if (template.getPod() != null && template.getPod().getMetadata() != null)  {
-                zk.templatePodLabels = template.getPod().getMetadata().getLabels();
-                zk.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+            if (template.getPod() != null)  {
+                PodTemplate pod = template.getPod();
+
+                if (pod.getMetadata() != null) {
+                    zk.templatePodLabels = pod.getMetadata().getLabels();
+                    zk.templatePodAnnotations = pod.getMetadata().getAnnotations();
+                }
+
+                zk.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
+                zk.templateImagePullSecrets = pod.getImagePullSecrets();
+                zk.templateSecurityContext = pod.getSecurityContext();
             }
 
             if (template.getClientService() != null && template.getClientService().getMetadata() != null)  {
@@ -309,7 +318,6 @@ public class ZookeeperCluster extends AbstractModel {
                 emptyMap(),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
-                getVolumeMounts(),
                 getMergedAffinity(),
                 getInitContainers(),
                 getContainers(),

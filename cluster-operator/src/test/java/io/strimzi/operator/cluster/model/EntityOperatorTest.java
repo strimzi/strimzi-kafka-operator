@@ -5,6 +5,8 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -178,6 +181,125 @@ public class EntityOperatorTest {
         // Check Pods
         assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
         assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+    }
+
+    @Test
+    public void testGracePeriod() {
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewEntityOperator()
+                    .withTopicOperator(entityTopicOperatorSpec)
+                    .withUserOperator(entityUserOperatorSpec)
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withTerminationGracePeriodSeconds(123)
+                        .endPod()
+                    .endTemplate()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+        EntityOperator eo = EntityOperator.fromCrd(resource);
+
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+    }
+
+    @Test
+    public void testDefaultGracePeriod() {
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+        EntityOperator eo = EntityOperator.fromCrd(resource);
+
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        assertEquals(Long.valueOf(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+    }
+
+    @Test
+    public void testImagePullSecrets() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewEntityOperator()
+                    .withTopicOperator(entityTopicOperatorSpec)
+                    .withUserOperator(entityUserOperatorSpec)
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withImagePullSecrets(secret1, secret2)
+                        .endPod()
+                    .endTemplate()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+        EntityOperator eo = EntityOperator.fromCrd(resource);
+
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testDefaultImagePullSecrets() {
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+        EntityOperator eo = EntityOperator.fromCrd(resource);
+
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        assertEquals(0, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+    }
+
+    @Test
+    public void testSecurityContext() {
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withNewRunAsUser(789L).build())
+                            .endPod()
+                        .endTemplate()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+        EntityOperator eo = EntityOperator.fromCrd(resource);
+
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        assertNotNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
+        assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
+        assertEquals(Long.valueOf(456), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
+        assertEquals(Long.valueOf(789), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser());
+    }
+
+    @Test
+    public void testDefaultSecurityContext() {
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+        EntityOperator eo = EntityOperator.fromCrd(resource);
+
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
     }
 
     @AfterClass

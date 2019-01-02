@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
 
@@ -147,9 +148,17 @@ public class EntityOperator extends AbstractModel {
                     result.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
                 }
 
-                if (template.getPod() != null && template.getPod().getMetadata() != null)  {
-                    result.templatePodLabels = template.getPod().getMetadata().getLabels();
-                    result.templatePodAnnotations = template.getPod().getMetadata().getAnnotations();
+                if (template.getPod() != null)  {
+                    PodTemplate pod = template.getPod();
+
+                    if (pod.getMetadata() != null) {
+                        result.templatePodLabels = pod.getMetadata().getLabels();
+                        result.templatePodAnnotations = pod.getMetadata().getAnnotations();
+                    }
+
+                    result.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
+                    result.templateImagePullSecrets = pod.getImagePullSecrets();
+                    result.templateSecurityContext = pod.getSecurityContext();
                 }
             }
         }
