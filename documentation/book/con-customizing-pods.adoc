@@ -8,6 +8,7 @@
 In addition to Labels and Annotations, you can customize some other fields on Pods.
 These fields are described in the following table and affect how the Pod is created.
 
+[table,stripes=none]
 |===
 |Field |Description
 
@@ -51,4 +52,4 @@ template:
 
 .Additional resources
 
-* For more information, see xref:type-PodTemplate-reference[]
+* For more information, see xref:type-PodTemplate-reference[].
