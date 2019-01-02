@@ -654,28 +654,6 @@ spec:
                             properties:
                               name:
                                 type: string
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-<<<<<<< HEAD
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
-                          minimum: 0
->>>>>>> Refresh CRDs with the minimum value setting
-=======
->>>>>>> Fix updated CRD definitions and docs
-=======
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
->>>>>>> Update CRD resources
                         securityContext:
                           type: object
                           properties:
@@ -711,30 +689,9 @@ spec:
                                     type: string
                                   value:
                                     type: string
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
-=======
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-<<<<<<< HEAD
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
->>>>>>> Fix updated CRD definitions and docs
-=======
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
->>>>>>> Update CRD resources
                     bootstrapService:
                       type: object
                       properties:
@@ -1205,28 +1162,6 @@ spec:
                             properties:
                               name:
                                 type: string
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-<<<<<<< HEAD
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
-                          minimum: 0
->>>>>>> Refresh CRDs with the minimum value setting
-=======
->>>>>>> Fix updated CRD definitions and docs
-=======
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
->>>>>>> Update CRD resources
                         securityContext:
                           type: object
                           properties:
@@ -1262,30 +1197,9 @@ spec:
                                     type: string
                                   value:
                                     type: string
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
-=======
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-<<<<<<< HEAD
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
->>>>>>> Fix updated CRD definitions and docs
-=======
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
->>>>>>> Update CRD resources
                     clientService:
                       type: object
                       properties:
@@ -2048,28 +1962,6 @@ spec:
                             properties:
                               name:
                                 type: string
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-<<<<<<< HEAD
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
-                          minimum: 0
->>>>>>> Refresh CRDs with the minimum value setting
-=======
->>>>>>> Fix updated CRD definitions and docs
-=======
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
->>>>>>> Update CRD resources
                         securityContext:
                           type: object
                           properties:
@@ -2105,32 +1997,9 @@ spec:
                                     type: string
                                   value:
                                     type: string
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
                         terminationGracePeriodSeconds:
                           type: integer
                           minimum: 0
-=======
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
->>>>>>> Fix updated CRD definitions and docs
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
-=======
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
->>>>>>> Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
-=======
-                        terminationGracePeriodSeconds:
-                          type: integer
-                          minimum: 0
->>>>>>> Update CRD resources
             clusterCa:
               type: object
               properties:
