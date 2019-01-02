@@ -378,6 +378,9 @@ public class ZookeeperClusterTest {
 
         StatefulSet ss = zc.generateStatefulSet(true);
         assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertNotNull(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle());
+        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
+        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("123"));
     }
 
     @Test
@@ -389,6 +392,9 @@ public class ZookeeperClusterTest {
 
         StatefulSet ss = zc.generateStatefulSet(true);
         assertEquals(Long.valueOf(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertNotNull(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle());
+        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
+        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("30"));
     }
 
     @Test

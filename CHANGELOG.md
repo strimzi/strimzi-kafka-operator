@@ -13,6 +13,7 @@
     * `operator.strimzi.io/generation` → `strimzi.io/generation`
 * Add support for mounting Secrets and Config Maps into Kafka Connect and Kafka Connect S2I
 * Add support for NetworkPolicy peers in listener configurations
+* Make sure the TLS sidecar pods shutdown only after the main container
 
 ## 0.9.0
 

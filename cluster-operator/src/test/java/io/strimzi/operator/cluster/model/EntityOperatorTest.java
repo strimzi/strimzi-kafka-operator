@@ -202,6 +202,9 @@ public class EntityOperatorTest {
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
         assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertNotNull(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle());
+        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("123"));
     }
 
     @Test
@@ -218,6 +221,9 @@ public class EntityOperatorTest {
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
         assertEquals(Long.valueOf(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
+        assertNotNull(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle());
+        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("30"));
     }
 
     @Test
