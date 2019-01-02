@@ -37,3 +37,6 @@ systemtest/my-plugins/
 
 # MacOS Desktop Services Store files
 **/.DS_Store
+
+# Hacking directory with different script utilities and more complex YAML examples used by developers for development and testing
+/hacking/
