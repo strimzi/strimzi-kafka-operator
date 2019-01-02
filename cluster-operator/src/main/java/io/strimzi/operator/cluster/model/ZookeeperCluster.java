@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilde
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -198,18 +199,7 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
             }
 
-            if (template.getPod() != null)  {
-                PodTemplate pod = template.getPod();
-
-                if (pod.getMetadata() != null) {
-                    zk.templatePodLabels = pod.getMetadata().getLabels();
-                    zk.templatePodAnnotations = pod.getMetadata().getAnnotations();
-                }
-
-                zk.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
-                zk.templateImagePullSecrets = pod.getImagePullSecrets();
-                zk.templateSecurityContext = pod.getSecurityContext();
-            }
+            FromCrdUtils.parsePodTemplate(zk, template.getPod());
 
             if (template.getClientService() != null && template.getClientService().getMetadata() != null)  {
                 zk.templateServiceLabels = template.getClientService().getMetadata().getLabels();
@@ -220,6 +210,8 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateHeadlessServiceLabels = template.getNodesService().getMetadata().getLabels();
                 zk.templateHeadlessServiceAnnotations = template.getNodesService().getMetadata().getAnnotations();
             }
+
+            FromCrdUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudgetTemplate());
         }
 
         return zk;
@@ -453,6 +445,15 @@ public class ZookeeperCluster extends AbstractModel {
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         return volumeMountList;
+    }
+
+    /**
+     * Generates the PodDisruptionBudget
+     *
+     * @return
+     */
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return createPodDisruptionBudget();
     }
 
     protected void setTlsSidecar(TlsSidecar tlsSidecar) {

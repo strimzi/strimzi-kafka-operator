@@ -377,6 +377,19 @@ spec:
                           type: object
                         annotations:
                           type: object
+                podDisruptionBudgetTemplate:
+                  type: object
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
+                    maxUnavailable:
+                      type: integer
+                      minimum: 0
             authentication:
               type: object
               properties:

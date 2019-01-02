@@ -32,6 +32,7 @@ public class KafkaConnectTemplate implements Serializable {
     private ResourceTemplate deployment;
     private PodTemplate pod;
     private ResourceTemplate apiService;
+    private PodDisruptionBudgetTemplate podDisruptionBudgetTemplate;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Connect `Deployment`.")
@@ -62,6 +63,16 @@ public class KafkaConnectTemplate implements Serializable {
 
     public void setApiService(ResourceTemplate apiService) {
         this.apiService = apiService;
+    }
+
+    @Description("Template for Kafka Connect `PodDisruptionBudget`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public PodDisruptionBudgetTemplate getPodDisruptionBudgetTemplate() {
+        return podDisruptionBudgetTemplate;
+    }
+
+    public void setPodDisruptionBudgetTemplate(PodDisruptionBudgetTemplate podDisruptionBudgetTemplate) {
+        this.podDisruptionBudgetTemplate = podDisruptionBudgetTemplate;
     }
 
     @JsonAnyGetter

@@ -33,6 +33,7 @@ public class ZookeeperClusterTemplate implements Serializable {
     private PodTemplate pod;
     private ResourceTemplate clientService;
     private ResourceTemplate nodesService;
+    private PodDisruptionBudgetTemplate podDisruptionBudgetTemplate;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Zookeeper `StatefulSet`.")
@@ -73,6 +74,16 @@ public class ZookeeperClusterTemplate implements Serializable {
 
     public void setNodesService(ResourceTemplate nodesService) {
         this.nodesService = nodesService;
+    }
+
+    @Description("Template for Zookeeper `PodDisruptionBudget`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public PodDisruptionBudgetTemplate getPodDisruptionBudgetTemplate() {
+        return podDisruptionBudgetTemplate;
+    }
+
+    public void setPodDisruptionBudgetTemplate(PodDisruptionBudgetTemplate podDisruptionBudgetTemplate) {
+        this.podDisruptionBudgetTemplate = podDisruptionBudgetTemplate;
     }
 
     @JsonAnyGetter
