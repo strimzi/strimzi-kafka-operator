@@ -18,6 +18,7 @@ release.properties
 
 # VS Code
 .factorypath
+.vscode
 
 # Velocity.log
 velocity.log
