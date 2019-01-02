@@ -6,7 +6,7 @@
 = Pods
 
 In addition to Labels and Annotations, every Pod has some more fields which you can customize.
-These fields affect how the Pod as created.
+These fields affect how the Pods are created.
 They can be used with all clusters:
 
 * Kafka and Zookeeper
