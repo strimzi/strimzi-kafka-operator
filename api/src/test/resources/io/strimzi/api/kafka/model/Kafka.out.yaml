@@ -17,13 +17,52 @@ spec:
       plain:
         authentication:
           type: "scram-sha-512"
+        networkPolicyPeers:
+        - namespaceSelector:
+            matchExpressions: []
+            matchLabels:
+              kafka-enabled: "true"
+          podSelector:
+            matchExpressions: []
+            matchLabels:
+              app: "kafka-consumer"
+        - podSelector:
+            matchExpressions: []
+            matchLabels:
+              app: "kafka-producer"
       tls:
+        networkPolicyPeers:
+        - namespaceSelector:
+            matchExpressions: []
+            matchLabels:
+              kafka-enabled: "true"
+          podSelector:
+            matchExpressions: []
+            matchLabels:
+              app: "kafka-consumer"
+        - podSelector:
+            matchExpressions: []
+            matchLabels:
+              app: "kafka-producer"
         authentication:
           type: "tls"
       external:
         type: "route"
         authentication:
           type: "tls"
+        networkPolicyPeers:
+        - namespaceSelector:
+            matchExpressions: []
+            matchLabels:
+              kafka-enabled: "true"
+          podSelector:
+            matchExpressions: []
+            matchLabels:
+              app: "kafka-consumer"
+        - podSelector:
+            matchExpressions: []
+            matchLabels:
+              app: "kafka-producer"
     authorization:
       type: "simple"
       superUsers:

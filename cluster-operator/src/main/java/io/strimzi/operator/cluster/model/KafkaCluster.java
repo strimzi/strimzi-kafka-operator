@@ -922,7 +922,7 @@ public class KafkaCluster extends AbstractModel {
 
                 NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
                         .withPorts(plainPort)
-                        .withFrom()
+                        .withFrom(listeners.getPlain().getNetworkPolicyPeers())
                         .build();
 
                 rules.add(plainRule);
@@ -934,7 +934,7 @@ public class KafkaCluster extends AbstractModel {
 
                 NetworkPolicyIngressRule tlsRule = new NetworkPolicyIngressRuleBuilder()
                         .withPorts(tlsPort)
-                        .withFrom()
+                        .withFrom(listeners.getTls().getNetworkPolicyPeers())
                         .build();
 
                 rules.add(tlsRule);
@@ -946,7 +946,7 @@ public class KafkaCluster extends AbstractModel {
 
                 NetworkPolicyIngressRule externalRule = new NetworkPolicyIngressRuleBuilder()
                         .withPorts(externalPort)
-                        .withFrom()
+                        .withFrom(listeners.getExternal().getNetworkPolicyPeers())
                         .build();
 
                 rules.add(externalRule);
