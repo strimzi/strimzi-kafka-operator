@@ -159,8 +159,12 @@ listeners:
 # ...
 ----
 
-In the example above, only applications with matching labels will be allowed to connect to the `plain` listener and only applications from the namespaces matching the labels will be allowed to connect.
+In the example above:
+
+* Only the application pods matching the labels `app: kafka-sasl-consumer` and `app: kafka-sasl-producer` which are running in the same namespace as the Kafka brokers can connect to the `plain` listener.
+* Only the application pods running in the namespaces matching the labels `project: myproject` and `project: myproject2` can connect to the `tls` listener.
+
 The syntax of the `networkPolicyPeers` field uses the same syntax as the `from` field in Kubernetes NetworkPolicies.
 For more information about the schema, see {K8sNetworkPolicyPeerAPI} and xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
 
-NOTE: To use NetworkPolicies, your {ProductPlatformName} needs to use SDN with Ingress NetworkPolicy support.
+NOTE: To use NetworkPolicies, your {ProductPlatformName} needs to support Ingress NetworkPolicies.
