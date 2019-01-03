@@ -1,0 +1,79 @@
+---
+apiVersion: "extensions/v1beta1"
+kind: "Deployment"
+metadata:
+  labels:
+    app: "strimzi"
+  name: "strimzi-cluster-operator"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: "strimzi-cluster-operator"
+    spec:
+      serviceAccountName: "strimzi-cluster-operator"
+      containers:
+      - name: "strimzi-cluster-operator"
+        image: "strimzi/cluster-operator:latest"
+        imagePullPolicy: "IfNotPresent"
+        env:
+        - name: "STRIMZI_NAMESPACE"
+          valueFrom:
+            fieldRef:
+              fieldPath: "metadata.namespace"
+        - name: "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS"
+          value: "120000"
+        - name: "STRIMZI_OPERATION_TIMEOUT_MS"
+          value: "300000"
+        - name: "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE"
+          value: "strimzi/zookeeper:latest-kafka-2.0.0"
+        - name: "STRIMZI_KAFKA_IMAGES"
+          value: "2.0.0=strimzi/kafka:latest-kafka-2.0.0\n2.0.1=strimzi/kafka:latest-kafka-2.0.1\n\
+            2.1.0=strimzi/kafka:latest-kafka-2.1.0\n"
+        - name: "STRIMZI_KAFKA_CONNECT_IMAGES"
+          value: "2.0.0=strimzi/kafka-connect:latest-kafka-2.0.0\n2.0.1=strimzi/kafka-connect:latest-kafka-2.0.1\n\
+            2.1.0=strimzi/kafka-connect:latest-kafka-2.1.0\n"
+        - name: "STRIMZI_KAFKA_CONNECT_S2I_IMAGES"
+          value: "2.0.0=strimzi/kafka-connect-s2i:latest-kafka-2.0.0\n2.0.1=strimzi/kafka-connect-s2i:latest-kafka-2.0.1\n\
+            2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0\n"
+        - name: "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES"
+          value: "2.0.0=strimzi/kafka-mirror-maker:latest-kafka-2.0.0\n2.0.1=strimzi/kafka-mirror-maker:latest-kafka-2.0.1\n\
+            2.1.0=strimzi/kafka-mirror-maker:latest-kafka-2.1.0\n"
+        - name: "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"
+          value: "strimzi/topic-operator:latest"
+        - name: "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"
+          value: "strimzi/user-operator:latest"
+        - name: "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE"
+          value: "strimzi/kafka-init:latest"
+        - name: "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE"
+          value: "strimzi/zookeeper-stunnel:latest"
+        - name: "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE"
+          value: "strimzi/kafka-stunnel:latest"
+        - name: "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE"
+          value: "strimzi/entity-operator-stunnel:latest"
+        - name: "STRIMZI_LOG_LEVEL"
+          value: "INFO"
+        livenessProbe:
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          httpGet:
+            path: "/healthy"
+            port: 8080
+        readinessProbe:
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          httpGet:
+            path: "/ready"
+            port: 8080
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "1000m"
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+        additionalProperties: {}
+      additionalProperties: {}
+  strategy:
+    type: "Recreate"
