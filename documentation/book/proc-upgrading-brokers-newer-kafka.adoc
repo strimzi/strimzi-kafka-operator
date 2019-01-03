@@ -48,9 +48,11 @@ spec:
   kafka:
     version: 2.1.0
     config:
-      log.message.format.version=2.0
+      log.message.format.version: "2.0"
       # ...
 ----
++
+NOTE: It is necessary to format the value of `log.message.format.version` as a string to prevent it being interpreted as a number.
 
 . Wait for the Cluster Operator to upgrade the cluster, by inspecting the Cluster Operator logs and looking for a `INFO` level message like:
 `Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed` (if two rolling updates were required), or
@@ -79,7 +81,7 @@ spec:
   kafka:
     version: 2.1.0
     config:
-      log.message.format.version=2.1
+      log.message.format.version: "2.1"
       # ...
 ----
 

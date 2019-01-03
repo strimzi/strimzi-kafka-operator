@@ -36,7 +36,7 @@ Once producers have sent messages in the new message format and those messages h
 User action is required as follows:
 
 . Initially to set `log.message.format.version` in the `Kafka.spec.kafka.config` to the message format version is use by the version of Kafka being upgraded _from_. 
-This step is not necessary if `log.message.format.version` already has the correct value.
+This step is not necessary if `log.message.format.version` already has the correct value, otherwise adding `log.message.format.version` will cause a rolling update as for any other `Kafka.spec.kafka.config` change.
 
 . To change the `Kafka.spec.kafka.version` to the version being upgraded _to_. 
 The Cluster Operator manages the rolling restarts necessary for Phase 1 and 2.
