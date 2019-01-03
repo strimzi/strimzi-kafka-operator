@@ -32,7 +32,7 @@ public class KafkaConnectTemplate implements Serializable {
     private ResourceTemplate deployment;
     private PodTemplate pod;
     private ResourceTemplate apiService;
-    private PodDisruptionBudgetTemplate podDisruptionBudgetTemplate;
+    private PodDisruptionBudgetTemplate podDisruptionBudget;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Connect `Deployment`.")
@@ -67,12 +67,12 @@ public class KafkaConnectTemplate implements Serializable {
 
     @Description("Template for Kafka Connect `PodDisruptionBudget`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodDisruptionBudgetTemplate getPodDisruptionBudgetTemplate() {
-        return podDisruptionBudgetTemplate;
+    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
+        return podDisruptionBudget;
     }
 
-    public void setPodDisruptionBudgetTemplate(PodDisruptionBudgetTemplate podDisruptionBudgetTemplate) {
-        this.podDisruptionBudgetTemplate = podDisruptionBudgetTemplate;
+    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
+        this.podDisruptionBudget = podDisruptionBudget;
     }
 
     @JsonAnyGetter

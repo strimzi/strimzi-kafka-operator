@@ -37,7 +37,7 @@ public class KafkaClusterTemplate implements Serializable {
     private ResourceTemplate perPodService;
     private ResourceTemplate externalBootstrapRoute;
     private ResourceTemplate perPodRoute;
-    private PodDisruptionBudgetTemplate podDisruptionBudgetTemplate;
+    private PodDisruptionBudgetTemplate podDisruptionBudget;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka `StatefulSet`.")
@@ -122,12 +122,12 @@ public class KafkaClusterTemplate implements Serializable {
 
     @Description("Template for Kafka `PodDisruptionBudget`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodDisruptionBudgetTemplate getPodDisruptionBudgetTemplate() {
-        return podDisruptionBudgetTemplate;
+    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
+        return podDisruptionBudget;
     }
 
-    public void setPodDisruptionBudgetTemplate(PodDisruptionBudgetTemplate podDisruptionBudgetTemplate) {
-        this.podDisruptionBudgetTemplate = podDisruptionBudgetTemplate;
+    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
+        this.podDisruptionBudget = podDisruptionBudget;
     }
 
     @JsonAnyGetter

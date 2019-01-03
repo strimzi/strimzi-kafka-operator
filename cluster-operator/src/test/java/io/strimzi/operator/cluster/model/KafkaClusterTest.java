@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -726,6 +727,9 @@ public class KafkaClusterTest {
         Map<String, String> perPodRouteLabels = TestUtils.map("l15", "v15", "l16", "v16");
         Map<String, String> perPodRouteAnots = TestUtils.map("a15", "v15", "a16", "v16");
 
+        Map<String, String> pdbLabels = TestUtils.map("l17", "v17", "l18", "v18");
+        Map<String, String> pdbAnots = TestUtils.map("a17", "v17", "a18", "v18");
+
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
@@ -783,6 +787,12 @@ public class KafkaClusterTest {
                                 .withAnnotations(perPodRouteAnots)
                                 .endMetadata()
                             .endPerPodRoute()
+                            .withNewPodDisruptionBudget()
+                                .withNewMetadata()
+                                    .withLabels(pdbLabels)
+                                    .withAnnotations(pdbAnots)
+                                .endMetadata()
+                            .endPodDisruptionBudget()
                         .endTemplate()
                     .endKafka()
                 .endSpec()
@@ -827,6 +837,11 @@ public class KafkaClusterTest {
         rt = kc.generateExternalRoute(0);
         assertTrue(rt.getMetadata().getLabels().entrySet().containsAll(perPodRouteLabels.entrySet()));
         assertTrue(rt.getMetadata().getAnnotations().entrySet().containsAll(perPodRouteAnots.entrySet()));
+
+        // Check PodDisruptionBudget
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
+        assertTrue(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()));
+        assertTrue(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()));
     }
 
     @Test
@@ -1021,5 +1036,36 @@ public class KafkaClusterTest {
 
         StatefulSet ss = kc.generateStatefulSet(true);
         assertNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
+    }
+
+    @Test
+    public void testPodDisruptionBudget() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                    .withNewTemplate()
+                        .withNewPodDisruptionBudget()
+                            .withMaxUnavailable(2)
+                        .endPodDisruptionBudget()
+                    .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(2), pdb.getSpec().getMaxUnavailable());
+    }
+
+    @Test
+    public void testDefaultPodDisruptionBudget() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
     }
 }

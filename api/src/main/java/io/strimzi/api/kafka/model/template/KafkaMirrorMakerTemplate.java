@@ -31,7 +31,7 @@ public class KafkaMirrorMakerTemplate implements Serializable {
 
     private ResourceTemplate deployment;
     private PodTemplate pod;
-    private PodDisruptionBudgetTemplate podDisruptionBudgetTemplate;
+    private PodDisruptionBudgetTemplate podDisruptionBudget;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Mirror Maker `Deployment`.")
@@ -56,12 +56,12 @@ public class KafkaMirrorMakerTemplate implements Serializable {
 
     @Description("Template for Kafka Mirror Maker `PodDisruptionBudget`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodDisruptionBudgetTemplate getPodDisruptionBudgetTemplate() {
-        return podDisruptionBudgetTemplate;
+    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
+        return podDisruptionBudget;
     }
 
-    public void setPodDisruptionBudgetTemplate(PodDisruptionBudgetTemplate podDisruptionBudgetTemplate) {
-        this.podDisruptionBudgetTemplate = podDisruptionBudgetTemplate;
+    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
+        this.podDisruptionBudget = podDisruptionBudget;
     }
 
     @JsonAnyGetter

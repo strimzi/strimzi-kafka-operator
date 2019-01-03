@@ -218,7 +218,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     kafkaConnect.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
                 }
 
-                FromCrdUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudgetTemplate());
+                FromCrdUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudget());
             }
 
             if (spec.getExternalConfiguration() != null)    {

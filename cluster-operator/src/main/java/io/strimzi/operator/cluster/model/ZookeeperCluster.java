@@ -210,7 +210,7 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateHeadlessServiceAnnotations = template.getNodesService().getMetadata().getAnnotations();
             }
 
-            FromCrdUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudgetTemplate());
+            FromCrdUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 
         return zk;

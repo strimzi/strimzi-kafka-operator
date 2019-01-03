@@ -501,7 +501,7 @@ spec:
                     terminationGracePeriodSeconds:
                       type: integer
                       minimum: 0
-                podDisruptionBudgetTemplate:
+                podDisruptionBudget:
                   type: object
                   properties:
                     metadata:

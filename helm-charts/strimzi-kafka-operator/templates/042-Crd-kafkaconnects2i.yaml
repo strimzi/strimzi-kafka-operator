@@ -362,7 +362,7 @@ spec:
                           type: object
                         annotations:
                           type: object
-                podDisruptionBudgetTemplate:
+                podDisruptionBudget:
                   type: object
                   properties:
                     metadata:

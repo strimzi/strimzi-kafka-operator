@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
@@ -18,6 +19,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
@@ -350,6 +352,9 @@ public class KafkaConnectClusterTest {
         Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
 
+        Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
+        Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
+
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
                     .withNewTemplate()
@@ -371,6 +376,12 @@ public class KafkaConnectClusterTest {
                                 .withAnnotations(svcAnots)
                             .endMetadata()
                         .endApiService()
+                        .withNewPodDisruptionBudget()
+                            .withNewMetadata()
+                                .withLabels(pdbLabels)
+                                .withAnnotations(pdbAnots)
+                            .endMetadata()
+                        .endPodDisruptionBudget()
                     .endTemplate()
                 .endSpec()
                 .build();
@@ -389,6 +400,11 @@ public class KafkaConnectClusterTest {
         Service svc = kc.generateService();
         assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()));
         assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()));
+
+        // Check PodDisruptionBudget
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
+        assertTrue(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()));
+        assertTrue(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()));
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
@@ -701,5 +717,31 @@ public class KafkaConnectClusterTest {
 
         Deployment dep = kc.generateDeployment(Collections.EMPTY_MAP, true);
         assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
+    }
+
+    @Test
+    public void testPodDisruptionBudget() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPodDisruptionBudget()
+                            .withMaxUnavailable(2)
+                        .endPodDisruptionBudget()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(2), pdb.getSpec().getMaxUnavailable());
+    }
+
+    @Test
+    public void testDefaultPodDisruptionBudget() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource).build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
     }
 }

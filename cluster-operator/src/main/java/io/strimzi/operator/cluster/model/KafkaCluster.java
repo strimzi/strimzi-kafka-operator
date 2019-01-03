@@ -347,7 +347,7 @@ public class KafkaCluster extends AbstractModel {
                 result.templatePerPodRouteAnnotations = template.getPerPodRoute().getMetadata().getAnnotations();
             }
 
-            FromCrdUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudgetTemplate());
+            FromCrdUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
