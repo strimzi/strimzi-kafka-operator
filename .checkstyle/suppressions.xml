@@ -12,6 +12,9 @@
     <suppress checks="ParameterNumber"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]ResourceUtils.java"/>
 
+    <suppress checks="ParameterNumber"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]resource[/\\]ResourceOperatorSupplier.java"/>
+
     <suppress checks="MethodLength|NPathComplexity|CyclomaticComplexity|ClassDataAbstractionCoupling"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperatorTest.java"/>
 

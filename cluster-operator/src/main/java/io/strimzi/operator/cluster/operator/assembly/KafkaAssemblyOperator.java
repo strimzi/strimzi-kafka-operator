@@ -124,7 +124,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                  CertManager certManager,
                                  ResourceOperatorSupplier supplier,
                                  KafkaVersion.Lookup versions) {
-        super(vertx, isOpenShift, ResourceType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations, supplier.networkPolicyOperator);
+        super(vertx, isOpenShift, ResourceType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations, supplier.networkPolicyOperator, supplier.podDisruptionBudgetOperator);
         this.operationTimeoutMs = operationTimeoutMs;
         this.serviceOperations = supplier.serviceOperations;
         this.routeOperations = supplier.routeOperations;
@@ -158,6 +158,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkAncillaryCm())
                 .compose(state -> state.zkNodesSecret())
                 .compose(state -> state.zkNetPolicy())
+                .compose(state -> state.zkPodDisruptionBudget())
                 .compose(state -> state.zkStatefulSet())
                 .compose(state -> state.zkRollingUpdate(this::dateSupplier))
                 .compose(state -> state.zkScaleUp())
@@ -184,6 +185,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaAncillaryCm())
                 .compose(state -> state.kafkaBrokersSecret())
                 .compose(state -> state.kafkaNetPolicy())
+                .compose(state -> state.kafkaPodDisruptionBudget())
                 .compose(state -> state.kafkaStatefulSet())
                 .compose(state -> state.kafkaRollingUpdate(this::dateSupplier))
                 .compose(state -> state.kafkaScaleUp())
@@ -854,6 +856,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy()));
         }
 
+        Future<ReconciliationState> zkPodDisruptionBudget() {
+            return withVoid(podDisruptionBudgetOperator.reconcile(namespace, zkCluster.getName(), zkCluster.generatePodDisruptionBudget()));
+        }
+
         Future<ReconciliationState> zkStatefulSet() {
             StatefulSet zkSs = zkCluster.generateStatefulSet(isOpenShift);
             Annotations.annotations(zkSs.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
@@ -1303,6 +1309,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaNetPolicy() {
             return withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), kafkaCluster.generateNetworkPolicy()));
+        }
+
+        Future<ReconciliationState> kafkaPodDisruptionBudget() {
+            return withVoid(podDisruptionBudgetOperator.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generatePodDisruptionBudget()));
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {

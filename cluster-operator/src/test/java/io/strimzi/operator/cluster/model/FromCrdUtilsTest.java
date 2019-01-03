@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.common.model.Labels;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;

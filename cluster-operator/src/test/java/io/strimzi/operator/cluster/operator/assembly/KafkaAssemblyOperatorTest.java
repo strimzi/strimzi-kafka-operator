@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
@@ -54,6 +55,7 @@ import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -301,6 +303,7 @@ public class KafkaAssemblyOperatorTest {
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         RouteOperator mockRotueOps = supplier.routeOperations;
 
         // Create a CM
@@ -309,6 +312,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockKafkaOps.get(clusterCmNamespace, clusterCmName)).thenReturn(null);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         ArgumentCaptor<NetworkPolicy> policyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockServiceOps.endpointReadiness(anyString(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
@@ -321,6 +325,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
         when(mockKsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockPolicyOps.reconcile(anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+        when(mockPdbOps.reconcile(anyString(), anyString(), pdbCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         Set<String> expectedSecrets = set(
                 KafkaCluster.clientsCaKeySecretName(clusterCmName),
@@ -432,6 +437,11 @@ public class KafkaAssemblyOperatorTest {
 
             // expected Secrets with certificates
             context.assertEquals(new TreeSet(expectedSecrets), new TreeSet(createdOrUpdatedSecrets));
+
+            // Check PDBs
+            context.assertEquals(2, pdbCaptor.getAllValues().size());
+            context.assertEquals(set(KafkaCluster.kafkaClusterName(clusterCmName), ZookeeperCluster.zookeeperClusterName(clusterCmName)),
+                    pdbCaptor.getAllValues().stream().map(ss -> ss.getMetadata().getName()).collect(Collectors.toSet()));
 
             // Verify deleted routes
             if (openShift) {
@@ -611,6 +621,7 @@ public class KafkaAssemblyOperatorTest {
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
         RoleBindingOperator mockRbo = supplier.roleBindingOperator;
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
@@ -682,6 +693,10 @@ public class KafkaAssemblyOperatorTest {
         when(mockPolicyOps.get(clusterNamespace, KafkaCluster.policyName(clusterName))).thenReturn(originalKafkaCluster.generateNetworkPolicy());
         when(mockPolicyOps.get(clusterNamespace, ZookeeperCluster.policyName(clusterName))).thenReturn(originalZookeeperCluster.generateNetworkPolicy());
 
+        // Mock PodDisruptionBudget get
+        when(mockPdbOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(originalKafkaCluster.generatePodDisruptionBudget());
+        when(mockPdbOps.get(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(originalZookeeperCluster.generatePodDisruptionBudget());
+
         // Mock StatefulSet get
         when(mockKsOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(
                 originalKafkaCluster.generateStatefulSet(openShift)
@@ -720,8 +735,11 @@ public class KafkaAssemblyOperatorTest {
         // Mock Secrets patch
         when(mockSecretOps.reconcile(eq(clusterNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
-        // Mock Secrets patch
+        // Mock NetworkPolicy patch
         when(mockPolicyOps.reconcile(eq(clusterNamespace), any(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock PodDisruptionBudget patch
+        when(mockPdbOps.reconcile(eq(clusterNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet patch
         when(mockZsOps.reconcile(anyString(), anyString(), any())).thenAnswer(invocation -> {
@@ -903,7 +921,7 @@ public class KafkaAssemblyOperatorTest {
                 mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
                 mock(PvcOperator.class), mock(DeploymentOperator.class),
                 mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
-                mock(NetworkPolicyOperator.class), mock(CrdOperator.class));
+                mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(CrdOperator.class));
         when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
