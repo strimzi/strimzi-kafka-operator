@@ -13,6 +13,7 @@ spec:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
+      log.message.format.version: "2.1"
     storage:
       type: ephemeral
   zookeeper:
