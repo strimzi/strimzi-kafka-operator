@@ -12,7 +12,7 @@ GREP=grep
 WC=wc
 
 UNAME_S=$(uname -s)
-if [ $UNAME_S="Darwin" ];
+if [ $UNAME_S = "Darwin" ];
 then
     # MacOS GNU versions which can be installed through Homebrew
     FIND=gfind
