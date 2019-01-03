@@ -3,12 +3,14 @@
 // assembly-configuring-kafka-listeners.adoc
 
 [id='proc-restricting-access-to-listeners-using-network-policies-{context}']
-= Restricting access to Kafka listeners using NetworkPolicies
+= Restricting access to Kafka listeners using `networkPolicyPeers`
+
+You can restrict access to a listener to only selected applications by using the `networkPolicyPeers` field.
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster with SDN supporting Ingress NetworkPolicies
-* A running Cluster Operator
+* An {ProductPlatformName} cluster with support for Ingress NetworkPolicies.
+* The Cluster Operator is running.
 
 .Procedure
 
@@ -36,15 +38,15 @@ spec:
 . Create or update the resource.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName} use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName} use `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
 
 .Additional resources
-* For more information about the schema, see {K8sNetworkPolicyPeerAPI} and xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
+* For more information about the schema, see {K8sNetworkPolicyPeerAPI} and the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

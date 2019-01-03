@@ -125,13 +125,15 @@ listeners:
 
 Authentication must be configured when using the User Operator to manage `KafkaUsers`.
 
-== Network Policies
+== Network policies
 
-For every enabled listener, {ProductName} will automatically create a NetworkPolicy which will by default grant all applications access to the listener.
-You can restrict the access only to selected applications using the `networkPolicyPeers` field.
-You can use different `networkPolicyPeers` configuration for each listener.
+{ProductName} automatically creates a `NetworkPolicy` resource for every listener that is enabled on a Kafka broker.
+By default, a `NetworkPolicy` grants access to a listener to all applications and namespaces.
+If you want to restrict access to a listener to only selected applications or namespaces, use the `networkPolicyPeers` field.
+Each listener can have a different `networkPolicyPeers` configuration.
 
-.An example where the `plain` and `tls` listeners allow connections only from selected pods
+The following example shows a `networkPolicyPeers` configuration for a `plain` and a `tls` listener:
+
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -159,12 +161,13 @@ listeners:
 # ...
 ----
 
-In the example above:
+In the above example:
 
-* Only the application pods matching the labels `app: kafka-sasl-consumer` and `app: kafka-sasl-producer` which are running in the same namespace as the Kafka brokers can connect to the `plain` listener.
-* Only the application pods running in the namespaces matching the labels `project: myproject` and `project: myproject2` can connect to the `tls` listener.
+* Only application pods matching the labels `app: kafka-sasl-consumer` and `app: kafka-sasl-producer` can connect to the `plain` listener.
+The application pods must be running in the same namespace as the Kafka broker.
+* Only application pods running in namespaces matching the labels `project: myproject` and `project: myproject2` can connect to the `tls` listener.
 
-The syntax of the `networkPolicyPeers` field uses the same syntax as the `from` field in Kubernetes NetworkPolicies.
-For more information about the schema, see {K8sNetworkPolicyPeerAPI} and xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
+The syntax of the `networkPolicyPeers` field is the same as the `from` field in the `NetworkPolicy` resource in {KubernetesName}.
+For more information about the schema, see {K8sNetworkPolicyPeerAPI} and the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].
 
-NOTE: To use NetworkPolicies, your {ProductPlatformName} needs to support Ingress NetworkPolicies.
+NOTE: To use NetworkPolicies, your {ProductPlatformName} must support Ingress NetworkPolicies.
