@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -155,7 +156,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                 lock.release();
                                 log.debug("{}: Lock {} released", reconciliation, lockName);
                                 if (createResult.failed()) {
-                                    if (createResult.cause() instanceof InvalidConfigParameterException) {
+                                    if (createResult.cause() instanceof InvalidResourceException) {
                                         log.error(createResult.cause().getMessage());
                                     } else {
                                         log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());

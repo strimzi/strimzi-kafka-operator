@@ -484,14 +484,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 // Force the user to explicitly set the log.message.format.version
                 // to match the old version
-                throw new KafkaUpgradeException(upgrade + " requires a message format change " +
+                return Future.failedFuture(new KafkaUpgradeException(upgrade + " requires a message format change " +
                         "from " + upgrade.from().messageVersion() + " to " + upgrade.to().messageVersion() + ". " +
                         "You must explicitly set " +
                         LOG_MESSAGE_FORMAT_VERSION + ": \"" + upgrade.from().messageVersion() + "\"" +
                         " in Kafka.spec.kafka.config to perform the upgrade. " +
                         "Then you can upgrade client applications. " +
                         "And finally you can remove " + LOG_MESSAGE_FORMAT_VERSION +
-                        " from Kafka.spec.kafka.config");
+                        " from Kafka.spec.kafka.config"));
             }
             // Otherwise both versions use the same message format, so we don't care.
 
@@ -639,14 +639,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Force the user to explicitly set log.message.format.version
             // (Controller shouldn't break clients)
             if (oldMessageFormat == null || !oldMessageFormat.equals(upgrade.to().messageVersion())) {
-                throw new KafkaUpgradeException(
+                return Future.failedFuture(new KafkaUpgradeException(
                         String.format("Cannot downgrade Kafka cluster %s in namespace %s to version %s " +
                                         "because the current cluster is configured with %s=%s. " +
                                         "Downgraded brokers would not be able to understand existing " +
                                         "messages with the message version %s. ",
                                 name, namespace, upgrade.to(),
                                 LOG_MESSAGE_FORMAT_VERSION, oldMessageFormat,
-                                oldMessageFormat));
+                                oldMessageFormat)));
             }
 
             String lowerVersionProtocol = currentKafkaConfig.getConfigOption(INTERBROKER_PROTOCOL_VERSION);
