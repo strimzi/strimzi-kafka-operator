@@ -73,7 +73,5 @@ spec:
           requests:
             memory: "256Mi"
             cpu: "200m"
-        additionalProperties: {}
-      additionalProperties: {}
   strategy:
     type: "Recreate"

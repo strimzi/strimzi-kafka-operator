@@ -7,13 +7,11 @@ package io.strimzi.api.kafka.model.template;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.api.kafka.model.Probe;
+import io.fabric8.kubernetes.api.model.Probe;
 import io.strimzi.api.kafka.model.Resources;
 import io.sundr.builder.annotations.Buildable;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Representation of a pod template for Strimzi resources.

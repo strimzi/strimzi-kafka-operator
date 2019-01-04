@@ -6,12 +6,11 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.Container;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Representation of a template for Cluster Operator resources.
@@ -29,7 +28,7 @@ public class ClusterOperatorSpecTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String serviceAccountName;
-    private List<ContainerTemplate> containers;
+    private List<Container> containers;
 
     public String getServiceAccountName() {
         return serviceAccountName;
@@ -39,11 +38,11 @@ public class ClusterOperatorSpecTemplate implements Serializable {
         this.serviceAccountName = serviceAccountName;
     }
 
-    public List<ContainerTemplate> getContainers() {
+    public List<Container> getContainers() {
         return containers;
     }
 
-    public void setContainers(List<ContainerTemplate> containers) {
+    public void setContainers(List<Container> containers) {
         this.containers = containers;
     }
 }
