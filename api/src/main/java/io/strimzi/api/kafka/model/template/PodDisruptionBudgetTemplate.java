@@ -46,7 +46,7 @@ public class PodDisruptionBudgetTemplate implements Serializable {
     }
 
     @Description("Maximum number of unavailable pods to allow voluntary Pod eviction. " +
-            "An Pod eviction is allowed if at most \"maxUnavailable\" pods are unavailable after the eviction. " +
+            "A Pod eviction will only be allowed when \"maxUnavailable\" or fewer pods are unavailable after the eviction. " +
             "Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually." +
             "Defaults to 1.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
