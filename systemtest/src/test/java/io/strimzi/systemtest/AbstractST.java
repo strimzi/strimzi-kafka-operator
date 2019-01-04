@@ -114,6 +114,7 @@ public abstract class AbstractST {
     static KubeClient<?> kubeClient = cluster.client();
 
     Resources resources;
+    static Resources clusterOperatorResources;
     static String operationID;
     static String testClass;
     static String testName;
@@ -406,11 +407,22 @@ public abstract class AbstractST {
         resources = new Resources(namespacedClient());
     }
 
+    protected static void createClusterOperatorResources() {
+        LOGGER.info("Creating cluster operator resources");
+        clusterOperatorResources = new Resources(namespacedClient());
+    }
+
     protected void deleteResources() throws Exception {
         collectLogs();
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
         resources = null;
+    }
+
+    protected static void deleteClusterOperatorResources() {
+        LOGGER.info("Deleting cluster operator resources after the test");
+        clusterOperatorResources.deleteResources();
+        clusterOperatorResources = null;
     }
 
     Resources resources() {

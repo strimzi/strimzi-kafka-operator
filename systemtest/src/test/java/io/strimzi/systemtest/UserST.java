@@ -10,7 +10,9 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -99,5 +101,16 @@ class UserST extends AbstractST {
     void deleteTestResources() throws Exception {
         deleteResources();
         waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+    }
+
+    @BeforeAll
+    static void createClusterOperator() {
+        createClusterOperatorResources();
+        clusterOperatorResources.clusterOperatorDefault("strimzi-cluster-operator", NAMESPACE).done();
+    }
+
+    @AfterAll
+    static void deleteClusterOperator() {
+        deleteClusterOperatorResources();
     }
 }

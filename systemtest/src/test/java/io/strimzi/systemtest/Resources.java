@@ -49,6 +49,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -664,10 +665,15 @@ public class Resources {
 //                .endSpec();
 //    }
 
-    public DeploymentBuilder defaultClusterOperator(String name, String namespace) {
+    public DeploymentBuilder defaultClusterOperator(String name, String namespaces) {
+        LOGGER.info("Create new CO");
         return new DeploymentBuilder()
                 .withApiVersion("extensions/v1beta1")
-                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+                .withKind("Deployment")
+                .withNewMetadata()
+                    .withName("strimzi-cluster-operator")
+                    .addToLabels("app", "strimzi")
+                .endMetadata()
                 .withNewSpec()
                     .withReplicas(1)
                     .withNewTemplate()
@@ -679,34 +685,36 @@ public class Resources {
                             .addNewContainer()
                                 .withName("strimzi-cluster-operator")
                                 .withImage("strimzi/cluster-operator:latest")
-                                .withImagePullPolicy("IfNotPresent")
+                                .withImagePullPolicy(StrimziExtension.IMAGE_PULL_POLICY)
+                                // Default images
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag("strimzi/zookeeper:latest-kafka-2.0.0"), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", TestUtils.changeOrgAndTag("strimzi/topic-operator:latest"), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", TestUtils.changeOrgAndTag("strimzi/user-operator:latest"), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", TestUtils.changeOrgAndTag("strimzi/kafka-init:latest"), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag("strimzi/zookeeper-stunnel:latest"), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", TestUtils.changeOrgAndTag("strimzi/kafka-stunnel:latest"), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", TestUtils.changeOrgAndTag("strimzi/entity-operator-stunnel:latest"), null))
 
-                                .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespace, null))
+                                .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespaces, null))
                                 .addToEnv(new EnvVar("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", "120000", null))
                                 .addToEnv(new EnvVar("STRIMZI_OPERATION_TIMEOUT_MS", "300000", null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest-kafka-2.0.0", null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", "|\n" +
+
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", TestUtils.changeOrgAndTagInImageMap("|\n" +
                                         "        2.0.0=strimzi/kafka:latest-kafka-2.0.0\n" +
                                         "        2.0.1=strimzi/kafka:latest-kafka-2.0.1\n" +
-                                        "        2.1.0=strimzi/kafka:latest-kafka-2.1.0", null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", "|\n" +
+                                        "        2.1.0=strimzi/kafka:latest-kafka-2.1.0"), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", TestUtils.changeOrgAndTagInImageMap("|\n" +
                                         "        2.0.0=strimzi/kafka-connect:latest-kafka-2.0.0\n" +
                                         "        2.0.1=strimzi/kafka-connect:latest-kafka-2.0.1\n" +
-                                        "        2.1.0=strimzi/kafka-connect:latest-kafka-2.1.0", null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", "|\n" +
+                                        "        2.1.0=strimzi/kafka-connect:latest-kafka-2.1.0"), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", TestUtils.changeOrgAndTagInImageMap("|\n" +
                                         "        2.0.0=strimzi/kafka-connect-s2i:latest-kafka-2.0.0\n" +
                                         "        2.0.1=strimzi/kafka-connect-s2i:latest-kafka-2.0.1\n" +
-                                        "        2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0", null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", "|\n" +
+                                        "        2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0"), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", TestUtils.changeOrgAndTagInImageMap("|\n" +
                                         "        2.0.0=strimzi/kafka-mirror-maker:latest-kafka-2.0.0\n" +
                                         "        2.0.1=strimzi/kafka-mirror-maker:latest-kafka-2.0.1\n" +
-                                        "        2.1.0=strimzi/kafka-mirror-maker:latest-kafka-2.1.0", null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator:latest", null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/user-operator:latest", null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", "strimzi/kafka-init:latest", null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", "strimzi/zookeeper-stunnel:latest", null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", "strimzi/kafka-stunnel:latest", null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", "strimzi/entity-operator-stunnel:latest", null))
+                                        "        2.1.0=strimzi/kafka-mirror-maker:latest-kafka-2.1.0"), null))
                                 .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", "INFO", null))
 
                                 .withNewLivenessProbe()
@@ -728,12 +736,11 @@ public class Resources {
                                 .endReadinessProbe()
 
                                 .withNewResources()
-                                    .addToLimits("memory", new Quantity("256Mi"))
-                                    .addToLimits("cpu", new Quantity("1000m"))
+                                    .addToLimits("memory", new Quantity(StrimziExtension.REQUESTS_MEMORY))
+                                    .addToLimits("cpu", new Quantity(StrimziExtension.REQUESTS_CPU))
 
-                                    .addToRequests("memory", new Quantity("256Mi"))
-                                    .addToRequests("cpu", new Quantity("200m"))
-
+                                    .addToRequests("memory", new Quantity(StrimziExtension.LIMITS_MEMORY))
+                                    .addToRequests("cpu", new Quantity(StrimziExtension.LIMITS_CPU))
                                 .endResources()
                             .endContainer()
                         .endSpec()
