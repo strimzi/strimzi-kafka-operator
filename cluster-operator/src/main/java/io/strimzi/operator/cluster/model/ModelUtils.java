@@ -6,23 +6,27 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.common.model.Labels;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,12 +36,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
 import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 
 public class ModelUtils {
     private ModelUtils() {}
 
+    protected static final Logger log = LogManager.getLogger(ModelUtils.class.getName());
     /**
      * Find the first secret in the given secrets with the given name
      */
@@ -188,6 +196,47 @@ public class ModelUtils {
         return AbstractModel.buildEnvVar(TLS_SIDECAR_LOG_LEVEL,
                 (tlsSidecar != null && tlsSidecar.getLogLevel() != null ?
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
+    }
+
+    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName, String keyCertName, Labels labels, OwnerReference ownerReference) {
+        Map<String, String> data = new HashMap<>();
+        if (secret == null || clusterCa.certRenewed()) {
+            log.debug("Generating certificates");
+            try {
+                log.debug(keyCertName + " certificate to generate");
+                CertAndKey eoCertAndKey = clusterCa.generateSignedCert(secretName, Ca.IO_STRIMZI);
+                data.put(keyCertName + ".key", eoCertAndKey.keyAsBase64String());
+                data.put(keyCertName + ".crt", eoCertAndKey.certAsBase64String());
+            } catch (IOException e) {
+                log.warn("Error while generating certificates", e);
+            }
+            log.debug("End generating certificates");
+        } else {
+            data.put(keyCertName + ".key", secret.getData().get(keyCertName + ".key"));
+            data.put(keyCertName + ".crt", secret.getData().get(keyCertName + ".crt"));
+        }
+        return createSecret(secretName, namespace, labels, ownerReference, data);
+    }
+
+    public static Secret createSecret(String name, String namespace, Labels labels, OwnerReference ownerReference, Map<String, String> data) {
+        if (ownerReference == null) {
+            return new SecretBuilder()
+                    .withNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withLabels(labels.toMap())
+                    .endMetadata()
+                    .withData(data).build();
+        } else {
+            return new SecretBuilder()
+                    .withNewMetadata()
+                    .withName(name)
+                    .withOwnerReferences(ownerReference)
+                    .withNamespace(namespace)
+                    .withLabels(labels.toMap())
+                    .endMetadata()
+                    .withData(data).build();
+        }
     }
 
     /**

@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
-import io.strimzi.operator.cluster.operator.assembly.SecretGenerator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -366,7 +365,7 @@ public class TopicOperator extends AbstractModel {
      */
     public Secret generateSecret(ClusterCa clusterCa) {
         Secret topicOperatorSecret = clusterCa.topicOperatorSecret();
-        return SecretGenerator.generateSecret(clusterCa, topicOperatorSecret, namespace, TopicOperator.secretName(cluster), "entity-operator", labels, createOwnerReference());
+        return ModelUtils.buildSecret(clusterCa, topicOperatorSecret, namespace, TopicOperator.secretName(cluster), "entity-operator", labels, createOwnerReference());
     }
 
     protected void setTlsSidecar(TlsSidecar tlsSidecar) {

@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
-import io.strimzi.operator.cluster.operator.assembly.SecretGenerator;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.model.Labels;
 
@@ -250,7 +249,7 @@ public class EntityOperator extends AbstractModel {
             return null;
         }
         Secret secret = clusterCa.entityOperatorSecret();
-        return SecretGenerator.generateSecret(clusterCa, secret, namespace, EntityOperator.secretName(cluster), "entity-operator", labels, createOwnerReference());
+        return ModelUtils.buildSecret(clusterCa, secret, namespace, EntityOperator.secretName(cluster), "entity-operator", labels, createOwnerReference());
     }
 
     /**

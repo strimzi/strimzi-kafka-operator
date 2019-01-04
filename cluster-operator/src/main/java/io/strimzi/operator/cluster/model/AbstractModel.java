@@ -59,7 +59,6 @@ import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.cluster.operator.assembly.SecretGenerator;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -683,7 +682,7 @@ public abstract class AbstractModel {
     }
 
     protected Secret createSecret(String name, Map<String, String> data) {
-        return SecretGenerator.createSecret(name, namespace, labels, createOwnerReference(), data);
+        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data);
     }
 
     protected Probe createTcpSocketProbe(int port, int initialDelay, int timeout) {

@@ -102,6 +102,11 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         return false;
     }
 
+    /**
+     * Method `maybeRollingUpdate` uses an algorithm for rolling update of Zookeeper cluster.
+     * It is based on restarting the Zookeeper leader replica as the last one. So the quorum is preserved.
+     * The leader is determined by sending `stat` word to each pod.
+     */
     @Override
     public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart) {
         String namespace = ss.getMetadata().getNamespace();

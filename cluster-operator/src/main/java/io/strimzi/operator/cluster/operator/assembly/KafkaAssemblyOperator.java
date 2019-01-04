@@ -875,6 +875,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             ));
         }
 
+        /**
+         * Scale up is divided by scaling up Zookeeper cluster in steps.
+         * Scaling up from N to M (N > 0 and M>N) replicas is done in M-N steps.
+         * Each step performs scale up by one replica and full tolling update of Zookeeper cluster.
+         * This approach ensures a valid configuration of each Zk pod.
+         * Together with modified `maybeRollingUpdate` the quorum is not lost after the scale up operation is performed.
+         * There is one special case of scaling from standalone (single one) Zookeeper pod.
+         * In this case quorum cannot be preserved.
+         */
         Future<ReconciliationState> zkScaleUpStep() {
             Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
             return withVoid(futss.map(ss -> ss == null ? 0 : ss.getSpec().getReplicas())
