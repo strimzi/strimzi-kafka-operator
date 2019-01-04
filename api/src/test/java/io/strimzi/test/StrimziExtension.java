@@ -602,79 +602,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     @SuppressWarnings("unchecked")
     private Statement installOperatorFromExamples(AnnotatedElement element, Statement last, ClusterOperator cc) {
         Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file -> !file.getName().equals("050-Deployment-strimzi-cluster-operator.yaml")).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, node -> {
-            // Change the docker org of the images in the 04-deployment.yaml
-//            if ("050-Deployment-strimzi-cluster-operator.yaml".equals(f.getName())) {
-//                ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
-//                containerNode.put("imagePullPolicy", IMAGE_PULL_POLICY);
-//                JsonNodeFactory factory = new JsonNodeFactory(false);
-//                ObjectNode resources = new ObjectNode(factory);
-//                ObjectNode requests = new ObjectNode(factory);
-//                requests.put("cpu", "200m").put(REQUESTS_CPU, REQUESTS_MEMORY);
-//                ObjectNode limits = new ObjectNode(factory);
-//                limits.put("cpu", "1000m").put(LIMITS_CPU, LIMITS_MEMORY);
-//                resources.set("requests", requests);
-//                resources.set("limits", limits);
-//                containerNode.replace("resources", resources);
-//                containerNode.remove("resources");
-//                JsonNode ccImageNode = containerNode.get("image");
-//                containerNode.put("image", TestUtils.changeOrgAndTag(ccImageNode.asText()));
-//                for (JsonNode envVar : containerNode.get("env")) {
-//                    String varName = envVar.get("name").textValue();
-//                    // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
-//                    if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
-//                        String value = envVar.get("value").textValue();
-//                        String v = TestUtils.changeOrgAndTag(value);
-//                        LOGGER.info("{}={}", varName, v);
-//                        ((ObjectNode) envVar).put("value", v);
-//                    }
-//                    if (varName.matches("STRIMZI_KAFKA_IMAGES")) {
-//                        String value = envVar.get("value").textValue();
-//                        String v = TestUtils.changeOrgAndTagInImageMap(value);
-//                        LOGGER.info("STRIMZI_KAFKA_IMAGES={}", v);
-//                        ((ObjectNode) envVar).put("value", v);
-//                    }
-//                    if (varName.matches("STRIMZI_KAFKA_CONNECT_IMAGES")) {
-//                        String value = envVar.get("value").textValue();
-//                        String v = TestUtils.changeOrgAndTagInImageMap(value);
-//                        LOGGER.info("STRIMZI_KAFKA_CONNECT_IMAGES={}", v);
-//                        ((ObjectNode) envVar).put("value", v);
-//                    }
-//                    if (varName.matches("STRIMZI_KAFKA_CONNECT_S2I_IMAGES")) {
-//                        String value = envVar.get("value").textValue();
-//                        String v = TestUtils.changeOrgAndTagInImageMap(value);
-//                        LOGGER.info("STRIMZI_KAFKA_CONNECT_S2I_IMAGES={}", v);
-//                        ((ObjectNode) envVar).put("value", v);
-//                    }
-//                    if (varName.matches("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES")) {
-//                        String value = envVar.get("value").textValue();
-//                        String v = TestUtils.changeOrgAndTagInImageMap(value);
-//                        LOGGER.info("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES={}", v);
-//                        ((ObjectNode) envVar).put("value", v);
-//                    }
-//                    // Set log level
-//                    if (varName.equals("STRIMZI_LOG_LEVEL")) {
-//                        String logLevel = System.getenv().getOrDefault("TEST_STRIMZI_LOG_LEVEL", OPERATOR_LOG_LEVEL);
-//                        ((ObjectNode) envVar).put("value", logLevel);
-//                    }
-//                    // Updates default values of env variables
-//                    for (EnvVariables envVariable : cc.envVariables()) {
-//                        if (varName.equals(envVariable.key())) {
-//                            ((ObjectNode) envVar).put("value", envVariable.value());
-//                        }
-//                    }
-//
-//                    if (varName.matches("STRIMZI_NAMESPACE")) {
-//                        List<Namespace> namespaces = annotations(element, Namespace.class);
-//                        List<String> test = new ArrayList<>();
-//                        ((ObjectNode) envVar).remove("valueFrom");
-//                        for (Namespace namespace : namespaces) {
-//                            test.add(namespace.value());
-//                        }
-//                        ((ObjectNode) envVar).put("value", String.join(",", test));
-//                    }
-//                }
-//            }
-
+            // Change properties in role bindings
             if (f.getName().matches(".*RoleBinding.*")) {
                 String ns = annotations(element, Namespace.class).get(0).value();
                 return TestUtils.changeRoleBindingSubject(f, ns);
@@ -696,7 +624,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     kubeClient().namespace(annotations(element, Namespace.class).get(0).value());
                     kubeClient().clientWithAdmin().applyContent(entry.getValue());
                 }
-//                kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME, 1);
             }
 
             @Override
@@ -705,7 +632,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 while (!deletable.isEmpty()) {
                     kubeClient().clientWithAdmin().deleteContent(deletable.pop());
                 }
-//                kubeClient().waitForResourceDeletion("deployment", CO_DEPLOYMENT_NAME);
             }
         };
         return last;

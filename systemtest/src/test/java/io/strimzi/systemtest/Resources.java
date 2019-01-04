@@ -56,7 +56,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -446,7 +445,7 @@ public class Resources {
 
     private Deployment waitFor(Deployment clusterOperator) {
         LOGGER.info("Waiting for Cluster Operator {}", clusterOperator.getMetadata().getName());
-        String namespace = clusterOperator.getMetadata().getNamespace();
+        String namespace = client.getNamespace();
         waitForDeployment(namespace, clusterOperator.getMetadata().getName());
         return clusterOperator;
     }
@@ -473,9 +472,9 @@ public class Resources {
      * Wait until the deployment is ready
      */
     private void waitForDeployment(String namespace, String name) {
-        LOGGER.info("Waiting for Deployment {}", name);
+        LOGGER.info("Waiting for Deployment {} in namespace {}", name, namespace);
         TestUtils.waitFor("deployment " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client().extensions().deployments().inNamespace(namespace).withName(name).isReady());
+            () -> client().apps().deployments().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment {} is ready", name);
     }
 
@@ -702,22 +701,18 @@ public class Resources {
                                 .addToEnv(new EnvVar("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", "120000", null))
                                 .addToEnv(new EnvVar("STRIMZI_OPERATION_TIMEOUT_MS", "300000", null))
 
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", TestUtils.changeOrgAndTagInImageMap("|\n" +
-                                        "        2.0.0=strimzi/kafka:latest-kafka-2.0.0\n" +
-                                        "        2.0.1=strimzi/kafka:latest-kafka-2.0.1\n" +
-                                        "        2.1.0=strimzi/kafka:latest-kafka-2.1.0"), null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", TestUtils.changeOrgAndTagInImageMap("|\n" +
-                                        "        2.0.0=strimzi/kafka-connect:latest-kafka-2.0.0\n" +
-                                        "        2.0.1=strimzi/kafka-connect:latest-kafka-2.0.1\n" +
-                                        "        2.1.0=strimzi/kafka-connect:latest-kafka-2.1.0"), null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", TestUtils.changeOrgAndTagInImageMap("|\n" +
-                                        "        2.0.0=strimzi/kafka-connect-s2i:latest-kafka-2.0.0\n" +
-                                        "        2.0.1=strimzi/kafka-connect-s2i:latest-kafka-2.0.1\n" +
-                                        "        2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0"), null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", TestUtils.changeOrgAndTagInImageMap("|\n" +
-                                        "        2.0.0=strimzi/kafka-mirror-maker:latest-kafka-2.0.0\n" +
-                                        "        2.0.1=strimzi/kafka-mirror-maker:latest-kafka-2.0.1\n" +
-                                        "        2.1.0=strimzi/kafka-mirror-maker:latest-kafka-2.1.0"), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", TestUtils.changeOrgAndTagInImageMap("2.0.0=strimzi/kafka:latest-kafka-2.0.0\n" +
+                                        "2.0.1=strimzi/kafka:latest-kafka-2.0.1\n" +
+                                        "2.1.0=strimzi/kafka:latest-kafka-2.1.0"), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", TestUtils.changeOrgAndTagInImageMap("2.0.0=strimzi/kafka-connect:latest-kafka-2.0.0\n" +
+                                        "2.0.1=strimzi/kafka-connect:latest-kafka-2.0.1\n" +
+                                        "2.1.0=strimzi/kafka-connect:latest-kafka-2.1.0"), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", TestUtils.changeOrgAndTagInImageMap("2.0.0=strimzi/kafka-connect-s2i:latest-kafka-2.0.0\n" +
+                                        "2.0.1=strimzi/kafka-connect-s2i:latest-kafka-2.0.1\n" +
+                                        "2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0"), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", TestUtils.changeOrgAndTagInImageMap("2.0.0=strimzi/kafka-mirror-maker:latest-kafka-2.0.0\n" +
+                                        "2.0.1=strimzi/kafka-mirror-maker:latest-kafka-2.0.1\n" +
+                                        "2.1.0=strimzi/kafka-mirror-maker:latest-kafka-2.1.0"), null))
                                 .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", "INFO", null))
 
                                 .withNewLivenessProbe()
