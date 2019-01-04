@@ -668,7 +668,7 @@ public class Resources {
     public DeploymentBuilder defaultClusterOperator(String name, String namespaces) {
         LOGGER.info("Create new CO");
         return new DeploymentBuilder()
-                .withApiVersion("extensions/v1beta1")
+                .withApiVersion("apps/v1")
                 .withKind("Deployment")
                 .withNewMetadata()
                     .withName("strimzi-cluster-operator")
@@ -676,15 +676,18 @@ public class Resources {
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(1)
+                    .withNewSelector()
+                        .addToMatchLabels("name", "strimzi-cluster-operator")
+                    .endSelector()
                     .withNewTemplate()
                         .withNewMetadata()
-                            .withLabels(Collections.singletonMap("name", "strimzi-cluster-operator"))
+                            .addToLabels("name", "strimzi-cluster-operator")
                         .endMetadata()
                         .withNewSpec()
                             .withServiceAccountName("strimzi-cluster-operator")
                             .addNewContainer()
                                 .withName("strimzi-cluster-operator")
-                                .withImage("strimzi/cluster-operator:latest")
+                                .withImage(TestUtils.changeOrgAndTag("strimzi/cluster-operator:latest"))
                                 .withImagePullPolicy(StrimziExtension.IMAGE_PULL_POLICY)
                                 // Default images
                                 .addToEnv(new EnvVar("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag("strimzi/zookeeper:latest-kafka-2.0.0"), null))
@@ -736,11 +739,11 @@ public class Resources {
                                 .endReadinessProbe()
 
                                 .withNewResources()
-                                    .addToLimits("memory", new Quantity(StrimziExtension.REQUESTS_MEMORY))
-                                    .addToLimits("cpu", new Quantity(StrimziExtension.REQUESTS_CPU))
+                                    .addToLimits("memory", new Quantity(StrimziExtension.LIMITS_MEMORY))
+                                    .addToLimits("cpu", new Quantity(StrimziExtension.LIMITS_CPU))
 
-                                    .addToRequests("memory", new Quantity(StrimziExtension.LIMITS_MEMORY))
-                                    .addToRequests("cpu", new Quantity(StrimziExtension.LIMITS_CPU))
+                                    .addToRequests("memory", new Quantity(StrimziExtension.REQUESTS_MEMORY))
+                                    .addToRequests("cpu", new Quantity(StrimziExtension.REQUESTS_CPU))
                                 .endResources()
                             .endContainer()
                         .endSpec()
@@ -757,7 +760,8 @@ public class Resources {
             TestUtils.waitFor("Cluster operator creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
-                        clusterOperator().inNamespace(client().getNamespace()).createOrReplace(co);
+                        client.apps().deployments().createOrReplace(co);
+//                        clusterOperator().inNamespace(client().getNamespace()).create(co);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
