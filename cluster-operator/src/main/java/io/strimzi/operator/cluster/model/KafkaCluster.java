@@ -315,7 +315,7 @@ public class KafkaCluster extends AbstractModel {
                 result.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
             }
 
-            FromCrdUtils.parsePodTemplate(result, template.getPod());
+            ModelUtils.parsePodTemplate(result, template.getPod());
 
             if (template.getBootstrapService() != null && template.getBootstrapService().getMetadata() != null)  {
                 result.templateServiceLabels = template.getBootstrapService().getMetadata().getLabels();
@@ -347,7 +347,7 @@ public class KafkaCluster extends AbstractModel {
                 result.templatePerPodRouteAnnotations = template.getPerPodRoute().getMetadata().getAnnotations();
             }
 
-            FromCrdUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
+            ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());

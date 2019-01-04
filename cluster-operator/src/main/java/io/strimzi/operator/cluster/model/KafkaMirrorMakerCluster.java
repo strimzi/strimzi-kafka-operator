@@ -191,8 +191,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 kafkaMirrorMakerCluster.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
             }
 
-            FromCrdUtils.parsePodTemplate(kafkaMirrorMakerCluster, template.getPod());
-            FromCrdUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
+            ModelUtils.parsePodTemplate(kafkaMirrorMakerCluster, template.getPod());
+            ModelUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
         }
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);

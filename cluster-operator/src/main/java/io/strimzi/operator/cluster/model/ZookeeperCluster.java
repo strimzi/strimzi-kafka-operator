@@ -198,7 +198,7 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
             }
 
-            FromCrdUtils.parsePodTemplate(zk, template.getPod());
+            ModelUtils.parsePodTemplate(zk, template.getPod());
 
             if (template.getClientService() != null && template.getClientService().getMetadata() != null)  {
                 zk.templateServiceLabels = template.getClientService().getMetadata().getLabels();
@@ -210,7 +210,7 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateHeadlessServiceAnnotations = template.getNodesService().getMetadata().getAnnotations();
             }
 
-            FromCrdUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
+            ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 
         return zk;
