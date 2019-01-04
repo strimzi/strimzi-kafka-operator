@@ -1,0 +1,55 @@
+// Module included in the following assemblies:
+//
+// assembly-configuring-kafka-listeners.adoc
+
+[id='proc-restricting-access-to-listeners-using-network-policies-{context}']
+= Restricting access to Kafka listeners using `networkPolicyPeers`
+
+You can restrict access to a listener to only selected applications by using the `networkPolicyPeers` field.
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster with support for Ingress NetworkPolicies.
+* The Cluster Operator is running.
+
+.Procedure
+
+. Open the `Kafka` resource.
+
+. In the `networkPolicyPeers` field, define the application pods or namespaces that will be allowed to access the Kafka cluster.
++
+For example, to configure a `tls` listener to allow connections only from application pods with the label `app` set to `kafka-client`:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    listeners:
+      tls:
+        networkPolicyPeers:
+          - podSelector:
+              matchLabels:
+                app: kafka-client
+    # ...
+  zookeeper:
+    # ...
+----
+
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} use `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _your-file_
++
+endif::Kubernetes[]
+On {OpenShiftName} use `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _your-file_
+
+.Additional resources
+* For more information about the schema, see {K8sNetworkPolicyPeerAPI} and the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

@@ -30,4 +30,6 @@ include::proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
 
 include::proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
 
+include::proc-restricting-access-to-listeners-using-network-policies.adoc[leveloffset=+1]
+
 :context: {parent-context}
