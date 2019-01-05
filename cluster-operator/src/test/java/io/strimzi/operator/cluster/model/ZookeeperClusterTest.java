@@ -7,12 +7,14 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -305,6 +307,9 @@ public class ZookeeperClusterTest {
         Map<String, String> hSvcLabels = TestUtils.map("l7", "v7", "l8", "v8");
         Map<String, String> hSvcAnots = TestUtils.map("a7", "v7", "a8", "v8");
 
+        Map<String, String> pdbLabels = TestUtils.map("l9", "v9", "l10", "v10");
+        Map<String, String> pdbAnots = TestUtils.map("a9", "v9", "a10", "v10");
+
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
                 .editSpec()
@@ -334,6 +339,12 @@ public class ZookeeperClusterTest {
                                     .withAnnotations(hSvcAnots)
                                 .endMetadata()
                             .endNodesService()
+                            .withNewPodDisruptionBudget()
+                                .withNewMetadata()
+                                    .withLabels(pdbLabels)
+                                    .withAnnotations(pdbAnots)
+                                .endMetadata()
+                            .endPodDisruptionBudget()
                         .endTemplate()
                     .endZookeeper()
                 .endSpec()
@@ -358,6 +369,11 @@ public class ZookeeperClusterTest {
         svc = zc.generateHeadlessService();
         assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(hSvcLabels.entrySet()));
         assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnots.entrySet()));
+
+        // Check PodDisruptionBudget
+        PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
+        assertTrue(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()));
+        assertTrue(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()));
     }
 
     @Test
@@ -465,5 +481,36 @@ public class ZookeeperClusterTest {
 
         StatefulSet ss = zc.generateStatefulSet(true);
         assertNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
+    }
+
+    @Test
+    public void testPodDisruptionBudget() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPodDisruptionBudget()
+                                .withMaxUnavailable(2)
+                            .endPodDisruptionBudget()
+                        .endTemplate()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(2), pdb.getSpec().getMaxUnavailable());
+    }
+
+    @Test
+    public void testDefaultPodDisruptionBudget() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap()))
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
     }
 }

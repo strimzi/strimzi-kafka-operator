@@ -91,7 +91,7 @@ public class CertificateRenewalTest {
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, false, 1L, certManager,
                 new ResourceOperatorSupplier(null, null, null,
                         null, null, secretOps, null, null,
-                        null, null, null, null, null),
+                        null, null, null, null, null, null),
                 new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()));
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 

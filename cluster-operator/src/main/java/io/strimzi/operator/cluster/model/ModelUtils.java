@@ -18,6 +18,8 @@ import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.common.model.Labels;
 
@@ -186,5 +188,42 @@ public class ModelUtils {
         return AbstractModel.buildEnvVar(TLS_SIDECAR_LOG_LEVEL,
                 (tlsSidecar != null && tlsSidecar.getLogLevel() != null ?
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
+    }
+
+    /**
+     * Parses the values from the PodDisruptionBudgetTemplate in CRD model into the component model
+     *
+     * @param model AbstractModel class where the values from the PodDisruptionBudgetTemplate should be set
+     * @param pdb PodDisruptionBudgetTemplate with the values form the CRD
+     */
+    public static void parsePodDisruptionBudgetTemplate(AbstractModel model, PodDisruptionBudgetTemplate pdb)   {
+        if (pdb != null)  {
+            if (pdb.getMetadata() != null) {
+                model.templatePodDisruptionBudgetLabels = pdb.getMetadata().getLabels();
+                model.templatePodDisruptionBudgetAnnotations = pdb.getMetadata().getAnnotations();
+            }
+
+            model.templatePodDisruptionBudgetMaxUnavailable = pdb.getMaxUnavailable();
+        }
+    }
+
+    /**
+     * Parses the values from the PodTemplate in CRD model into the component model
+     *
+     * @param model AbstractModel class where the values from the PodTemplate should be set
+     * @param pod PodTemplate with the values form the CRD
+     */
+
+    public static void parsePodTemplate(AbstractModel model, PodTemplate pod)   {
+        if (pod != null)  {
+            if (pod.getMetadata() != null) {
+                model.templatePodLabels = pod.getMetadata().getLabels();
+                model.templatePodAnnotations = pod.getMetadata().getAnnotations();
+            }
+
+            model.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
+            model.templateImagePullSecrets = pod.getImagePullSecrets();
+            model.templateSecurityContext = pod.getSecurityContext();
+        }
     }
 }

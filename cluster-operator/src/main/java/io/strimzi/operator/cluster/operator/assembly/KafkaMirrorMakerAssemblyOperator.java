@@ -23,6 +23,7 @@ import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
@@ -67,8 +68,9 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                                             NetworkPolicyOperator networkPolicyOperator,
                                             DeploymentOperator deploymentOperations,
                                             ServiceOperator serviceOperations,
+                                            PodDisruptionBudgetOperator podDisruptionBudgetOperator,
                                             KafkaVersion.Lookup versions) {
-        super(vertx, isOpenShift, ResourceType.MIRRORMAKER, certManager, mirrorMakerOperator, secretOperations, networkPolicyOperator);
+        super(vertx, isOpenShift, ResourceType.MIRRORMAKER, certManager, mirrorMakerOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator);
         this.deploymentOperations = deploymentOperations;
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
@@ -101,6 +103,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         return deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas())
                 .compose(scale -> serviceOperations.reconcile(namespace, mirror.getServiceName(), mirror.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, mirror.getAncillaryConfigName(), logAndMetricsConfigMap))
+                .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
                 .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations, isOpenShift)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirror.getName(), mirror.getReplicas()).map((Void) null));
     }

@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -37,7 +38,6 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -211,23 +211,14 @@ public class KafkaConnectCluster extends AbstractModel {
                     kafkaConnect.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
                 }
 
-                if (template.getPod() != null)  {
-                    PodTemplate pod = template.getPod();
-
-                    if (pod.getMetadata() != null) {
-                        kafkaConnect.templatePodLabels = pod.getMetadata().getLabels();
-                        kafkaConnect.templatePodAnnotations = pod.getMetadata().getAnnotations();
-                    }
-
-                    kafkaConnect.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
-                    kafkaConnect.templateImagePullSecrets = pod.getImagePullSecrets();
-                    kafkaConnect.templateSecurityContext = pod.getSecurityContext();
-                }
+                ModelUtils.parsePodTemplate(kafkaConnect, template.getPod());
 
                 if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
                     kafkaConnect.templateServiceLabels = template.getApiService().getMetadata().getLabels();
                     kafkaConnect.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
                 }
+
+                ModelUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudget());
             }
 
             if (spec.getExternalConfiguration() != null)    {
@@ -536,5 +527,14 @@ public class KafkaConnectCluster extends AbstractModel {
     protected void setUsernameAndPassword(String username, PasswordSecretSource passwordSecret) {
         this.username = username;
         this.passwordSecret = passwordSecret;
+    }
+
+    /**
+     * Generates the PodDisruptionBudget
+     *
+     * @return
+     */
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return createPodDisruptionBudget();
     }
 }

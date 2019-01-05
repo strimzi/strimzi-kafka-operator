@@ -31,6 +31,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilde
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.EphemeralStorage;
@@ -50,7 +51,6 @@ import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -315,18 +315,7 @@ public class KafkaCluster extends AbstractModel {
                 result.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
             }
 
-            if (template.getPod() != null)  {
-                PodTemplate pod = template.getPod();
-
-                if (pod.getMetadata() != null) {
-                    result.templatePodLabels = pod.getMetadata().getLabels();
-                    result.templatePodAnnotations = pod.getMetadata().getAnnotations();
-                }
-
-                result.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
-                result.templateImagePullSecrets = pod.getImagePullSecrets();
-                result.templateSecurityContext = pod.getSecurityContext();
-            }
+            ModelUtils.parsePodTemplate(result, template.getPod());
 
             if (template.getBootstrapService() != null && template.getBootstrapService().getMetadata() != null)  {
                 result.templateServiceLabels = template.getBootstrapService().getMetadata().getLabels();
@@ -357,6 +346,8 @@ public class KafkaCluster extends AbstractModel {
                 result.templatePerPodRouteLabels = template.getPerPodRoute().getMetadata().getLabels();
                 result.templatePerPodRouteAnnotations = template.getPerPodRoute().getMetadata().getAnnotations();
             }
+
+            ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
@@ -991,6 +982,16 @@ public class KafkaCluster extends AbstractModel {
         log.trace("Created network policy {}", networkPolicy);
         return networkPolicy;
     }
+
+    /**
+     * Generates the PodDisruptionBudget
+     *
+     * @return
+     */
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return createPodDisruptionBudget();
+    }
+
     /**
      * Sets the object with Kafka listeners configuration
      *

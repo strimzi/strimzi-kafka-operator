@@ -9,10 +9,12 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerAuthenticationTlsBuilder;
@@ -404,6 +406,9 @@ public class KafkaMirrorMakerClusterTest {
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
         Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
 
+        Map<String, String> pdbLabels = TestUtils.map("l5", "v5", "l6", "v6");
+        Map<String, String> pdbAnots = TestUtils.map("a5", "v5", "a6", "v6");
+
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
                     .withNewTemplate()
@@ -419,6 +424,12 @@ public class KafkaMirrorMakerClusterTest {
                                 .withAnnotations(podAnots)
                             .endMetadata()
                         .endPod()
+                        .withNewPodDisruptionBudget()
+                            .withNewMetadata()
+                                .withLabels(pdbLabels)
+                                .withAnnotations(pdbAnots)
+                            .endMetadata()
+                        .endPodDisruptionBudget()
                     .endTemplate()
                 .endSpec()
                 .build();
@@ -432,6 +443,11 @@ public class KafkaMirrorMakerClusterTest {
         // Check Pods
         assertTrue(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()));
         assertTrue(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()));
+
+        // Check PodDisruptionBudget
+        PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();
+        assertTrue(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()));
+        assertTrue(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()));
     }
 
     @Test
@@ -518,5 +534,31 @@ public class KafkaMirrorMakerClusterTest {
 
         Deployment dep = mmc.generateDeployment(Collections.EMPTY_MAP, true);
         assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
+    }
+
+    @Test
+    public void testPodDisruptionBudget() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPodDisruptionBudget()
+                            .withMaxUnavailable(2)
+                        .endPodDisruptionBudget()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+
+        PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(2), pdb.getSpec().getMaxUnavailable());
+    }
+
+    @Test
+    public void testDefaultPodDisruptionBudget() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource).build();
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+
+        PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
     }
 }

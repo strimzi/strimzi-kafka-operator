@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
@@ -17,6 +18,7 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
@@ -440,6 +442,9 @@ public class KafkaConnectS2IClusterTest {
         Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
 
+        Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
+        Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
+
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
                     .withNewTemplate()
@@ -461,6 +466,12 @@ public class KafkaConnectS2IClusterTest {
                                 .withAnnotations(svcAnots)
                             .endMetadata()
                         .endApiService()
+                        .withNewPodDisruptionBudget()
+                            .withNewMetadata()
+                                .withLabels(pdbLabels)
+                                .withAnnotations(pdbAnots)
+                            .endMetadata()
+                        .endPodDisruptionBudget()
                     .endTemplate()
                 .endSpec()
                 .build();
@@ -479,6 +490,11 @@ public class KafkaConnectS2IClusterTest {
         Service svc = kc.generateService();
         assertTrue(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()));
         assertTrue(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()));
+
+        // Check PodDisruptionBudget
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
+        assertTrue(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()));
+        assertTrue(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()));
     }
 
     @Test
@@ -785,5 +801,31 @@ public class KafkaConnectS2IClusterTest {
 
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true);
         assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
+    }
+
+    @Test
+    public void testPodDisruptionBudget() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPodDisruptionBudget()
+                            .withMaxUnavailable(2)
+                        .endPodDisruptionBudget()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(2), pdb.getSpec().getMaxUnavailable());
+    }
+
+    @Test
+    public void testDefaultPodDisruptionBudget() {
+        KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource).build();
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
+        assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
     }
 }

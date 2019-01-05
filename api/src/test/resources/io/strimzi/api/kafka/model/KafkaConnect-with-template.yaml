@@ -31,6 +31,15 @@ spec:
         runAsGroup: 1000001
         fsGroup: 0
       terminationGracePeriodSeconds: 30
+    podDisruptionBudget:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
+      maxUnavailable: 1
     apiService:
       metadata:
         labels:

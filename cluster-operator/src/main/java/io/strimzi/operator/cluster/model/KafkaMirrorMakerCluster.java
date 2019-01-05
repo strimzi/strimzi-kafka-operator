@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
@@ -27,7 +28,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
@@ -191,18 +191,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 kafkaMirrorMakerCluster.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
             }
 
-            if (template.getPod() != null)  {
-                PodTemplate pod = template.getPod();
-
-                if (pod.getMetadata() != null) {
-                    kafkaMirrorMakerCluster.templatePodLabels = pod.getMetadata().getLabels();
-                    kafkaMirrorMakerCluster.templatePodAnnotations = pod.getMetadata().getAnnotations();
-                }
-
-                kafkaMirrorMakerCluster.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
-                kafkaMirrorMakerCluster.templateImagePullSecrets = pod.getImagePullSecrets();
-                kafkaMirrorMakerCluster.templateSecurityContext = pod.getSecurityContext();
-            }
+            ModelUtils.parsePodTemplate(kafkaMirrorMakerCluster, template.getPod());
+            ModelUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
         }
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
@@ -413,6 +403,15 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         }
 
         return varList;
+    }
+
+    /**
+     * Generates the PodDisruptionBudget
+     *
+     * @return
+     */
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return createPodDisruptionBudget();
     }
 
     @Override

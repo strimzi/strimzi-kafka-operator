@@ -48,6 +48,8 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
 import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -166,6 +168,9 @@ public abstract class AbstractModel {
     protected List<LocalObjectReference> templateImagePullSecrets;
     protected PodSecurityContext templateSecurityContext;
     protected int templateTerminationGracePeriodSeconds = 30;
+    protected Map<String, String> templatePodDisruptionBudgetLabels;
+    protected Map<String, String> templatePodDisruptionBudgetAnnotations;
+    protected int templatePodDisruptionBudgetMaxUnavailable = 1;
 
     // Owner Reference information
     private String ownerApiVersion;
@@ -1044,6 +1049,27 @@ public abstract class AbstractModel {
         annotations.put("prometheus.io/path", "/metrics");
 
         return annotations;
+    }
+
+    /**
+     * Creates the PodDisruptionBudget
+     *
+     * @return
+     */
+    protected PodDisruptionBudget createPodDisruptionBudget()   {
+        return new PodDisruptionBudgetBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withLabels(getLabelsWithName(templatePodDisruptionBudgetLabels))
+                    .withNamespace(namespace)
+                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
+                    .withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels()).build())
+                .endSpec()
+                .build();
     }
 
     String getAncillaryConfigMapKeyLogConfig() {

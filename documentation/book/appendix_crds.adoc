@@ -450,6 +450,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodService             1.2+<.<|Template for Kafka per-pod `Services` used for access from outside of Kubernetes.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|podDisruptionBudget       1.2+<.<|Template for Kafka `PodDisruptionBudget`.
+|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |====
 
 [id='type-ResourceTemplate-{context}']
@@ -468,7 +470,7 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+Used in: xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 
 
 [options="header"]
@@ -500,6 +502,21 @@ Used in: xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], x
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#podsecuritycontext-v1-core[PodSecurityContext]
 |terminationGracePeriodSeconds  1.2+<.<|The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process.Value must be non-negative integer. The value zero indicates delete immediately. Defaults to 30 seconds.
+|integer
+|====
+
+[id='type-PodDisruptionBudgetTemplate-{context}']
+### `PodDisruptionBudgetTemplate` schema reference
+
+Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+
+
+[options="header"]
+|====
+|Field                  |Description
+|metadata        1.2+<.<|Metadata which should be applied to the resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|maxUnavailable  1.2+<.<|Maximum number of unavailable pods to allow voluntary Pod eviction. A Pod eviction will only be allowed when "maxUnavailable" or fewer pods are unavailable after the eviction. Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. Defaults to 1.
 |integer
 |====
 
@@ -554,15 +571,17 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 [options="header"]
 |====
-|Field                 |Description
-|statefulset    1.2+<.<|Template for Zookeeper `StatefulSet`.
+|Field                       |Description
+|statefulset          1.2+<.<|Template for Zookeeper `StatefulSet`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod            1.2+<.<|Template for Zookeeper `Pods`.
+|pod                  1.2+<.<|Template for Zookeeper `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|clientService  1.2+<.<|Template for Zookeeper client `Service`.
+|clientService        1.2+<.<|Template for Zookeeper client `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|nodesService   1.2+<.<|Template for Zookeeper nodes `Service`.
+|nodesService         1.2+<.<|Template for Zookeeper nodes `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|podDisruptionBudget  1.2+<.<|Template for Zookeeper `PodDisruptionBudget`.
+|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |====
 
 [id='type-TopicOperatorSpec-{context}']
@@ -791,13 +810,15 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 
 [options="header"]
 |====
-|Field              |Description
-|deployment  1.2+<.<|Template for Kafka Connect `Deployment`.
+|Field                       |Description
+|deployment           1.2+<.<|Template for Kafka Connect `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod         1.2+<.<|Template for Kafka Connect `Pods`.
+|pod                  1.2+<.<|Template for Kafka Connect `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|apiService  1.2+<.<|Template for Kafka Connect API `Service`.
+|apiService           1.2+<.<|Template for Kafka Connect API `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|podDisruptionBudget  1.2+<.<|Template for Kafka Connect `PodDisruptionBudget`.
+|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |====
 
 [id='type-KafkaConnectAuthenticationTls-{context}']
@@ -1373,10 +1394,12 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 [options="header"]
 |====
-|Field              |Description
-|deployment  1.2+<.<|Template for Kafka Mirror Maker `Deployment`.
+|Field                       |Description
+|deployment           1.2+<.<|Template for Kafka Mirror Maker `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod         1.2+<.<|Template for Kafka Mirror Maker `Pods`.
+|pod                  1.2+<.<|Template for Kafka Mirror Maker `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
+|podDisruptionBudget  1.2+<.<|Template for Kafka Mirror Maker `PodDisruptionBudget`.
+|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |====
 

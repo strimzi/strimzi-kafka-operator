@@ -9,14 +9,16 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import io.vertx.core.cli.annotations.DefaultValue;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for Kafka Mirror Maker resources.
+ * Representation of a Pod disruption Budget template template for Strimzi resources.
  */
 @Buildable(
         editableEnabled = false,
@@ -25,43 +27,37 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pod"})
-public class KafkaMirrorMakerTemplate implements Serializable {
+        "metadata", "maxUnavailable"})
+public class PodDisruptionBudgetTemplate implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate deployment;
-    private PodTemplate pod;
-    private PodDisruptionBudgetTemplate podDisruptionBudget;
+    private MetadataTemplate metadata;
+    private int maxUnavailable = 1;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Template for Kafka Mirror Maker `Deployment`.")
+    @Description("Metadata which should be applied to the resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getDeployment() {
-        return deployment;
+    public MetadataTemplate getMetadata() {
+        return metadata;
     }
 
-    public void setDeployment(ResourceTemplate deployment) {
-        this.deployment = deployment;
+    public void setMetadata(MetadataTemplate metadata) {
+        this.metadata = metadata;
     }
 
-    @Description("Template for Kafka Mirror Maker `Pods`.")
+    @Description("Maximum number of unavailable pods to allow voluntary Pod eviction. " +
+            "A Pod eviction will only be allowed when \"maxUnavailable\" or fewer pods are unavailable after the eviction. " +
+            "Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. " +
+            "Defaults to 1.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodTemplate getPod() {
-        return pod;
+    @DefaultValue("1")
+    @Minimum(0)
+    public int getMaxUnavailable() {
+        return maxUnavailable;
     }
 
-    public void setPod(PodTemplate pod) {
-        this.pod = pod;
-    }
-
-    @Description("Template for Kafka Mirror Maker `PodDisruptionBudget`.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
-        return podDisruptionBudget;
-    }
-
-    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
-        this.podDisruptionBudget = podDisruptionBudget;
+    public void setMaxUnavailable(int maxUnavailable) {
+        this.maxUnavailable = maxUnavailable;
     }
 
     @JsonAnyGetter

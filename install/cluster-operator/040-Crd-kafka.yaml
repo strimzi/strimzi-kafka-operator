@@ -748,6 +748,19 @@ spec:
                               type: object
                             annotations:
                               type: object
+                    podDisruptionBudget:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                        maxUnavailable:
+                          type: integer
+                          minimum: 0
                 version:
                   type: string
               required:
@@ -1216,6 +1229,19 @@ spec:
                               type: object
                             annotations:
                               type: object
+                    podDisruptionBudget:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                        maxUnavailable:
+                          type: integer
+                          minimum: 0
               required:
               - replicas
               - storage
