@@ -17,12 +17,14 @@ The following resources will created by the Cluster Operator in the {ProductPlat
 `_cluster-name_-kafka-config`:: ConfigMap which contains the Kafka ancillary configuration and is mounted as a volume by the Kafka broker pods.
 `_cluster-name_-kafka-brokers`:: Secret with Kafka broker keys.
 `_cluster-name_-kafka`:: Service account used by the Kafka brokers.
+`_cluster-name_-kafka`:: Pod Disruption Budget configured for the Kafka brokers.
 `strimzi-_namespace-name_-_cluster-name_-kafka-init`:: Cluster role binding used by the Kafka brokers.
 `_cluster-name_-zookeeper`:: StatefulSet which is in charge of managing the Zookeeper node pods.
 `_cluster-name_-zookeeper-nodes`:: Service needed to have DNS resolve the Zookeeper pods IP addresses directly.
 `_cluster-name_-zookeeper-client`:: Service used by Kafka brokers to connect to Zookeeper nodes as clients.
 `_cluster-name_-zookeeper-config`:: ConfigMap which contains the Zookeeper ancillary configuration and is mounted as a volume by the Zookeeper node pods.
 `_cluster-name_-zookeeper-nodes`:: Secret with Zookeeper node keys.
+`_cluster-name_-zookeeper`:: Pod Disruption Budget configured for the Zookeeper nodes.
 `_cluster-name_-entity-operator`:: Deployment with Topic and User Operators. This resource will be created only if Cluster Operator deployed Entity Operator.
 `_cluster-name_-entity-topic-operator-config`:: Configmap with ancillary configuration for Topic Operators. This resource will be created only if Cluster Operator deployed Entity Operator.
 `_cluster-name_-entity-user-operator-config`:: Configmap with ancillary configuration for User Operators. This resource will be created only if Cluster Operator deployed Entity Operator.
