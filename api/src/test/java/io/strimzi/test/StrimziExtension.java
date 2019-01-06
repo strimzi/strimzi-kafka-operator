@@ -557,7 +557,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     LOGGER.info("Creating namespace '{}' before test per @Namespace annotation on {}", namespace.value(), name(element));
                     kubeClient().createNamespace(namespace.value());
                     previousNamespace = namespace.use() ? kubeClient().namespace(namespace.value()) : kubeClient().namespace();
-                    applyMultipleNamespacesWatcher(element);
                 }
 
                 @Override
@@ -603,15 +602,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private Statement installOperatorFromExamples(AnnotatedElement element, Statement last, ClusterOperator cc) {
         Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
                 !file.getName().matches(".*(Binding|Deployment)-.*")
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, node -> {
-
-            // Change properties in role bindings
-//            if (f.getName().matches(".*RoleBinding.*")) {
-//                String ns = annotations(element, Namespace.class).get(0).value();
-//                return TestUtils.changeRoleBindingSubject(f, ns);
-//            }
-            return TestUtils.toYamlString(node);
-        }), (x, y) -> x, LinkedHashMap::new));
+        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
         last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
                 .getDep(CO_DEPLOYMENT_NAME)) {
             Stack<String> deletable = new Stack<>();

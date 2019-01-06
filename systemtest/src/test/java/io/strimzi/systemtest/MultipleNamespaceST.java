@@ -104,6 +104,11 @@ class MultipleNamespaceST extends AbstractST {
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         LOGGER.info("Creating resources before the test class");
+        applyRoleBindings(DEFAULT_NAMESPACE, DEFAULT_NAMESPACE);
+        applyRoleBindings(DEFAULT_NAMESPACE, SECOND_NAMESPACE);
+        // 050-Deployment
+        clusterOperatorResources.clusterOperatorDefault(String.join(",", DEFAULT_NAMESPACE, SECOND_NAMESPACE)).done();
+
         classResources = new Resources(namespacedClient());
         classResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()

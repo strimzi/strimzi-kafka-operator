@@ -73,11 +73,15 @@ class ConnectS2IST extends AbstractST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
     }
 
     @BeforeAll
     static void createClassResources() {
+        LOGGER.info("Creating resources before the test class");
+        applyRoleBindings(NAMESPACE, NAMESPACE);
+        // 050-Deployment
+        clusterOperatorResources.clusterOperatorDefault(NAMESPACE).done();
+
         classResources = new Resources(namespacedClient());
         classResources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
     }

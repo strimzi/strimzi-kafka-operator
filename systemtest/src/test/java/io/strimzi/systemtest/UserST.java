@@ -10,7 +10,6 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -105,23 +104,8 @@ class UserST extends AbstractST {
 
     @BeforeAll
     static void createClusterOperator() {
-        createClusterOperatorResources();
-        // 020-RoleBinding
-        clusterOperatorResources.kubernetesRoleBinding("strimzi-cluster-operator", "strimzi-cluster-operator-namespaced", NAMESPACE);
-        // 021-ClusterRoleBinding
-        clusterOperatorResources.kubernetesClusterRoleBinding("strimzi-cluster-operator", "strimzi-cluster-operator-global", NAMESPACE);
-        // 030-ClusterRoleBinding
-        clusterOperatorResources.kubernetesClusterRoleBinding("strimzi-cluster-operator-kafka-broker-delegation", "strimzi-kafka-broker", NAMESPACE);
-        // 031-RoleBinding
-        clusterOperatorResources.kubernetesRoleBinding("strimzi-cluster-operator-entity-operator-delegation", "strimzi-entity-operator", NAMESPACE);
-        // 032-RoleBinding
-        clusterOperatorResources.kubernetesRoleBinding("strimzi-cluster-operator-topic-operator-delegation", "strimzi-topic-operator", NAMESPACE);
+        applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        clusterOperatorResources.clusterOperatorDefault("strimzi-cluster-operator", NAMESPACE).done();
-    }
-
-    @AfterAll
-    static void deleteClusterOperator() {
-        deleteClusterOperatorResources();
+        clusterOperatorResources.clusterOperatorDefault(NAMESPACE).done();
     }
 }

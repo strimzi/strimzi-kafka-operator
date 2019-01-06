@@ -150,6 +150,10 @@ class LogLevelST extends AbstractST {
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         LOGGER.info("Create resources for the tests");
+        applyRoleBindings(NAMESPACE, NAMESPACE);
+        // 050-Deployment
+        clusterOperatorResources.clusterOperatorDefault(NAMESPACE).done();
+
         testClass = testInfo.getTestClass().get().getSimpleName();
         operationID = startDeploymentMeasuring();
         classResources = new Resources(namespacedClient());

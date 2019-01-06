@@ -47,6 +47,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -391,16 +392,6 @@ public abstract class AbstractST {
     public String  getInitContainerImageName(String podName) {
         String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
         return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
-    }
-
-    @BeforeEach
-    void setTestName(TestInfo testInfo) {
-        testName = testInfo.getTestMethod().get().getName();
-    }
-
-    @BeforeAll
-    static void setTestClassName(TestInfo testInfo) {
-        testClass = testInfo.getTestClass().get().getSimpleName();
     }
 
     protected void createResources() {
@@ -1066,5 +1057,34 @@ public abstract class AbstractST {
             );
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
+    }
+
+    static void applyRoleBindings(String namespace, String clientNamespace) {
+        // 020-RoleBinding
+        clusterOperatorResources.kubernetesRoleBinding("strimzi-cluster-operator", "strimzi-cluster-operator-namespaced", namespace, clientNamespace);
+        // 021-ClusterRoleBinding
+        clusterOperatorResources.kubernetesClusterRoleBinding("strimzi-cluster-operator", "strimzi-cluster-operator-global", namespace, clientNamespace);
+        // 030-ClusterRoleBinding
+        clusterOperatorResources.kubernetesClusterRoleBinding("strimzi-cluster-operator-kafka-broker-delegation", "strimzi-kafka-broker", namespace, clientNamespace);
+        // 031-RoleBinding
+        clusterOperatorResources.kubernetesRoleBinding("strimzi-cluster-operator-entity-operator-delegation", "strimzi-entity-operator", namespace, clientNamespace);
+        // 032-RoleBinding
+        clusterOperatorResources.kubernetesRoleBinding("strimzi-cluster-operator-topic-operator-delegation", "strimzi-topic-operator", namespace, clientNamespace);
+    }
+
+    @BeforeEach
+    void setTestName(TestInfo testInfo) {
+        testName = testInfo.getTestMethod().get().getName();
+    }
+
+    @BeforeAll
+    static void setTestClassName(TestInfo testInfo) {
+        createClusterOperatorResources();
+        testClass = testInfo.getTestClass().get().getSimpleName();
+    }
+
+    @AfterAll
+    static void deleteClusterResources() {
+        clusterOperatorResources.deleteResources();
     }
 }

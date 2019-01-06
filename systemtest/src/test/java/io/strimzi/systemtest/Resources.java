@@ -26,12 +26,6 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import io.fabric8.openshift.api.model.ClusterRoleBinding;
-import io.fabric8.openshift.api.model.ClusterRoleBindingBuilder;
-import io.fabric8.openshift.api.model.DoneableClusterRoleBinding;
-import io.fabric8.openshift.api.model.DoneableRoleBinding;
-import io.fabric8.openshift.api.model.RoleBinding;
-import io.fabric8.openshift.api.model.RoleBindingBuilder;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.NamespacedOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -604,79 +598,7 @@ public class Resources {
         });
     }
 
-//    public ClusterOperatorBuilder defaultClusterOperator(String name, String namespace) {
-//        return new ClusterOperatorBuilder()
-//                .withApiVersion("extensions/v1beta1")
-//                .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
-//                .withNewSpec()
-//                    .withReplicas(1)
-//                    .withNewTemplate()
-//                        .withNewMetadata()
-//                    .withLabels(Collections.singletonMap("name", "strimzi-cluster-operator"))
-//                    .endMetadata()
-//                        .withNewSpec()
-//                        .withServiceAccountName("strimzi-cluster-operator")
-//
-//                        .withContainers()
-//                            .addToContainers()
-//
-//                                .withName("strimzi-cluster-operator")
-//                                .withImage("strimzi/cluster-operator:latest")
-//                                .withImagePullPolicy("IfNotPresent")
-//
-//                                .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespace, null))
-//                                .addToEnv(new EnvVar("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", "120000", null))
-//                                .addToEnv(new EnvVar("STRIMZI_OPERATION_TIMEOUT_MS", "300000", null))
-//                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest-kafka-2.0.0", null))
-//                                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", "|\n" +
-//                                        "        2.0.0=strimzi/kafka:latest-kafka-2.0.0\n" +
-//                                        "        2.0.1=strimzi/kafka:latest-kafka-2.0.1\n" +
-//                                        "        2.1.0=strimzi/kafka:latest-kafka-2.1.0", null))
-//                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", "|\n" +
-//                                        "        2.0.0=strimzi/kafka-connect:latest-kafka-2.0.0\n" +
-//                                        "        2.0.1=strimzi/kafka-connect:latest-kafka-2.0.1\n" +
-//                                        "        2.1.0=strimzi/kafka-connect:latest-kafka-2.1.0", null))
-//                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", "|\n" +
-//                                        "        2.0.0=strimzi/kafka-connect-s2i:latest-kafka-2.0.0\n" +
-//                                        "        2.0.1=strimzi/kafka-connect-s2i:latest-kafka-2.0.1\n" +
-//                                        "        2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0", null))
-//                                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", "|\n" +
-//                                        "        2.0.0=strimzi/kafka-mirror-maker:latest-kafka-2.0.0\n" +
-//                                        "        2.0.1=strimzi/kafka-mirror-maker:latest-kafka-2.0.1\n" +
-//                                        "        2.1.0=strimzi/kafka-mirror-maker:latest-kafka-2.1.0", null))
-//                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator:latest", null))
-//                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/user-operator:latest", null))
-//                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", "strimzi/kafka-init:latest", null))
-//                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", "strimzi/zookeeper-stunnel:latest", null))
-//                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", "strimzi/kafka-stunnel:latest", null))
-//                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", "strimzi/entity-operator-stunnel:latest", null))
-//                                .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", "INFO", null))
-//
-//            .withNewLivenessProbe()
-//                .withNewTcpSocket()
-//                    .withNewPort(4242)
-//                .endTcpSocket()
-//                .withInitialDelaySeconds(10)
-//                .withPeriodSeconds(5)
-//            .endLivenessProbe()
-//
-//                                .withNewResources()
-//                                    .withNewLimits()
-//                                        .withMemory("256Mi")
-//                                        .withMilliCpu("1000m")
-//                                    .endLimits()
-//                                    .withNewRequests()
-//                                        .withMemory("256Mi")
-//                                        .withMilliCpu("200m")
-//                                    .endRequests()
-//                                .endResources()
-//                            .endContainer()
-//                        .endSpec()
-//                    .endTemplate()
-//                .endSpec();
-//    }
-
-    public DeploymentBuilder defaultClusterOperator(String name, String namespaces) {
+    private DeploymentBuilder defaultClusterOperator(String namespaces) {
         LOGGER.info("Create new CO");
         return new DeploymentBuilder()
                 .withApiVersion("apps/v1")
@@ -758,8 +680,8 @@ public class Resources {
                 .endSpec();
     }
 
-    DoneableDeployment clusterOperatorDefault(String name, String namespace) {
-        return clusterOperator(defaultClusterOperator(name, namespace).build());
+    DoneableDeployment clusterOperatorDefault(String namespace) {
+        return clusterOperator(defaultClusterOperator(namespace).build());
     }
 
     DoneableDeployment clusterOperator(Deployment clusterOperator) {
@@ -783,72 +705,7 @@ public class Resources {
         });
     }
 
-    public RoleBindingBuilder defaultRoleBinding(String name, String roleRef, String namespace) {
-        LOGGER.info("Creating RoleBinding for {} in namespace {} with roleRef {}", name, namespace, roleRef);
-        return new RoleBindingBuilder()
-                .withApiVersion("rbac.authorization.k8s.io/v1")
-                .withKind("RoleBinding")
-                .withNewMetadata()
-                    .withName(name)
-                    .addToLabels("app", "strimzi")
-                .endMetadata()
-                .addNewSubject()
-                    .withApiVersion("rbac.authorization.k8s.io")
-                    .withKind("ServiceAccount")
-                    .withName("strimzi-cluster-operator")
-                    .withNamespace(namespace)
-                .endSubject()
-                .withNewRoleRef()
-                    .withApiVersion("rbac.authorization.k8s.io")
-                    .withKind("ClusterRole")
-                    .withName(roleRef)
-                .endRoleRef();
-    }
-
-    DoneableRoleBinding roleBinding(String name, String roleRef, String namespace) {
-        return roleBinding(defaultRoleBinding(name, roleRef, namespace).build());
-    }
-
-    DoneableRoleBinding roleBinding(RoleBinding clusterRoleBinding) {
-        LOGGER.info("Apply RoleBinding in namespace {}", client.getNamespace());
-        client.roleBindings().createOrReplace(clusterRoleBinding);
-        return new DoneableRoleBinding(clusterRoleBinding);
-    }
-
-    public ClusterRoleBindingBuilder defaultClusterRoleBinding(String name, String roleRef, String namespace) {
-        LOGGER.info("Creating ClusterRoleBinding for {} in namespace {} with roleRef {}", name, namespace, roleRef);
-        return new ClusterRoleBindingBuilder()
-                .withApiVersion("rbac.authorization.k8s.io/v1")
-                .withKind("ClusterRoleBinding")
-                .withNewMetadata()
-                    .withName(name)
-                    .addToLabels("app", "strimzi")
-                .endMetadata()
-                .addNewSubject()
-                    .withApiVersion("rbac.authorization.k8s.io")
-                    .withKind("ServiceAccount")
-                    .withName("strimzi-cluster-operator")
-                    .withNamespace(namespace)
-                .endSubject()
-                .withNewRoleRef()
-                    .withApiVersion("rbac.authorization.k8s.io")
-                    .withKind("ClusterRole")
-                    .withName(roleRef)
-                .endRoleRef();
-    }
-
-    DoneableClusterRoleBinding clusterRoleBinding(String name, String roleRef, String namespace) {
-        return clusterRoleBinding(defaultClusterRoleBinding(name, roleRef, namespace).build());
-    }
-
-    DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
-        LOGGER.info("Apply ClusterRoleBinding in namespace {}", client.getNamespace());
-        client.clusterRoleBindings().createOrReplace(clusterRoleBinding);
-        return new DoneableClusterRoleBinding(clusterRoleBinding);
-    }
-
-
-    public KubernetesRoleBindingBuilder defaultKubernetesRoleBinding(String name, String roleRef, String namespace) {
+    private KubernetesRoleBindingBuilder defaultKubernetesRoleBinding(String name, String roleRef, String namespace) {
         LOGGER.info("Creating RoleBinding for {} in namespace {} with roleRef {}", name, namespace, roleRef);
         return new KubernetesRoleBindingBuilder()
                 .withApiVersion("rbac.authorization.k8s.io/v1")
@@ -862,17 +719,17 @@ public class Resources {
                 .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole", roleRef);
     }
 
-    DoneableKubernetesRoleBinding kubernetesRoleBinding(String name, String roleRef, String namespace) {
-        return kubernetesRoleBinding(defaultKubernetesRoleBinding(name, roleRef, namespace).build());
+    DoneableKubernetesRoleBinding kubernetesRoleBinding(String name, String roleRef, String namespace, String clientNamespace) {
+        return kubernetesRoleBinding(defaultKubernetesRoleBinding(name, roleRef, namespace).build(), clientNamespace);
     }
 
-    DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding) {
-        LOGGER.info("Apply RoleBinding in namespace {}", client.getNamespace());
-        client.rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
+    DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String namespace) {
+        LOGGER.info("Apply RoleBinding in namespace {}", namespace);
+        client.inNamespace(namespace).rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
         return new DoneableKubernetesRoleBinding(roleBinding);
     }
 
-    public KubernetesClusterRoleBindingBuilder defaultKubernetesClusterRoleBinding(String name, String roleRef, String namespace) {
+    private KubernetesClusterRoleBindingBuilder defaultKubernetesClusterRoleBinding(String name, String roleRef, String namespace) {
         LOGGER.info("Creating ClusterRoleBinding for {} in namespace {} with roleRef {}", name, namespace, roleRef);
         return new KubernetesClusterRoleBindingBuilder()
                 .withApiVersion("rbac.authorization.k8s.io/v1")
@@ -886,13 +743,13 @@ public class Resources {
                 .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole", roleRef);
     }
 
-    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(String name, String roleRef, String namespace) {
-        return kubernetesClusterRoleBinding(defaultKubernetesClusterRoleBinding(name, roleRef, namespace).build());
+    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(String name, String roleRef, String namespace, String clientNamespace) {
+        return kubernetesClusterRoleBinding(defaultKubernetesClusterRoleBinding(name, roleRef, namespace).build(), clientNamespace);
     }
 
-    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding) {
-        LOGGER.info("Apply ClusterRoleBinding in namespace {}", client.getNamespace());
-        client.rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
+    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String namespace) {
+        LOGGER.info("Apply ClusterRoleBinding in namespace {}", namespace);
+        client.inNamespace(namespace).rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
         return new DoneableKubernetesClusterRoleBinding(clusterRoleBinding);
     }
 }

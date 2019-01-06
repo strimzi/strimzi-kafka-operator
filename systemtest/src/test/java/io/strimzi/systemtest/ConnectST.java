@@ -262,6 +262,11 @@ class ConnectST extends AbstractST {
 
     @BeforeAll
     static void createClassResources() {
+        LOGGER.info("Creating resources before the test class");
+        applyRoleBindings(NAMESPACE, NAMESPACE);
+        // 050-Deployment
+        clusterOperatorResources.clusterOperatorDefault(NAMESPACE).done();
+
         classResources = new Resources(namespacedClient());
 
         Map<String, Object> kafkaConfig = new HashMap<>();
