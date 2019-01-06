@@ -106,6 +106,17 @@ class UserST extends AbstractST {
     @BeforeAll
     static void createClusterOperator() {
         createClusterOperatorResources();
+        // 020-RoleBinding
+        clusterOperatorResources.defaultRoleBinding("strimzi-cluster-operator", "strimzi-cluster-operator-namespaced", NAMESPACE);
+        // 021-ClusterRoleBinding
+        clusterOperatorResources.defaultClusterRoleBinding("strimzi-cluster-operator", "strimzi-cluster-operator-global", NAMESPACE);
+        // 030-ClusterRoleBinding
+        clusterOperatorResources.defaultClusterRoleBinding("strimzi-cluster-operator-kafka-broker-delegation", "strimzi-kafka-broker", NAMESPACE);
+        // 031-RoleBinding
+        clusterOperatorResources.defaultRoleBinding("strimzi-cluster-operator-entity-operator-delegation", "strimzi-entity-operator", NAMESPACE);
+        // 032-RoleBinding
+        clusterOperatorResources.defaultRoleBinding("strimzi-cluster-operator-topic-operator-delegation", "strimzi-topic-operator", NAMESPACE);
+        // 050-Deployment
         clusterOperatorResources.clusterOperatorDefault("strimzi-cluster-operator", NAMESPACE).done();
     }
 

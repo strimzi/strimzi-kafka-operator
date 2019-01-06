@@ -20,9 +20,9 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.fabric8.openshift.client.NamespacedOpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
@@ -110,7 +110,8 @@ public abstract class AbstractST {
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
 
     public static KubeClusterResource cluster = new KubeClusterResource();
-    protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
+//    protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
+    protected static DefaultOpenShiftClient client = new DefaultOpenShiftClient();
     static KubeClient<?> kubeClient = cluster.client();
 
     Resources resources;
@@ -120,7 +121,7 @@ public abstract class AbstractST {
     static String testName;
     Random rng = new Random();
 
-    protected static NamespacedKubernetesClient namespacedClient() {
+    protected static NamespacedOpenShiftClient namespacedClient() {
         return client.inNamespace(kubeClient.namespace());
     }
 
@@ -979,13 +980,13 @@ public abstract class AbstractST {
     }
 
     private class LogCollector {
-        NamespacedKubernetesClient client;
+        NamespacedOpenShiftClient client;
         String namespace;
         File logDir;
         File configMapDir;
         File eventsDir;
 
-        private LogCollector(NamespacedKubernetesClient client, File logDir) {
+        private LogCollector(NamespacedOpenShiftClient client, File logDir) {
             this.client = client;
             this.namespace = client.getNamespace();
             this.logDir = logDir;

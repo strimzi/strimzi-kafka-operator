@@ -16,12 +16,18 @@ import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
+import io.fabric8.openshift.api.model.ClusterRoleBinding;
+import io.fabric8.openshift.api.model.ClusterRoleBindingBuilder;
+import io.fabric8.openshift.api.model.DoneableClusterRoleBinding;
+import io.fabric8.openshift.api.model.DoneableRoleBinding;
+import io.fabric8.openshift.api.model.RoleBinding;
+import io.fabric8.openshift.api.model.RoleBindingBuilder;
+import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.fabric8.openshift.client.NamespacedOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
@@ -71,13 +77,13 @@ public class Resources {
     private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(3).toMillis();
     private static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
 
-    private final NamespacedKubernetesClient client;
+    private final NamespacedOpenShiftClient client;
 
-    Resources(NamespacedKubernetesClient client) {
+    Resources(NamespacedOpenShiftClient client) {
         this.client = client;
     }
 
-    private NamespacedKubernetesClient client() {
+    private NamespacedOpenShiftClient client() {
         return client;
     }
 
@@ -87,7 +93,7 @@ public class Resources {
 
     // This logic is necessary only for the deletion of resources with `cascading: true`
     private <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) client()).getHttpClient(), client().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
+        return new CustomResourceOperationsImpl<T, L, D>(((DefaultOpenShiftClient) client()).getHttpClient(), client().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
     }
 
     private MixedOperation<KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnect() {
@@ -756,7 +762,6 @@ public class Resources {
                 () -> {
                     try {
                         client.apps().deployments().createOrReplace(co);
-//                        clusterOperator().inNamespace(client().getNamespace()).create(co);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
@@ -770,5 +775,67 @@ public class Resources {
             return waitFor(deleteLater(
                     co));
         });
+    }
+
+    public RoleBindingBuilder defaultRoleBinding(String name, String roleRef, String namespace) {
+        LOGGER.info("Creating RoleBinding for {} in namespace {} with roleRef {}", name, namespace, roleRef);
+        return new RoleBindingBuilder()
+                .withApiVersion("rbac.authorization.k8s.io/v1")
+                .withKind("RoleBinding")
+                .withNewMetadata()
+                    .withName(name)
+                    .addToLabels("app", "strimzi")
+                .endMetadata()
+                .addNewSubject()
+                    .withApiVersion("rbac.authorization.k8s.io")
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                .endSubject()
+                .withNewRoleRef()
+                    .withApiVersion("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName(roleRef)
+                .endRoleRef();
+    }
+
+    DoneableRoleBinding roleBinding(String name, String roleRef, String namespace) {
+        return roleBinding(defaultRoleBinding(name, roleRef, namespace).build());
+    }
+
+    DoneableRoleBinding roleBinding(RoleBinding clusterRoleBinding) {
+        client.roleBindings().createOrReplace(clusterRoleBinding);
+        return new DoneableRoleBinding(clusterRoleBinding);
+    }
+
+    public ClusterRoleBindingBuilder defaultClusterRoleBinding(String name, String roleRef, String namespace) {
+        LOGGER.info("Creating ClusterRoleBinding for {} in namespace {} with roleRef {}", name, namespace, roleRef);
+        return new ClusterRoleBindingBuilder()
+                .withApiVersion("rbac.authorization.k8s.io/v1")
+                .withKind("ClusterRoleBinding")
+                .withNewMetadata()
+                    .withName(name)
+                    .addToLabels("app", "strimzi")
+                .endMetadata()
+                .addNewSubject()
+                    .withApiVersion("rbac.authorization.k8s.io")
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                .endSubject()
+                .withNewRoleRef()
+                    .withApiVersion("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName(roleRef)
+                .endRoleRef();
+    }
+
+    DoneableClusterRoleBinding clusterRoleBinding(String name, String roleRef, String namespace) {
+        return clusterRoleBinding(defaultClusterRoleBinding(name, roleRef, namespace).build());
+    }
+
+    DoneableClusterRoleBinding clusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
+        client.clusterRoleBindings().createOrReplace(clusterRoleBinding);
+        return new DoneableClusterRoleBinding(clusterRoleBinding);
     }
 }

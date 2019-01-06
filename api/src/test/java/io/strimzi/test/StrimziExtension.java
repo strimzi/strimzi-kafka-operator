@@ -601,12 +601,15 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
     @SuppressWarnings("unchecked")
     private Statement installOperatorFromExamples(AnnotatedElement element, Statement last, ClusterOperator cc) {
-        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file -> !file.getName().equals("050-Deployment-strimzi-cluster-operator.yaml")).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, node -> {
+        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
+                !file.getName().matches(".*(Binding|Deployment)-.*")
+        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, node -> {
+
             // Change properties in role bindings
-            if (f.getName().matches(".*RoleBinding.*")) {
-                String ns = annotations(element, Namespace.class).get(0).value();
-                return TestUtils.changeRoleBindingSubject(f, ns);
-            }
+//            if (f.getName().matches(".*RoleBinding.*")) {
+//                String ns = annotations(element, Namespace.class).get(0).value();
+//                return TestUtils.changeRoleBindingSubject(f, ns);
+//            }
             return TestUtils.toYamlString(node);
         }), (x, y) -> x, LinkedHashMap::new));
         last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
