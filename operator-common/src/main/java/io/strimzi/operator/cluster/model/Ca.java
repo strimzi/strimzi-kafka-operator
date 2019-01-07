@@ -132,7 +132,7 @@ public abstract class Ca {
         }
     }
 
-    private static CertAndKey asCertAndKey(Secret secret, String key, String cert) {
+    public static CertAndKey asCertAndKey(Secret secret, String key, String cert) {
         Base64.Decoder decoder = Base64.getDecoder();
         return secret == null ? null : new CertAndKey(
                 decoder.decode(secret.getData().get(key)),

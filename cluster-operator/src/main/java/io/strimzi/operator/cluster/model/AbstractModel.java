@@ -30,7 +30,6 @@ import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -197,7 +196,7 @@ public abstract class AbstractModel {
         return replicas;
     }
 
-    protected void setReplicas(int replicas) {
+    public void setReplicas(int replicas) {
         this.replicas = replicas;
     }
 
@@ -683,18 +682,7 @@ public abstract class AbstractModel {
     }
 
     protected Secret createSecret(String name, Map<String, String> data) {
-
-        Secret s = new SecretBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                    .withLabels(labels.toMap())
-                    .withOwnerReferences(createOwnerReference())
-                .endMetadata()
-                .withData(data)
-                .build();
-
-        return s;
+        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data);
     }
 
     protected Probe createTcpSocketProbe(int port, int initialDelay, int timeout) {

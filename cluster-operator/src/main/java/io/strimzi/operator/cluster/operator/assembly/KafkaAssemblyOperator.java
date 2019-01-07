@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
@@ -149,9 +150,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         createReconciliationState(reconciliation, kafkaAssembly)
                 .reconcileCas()
 
+                .compose(state -> state.clusterOperatorSecret())
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
                 .compose(state -> state.getZookeeperDescription())
+                .compose(state -> state.zkScaleUpStep())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
@@ -160,8 +163,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkNetPolicy())
                 .compose(state -> state.zkPodDisruptionBudget())
                 .compose(state -> state.zkStatefulSet())
-                .compose(state -> state.zkRollingUpdate(this::dateSupplier))
                 .compose(state -> state.zkScaleUp())
+                .compose(state -> state.zkRollingUpdate(this::dateSupplier))
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
                 .compose(state -> state.kafkaUpgrade())
@@ -331,14 +334,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clusterCaKeyName, this.clusterCa.caKeySecret()))
                                 .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clientsCaCertName, this.clientsCa.caCertSecret()))
                                 .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clientsCaKeyName, this.clientsCa.caKeySecret()))
-                                .compose(ignored  -> {
+                                .compose(ignored -> {
                                     future.complete(this);
                                 }, future);
                     } catch (Throwable e) {
                         future.fail(e);
                     }
                 }, true,
-                    result.completer()
+                result.completer()
             );
             return result;
         }
@@ -827,10 +830,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     boolean onlyMetricsSettingChanged = onlyMetricsSettingChanged(current, configMap);
                     future.complete(onlyMetricsSettingChanged);
                 }, res -> {
-                    if (res.succeeded())  {
+                    if (res.succeeded()) {
                         boolean onlyMetricsSettingChanged = res.result();
                         function.apply(onlyMetricsSettingChanged, configMapOperations.reconcile(namespace, cluster.getAncillaryConfigName(), configMap)).setHandler(res2 -> {
-                            if (res2.succeeded())   {
+                            if (res2.succeeded()) {
                                 result.complete(res2.result());
                             } else {
                                 result.fail(res2.cause());
@@ -870,6 +873,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(zkSetOperations.maybeRollingUpdate(zkDiffs.resource(), pod ->
                 isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, dateSupplier, this.clusterCa)
             ));
+        }
+
+        /**
+         * Scale up is divided by scaling up Zookeeper cluster in steps.
+         * Scaling up from N to M (N > 0 and M>N) replicas is done in M-N steps.
+         * Each step performs scale up by one replica and full tolling update of Zookeeper cluster.
+         * This approach ensures a valid configuration of each Zk pod.
+         * Together with modified `maybeRollingUpdate` the quorum is not lost after the scale up operation is performed.
+         * There is one special case of scaling from standalone (single one) Zookeeper pod.
+         * In this case quorum cannot be preserved.
+         */
+        Future<ReconciliationState> zkScaleUpStep() {
+            Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            return withVoid(futss.map(ss -> ss == null ? 0 : ss.getSpec().getReplicas())
+                    .compose(currentReplicas -> {
+                        if (currentReplicas > 0 && zkCluster.getReplicas() > currentReplicas) {
+                            zkCluster.setReplicas(currentReplicas + 1);
+                        }
+                        Future<Integer> result = Future.succeededFuture(zkCluster.getReplicas() + 1);
+                        return result;
+                    }));
         }
 
         Future<ReconciliationState> zkScaleUp() {
@@ -977,7 +1001,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Future replacementFut = Future.future();
 
             fut.setHandler(res -> {
-                if (res.failed())    {
+                if (res.failed()) {
                     if (desired == null && res.cause().getMessage().contains("403: Forbidden")) {
                         log.debug("Ignoring forbidden access to ClusterRoleBindings which seems not needed while Kafka rack awareness is disabled.");
                         replacementFut.complete();
@@ -1024,7 +1048,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             if (routeOperations != null) {
                 return withVoid(routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), route));
-            } else if (route != null)   {
+            } else if (route != null) {
                 log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
                 return withVoid(Future.failedFuture("Exposing Kafka cluster " + name + " using OpenShift Routes is available only on OpenShift"));
             }
@@ -1041,7 +1065,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 if (routeOperations != null) {
                     routeFutures.add(routeOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), route));
-                } else if (route != null)   {
+                } else if (route != null) {
                     log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
                     return withVoid(Future.failedFuture("Exposing Kafka cluster " + name + " using OpenShift Routes is available only on OpenShift"));
                 }
@@ -1095,9 +1119,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
                     });
                 }, res -> {
-                    if (res.succeeded())    {
+                    if (res.succeeded()) {
                         blockingFuture.complete();
-                    } else  {
+                    } else {
                         blockingFuture.fail(res.cause());
                     }
                 });
@@ -1141,7 +1165,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
                                     }
 
-                                    if (kafkaCluster.isExposedWithTls())    {
+                                    if (kafkaCluster.isExposedWithTls()) {
                                         this.kafkaExternalDnsNames.put(podNumber, serviceAddress);
                                     }
                                 } else if (kafkaCluster.isExposedWithNodePort()) {
@@ -1167,14 +1191,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     CompositeFuture.join(routeFutures).setHandler(res -> {
                         if (res.succeeded()) {
                             future.complete();
-                        } else  {
+                        } else {
                             future.fail(res.cause());
                         }
                     });
                 }, res -> {
-                    if (res.succeeded())    {
+                    if (res.succeeded()) {
                         blockingFuture.complete();
-                    } else  {
+                    } else {
                         blockingFuture.fail(res.cause());
                     }
                 });
@@ -1211,9 +1235,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
                     });
                 }, res -> {
-                    if (res.succeeded())    {
+                    if (res.succeeded()) {
                         blockingFuture.complete();
-                    } else  {
+                    } else {
                         blockingFuture.fail(res.cause());
                     }
                 });
@@ -1262,14 +1286,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     CompositeFuture.join(routeFutures).setHandler(res -> {
                         if (res.succeeded()) {
                             future.complete();
-                        } else  {
+                        } else {
                             future.fail(res.cause());
                         }
                     });
                 }, res -> {
-                    if (res.succeeded())    {
+                    if (res.succeeded()) {
                         blockingFuture.complete();
-                    } else  {
+                    } else {
                         blockingFuture.fail(res.cause());
                     }
                 });
@@ -1681,6 +1705,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return ca instanceof ClientsCa ?
                     Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION :
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
+        }
+
+        Future<ReconciliationState> clusterOperatorSecret() {
+            return withVoid(secretOperations.reconcile(namespace, ClusterOperator.secretName(name),
+                    ClusterOperator.generateSecret(clusterCa, namespace, name)));
         }
     }
 

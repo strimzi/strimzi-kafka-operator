@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.cluster.ClusterOperator;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class ClusterCa extends Ca {
     private final String clusterName;
     private Secret entityOperatorSecret;
     private Secret topicOperatorSecret;
+    private Secret clusterOperatorSecret;
 
     private Secret brokersSecret;
     private Secret zkNodesSecret;
@@ -84,6 +86,8 @@ public class ClusterCa extends Ca {
                 topicOperatorSecret = secret;
             } else if (ZookeeperCluster.nodesSecretName(clusterName).equals(name)) {
                 zkNodesSecret = secret;
+            } else if (ClusterOperator.secretName(clusterName).equals(name)) {
+                clusterOperatorSecret = secret;
             }
         }
     }
@@ -94,6 +98,10 @@ public class ClusterCa extends Ca {
 
     public Secret entityOperatorSecret() {
         return entityOperatorSecret;
+    }
+
+    public Secret clusterOperatorSecret() {
+        return clusterOperatorSecret;
     }
 
     public Map<String, CertAndKey> generateZkCerts(Kafka kafka) throws IOException {
