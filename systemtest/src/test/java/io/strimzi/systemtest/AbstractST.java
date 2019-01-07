@@ -111,7 +111,6 @@ public abstract class AbstractST {
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
 
     public static KubeClusterResource cluster = new KubeClusterResource();
-//    protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
     protected static DefaultOpenShiftClient client = new DefaultOpenShiftClient();
     static KubeClient<?> kubeClient = cluster.client();
 

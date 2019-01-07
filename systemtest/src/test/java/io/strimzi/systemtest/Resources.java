@@ -649,7 +649,6 @@ public class Resources {
                                     .withInitialDelaySeconds(ClusterOperatorConsts.INITIAL_DELAY_SECCONDS)
                                     .withNewPeriodSeconds(ClusterOperatorConsts.PERIOD_SECCONDS)
                                 .endLivenessProbe()
-
                                 .withNewReadinessProbe()
                                     .withNewHttpGet()
                                         .withPath("/ready")
@@ -658,11 +657,9 @@ public class Resources {
                                     .withInitialDelaySeconds(ClusterOperatorConsts.INITIAL_DELAY_SECCONDS)
                                     .withNewPeriodSeconds(ClusterOperatorConsts.PERIOD_SECCONDS)
                                 .endReadinessProbe()
-
                                 .withNewResources()
                                     .addToLimits("memory", new Quantity(ClusterOperatorConsts.LIMITS_MEMORY))
                                     .addToLimits("cpu", new Quantity(ClusterOperatorConsts.LIMITS_CPU))
-
                                     .addToRequests("memory", new Quantity(ClusterOperatorConsts.REQUESTS_MEMORY))
                                     .addToRequests("cpu", new Quantity(ClusterOperatorConsts.REQUESTS_CPU))
                                 .endResources()
@@ -706,7 +703,6 @@ public class Resources {
                     .withName(name)
                     .addToLabels("app", "strimzi")
                 .endMetadata()
-
                 .addNewSubject("", "ServiceAccount", "strimzi-cluster-operator", namespace)
                 .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole", roleRef);
     }
@@ -730,7 +726,6 @@ public class Resources {
                     .withName(name)
                     .addToLabels("app", "strimzi")
                 .endMetadata()
-
                 .addNewSubject("", "ServiceAccount", "strimzi-cluster-operator", namespace)
                 .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole", roleRef);
     }
