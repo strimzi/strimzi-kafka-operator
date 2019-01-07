@@ -63,10 +63,6 @@ parameters:
   displayName: Transaction state replication factor
   name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
   value: "3"
-- description: The version of the format using for storing messages
-  displayName: Log message format version
-  name: KAFKA_LOG_MESSAGE_FORMAT_VERSION
-  value: "2.1"
 objects:
 - apiVersion: kafka.strimzi.io/v1alpha1
   kind: Kafka
@@ -91,7 +87,7 @@ objects:
         default.replication.factor: ${KAFKA_DEFAULT_REPLICATION_FACTOR}
         offsets.topic.replication.factor: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
         transaction.state.log.replication.factor: ${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}
-        log.message.format.version: ${KAFKA_LOG_MESSAGE_FORMAT_VERSION}
+        log.message.format.version: ${KAFKA_VERSION}
     zookeeper:
       replicas: ${{ZOOKEEPER_NODE_COUNT}}
       livenessProbe:
