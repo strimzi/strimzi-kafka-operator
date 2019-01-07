@@ -8,20 +8,6 @@
 {ProductName} automatically creates a Pod Disruption Budget for every `StatefulSet` or `Deployment` which it creates.
 By default, the Pod Disruption Budgets always allow up to one Pod to be unavailable at a time by setting the `maxUnavailable` value in `PodDisruptionBudget.spec` to `1`.
 You can change this default setting using the Pod Disruption Budget template.
-
-In the Pod Disruption Budget template you can - in addition to Labels and Annotations - customize the `maxUnavailable` field as well:
-
-[table,stripes=none]
-|===
-|Field |Description
-|`maxUnavailable`
-|Maximum number of unavailable pods to allow voluntary Pod eviction.
-A Pod eviction will only be allowed when "maxUnavailable" or fewer pods are unavailable after the eviction.
-Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually.
-Defaults to 1.
-For more information about Pod disruption Budgets and how they work, see {K8sPodDisruptionBudgets}.
-|===
-
 The Pod Disruption Budget template is effective on each type of cluster (Kafka and Zookeeper; Kafka Connect and Kafka Connect with S2I support; and Kafka Mirror Maker).
 
 The following example shows customized Pod Disruption Budget fields on a `template` property:
