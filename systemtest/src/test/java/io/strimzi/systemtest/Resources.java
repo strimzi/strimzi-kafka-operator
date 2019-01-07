@@ -55,7 +55,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
-import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -599,80 +598,73 @@ public class Resources {
     }
 
     private DeploymentBuilder defaultClusterOperator(String namespaces) {
-        LOGGER.info("Create new CO");
+        LOGGER.info("Creating new Cluster Operator for namespaces {}", namespaces);
+        ClusterOperatorConsts.printClusterOperatorInfo();
+
         return new DeploymentBuilder()
                 .withApiVersion("apps/v1")
                 .withKind("Deployment")
                 .withNewMetadata()
-                    .withName("strimzi-cluster-operator")
+                    .withName(ClusterOperatorConsts.DEPLOYMENT_NAME)
                     .addToLabels("app", "strimzi")
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(1)
                     .withNewSelector()
-                        .addToMatchLabels("name", "strimzi-cluster-operator")
+                        .addToMatchLabels("name", ClusterOperatorConsts.DEPLOYMENT_NAME)
                     .endSelector()
                     .withNewTemplate()
                         .withNewMetadata()
-                            .addToLabels("name", "strimzi-cluster-operator")
+                            .addToLabels("name", ClusterOperatorConsts.DEPLOYMENT_NAME)
                         .endMetadata()
                         .withNewSpec()
-                            .withServiceAccountName("strimzi-cluster-operator")
+                            .withServiceAccountName(ClusterOperatorConsts.DEPLOYMENT_NAME)
                             .addNewContainer()
-                                .withName("strimzi-cluster-operator")
-                                .withImage(TestUtils.changeOrgAndTag("strimzi/cluster-operator:latest"))
-                                .withImagePullPolicy(StrimziExtension.IMAGE_PULL_POLICY)
+                                .withName(ClusterOperatorConsts.DEPLOYMENT_NAME)
+                                .withImage(TestUtils.changeOrgAndTag(ClusterOperatorConsts.STRIMZI_IMAGE))
+                                .withImagePullPolicy(ClusterOperatorConsts.IMAGE_PULL_POLICY)
                                 // Default images
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag("strimzi/zookeeper:latest-kafka-2.0.0"), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", TestUtils.changeOrgAndTag("strimzi/topic-operator:latest"), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", TestUtils.changeOrgAndTag("strimzi/user-operator:latest"), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", TestUtils.changeOrgAndTag("strimzi/kafka-init:latest"), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag("strimzi/zookeeper-stunnel:latest"), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", TestUtils.changeOrgAndTag("strimzi/kafka-stunnel:latest"), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", TestUtils.changeOrgAndTag("strimzi/entity-operator-stunnel:latest"), null))
-
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.ZOOKEEPER_IMAGE), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TOPIC_OPERATOR_IMAGE), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.USER_OPERATOR_IMAGE), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.KAFKA_INIT_IMAGE), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_ZOOKEEPER_IMAGE), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_KAFKA_IMAGE), null))
+                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_ENTITY_OPERATOR_IMAGE), null))
+                                // Kafka images
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_IMAGES), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_CONNECT_IMAGES), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_CONNECT_S2I_IMAGES), null))
+                                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_MIRROR_MAKER_IMAGES), null))
+                                // Other envs
                                 .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespaces, null))
-                                .addToEnv(new EnvVar("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", "120000", null))
-                                .addToEnv(new EnvVar("STRIMZI_OPERATION_TIMEOUT_MS", "300000", null))
-
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", TestUtils.changeOrgAndTagInImageMap("2.0.0=strimzi/kafka:latest-kafka-2.0.0\n" +
-                                        "2.0.1=strimzi/kafka:latest-kafka-2.0.1\n" +
-                                        "2.1.0=strimzi/kafka:latest-kafka-2.1.0"), null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", TestUtils.changeOrgAndTagInImageMap("2.0.0=strimzi/kafka-connect:latest-kafka-2.0.0\n" +
-                                        "2.0.1=strimzi/kafka-connect:latest-kafka-2.0.1\n" +
-                                        "2.1.0=strimzi/kafka-connect:latest-kafka-2.1.0"), null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", TestUtils.changeOrgAndTagInImageMap("2.0.0=strimzi/kafka-connect-s2i:latest-kafka-2.0.0\n" +
-                                        "2.0.1=strimzi/kafka-connect-s2i:latest-kafka-2.0.1\n" +
-                                        "2.1.0=strimzi/kafka-connect-s2i:latest-kafka-2.1.0"), null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", TestUtils.changeOrgAndTagInImageMap("2.0.0=strimzi/kafka-mirror-maker:latest-kafka-2.0.0\n" +
-                                        "2.0.1=strimzi/kafka-mirror-maker:latest-kafka-2.0.1\n" +
-                                        "2.1.0=strimzi/kafka-mirror-maker:latest-kafka-2.1.0"), null))
-                                .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", "INFO", null))
-
+                                .addToEnv(new EnvVar("FULL_RECONCILIATION_INTERVAL_MS", ClusterOperatorConsts.FULL_RECONCILIATION_INTERVAL_MS, null))
+                                .addToEnv(new EnvVar("OPERATION_TIMEOUT_MS", ClusterOperatorConsts.OPERATION_TIMEOUT_MS, null))
+                                .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", ClusterOperatorConsts.LOG_LEVEL, null))
                                 .withNewLivenessProbe()
                                     .withNewHttpGet()
                                         .withPath("/healthy")
-                                        .withPort(new IntOrString(8080))
+                                        .withPort(new IntOrString(ClusterOperatorConsts.DEFAULT_HEALTCHECK_PORT))
                                     .endHttpGet()
-                                    .withInitialDelaySeconds(10)
-                                    .withNewPeriodSeconds(30)
+                                    .withInitialDelaySeconds(ClusterOperatorConsts.INITIAL_DELAY_SECCONDS)
+                                    .withNewPeriodSeconds(ClusterOperatorConsts.PERIOD_SECCONDS)
                                 .endLivenessProbe()
 
                                 .withNewReadinessProbe()
                                     .withNewHttpGet()
                                         .withPath("/ready")
-                                        .withPort(new IntOrString(8080))
+                                        .withPort(new IntOrString(ClusterOperatorConsts.DEFAULT_HEALTCHECK_PORT))
                                     .endHttpGet()
-                                    .withInitialDelaySeconds(10)
-                                    .withNewPeriodSeconds(30)
+                                    .withInitialDelaySeconds(ClusterOperatorConsts.INITIAL_DELAY_SECCONDS)
+                                    .withNewPeriodSeconds(ClusterOperatorConsts.PERIOD_SECCONDS)
                                 .endReadinessProbe()
 
                                 .withNewResources()
-                                    .addToLimits("memory", new Quantity(StrimziExtension.LIMITS_MEMORY))
-                                    .addToLimits("cpu", new Quantity(StrimziExtension.LIMITS_CPU))
+                                    .addToLimits("memory", new Quantity(ClusterOperatorConsts.LIMITS_MEMORY))
+                                    .addToLimits("cpu", new Quantity(ClusterOperatorConsts.LIMITS_CPU))
 
-                                    .addToRequests("memory", new Quantity(StrimziExtension.REQUESTS_MEMORY))
-                                    .addToRequests("cpu", new Quantity(StrimziExtension.REQUESTS_CPU))
+                                    .addToRequests("memory", new Quantity(ClusterOperatorConsts.REQUESTS_MEMORY))
+                                    .addToRequests("cpu", new Quantity(ClusterOperatorConsts.REQUESTS_CPU))
                                 .endResources()
                             .endContainer()
                         .endSpec()
@@ -711,8 +703,8 @@ public class Resources {
                 .withApiVersion("rbac.authorization.k8s.io/v1")
                 .withKind("RoleBinding")
                 .withNewMetadata()
-                .withName(name)
-                .addToLabels("app", "strimzi")
+                    .withName(name)
+                    .addToLabels("app", "strimzi")
                 .endMetadata()
 
                 .addNewSubject("", "ServiceAccount", "strimzi-cluster-operator", namespace)
@@ -735,8 +727,8 @@ public class Resources {
                 .withApiVersion("rbac.authorization.k8s.io/v1")
                 .withKind("ClusterRoleBinding")
                 .withNewMetadata()
-                .withName(name)
-                .addToLabels("app", "strimzi")
+                    .withName(name)
+                    .addToLabels("app", "strimzi")
                 .endMetadata()
 
                 .addNewSubject("", "ServiceAccount", "strimzi-cluster-operator", namespace)

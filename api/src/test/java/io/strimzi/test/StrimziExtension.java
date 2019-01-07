@@ -4,8 +4,6 @@
  */
 package io.strimzi.test;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
@@ -40,7 +38,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -568,34 +565,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
             };
         }
         return last;
-    }
-
-    private void applyMultipleNamespacesWatcher(AnnotatedElement element) {
-        List<Namespace> namespaces = annotations(element, Namespace.class);
-        String defaultNamespace  = namespaces.get(0).value();
-        for (Namespace namespace: namespaces) {
-            if (namespace.value().matches(defaultNamespace)) {
-                continue;
-            }
-            Map<File, String> configYamlFiles = Arrays.stream(
-                    Objects.requireNonNull(new File(CO_INSTALL_DIR).listFiles((file, name) -> name.matches("[0-9]*-RoleBinding.*")))
-            ).sorted().collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, node -> {
-
-                ArrayNode subjects = (ArrayNode) node.get("subjects");
-                ObjectNode subject = (ObjectNode) subjects.get(0);
-                subject.put("kind", "ServiceAccount")
-                        .put("name", "strimzi-cluster-operator")
-                        .put("namespace", defaultNamespace);
-                return TestUtils.toYamlString(node);
-            }), (x, y) -> x, LinkedHashMap::new));
-
-            for (Map.Entry<File, String> entry : configYamlFiles.entrySet()) {
-                LOGGER.info("Apply {} into namespace {}", entry.getKey(), namespace.value());
-                kubeClient().namespace(namespace.value());
-                kubeClient().clientWithAdmin().applyContent(entry.getValue());
-            }
-        }
-        kubeClient().namespace(defaultNamespace);
     }
 
     @SuppressWarnings("unchecked")
