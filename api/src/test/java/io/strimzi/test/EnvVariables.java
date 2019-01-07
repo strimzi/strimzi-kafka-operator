@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  * <p>
  * An example would be:
  * <pre>
- * &#064;RunWith({@link StrimziRunner})
+ * &#064;ExtendedWith({@link StrimziExtension})
  * &#064;ClusterOperator(envVariables = {
  * &#064;EnvVariables(key = "foo", value = "bar")
  * })

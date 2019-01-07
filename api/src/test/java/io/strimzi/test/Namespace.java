@@ -11,8 +11,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for test classes or methods run via {@code @RunWith(StrimziRunner.class)}
- * which causes that runner to create namespaces before, and delete namespaces after,
+ * Annotation for test classes or methods using {@code @ExtendWith(StrimziExtension.class)}
+ * which enables to create namespaces before, and delete namespaces after,
  * the tests.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})

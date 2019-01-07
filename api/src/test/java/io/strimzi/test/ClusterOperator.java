@@ -10,8 +10,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for test classes or methods run via {@code @RunWith(StrimziRunner.class)}
- * which causes that runner to create a cluster operator before, and delete a cluster operator after,
+ * Annotation for test classes or methods using {@code @ExtendWith(StrimziExtension.class)}
+ * which enables to create a cluster operator before, and delete a cluster operator after,
  * the tests.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
