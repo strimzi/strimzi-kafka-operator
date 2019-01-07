@@ -95,6 +95,7 @@ objects:
         default.replication.factor: ${KAFKA_DEFAULT_REPLICATION_FACTOR}
         offsets.topic.replication.factor: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
         transaction.state.log.replication.factor: ${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}
+        log.message.format.version: ${KAFKA_VERSION}
     zookeeper:
       replicas: ${{ZOOKEEPER_NODE_COUNT}}
       livenessProbe:
