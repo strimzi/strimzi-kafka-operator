@@ -11,11 +11,14 @@
 
 = Using external configuration and secrets
 
-Kafka Connect connectors have their own configuration.
-They are configured using the REST interface.
-The connector configuration is passed to Kafka Connect as part of the HTTP requests.
-In some cases, it might make sense to externalize the configuration of Kafka Connect connectors and keep it in the regular Kubernetes resources such as ConfigMaps or Secrets.
-This applies especially to confidential data such as usernames, passwords or certificates.
+Kafka Connect connectors are configured using an HTTP REST interface.
+The connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
+
+Some parts of the configuration of a Kafka Connect connector can be externalized using ConfigMaps or Secrets.
+You can then reference the configuration values in HTTP REST commands (this keeps the configuration separate and more secure, if needed).
+This method applies especially to confidential data, such as usernames, passwords, or certificates.
+
+ConfigMaps and Secrets are standard {ProductPlatformName} resources used for storing of configurations and confidential data.
 
 include::con-kafka-connect-external-configuration.adoc[leveloffset=+1]
 
