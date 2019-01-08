@@ -17,7 +17,7 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class EphemeralStorage extends Storage {
+public class EphemeralStorage extends SingleVolumeStorage {
 
     private static final long serialVersionUID = 1L;
 

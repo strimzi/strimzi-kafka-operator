@@ -23,7 +23,7 @@ public class JbodStorage extends Storage {
 
     private static final long serialVersionUID = 1L;
 
-    private List<Storage> volumes;
+    private List<SingleVolumeStorage> volumes;
 
     @Description("Must be `" + TYPE_JBOD + "`")
     @Override
@@ -33,11 +33,11 @@ public class JbodStorage extends Storage {
 
     @Description("List of volumes as Storage objects representing the JBOD disks array")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public List<Storage> getVolumes() {
+    public List<SingleVolumeStorage> getVolumes() {
         return volumes;
     }
 
-    public void setVolumes(List<Storage> volumes) {
+    public void setVolumes(List<SingleVolumeStorage> volumes) {
         this.volumes = volumes;
     }
 }

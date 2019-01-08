@@ -22,7 +22,7 @@ import java.util.Map;
 )
 @JsonPropertyOrder({"type", "size", "storageClass", "selector", "deleteClaim"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PersistentClaimStorage extends Storage {
+public class PersistentClaimStorage extends SingleVolumeStorage {
 
     private static final long serialVersionUID = 1L;
 
