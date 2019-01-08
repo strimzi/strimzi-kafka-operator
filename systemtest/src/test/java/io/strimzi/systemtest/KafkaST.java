@@ -92,6 +92,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     @OpenShiftOnly
+    @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
     void testDeployKafkaClusterViaTemplate() {
         Oc oc = (Oc) kubeClient;
         String clusterName = "openshift-my-cluster";

@@ -1052,7 +1052,7 @@ public abstract class AbstractST {
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
             // Delete remaining pods if there are some
-            podStream.forEach(p -> waitForPodDeletion(client.getNamespace(),p.getMetadata().getName()));
+            podStream.forEach(p -> waitForPodDeletion(client.getNamespace(), p.getMetadata().getName()));
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
     }
