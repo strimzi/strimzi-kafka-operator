@@ -6,9 +6,9 @@ package io.strimzi.systemtest;
 
 import io.strimzi.systemtest.timemeasuring.Operation;
 import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
-import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.Namespace;
-import io.strimzi.test.StrimziExtension;
+import io.strimzi.test.Annotations.ClusterOperator;
+import io.strimzi.test.Annotations.Namespace;
+import io.strimzi.test.Extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.test.StrimziExtension.REGRESSION;
+import static io.strimzi.test.Extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

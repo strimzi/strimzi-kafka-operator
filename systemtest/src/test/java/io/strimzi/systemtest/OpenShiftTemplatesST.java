@@ -21,13 +21,14 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.test.Namespace;
-import io.strimzi.test.OpenShiftOnly;
-import io.strimzi.test.Resources;
-import io.strimzi.test.StrimziExtension;
+import io.strimzi.test.Annotations.Namespace;
+import io.strimzi.test.Annotations.OpenShiftOnly;
+import io.strimzi.test.Annotations.Resources;
+import io.strimzi.test.Extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,7 @@ import static io.strimzi.test.TestUtils.map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static io.strimzi.test.StrimziExtension.REGRESSION;
+import static io.strimzi.test.Extensions.StrimziExtension.REGRESSION;
 
 /**
  * Basic tests for the OpenShift templates.
@@ -211,5 +212,10 @@ public class OpenShiftTemplatesST {
         assertNull(topic.getSpec().getTopicName());
         assertEquals(Integer.valueOf(10), topic.getSpec().getPartitions());
         assertEquals(Integer.valueOf(2), topic.getSpec().getReplicas());
+    }
+
+    @BeforeEach
+    void prepareTest() {
+        cluster.before();
     }
 }

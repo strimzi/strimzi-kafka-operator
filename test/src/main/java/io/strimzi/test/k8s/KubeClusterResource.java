@@ -4,8 +4,6 @@
  */
 package io.strimzi.test.k8s;
 
-import org.junit.rules.ExternalResource;
-
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
  * for use with {@code @ClassRule} (or {@code Rule}.
@@ -15,7 +13,7 @@ import org.junit.rules.ExternalResource;
  *     public static KubeClusterResource testCluster;
  * </code></pre>
  */
-public class KubeClusterResource extends ExternalResource {
+public class KubeClusterResource {
 
     private final boolean bootstrap;
     private KubeCluster cluster;
@@ -65,7 +63,6 @@ public class KubeClusterResource extends ExternalResource {
         return cluster;
     }
 
-    @Override
     public void before() {
         if (bootstrap) {
             if (cluster == null) {

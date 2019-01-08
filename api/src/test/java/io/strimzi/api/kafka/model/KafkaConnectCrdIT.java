@@ -4,9 +4,9 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.test.Namespace;
-import io.strimzi.test.Resources;
-import io.strimzi.test.StrimziExtension;
+import io.strimzi.test.Annotations.Namespace;
+import io.strimzi.test.Annotations.Resources;
+import io.strimzi.test.Extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.jupiter.api.Test;
