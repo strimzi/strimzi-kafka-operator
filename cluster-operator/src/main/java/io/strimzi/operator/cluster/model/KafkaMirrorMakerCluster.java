@@ -163,21 +163,20 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         kafkaMirrorMakerCluster.setReplicas(kafkaMirrorMaker.getSpec() != null && kafkaMirrorMaker.getSpec().getReplicas() > 0 ? kafkaMirrorMaker.getSpec().getReplicas() : DEFAULT_REPLICAS);
 
-        if (kafkaMirrorMaker.getSpec() != null) {
-            kafkaMirrorMakerCluster.setWhitelist(kafkaMirrorMaker.getSpec().getWhitelist());
-            kafkaMirrorMakerCluster.setProducer(kafkaMirrorMaker.getSpec().getProducer());
-            kafkaMirrorMakerCluster.setConsumer(kafkaMirrorMaker.getSpec().getConsumer());
-            kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(
-                    kafkaMirrorMaker.getSpec().getImage(),
-                    kafkaMirrorMaker.getSpec().getVersion()));
-            kafkaMirrorMakerCluster.setLogging(kafkaMirrorMaker.getSpec().getLogging());
-            kafkaMirrorMakerCluster.setGcLoggingEnabled(kafkaMirrorMaker.getSpec().getJvmOptions() == null ? true : kafkaMirrorMaker.getSpec().getJvmOptions().isGcLoggingEnabled());
 
-            Map<String, Object> metrics = kafkaMirrorMaker.getSpec().getMetrics();
-            if (metrics != null) {
-                kafkaMirrorMakerCluster.setMetricsEnabled(true);
-                kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
-            }
+        kafkaMirrorMakerCluster.setWhitelist(kafkaMirrorMaker.getSpec().getWhitelist());
+        kafkaMirrorMakerCluster.setProducer(kafkaMirrorMaker.getSpec().getProducer());
+        kafkaMirrorMakerCluster.setConsumer(kafkaMirrorMaker.getSpec().getConsumer());
+        kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(
+                kafkaMirrorMaker.getSpec().getImage(),
+                kafkaMirrorMaker.getSpec().getVersion()));
+        kafkaMirrorMakerCluster.setLogging(kafkaMirrorMaker.getSpec().getLogging());
+        kafkaMirrorMakerCluster.setGcLoggingEnabled(kafkaMirrorMaker.getSpec().getJvmOptions() == null ? true : kafkaMirrorMaker.getSpec().getJvmOptions().isGcLoggingEnabled());
+
+        Map<String, Object> metrics = kafkaMirrorMaker.getSpec().getMetrics();
+        if (metrics != null) {
+            kafkaMirrorMakerCluster.setMetricsEnabled(true);
+            kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
         }
 
         setClientAuth(kafkaMirrorMakerCluster, kafkaMirrorMaker.getSpec().getConsumer());

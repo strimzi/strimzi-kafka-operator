@@ -45,8 +45,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptySet;
-
 public class KafkaConnectCluster extends AbstractModel {
 
     // Port configuration
@@ -143,94 +141,93 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
                                                                 C kafkaConnect) {
-        kafkaConnect.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec != null ? spec.getConfig().entrySet() : emptySet()));
-        if (spec != null) {
-            String image = spec instanceof KafkaConnectS2ISpec ?
-                    versions.kafkaConnectS2iVersion(spec.getImage(), spec.getVersion())
-                    : versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
-            if (image == null) {
-                throw new InvalidResourceException("Version is not supported");
-            }
-            kafkaConnect.setImage(image);
+        kafkaConnect.setReplicas(spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec.getConfig().entrySet()));
 
-            kafkaConnect.setResources(spec.getResources());
-            kafkaConnect.setLogging(spec.getLogging());
-            kafkaConnect.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
-            kafkaConnect.setJvmOptions(spec.getJvmOptions());
-            if (spec.getReadinessProbe() != null) {
-                kafkaConnect.setReadinessInitialDelay(spec.getReadinessProbe().getInitialDelaySeconds());
-                kafkaConnect.setReadinessTimeout(spec.getReadinessProbe().getTimeoutSeconds());
-            }
-            if (spec.getLivenessProbe() != null) {
-                kafkaConnect.setLivenessInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
-                kafkaConnect.setLivenessTimeout(spec.getLivenessProbe().getTimeoutSeconds());
-            }
+        String image = spec instanceof KafkaConnectS2ISpec ?
+                versions.kafkaConnectS2iVersion(spec.getImage(), spec.getVersion())
+                : versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
+        if (image == null) {
+            throw new InvalidResourceException("Version is not supported");
+        }
+        kafkaConnect.setImage(image);
 
-            Map<String, Object> metrics = spec.getMetrics();
-            if (metrics != null) {
-                kafkaConnect.setMetricsEnabled(true);
-                kafkaConnect.setMetricsConfig(metrics.entrySet());
-            }
-            kafkaConnect.setUserAffinity(spec.getAffinity());
-            kafkaConnect.setTolerations(spec.getTolerations());
-            kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
+        kafkaConnect.setResources(spec.getResources());
+        kafkaConnect.setLogging(spec.getLogging());
+        kafkaConnect.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
+        kafkaConnect.setJvmOptions(spec.getJvmOptions());
+        if (spec.getReadinessProbe() != null) {
+            kafkaConnect.setReadinessInitialDelay(spec.getReadinessProbe().getInitialDelaySeconds());
+            kafkaConnect.setReadinessTimeout(spec.getReadinessProbe().getTimeoutSeconds());
+        }
+        if (spec.getLivenessProbe() != null) {
+            kafkaConnect.setLivenessInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
+            kafkaConnect.setLivenessTimeout(spec.getLivenessProbe().getTimeoutSeconds());
+        }
 
-            if (spec.getTls() != null) {
-                kafkaConnect.setTrustedCertificates(spec.getTls().getTrustedCertificates());
-            }
+        Map<String, Object> metrics = spec.getMetrics();
+        if (metrics != null) {
+            kafkaConnect.setMetricsEnabled(true);
+            kafkaConnect.setMetricsConfig(metrics.entrySet());
+        }
+        kafkaConnect.setUserAffinity(spec.getAffinity());
+        kafkaConnect.setTolerations(spec.getTolerations());
+        kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
-            if (spec.getAuthentication() != null)   {
-                if (spec.getAuthentication() instanceof KafkaConnectAuthenticationTls) {
-                    KafkaConnectAuthenticationTls auth = (KafkaConnectAuthenticationTls) spec.getAuthentication();
-                    if (auth.getCertificateAndKey() != null) {
-                        kafkaConnect.setTlsAuthCertAndKey(auth.getCertificateAndKey());
-                        if (spec.getTls() == null) {
-                            log.warn("TLS configuration missing: related TLS client authentication will not work properly");
-                        }
-                    } else {
-                        log.warn("TLS Client authentication selected, but no certificate and key configured.");
-                        throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
+        if (spec.getTls() != null) {
+            kafkaConnect.setTrustedCertificates(spec.getTls().getTrustedCertificates());
+        }
+
+        if (spec.getAuthentication() != null)   {
+            if (spec.getAuthentication() instanceof KafkaConnectAuthenticationTls) {
+                KafkaConnectAuthenticationTls auth = (KafkaConnectAuthenticationTls) spec.getAuthentication();
+                if (auth.getCertificateAndKey() != null) {
+                    kafkaConnect.setTlsAuthCertAndKey(auth.getCertificateAndKey());
+                    if (spec.getTls() == null) {
+                        log.warn("TLS configuration missing: related TLS client authentication will not work properly");
                     }
-                } else if (spec.getAuthentication() instanceof KafkaConnectAuthenticationScramSha512)    {
-                    KafkaConnectAuthenticationScramSha512 auth = (KafkaConnectAuthenticationScramSha512) spec.getAuthentication();
-                    if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
-                        kafkaConnect.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
-                    } else  {
-                        log.warn("SCRAM-SHA-512 authentication selected, but no username and password configured.");
-                        throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but no username and password configured.");
-                    }
+                } else {
+                    log.warn("TLS Client authentication selected, but no certificate and key configured.");
+                    throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
+                }
+            } else if (spec.getAuthentication() instanceof KafkaConnectAuthenticationScramSha512)    {
+                KafkaConnectAuthenticationScramSha512 auth = (KafkaConnectAuthenticationScramSha512) spec.getAuthentication();
+                if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
+                    kafkaConnect.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
+                } else  {
+                    log.warn("SCRAM-SHA-512 authentication selected, but no username and password configured.");
+                    throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but no username and password configured.");
                 }
             }
+        }
 
-            if (spec.getTemplate() != null) {
-                KafkaConnectTemplate template = spec.getTemplate();
+        if (spec.getTemplate() != null) {
+            KafkaConnectTemplate template = spec.getTemplate();
 
-                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
-                    kafkaConnect.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
-                    kafkaConnect.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
-                }
-
-                ModelUtils.parsePodTemplate(kafkaConnect, template.getPod());
-
-                if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
-                    kafkaConnect.templateServiceLabels = template.getApiService().getMetadata().getLabels();
-                    kafkaConnect.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
-                }
-
-                ModelUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudget());
+            if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
+                kafkaConnect.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                kafkaConnect.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
             }
 
-            if (spec.getExternalConfiguration() != null)    {
-                ExternalConfiguration externalConfiguration = spec.getExternalConfiguration();
+            ModelUtils.parsePodTemplate(kafkaConnect, template.getPod());
 
-                if (externalConfiguration.getEnv() != null && !externalConfiguration.getEnv().isEmpty())    {
-                    kafkaConnect.externalEnvs = externalConfiguration.getEnv();
-                }
+            if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
+                kafkaConnect.templateServiceLabels = template.getApiService().getMetadata().getLabels();
+                kafkaConnect.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
+            }
 
-                if (externalConfiguration.getVolumes() != null && !externalConfiguration.getVolumes().isEmpty())    {
-                    kafkaConnect.externalVolumes = externalConfiguration.getVolumes();
-                }
+            ModelUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudget());
+        }
+
+        if (spec.getExternalConfiguration() != null)    {
+            ExternalConfiguration externalConfiguration = spec.getExternalConfiguration();
+
+            if (externalConfiguration.getEnv() != null && !externalConfiguration.getEnv().isEmpty())    {
+                kafkaConnect.externalEnvs = externalConfiguration.getEnv();
+            }
+
+            if (externalConfiguration.getVolumes() != null && !externalConfiguration.getVolumes().isEmpty())    {
+                kafkaConnect.externalVolumes = externalConfiguration.getVolumes();
             }
         }
 

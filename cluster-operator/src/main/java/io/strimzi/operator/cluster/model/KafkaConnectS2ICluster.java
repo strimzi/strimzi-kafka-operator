@@ -57,7 +57,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 Labels.fromResource(kafkaConnectS2I).withKind(kafkaConnectS2I.getKind())));
 
         cluster.setOwnerReference(kafkaConnectS2I);
-        cluster.setInsecureSourceRepository(spec != null ? spec.isInsecureSourceRepository() : false);
+        cluster.setInsecureSourceRepository(spec.isInsecureSourceRepository());
 
         return cluster;
     }
