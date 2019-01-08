@@ -17,22 +17,28 @@ import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.Assumptions;
-import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
 
 import java.lang.reflect.InvocationTargetException;
 
 import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectMethod;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
 class StrimziExtensionTest {
 
-    private static final KubeClient MOCK_KUBE_CLIENT = Mockito.mock(KubeClient.class);
+    private static final KubeClient MOCK_KUBE_CLIENT = mock(KubeClient.class);
 
     StrimziExtensionTest() throws InvocationTargetException {
     }
@@ -61,7 +67,7 @@ class StrimziExtensionTest {
     @Namespace("test")
     @Resources("foo")
     @ExtendWith(StrimziExtension.class)
-    static class ClsWithClusterResource {
+    public static class ClsWithClusterResource {
 
         public static KubeClusterResource cluster = new MockKubeClusterResource() {
         };
@@ -84,16 +90,11 @@ class StrimziExtensionTest {
         void test2() {
             Assertions.fail("This test fails");
         }
-
-        @BeforeEach
-        void invokeBefore() {
-            cluster.before();
-        }
     }
 
     @BeforeEach
     void resetMock() {
-        Mockito.reset(MOCK_KUBE_CLIENT);
+        reset(MOCK_KUBE_CLIENT);
     }
 
     @Test
@@ -103,7 +104,7 @@ class StrimziExtensionTest {
         SummaryGeneratingListener listener = new SummaryGeneratingListener();
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
                 .selectors(
-                        DiscoverySelectors.selectMethod(ClsWithClusterResource.class, "test0")
+                        selectMethod(ClsWithClusterResource.class, "test0")
                 )
                 .build();
         Launcher launcher = LauncherFactory.create();
@@ -113,12 +114,12 @@ class StrimziExtensionTest {
         if (!listener.getSummary().getFailures().isEmpty()) {
             listener.getSummary().getFailures().get(0).getException().printStackTrace();
         }
-        Assertions.assertTrue(listener.getSummary().getFailures().isEmpty());
+        assertTrue(listener.getSummary().getFailures().isEmpty());
 
-        Mockito.verify(MOCK_KUBE_CLIENT).createNamespace(ArgumentMatchers.eq("test"));
-        Mockito.verify(MOCK_KUBE_CLIENT).create(ArgumentMatchers.eq("foo"));
-        Mockito.verify(MOCK_KUBE_CLIENT).deleteNamespace(ArgumentMatchers.eq("test"));
-        Mockito.verify(MOCK_KUBE_CLIENT).delete(ArgumentMatchers.eq("foo"));
+        verify(MOCK_KUBE_CLIENT).createNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT).create(eq("foo"));
+        verify(MOCK_KUBE_CLIENT).deleteNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT).delete(eq("foo"));
     }
 
     @Test
@@ -127,7 +128,7 @@ class StrimziExtensionTest {
         SummaryGeneratingListener listener = new SummaryGeneratingListener();
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
                 .selectors(
-                        DiscoverySelectors.selectMethod(ClsWithClusterResource.class, "test1")
+                        selectMethod(ClsWithClusterResource.class, "test1")
                 )
                 .build();
 
@@ -138,33 +139,33 @@ class StrimziExtensionTest {
         if (!listener.getSummary().getFailures().isEmpty()) {
             listener.getSummary().getFailures().get(0).getException().printStackTrace();
         }
-        Assertions.assertTrue(listener.getSummary().getFailures().isEmpty());
+        assertTrue(listener.getSummary().getFailures().isEmpty());
 
-        Mockito.verify(MOCK_KUBE_CLIENT).createNamespace(ArgumentMatchers.eq("test"));
-        Mockito.verify(MOCK_KUBE_CLIENT).create(ArgumentMatchers.eq("foo"));
-        Mockito.verify(MOCK_KUBE_CLIENT).deleteNamespace(ArgumentMatchers.eq("test"));
-        Mockito.verify(MOCK_KUBE_CLIENT).delete(ArgumentMatchers.eq("foo"));
+        verify(MOCK_KUBE_CLIENT).createNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT).create(eq("foo"));
+        verify(MOCK_KUBE_CLIENT).deleteNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT).delete(eq("foo"));
 
 
-        Mockito.verify(MOCK_KUBE_CLIENT, Mockito.times(1)).createNamespace(ArgumentMatchers.eq("different"));
-        Mockito.verify(MOCK_KUBE_CLIENT, Mockito.times(1)).create(ArgumentMatchers.eq("moreResources"));
-        Mockito.verify(MOCK_KUBE_CLIENT, Mockito.times(1)).deleteNamespace(ArgumentMatchers.eq("different"));
-        Mockito.verify(MOCK_KUBE_CLIENT, Mockito.times(1)).delete(ArgumentMatchers.eq("moreResources"));
+        verify(MOCK_KUBE_CLIENT, times(1)).createNamespace(eq("different"));
+        verify(MOCK_KUBE_CLIENT, times(1)).create(eq("moreResources"));
+        verify(MOCK_KUBE_CLIENT, times(1)).deleteNamespace(eq("different"));
+        verify(MOCK_KUBE_CLIENT, times(1)).delete(eq("moreResources"));
     }
 
     @Test
     void test2() {
         Assumptions.assumeTrue(System.getenv(StrimziExtension.NOTEARDOWN) == null);
         for (String resourceType : asList("pod", "deployment", "statefulset", "kafka")) {
-            Mockito.when(MOCK_KUBE_CLIENT.list(resourceType)).thenReturn(asList(resourceType + "1", resourceType + "2"));
-            Mockito.when(MOCK_KUBE_CLIENT.getResourceAsJson(resourceType, resourceType + "1")).thenReturn("Blah\nblah,\n" + resourceType + "1");
-            Mockito.when(MOCK_KUBE_CLIENT.getResourceAsJson(resourceType, resourceType + "2")).thenReturn("Blah\nblah,\n" + resourceType + "2");
+            when(MOCK_KUBE_CLIENT.list(resourceType)).thenReturn(asList(resourceType + "1", resourceType + "2"));
+            when(MOCK_KUBE_CLIENT.getResourceAsJson(resourceType, resourceType + "1")).thenReturn("Blah\nblah,\n" + resourceType + "1");
+            when(MOCK_KUBE_CLIENT.getResourceAsJson(resourceType, resourceType + "2")).thenReturn("Blah\nblah,\n" + resourceType + "2");
         }
 
         SummaryGeneratingListener listener = new SummaryGeneratingListener();
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
                 .selectors(
-                        DiscoverySelectors.selectMethod(ClsWithClusterResource.class, "test2")
+                        selectMethod(ClsWithClusterResource.class, "test2")
                 )
                 .build();
 
@@ -172,18 +173,18 @@ class StrimziExtensionTest {
         launcher.registerTestExecutionListeners(listener);
         launcher.execute(request);
 
-        Mockito.when(MOCK_KUBE_CLIENT.logs("pod1")).thenReturn("these\nare\nthe\nlogs\nfrom\npod\n1");
-        Mockito.when(MOCK_KUBE_CLIENT.logs("pod2")).thenReturn("these\nare\nthe\nlogs\nfrom\npod\n2");
+        when(MOCK_KUBE_CLIENT.logs("pod1")).thenReturn("these\nare\nthe\nlogs\nfrom\npod\n1");
+        when(MOCK_KUBE_CLIENT.logs("pod2")).thenReturn("these\nare\nthe\nlogs\nfrom\npod\n2");
 
         if (!listener.getSummary().getFailures().isEmpty()) {
             listener.getSummary().getFailures().get(0).getException().printStackTrace();
         }
-        Assertions.assertEquals(1, listener.getSummary().getFailures().size());
+        assertEquals(1, listener.getSummary().getFailures().size());
 
-        Mockito.verify(MOCK_KUBE_CLIENT, Mockito.times(1)).createNamespace(ArgumentMatchers.eq("test"));
-        Mockito.verify(MOCK_KUBE_CLIENT, Mockito.times(1)).create(ArgumentMatchers.eq("foo"));
-        Mockito.verify(MOCK_KUBE_CLIENT, Mockito.times(1)).deleteNamespace(ArgumentMatchers.eq("test"));
-        Mockito.verify(MOCK_KUBE_CLIENT, Mockito.times(1)).delete(ArgumentMatchers.eq("foo"));
+        verify(MOCK_KUBE_CLIENT, times(1)).createNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT, times(1)).create(eq("foo"));
+        verify(MOCK_KUBE_CLIENT, times(1)).deleteNamespace(eq("test"));
+        verify(MOCK_KUBE_CLIENT, times(1)).delete(eq("foo"));
     }
 }
 

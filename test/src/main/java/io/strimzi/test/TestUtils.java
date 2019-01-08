@@ -376,7 +376,7 @@ public final class TestUtils {
      * {@code strimzi-cluster-operator} {@code ServiceAccount} in the given namespace.
      * @param roleBindingFile
      * @param namespace
-     * @return
+     * @return role
      */
     public static String changeRoleBindingSubject(File roleBindingFile, String namespace) {
         YAMLMapper mapper = new YAMLMapper();

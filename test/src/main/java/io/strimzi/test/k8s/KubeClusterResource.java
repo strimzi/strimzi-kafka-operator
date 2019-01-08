@@ -6,11 +6,15 @@ package io.strimzi.test.k8s;
 
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
- * for use with {@code @ClassRule} (or {@code Rule}.
+ * for use with {@code @BeforeAll} (or {@code BeforeEach}.
  * For example:
  * <pre><code>
- *     @ClassRule
- *     public static KubeClusterResource testCluster;
+ *     public static KubeClusterResource testCluster = new KubeClusterResources();
+ *
+ *     @BeforeEach
+ *     void before() {
+ *         testCluster.before();
+ *     }
  * </code></pre>
  */
 public class KubeClusterResource {
