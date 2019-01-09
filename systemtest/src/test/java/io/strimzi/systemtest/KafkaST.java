@@ -207,20 +207,17 @@ class KafkaST extends AbstractST {
             k.getSpec().getZookeeper().setReplicas(scaleZkTo);
         });
         kubeClient.waitForPod(newZkPodName[0]);
-        waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), podHashes);
-//
-        podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
-        // Remove newly created zk pod
-        podHashes.remove(new Integer(client.pods().withName(newZkPodName[0]).get().hashCode()));
-        if (podHashes.size() > 3) {
-            podHashes.remove(new Integer(client.pods().withName(newZkPodName[1]).get().hashCode()));
-        }
+
+        podHashes.addAll(getPodsHash(zookeeperClusterName(CLUSTER_NAME)));
+
         kubeClient.waitForPod(newZkPodName[1]);
+
+        podHashes.remove(new Integer(client.pods().withName(newZkPodName[1]).get().hashCode()));
         waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), podHashes);
         checkPodsReadiness();
 
         // check the new node is either in leader or follower state
-        waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
+        waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2, 3, 4);
 
         //Test that first pod does not have errors or failures in events
         List<Event> eventsForFirstPod = getEvents("Pod", newZkPodName[0]);
@@ -244,7 +241,8 @@ class KafkaST extends AbstractST {
         });
         kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  3));
         // Wait for the one remaining node to enter standalone mode
-        waitForZkMntr(Pattern.compile("zk_server_state\\s+standalone"), 0);
+//        waitForZkMntr(Pattern.compile("zk_server_state\\s+standalone"), 0);
+        waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
         assertThat(getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));

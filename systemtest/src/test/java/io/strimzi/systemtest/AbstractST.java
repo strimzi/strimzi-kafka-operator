@@ -1122,7 +1122,7 @@ public abstract class AbstractST {
         LOGGER.info("Passed hashes: {}",
                 podHashes.toString());
         TestUtils.waitFor("test", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-                () -> comparePodHashLists(podHashes, getPodsHash(namePrefix)));
+            () -> comparePodHashLists(podHashes, getPodsHash(namePrefix)));
         LOGGER.info("All zk pods are ready");
     }
 
