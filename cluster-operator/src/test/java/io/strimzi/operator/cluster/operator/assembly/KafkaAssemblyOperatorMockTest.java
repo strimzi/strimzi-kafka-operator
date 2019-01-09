@@ -125,7 +125,7 @@ public class KafkaAssemblyOperatorMockTest {
     @Parameterized.Parameters(name = "{0}")
     public static Iterable<KafkaAssemblyOperatorMockTest.Params> data() {
         int[] replicas = {1, 3};
-        io.strimzi.api.kafka.model.Storage[] kafkaStorageConfigs = {
+        Storage[] kafkaStorageConfigs = {
             new EphemeralStorage(),
             new PersistentClaimStorageBuilder()
                 .withSize("123")
@@ -138,7 +138,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .withDeleteClaim(false)
                 .build()
         };
-        io.strimzi.api.kafka.model.SingleVolumeStorage[] zkStorageConfigs = {
+        SingleVolumeStorage[] zkStorageConfigs = {
             new EphemeralStorage(),
             new PersistentClaimStorageBuilder()
                     .withSize("123")
