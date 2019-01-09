@@ -1119,6 +1119,8 @@ public abstract class AbstractST {
     void waitForZkPodsRollUp(String namePrefix, List<Integer> podHashes) {
         LOGGER.info("Waiting for all zookeeper pods will be running");
         // wait when all pods are ready
+        LOGGER.info("Passed hashes: {}",
+                podHashes.toString());
         TestUtils.waitFor("test", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
                 () -> comparePodHashLists(podHashes, getPodsHash(namePrefix)));
         LOGGER.info("All zk pods are ready");
@@ -1131,8 +1133,20 @@ public abstract class AbstractST {
                 .filter(p -> p.getMetadata().getName().startsWith(namePrefix))
                 .forEach(p -> newHashes.add(p.hashCode()));
 
-        LOGGER.info("New hashes: {}", newHashes.toString());
+        LOGGER.info("Current hashes: {}", newHashes.toString());
         return newHashes;
+    }
+
+    boolean checkPodsReadiness() {
+        for (Pod pod : client.pods().list().getItems()) {
+            LOGGER.info("Checking: {}", pod.getMetadata().getName());
+            try {
+                client.resource(pod).waitUntilReady(1, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return true;
     }
 
     void waitForPod(Pod pod) throws InterruptedException {
@@ -1143,6 +1157,7 @@ public abstract class AbstractST {
     boolean comparePodHashLists(List<Integer> oldHash, List<Integer> newHash) {
         for (Integer hash: oldHash) {
             if (newHash.contains(hash)) {
+                LOGGER.info("Pod with hash {} is still UP", hash);
                 return false;
             }
         }

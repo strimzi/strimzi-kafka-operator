@@ -199,9 +199,7 @@ class KafkaST extends AbstractST {
                 zookeeperPodName(CLUSTER_NAME,  newPodIds[1])
         };
 
-
         List<Integer> podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
-        LOGGER.info("Old hashes: {}", podHashes.toString());
 
         final String firstZkPodName = zookeeperPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleZkTo);
@@ -209,12 +207,17 @@ class KafkaST extends AbstractST {
             k.getSpec().getZookeeper().setReplicas(scaleZkTo);
         });
         kubeClient.waitForPod(newZkPodName[0]);
-
         waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), podHashes);
-
+//
         podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
+        // Remove newly created zk pod
+        podHashes.remove(new Integer(client.pods().withName(newZkPodName[0]).get().hashCode()));
+        if (podHashes.size() > 3) {
+            podHashes.remove(new Integer(client.pods().withName(newZkPodName[1]).get().hashCode()));
+        }
         kubeClient.waitForPod(newZkPodName[1]);
         waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), podHashes);
+        checkPodsReadiness();
 
         // check the new node is either in leader or follower state
         waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
@@ -237,9 +240,9 @@ class KafkaST extends AbstractST {
         LOGGER.info("Scaling down");
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
         replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getZookeeper().setReplicas(1);
+            k.getSpec().getZookeeper().setReplicas(3);
         });
-        kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  1));
+        kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  3));
         // Wait for the one remaining node to enter standalone mode
         waitForZkMntr(Pattern.compile("zk_server_state\\s+standalone"), 0);
 
