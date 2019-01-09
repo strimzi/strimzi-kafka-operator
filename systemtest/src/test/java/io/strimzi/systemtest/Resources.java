@@ -245,7 +245,7 @@ public class Resources {
                             .withMetrics(new HashMap<>())
                         .endKafka()
                         .withNewZookeeper()
-                            .withReplicas(1)
+                            .withReplicas(3)
                             .withNewResources()
                                 .withNewRequests()
                                     .withMemory("1G")

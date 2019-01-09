@@ -64,6 +64,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -1113,5 +1114,38 @@ public abstract class AbstractST {
     static void createTestClassResources(TestInfo testInfo) {
         createClusterOperatorResources();
         testClass = testInfo.getTestClass().get().getSimpleName();
+    }
+
+    void waitForZkPodsRollUp(String namePrefix, List<Integer> podHashes) {
+        LOGGER.info("Waiting for all zookeeper pods will be running");
+        // wait when all pods are ready
+        TestUtils.waitFor("test", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+                () -> comparePodHashLists(podHashes, getPodsHash(namePrefix)));
+        LOGGER.info("All zk pods are ready");
+    }
+
+    List<Integer> getPodsHash(String namePrefix) {
+        List<Integer> newHashes = new ArrayList<>();
+
+        client.pods().list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(namePrefix))
+                .forEach(p -> newHashes.add(p.hashCode()));
+
+        LOGGER.info("New hashes: {}", newHashes.toString());
+        return newHashes;
+    }
+
+    void waitForPod(Pod pod) throws InterruptedException {
+        LOGGER.info("Waiting for pod {}", pod.getMetadata().getName());
+        client.resource(pod).waitUntilReady(1, TimeUnit.MINUTES);
+    }
+
+    boolean comparePodHashLists(List<Integer> oldHash, List<Integer> newHash) {
+        for (Integer hash: oldHash) {
+            if (newHash.contains(hash)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

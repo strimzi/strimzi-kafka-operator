@@ -189,7 +189,7 @@ class KafkaST extends AbstractST {
         //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(CLUSTER_NAME), 1);
         KubernetesClient client = new DefaultKubernetesClient();
         final int initialZkReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
-        assertEquals(1, initialZkReplicas);
+        assertEquals(3, initialZkReplicas);
 
         // scale up
         final int scaleZkTo = initialZkReplicas + 2;
@@ -198,13 +198,23 @@ class KafkaST extends AbstractST {
                 zookeeperPodName(CLUSTER_NAME,  newPodIds[0]),
                 zookeeperPodName(CLUSTER_NAME,  newPodIds[1])
         };
+
+
+        List<Integer> podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
+        LOGGER.info("Old hashes: {}", podHashes.toString());
+
         final String firstZkPodName = zookeeperPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleZkTo);
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getZookeeper().setReplicas(scaleZkTo);
         });
         kubeClient.waitForPod(newZkPodName[0]);
+
+        waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), podHashes);
+
+        podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
         kubeClient.waitForPod(newZkPodName[1]);
+        waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), podHashes);
 
         // check the new node is either in leader or follower state
         waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
