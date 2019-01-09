@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.ResourcesBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
@@ -86,7 +87,7 @@ public class KafkaAssemblyOperatorMockTest {
             singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap(), emptyMap()) { };
 
     private final int zkReplicas;
-    private final Storage zkStorage;
+    private final SingleVolumeStorage zkStorage;
 
     private final int kafkaReplicas;
     private final Storage kafkaStorage;
@@ -95,14 +96,14 @@ public class KafkaAssemblyOperatorMockTest {
 
     public static class Params {
         private final int zkReplicas;
-        private final Storage zkStorage;
+        private final SingleVolumeStorage zkStorage;
 
         private final int kafkaReplicas;
         private final Storage kafkaStorage;
         private Resources resources;
 
         public Params(int zkReplicas,
-                      Storage zkStorage, int kafkaReplicas,
+                      SingleVolumeStorage zkStorage, int kafkaReplicas,
                       Storage kafkaStorage,
                       Resources resources) {
             this.kafkaReplicas = kafkaReplicas;
@@ -124,7 +125,7 @@ public class KafkaAssemblyOperatorMockTest {
     @Parameterized.Parameters(name = "{0}")
     public static Iterable<KafkaAssemblyOperatorMockTest.Params> data() {
         int[] replicas = {1, 3};
-        io.strimzi.api.kafka.model.Storage[] storageConfigs = {
+        io.strimzi.api.kafka.model.Storage[] kafkaStorageConfigs = {
             new EphemeralStorage(),
             new PersistentClaimStorageBuilder()
                 .withSize("123")
@@ -136,6 +137,19 @@ public class KafkaAssemblyOperatorMockTest {
                 .withStorageClass("foo")
                 .withDeleteClaim(false)
                 .build()
+        };
+        io.strimzi.api.kafka.model.SingleVolumeStorage[] zkStorageConfigs = {
+            new EphemeralStorage(),
+            new PersistentClaimStorageBuilder()
+                    .withSize("123")
+                    .withStorageClass("foo")
+                    .withDeleteClaim(true)
+                    .build(),
+            new PersistentClaimStorageBuilder()
+                    .withSize("123")
+                    .withStorageClass("foo")
+                    .withDeleteClaim(false)
+                    .build()
         };
         Resources[] resources = {
             new ResourcesBuilder()
@@ -152,9 +166,9 @@ public class KafkaAssemblyOperatorMockTest {
         List<KafkaAssemblyOperatorMockTest.Params> result = new ArrayList();
 
         for (int zkReplica : replicas) {
-            for (Storage zkStorage : storageConfigs) {
+            for (SingleVolumeStorage zkStorage : zkStorageConfigs) {
                 for (int kafkaReplica : replicas) {
-                    for (Storage kafkaStorage : storageConfigs) {
+                    for (Storage kafkaStorage : kafkaStorageConfigs) {
                         for (Resources resource : resources) {
                             result.add(new KafkaAssemblyOperatorMockTest.Params(
                                     zkReplica, zkStorage,
