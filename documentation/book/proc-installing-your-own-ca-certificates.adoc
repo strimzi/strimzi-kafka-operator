@@ -78,7 +78,7 @@ oc delete secret _<ca-key-secret>_
 # Create the new one
 oc create secret generic _<ca-key-secret>_ \
   --from-file=ca.key=_<ca-key-file>_ \
-  && kubectl label secret _<ca-key-secret>_ \
+  && oc label secret _<ca-key-secret>_ \
   strimzi.io/kind=Kafka \
   strimzi.io/cluster=_<my-cluster>_
 ----
@@ -98,4 +98,4 @@ spec:
 
 //.Additional resources
 //
-//* For the procedure for renewing CA certificates you have previousy //installed, see xref:renewing-your-own-ca-certificates-{context}[]
+//* For the procedure for renewing CA certificates you have previously //installed, see xref:renewing-your-own-ca-certificates-{context}[]
