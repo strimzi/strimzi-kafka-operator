@@ -152,7 +152,7 @@ class LogLevelST extends AbstractST {
         LOGGER.info("Create resources for the tests");
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        testClassResources.defaultCLusterOperator(NAMESPACE).done();
+        testClassResources.clusterOperator(NAMESPACE).done();
 
         testClass = testInfo.getTestClass().get().getSimpleName();
         operationID = startDeploymentMeasuring();
@@ -207,10 +207,7 @@ class LogLevelST extends AbstractST {
 
     @AfterAll
     static void deleteClassResources() {
-        LOGGER.info("Deleting resources after the test class");
         TimeMeasuringSystem.stopOperation(operationID);
-        classResources.deleteResources();
-        classResources = null;
     }
 
     private static Resources classResources() {

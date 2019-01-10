@@ -47,7 +47,6 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -408,12 +407,6 @@ public abstract class AbstractST {
         LOGGER.info("Deleting resources after the test");
         resources.deleteResources();
         resources = null;
-    }
-
-    protected static void deleteClusterOperatorResources() {
-        LOGGER.info("Deleting cluster operator resources after the test");
-        testClassResources.deleteResources();
-        testClassResources = null;
     }
 
     Resources resources() {
@@ -1065,15 +1058,15 @@ public abstract class AbstractST {
      */
     static void applyRoleBindings(String namespace, String clientNamespace) {
         // 020-RoleBinding
-        testClassResources.defaultKubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+        testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
         // 021-ClusterRoleBinding
-        testClassResources.defaultKubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+        testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
         // 030-ClusterRoleBinding
-        testClassResources.defaultKubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, clientNamespace);
+        testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, clientNamespace);
         // 031-RoleBinding
-        testClassResources.defaultKubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-entity-operator-delegation.yaml", namespace, clientNamespace);
+        testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, clientNamespace);
         // 032-RoleBinding
-        testClassResources.defaultKubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-topic-operator-delegation.yaml", namespace, clientNamespace);
+        testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, clientNamespace);
     }
 
     @BeforeEach
@@ -1085,10 +1078,5 @@ public abstract class AbstractST {
     static void setTestClassName(TestInfo testInfo) {
         createClusterOperatorResources();
         testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
-    @AfterAll
-    static void deleteClusterResources() {
-        testClassResources.deleteResources();
     }
 }

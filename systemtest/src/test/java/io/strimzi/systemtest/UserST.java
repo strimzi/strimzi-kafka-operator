@@ -106,6 +106,6 @@ class UserST extends AbstractST {
     static void createClusterOperator() {
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        testClassResources.defaultCLusterOperator(NAMESPACE).done();
+        testClassResources.clusterOperator(NAMESPACE).done();
     }
 }

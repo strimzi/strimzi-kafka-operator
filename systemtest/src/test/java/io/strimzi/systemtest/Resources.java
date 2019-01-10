@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
@@ -16,7 +17,9 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
@@ -599,8 +602,12 @@ public class Resources {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
 
-    DoneableDeployment defaultCLusterOperator(String namespace) {
-        return clusterOperator(getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG))
+    DoneableDeployment clusterOperator(String namespace) {
+        return clusterOperator(defaultCLusterOperator(namespace).build());
+    }
+
+    DeploymentBuilder defaultCLusterOperator(String namespace) {
+        return new DeploymentBuilder(getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG))
                 .withApiVersion("apps/v1")
                 .editSpec()
                     .withNewSelector()
@@ -645,37 +652,43 @@ public class Resources {
         return TestUtils.configFromYaml(yamlPath, KubernetesClusterRoleBinding.class);
     }
 
-    DoneableKubernetesRoleBinding defaultKubernetesRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+    DoneableKubernetesRoleBinding kubernetesRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+        return kubernetesRoleBinding(defaultKubernetesRoleBinding(yamlPath, namespace).build(), clientNamespace);
+    }
+
+    KubernetesRoleBindingBuilder defaultKubernetesRoleBinding(String yamlPath, String namespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
 
-        return kubernetesRoleBinding(getRoleBindingFromYaml(yamlPath), namespace)
-                .withApiVersion("rbac.authorization.k8s.io/v1")
-                .editFirstSubject()
-                .withNamespace(namespace)
-                .endSubject();
-
-    }
-
-    DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String namespace) {
-        LOGGER.info("Apply RoleBinding in namespace {}", namespace);
-        client.inNamespace(namespace).rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
-        return new DoneableKubernetesRoleBinding(roleBinding);
-    }
-
-    DoneableKubernetesClusterRoleBinding defaultKubernetesClusterRoleBinding(String yamlPath, String namespace, String clientNamespace) {
-        LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
-
-        return kubernetesClusterRoleBinding(getClusterRoleBindingFromYaml(yamlPath), namespace)
+        return new KubernetesRoleBindingBuilder(getRoleBindingFromYaml(yamlPath))
                 .withApiVersion("rbac.authorization.k8s.io/v1")
                 .editFirstSubject()
                     .withNamespace(namespace)
                 .endSubject();
-
     }
 
-    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String namespace) {
-        LOGGER.info("Apply ClusterRoleBinding in namespace {}", namespace);
-        client.inNamespace(namespace).rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
+    DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String clientNamespace) {
+        LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
+        client.inNamespace(clientNamespace).rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
+        return new DoneableKubernetesRoleBinding(roleBinding);
+    }
+
+    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+        return kubernetesClusterRoleBinding(defaultKubernetesClusterRoleBinding(yamlPath, namespace).build(), clientNamespace);
+    }
+
+    KubernetesClusterRoleBindingBuilder defaultKubernetesClusterRoleBinding(String yamlPath, String namespace) {
+        LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
+
+        return new KubernetesClusterRoleBindingBuilder(getClusterRoleBindingFromYaml(yamlPath))
+                .withApiVersion("rbac.authorization.k8s.io/v1")
+                .editFirstSubject()
+                    .withNamespace(namespace)
+                .endSubject();
+    }
+
+    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String clientNamespace) {
+        LOGGER.info("Apply ClusterRoleBinding in namespace {}", clientNamespace);
+        client.inNamespace(clientNamespace).rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
         return new DoneableKubernetesClusterRoleBinding(clusterRoleBinding);
     }
 }

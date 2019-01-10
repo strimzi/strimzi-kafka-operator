@@ -13,7 +13,6 @@ import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -265,7 +264,7 @@ class ConnectST extends AbstractST {
         LOGGER.info("Creating resources before the test class");
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        testClassResources.defaultCLusterOperator(NAMESPACE).done();
+        testClassResources.clusterOperator(NAMESPACE).done();
 
         classResources = new Resources(namespacedClient());
 
@@ -280,13 +279,6 @@ class ConnectST extends AbstractST {
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec().done();
-    }
-
-    @AfterAll
-    static void deleteClassResources() {
-        LOGGER.info("Deleting resources after the test class");
-        classResources.deleteResources();
-        classResources = null;
     }
 
     private static Resources classResources() {

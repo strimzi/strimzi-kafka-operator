@@ -11,7 +11,6 @@ import io.strimzi.test.Namespace;
 import io.strimzi.test.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -191,18 +190,11 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Creating resources before the test class");
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        testClassResources.defaultCLusterOperator(NAMESPACE).done();
+        testClassResources.clusterOperator(NAMESPACE).done();
 
         classResources = new Resources(namespacedClient());
         classResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
         testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
-    @AfterAll
-    static void deleteClassResources() {
-        LOGGER.info("Deleting resources after the test class");
-        classResources.deleteResources();
-        classResources = null;
     }
 
     private static Resources classResources() {
