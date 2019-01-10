@@ -989,6 +989,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     void testManualTriggeringRollingUpdate() {
+        String coPodName = kubeClient.listResourcesByLabel("pod", "name=strimzi-cluster-operator").get(0);
         resources().kafkaEphemeral(CLUSTER_NAME, 1).done();
 
         // rolling update for kafka
@@ -1014,7 +1015,7 @@ class KafkaST extends AbstractST {
         );
 
         // check rolling update messages in CO log
-        String coLog = kubeClient.logsForResource("deployment", "strimzi-cluster-operator");
+        String coLog = kubeClient.logs(coPodName);
         assertThat(coLog, containsString("Rolling Kafka pod " + kafkaClusterName(CLUSTER_NAME) + "-0" + " due to manual rolling update"));
 
 
@@ -1036,7 +1037,7 @@ class KafkaST extends AbstractST {
                 .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
-        coLog = kubeClient.logsForResource("deployment", "strimzi-cluster-operator");
+        coLog = kubeClient.logs(coPodName);
         assertThat(coLog, containsString("Rolling Zookeeper pod " + zookeeperClusterName(CLUSTER_NAME) + "-0" + " to manual rolling update"));
     }
 

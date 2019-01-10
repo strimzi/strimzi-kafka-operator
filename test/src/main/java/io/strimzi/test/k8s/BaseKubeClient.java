@@ -20,8 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -408,11 +408,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
             args = new String[]{"logs", pod};
         }
         return Exec.exec(namespacedCommand(args)).out();
-    }
-
-    @Override
-    public String logsForResource(String resourceType, String resourceName) {
-        return Exec.exec(namespacedCommand("logs", resourceType + "/" + resourceName)).out();
     }
 
     @Override
