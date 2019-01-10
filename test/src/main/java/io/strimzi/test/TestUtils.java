@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.logging.log4j.LogManager;
@@ -255,7 +256,6 @@ public final class TestUtils {
 
     public static <T> T fromYaml(String resource, Class<T> c, boolean ignoreUnknownProperties) {
         URL url = c.getResource(resource);
-        LOGGER.info(url.toExternalForm());
         if (url == null) {
             return null;
         }
@@ -291,6 +291,17 @@ public final class TestUtils {
         try {
             return mapper.writeValueAsString(instance);
         } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T configFromYaml(String yamlPath, Class<T> c) {
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        try {
+            return mapper.readValue(new File(yamlPath), c);
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

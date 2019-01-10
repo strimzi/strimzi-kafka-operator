@@ -4,15 +4,10 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.builder.Predicate;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
@@ -60,7 +55,6 @@ import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -78,6 +72,9 @@ public class Resources {
     private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
     private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(3).toMillis();
     private static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
+
+    public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
+    public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
 
     private final NamespacedOpenShiftClient client;
 
@@ -600,109 +597,25 @@ public class Resources {
         });
     }
 
-    private DeploymentBuilder defaultClusterOperator(String namespaces) {
-        LOGGER.info("Creating new Cluster Operator for namespaces {}", namespaces);
-        ClusterOperatorConsts.printClusterOperatorInfo();
+    Deployment getDeploymentFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, Deployment.class);
+    }
 
-        return new DeploymentBuilder()
+    DoneableDeployment createDefaultClusterOperator(String namespace) {
+        return clusterOperator(getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG))
                 .withApiVersion("apps/v1")
-                .withKind("Deployment")
-                .withNewMetadata()
-                    .withName(ClusterOperatorConsts.DEPLOYMENT_NAME)
-                    .addToLabels("app", "strimzi")
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(1)
+                .editSpec()
                     .withNewSelector()
-                        .addToMatchLabels("name", ClusterOperatorConsts.DEPLOYMENT_NAME)
+                        .addToMatchLabels("name", STRIMZI_DEPLOYMENT_NAME)
                     .endSelector()
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .addToLabels("name", ClusterOperatorConsts.DEPLOYMENT_NAME)
-                        .endMetadata()
-                        .withNewSpec()
-                            .withServiceAccountName(ClusterOperatorConsts.DEPLOYMENT_NAME)
-                            .addNewContainer()
-                                .withName(ClusterOperatorConsts.DEPLOYMENT_NAME)
-                                .withImage(TestUtils.changeOrgAndTag(ClusterOperatorConsts.STRIMZI_IMAGE))
-                                .withImagePullPolicy(ClusterOperatorConsts.IMAGE_PULL_POLICY)
-                                // Default images
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.ZOOKEEPER_IMAGE), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TOPIC_OPERATOR_IMAGE), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.USER_OPERATOR_IMAGE), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.KAFKA_INIT_IMAGE), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_ZOOKEEPER_IMAGE), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_KAFKA_IMAGE), null))
-                                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_ENTITY_OPERATOR_IMAGE), null))
-                                // Kafka images
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_IMAGES), null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_CONNECT_IMAGES), null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_CONNECT_S2I_IMAGES), null))
-                                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_MIRROR_MAKER_IMAGES), null))
-                                // Other envs
-                                .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespaces, null))
-                                .addToEnv(new EnvVar("FULL_RECONCILIATION_INTERVAL_MS", ClusterOperatorConsts.FULL_RECONCILIATION_INTERVAL_MS, null))
-                                .addToEnv(new EnvVar("OPERATION_TIMEOUT_MS", ClusterOperatorConsts.OPERATION_TIMEOUT_MS, null))
-                                .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", ClusterOperatorConsts.LOG_LEVEL, null))
-                                .withNewLivenessProbe()
-                                    .withNewHttpGet()
-                                        .withPath("/healthy")
-                                        .withPort(new IntOrString(ClusterOperatorConsts.DEFAULT_HEALTCHECK_PORT))
-                                    .endHttpGet()
-                                    .withInitialDelaySeconds(ClusterOperatorConsts.INITIAL_DELAY_SECCONDS)
-                                    .withNewPeriodSeconds(ClusterOperatorConsts.PERIOD_SECCONDS)
-                                .endLivenessProbe()
-                                .withNewReadinessProbe()
-                                    .withNewHttpGet()
-                                        .withPath("/ready")
-                                        .withPort(new IntOrString(ClusterOperatorConsts.DEFAULT_HEALTCHECK_PORT))
-                                    .endHttpGet()
-                                    .withInitialDelaySeconds(ClusterOperatorConsts.INITIAL_DELAY_SECCONDS)
-                                    .withNewPeriodSeconds(ClusterOperatorConsts.PERIOD_SECCONDS)
-                                .endReadinessProbe()
-                                .withNewResources()
-                                    .addToLimits("memory", new Quantity(ClusterOperatorConsts.LIMITS_MEMORY))
-                                    .addToLimits("cpu", new Quantity(ClusterOperatorConsts.LIMITS_CPU))
-                                    .addToRequests("memory", new Quantity(ClusterOperatorConsts.REQUESTS_MEMORY))
-                                    .addToRequests("cpu", new Quantity(ClusterOperatorConsts.REQUESTS_CPU))
-                                .endResources()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespace, null))
                             .endContainer()
                         .endSpec()
                     .endTemplate()
                 .endSpec();
-    }
-
-    DoneableDeployment clusterOperatorDefault(String namespace) {
-        DeploymentBuilder co = TestUtils.fromYaml("../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml", DeploymentBuilder.class);
-        co
-                .editSpec()
-                .editOrNewTemplate()
-                .editOrNewSpec()
-                .editFirstContainer()
-                .addToEnv(new EnvVar("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.ZOOKEEPER_IMAGE), null))
-                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TOPIC_OPERATOR_IMAGE), null))
-                .addToEnv(new EnvVar("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.USER_OPERATOR_IMAGE), null))
-                .addToEnv(new EnvVar("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.KAFKA_INIT_IMAGE), null))
-                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_ZOOKEEPER_IMAGE), null))
-                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_KAFKA_IMAGE), null))
-                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_ENTITY_OPERATOR_IMAGE), null))
-                // Kafka images
-                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_IMAGES), null))
-                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_CONNECT_IMAGES), null))
-                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_CONNECT_S2I_IMAGES), null))
-                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_MIRROR_MAKER_IMAGES), null))
-                // Other envs
-                .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespace, null))
-                .addToEnv(new EnvVar("FULL_RECONCILIATION_INTERVAL_MS", ClusterOperatorConsts.FULL_RECONCILIATION_INTERVAL_MS, null))
-                .addToEnv(new EnvVar("OPERATION_TIMEOUT_MS", ClusterOperatorConsts.OPERATION_TIMEOUT_MS, null))
-                .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", ClusterOperatorConsts.LOG_LEVEL, null))
-                .endContainer()
-                .endSpec()
-                .endTemplate()
-                .endSpec();
-
-//        return clusterOperator(defaultClusterOperator(namespace).build());
-        return clusterOperator(co.build());
     }
 
     DoneableDeployment clusterOperator(Deployment clusterOperator) {

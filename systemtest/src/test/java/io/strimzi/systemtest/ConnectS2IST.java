@@ -80,7 +80,7 @@ class ConnectS2IST extends AbstractST {
         LOGGER.info("Creating resources before the test class");
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        clusterOperatorResources.clusterOperatorDefault(NAMESPACE).done();
+        clusterOperatorResources.createDefaultClusterOperator(NAMESPACE).done();
 
         classResources = new Resources(namespacedClient());
         classResources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
