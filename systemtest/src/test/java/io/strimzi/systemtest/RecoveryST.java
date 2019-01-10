@@ -191,7 +191,7 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Creating resources before the test class");
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        clusterOperatorResources.createDefaultClusterOperator(NAMESPACE).done();
+        testClassResources.defaultCLusterOperator(NAMESPACE).done();
 
         classResources = new Resources(namespacedClient());
         classResources().kafkaEphemeral(CLUSTER_NAME, 1).done();

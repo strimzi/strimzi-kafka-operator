@@ -16,15 +16,13 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.fabric8.openshift.client.NamespacedOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
@@ -76,13 +74,13 @@ public class Resources {
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
 
-    private final NamespacedOpenShiftClient client;
+    private final NamespacedKubernetesClient client;
 
-    Resources(NamespacedOpenShiftClient client) {
+    Resources(NamespacedKubernetesClient client) {
         this.client = client;
     }
 
-    private NamespacedOpenShiftClient client() {
+    private NamespacedKubernetesClient client() {
         return client;
     }
 
@@ -92,7 +90,7 @@ public class Resources {
 
     // This logic is necessary only for the deletion of resources with `cascading: true`
     private <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return new CustomResourceOperationsImpl<T, L, D>(((DefaultOpenShiftClient) client()).getHttpClient(), client().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
+        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) client()).getHttpClient(), client().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
     }
 
     private MixedOperation<KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnect() {
@@ -601,7 +599,7 @@ public class Resources {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
 
-    DoneableDeployment createDefaultClusterOperator(String namespace) {
+    DoneableDeployment defaultCLusterOperator(String namespace) {
         return clusterOperator(getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG))
                 .withApiVersion("apps/v1")
                 .editSpec()
@@ -639,21 +637,23 @@ public class Resources {
         });
     }
 
-    private KubernetesRoleBindingBuilder defaultKubernetesRoleBinding(String name, String roleRef, String namespace) {
-        LOGGER.info("Creating RoleBinding for {} in namespace {} with roleRef {}", name, namespace, roleRef);
-        return new KubernetesRoleBindingBuilder()
-                .withApiVersion("rbac.authorization.k8s.io/v1")
-                .withKind("RoleBinding")
-                .withNewMetadata()
-                    .withName(name)
-                    .addToLabels("app", "strimzi")
-                .endMetadata()
-                .addNewSubject("", "ServiceAccount", "strimzi-cluster-operator", namespace)
-                .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole", roleRef);
+    KubernetesRoleBinding getRoleBindingFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, KubernetesRoleBinding.class);
     }
 
-    DoneableKubernetesRoleBinding kubernetesRoleBinding(String name, String roleRef, String namespace, String clientNamespace) {
-        return kubernetesRoleBinding(defaultKubernetesRoleBinding(name, roleRef, namespace).build(), clientNamespace);
+    KubernetesClusterRoleBinding getClusterRoleBindingFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, KubernetesClusterRoleBinding.class);
+    }
+
+    DoneableKubernetesRoleBinding defaultKubernetesRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+        LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
+
+        return kubernetesRoleBinding(getRoleBindingFromYaml(yamlPath), namespace)
+                .withApiVersion("rbac.authorization.k8s.io/v1")
+                .editFirstSubject()
+                .withNamespace(namespace)
+                .endSubject();
+
     }
 
     DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String namespace) {
@@ -662,21 +662,15 @@ public class Resources {
         return new DoneableKubernetesRoleBinding(roleBinding);
     }
 
-    private KubernetesClusterRoleBindingBuilder defaultKubernetesClusterRoleBinding(String name, String roleRef, String namespace) {
-        LOGGER.info("Creating ClusterRoleBinding for {} in namespace {} with roleRef {}", name, namespace, roleRef);
-        return new KubernetesClusterRoleBindingBuilder()
-                .withApiVersion("rbac.authorization.k8s.io/v1")
-                .withKind("ClusterRoleBinding")
-                .withNewMetadata()
-                    .withName(name)
-                    .addToLabels("app", "strimzi")
-                .endMetadata()
-                .addNewSubject("", "ServiceAccount", "strimzi-cluster-operator", namespace)
-                .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole", roleRef);
-    }
+    DoneableKubernetesClusterRoleBinding defaultKubernetesClusterRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+        LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
 
-    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(String name, String roleRef, String namespace, String clientNamespace) {
-        return kubernetesClusterRoleBinding(defaultKubernetesClusterRoleBinding(name, roleRef, namespace).build(), clientNamespace);
+        return kubernetesClusterRoleBinding(getClusterRoleBindingFromYaml(yamlPath), namespace)
+                .withApiVersion("rbac.authorization.k8s.io/v1")
+                .editFirstSubject()
+                    .withNamespace(namespace)
+                .endSubject();
+
     }
 
     DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String namespace) {

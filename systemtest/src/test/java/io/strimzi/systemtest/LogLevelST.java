@@ -152,7 +152,7 @@ class LogLevelST extends AbstractST {
         LOGGER.info("Create resources for the tests");
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        clusterOperatorResources.createDefaultClusterOperator(NAMESPACE).done();
+        testClassResources.defaultCLusterOperator(NAMESPACE).done();
 
         testClass = testInfo.getTestClass().get().getSimpleName();
         operationID = startDeploymentMeasuring();

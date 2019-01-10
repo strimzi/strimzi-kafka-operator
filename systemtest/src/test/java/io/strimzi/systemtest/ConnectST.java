@@ -243,7 +243,7 @@ class ConnectST extends AbstractST {
 
         String connectVersion = Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
         if (connectVersion == null) {
-            connectVersion = "2.0.0";
+            connectVersion = "2.1.0";
         }
 
         assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), connectImageName);
@@ -265,7 +265,7 @@ class ConnectST extends AbstractST {
         LOGGER.info("Creating resources before the test class");
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        clusterOperatorResources.createDefaultClusterOperator(NAMESPACE).done();
+        testClassResources.defaultCLusterOperator(NAMESPACE).done();
 
         classResources = new Resources(namespacedClient());
 

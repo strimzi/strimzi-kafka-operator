@@ -660,7 +660,7 @@ class KafkaST extends AbstractST {
             String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "kafka");
             String kafkaVersion = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getVersion();
             if (kafkaVersion == null) {
-                kafkaVersion = "2.0.0";
+                kafkaVersion = "2.1.0";
             }
             assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), imgFromPod);
             imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "tls-sidecar");
@@ -965,6 +965,6 @@ class KafkaST extends AbstractST {
     static void createClusterOperator() {
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        clusterOperatorResources.createDefaultClusterOperator(NAMESPACE).done();
+        testClassResources.defaultCLusterOperator(NAMESPACE).done();
     }
 }

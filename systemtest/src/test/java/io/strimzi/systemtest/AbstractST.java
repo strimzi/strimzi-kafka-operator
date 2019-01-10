@@ -20,9 +20,9 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.fabric8.openshift.client.NamespacedOpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
@@ -111,17 +111,17 @@ public abstract class AbstractST {
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
 
     public static KubeClusterResource cluster = new KubeClusterResource();
-    protected static DefaultOpenShiftClient client = new DefaultOpenShiftClient();
+    protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
     static KubeClient<?> kubeClient = cluster.client();
 
     Resources resources;
-    static Resources clusterOperatorResources;
+    static Resources testClassResources;
     static String operationID;
     static String testClass;
     static String testName;
     Random rng = new Random();
 
-    protected static NamespacedOpenShiftClient namespacedClient() {
+    protected static NamespacedKubernetesClient namespacedClient() {
         return client.inNamespace(kubeClient.namespace());
     }
 
@@ -400,7 +400,7 @@ public abstract class AbstractST {
 
     protected static void createClusterOperatorResources() {
         LOGGER.info("Creating cluster operator resources");
-        clusterOperatorResources = new Resources(namespacedClient());
+        testClassResources = new Resources(namespacedClient());
     }
 
     protected void deleteResources() throws Exception {
@@ -412,8 +412,8 @@ public abstract class AbstractST {
 
     protected static void deleteClusterOperatorResources() {
         LOGGER.info("Deleting cluster operator resources after the test");
-        clusterOperatorResources.deleteResources();
-        clusterOperatorResources = null;
+        testClassResources.deleteResources();
+        testClassResources = null;
     }
 
     Resources resources() {
@@ -970,13 +970,13 @@ public abstract class AbstractST {
     }
 
     private class LogCollector {
-        NamespacedOpenShiftClient client;
+        NamespacedKubernetesClient client;
         String namespace;
         File logDir;
         File configMapDir;
         File eventsDir;
 
-        private LogCollector(NamespacedOpenShiftClient client, File logDir) {
+        private LogCollector(NamespacedKubernetesClient client, File logDir) {
             this.client = client;
             this.namespace = client.getNamespace();
             this.logDir = logDir;
@@ -1058,17 +1058,22 @@ public abstract class AbstractST {
         }
     }
 
+    /**
+     * Method for apply Strimzi cluster operator specific Role and CLusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO is deployed
+     * @param clientNamespace namespace, where bindings should be deployed
+     */
     static void applyRoleBindings(String namespace, String clientNamespace) {
         // 020-RoleBinding
-        clusterOperatorResources.kubernetesRoleBinding("strimzi-cluster-operator", "strimzi-cluster-operator-namespaced", namespace, clientNamespace);
+        testClassResources.defaultKubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
         // 021-ClusterRoleBinding
-        clusterOperatorResources.kubernetesClusterRoleBinding("strimzi-cluster-operator", "strimzi-cluster-operator-global", namespace, clientNamespace);
+        testClassResources.defaultKubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
         // 030-ClusterRoleBinding
-        clusterOperatorResources.kubernetesClusterRoleBinding("strimzi-cluster-operator-kafka-broker-delegation", "strimzi-kafka-broker", namespace, clientNamespace);
+        testClassResources.defaultKubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, clientNamespace);
         // 031-RoleBinding
-        clusterOperatorResources.kubernetesRoleBinding("strimzi-cluster-operator-entity-operator-delegation", "strimzi-entity-operator", namespace, clientNamespace);
+        testClassResources.defaultKubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-entity-operator-delegation.yaml", namespace, clientNamespace);
         // 032-RoleBinding
-        clusterOperatorResources.kubernetesRoleBinding("strimzi-cluster-operator-topic-operator-delegation", "strimzi-topic-operator", namespace, clientNamespace);
+        testClassResources.defaultKubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-topic-operator-delegation.yaml", namespace, clientNamespace);
     }
 
     @BeforeEach
@@ -1084,6 +1089,6 @@ public abstract class AbstractST {
 
     @AfterAll
     static void deleteClusterResources() {
-        clusterOperatorResources.deleteResources();
+        testClassResources.deleteResources();
     }
 }

@@ -54,6 +54,6 @@ class HelmChartST extends AbstractST {
     static void createClusterOperator() {
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
-        clusterOperatorResources.createDefaultClusterOperator(NAMESPACE).done();
+        testClassResources.defaultCLusterOperator(NAMESPACE).done();
     }
 }
