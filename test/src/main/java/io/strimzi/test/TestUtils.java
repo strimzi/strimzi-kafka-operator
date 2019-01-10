@@ -255,6 +255,7 @@ public final class TestUtils {
 
     public static <T> T fromYaml(String resource, Class<T> c, boolean ignoreUnknownProperties) {
         URL url = c.getResource(resource);
+        LOGGER.info(url.toExternalForm());
         if (url == null) {
             return null;
         }

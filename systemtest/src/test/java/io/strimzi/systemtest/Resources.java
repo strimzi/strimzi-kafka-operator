@@ -4,8 +4,10 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.builder.Predicate;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -58,6 +60,7 @@ import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -670,7 +673,36 @@ public class Resources {
     }
 
     DoneableDeployment clusterOperatorDefault(String namespace) {
-        return clusterOperator(defaultClusterOperator(namespace).build());
+        DeploymentBuilder co = TestUtils.fromYaml("../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml", DeploymentBuilder.class);
+        co
+                .editSpec()
+                .editOrNewTemplate()
+                .editOrNewSpec()
+                .editFirstContainer()
+                .addToEnv(new EnvVar("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.ZOOKEEPER_IMAGE), null))
+                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TOPIC_OPERATOR_IMAGE), null))
+                .addToEnv(new EnvVar("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.USER_OPERATOR_IMAGE), null))
+                .addToEnv(new EnvVar("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.KAFKA_INIT_IMAGE), null))
+                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_ZOOKEEPER_IMAGE), null))
+                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_KAFKA_IMAGE), null))
+                .addToEnv(new EnvVar("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", TestUtils.changeOrgAndTag(ClusterOperatorConsts.TLS_SIDECAR_ENTITY_OPERATOR_IMAGE), null))
+                // Kafka images
+                .addToEnv(new EnvVar("STRIMZI_KAFKA_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_IMAGES), null))
+                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_CONNECT_IMAGES), null))
+                .addToEnv(new EnvVar("STRIMZI_KAFKA_CONNECT_S2I_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_CONNECT_S2I_IMAGES), null))
+                .addToEnv(new EnvVar("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", TestUtils.changeOrgAndTagInImageMap(ClusterOperatorConsts.KAFKA_MIRROR_MAKER_IMAGES), null))
+                // Other envs
+                .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespace, null))
+                .addToEnv(new EnvVar("FULL_RECONCILIATION_INTERVAL_MS", ClusterOperatorConsts.FULL_RECONCILIATION_INTERVAL_MS, null))
+                .addToEnv(new EnvVar("OPERATION_TIMEOUT_MS", ClusterOperatorConsts.OPERATION_TIMEOUT_MS, null))
+                .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", ClusterOperatorConsts.LOG_LEVEL, null))
+                .endContainer()
+                .endSpec()
+                .endTemplate()
+                .endSpec();
+
+//        return clusterOperator(defaultClusterOperator(namespace).build());
+        return clusterOperator(co.build());
     }
 
     DoneableDeployment clusterOperator(Deployment clusterOperator) {
