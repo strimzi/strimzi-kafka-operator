@@ -180,6 +180,14 @@ public interface KubeClient<K extends KubeClient<K>> {
     String logs(String pod, String container);
 
     /**
+     * Get a log for resource by {@code resourceType} and {@code resourceName}
+     * @param resourceType The type of resource
+     * @param resourceName The name of resource
+     * @return Log messages for resource
+     */
+    String logsForResource(String resourceType, String resourceName);
+
+    /**
      * @param resourceType The type of resource
      * @param resourceName The name of resource
      * @param sinceSeconds Return logs newer than a relative duration like 5s, 2m, or 3h.

@@ -5,7 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -35,6 +34,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -66,13 +65,13 @@ import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @ExtendWith(StrimziExtension.class)
@@ -90,6 +89,8 @@ class KafkaST extends AbstractST {
     private static final long POLL_INTERVAL_SECRET_CREATION = 5_000;
     private static final long TIMEOUT_FOR_SECRET_CREATION = 360_000;
     private static final long TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION = 450_000;
+    private static final long WAIT_FOR_ROLLING_UPDATE_INTERVAL = Duration.ofSeconds(5).toMillis();
+    private static final long WAIT_FOR_ROLLING_UPDATE_TIMEOUT = Duration.ofMinutes(5).toMillis();
 
     @Test
     @Tag(FLAKY)
@@ -987,26 +988,56 @@ class KafkaST extends AbstractST {
 
     @Test
     @Tag(REGRESSION)
-    void testTriggeringRollingUpdateForKafka() {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+    void testManualTriggeringRollingUpdate() {
+        resources().kafkaEphemeral(CLUSTER_NAME, 1).done();
 
-        // get pods for Kafka
-        Stream<Pod> podStream = client.pods().inNamespace(NAMESPACE).list().getItems().stream().filter(
-                p -> !p.getMetadata().getName().startsWith(CLUSTER_NAME + "kafka"));
+        // rolling update for kafka
+        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
+        // set annotation to trigger Kafka rolling update
+        client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).cascading(false).edit()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .endMetadata().done();
 
-        // trigger Kafka rolling update
-        client.apps().statefulSets().inNamespace(NAMESPACE).withName("my-cluster-kafka").edit().editMetadata().addToAnnotations("strimzi.io/manual-rolling-update", "true").endMetadata().done();
+        // check annotation to trigger rolling update
+        assertTrue(Boolean.parseBoolean(client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
+
+        // wait when annotation will be removed
+        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+            () -> !client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
         // wait for pod deletion
         podStream.forEach(
                 p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName())
         );
 
-        // wait for Kafka redeployment
-        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
+        // check rolling update messages in CO log
+        String coLog = kubeClient.logsForResource("deployment", "strimzi-cluster-operator");
+        assertThat(coLog, containsString("Rolling Kafka pod " + kafkaClusterName(CLUSTER_NAME) + "-0" + " due to manual rolling update"));
 
-        // Check that annotation was removed
-        assertFalse(client.apps().statefulSets().inNamespace(NAMESPACE).withName("my-cluster-kafka").get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
+
+        // rolling update for zookeeper
+        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
+        // set annotation to trigger Zookeeper rolling update
+        client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).cascading(false).edit()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .endMetadata().done();
+
+        // check annotation to trigger rolling update
+        assertTrue(Boolean.parseBoolean(client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
+
+        // wait when annotation will be removed
+        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+            () -> !client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
+
+        // check rolling update messages in CO log
+        coLog = kubeClient.logsForResource("deployment", "strimzi-cluster-operator");
+        assertThat(coLog, containsString("Rolling Zookeeper pod " + zookeeperClusterName(CLUSTER_NAME) + "-0" + " to manual rolling update"));
     }
 
     @BeforeEach

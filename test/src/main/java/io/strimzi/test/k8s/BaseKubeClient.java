@@ -411,6 +411,11 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
+    public String logsForResource(String resourceType, String resourceName) {
+        return Exec.exec(namespacedCommand("logs", resourceType + "/" + resourceName)).out();
+    }
+
+    @Override
     public String searchInLog(String resourceType, String resourceName, long sinceSeconds, String... grepPattern) {
         try {
             return Exec.exec("bash", "-c", join(" ", namespacedCommand("logs", resourceType + "/" + resourceName, "--since=" + String.valueOf(sinceSeconds) + "s",
