@@ -57,10 +57,12 @@ import org.junit.jupiter.api.TestInfo;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -71,6 +73,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
+import static io.strimzi.test.StrimziExtension.CO_INSTALL_DIR;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -1076,9 +1079,9 @@ public abstract class AbstractST {
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+            List<Pod> pods = client.pods().inNamespace(namespace).list().getItems().stream().filter(
                 p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
-            podStream.forEach(
+            pods.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
 
@@ -1097,13 +1100,29 @@ public abstract class AbstractST {
      * @param clientNamespaces list of namespaces where Bindings should be deployed to
      */
     void recreateTestEnv(String namespace, List<String> clientNamespaces) {
+        LOGGER.info("There are some unexpected pods! Cleanup is not finished properly! Wait till env will be recreated.");
+        testClassResources.deleteResources();
         kubeClient.namespace(DEFAULT_NAMESPACE);
         kubeClient.deleteNamespace(namespace);
         kubeClient.waitForResourceDeletion("Namespace", namespace);
+        kubeClient.createNamespace(namespace);
+        kubeClient.namespace(namespace);
+
+        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
+                !file.getName().matches(".*(Binding|Deployment)-.*")
+        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
+        // Here we record the state of the cluster
+        for (Map.Entry<File, String> entry : yamls.entrySet()) {
+            LOGGER.info("creating possibly modified version of {}", entry.getKey());
+            kubeClient.clientWithAdmin().applyContent(entry.getValue());
+        }
+
+        testClassResources = new Resources(namespacedClient());
 
         applyRoleBindings(namespace, clientNamespaces);
         // 050-Deployment
         testClassResources.clusterOperator(namespace).done();
+        LOGGER.info("Env recreated.");
     }
 
     /**
