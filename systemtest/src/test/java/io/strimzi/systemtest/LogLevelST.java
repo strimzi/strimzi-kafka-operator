@@ -156,10 +156,9 @@ class LogLevelST extends AbstractST {
 
         testClass = testInfo.getTestClass().get().getSimpleName();
         operationID = startDeploymentMeasuring();
-        classResources = new Resources(namespacedClient());
         String targetKafka = CLUSTER_NAME + "-target";
 
-        classResources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .withNewInlineLoggingLogging()
@@ -186,16 +185,16 @@ class LogLevelST extends AbstractST {
             .endSpec()
             .done();
 
-        classResources().kafkaEphemeral(targetKafka, 3).done();
+        testClassResources.kafkaEphemeral(targetKafka, 3).done();
 
-        classResources().kafkaConnect(CLUSTER_NAME, 1)
+        testClassResources.kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLoggingLogging()
                     .withLoggers(CONNECT_LOGGERS)
                 .endInlineLoggingLogging()
             .endSpec().done();
 
-        classResources().kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafka, "my-group", 1, false)
+        testClassResources.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafka, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLoggingLogging()
                   .withLoggers(MIRROR_MAKER_LOGGERS)
