@@ -514,7 +514,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 [options="header"]
 |====
 |Field                  |Description
-|metadata        1.2+<.<|Metadata which should be applied to the resource.
+|metadata        1.2+<.<|Metadata which should be applied to the `PodDistruptionBugetTemplate` resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |maxUnavailable  1.2+<.<|Maximum number of unavailable pods to allow voluntary Pod eviction. A Pod eviction will only be allowed when "maxUnavailable" or fewer pods are unavailable after the eviction. Setting this value to 0 will prevent all voluntary evictions and the pods will need to be evicted manually. Defaults to 1.
 |integer

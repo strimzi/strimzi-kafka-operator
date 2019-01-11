@@ -48,6 +48,7 @@ When defined in a Kafka cluster, the `template` object can have the following fi
 `perPodService`:: Configures the per-Pod services used by clients connecting to the Kafka broker from outside {ProductPlatformName} to access individual brokers.
 `externalBootstrapRoute`:: Configures the bootstrap route used by clients connecting to the Kafka brokers from outside of {OpenShiftName} using {OpenShiftName} `Routes`.
 `perPodRoute`:: Configures the per-Pod routes used by clients connecting to the Kafka broker from outside {OpenShiftName} to access individual brokers using {OpenShiftName} `Routes`.
+`podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka broker `StatefulSet`.
 
 .Supported resources in Zookeeper cluster
 
@@ -57,6 +58,7 @@ When defined in a Zookeeper cluster, the `template` object can have the followin
 `pod`:: Configures the Zookeeper `Pods` created by the `StatefulSet`.
 `clientsService`:: Configures the service used by clients to access Zookeeper.
 `nodesService`:: Configures the headless service.
+`podDisruptionBudget`:: Configures the Pod Disruption Budget for Zookeeper `StatefulSet`.
 
 .Supported resources in Entity Operator
 
@@ -72,6 +74,7 @@ When used with Kafka Connect and Kafka Connect with Source2Image support , the t
 `deployment`:: Configures the Kafka Connect `Deployment`.
 `pod`:: Configures the Kafka Connect `Pods` created by the `Deployment`.
 `apiService`:: Configures the service used by the Kafka Connect REST API.
+`podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka Connect `Deployment`.
 
 .Supported resource in Kafka Mirror Maker
 
@@ -79,3 +82,4 @@ When used with Kafka Mirror Maker , the template object can have the following f
 
 `deployment`:: Configures the Kafka Mirror Maker `Deployment`.
 `pod`:: Configures the Kafka Mirror Maker `Pods` created by the `Deployment`.
+`podDisruptionBudget`:: Configures the Pod Disruption Budget for Kafka Mirror Maker `Deployment`.

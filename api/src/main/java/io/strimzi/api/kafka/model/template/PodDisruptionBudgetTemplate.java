@@ -35,7 +35,7 @@ public class PodDisruptionBudgetTemplate implements Serializable {
     private int maxUnavailable = 1;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metadata which should be applied to the resource.")
+    @Description("Metadata which should be applied to the `PodDistruptionBugetTemplate` resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;
