@@ -545,14 +545,17 @@ public abstract class Ca {
                 Instant expiryDate = cert.getNotAfter().toInstant();
                 remove = expiryDate.isBefore(Instant.now());
                 if (remove) {
-                    log.debug("The certificate (data.{}) in Secret expired {}; removing it", certName.replace(".", "\\.")), expiryDate);
+                    log.debug("The certificate (data.{}) in Secret expired {}; removing it",
+                            certName.replace(".", "\\."), expiryDate);
                 }
             } catch (CertificateException e) {
                 remove = true;
-                log.debug("The certificate (data.{}) in Secret is not an X.509 certificate; removing it", certName.replace(".", "\\."));
+                log.debug("The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
+                        certName.replace(".", "\\."));
             }
             if (remove) {
-                log.debug("Removing data.{} from Secret", certName.replace(".", "\\.")));
+                log.debug("Removing data.{} from Secret",
+                        certName.replace(".", "\\."));
                 iter.remove();
                 removed++;
             }
