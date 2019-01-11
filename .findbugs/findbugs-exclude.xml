@@ -16,5 +16,8 @@
   <Match>
     <Class name="~io\.fabric8\.kubernetes\.api\.model\.(Doneable).+(\$.*)?" />
   </Match>
+  <Match>
+    <Class name="~io\.strimzi\.test\.Extensions\.StrimziExtension.*" />
+  </Match>
 
 </FindBugsFilter>
