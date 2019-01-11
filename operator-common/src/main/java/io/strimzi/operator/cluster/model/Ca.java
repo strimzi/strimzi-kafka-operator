@@ -414,11 +414,11 @@ public abstract class Ca {
         RenewalType renewalType = RenewalType.NOOP;
         if (caKeySecret == null
                 || caKeySecret.getData().get(CA_KEY) == null) {
-            reason = "CA key secret " + caKeySecretName + " is missing or lacking the key " + CA_KEY;
+            reason = "CA key secret " + caKeySecretName + " is missing or lacking data." + CA_KEY.replace(".", "\\.");
             renewalType = RenewalType.CREATE;
         } else if (this.caCertSecret == null
                 || this.caCertSecret.getData().get(CA_CRT) == null) {
-            reason = "CA certificate secret " + caCertSecretName + " is missing or lacking the key " + CA_CRT;
+            reason = "CA certificate secret " + caCertSecretName + " is missing or lacking data." + CA_CRT.replace(".", "\\.");
             renewalType = RenewalType.RENEW_CERT;
         } else if (this.caCertSecret.getMetadata() != null
                 && Annotations.booleanAnnotation(this.caCertSecret, ANNO_STRIMZI_IO_FORCE_RENEW, false)) {
@@ -458,21 +458,23 @@ public abstract class Ca {
         }
         if (!generateCa) {
             if (renewalType == RenewalType.RENEW_CERT) {
-                log.warn("The {} certificate in Secret {} in namespace {} needs to be renewed " +
+                log.warn("The certificate (data.{}) in Secret {} in namespace {} needs to be renewed " +
                                 "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
                                 "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                        CA_CRT, this.caCertSecretName, namespace, currentCert.getNotAfter());
+                        CA_CRT.replace(".", "\\."), this.caCertSecretName, namespace,
+                        currentCert.getNotAfter());
             } else if (renewalType == RenewalType.REPLACE_KEY) {
-                log.warn("The {} key in Secret {} in namespace {} needs to be renewed " +
+                log.warn("The private key (data.{}) in Secret {} in namespace {} needs to be renewed " +
                                 "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
                                 "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                        CA_KEY, this.caKeySecretName, namespace, currentCert.getNotAfter());
+                        CA_KEY.replace(".", "\\."), this.caKeySecretName, namespace,
+                        currentCert.getNotAfter());
             } else if (caCertSecret == null) {
                 log.warn("The certificate (data.{}) in Secret {} and the private key (data.{}) in Secret {} in namespace {} " +
                                 "needs to be configured with a Base64 encoded PEM-format certificate. " +
                                 "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                        CA_CRT, this.caCertSecretName,
-                        CA_KEY, this.caKeySecretName, namespace,
+                        CA_CRT.replace(".", "\\."), this.caCertSecretName,
+                        CA_KEY.replace(".", "\\."), this.caKeySecretName, namespace,
                         clusterName, namespace);
             }
         }
@@ -543,14 +545,14 @@ public abstract class Ca {
                 Instant expiryDate = cert.getNotAfter().toInstant();
                 remove = expiryDate.isBefore(Instant.now());
                 if (remove) {
-                    log.debug("{} in Secret expired {}; removing it", certName, expiryDate);
+                    log.debug("The certificate (data.{}) in Secret expired {}; removing it", certName.replace(".", "\\.")), expiryDate);
                 }
             } catch (CertificateException e) {
                 remove = true;
-                log.debug("{} in Secret is not an X.509 certificate; removing it", certName);
+                log.debug("The certificate (data.{}) in Secret is not an X.509 certificate; removing it", certName.replace(".", "\\."));
             }
             if (remove) {
-                log.debug("Removing {} from Secret", certName);
+                log.debug("Removing data.{} from Secret", certName.replace(".", "\\.")));
                 iter.remove();
                 removed++;
             }
@@ -574,7 +576,7 @@ public abstract class Ca {
         try {
             return x509Certificate(bytes);
         } catch (CertificateException e) {
-            throw new RuntimeException("Certificate in key " + key + " of Secret " + secret.getMetadata().getName(), e);
+            throw new RuntimeException("Certificate in data." + key.replace(".", "\\.") + " of Secret " + secret.getMetadata().getName(), e);
         }
     }
 

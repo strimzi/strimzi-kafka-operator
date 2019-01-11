@@ -365,12 +365,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (this.clientsCa.keyReplaced()) {
                 reason.add("trust new clients CA certificate signed by new key");
             }
-            if (this.clusterCa.certsRemoved()) {
-                reason.add("remove expired cluster CA certificate");
-            }
-            if (this.clientsCa.certsRemoved()) {
-                reason.add("remove expired clients CA certificate");
-            }
             if (!reason.isEmpty()) {
                 String reasons = reason.stream().collect(Collectors.joining(", "));
                 return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
