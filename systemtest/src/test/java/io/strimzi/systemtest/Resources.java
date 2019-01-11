@@ -607,7 +607,21 @@ public class Resources {
     }
 
     DeploymentBuilder defaultCLusterOperator(String namespace) {
-        return new DeploymentBuilder(getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG))
+
+        Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
+
+        List<EnvVar> envVars = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+
+
+        for (EnvVar envVar : envVars) {
+            if (envVar.getName().contains("IMAGE")) {
+                envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));
+            }
+        }
+
+        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
+
+        return new DeploymentBuilder(clusterOperator)
                 .withApiVersion("apps/v1")
                 .editSpec()
                     .withNewSelector()
@@ -617,6 +631,7 @@ public class Resources {
                         .editSpec()
                             .editFirstContainer()
                                 .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespace, null))
+                                .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", "DEBUG", null))
                             .endContainer()
                         .endSpec()
                     .endTemplate()
