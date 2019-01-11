@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -261,7 +262,7 @@ class ConnectST extends AbstractST {
     @BeforeAll
     static void createClassResources() {
         LOGGER.info("Creating resources before the test class");
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE, Collections.singletonList(NAMESPACE));
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 

@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -150,7 +151,7 @@ class LogLevelST extends AbstractST {
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         LOGGER.info("Create resources for the tests");
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE, Collections.singletonList(NAMESPACE));
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
@@ -207,10 +208,6 @@ class LogLevelST extends AbstractST {
     @AfterAll
     static void deleteClassResources() {
         TimeMeasuringSystem.stopOperation(operationID);
-    }
-
-    private static Resources classResources() {
-        return classResources;
     }
 
     private static String startDeploymentMeasuring() {
