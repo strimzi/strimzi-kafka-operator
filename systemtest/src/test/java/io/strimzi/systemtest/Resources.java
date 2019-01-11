@@ -614,8 +614,18 @@ public class Resources {
 
 
         for (EnvVar envVar : envVars) {
-            if (envVar.getName().contains("IMAGE")) {
-                envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));
+            switch (envVar.getName()) {
+                case "STRIMZI_LOG_LEVEL":
+                    envVar.setValue("DEBUG");
+                    break;
+                case "STRIMZI_NAMESPACE":
+                    envVar.setValue(namespace);
+                    envVar.setValueFrom(null);
+                    break;
+                default:
+                    if (envVar.getName().contains("IMAGE")) {
+                        envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));
+                    }
             }
         }
 
@@ -627,14 +637,6 @@ public class Resources {
                     .withNewSelector()
                         .addToMatchLabels("name", STRIMZI_DEPLOYMENT_NAME)
                     .endSelector()
-                    .editTemplate()
-                        .editSpec()
-                            .editFirstContainer()
-                                .addToEnv(new EnvVar("STRIMZI_NAMESPACE", namespace, null))
-                                .addToEnv(new EnvVar("STRIMZI_LOG_LEVEL", "DEBUG", null))
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
                 .endSpec();
     }
 
