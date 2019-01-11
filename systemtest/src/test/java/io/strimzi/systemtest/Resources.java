@@ -610,9 +610,12 @@ public class Resources {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
+        // Get env from config file
         List<EnvVar> envVars = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        // Get default CO image
+        String coImage = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
 
-
+        // Update images
         for (EnvVar envVar : envVars) {
             switch (envVar.getName()) {
                 case "STRIMZI_LOG_LEVEL":
@@ -623,12 +626,14 @@ public class Resources {
                     envVar.setValueFrom(null);
                     break;
                 default:
-                    if (envVar.getName().contains("IMAGE")) {
+                    if (envVar.getName().contains("STRIMZI_DEFAULT")) {
                         envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));
+                    } else if (envVar.getName().contains("IMAGES")) {
+                        envVar.setValue(TestUtils.changeOrgAndTagInImageMap(envVar.getValue()));
                     }
             }
         }
-
+        // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
@@ -637,6 +642,13 @@ public class Resources {
                     .withNewSelector()
                         .addToMatchLabels("name", STRIMZI_DEPLOYMENT_NAME)
                     .endSelector()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .withImage(TestUtils.changeOrgAndTag(coImage))
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
                 .endSpec();
     }
 
