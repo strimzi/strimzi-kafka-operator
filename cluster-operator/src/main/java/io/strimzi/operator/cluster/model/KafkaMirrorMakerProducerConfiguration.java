@@ -7,9 +7,9 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static java.util.Arrays.asList;
 
@@ -19,12 +19,12 @@ import static java.util.Arrays.asList;
 public class KafkaMirrorMakerProducerConfiguration extends AbstractConfiguration {
 
     private static final List<String> FORBIDDEN_OPTIONS;
-    private static final Properties DEFAULTS;
+    private static final Map<String, String> DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(KafkaMirrorMakerProducerSpec.FORBIDDEN_PREFIXES.split(", "));
 
-        DEFAULTS = new Properties();
+        DEFAULTS = new HashMap<>();
     }
 
     /**

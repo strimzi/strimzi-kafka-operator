@@ -4,8 +4,9 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.vertx.core.json.JsonObject;
@@ -18,50 +19,55 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AbstractConfigurationTest {
-    final private String defaultConfiguration = "default.option=hello" + LINE_SEPARATOR;
+
+    static OrderedProperties createProperties(String... keyValues) {
+        OrderedProperties properties = new OrderedProperties();
+        for (int i = 0; i < keyValues.length; i += 2) {
+            properties.addPair(keyValues[i], keyValues[i + 1]);
+        }
+        return properties;
+    }
+
+    OrderedProperties createWithDefaults(String... keyValues) {
+        return createProperties(keyValues).addMapPairs(defaultConfiguration.asMap());
+    }
+
+    final private OrderedProperties defaultConfiguration = createProperties("default.option", "hello");
 
     @Test
     public void testConfigurationStringDefaults()  {
         AbstractConfiguration config = new TestConfiguration("");
-        assertEquals(defaultConfiguration, config.getConfiguration());
+        assertEquals(defaultConfiguration, config.asOrderedProperties());
     }
 
     @Test
     public void testConfigurationStringOverridingDefaults()  {
-        AbstractConfiguration config = new TestConfiguration("default.option=world" + LINE_SEPARATOR);
-        assertEquals("default.option=world" + LINE_SEPARATOR, config.getConfiguration());
+        AbstractConfiguration config = new TestConfiguration("default.option=world");
+        assertEquals(createProperties("default.option", "world"), config.asOrderedProperties());
     }
 
     @Test
     public void testConfigurationStringOverridingDefaultsWithMore()  {
         AbstractConfiguration config = new TestConfiguration("default.option=world" + LINE_SEPARATOR + "var1=aaa" + LINE_SEPARATOR);
-
-        String expectedConfiguration = "default.option=world" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
-
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(createProperties("default.option", "world", "var1", "aaa"), config.asOrderedProperties());
     }
 
     @Test
     public void testDefaultsFromJson()  {
         AbstractConfiguration config = new TestConfiguration(new JsonObject());
-        assertEquals(defaultConfiguration, config.getConfiguration());
+        assertEquals(defaultConfiguration, config.asOrderedProperties());
     }
 
     @Test
     public void testJsonOverridingDefaults()  {
         AbstractConfiguration config = new TestConfiguration(new JsonObject().put("default.option", "world"));
-        assertEquals("default.option=world" + LINE_SEPARATOR, config.getConfiguration());
+        assertEquals(createProperties("default.option", "world"), config.asOrderedProperties());
     }
 
     @Test
     public void testJsonOverridingDefaultsWithMore()  {
         AbstractConfiguration config = new TestConfiguration(new JsonObject().put("default.option", "world").put("var1", "aaa"));
-
-        String expectedConfiguration = "default.option=world" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
-
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(createProperties("default.option", "world", "var1", "aaa"), config.asOrderedProperties());
     }
 
     @Test
@@ -83,25 +89,26 @@ public class AbstractConfigurationTest {
         String configuration = "var1=aaa" + LINE_SEPARATOR +
                 "var2=bbb" + LINE_SEPARATOR +
                 "var3=ccc" + LINE_SEPARATOR;
-        String expectedConfiguration = defaultConfiguration +
-                "var3=ccc" + LINE_SEPARATOR +
-                "var2=bbb" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
+        OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
+                "var2", "bbb",
+                "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(expectedConfiguration, config.asOrderedProperties());
     }
 
     @Test
     public void testNonEmptyJson() {
-        JsonObject configuration = new JsonObject().put("var1", "aaa").put("var2", "bbb").put("var3", "ccc");
-        String expectedConfiguration = defaultConfiguration +
-                "var3=ccc" + LINE_SEPARATOR +
-                "var2=bbb" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
+        JsonObject configuration = new JsonObject()
+                .put("var1", "aaa")
+                .put("var2", "bbb")
+                .put("var3", "ccc");
+        OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
+                "var2", "bbb",
+                "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(expectedConfiguration, config.asOrderedProperties());
     }
 
     @Test
@@ -110,25 +117,27 @@ public class AbstractConfigurationTest {
                 "var2=bbb" + LINE_SEPARATOR +
                 "var3=ccc" + LINE_SEPARATOR +
                 "var2=ddd" + LINE_SEPARATOR;
-        String expectedConfiguration = defaultConfiguration +
-                "var3=ccc" + LINE_SEPARATOR +
-                "var2=ddd" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
+        OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
+                "var2", "ddd",
+                "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(expectedConfiguration, config.asOrderedProperties());
     }
 
     @Test
     public void testJsonWithDuplicates() {
-        JsonObject configuration = new JsonObject().put("var1", "aaa").put("var2", "bbb").put("var3", "ccc").put("var2", "ddd");
-        String expectedConfiguration = defaultConfiguration +
-                "var3=ccc" + LINE_SEPARATOR +
-                "var2=ddd" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
+        JsonObject configuration = new JsonObject()
+                .put("var1", "aaa")
+                .put("var2", "bbb")
+                .put("var3", "ccc")
+                .put("var2", "ddd");
+        OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
+                "var2", "ddd",
+                "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(expectedConfiguration, config.asOrderedProperties());
     }
 
     @Test
@@ -137,13 +146,12 @@ public class AbstractConfigurationTest {
                 "var2=bbb" + LINE_SEPARATOR +
                 "var3=ccc" + LINE_SEPARATOR +
                 "forbidden.option=ddd" + LINE_SEPARATOR;
-        String expectedConfiguration = defaultConfiguration +
-                "var3=ccc" + LINE_SEPARATOR +
-                "var2=bbb" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
+        OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
+                "var2", "bbb",
+                "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(expectedConfiguration, config.asOrderedProperties());
     }
 
     @Test
@@ -152,42 +160,48 @@ public class AbstractConfigurationTest {
                 "var2=bbb" + LINE_SEPARATOR +
                 "var3=ccc" + LINE_SEPARATOR +
                 "FORBIDDEN.OPTION=ddd" + LINE_SEPARATOR;
-        String expectedConfiguration = defaultConfiguration +
-                "var3=ccc" + LINE_SEPARATOR +
-                "var2=bbb" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
+        OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
+                "var2", "bbb",
+                "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(expectedConfiguration, config.asOrderedProperties());
     }
 
     @Test
     public void testJsonWithForbiddenKeys() {
-        JsonObject configuration = new JsonObject().put("var1", "aaa").put("var2", "bbb").put("var3", "ccc").put("forbidden.option", "ddd");
-        String expectedConfiguration = defaultConfiguration +
-                "var3=ccc" + LINE_SEPARATOR +
-                "var2=bbb" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
+        JsonObject configuration = new JsonObject().put("var1", "aaa")
+                .put("var2", "bbb")
+                .put("var3", "ccc")
+                .put("forbidden.option", "ddd");
+        OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
+                "var2", "bbb",
+                "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(expectedConfiguration, config.asOrderedProperties());
     }
 
     @Test
     public void testJsonWithForbiddenKeysPrefix() {
-        JsonObject configuration = new JsonObject().put("var1", "aaa").put("var2", "bbb").put("var3", "ccc").put("forbidden.option.first", "ddd").put("forbidden.option.second", "ddd");
-        String expectedConfiguration = defaultConfiguration +
-                "var3=ccc" + LINE_SEPARATOR +
-                "var2=bbb" + LINE_SEPARATOR +
-                "var1=aaa" + LINE_SEPARATOR;
+        JsonObject configuration = new JsonObject().put("var1", "aaa")
+                .put("var2", "bbb")
+                .put("var3", "ccc")
+                .put("forbidden.option.first", "ddd")
+                .put("forbidden.option.second", "ddd");
+        OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
+                "var2", "bbb",
+                "var1", "aaa");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(expectedConfiguration, config.asOrderedProperties());
     }
 
     @Test
     public void testJsonWithDifferentTypes() {
-        JsonObject configuration = new JsonObject().put("var1", 1).put("var2", "bbb").put("var3", new JsonObject().put("xxx", "yyy"));
+        JsonObject configuration = new JsonObject().put("var1", 1)
+                .put("var2", "bbb")
+                .put("var3", new JsonObject().put("xxx", "yyy"));
         try {
             new TestConfiguration(configuration);
             fail("Expected it to throw an exception");
@@ -199,24 +213,23 @@ public class AbstractConfigurationTest {
     @Test
     public void testWithHostPort() {
         JsonObject configuration = new JsonObject().put("option.with.port", "my-server:9092");
-        String expectedConfiguration = defaultConfiguration +
-                "option.with.port=my-server\\:9092" + LINE_SEPARATOR;
+        OrderedProperties expectedConfiguration = createWithDefaults("option.with.port", "my-server:9092");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
-        assertEquals(expectedConfiguration, config.getConfiguration());
+        assertEquals(expectedConfiguration, config.asOrderedProperties());
     }
 }
 
 class TestConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_OPTIONS;
-    private static final Properties DEFAULTS;
+    private static final Map<String, String> DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(
                 "forbidden.option");
 
-        DEFAULTS = new Properties();
-        DEFAULTS.setProperty("default.option", "hello");
+        DEFAULTS = new HashMap<>();
+        DEFAULTS.put("default.option", "hello");
     }
 
     /**
