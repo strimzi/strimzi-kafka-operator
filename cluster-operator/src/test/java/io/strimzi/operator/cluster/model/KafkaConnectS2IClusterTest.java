@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
@@ -73,27 +72,20 @@ public class KafkaConnectS2IClusterTest {
     private final String configurationJson = "{\"foo\":\"bar\"}";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
-    private final String expectedConfiguration = "group.id=connect-cluster" + LINE_SEPARATOR +
-            "key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
-            "internal.key.converter.schemas.enable=false" + LINE_SEPARATOR +
-            "value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
-            "config.storage.topic=connect-cluster-configs" + LINE_SEPARATOR +
-            "status.storage.topic=connect-cluster-status" + LINE_SEPARATOR +
-            "offset.storage.topic=connect-cluster-offsets" + LINE_SEPARATOR +
-            "foo=bar" + LINE_SEPARATOR +
-            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
-            "internal.value.converter.schemas.enable=false" + LINE_SEPARATOR +
-            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR;
-    private final String defaultConfiguration = "group.id=connect-cluster" + LINE_SEPARATOR +
-            "key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
-            "internal.key.converter.schemas.enable=false" + LINE_SEPARATOR +
-            "value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
-            "config.storage.topic=connect-cluster-configs" + LINE_SEPARATOR +
-            "status.storage.topic=connect-cluster-status" + LINE_SEPARATOR +
-            "offset.storage.topic=connect-cluster-offsets" + LINE_SEPARATOR +
-            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR +
-            "internal.value.converter.schemas.enable=false" + LINE_SEPARATOR +
-            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter" + LINE_SEPARATOR;
+    private final OrderedProperties defaultConfiguration = new OrderedProperties()
+            .addPair("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter")
+            .addPair("config.storage.topic", "connect-cluster-configs")
+            .addPair("group.id", "connect-cluster")
+            .addPair("status.storage.topic", "connect-cluster-status")
+            .addPair("internal.value.converter.schemas.enable", "false")
+            .addPair("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter")
+            .addPair("offset.storage.topic", "connect-cluster-offsets")
+            .addPair("value.converter", "org.apache.kafka.connect.json.JsonConverter")
+            .addPair("internal.key.converter.schemas.enable", "false")
+            .addPair("key.converter", "org.apache.kafka.connect.json.JsonConverter");
+    private final OrderedProperties expectedConfiguration = new OrderedProperties()
+            .addMapPairs(defaultConfiguration.asMap())
+            .addPair("foo", "bar");
     private final boolean insecureSourceRepo = false;
 
 
@@ -132,7 +124,7 @@ public class KafkaConnectS2IClusterTest {
 
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<EnvVar>();
-        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration).build());
+        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION).withValue(expectedConfiguration.asPairs()).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_OPTS).withValue(KafkaConnectCluster.DEFAULT_KAFKA_GC_LOGGING).build());
@@ -151,7 +143,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessTimeout);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessInitialDelay);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.livenessTimeout);
-        assertEquals(defaultConfiguration, kc.getConfiguration().getConfiguration());
+        assertEquals(defaultConfiguration, kc.getConfiguration().asOrderedProperties());
         assertFalse(kc.isInsecureSourceRepository());
     }
 
@@ -164,7 +156,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(healthTimeout, kc.readinessTimeout);
         assertEquals(healthDelay, kc.livenessInitialDelay);
         assertEquals(healthTimeout, kc.livenessTimeout);
-        assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
+        assertEquals(expectedConfiguration, kc.getConfiguration().asOrderedProperties());
         assertEquals(bootstrapServers, kc.bootstrapServers);
         assertFalse(kc.isInsecureSourceRepository());
     }

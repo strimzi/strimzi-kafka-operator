@@ -9,10 +9,9 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptyList;
 
 /**
  * Class for handling Kafka configuration passed by the user
@@ -36,7 +35,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
      *                      pairs.
      */
     public KafkaConfiguration(String configuration) {
-        super(configuration, FORBIDDEN_OPTIONS);
+        this(configuration, FORBIDDEN_OPTIONS);
     }
 
     /**
@@ -49,8 +48,8 @@ public class KafkaConfiguration extends AbstractConfiguration {
         super(jsonOptions, FORBIDDEN_OPTIONS);
     }
 
-    private KafkaConfiguration(Properties properties) {
-        super(properties);
+    private KafkaConfiguration(String configuration, List<String> forbiddenOptions) {
+        super(configuration, forbiddenOptions);
     }
 
     /**
@@ -59,6 +58,6 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * @return The KafkaConfiguration
      */
     public static KafkaConfiguration unvalidated(String string) {
-        return new KafkaConfiguration(parseProperties(string, emptyMap()));
+        return new KafkaConfiguration(string, emptyList());
     }
 }

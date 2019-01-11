@@ -45,6 +45,9 @@ import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -239,12 +242,43 @@ public abstract class AbstractST {
         }
     }
 
-    String getValueFromJson(String json, String jsonPath) {
+    static String getValueFromJson(String json, String jsonPath) {
         return JsonPath.parse(json).read(jsonPath).toString();
     }
 
-    String globalVariableJsonPathBuilder(String variable) {
-        return "$.spec.containers[*].env[?(@.name=='" + variable + "')].value";
+    /**
+     * Translate key/value pairs fromatted like properties into a Map
+     * @param keyValuePairs Pairs in key=value format; pairs are separated by newlines
+     * @return THe map of key/values
+     */
+    static Map<String, String> loadProperties(String keyValuePairs) {
+        try {
+            Properties actual = new Properties();
+            actual.load(new StringReader(keyValuePairs));
+            return (Map) actual;
+        } catch (IOException e) {
+            throw new AssertionError("Invalid Properties definiton", e);
+        }
+    }
+
+    /**
+     * Get a Map of properties from an environment variable in json.
+     * @param json The json from which to extract properties
+     * @param envVar The environment variable name
+     * @return The properties which the variable contains
+     */
+    static Map<String, String> getPropertiesFromJson(String json, String envVar) {
+        List<String> array = JsonPath.parse(json).read(globalVariableJsonPathBuilder(envVar));
+        return loadProperties(array.get(0));
+    }
+
+    /**
+     * Get a jsonPath which can be used to extract envariable variables from a spec
+     * @param envVar The environment variable name
+     * @return The json path
+     */
+    static String globalVariableJsonPathBuilder(String envVar) {
+        return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
     }
 
     List<Event> getEvents(String resourceType, String resourceName) {
