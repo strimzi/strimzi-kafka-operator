@@ -66,7 +66,6 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
@@ -1042,8 +1041,8 @@ public abstract class AbstractST {
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            Stream<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
-                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX));
+            List<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             podStream.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
@@ -1075,7 +1074,7 @@ public abstract class AbstractST {
     }
 
     @BeforeAll
-    static void setTestClassName(TestInfo testInfo) {
+    static void createTestClassResources(TestInfo testInfo) {
         createClusterOperatorResources();
         testClass = testInfo.getTestClass().get().getSimpleName();
     }
