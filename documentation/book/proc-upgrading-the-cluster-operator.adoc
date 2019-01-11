@@ -1,0 +1,45 @@
+// This module is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='proc-upgrading-the-cluster-operator-{context}']
+= Upgrading the Cluster Operator from 0.9.0 to 0.10.0
+
+This procedure will describe how to upgrade a Cluster Operator deployment from version 0.9.x to version 0.10.0. 
+The upgrade will happen without affecting availability of the Kafka clusters managed by the Cluster Operator.
+
+== Prerequisites 
+
+* An existing version 0.9.0 Cluster Operator deployment to be upgraded
+
+== Procedure
+
+. Update your existing `Kafka`, `KafkaConnect`, `KafkaConnectS2I` and `KafkaMirrorMaker` resources, as follows:
++
+* Add `Kafka.spec.kafka.version` with the value `2.0.1`
+* Add `KafkaConnect.spec.version` with the value `2.0.1`
+* Add `KafkaConnectS2I.spec.kafka.version` with the value `2.0.1`
+* Add `KafkaMirrorMaker.spec.version` with the value `2.0.1`
++
+Wait for the associated rolling updates to complete.
+
+. Backup the existing Cluster Operator resources
++
+----
+oc get -l app=strimzi > strimzi-backup.yaml
+----
+
+. Update the Cluster Operator. 
+If you have modified some of the environment variables in your existing Cluster Operator `Deployment` you should edit 
+`install/cluster-operator/050-Deployment-cluster-operator.yaml` to reflect the changes you have made.
+When you have an updated configuration you can deploy it along with the rest of the install resources
++
+----
+oc apply -f install/cluster-operator
+----
++
+Wait for the associated rolling updates to complete.
+
+. Update existing resources to cope with deprecated custom resource properties.
++
+* If you have `Kafka` resources which specify `Kafka.spec.topicOperator` they should be rewritten to use `Kafka.spec.entityOperator.topicOperator` instead.
