@@ -143,6 +143,24 @@ public class OrderedPropertiesTest {
     }
 
     @Test
+    public void propertiesLeadingSpaceAfterNewLine() throws IOException {
+        Map<String, String> actual = propertiesCompatibility("key : multi\\\n \\\r\n \t line");
+
+        OrderedProperties expected = new OrderedProperties().addPair("key", "multiline");
+        Assert.assertEquals(expected.asMap(), actual);
+    }
+
+    @Test
+    public void spacesBeforeAndAfterKey() throws IOException {
+        Map<String, String> actual = propertiesCompatibility("  before: 1\nafter : 2");
+
+        OrderedProperties expected = new OrderedProperties()
+            .addPair("before", "1")
+            .addPair("after", "2");
+        Assert.assertEquals(expected.asMap(), actual);
+    }
+
+    @Test
     public void lineContinuation() throws IOException {
         Map<String, String> actual = propertiesCompatibility("cr:split\\\rvalue\nnl:split\\\nvalue\ncrnl:split\\\r\nvalue\nno:split");
 

@@ -47,7 +47,7 @@ public class OrderedProperties {
      * @param additionalPairs Key/Value pairs to add to current set (may be null)
      * @return this instance for chaining
      */
-    public OrderedProperties addMapPairs(Map<?, ?> additionalPairs) {
+    public OrderedProperties addMapPairs(Map<String, String> additionalPairs) {
         addIterablePairs(additionalPairs.entrySet());
         return this;
     }
@@ -55,18 +55,13 @@ public class OrderedProperties {
     /**
      * Converts the values from the Iterable into String values and adds the pairs to the current set.
      *
-     * @param iterable Key/Value pairs
+     * @param iterable Key/Value pairs These are Map.Entry&lt;?, ?&gt; due to Properties extending Hashtable&lt;?, ?&gt;
      * @return this instance for chaining
      * @throws InvalidConfigParameterException if value is null or is of an unsupported type
      */
-    public OrderedProperties addIterablePairs(Iterable<? extends Map.Entry<?, ?>> iterable) {
-        for (Map.Entry<?, ?> entry : iterable) {
-            Object obj = entry.getKey();
-            if (!(obj instanceof String)) {
-                throw new InvalidConfigParameterException(
-                  obj != null ? obj.getClass().getCanonicalName() : "null", "Key must be a string");
-            }
-            String key = (String) obj;
+    public OrderedProperties addIterablePairs(Iterable<? extends Map.Entry<String, ?>> iterable) {
+        for (Map.Entry<String, ?> entry : iterable) {
+            String key = entry.getKey();
             Object value = entry.getValue();
 
             if (value instanceof String) {
@@ -86,7 +81,6 @@ public class OrderedProperties {
 
     /**
      * Parse key/value pairs and add to the current pair set.
-     * N.B. values containing a newline or other control characters will probably cause problems!
      * @param keyValuePairs Pairs in key=value format, pairs separated by newlines
      * @throws InvalidConfigParameterException if value is null
      * @return this instance for chaining
@@ -245,13 +239,10 @@ public class OrderedProperties {
             String rc;
             switch (ec) {
                 case '\r':
-                    peekChar = bufferedReader.read();
-                    if (peekChar != '\n') {
-                        return "";
-                    }
                 case '\n':
-                    rc = "";
-                    break;
+                    peekChar = bufferedReader.read();
+                    ignoreWhitespace(true);
+                    return "";
                 case 'u':
                     rc = readUnicode();
                     break;

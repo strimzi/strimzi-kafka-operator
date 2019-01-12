@@ -54,7 +54,7 @@ class ConnectST extends AbstractST {
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME);
-    private static final String EXPECTED_CONFIG = "group.id=connect-cluster\n" +
+    private static final Map EXPECTED_CONFIG = loadProperties("group.id=connect-cluster\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
             "internal.key.converter.schemas.enable=false\n" +
             "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
@@ -63,7 +63,7 @@ class ConnectST extends AbstractST {
             "offset.storage.topic=connect-cluster-offsets\n" +
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
             "internal.value.converter.schemas.enable=false\n" +
-            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
+            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n");
 
     private static Resources classResources;
 
@@ -78,8 +78,7 @@ class ConnectST extends AbstractST {
 
         assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
                 hasItem(KAFKA_CONNECT_BOOTSTRAP_SERVERS)));
-        assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONNECT_CONFIGURATION"),
-                hasItem(EXPECTED_CONFIG)));
+        assertEquals(EXPECTED_CONFIG, getPropertiesFromJson(kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"));
         testDockerImagesForKafkaConnect();
     }
 
