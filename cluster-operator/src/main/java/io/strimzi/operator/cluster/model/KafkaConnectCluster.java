@@ -419,7 +419,8 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
-        varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_OPTS, getGcLoggingOptions()));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
         if (trustedCertificates != null && trustedCertificates.size() > 0) {
