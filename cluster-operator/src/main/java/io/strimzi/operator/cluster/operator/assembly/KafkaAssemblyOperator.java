@@ -149,7 +149,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
         createReconciliationState(reconciliation, kafkaAssembly)
                 .reconcileCas()
-
                 .compose(state -> state.clusterOperatorSecret())
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
@@ -274,6 +273,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * and the current key is stored under the key {@code ca.key}.
          */
         Future<ReconciliationState> reconcileCas() {
+            Labels selectorLabels = Labels.EMPTY.withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
             Labels caLabels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
             Future<ReconciliationState> result = Future.future();
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
@@ -287,7 +287,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         Secret clusterCaKeySecret = null;
                         Secret clientsCaCertSecret = null;
                         Secret clientsCaKeySecret = null;
-                        List<Secret> clusterSecrets = secretOperations.list(reconciliation.namespace(), caLabels);
+                        List<Secret> clusterSecrets = secretOperations.list(reconciliation.namespace(), selectorLabels);
                         for (Secret secret : clusterSecrets) {
                             String secretName = secret.getMetadata().getName();
                             if (secretName.equals(clusterCaCertName)) {
@@ -1708,8 +1708,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> clusterOperatorSecret() {
+            Labels labels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
+
+            OwnerReference ownerRef = new OwnerReferenceBuilder()
+                    .withApiVersion(kafkaAssembly.getApiVersion())
+                    .withKind(kafkaAssembly.getKind())
+                    .withName(kafkaAssembly.getMetadata().getName())
+                    .withUid(kafkaAssembly.getMetadata().getUid())
+                    .withBlockOwnerDeletion(false)
+                    .withController(false)
+                    .build();
+
+            Secret secret = ModelUtils.buildSecret(clusterCa, clusterCa.clusterOperatorSecret(), namespace, ClusterOperator.secretName(name), "cluster-operator", labels, ownerRef);
+
             return withVoid(secretOperations.reconcile(namespace, ClusterOperator.secretName(name),
-                    ClusterOperator.generateSecret(clusterCa, namespace, name)));
+                    secret));
         }
     }
 
