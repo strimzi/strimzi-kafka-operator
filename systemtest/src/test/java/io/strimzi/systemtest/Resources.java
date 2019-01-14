@@ -5,10 +5,21 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.fabric8.kubernetes.api.model.apps.DeploymentList;
+import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
@@ -63,6 +74,9 @@ public class Resources {
     private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(3).toMillis();
     private static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
 
+    public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
+    public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
+
     private final NamespacedKubernetesClient client;
 
     Resources(NamespacedKubernetesClient client) {
@@ -110,6 +124,10 @@ public class Resources {
         return client()
                 .customResources(Crds.kafkaUser(),
                         KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
+    }
+
+    private MixedOperation<Deployment, DeploymentList, DoneableDeployment, Resource<Deployment, DoneableDeployment>> clusterOperator() {
+        return customResourcesWithCascading(Deployment.class, DeploymentList.class, DoneableDeployment.class);
     }
 
     private List<Runnable> resources = new ArrayList<>();
@@ -176,6 +194,10 @@ public class Resources {
 
     private KafkaUser deleteLater(KafkaUser resource) {
         return deleteLater(kafkaUser(), resource);
+    }
+
+    private Deployment deleteLater(Deployment resource) {
+        return deleteLater(clusterOperator(), resource);
     }
 
     Job deleteLater(Job resource) {
@@ -427,6 +449,13 @@ public class Resources {
         return kafkaMirrorMaker;
     }
 
+    private Deployment waitFor(Deployment clusterOperator) {
+        LOGGER.info("Waiting for Cluster Operator {}", clusterOperator.getMetadata().getName());
+        String namespace = client.getNamespace();
+        waitForDeployment(namespace, clusterOperator.getMetadata().getName());
+        return clusterOperator;
+    }
+
     /**
      * Wait until the SS is ready and all of its Pods are also ready
      */
@@ -449,9 +478,9 @@ public class Resources {
      * Wait until the deployment is ready
      */
     private void waitForDeployment(String namespace, String name) {
-        LOGGER.info("Waiting for Deployment {}", name);
+        LOGGER.info("Waiting for Deployment {} in namespace {}", name, namespace);
         TestUtils.waitFor("deployment " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client().extensions().deployments().inNamespace(namespace).withName(name).isReady());
+            () -> client().apps().deployments().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment {} is ready", name);
     }
 
@@ -567,5 +596,128 @@ public class Resources {
             LOGGER.info("Created KafkaUser {}", resource.getMetadata().getName());
             return deleteLater(resource);
         });
+    }
+
+    Deployment getDeploymentFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, Deployment.class);
+    }
+
+    DoneableDeployment clusterOperator(String namespace) {
+        return clusterOperator(defaultCLusterOperator(namespace).build());
+    }
+
+    DeploymentBuilder defaultCLusterOperator(String namespace) {
+
+        Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
+
+        // Get env from config file
+        List<EnvVar> envVars = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        // Get default CO image
+        String coImage = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+
+        // Update images
+        for (EnvVar envVar : envVars) {
+            switch (envVar.getName()) {
+                case "STRIMZI_LOG_LEVEL":
+                    envVar.setValue("DEBUG");
+                    break;
+                case "STRIMZI_NAMESPACE":
+                    envVar.setValue(namespace);
+                    envVar.setValueFrom(null);
+                    break;
+                default:
+                    if (envVar.getName().contains("STRIMZI_DEFAULT")) {
+                        envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));
+                    } else if (envVar.getName().contains("IMAGES")) {
+                        envVar.setValue(TestUtils.changeOrgAndTagInImageMap(envVar.getValue()));
+                    }
+            }
+        }
+        // Apply updated env variables
+        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
+
+        return new DeploymentBuilder(clusterOperator)
+                .withApiVersion("apps/v1")
+                .editSpec()
+                    .withNewSelector()
+                        .addToMatchLabels("name", STRIMZI_DEPLOYMENT_NAME)
+                    .endSelector()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .withImage(TestUtils.changeOrgAndTag(coImage))
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec();
+    }
+
+    DoneableDeployment clusterOperator(Deployment clusterOperator) {
+        return new DoneableDeployment(clusterOperator, co -> {
+            TestUtils.waitFor("Cluster operator creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
+                () -> {
+                    try {
+                        client.apps().deployments().createOrReplace(co);
+                        return true;
+                    } catch (KubernetesClientException e) {
+                        if (e.getMessage().contains("object is being deleted")) {
+                            return false;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+            );
+            return waitFor(deleteLater(
+                    co));
+        });
+    }
+
+    KubernetesRoleBinding getRoleBindingFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, KubernetesRoleBinding.class);
+    }
+
+    KubernetesClusterRoleBinding getClusterRoleBindingFromYaml(String yamlPath) {
+        return TestUtils.configFromYaml(yamlPath, KubernetesClusterRoleBinding.class);
+    }
+
+    DoneableKubernetesRoleBinding kubernetesRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+        return kubernetesRoleBinding(defaultKubernetesRoleBinding(yamlPath, namespace).build(), clientNamespace);
+    }
+
+    KubernetesRoleBindingBuilder defaultKubernetesRoleBinding(String yamlPath, String namespace) {
+        LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
+
+        return new KubernetesRoleBindingBuilder(getRoleBindingFromYaml(yamlPath))
+                .withApiVersion("rbac.authorization.k8s.io/v1")
+                .editFirstSubject()
+                    .withNamespace(namespace)
+                .endSubject();
+    }
+
+    DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String clientNamespace) {
+        LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
+        client.inNamespace(clientNamespace).rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
+        return new DoneableKubernetesRoleBinding(roleBinding);
+    }
+
+    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(String yamlPath, String namespace, String clientNamespace) {
+        return kubernetesClusterRoleBinding(defaultKubernetesClusterRoleBinding(yamlPath, namespace).build(), clientNamespace);
+    }
+
+    KubernetesClusterRoleBindingBuilder defaultKubernetesClusterRoleBinding(String yamlPath, String namespace) {
+        LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
+
+        return new KubernetesClusterRoleBindingBuilder(getClusterRoleBindingFromYaml(yamlPath))
+                .withApiVersion("rbac.authorization.k8s.io/v1")
+                .editFirstSubject()
+                    .withNamespace(namespace)
+                .endSubject();
+    }
+
+    DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String clientNamespace) {
+        LOGGER.info("Apply ClusterRoleBinding in namespace {}", clientNamespace);
+        client.inNamespace(clientNamespace).rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
+        return new DoneableKubernetesClusterRoleBinding(clusterRoleBinding);
     }
 }

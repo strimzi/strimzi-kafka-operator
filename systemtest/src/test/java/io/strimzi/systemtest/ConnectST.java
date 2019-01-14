@@ -13,7 +13,6 @@ import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -243,7 +242,7 @@ class ConnectST extends AbstractST {
 
         String connectVersion = Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
         if (connectVersion == null) {
-            connectVersion = "2.0.0";
+            connectVersion = "2.1.0";
         }
 
         assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), connectImageName);
@@ -262,6 +261,11 @@ class ConnectST extends AbstractST {
 
     @BeforeAll
     static void createClassResources() {
+        LOGGER.info("Creating resources before the test class");
+        applyRoleBindings(NAMESPACE, NAMESPACE);
+        // 050-Deployment
+        testClassResources.clusterOperator(NAMESPACE).done();
+
         classResources = new Resources(namespacedClient());
 
         Map<String, Object> kafkaConfig = new HashMap<>();
@@ -275,13 +279,6 @@ class ConnectST extends AbstractST {
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec().done();
-    }
-
-    @AfterAll
-    static void deleteClassResources() {
-        LOGGER.info("Deleting resources after the test class");
-        classResources.deleteResources();
-        classResources = null;
     }
 
     private static Resources classResources() {

@@ -10,7 +10,6 @@ import io.strimzi.test.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,6 +103,11 @@ class MultipleNamespaceST extends AbstractST {
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         LOGGER.info("Creating resources before the test class");
+        applyRoleBindings(DEFAULT_NAMESPACE, DEFAULT_NAMESPACE);
+        applyRoleBindings(DEFAULT_NAMESPACE, SECOND_NAMESPACE);
+        // 050-Deployment
+        testClassResources.clusterOperator(String.join(",", DEFAULT_NAMESPACE, SECOND_NAMESPACE)).done();
+
         classResources = new Resources(namespacedClient());
         classResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -116,13 +120,6 @@ class MultipleNamespaceST extends AbstractST {
             .done();
 
         testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
-    @AfterAll
-    static void deleteClassResources() {
-        LOGGER.info("Deleting resources after the test class");
-        classResources.deleteResources();
-        classResources = null;
     }
 
     private static Resources classResources() {

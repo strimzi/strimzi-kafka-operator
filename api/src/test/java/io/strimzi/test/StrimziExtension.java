@@ -4,10 +4,6 @@
  */
 package io.strimzi.test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
@@ -42,7 +38,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -559,9 +554,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     LOGGER.info("Creating namespace '{}' before test per @Namespace annotation on {}", namespace.value(), name(element));
                     kubeClient().createNamespace(namespace.value());
                     previousNamespace = namespace.use() ? kubeClient().namespace(namespace.value()) : kubeClient().namespace();
-                    if (element instanceof Method) {
-                        applyMultipleNamespacesWatcher(element);
-                    }
                 }
 
                 @Override
@@ -575,116 +567,11 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         return last;
     }
 
-    private void applyMultipleNamespacesWatcher(AnnotatedElement element) {
-        List<Namespace> namespaces = annotations(element, Namespace.class);
-        String defaultNamespace  = namespaces.get(0).value();
-        for (Namespace namespace: namespaces) {
-            if (namespace.value().matches(defaultNamespace)) {
-                continue;
-            }
-            Map<File, String> configYamlFiles = Arrays.stream(
-                    Objects.requireNonNull(new File(CO_INSTALL_DIR).listFiles((file, name) -> name.matches("[0-9]*-RoleBinding.*")))
-            ).sorted().collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, node -> {
-
-                ArrayNode subjects = (ArrayNode) node.get("subjects");
-                ObjectNode subject = (ObjectNode) subjects.get(0);
-                subject.put("kind", "ServiceAccount")
-                        .put("name", "strimzi-cluster-operator")
-                        .put("namespace", defaultNamespace);
-                return TestUtils.toYamlString(node);
-            }), (x, y) -> x, LinkedHashMap::new));
-
-            for (Map.Entry<File, String> entry : configYamlFiles.entrySet()) {
-                LOGGER.info("Apply {} into namespace {}", entry.getKey(), namespace.value());
-                kubeClient().namespace(namespace.value());
-                kubeClient().clientWithAdmin().applyContent(entry.getValue());
-            }
-        }
-        kubeClient().namespace(defaultNamespace);
-    }
-
     @SuppressWarnings("unchecked")
     private Statement installOperatorFromExamples(AnnotatedElement element, Statement last, ClusterOperator cc) {
-        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, node -> {
-            // Change the docker org of the images in the 04-deployment.yaml
-            if ("050-Deployment-strimzi-cluster-operator.yaml".equals(f.getName())) {
-                ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
-                containerNode.put("imagePullPolicy", IMAGE_PULL_POLICY);
-                JsonNodeFactory factory = new JsonNodeFactory(false);
-                ObjectNode resources = new ObjectNode(factory);
-                ObjectNode requests = new ObjectNode(factory);
-                requests.put("cpu", "200m").put(REQUESTS_CPU, REQUESTS_MEMORY);
-                ObjectNode limits = new ObjectNode(factory);
-                limits.put("cpu", "1000m").put(LIMITS_CPU, LIMITS_MEMORY);
-                resources.set("requests", requests);
-                resources.set("limits", limits);
-                containerNode.replace("resources", resources);
-                containerNode.remove("resources");
-                JsonNode ccImageNode = containerNode.get("image");
-                containerNode.put("image", TestUtils.changeOrgAndTag(ccImageNode.asText()));
-                for (JsonNode envVar : containerNode.get("env")) {
-                    String varName = envVar.get("name").textValue();
-                    // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
-                    if (varName.matches("STRIMZI_DEFAULT_.*_IMAGE")) {
-                        String value = envVar.get("value").textValue();
-                        String v = TestUtils.changeOrgAndTag(value);
-                        LOGGER.info("{}={}", varName, v);
-                        ((ObjectNode) envVar).put("value", v);
-                    }
-                    if (varName.matches("STRIMZI_KAFKA_IMAGES")) {
-                        String value = envVar.get("value").textValue();
-                        String v = TestUtils.changeOrgAndTagInImageMap(value);
-                        LOGGER.info("STRIMZI_KAFKA_IMAGES={}", v);
-                        ((ObjectNode) envVar).put("value", v);
-                    }
-                    if (varName.matches("STRIMZI_KAFKA_CONNECT_IMAGES")) {
-                        String value = envVar.get("value").textValue();
-                        String v = TestUtils.changeOrgAndTagInImageMap(value);
-                        LOGGER.info("STRIMZI_KAFKA_CONNECT_IMAGES={}", v);
-                        ((ObjectNode) envVar).put("value", v);
-                    }
-                    if (varName.matches("STRIMZI_KAFKA_CONNECT_S2I_IMAGES")) {
-                        String value = envVar.get("value").textValue();
-                        String v = TestUtils.changeOrgAndTagInImageMap(value);
-                        LOGGER.info("STRIMZI_KAFKA_CONNECT_S2I_IMAGES={}", v);
-                        ((ObjectNode) envVar).put("value", v);
-                    }
-                    if (varName.matches("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES")) {
-                        String value = envVar.get("value").textValue();
-                        String v = TestUtils.changeOrgAndTagInImageMap(value);
-                        LOGGER.info("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES={}", v);
-                        ((ObjectNode) envVar).put("value", v);
-                    }
-                    // Set log level
-                    if (varName.equals("STRIMZI_LOG_LEVEL")) {
-                        String logLevel = System.getenv().getOrDefault("TEST_STRIMZI_LOG_LEVEL", OPERATOR_LOG_LEVEL);
-                        ((ObjectNode) envVar).put("value", logLevel);
-                    }
-                    // Updates default values of env variables
-                    for (EnvVariables envVariable : cc.envVariables()) {
-                        if (varName.equals(envVariable.key())) {
-                            ((ObjectNode) envVar).put("value", envVariable.value());
-                        }
-                    }
-
-                    if (varName.matches("STRIMZI_NAMESPACE")) {
-                        List<Namespace> namespaces = annotations(element, Namespace.class);
-                        List<String> test = new ArrayList<>();
-                        ((ObjectNode) envVar).remove("valueFrom");
-                        for (Namespace namespace : namespaces) {
-                            test.add(namespace.value());
-                        }
-                        ((ObjectNode) envVar).put("value", String.join(",", test));
-                    }
-                }
-            }
-
-            if (f.getName().matches(".*RoleBinding.*")) {
-                String ns = annotations(element, Namespace.class).get(0).value();
-                return TestUtils.changeRoleBindingSubject(f, ns);
-            }
-            return TestUtils.toYamlString(node);
-        }), (x, y) -> x, LinkedHashMap::new));
+        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
+                !file.getName().matches(".*(Binding|Deployment)-.*")
+        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
         last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
                 .getDep(CO_DEPLOYMENT_NAME)) {
             Stack<String> deletable = new Stack<>();
@@ -700,8 +587,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     kubeClient().namespace(annotations(element, Namespace.class).get(0).value());
                     kubeClient().clientWithAdmin().applyContent(entry.getValue());
                 }
-                applyMultipleNamespacesWatcher(element);
-                kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME, 1);
             }
 
             @Override
@@ -710,7 +595,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 while (!deletable.isEmpty()) {
                     kubeClient().clientWithAdmin().deleteContent(deletable.pop());
                 }
-                kubeClient().waitForResourceDeletion("deployment", CO_DEPLOYMENT_NAME);
             }
         };
         return last;

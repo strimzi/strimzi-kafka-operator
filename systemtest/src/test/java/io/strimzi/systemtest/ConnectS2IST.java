@@ -11,7 +11,6 @@ import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,20 +72,17 @@ class ConnectS2IST extends AbstractST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
     }
 
     @BeforeAll
     static void createClassResources() {
+        LOGGER.info("Creating resources before the test class");
+        applyRoleBindings(NAMESPACE, NAMESPACE);
+        // 050-Deployment
+        testClassResources.clusterOperator(NAMESPACE).done();
+
         classResources = new Resources(namespacedClient());
         classResources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
-    }
-
-    @AfterAll
-    static void deleteClassResources() {
-        LOGGER.info("Deleting resources after the test class");
-        classResources.deleteResources();
-        classResources = null;
     }
 
     private static Resources classResources() {

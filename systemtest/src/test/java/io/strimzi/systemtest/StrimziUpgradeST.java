@@ -14,6 +14,7 @@ import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -161,5 +162,12 @@ public class StrimziUpgradeST extends AbstractST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteResources();
+    }
+
+    @BeforeAll
+    static void createClusterOperator() {
+        applyRoleBindings(NAMESPACE, NAMESPACE);
+        // 050-Deployment
+        testClassResources.clusterOperator(NAMESPACE).done();
     }
 }

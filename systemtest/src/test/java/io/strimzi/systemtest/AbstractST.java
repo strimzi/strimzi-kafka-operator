@@ -66,7 +66,6 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
@@ -114,6 +113,7 @@ public abstract class AbstractST {
     static KubeClient<?> kubeClient = cluster.client();
 
     Resources resources;
+    static Resources testClassResources;
     static String operationID;
     static String testClass;
     static String testName;
@@ -391,19 +391,14 @@ public abstract class AbstractST {
         return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
     }
 
-    @BeforeEach
-    void setTestName(TestInfo testInfo) {
-        testName = testInfo.getTestMethod().get().getName();
-    }
-
-    @BeforeAll
-    static void setTestClassName(TestInfo testInfo) {
-        testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
     protected void createResources() {
         LOGGER.info("Creating resources before the test");
         resources = new Resources(namespacedClient());
+    }
+
+    protected static void createClusterOperatorResources() {
+        LOGGER.info("Creating cluster operator resources");
+        testClassResources = new Resources(namespacedClient());
     }
 
     protected void deleteResources() throws Exception {
@@ -1046,8 +1041,8 @@ public abstract class AbstractST {
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            Stream<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
-                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX));
+            List<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             podStream.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
@@ -1055,5 +1050,34 @@ public abstract class AbstractST {
             podStream.forEach(p -> waitForPodDeletion(client.getNamespace(), p.getMetadata().getName()));
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
+    }
+
+    /**
+     * Method for apply Strimzi cluster operator specific Role and CLusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO is deployed
+     * @param clientNamespace namespace, where bindings should be deployed
+     */
+    static void applyRoleBindings(String namespace, String clientNamespace) {
+        // 020-RoleBinding
+        testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+        // 021-ClusterRoleBinding
+        testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+        // 030-ClusterRoleBinding
+        testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, clientNamespace);
+        // 031-RoleBinding
+        testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, clientNamespace);
+        // 032-RoleBinding
+        testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, clientNamespace);
+    }
+
+    @BeforeEach
+    void setTestName(TestInfo testInfo) {
+        testName = testInfo.getTestMethod().get().getName();
+    }
+
+    @BeforeAll
+    static void createTestClassResources(TestInfo testInfo) {
+        createClusterOperatorResources();
+        testClass = testInfo.getTestClass().get().getSimpleName();
     }
 }
