@@ -11,7 +11,7 @@ package io.strimzi.test.k8s;
  * <pre><code>
  *     public static KubeClusterResource testCluster = new KubeClusterResources();
  *
- *     @BeforeEach
+ *     &#64;BeforeEach
  *     void before() {
  *         testCluster.before();
  *     }
