@@ -7,8 +7,8 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.Annotations.Namespace;
-import io.strimzi.test.Extensions.StrimziExtension;
+import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.test.Extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(StrimziUpgradeST.NAMESPACE)

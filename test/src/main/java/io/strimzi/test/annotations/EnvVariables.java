@@ -2,9 +2,9 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.Annotations;
+package io.strimzi.test.annotations;
 
-import io.strimzi.test.Extensions.StrimziExtension;
+import io.strimzi.test.extensions.StrimziExtension;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

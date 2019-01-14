@@ -62,7 +62,7 @@ import static java.util.Collections.emptyMap;
  * <p>The tool works by recursing through class properties (in the JavaBeans sense)
  * and the types of those properties, guided by the annotations.</p>
  *
- * <h3>Annotations</h3>
+ * <h3>annotations</h3>
  * <dl>
  *     <dt>@{@link Crd}</dt>
  *     <dd>Annotates the top level class which represents an instance of the custom resource.

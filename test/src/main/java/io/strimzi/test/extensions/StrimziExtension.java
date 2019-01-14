@@ -2,14 +2,14 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.Extensions;
+package io.strimzi.test.extensions;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.strimzi.test.Annotations.ClusterOperator;
-import io.strimzi.test.Annotations.EnvVariables;
-import io.strimzi.test.Annotations.Namespace;
-import io.strimzi.test.Annotations.OpenShiftOnly;
-import io.strimzi.test.Annotations.Resources;
+import io.strimzi.test.annotations.ClusterOperator;
+import io.strimzi.test.annotations.EnvVariables;
+import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.annotations.OpenShiftOnly;
+import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;

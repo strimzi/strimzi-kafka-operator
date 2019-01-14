@@ -44,7 +44,7 @@ public class MetadataTemplate implements Serializable {
         this.labels = labels;
     }
 
-    @Description("Annotations which should be added to the resource template. " +
+    @Description("annotations which should be added to the resource template. " +
             "Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {

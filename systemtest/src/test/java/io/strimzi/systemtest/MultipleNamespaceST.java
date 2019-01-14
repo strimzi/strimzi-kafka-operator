@@ -4,9 +4,9 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.Annotations.ClusterOperator;
-import io.strimzi.test.Annotations.Namespace;
-import io.strimzi.test.Extensions.StrimziExtension;
+import io.strimzi.test.annotations.ClusterOperator;
+import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.File;
 import java.util.List;
 
-import static io.strimzi.test.Extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
