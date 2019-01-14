@@ -43,7 +43,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,7 +71,6 @@ public class TopicOperatorIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
 
-    @ClassRule
     public static KubeClusterResource testCluster = new KubeClusterResource();
     private static String oldNamespace;
 
@@ -127,6 +125,7 @@ public class TopicOperatorIT {
     @Before
     public void setup(TestContext context) throws Exception {
         LOGGER.info("Setting up test");
+        testCluster.before();
         testCluster.before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
         kafkaCluster = new KafkaCluster();

@@ -367,7 +367,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     }
 
     /**
-     * Get the value of the @ClassRule-annotated KubeClusterResource field
+     * Get the value of the KubeClusterResource field with name 'cluster'
      */
     private KubeClusterResource clusterResource() {
         if (clusterResource == null) {
