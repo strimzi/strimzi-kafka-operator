@@ -4,18 +4,14 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
-import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
-import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServer;
@@ -182,10 +178,5 @@ public class ClusterOperator extends AbstractVerticle {
 
     public static String secretName(String cluster) {
         return cluster + CERTS_SUFFIX;
-    }
-
-    public static Secret generateSecret(ClusterCa clusterCa, String namespace, String cluster) {
-        Secret secret = clusterCa.clusterOperatorSecret();
-        return ModelUtils.buildSecret(clusterCa, secret, namespace, ClusterOperator.secretName(cluster), "cluster-operator", Labels.fromString(""), null);
     }
 }
