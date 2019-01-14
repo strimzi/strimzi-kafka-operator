@@ -214,7 +214,6 @@ class KafkaST extends AbstractST {
 
         podHashes.remove(new Integer(client.pods().withName(newZkPodName[1]).get().hashCode()));
         waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), podHashes);
-        checkPodsReadiness();
 
         // check the new node is either in leader or follower state
         waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2, 3, 4);

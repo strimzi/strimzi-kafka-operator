@@ -1123,6 +1123,15 @@ public abstract class AbstractST {
                 podHashes.toString());
         TestUtils.waitFor("test", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
             () -> comparePodHashLists(podHashes, getPodsHash(namePrefix)));
+
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        checkPodsReadiness();
+
         LOGGER.info("All zk pods are ready");
     }
 
@@ -1147,11 +1156,6 @@ public abstract class AbstractST {
             }
         }
         return true;
-    }
-
-    void waitForPod(Pod pod) throws InterruptedException {
-        LOGGER.info("Waiting for pod {}", pod.getMetadata().getName());
-        client.resource(pod).waitUntilReady(1, TimeUnit.MINUTES);
     }
 
     boolean comparePodHashLists(List<Integer> oldHash, List<Integer> newHash) {
