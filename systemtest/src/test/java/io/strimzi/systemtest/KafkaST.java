@@ -42,6 +42,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -186,47 +187,26 @@ class KafkaST extends AbstractST {
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
-        //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(CLUSTER_NAME), 1);
         KubernetesClient client = new DefaultKubernetesClient();
         final int initialZkReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(3, initialZkReplicas);
 
-        // scale up
-        final int scaleZkTo = initialZkReplicas + 2;
-        final int[] newPodIds = {initialZkReplicas, initialZkReplicas + 1};
-        final String[] newZkPodName = {
-                zookeeperPodName(CLUSTER_NAME,  newPodIds[0]),
-                zookeeperPodName(CLUSTER_NAME,  newPodIds[1])
-        };
+        final int scaleZkTo = initialZkReplicas + 4;
+        final List<String> newZkPodNames = new ArrayList<String>() {{
+            for (int i = 0; i < scaleZkTo; i++) {
+                add(zookeeperPodName(CLUSTER_NAME, i));
+            }
+        }};
 
-        List<Integer> podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
+        Set<Integer> podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
 
-        final String firstZkPodName = zookeeperPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleZkTo);
-        replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getZookeeper().setReplicas(scaleZkTo);
-        });
-        kubeClient.waitForPod(newZkPodName[0]);
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo));
 
-        podHashes.addAll(getPodsHash(zookeeperClusterName(CLUSTER_NAME)));
-
-        kubeClient.waitForPod(newZkPodName[1]);
-
-        podHashes.remove(new Integer(client.pods().withName(newZkPodName[1]).get().hashCode()));
-        waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), podHashes);
-
+        waitForZkPods(podHashes, newZkPodNames);
         // check the new node is either in leader or follower state
-        waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2, 3, 4);
-
-        //Test that first pod does not have errors or failures in events
-        List<Event> eventsForFirstPod = getEvents("Pod", newZkPodName[0]);
-        assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        assertThat(eventsForFirstPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
-
-        //Test that second pod does not have errors or failures in events
-        List<Event> eventsForSecondPod = getEvents("Pod", newZkPodName[1]);
-        assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+        waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2, 3, 4, 5, 6);
+        checkZkPodsLog(newZkPodNames);
 
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
@@ -235,16 +215,17 @@ class KafkaST extends AbstractST {
         // scale down
         LOGGER.info("Scaling down");
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
-        replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getZookeeper().setReplicas(3);
-        });
-        kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  3));
-        // Wait for the one remaining node to enter standalone mode
-//        waitForZkMntr(Pattern.compile("zk_server_state\\s+standalone"), 0);
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
+
+        for (String name : newZkPodNames) {
+            kubeClient.waitForResourceDeletion("po", name);
+        }
+
+        // Wait for one zk pods will became leader and others follower state
         waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
-        assertThat(getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
+        assertThat(getEvents("Pod", newZkPodNames.get(4)), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring

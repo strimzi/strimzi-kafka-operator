@@ -61,9 +61,11 @@ import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -71,6 +73,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.k8s.Events.Created;
+import static io.strimzi.systemtest.k8s.Events.Failed;
+import static io.strimzi.systemtest.k8s.Events.FailedSync;
+import static io.strimzi.systemtest.k8s.Events.FailedValidation;
+import static io.strimzi.systemtest.k8s.Events.Pulled;
+import static io.strimzi.systemtest.k8s.Events.Scheduled;
+import static io.strimzi.systemtest.k8s.Events.Started;
+import static io.strimzi.systemtest.k8s.Events.Unhealthy;
+import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
+import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
@@ -1116,27 +1128,20 @@ public abstract class AbstractST {
         testClass = testInfo.getTestClass().get().getSimpleName();
     }
 
-    void waitForZkPodsRollUp(String namePrefix, List<Integer> podHashes) {
+    void waitForZkPodsRollUp(String namePrefix, Set<Integer> podHashes) {
         LOGGER.info("Waiting for all zookeeper pods will be running");
         // wait when all pods are ready
         LOGGER.info("Passed hashes: {}",
                 podHashes.toString());
-        TestUtils.waitFor("test", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Wait for all zk rollup finished", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
             () -> comparePodHashLists(podHashes, getPodsHash(namePrefix)));
 
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         checkPodsReadiness();
-
         LOGGER.info("All zk pods are ready");
     }
 
-    List<Integer> getPodsHash(String namePrefix) {
-        List<Integer> newHashes = new ArrayList<>();
+    Set<Integer> getPodsHash(String namePrefix) {
+        Set<Integer> newHashes = new HashSet<>();
 
         client.pods().list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(namePrefix))
@@ -1158,13 +1163,33 @@ public abstract class AbstractST {
         return true;
     }
 
-    boolean comparePodHashLists(List<Integer> oldHash, List<Integer> newHash) {
+    boolean comparePodHashLists(Set<Integer> oldHash, Set<Integer> newHash) {
         for (Integer hash: oldHash) {
             if (newHash.contains(hash)) {
-                LOGGER.info("Pod with hash {} is still UP", hash);
+                LOGGER.warn("Pod with hash {} is still UP", hash);
                 return false;
             }
         }
         return true;
+    }
+
+    void waitForZkPods(Set<Integer> defaultPods, List<String> newZkPodNames) {
+        for (String name : newZkPodNames) {
+            kubeClient.waitForPod(name);
+            LOGGER.info("Pod {} is ready", name);
+            defaultPods.addAll(getPodsHash(zookeeperClusterName(CLUSTER_NAME)));
+        }
+
+        defaultPods.remove(client.pods().withName(newZkPodNames.get(newZkPodNames.size() - 1)).get().hashCode());
+        waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), defaultPods);
+    }
+
+    void checkZkPodsLog(List<String> newZkPodNames) {
+        for (String name : newZkPodNames) {
+            //Test that second pod does not have errors or failures in events
+            LOGGER.info("Checking logs fro pod {}", name);
+            List<Event> eventsForSecondPod = getEvents("Pod", name);
+            assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+        }
     }
 }
