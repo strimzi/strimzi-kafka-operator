@@ -65,6 +65,7 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
                 .build();
     }
 
+    @Override
     public void createWhenExistsIsAPatch(TestContext context, boolean cascade) {
         PodDisruptionBudget resource = resource();
         Resource mockResource = mock(resourceType());
