@@ -46,6 +46,7 @@ public abstract class Storage implements Serializable {
 
     @Description("Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'")
     @Minimum(1)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getId() {
         return id;
     }
