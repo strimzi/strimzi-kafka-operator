@@ -6,7 +6,6 @@ package io.strimzi.test.extensions;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.EnvVariables;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.annotations.Resources;
