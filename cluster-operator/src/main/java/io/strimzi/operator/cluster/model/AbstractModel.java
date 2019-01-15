@@ -484,8 +484,8 @@ public abstract class AbstractModel {
         this.configuration = configuration;
     }
 
-    protected String getVolumeName() {
-        return storage.getId() != 0 ? VOLUME_NAME + "-" + storage.getId() : VOLUME_NAME;
+    public String getVolumeName() {
+        return this.VOLUME_NAME;
     }
 
     public String getImage() {

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Minimum;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
@@ -23,7 +24,20 @@ public abstract class SingleVolumeStorage extends Storage {
 
     private static final long serialVersionUID = 1L;
 
+    private Integer id;
+
     @Override
     @Description("Storage type, must be either 'ephemeral' or 'persistent-claim'.")
     public abstract String getType();
+
+    @Description("Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'")
+    @Minimum(1)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
 }
