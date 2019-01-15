@@ -50,8 +50,8 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |integer
 |image                1.2+<.<|The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.
 |string
-|storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim].
-|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
+|storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim, jbod].
+|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
 |listeners            1.2+<.<|Configures listeners of Kafka brokers.
 |xref:type-KafkaListeners-{context}[`KafkaListeners`]
 |authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple].
@@ -93,7 +93,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 [id='type-EphemeralStorage-{context}']
 ### `EphemeralStorage` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `EphemeralStorage` from xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
@@ -101,6 +101,8 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 [options="header"]
 |====
 |Field        |Description
+|id    1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+|integer
 |type  1.2+<.<|Must be `ephemeral`.
 |string
 |====
@@ -108,7 +110,7 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 [id='type-PersistentClaimStorage-{context}']
 ### `PersistentClaimStorage` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `PersistentClaimStorage` from xref:type-EphemeralStorage-{context}[`EphemeralStorage`].
@@ -126,6 +128,25 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |boolean
 |class        1.2+<.<|The storage class to use for dynamic volume allocation.
 |string
+|id           1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+|integer
+|====
+
+[id='type-JbodStorage-{context}']
+### `JbodStorage` schema reference
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `JbodStorage` from xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
+It must have the value `jbod` for the type `JbodStorage`.
+[options="header"]
+|====
+|Field           |Description
+|type     1.2+<.<|Must be `jbod`.
+|string
+|volumes  1.2+<.<|List of volumes as Storage objects representing the JBOD disks array.
+|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`] array
 |====
 
 [id='type-KafkaListeners-{context}']

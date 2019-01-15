@@ -477,7 +477,7 @@ public abstract class AbstractModel {
 
     /**
      * Set the configuration object which might be passed to the cluster as EnvVar
-     *
+     *getPersistentVolumeClaimName
      * @param configuration Configuration object with cluster configuration
      */
     protected void setConfiguration(AbstractConfiguration configuration) {

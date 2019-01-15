@@ -40,6 +40,9 @@ spec:
                       type: string
                     deleteClaim:
                       type: boolean
+                    id:
+                      type: integer
+                      minimum: 0
                     selector:
                       type: object
                     size:
@@ -49,6 +52,30 @@ spec:
                       enum:
                       - ephemeral
                       - persistent-claim
+                      - jbod
+                    volumes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          class:
+                            type: string
+                          deleteClaim:
+                            type: boolean
+                          id:
+                            type: integer
+                            minimum: 0
+                          selector:
+                            type: object
+                          size:
+                            type: string
+                          type:
+                            type: string
+                            enum:
+                            - ephemeral
+                            - persistent-claim
+                        required:
+                        - type
                   required:
                   - type
                 listeners:
@@ -786,6 +813,9 @@ spec:
                       type: string
                     deleteClaim:
                       type: boolean
+                    id:
+                      type: integer
+                      minimum: 0
                     selector:
                       type: object
                     size:

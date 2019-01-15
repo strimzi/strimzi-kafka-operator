@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaListeners;
 import io.strimzi.api.kafka.model.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
@@ -126,10 +127,10 @@ public class KafkaAssemblyOperatorTest {
     private final KafkaListeners kafkaListeners;
     private final Map<String, Object> kafkaConfig;
     private final Map<String, Object> zooConfig;
-    private final Storage storage;
+    private final Storage kafkaStorage;
+    private final SingleVolumeStorage zkStorage;
     private final TopicOperatorSpec toConfig;
     private final EntityOperatorSpec eoConfig;
-    private final boolean deleteClaim;
     private MockCertManager certManager = new MockCertManager();
 
     public static class Params {
@@ -138,17 +139,19 @@ public class KafkaAssemblyOperatorTest {
         private final KafkaListeners kafkaListeners;
         private final Map<String, Object> kafkaConfig;
         private final Map<String, Object> zooConfig;
-        private final Storage storage;
+        private final Storage kafkaStorage;
+        private final SingleVolumeStorage zkStorage;
         private final TopicOperatorSpec toConfig;
         private final EntityOperatorSpec eoConfig;
 
-        public Params(boolean openShift, boolean metrics, KafkaListeners kafkaListeners, Map<String, Object> kafkaConfig, Map<String, Object> zooConfig, Storage storage, TopicOperatorSpec toConfig, EntityOperatorSpec eoConfig) {
+        public Params(boolean openShift, boolean metrics, KafkaListeners kafkaListeners, Map<String, Object> kafkaConfig, Map<String, Object> zooConfig, Storage kafkaStorage, SingleVolumeStorage zkStorage, TopicOperatorSpec toConfig, EntityOperatorSpec eoConfig) {
             this.openShift = openShift;
             this.metrics = metrics;
             this.kafkaConfig = kafkaConfig;
             this.kafkaListeners = kafkaListeners;
             this.zooConfig = zooConfig;
-            this.storage = storage;
+            this.kafkaStorage = kafkaStorage;
+            this.zkStorage = zkStorage;
             this.toConfig = toConfig;
             this.eoConfig = eoConfig;
         }
@@ -159,7 +162,8 @@ public class KafkaAssemblyOperatorTest {
                     ",kafkaListeners=" + kafkaListeners +
                     ",kafkaConfig=" + kafkaConfig +
                     ",zooConfig=" + zooConfig +
-                    ",storage=" + storage +
+                    ",kafkaStorage=" + kafkaStorage +
+                    ",zkStorage=" + zkStorage +
                     ",toConfig=" + toConfig +
                     ",eoConfig=" + eoConfig;
         }
@@ -169,13 +173,21 @@ public class KafkaAssemblyOperatorTest {
     public static Iterable<Params> data() {
         boolean[] shiftiness = {true, false};
         boolean[] metrics = {true, false};
-        Storage[] storageConfigs = {
+        Storage[] kafkaStorageConfigs = {
             new EphemeralStorage(),
             new PersistentClaimStorageBuilder()
                     .withSize("123")
                     .withStorageClass("foo")
                     .withDeleteClaim(true)
                 .build()
+        };
+        SingleVolumeStorage[] zkStorageConfigs = {
+            new EphemeralStorage(),
+            new PersistentClaimStorageBuilder()
+                    .withSize("123")
+                    .withStorageClass("foo")
+                    .withDeleteClaim(true)
+                    .build()
         };
         Map[] kafkaConfigs = {
             null,
@@ -205,45 +217,47 @@ public class KafkaAssemblyOperatorTest {
             for (boolean metric: metrics) {
                 for (Map kafkaConfig : kafkaConfigs) {
                     for (Map zooConfig : zooConfigs) {
-                        for (Storage storage : storageConfigs) {
-                            for (TopicOperatorSpec toConfig : toConfigs) {
-                                for (EntityOperatorSpec eoConfig : eoConfigs) {
-                                    KafkaListeners listeners;
-                                    if (shift)   {
-                                        listeners = new KafkaListenersBuilder()
-                                                .withNewPlain()
+                        for (Storage kafkaStorage : kafkaStorageConfigs) {
+                            for (SingleVolumeStorage zkStorage : zkStorageConfigs) {
+                                for (TopicOperatorSpec toConfig : toConfigs) {
+                                    for (EntityOperatorSpec eoConfig : eoConfigs) {
+                                        KafkaListeners listeners;
+                                        if (shift) {
+                                            listeners = new KafkaListenersBuilder()
+                                                    .withNewPlain()
                                                     .withNewKafkaListenerAuthenticationScramSha512Authentication()
                                                     .endKafkaListenerAuthenticationScramSha512Authentication()
-                                                .endPlain()
-                                                .withNewTls()
+                                                    .endPlain()
+                                                    .withNewTls()
                                                     .withNewKafkaListenerAuthenticationTlsAuth()
                                                     .endKafkaListenerAuthenticationTlsAuth()
-                                                .endTls()
-                                                .withNewKafkaListenerExternalRouteExternal()
+                                                    .endTls()
+                                                    .withNewKafkaListenerExternalRouteExternal()
                                                     .withNewKafkaListenerAuthenticationTlsAuth()
                                                     .endKafkaListenerAuthenticationTlsAuth()
-                                                .endKafkaListenerExternalRouteExternal()
-                                                .build();
-                                    } else {
-                                        listeners = new KafkaListenersBuilder()
-                                                .withNewPlain()
+                                                    .endKafkaListenerExternalRouteExternal()
+                                                    .build();
+                                        } else {
+                                            listeners = new KafkaListenersBuilder()
+                                                    .withNewPlain()
                                                     .withNewKafkaListenerAuthenticationScramSha512Authentication()
                                                     .endKafkaListenerAuthenticationScramSha512Authentication()
-                                                .endPlain()
-                                                .withNewTls()
+                                                    .endPlain()
+                                                    .withNewTls()
                                                     .withNewKafkaListenerAuthenticationTlsAuth()
                                                     .endKafkaListenerAuthenticationTlsAuth()
-                                                .endTls()
-                                                .withNewKafkaListenerExternalNodePortExternal()
+                                                    .endTls()
+                                                    .withNewKafkaListenerExternalNodePortExternal()
                                                     .withNewKafkaListenerAuthenticationTlsAuth()
                                                     .endKafkaListenerAuthenticationTlsAuth()
-                                                .endKafkaListenerExternalNodePortExternal()
-                                                .build();
-                                    }
+                                                    .endKafkaListenerExternalNodePortExternal()
+                                                    .build();
+                                        }
 
-                                    // TO and EO cannot be deployed together so no need for testing this case
-                                    if (!(toConfig != null && eoConfig != null)) {
-                                        result.add(new Params(shift, metric, listeners, kafkaConfig, zooConfig, storage, toConfig, eoConfig));
+                                        // TO and EO cannot be deployed together so no need for testing this case
+                                        if (!(toConfig != null && eoConfig != null)) {
+                                            result.add(new Params(shift, metric, listeners, kafkaConfig, zooConfig, kafkaStorage, zkStorage, toConfig, eoConfig));
+                                        }
                                     }
                                 }
                             }
@@ -261,10 +275,10 @@ public class KafkaAssemblyOperatorTest {
         this.kafkaListeners = params.kafkaListeners;
         this.kafkaConfig = params.kafkaConfig;
         this.zooConfig = params.zooConfig;
-        this.storage = params.storage;
+        this.kafkaStorage = params.kafkaStorage;
+        this.zkStorage = params.zkStorage;
         this.toConfig = params.toConfig;
         this.eoConfig = params.eoConfig;
-        this.deleteClaim = Storage.deleteClaim(params.storage);
     }
 
     protected static Vertx vertx;
@@ -474,7 +488,7 @@ public class KafkaAssemblyOperatorTest {
         int healthTimeout = 30;
         Map<String, Object> metricsCmJson = metrics ? METRICS_CONFIG : null;
 
-        Kafka resource = ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, null, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
+        Kafka resource = ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, kafkaStorage, zkStorage, null, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG);
 
         Kafka kafka = new KafkaBuilder(resource)
                 .editSpec()

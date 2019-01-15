@@ -49,7 +49,7 @@ public class ZookeeperClusterSpec implements Serializable {
             System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", "strimzi/zookeeper-stunnel:latest");
     public static final int DEFAULT_REPLICAS = 3;
 
-    protected Storage storage;
+    protected SingleVolumeStorage storage;
 
     private Map<String, Object> config = new HashMap<>(0);
 
@@ -80,11 +80,11 @@ public class ZookeeperClusterSpec implements Serializable {
 
     @Description("Storage configuration (disk). Cannot be updated.")
     @JsonProperty(required = true)
-    public Storage getStorage() {
+    public SingleVolumeStorage getStorage() {
         return storage;
     }
 
-    public void setStorage(Storage storage) {
+    public void setStorage(SingleVolumeStorage storage) {
         this.storage = storage;
     }
 

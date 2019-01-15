@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
@@ -267,7 +268,8 @@ public class ResourceUtils {
                                            Map<String, Object> metricsCm,
                                            Map<String, Object> kafkaConfiguration,
                                            Map<String, Object> zooConfiguration,
-                                           Storage storage,
+                                           Storage kafkaStorage,
+                                           SingleVolumeStorage zkStorage,
                                            TopicOperatorSpec topicOperatorSpec,
                                            Logging kafkaLogging, Logging zkLogging) {
         Kafka result = new Kafka();
@@ -296,7 +298,7 @@ public class ResourceUtils {
         if (kafkaConfiguration != null) {
             kafkaClusterSpec.setConfig(kafkaConfiguration);
         }
-        kafkaClusterSpec.setStorage(storage);
+        kafkaClusterSpec.setStorage(kafkaStorage);
         spec.setKafka(kafkaClusterSpec);
 
         ZookeeperClusterSpec zk = new ZookeeperClusterSpec();
@@ -310,7 +312,7 @@ public class ResourceUtils {
         if (zooConfiguration != null) {
             zk.setConfig(zooConfiguration);
         }
-        zk.setStorage(storage);
+        zk.setStorage(zkStorage);
         if (metricsCm != null) {
             zk.setMetrics(metricsCm);
         }
