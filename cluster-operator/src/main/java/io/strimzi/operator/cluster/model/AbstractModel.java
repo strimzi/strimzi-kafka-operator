@@ -352,15 +352,15 @@ public abstract class AbstractModel {
                     log.warn(key + " is not a valid logger");
                     return;
                 }
-                if (key.toString().contains("log4j.appender.CONSOLE")) {
+                if (key.contains("log4j.appender.CONSOLE")) {
                     log.warn("You cannot set appender");
                     return;
                 }
-                if ((asList(validLoggerValues).contains(tmpEntry.toString().replaceAll(",[ ]+CONSOLE", ""))) || (asList(validLoggerValues).contains(tmpEntry))) {
+                if ((asList(validLoggerValues).contains(tmpEntry.replaceAll(",[ ]+CONSOLE", ""))) || (asList(validLoggerValues).contains(tmpEntry))) {
                     // correct value
                 } else {
                     Pattern p = Pattern.compile("\\$\\{(.*)\\}, ([A-Z]+)");
-                    Matcher m = p.matcher(tmpEntry.toString());
+                    Matcher m = p.matcher(tmpEntry);
 
                     String logger = "";
                     String value = "";
