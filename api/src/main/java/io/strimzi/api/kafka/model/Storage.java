@@ -44,7 +44,7 @@ public abstract class Storage implements Serializable {
     @Description("Storage type, must be either 'ephemeral', 'persistent-claim' or 'jbod'.")
     public abstract String getType();
 
-    @Description("Storage identification number. It's mandatory only for storage volumes defined in a storage of type 'jbod'")
+    @Description("Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'")
     @Minimum(1)
     public int getId() {
         return id;
