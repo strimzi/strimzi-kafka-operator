@@ -124,48 +124,77 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return f;
     }
 
+    /**
+     * Asynchronously apply the given {@code podRestart}, if it returns true then restart the pod
+     * given by {@code podName} by deleting it and letting it be recreated by K8s;
+     * in any case return a Future which completes when the given (possibly recreated) pod is ready.
+     * @param ss The StatefulSet.
+     * @param podName The name of the Pod to possibly restart.
+     * @param podRestart The predicate for deciding whether to restart the pod.
+     * @return a Future which completes when the given (possibly recreated) pod is ready.
+     */
     public Future<Void> maybeRestartPod(StatefulSet ss, String podName, Predicate<Pod> podRestart) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
-        Pod pod = podOperations.get(ss.getMetadata().getNamespace(), podName);
-        if (podRestart.test(pod)) {
-            Future<Void> result = Future.future();
-            Future<Void> deleteFinished = Future.future();
-            log.info("Rolling update of {}/{}: Rolling pod {}", namespace, name, podName);
-
-            // Determine generation of deleted pod
-            String deleted = getPodUid(pod);
-
-            // Delete the pod
-            log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
-            Future<Void> podReconcileFuture =
-                podOperations.reconcile(namespace, podName, null).compose(ignore -> {
-                    Future<Void> del = podOperations.waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
-                        // predicate - changed generation means pod has been updated
-                        String newUid = getPodUid(podOperations.get(namespace, podName));
-                        boolean done = !deleted.equals(newUid);
-                        if (done) {
-                            log.debug("Rolling pod {} finished", podName);
-                        }
-                        return done;
-                    });
-                    return del;
-                });
-
-            podReconcileFuture.setHandler(deleteResult -> {
-                if (deleteResult.succeeded()) {
-                    log.debug("Rolling update of {}/{}: Pod {} was deleted", namespace, name, podName);
-                }
-                deleteFinished.handle(deleteResult);
+        return podOperations.getAsync(ss.getMetadata().getNamespace(), podName).compose(pod -> {
+            Future<Void> fut;
+            if (podRestart.test(pod)) {
+                fut = restartPod(ss, pod);
+            } else {
+                log.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
+                fut = Future.succeededFuture();
+            }
+            return fut.compose(ignored -> {
+                log.debug("Rolling update of {}/{}: wait for pod {} readiness", namespace, name, podName);
+                return podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs);
             });
-            deleteFinished.compose(ix -> podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs)).setHandler(result);
-            return result;
-        } else {
-            log.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
-            return Future.succeededFuture();
-        }
+        });
+    }
+
+    /**
+     * Asynchronously delete the given pod, return a Future which completes when the Pod has been recreated.
+     * Note: The pod might not be ready when the returned Future completes.
+     * @param ss The StatefulSet
+     * @param pod The pod to be restarted
+     * @return a Future which completes when the Pod has been recreated
+     */
+    private Future<Void> restartPod(StatefulSet ss, Pod pod) {
+        long pollingIntervalMs = 1_000;
+        long timeoutMs = operationTimeoutMs;
+        String namespace = ss.getMetadata().getNamespace();
+        String name = ss.getMetadata().getName();
+        String podName = pod.getMetadata().getName();
+        Future<Void> deleteFinished = Future.future();
+        log.info("Rolling update of {}/{}: Rolling pod {}", namespace, name, podName);
+
+        // Determine generation of deleted pod
+        String deleted = getPodUid(pod);
+
+        // Delete the pod
+        log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
+        Future<Void> podReconcileFuture =
+            podOperations.reconcile(namespace, podName, null).compose(ignore -> {
+                Future<Void> del = podOperations.waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                    // predicate - changed generation means pod has been updated
+                    String newUid = getPodUid(podOperations.get(namespace, podName));
+                    boolean done = !deleted.equals(newUid);
+                    if (done) {
+                        log.debug("Rolling pod {} finished", podName);
+                    }
+                    return done;
+                });
+                return del;
+            });
+
+        podReconcileFuture.setHandler(deleteResult -> {
+            if (deleteResult.succeeded()) {
+                log.debug("Rolling update of {}/{}: Pod {} was deleted", namespace, name, podName);
+            }
+            deleteFinished.handle(deleteResult);
+        });
+        return deleteFinished;
     }
 
     @Override
