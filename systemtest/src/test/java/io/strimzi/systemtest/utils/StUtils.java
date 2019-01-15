@@ -215,7 +215,7 @@ public class StUtils {
      */
     public static void waitForDeploymentReady(KubernetesClient client, String namespace, String name) {
         LOGGER.info("Waiting for Deployment {}", name);
-        TestUtils.waitFor("deployment " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("deployment " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client.extensions().deployments().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment {} is ready", name);
     }
