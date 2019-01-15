@@ -137,16 +137,13 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                         log.debug("maybe restarting non leader pod " + i);
                         // roll the pod and wait until it is ready
                         // this prevents rolling into faulty state (note: this applies just for ZK pods)
-                        f2 = f2.compose(ignore -> maybeRestartPod(ss, podName, podRestart))
-                                .compose(ignore -> podOperations.readiness(namespace, podName, 1_000, operationTimeoutMs));
+                        f2 = f2.compose(ignore -> maybeRestartPod(ss, podName, podRestart));
                     }
                 }
                 return f2.compose(ar -> {
                     // the leader is rolled as the last
                     log.debug("maybe restarting leader pod " + lead);
-                    return maybeRestartPod(ss, name + "-" + lead, podRestart)
-                            .compose(ignore -> podOperations.readiness(namespace,
-                                    KafkaResources.zookeeperPodName(cluster, lead), 1_000, operationTimeoutMs));
+                    return maybeRestartPod(ss, KafkaResources.zookeeperPodName(cluster, lead), podRestart);
                 });
             });
         }
