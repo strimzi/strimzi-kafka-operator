@@ -132,29 +132,27 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         Pod pod = podOperations.get(ss.getMetadata().getNamespace(), podName);
         if (podRestart.test(pod)) {
             Future<Void> result = Future.future();
-            Future<ReconcileResult<Pod>> deleteFinished = Future.future();
+            Future<Void> deleteFinished = Future.future();
             log.info("Rolling update of {}/{}: Rolling pod {}", namespace, name, podName);
 
             // Determine generation of deleted pod
-            Future<String> deleted = getUid(namespace, podName);
+            String deleted = getPodUid(pod);
 
             // Delete the pod
-            Future<ReconcileResult<Pod>> podReconcileFuture = deleted.compose(l -> {
-                log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
-                // null as desired parameter means pod will be deleted
-                return podOperations.reconcile(namespace, podName, null);
-            }).compose(ignore -> {
-                Future del = podOperations.waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
-                    // predicate - changed generation means pod has been updated
-                    String newUid = getPodUid(podOperations.get(namespace, podName));
-                    boolean done = !deleted.result().equals(newUid);
-                    if (done) {
-                        log.debug("Rolling pod {} finished", podName);
-                    }
-                    return done;
+            log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
+            Future<Void> podReconcileFuture =
+                podOperations.reconcile(namespace, podName, null).compose(ignore -> {
+                    Future<Void> del = podOperations.waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                        // predicate - changed generation means pod has been updated
+                        String newUid = getPodUid(podOperations.get(namespace, podName));
+                        boolean done = !deleted.equals(newUid);
+                        if (done) {
+                            log.debug("Rolling pod {} finished", podName);
+                        }
+                        return done;
+                    });
+                    return del;
                 });
-                return del;
-            });
 
             podReconcileFuture.setHandler(deleteResult -> {
                 if (deleteResult.succeeded()) {
@@ -306,17 +304,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         }
 
         return new StatefulSetDiff(current, desired);
-    }
-
-    protected Future<String> getUid(String namespace, String podName) {
-        Future<String> result = Future.future();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
-            future -> {
-                String uid = getPodUid(podOperations.get(namespace, podName));
-                future.complete(uid);
-            }, true, result.completer()
-        );
-        return result;
     }
 
     private static String getPodUid(Pod resource) {

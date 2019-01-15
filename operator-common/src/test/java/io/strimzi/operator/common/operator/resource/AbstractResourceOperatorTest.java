@@ -81,6 +81,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     public void createWhenExistsIsAPatch(TestContext context) {
         createWhenExistsIsAPatch(context, true);
     }
+
     public void createWhenExistsIsAPatch(TestContext context, boolean cascade) {
         T resource = resource();
         Resource mockResource = mock(resourceType());

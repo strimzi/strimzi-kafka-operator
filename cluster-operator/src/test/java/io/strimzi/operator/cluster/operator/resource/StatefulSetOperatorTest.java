@@ -4,13 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.common.operator.resource.AbstractResourceOperatorTest;
-import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.strimzi.operator.common.operator.resource.PvcOperator;
-import io.strimzi.operator.common.operator.resource.ScalableResourceOperatorTest;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.TimeoutException;
-
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
@@ -21,12 +14,17 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.operator.common.operator.resource.AbstractResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
+import io.strimzi.operator.common.operator.resource.ScalableResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
 
-import java.util.UUID;
 import java.util.function.BiPredicate;
 
 import static org.junit.Assert.assertTrue;
@@ -142,11 +140,6 @@ public class StatefulSetOperatorTest
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
             }
-
-            @Override
-            protected Future<String> getUid(String namespace, String podName) {
-                return Future.succeededFuture(UUID.randomUUID().toString());
-            }
         };
 
         Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
@@ -183,12 +176,6 @@ public class StatefulSetOperatorTest
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
             }
-
-            @Override
-            protected Future<String> getUid(String namespace, String podName) {
-                return Future.succeededFuture(UUID.randomUUID().toString());
-            }
-
         };
 
         Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
@@ -227,11 +214,6 @@ public class StatefulSetOperatorTest
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
             }
-
-            @Override
-            protected Future<String> getUid(String namespace, String podName) {
-                return Future.succeededFuture(UUID.randomUUID().toString());
-            }
         };
 
         Future result = op.maybeRestartPod(resource, "my-pod-0", pod -> true);
@@ -269,11 +251,6 @@ public class StatefulSetOperatorTest
             @Override
             protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
                 return true;
-            }
-
-            @Override
-            protected Future<String> getUid(String namespace, String podName) {
-                return Future.succeededFuture(UUID.randomUUID().toString());
             }
         };
 
