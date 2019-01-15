@@ -31,7 +31,7 @@ public abstract class SingleVolumeStorage extends Storage {
     public abstract String getType();
 
     @Description("Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'")
-    @Minimum(1)
+    @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getId() {
         return id;

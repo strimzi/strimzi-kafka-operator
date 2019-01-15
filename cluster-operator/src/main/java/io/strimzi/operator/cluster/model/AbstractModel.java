@@ -477,7 +477,7 @@ public abstract class AbstractModel {
 
     /**
      * Set the configuration object which might be passed to the cluster as EnvVar
-     *
+     *getPersistentVolumeClaimName
      * @param configuration Configuration object with cluster configuration
      */
     protected void setConfiguration(AbstractConfiguration configuration) {
@@ -512,14 +512,6 @@ public abstract class AbstractModel {
 
     public static String getPersistentVolumeClaimName(String name, int podId) {
         return VOLUME_NAME + "-" + name + "-" + podId;
-    }
-
-    public static String getPersistentVolumeClaimName(StatefulSet ss) {
-        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
-            return ss.getSpec().getVolumeClaimTemplates().get(0).getMetadata().getName();
-        } else {
-            return null;
-        }
     }
 
     public String getPodName(int podId) {

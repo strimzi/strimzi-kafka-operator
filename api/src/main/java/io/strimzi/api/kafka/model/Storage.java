@@ -39,7 +39,7 @@ public abstract class Storage implements Serializable {
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Storage type, must be either 'ephemeral', 'persistent-claim' or 'jbod'.")
+    @Description("Storage type, must be either 'ephemeral', 'persistent-claim', or 'jbod'.")
     public abstract String getType();
 
     @JsonAnyGetter

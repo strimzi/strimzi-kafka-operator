@@ -42,7 +42,7 @@ spec:
                       type: boolean
                     id:
                       type: integer
-                      minimum: 1
+                      minimum: 0
                     selector:
                       type: object
                     size:
@@ -64,7 +64,7 @@ spec:
                             type: boolean
                           id:
                             type: integer
-                            minimum: 1
+                            minimum: 0
                           selector:
                             type: object
                           size:
@@ -815,7 +815,7 @@ spec:
                       type: boolean
                     id:
                       type: integer
-                      minimum: 1
+                      minimum: 0
                     selector:
                       type: object
                     size:
