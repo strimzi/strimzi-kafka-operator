@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Minimum;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -36,10 +37,22 @@ public abstract class Storage implements Serializable {
     public static final String TYPE_EPHEMERAL = "ephemeral";
     public static final String TYPE_PERSISTENT_CLAIM = "persistent-claim";
     public static final String TYPE_JBOD = "jbod";
+
+    private int id = 0;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Storage type, must be either 'ephemeral', 'persistent-claim' or 'jbod'.")
     public abstract String getType();
+
+    @Description("Storage identification number. It's mandatory only for storage volumes defined in a storage of type 'jbod'")
+    @Minimum(1)
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {

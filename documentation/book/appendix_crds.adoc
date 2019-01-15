@@ -101,6 +101,8 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 [options="header"]
 |====
 |Field        |Description
+|id    1.2+<.<|Storage identification number. It's mandatory only for storage volumes defined in a storage of type 'jbod'.
+|integer
 |type  1.2+<.<|Must be `ephemeral`.
 |string
 |====
@@ -126,6 +128,8 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |boolean
 |class        1.2+<.<|The storage class to use for dynamic volume allocation.
 |string
+|id           1.2+<.<|Storage identification number. It's mandatory only for storage volumes defined in a storage of type 'jbod'.
+|integer
 |====
 
 [id='type-JbodStorage-{context}']
@@ -139,6 +143,8 @@ It must have the value `jbod` for the type `JbodStorage`.
 [options="header"]
 |====
 |Field           |Description
+|id       1.2+<.<|Storage identification number. It's mandatory only for storage volumes defined in a storage of type 'jbod'.
+|integer
 |type     1.2+<.<|Must be `jbod`.
 |string
 |volumes  1.2+<.<|List of volumes as Storage objects representing the JBOD disks array.

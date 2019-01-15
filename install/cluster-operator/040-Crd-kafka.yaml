@@ -36,6 +36,9 @@ spec:
                       type: string
                     deleteClaim:
                       type: boolean
+                    id:
+                      type: integer
+                      minimum: 1
                     selector:
                       type: object
                     size:
@@ -55,6 +58,9 @@ spec:
                             type: string
                           deleteClaim:
                             type: boolean
+                          id:
+                            type: integer
+                            minimum: 1
                           selector:
                             type: object
                           size:
@@ -803,6 +809,9 @@ spec:
                       type: string
                     deleteClaim:
                       type: boolean
+                    id:
+                      type: integer
+                      minimum: 1
                     selector:
                       type: object
                     size:

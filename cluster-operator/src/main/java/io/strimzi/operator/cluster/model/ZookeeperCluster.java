@@ -422,7 +422,7 @@ public class ZookeeperCluster extends AbstractModel {
     private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
         if (storage instanceof EphemeralStorage) {
-            volumeList.add(createEmptyDirVolume(VOLUME_NAME));
+            volumeList.add(createEmptyDirVolume(getVolumeName()));
         }
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(createSecretVolume(TLS_SIDECAR_NODES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
@@ -433,14 +433,14 @@ public class ZookeeperCluster extends AbstractModel {
     private List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
         if (storage instanceof PersistentClaimStorage) {
-            pvcList.add(createPersistentVolumeClaim(VOLUME_NAME));
+            pvcList.add(createPersistentVolumeClaim(getVolumeName()));
         }
         return pvcList;
     }
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
+        volumeMountList.add(createVolumeMount(getVolumeName(), mountPath));
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         return volumeMountList;

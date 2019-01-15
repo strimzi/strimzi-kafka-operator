@@ -484,8 +484,8 @@ public abstract class AbstractModel {
         this.configuration = configuration;
     }
 
-    public String getVolumeName() {
-        return this.VOLUME_NAME;
+    protected String getVolumeName() {
+        return storage.getId() != 0 ? VOLUME_NAME + "-" + storage.getId() : VOLUME_NAME;
     }
 
     public String getImage() {
@@ -512,6 +512,14 @@ public abstract class AbstractModel {
 
     public static String getPersistentVolumeClaimName(String name, int podId) {
         return VOLUME_NAME + "-" + name + "-" + podId;
+    }
+
+    public static String getPersistentVolumeClaimName(StatefulSet ss) {
+        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
+            return ss.getSpec().getVolumeClaimTemplates().get(0).getMetadata().getName();
+        } else {
+            return null;
+        }
     }
 
     public String getPodName(int podId) {
