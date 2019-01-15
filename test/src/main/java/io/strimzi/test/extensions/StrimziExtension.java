@@ -456,7 +456,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         }
     }
 
-    class ResourceName {
+    static class ResourceName {
         public final String kind;
         public final String name;
 
