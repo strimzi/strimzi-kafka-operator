@@ -10,7 +10,6 @@ import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -308,7 +307,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     context.getDisplayName(), declaredTags, enabledTags);
             return false;
         } else {
-            if (CollectionUtils.containsAny(enabledTags, declaredTags) || declaredTags.isEmpty()) {
+            if (containsAny(enabledTags, declaredTags) || declaredTags.isEmpty()) {
                 LOGGER.info("Test class {} with tags {} does not have any tag restrictions by tags: {}. Checking method tags ...",
                         context.getDisplayName(), declaredTags, enabledTags);
                 for (Method method : testClass.getDeclaredMethods()) {
@@ -722,5 +721,14 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         } else {
             return a.toString();
         }
+    }
+
+    private boolean containsAny(Collection<String> enabledTags, Collection<String> declaredTags) {
+        for (String declaredTag : declaredTags) {
+            if (enabledTags.contains(declaredTag)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
