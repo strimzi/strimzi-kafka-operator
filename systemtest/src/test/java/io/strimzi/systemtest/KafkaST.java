@@ -193,10 +193,10 @@ class KafkaST extends AbstractST {
 
         final int scaleZkTo = initialZkReplicas + 4;
         final List<String> newZkPodNames = new ArrayList<String>() {{
-            for (int i = 0; i < scaleZkTo; i++) {
-                add(zookeeperPodName(CLUSTER_NAME, i));
-            }
-        }};
+                for (int i = 0; i < scaleZkTo; i++) {
+                    add(zookeeperPodName(CLUSTER_NAME, i));
+                }
+            }};
 
         Set<Integer> podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
 

@@ -74,15 +74,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.k8s.Events.Created;
-import static io.strimzi.systemtest.k8s.Events.Failed;
-import static io.strimzi.systemtest.k8s.Events.FailedSync;
-import static io.strimzi.systemtest.k8s.Events.FailedValidation;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
-import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
-import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
@@ -373,7 +368,7 @@ public abstract class AbstractST {
 
     void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "ERROR", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
@@ -1136,6 +1131,12 @@ public abstract class AbstractST {
         TestUtils.waitFor("Wait for all zk rollup finished", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
             () -> comparePodHashLists(podHashes, getPodsHash(namePrefix)));
 
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         checkPodsReadiness();
         LOGGER.info("All zk pods are ready");
     }
@@ -1180,7 +1181,12 @@ public abstract class AbstractST {
             defaultPods.addAll(getPodsHash(zookeeperClusterName(CLUSTER_NAME)));
         }
 
-        defaultPods.remove(client.pods().withName(newZkPodNames.get(newZkPodNames.size() - 1)).get().hashCode());
+        String lastPodName = newZkPodNames.get(newZkPodNames.size() - 1);
+        Integer podHasCode = client.pods().withName(lastPodName).get().hashCode();
+
+        LOGGER.info("Remove pod with name {} from index {}", lastPodName, podHasCode);
+
+        defaultPods.remove(client.pods().withName(lastPodName).get().hashCode());
         waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), defaultPods);
     }
 
