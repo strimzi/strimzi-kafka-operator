@@ -61,11 +61,9 @@ import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -1123,13 +1121,29 @@ public abstract class AbstractST {
         testClass = testInfo.getTestClass().get().getSimpleName();
     }
 
-    void waitForZkPodsRollUp(String namePrefix, Set<Integer> podHashes) {
+    void waitForZkPods(Map<Integer, String> defaultPods, List<String> newZkPodNames) {
+        for (String name : newZkPodNames) {
+            kubeClient.waitForPod(name);
+            LOGGER.info("Pod {} is ready", name);
+            defaultPods.putAll(getPodsHash(zookeeperClusterName(CLUSTER_NAME)));
+        }
+
+        String lastPodName = newZkPodNames.get(newZkPodNames.size() - 1);
+        Integer podHasCode = client.pods().withName(lastPodName).get().hashCode();
+
+        LOGGER.info("Remove pod with name {} from index {}", lastPodName, podHasCode);
+
+        defaultPods.remove(client.pods().withName(lastPodName).get().hashCode());
+        waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), defaultPods);
+    }
+
+    void waitForZkPodsRollUp(String namePrefix, Map<Integer, String> podHashes) {
         LOGGER.info("Waiting for all zookeeper pods will be running");
         // wait when all pods are ready
         LOGGER.info("Passed hashes: {}",
                 podHashes.toString());
         TestUtils.waitFor("Wait for all zk rollup finished", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> comparePodHashLists(podHashes, getPodsHash(namePrefix)));
+            () -> comparePodHashMaps(podHashes, getPodsHash(namePrefix)));
 
         try {
             Thread.sleep(10000);
@@ -1141,20 +1155,19 @@ public abstract class AbstractST {
         LOGGER.info("All zk pods are ready");
     }
 
-    Set<Integer> getPodsHash(String namePrefix) {
-        Set<Integer> newHashes = new HashSet<>();
+    Map<Integer, String> getPodsHash(String namePrefix) {
+        Map<Integer, String> podsHash = new HashMap<>();
 
         client.pods().list().getItems().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(namePrefix))
-                .forEach(p -> newHashes.add(p.hashCode()));
+                .filter(p -> p.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList())
+                .forEach(p -> podsHash.put(p.hashCode(), p.getMetadata().getName()));
 
-        LOGGER.info("Current hashes: {}", newHashes.toString());
-        return newHashes;
+        return podsHash;
     }
 
     boolean checkPodsReadiness() {
         for (Pod pod : client.pods().list().getItems()) {
-            LOGGER.info("Checking: {}", pod.getMetadata().getName());
+            LOGGER.info("Check state of pod {}", pod.getMetadata().getName());
             try {
                 client.resource(pod).waitUntilReady(1, TimeUnit.MINUTES);
             } catch (InterruptedException e) {
@@ -1164,30 +1177,16 @@ public abstract class AbstractST {
         return true;
     }
 
-    boolean comparePodHashLists(Set<Integer> oldHash, Set<Integer> newHash) {
-        for (Integer hash: oldHash) {
-            if (newHash.contains(hash)) {
-                LOGGER.warn("Pod with hash {} is still UP", hash);
+    boolean comparePodHashMaps(Map<Integer, String> oldHash, Map<Integer, String> newHash) {
+
+
+        for (Map.Entry<Integer, String> pod : oldHash.entrySet()) {
+            if (newHash.containsKey(pod.getKey())) {
+                LOGGER.info("Pod {} with hash {} still waiting for roll up", pod.getValue(), pod.getKey());
                 return false;
             }
         }
         return true;
-    }
-
-    void waitForZkPods(Set<Integer> defaultPods, List<String> newZkPodNames) {
-        for (String name : newZkPodNames) {
-            kubeClient.waitForPod(name);
-            LOGGER.info("Pod {} is ready", name);
-            defaultPods.addAll(getPodsHash(zookeeperClusterName(CLUSTER_NAME)));
-        }
-
-        String lastPodName = newZkPodNames.get(newZkPodNames.size() - 1);
-        Integer podHasCode = client.pods().withName(lastPodName).get().hashCode();
-
-        LOGGER.info("Remove pod with name {} from index {}", lastPodName, podHasCode);
-
-        defaultPods.remove(client.pods().withName(lastPodName).get().hashCode());
-        waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), defaultPods);
     }
 
     void checkZkPodsLog(List<String> newZkPodNames) {

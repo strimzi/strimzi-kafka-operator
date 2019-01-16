@@ -42,7 +42,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -193,20 +192,25 @@ class KafkaST extends AbstractST {
 
         final int scaleZkTo = initialZkReplicas + 4;
         final List<String> newZkPodNames = new ArrayList<String>() {{
+                for (int i = initialZkReplicas; i < scaleZkTo; i++) {
+                    add(zookeeperPodName(CLUSTER_NAME, i));
+                }
+            }};
+        final List<String> zkPodNames = new ArrayList<String>() {{
                 for (int i = 0; i < scaleZkTo; i++) {
                     add(zookeeperPodName(CLUSTER_NAME, i));
                 }
             }};
 
-        Set<Integer> podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
+        Map<Integer, String> podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
 
         LOGGER.info("Scaling up to {}", scaleZkTo);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo));
 
-        waitForZkPods(podHashes, newZkPodNames);
+        waitForZkPods(podHashes, zkPodNames);
         // check the new node is either in leader or follower state
         waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2, 3, 4, 5, 6);
-        checkZkPodsLog(newZkPodNames);
+        checkZkPodsLog(zkPodNames);
 
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);

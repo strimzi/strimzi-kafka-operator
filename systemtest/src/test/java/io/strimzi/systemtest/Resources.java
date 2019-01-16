@@ -614,6 +614,8 @@ public class Resources {
                     envVar.setValue(namespace);
                     envVar.setValueFrom(null);
                     break;
+                case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
+                    envVar.setValue("30000");
                 default:
                     if (envVar.getName().contains("STRIMZI_DEFAULT")) {
                         envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));
