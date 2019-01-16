@@ -268,6 +268,8 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 |string
 |authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|advertisedHost      1.2+<.<|Explicitly sets advertised host name.
+|string
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
 
 

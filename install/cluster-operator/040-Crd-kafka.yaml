@@ -179,6 +179,8 @@ spec:
                     external:
                       type: object
                       properties:
+                        advertisedHost:
+                          type: string
                         authentication:
                           type: object
                           properties:

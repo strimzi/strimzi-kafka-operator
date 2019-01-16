@@ -15,6 +15,7 @@ public class InitWriterConfig {
     public static final String RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     public static final String NODE_NAME = "NODE_NAME";
     public static final String EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
+    public static final String EXTERNAL_ADVERTISED_HOST = "EXTERNAL_ADVERTISED_HOST";
 
     public static final String DEFAULT_INIT_FOLDER = "/opt/kafka/init";
 
@@ -22,6 +23,7 @@ public class InitWriterConfig {
     private String rackTopologyKey;
     private boolean externalAddress;
     private String initFolder;
+    private String externalAdvertisedHost;
 
     /**
      * Load configuration parameters from a related map
@@ -46,14 +48,21 @@ public class InitWriterConfig {
             initFolder = initFolderEnvVar;
         }
 
-        return new InitWriterConfig(nodeName, rackTopologyKey, externalAddress, initFolder);
+        String externalAdvertisedHost = null;
+        String externalAdvertisedHostEnvVar = map.get(InitWriterConfig.EXTERNAL_ADVERTISED_HOST);
+        if (externalAdvertisedHostEnvVar != null) {
+            externalAdvertisedHost = externalAdvertisedHostEnvVar;
+        }
+
+        return new InitWriterConfig(nodeName, rackTopologyKey, externalAddress, initFolder, externalAdvertisedHost);
     }
 
-    public InitWriterConfig(String nodeName, String rackTopologyKey, boolean externalAddress, String initFolder) {
+    public InitWriterConfig(String nodeName, String rackTopologyKey, boolean externalAddress, String initFolder, String externalAdvertisedHost) {
         this.nodeName = nodeName;
         this.rackTopologyKey = rackTopologyKey;
         this.externalAddress = externalAddress;
         this.initFolder = initFolder;
+        this.externalAdvertisedHost = externalAdvertisedHost;
     }
 
     /**
@@ -84,6 +93,13 @@ public class InitWriterConfig {
         return externalAddress;
     }
 
+    /**
+     * @return Return external advertised listener host to use in kafka pods
+     */
+    public String getExternalAdvertisedHost() {
+        return externalAdvertisedHost;
+    }
+
     @Override
     public String toString() {
         return "InitWriterConfig(" +
@@ -91,6 +107,7 @@ public class InitWriterConfig {
                 ",rackTopologyKey=" + rackTopologyKey +
                 ",externalAddress=" + externalAddress +
                 ",initFolder=" + initFolder +
+                ",externalAdvertisedHost=" + externalAdvertisedHost +
                 ")";
     }
 }

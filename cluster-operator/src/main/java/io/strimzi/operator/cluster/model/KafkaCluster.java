@@ -77,6 +77,7 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
     private static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
+    private static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_HOST = "EXTERNAL_ADVERTISED_HOST";
     /** {@code TRUE} when the CLIENT listener (PLAIN transport) should be enabled*/
     private static final String ENV_VAR_KAFKA_CLIENT_ENABLED = "KAFKA_CLIENT_ENABLED";
     /** The authentication to configure for the CLIENT listener (PLAIN transport). */
@@ -706,6 +707,10 @@ public class KafkaCluster extends AbstractModel {
 
             if (isExposedWithNodePort()) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
+                String advertisedHost = ((KafkaListenerExternalNodePort) listeners.getExternal()).getAdvertisedHost();
+                if (advertisedHost != null && !advertisedHost.trim().isEmpty()) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_HOST, advertisedHost));
+                }
             }
 
             Container initContainer = new ContainerBuilder()

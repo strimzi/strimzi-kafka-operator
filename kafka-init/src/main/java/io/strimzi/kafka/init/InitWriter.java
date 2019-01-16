@@ -112,6 +112,10 @@ public class InitWriter {
      * @return  Address of the node
      */
     protected String findAddress(List<NodeAddress> addresses)   {
+        if (config.getExternalAdvertisedHost() != null) {
+            return config.getExternalAdvertisedHost();
+        }
+
         if (addresses == null)  {
             return null;
         }

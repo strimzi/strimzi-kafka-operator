@@ -33,6 +33,7 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
     private KafkaListenerAuthentication auth;
     private boolean tls = true;
     private List<NetworkPolicyPeer> networkPolicyPeers;
+    private String advertisedHost;
 
     @Description("Must be `" + TYPE_NODEPORT + "`")
     @Override
@@ -74,5 +75,15 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
 
     public void setNetworkPolicyPeers(List<NetworkPolicyPeer> networkPolicyPeers) {
         this.networkPolicyPeers = networkPolicyPeers;
+    }
+
+    @Description("Explicitly sets advertised host name")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getAdvertisedHost() {
+        return advertisedHost;
+    }
+
+    public void setAdvertisedHost(String advertisedHost) {
+        this.advertisedHost = advertisedHost;
     }
 }

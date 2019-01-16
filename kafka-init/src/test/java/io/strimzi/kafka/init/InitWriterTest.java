@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -92,6 +94,29 @@ public class InitWriterTest {
 
         InitWriter writer = new InitWriter(client, config);
         assertTrue(writer.writeExternalAddress());
+    }
+
+    @Test
+    public void testWriteExternalAdvertisedAddress() throws IOException {
+
+        // create and configure (env vars) the path to the rack-id file
+        File kafkaFolder = tmpFolder.newFolder("opt", "kafka");
+        String addressFolder = kafkaFolder.getAbsolutePath() + "/external.address";
+        String advertisedHost = "www.test.com";
+        new File(addressFolder).mkdir();
+
+        Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
+        envVars.put(InitWriterConfig.INIT_FOLDER, addressFolder);
+        envVars.put(InitWriterConfig.EXTERNAL_ADVERTISED_HOST, advertisedHost);
+
+        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
+
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), Collections.EMPTY_MAP, addresses);
+
+        InitWriter writer = new InitWriter(client, config);
+        writer.writeExternalAddress();
+        String content = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address")), "UTF-8");
+        assertEquals(content, "www.test.com");
     }
 
     @Test
