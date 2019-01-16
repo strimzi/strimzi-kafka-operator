@@ -3,6 +3,8 @@
 # Generates documentation/book/ref-kafka-versions.adoc
 # according to the values in kafka-versions
 
+. $(dirname $0)/../multi-platform-support.sh
+
 FILE=$1
 cat <<EOF
 // This assembly is included in the following assemblies:
@@ -21,9 +23,9 @@ cat <<EOF
 EOF
 
 
-for x in $(grep -E '^[^#]' "$FILE" | sed -E 's/ +/|/g'); do
+for x in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/ +/|/g'); do
     i=0
-    for y in $(echo $x | sed -E -e 's/[|][a-zA-Z0-9]+$'// -e 's/[|]/ /g' ); do
+    for y in $(echo $x | $SED -E -e 's/[|][a-zA-Z0-9]+$'// -e 's/[|]/ /g' ); do
         if [ "$y" != 'default' ]; then
             echo -n "|$y "
         fi

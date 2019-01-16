@@ -59,14 +59,14 @@ NOTE: It is necessary to format the value of `log.message.format.version` as a s
 `Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed` (if a single rolling update was required).
 For example, using `grep`:
 +
-[shell,subs="+quotes"]
+[source,shell,subs="+quotes"]
 ----
 oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version upgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
 ----
 
 . Upgrade each client application to use the new version of the client libraries.
 +
-NOTE: If, for whatever reason, you need to revert the update at this point, follow the procedure xref:proc-downgradings-brokers-older-kafka-{context}[]. 
+NOTE: If, for whatever reason, you need to revert the update at this point, follow the procedure xref:proc-downgrading-brokers-older-kafka-{context}[]. 
 You will not be able to downgrade after this step.
 
 . Change the `log.message.format.version` in `Kafka.spec.kafka.config` to the default version for the new version of Kafka now being used.

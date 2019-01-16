@@ -30,9 +30,14 @@ oc get -l app=strimzi > strimzi-backup.yaml
 ----
 
 . Update the Cluster Operator. 
+You will need to modify the installation files according to the namespace the Cluster Operator is running in.
++
+include:frag-cluster-operator-namespace-sed.adoc[]
++
 If you have modified some of the environment variables in your existing Cluster Operator `Deployment` you should edit 
 `install/cluster-operator/050-Deployment-cluster-operator.yaml` to reflect the changes you have made.
-When you have an updated configuration you can deploy it along with the rest of the install resources
+
+. When you have an updated configuration you can deploy it along with the rest of the install resources
 +
 ----
 oc apply -f install/cluster-operator

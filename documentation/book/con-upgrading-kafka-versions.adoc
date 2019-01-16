@@ -34,7 +34,7 @@ If this wasn't explicitly configured already the Cluster Operator will perform a
 . You can then set the `Kafka.spec.kafka.version` to the version of Kafka being upgraded to, keeping the `log.message.format.version` set to the old version.
 The Cluster Operator will perform the rolling upgrades necessary to start using the new Kafka version.
 
-. Once the Cluster Operator has completed its rolling updates you will need for upgrade client applications to use the new version of the Kafka client libraries. 
+. After the Cluster Operator has completed its rolling updates you will need for upgrade client applications to use the new version of the Kafka client libraries. 
 
 . When you've upgraded all the client applications and you are sure you want to proceed with the new version, you can change the `log.message.format.version` in the `Kafka.spec.kafka.config` to the new version.
 +
@@ -47,7 +47,7 @@ The Cluster Operator will perform a rolling upgrade of the broker cluster so tha
 == When the versions of Zookeeper differ
 
 When the Kafka versions need a different version of Zookeeper then an upgrade of Zookeeper is also be necessary.
-Currently all Kafka versions support the same version of Zookeeper. 
+Currently all Kafka versions supported by {ProductName} require the same version of Zookeeper. 
 Because of this, and in order to avoid unnecessary rolling updates of the Zookeeper cluster, the Zookeeper Pods will not be upgraded with a new image.
 This is not a problem because the versions of Zookeeper in the different Kafka images are the same.
 

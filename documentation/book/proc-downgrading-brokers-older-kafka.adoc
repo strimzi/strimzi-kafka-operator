@@ -46,7 +46,7 @@ NOTE: It is necessary to format the value of `log.message.format.version` as a s
 `Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed` (if a single rolling update was required).
 For example, using `grep`:
 +
-[shell,subs="+quotes"]
+[source,shell,subs="+quotes"]
 ----
 oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
 ----
