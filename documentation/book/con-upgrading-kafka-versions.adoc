@@ -5,58 +5,18 @@
 [id='con-upgrading-kafka-versions-{context}']
 = Upgrading Kafka versions
 
-A given version of the Cluster Operator knows certain details about a given set of Kafka versions. 
-For the purpose of a Kafka upgrade the important attributes are:
+A given version of the Cluster Operator embeds certain information about a given set of Kafka versions. 
 
-* The version of the Kafka protocol to be used between brokers. (this is set via the `interbroker.protocol.version` Kafka configuration parameter),
-* The format version to be used for messages stored in the Kafka log (this is set via the `log.message.format.version` Kafka configuration parameter),
-* The required version of Zookeeper.
+How the Cluster Operator will perform an upgrade depends on the differences between:
 
-The differences in these attributes between the Kafka version being upgraded from and the Kafka version being upgraded to will determine exactly how the upgrade process works.
+* the interbroker protocol version of the two Kafka versions.
+* the log message format version of the two Kafka versions.
+* the version of Zookeeper used by the two Kafka versions.
 
-== When all the attributes are the same
+When all of these are the same, as is typically the case for a patch level upgrade (for example 2.0.0 to 2.0.1), then the upgrade can be done using a single rolling update of the Kafka brokers.
 
-When all these properties are the same for the Kafka version being upgraded from and to then when you change the  `Kafka.spec.kafka.config` a single rolling update of the Kafka brokers can be used by the Cluster Operator.
-This will typically be the case when the Kafka version numbers differ only in the patch level, for example 2.0.0 to 2.0.1.
+When one or more of these differ, the upgrade process will involve two or three rolling updates of the Kafka brokers.
 
-== When the interbroker protocol versions differ
+Consult the following table to determine whether your intended upgrade is a simple one.
 
-When the Kafka versions use different versions of the Kafka protocol the Cluster Operator will automatically handle the setting and unsetting of the `interbroker.protocol.version` together with the change in the `Pod.spec.image`.
-Doing this requires two rolling updates of the broker cluster.
-
-== When the message format versions differ
-
-When the Kafka versions use different versions for the message format in the Kafka logs you will need to configure the `log.message.format.version` in the `Kafka.spec.kafka.config` explicitly:
-
-. Initially it will need to be set to the message format version being used in the Kafka version being upgraded from. 
-If this wasn't explicitly configured already the Cluster Operator will perform a rolling update when you change this, as if would for any other `Kafka.spec.kafka.config` change.
-
-. You can then set the `Kafka.spec.kafka.version` to the version of Kafka being upgraded to, keeping the `log.message.format.version` set to the old version.
-The Cluster Operator will perform the rolling upgrades necessary to start using the new Kafka version.
-
-. After the Cluster Operator has completed its rolling updates you will need for upgrade client applications to use the new version of the Kafka client libraries. 
-
-. When you've upgraded all the client applications and you are sure you want to proceed with the new version, you can change the `log.message.format.version` in the `Kafka.spec.kafka.config` to the new version.
-+
-NOTE: Equivalently, you can remove `log.message.format.version` from the `Kafka.spec.kafka.config`, however that will mean the next Kafka upgrade will require an initial rolling update in order to set `log.message.format.version` explicitly.
-+
-WARNING: Once you have changed `log.message.format.version` from the old version it will no longer be possible to revert to the old version, so it is worth ensuring that you are ready to proceed
-+
-The Cluster Operator will perform a rolling upgrade of the broker cluster so that all brokers are using the new format for messages.
-
-== When the versions of Zookeeper differ
-
-When the Kafka versions need a different version of Zookeeper then an upgrade of Zookeeper is also be necessary.
-Currently all Kafka versions supported by {ProductName} require the same version of Zookeeper. 
-Because of this, and in order to avoid unnecessary rolling updates of the Zookeeper cluster, the Zookeeper Pods will not be upgraded with a new image.
-This is not a problem because the versions of Zookeeper in the different Kafka images are the same.
-
-== Upgrading across major or minor versions
-
-When the Kafka version numbers differ in the major or minor numbers, for example 2.0.0 to 2.1.0, then usually both the interbroker protocol and message format versions will differ, with consequences for Kafka upgrade as described above. 
-This means:
-
-. You will need to have set `log.message.format.version` initially (requiring a rolling update of the Kafka brokers if it was not already set).
-. When you change the `Kafka.spec.kafka.version` the Cluster Operator will perform two rolling upgrades of the Kafka brokers (to handle the change in interbroker protocol versions).
-. You will then need to upgrade clients.
-. When you update or remove `log.message.format.version` following the upgrade of clients the Cluster Operator will perform a final rolling update of the Kafka brokers.
+include::ref-kafka-versions.adoc[leveloffset=+1]

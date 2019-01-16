@@ -19,7 +19,7 @@ cat <<EOF
 
 [options="header"]
 |=================
-|Kafka version |interbroker.protocol.version |log.message.format.version
+|Kafka version |Interbroker protocol version |Log message format version| Zookeeper version
 EOF
 
 
@@ -30,7 +30,7 @@ for x in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/ +/|/g'); do
             echo -n "|$y "
         fi
     done
-    echo
+    echo "|3.4.9"
 done
 default_version=$($GREP -E '^[0-9.]+ +default' $FILE | $SED -E 's/(^[0-9.]+).*/\1/')
 
