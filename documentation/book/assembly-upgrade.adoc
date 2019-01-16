@@ -7,7 +7,6 @@
 
 A given version of {ProductName} supports a range of versions of Kafka.
 Within a given version of {ProductName} it is possible to upgrade (and sometimes downgrade) between the supported Kafka versions.
-This version of {ProductName} supports {SupportedKafkaVersionList}.
 
 When a newer version of {ProductName} is available, it may provide support for newer versions of Kafka. 
 In this case it is first necessary to upgrade {ProductName} before then upgrading to a newer Kafka version supported by the new {ProductName} version.

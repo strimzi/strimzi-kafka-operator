@@ -7,8 +7,6 @@
 
 = Upgrading and Downgrading Kafka versions
 
-This version of {ProductName} supports running Kafka clusters using versions {SupportedKafkaVersionList} of Kafka with the default version being {DefaultKafkaVersion}.
-
 include::con-versions-and-images.adoc[leveloffset=+1]
 
 include::con-upgrading-kafka-versions.adoc[leveloffset=+1]

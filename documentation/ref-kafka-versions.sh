@@ -24,7 +24,7 @@ EOF
 
 
 for x in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/ +/|/g'); do
-    i=0
+    
     for y in $(echo $x | $SED -E -e 's/[|][a-zA-Z0-9]+$'// -e 's/[|]/ /g' ); do
         if [ "$y" != 'default' ]; then
             echo -n "|$y "
@@ -32,8 +32,10 @@ for x in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/ +/|/g'); do
     done
     echo
 done
+default_version=$($GREP -E '^[0-9.]+ +default' $FILE | $SED -E 's/(^[0-9.]+).*/\1/')
+
 cat <<EOF
 |=================
 
-The default Kafka version is {DefaultKafkaVersion}.
+The default Kafka version is ${default_version}.
 EOF
