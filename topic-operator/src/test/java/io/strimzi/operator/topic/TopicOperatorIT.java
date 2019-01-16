@@ -126,7 +126,6 @@ public class TopicOperatorIT {
     public void setup(TestContext context) throws Exception {
         LOGGER.info("Setting up test");
         testCluster.before();
-        testCluster.before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
         kafkaCluster = new KafkaCluster();
         kafkaCluster.addBrokers(1);
