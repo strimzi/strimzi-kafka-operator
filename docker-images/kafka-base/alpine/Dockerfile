@@ -1,15 +1,18 @@
+#
+# License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+#
+# Alpine images are an experimental feature not supported by the core Strimzi team
+#
 FROM strimzi/java-base:latest
 ARG KAFKA_SHA512
 ARG KAFKA_VERSION
-
-RUN yum -y install gettext nmap-ncat && yum clean all -y
 
 # set Kafka home folder
 ENV KAFKA_HOME=/opt/kafka
 
 # Add kafka user with UID 1002
 # The user is in the group 0 to have access to the mounted volumes and storage
-RUN useradd -r -m -u 1002 -g 0 kafka
+RUN adduser -u 1002 -D kafka root
 
 # Set Scala and Kafka version
 ENV KAFKA_VERSION=${KAFKA_VERSION}
