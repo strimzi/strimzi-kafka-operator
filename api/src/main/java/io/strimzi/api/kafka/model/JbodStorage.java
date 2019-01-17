@@ -8,8 +8,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.List;
+
 /**
- * Representation for ephemeral storage.
+ * Representation for JBOD storage.
  */
 @Buildable(
         editableEnabled = false,
@@ -17,13 +19,25 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class EphemeralStorage extends SingleVolumeStorage {
+public class JbodStorage extends Storage {
 
     private static final long serialVersionUID = 1L;
 
-    @Description("Must be `" + TYPE_EPHEMERAL + "`")
+    private List<SingleVolumeStorage> volumes;
+
+    @Description("Must be `" + TYPE_JBOD + "`")
     @Override
     public String getType() {
-        return TYPE_EPHEMERAL;
+        return TYPE_JBOD;
+    }
+
+    @Description("List of volumes as Storage objects representing the JBOD disks array")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<SingleVolumeStorage> getVolumes() {
+        return volumes;
+    }
+
+    public void setVolumes(List<SingleVolumeStorage> volumes) {
+        this.volumes = volumes;
     }
 }

@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
@@ -50,7 +51,8 @@ public class TopicOperatorTest {
     private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
     private final Map<String, Object> kafkaConfig = singletonMap("foo", "bar");
     private final Map<String, Object> zooConfig = singletonMap("foo", "bar");
-    private final Storage storage = new EphemeralStorage();
+    private final Storage kafkaStorage = new EphemeralStorage();
+    private final SingleVolumeStorage zkStorage = new EphemeralStorage();
     private final InlineLogging kafkaLogJson = new InlineLogging();
     private final InlineLogging zooLogJson = new InlineLogging();
     private final InlineLogging topicOperatorLogging = new InlineLogging();
@@ -82,7 +84,7 @@ public class TopicOperatorTest {
             .withTlsSidecar(tlsSidecar)
             .build();
 
-    private final Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, storage, topicOperator, kafkaLogJson, zooLogJson);
+    private final Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, kafkaStorage, zkStorage, topicOperator, kafkaLogJson, zooLogJson);
     private final TopicOperator tc = TopicOperator.fromCrd(resource);
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -112,7 +114,7 @@ public class TopicOperatorTest {
     public void testFromConfigMapDefaultConfig() {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
-                storage, new TopicOperatorSpec(), kafkaLogJson, zooLogJson);
+                kafkaStorage, zkStorage, new TopicOperatorSpec(), kafkaLogJson, zooLogJson);
         TopicOperator tc = TopicOperator.fromCrd(resource);
         Assert.assertEquals(TopicOperatorSpec.DEFAULT_IMAGE, tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());

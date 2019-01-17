@@ -97,4 +97,27 @@ public class KafkaCrdIT extends AbstractCrdIT {
             assertTrue(e.getMessage().contains("spec.kafka.tlsSidecar.logLevel in body should be one of [emerg alert crit err warning notice info debug]"));
         }
     }
+
+    @Test
+    public void testKafkaWithJbodStorage() {
+        createDelete(Kafka.class, "Kafka-with-jbod-storage.yaml");
+    }
+
+    @Test
+    public void testKafkaWithJbodStorageOnZookeeper() {
+        try {
+            createDelete(Kafka.class, "Kafka-with-jbod-storage-on-zookeeper.yaml");
+        } catch (KubeClusterException.InvalidResource e) {
+            assertTrue(e.getMessage().contains("spec.zookeeper.storage.type in body should be one of [ephemeral persistent-claim]"));
+        }
+    }
+
+    @Test
+    public void testKafkaWithInvalidStorage() {
+        try {
+            createDelete(Kafka.class, "Kafka-with-invalid-storage.yaml");
+        } catch (KubeClusterException.InvalidResource e) {
+            assertTrue(e.getMessage().contains("spec.kafka.storage.type in body should be one of [ephemeral persistent-claim jbod]"));
+        }
+    }
 }

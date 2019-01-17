@@ -25,7 +25,8 @@ import java.util.Map;
 )
 @JsonSubTypes({
         @JsonSubTypes.Type(value = EphemeralStorage.class, name = Storage.TYPE_EPHEMERAL),
-        @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM)}
+        @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM),
+        @JsonSubTypes.Type(value = JbodStorage.class, name = Storage.TYPE_JBOD)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class Storage implements Serializable {
@@ -34,9 +35,11 @@ public abstract class Storage implements Serializable {
 
     public static final String TYPE_EPHEMERAL = "ephemeral";
     public static final String TYPE_PERSISTENT_CLAIM = "persistent-claim";
+    public static final String TYPE_JBOD = "jbod";
+
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Storage type, must be either 'ephemeral' or 'persistent-claim'.")
+    @Description("Storage type, must be either 'ephemeral', 'persistent-claim', or 'jbod'.")
     public abstract String getType();
 
     @JsonAnyGetter

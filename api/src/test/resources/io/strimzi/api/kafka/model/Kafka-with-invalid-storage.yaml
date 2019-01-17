@@ -1,0 +1,16 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: strimzi-ephemeral
+spec:
+  kafka:
+    replicas: 3
+    storage:
+      type: foobar
+    listeners:
+      plain: {}
+      tls: {}
+  zookeeper:
+    replicas: 3
+    storage:
+      type: ephemeral
