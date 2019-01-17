@@ -19,7 +19,7 @@ openssl req -x509 -new -days _<validity>_ --nodes -out ca.crt -keyout ca.key
 
 .Procedure
 
-. Put your CA certificate in the corresponding `Secret` (`_<cluster>_-cluster-ca-cert` for the cluster CA or `_<cluster>_-client-ca-cert` for the clients CA):
+. Put your CA certificate in the corresponding `Secret` (`_<cluster>_-cluster-ca-cert` for the cluster CA or `_<cluster>_-clients-ca-cert` for the clients CA):
 ifdef::Kubernetes[]
 +
 On {KubernetesName}, run the following commands:
@@ -51,7 +51,7 @@ oc create secret generic _<ca-cert-secret>_ \
   strimzi.io/cluster=_<my-cluster>_
 ----
 
-. Put your CA key in the corresponding `Secret` (`_<cluster>_-cluster-ca` for the cluster CA or `_<cluster>_-client-ca` for the clients CA)
+. Put your CA key in the corresponding `Secret` (`_<cluster>_-cluster-ca` for the cluster CA or `_<cluster>_-clients-ca` for the clients CA)
 ifdef::Kubernetes[]
 +
 On {KubernetesName}, run the following commands:
