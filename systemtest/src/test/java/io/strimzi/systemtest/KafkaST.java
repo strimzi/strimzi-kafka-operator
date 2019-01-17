@@ -26,6 +26,7 @@ import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
@@ -43,9 +44,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Failed;
 import static io.strimzi.systemtest.k8s.Events.FailedSync;
@@ -92,6 +95,7 @@ class KafkaST extends AbstractST {
     private static final long TIMEOUT_FOR_TOPIC_CREATION = 60_000;
     private static final long POLL_INTERVAL_SECRET_CREATION = 5_000;
     private static final long TIMEOUT_FOR_SECRET_CREATION = 360_000;
+    private static final long TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION = 450_000;
 
     @Test
     @Tag(REGRESSION)
@@ -180,7 +184,6 @@ class KafkaST extends AbstractST {
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
-    @Disabled
     @Test
     @Tag(FLAKY)
     void testZookeeperScaleUpScaleDown() {
@@ -198,21 +201,14 @@ class KafkaST extends AbstractST {
                     add(zookeeperPodName(CLUSTER_NAME, i));
                 }
             }};
-        final List<String> zkPodNames = new ArrayList<String>() {{
-                for (int i = 0; i < scaleZkTo; i++) {
-                    add(zookeeperPodName(CLUSTER_NAME, i));
-                }
-            }};
-
-        Map<Integer, String> podHashes = getPodsHash(zookeeperClusterName(CLUSTER_NAME));
 
         LOGGER.info("Scaling up to {}", scaleZkTo);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo));
 
-        waitForZkPods(podHashes, zkPodNames);
+        waitForZkPods(newZkPodNames);
         // check the new node is either in leader or follower state
         waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2, 3, 4, 5, 6);
-        checkZkPodsLog(zkPodNames);
+        checkZkPodsLog(newZkPodNames);
 
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
@@ -947,6 +943,45 @@ class KafkaST extends AbstractST {
         Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-target", nameConsumerTarget, topicName, messagesCount, userTarget, true));
         // Check consumed messages in target cluster
         checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+    }
+
+    void waitForZkRollUp() {
+        LOGGER.info("Waiting for cluster stability");
+        Map<String, String>[] zkPods = new Map[1];
+        AtomicInteger count = new AtomicInteger();
+        zkPods[0] = StUtils.ssSnapshot(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+        TestUtils.waitFor("Cluster stable and ready", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION, () -> {
+            Map<String, String> zkSnapshot = StUtils.ssSnapshot(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+            boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
+            if (!zkSameAsLast) {
+                LOGGER.info("ZK Cluster not stable");
+            }
+            if (zkSameAsLast) {
+                int c = count.getAndIncrement();
+                LOGGER.info("All stable for {} polls", c);
+                return c > 60;
+            }
+            zkPods[0] = zkSnapshot;
+            count.set(0);
+            return false;
+        });
+    }
+
+    void checkZkPodsLog(List<String> newZkPodNames) {
+        for (String name : newZkPodNames) {
+            //Test that second pod does not have errors or failures in events
+            LOGGER.info("Checking logs fro pod {}", name);
+            List<Event> eventsForSecondPod = getEvents("Pod", name);
+            assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+        }
+    }
+
+    void waitForZkPods(List<String> newZkPodNames) {
+        for (String name : newZkPodNames) {
+            kubeClient.waitForPod(name);
+            LOGGER.info("Pod {} is ready", name);
+        }
+        waitForZkRollUp();
     }
 
     @BeforeEach

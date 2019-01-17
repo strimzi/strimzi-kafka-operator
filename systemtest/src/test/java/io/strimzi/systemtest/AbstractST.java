@@ -64,18 +64,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.k8s.Events.Created;
-import static io.strimzi.systemtest.k8s.Events.Pulled;
-import static io.strimzi.systemtest.k8s.Events.Scheduled;
-import static io.strimzi.systemtest.k8s.Events.Started;
-import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
@@ -1119,82 +1113,5 @@ public abstract class AbstractST {
     static void createTestClassResources(TestInfo testInfo) {
         createClusterOperatorResources();
         testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
-    void waitForZkPods(Map<Integer, String> defaultPods, List<String> newZkPodNames) {
-        for (String name : newZkPodNames) {
-            kubeClient.waitForPod(name);
-            LOGGER.info("Pod {} is ready", name);
-            defaultPods.putAll(getPodsHash(zookeeperClusterName(CLUSTER_NAME)));
-        }
-
-        String lastPodName = newZkPodNames.get(newZkPodNames.size() - 1);
-        Integer podHasCode = client.pods().withName(lastPodName).get().hashCode();
-
-        LOGGER.info("Remove pod with name {} from index {}", lastPodName, podHasCode);
-
-        defaultPods.remove(client.pods().withName(lastPodName).get().hashCode());
-        waitForZkPodsRollUp(zookeeperClusterName(CLUSTER_NAME), defaultPods);
-    }
-
-    void waitForZkPodsRollUp(String namePrefix, Map<Integer, String> podHashes) {
-        LOGGER.info("Waiting for all zookeeper pods will be running");
-        // wait when all pods are ready
-        LOGGER.info("Passed hashes: {}",
-                podHashes.toString());
-        TestUtils.waitFor("Wait for all zk rollup finished", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> comparePodHashMaps(podHashes, getPodsHash(namePrefix)));
-
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        checkPodsReadiness();
-        LOGGER.info("All zk pods are ready");
-    }
-
-    Map<Integer, String> getPodsHash(String namePrefix) {
-        Map<Integer, String> podsHash = new HashMap<>();
-
-        client.pods().list().getItems().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList())
-                .forEach(p -> podsHash.put(p.hashCode(), p.getMetadata().getName()));
-
-        return podsHash;
-    }
-
-    boolean checkPodsReadiness() {
-        for (Pod pod : client.pods().list().getItems()) {
-            LOGGER.info("Check state of pod {}", pod.getMetadata().getName());
-            try {
-                client.resource(pod).waitUntilReady(1, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        return true;
-    }
-
-    boolean comparePodHashMaps(Map<Integer, String> oldHash, Map<Integer, String> newHash) {
-
-
-        for (Map.Entry<Integer, String> pod : oldHash.entrySet()) {
-            if (newHash.containsKey(pod.getKey())) {
-                LOGGER.info("Pod {} with hash {} still waiting for roll up", pod.getValue(), pod.getKey());
-                return false;
-            }
-        }
-        return true;
-    }
-
-    void checkZkPodsLog(List<String> newZkPodNames) {
-        for (String name : newZkPodNames) {
-            //Test that second pod does not have errors or failures in events
-            LOGGER.info("Checking logs fro pod {}", name);
-            List<Event> eventsForSecondPod = getEvents("Pod", name);
-            assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        }
     }
 }
