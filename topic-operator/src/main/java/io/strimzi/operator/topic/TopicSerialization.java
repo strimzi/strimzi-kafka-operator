@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -87,7 +88,8 @@ public class TopicSerialization {
                 .withTopicName(getTopicName(kafkaTopic))
                 .withNumPartitions(getPartitions(kafkaTopic))
                 .withNumReplicas(getReplicas(kafkaTopic))
-                .withConfig(topicConfigFromTopicConfig(kafkaTopic));
+                .withConfig(topicConfigFromTopicConfig(kafkaTopic))
+                .withMetadata(kafkaTopic.getMetadata());
         return builder.build();
     }
 
@@ -127,7 +129,28 @@ public class TopicSerialization {
      */
     public static KafkaTopic toTopicResource(Topic topic, LabelPredicate resourcePredicate) {
         ResourceName resourceName = topic.getOrAsMapName();
-        return new KafkaTopicBuilder().withApiVersion("v1")
+        ObjectMeta om = topic.getMetadata();
+        if (om != null) {
+            om.setName(resourceName.toString());
+            om.setLabels(resourcePredicate.labels());
+            om.setOwnerReferences(topic.getMetadata().getOwnerReferences());
+            om.setAnnotations(topic.getMetadata().getAnnotations());
+            KafkaTopic kt = new KafkaTopicBuilder().withApiVersion("v1")
+                    .withMetadata(om)
+                    // TODO .withUid()
+                    .withNewSpec()
+                    .withTopicName(topic.getTopicName().toString())
+                    .withPartitions(topic.getNumPartitions())
+                    .withReplicas((int) topic.getNumReplicas())
+                    .withConfig(new LinkedHashMap<>(topic.getConfig()))
+                    .endSpec()
+                    .build();
+            // for some reason when the `topic.getMetadata().getAnnotations()` is null
+            // topic is created with annotations={} (empty map but should be null aswell)
+            kt.getMetadata().setAnnotations(topic.getMetadata().getAnnotations());
+            return kt;
+        } else {
+            return new KafkaTopicBuilder().withApiVersion("v1")
                     .withMetadata(new ObjectMetaBuilder()
                     .withName(resourceName.toString())
                     .withLabels(resourcePredicate.labels()).build())
@@ -139,6 +162,7 @@ public class TopicSerialization {
                     .withConfig(new LinkedHashMap<>(topic.getConfig()))
                 .endSpec()
             .build();
+        }
     }
 
 
@@ -198,6 +222,26 @@ public class TopicSerialization {
                 .withTopicName(meta.getDescription().name())
                 .withNumPartitions(meta.getDescription().partitions().size())
                 .withNumReplicas((short) meta.getDescription().partitions().get(0).replicas().size());
+        for (ConfigEntry entry: meta.getConfig().entries()) {
+            if (!entry.isDefault()) {
+                builder.withConfigEntry(entry.name(), entry.value());
+            }
+        }
+        return builder.build();
+    }
+
+    /**
+     * Create a Topic to reflect the given TopicMetadata.
+     */
+    public static Topic fromTopicMetadata(TopicMetadata meta, ObjectMeta k8sMeta) {
+        if (meta == null) {
+            return null;
+        }
+        Topic.Builder builder = new Topic.Builder()
+                .withTopicName(meta.getDescription().name())
+                .withNumPartitions(meta.getDescription().partitions().size())
+                .withNumReplicas((short) meta.getDescription().partitions().get(0).replicas().size())
+                .withMetadata(k8sMeta);
         for (ConfigEntry entry: meta.getConfig().entries()) {
             if (!entry.isDefault()) {
                 builder.withConfigEntry(entry.name(), entry.value());

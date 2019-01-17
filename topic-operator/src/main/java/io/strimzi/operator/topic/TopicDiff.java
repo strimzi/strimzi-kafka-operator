@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -112,6 +114,51 @@ public class TopicDiff {
         }
     }
 
+    private static class MetadataDifference extends Difference {
+        public static final String ADDRESS = "metadata";
+        private ObjectMeta metadata;
+        private ObjectMeta metadataNew;
+
+        public MetadataDifference(ObjectMeta metadata, ObjectMeta metadataNew) {
+            this.metadata = metadata;
+            this.metadataNew = metadataNew;
+        }
+
+        @Override
+        public String address() {
+            return ADDRESS;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MetadataDifference that = (MetadataDifference) o;
+
+            return metadataNew.equals(that.metadataNew);
+        }
+
+        @Override
+        public int hashCode() {
+            return metadataNew.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "metadataNew=" + metadataNew;
+        }
+
+        @Override
+        protected void apply(Topic.Builder builder) {
+            builder.withMetadata(this.metadataNew);
+        }
+
+        public ObjectMeta metadataChange() {
+            return metadataNew;
+        }
+    }
+
     private static class AddedConfigEntry extends Difference {
         public static final String ADDRESS_PREFIX = "config:";
         private final String configKey;
@@ -157,6 +204,47 @@ public class TopicDiff {
         @Override
         protected void apply(Topic.Builder builder) {
             builder.withConfigEntry(this.configKey, this.configValue);
+        }
+    }
+
+    private static class AddedMetadataEntry extends Difference {
+        public static final String ADDRESS = "metadata";
+        private final ObjectMeta metadata;
+
+        public AddedMetadataEntry(ObjectMeta metadata) {
+            if (metadata == null) {
+                throw new IllegalArgumentException();
+            }
+            this.metadata = metadata;
+        }
+
+        @Override
+        public String address() {
+            return ADDRESS;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            AddedMetadataEntry that = (AddedMetadataEntry) o;
+            return metadata.equals(that.metadata);
+        }
+
+        @Override
+        public int hashCode() {
+            return metadata.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "metadata +'" + metadata.toString() + '\'';
+        }
+
+        @Override
+        protected void apply(Topic.Builder builder) {
+            builder.withMetadata(this.metadata);
         }
     }
 
@@ -249,6 +337,10 @@ public class TopicDiff {
                 }
             }
         }
+        if (source.getMetadata() != null && !source.getMetadata().equals(target.getMetadata())) {
+            MetadataDifference metadataDifference = new MetadataDifference(source.getMetadata(), target.getMetadata());
+            differences.put(metadataDifference.address(), metadataDifference);
+        }
         return new TopicDiff(differences);
     }
 
@@ -297,6 +389,10 @@ public class TopicDiff {
             }
         }
         return false;
+    }
+
+    public boolean changesMetadata() {
+        return this.differences.containsKey(MetadataDifference.ADDRESS);
     }
 
     public boolean changesReplicationFactor() {

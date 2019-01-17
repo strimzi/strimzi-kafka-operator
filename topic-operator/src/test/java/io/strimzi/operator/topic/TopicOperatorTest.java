@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -45,6 +46,7 @@ public class TopicOperatorTest {
     private MockK8s mockK8s = new MockK8s();
     private TopicOperator topicOperator;
     private Config config;
+    private ObjectMeta metadata = new ObjectMeta();
 
     private static final Map<String, String> MANDATORY_CONFIG = new HashMap<>();
 
@@ -61,6 +63,10 @@ public class TopicOperatorTest {
         mockK8s = new MockK8s();
         config = new Config(new HashMap<>(MANDATORY_CONFIG));
         topicOperator = new TopicOperator(vertx, mockKafka, mockK8s, mockTopicStore, resourcePredicate, "default-namespace", config);
+        metadata.setName(topicName.toString());
+        Map<String, String> lbls = new HashMap<>();
+        lbls.put("app", "strimzi");
+        metadata.setLabels(lbls);
     }
 
     @After
@@ -132,7 +138,7 @@ public class TopicOperatorTest {
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName(topicName.toString()).withLabels(resourcePredicate.labels()).build())
+                .withMetadata(metadata)
                 .withNewSpec()
                     .withReplicas(2)
                     .withPartitions(10)
@@ -241,7 +247,8 @@ public class TopicOperatorTest {
         topicOperator.onTopicCreated(topicName, ar -> {
             assertSucceeded(context, ar);
             mockK8s.assertExists(context, resourceName);
-            mockTopicStore.assertContains(context, TopicSerialization.fromTopicMetadata(topicMetadata));
+            Topic t = TopicSerialization.fromTopicMetadata(topicMetadata, metadata);
+            mockTopicStore.assertContains(context, t);
             async.complete();
         });
     }
@@ -277,7 +284,7 @@ public class TopicOperatorTest {
             assertSucceeded(context, ar);
             context.assertEquals(4, counter.get());
             mockK8s.assertExists(context, resourceName);
-            mockTopicStore.assertContains(context, TopicSerialization.fromTopicMetadata(topicMetadata));
+            mockTopicStore.assertContains(context, TopicSerialization.fromTopicMetadata(topicMetadata, metadata));
             async.complete();
         });
     }
@@ -425,7 +432,7 @@ public class TopicOperatorTest {
     public void testReconcile_noResource_withKafka_noPrivate(TestContext context) {
 
         Topic kubeTopic = null;
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
         Topic privateTopic = null;
 
         Async async0 = context.async();
@@ -491,7 +498,7 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_matching(TestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = null;
 
@@ -526,10 +533,10 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_configsReconcilable(TestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true"), metadata).build();
         Topic privateTopic = null;
-        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true", "cleanup.policy", "bar")).build();
+        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true", "cleanup.policy", "bar"), metadata).build();
 
         Async async0 = context.async(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
@@ -569,8 +576,8 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_irreconcilable(TestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short) 2, map("cleanup.policy", "baz")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short) 2, map("cleanup.policy", "baz"), metadata).build();
         Topic privateTopic = null;
 
         Async async0 = context.async(2);
@@ -613,10 +620,10 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_withPrivate_3WayMerge(TestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar")).build();
-        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "baz")).build();
-        Topic privateTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz")).build();
-        Topic resultTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "baz"), metadata).build();
+        Topic privateTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), metadata).build();
+        Topic resultTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "bar"), metadata).build();
 
         Async async0 = context.async(3);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
@@ -698,8 +705,8 @@ public class TopicOperatorTest {
 
     @Test
     public void testOnKafkaTopicChanged(TestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz")).build();
-        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), null).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), null).build();
         Topic privateTopic = kafkaTopic;
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
 

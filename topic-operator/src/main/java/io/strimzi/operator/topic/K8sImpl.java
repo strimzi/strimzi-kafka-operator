@@ -55,7 +55,7 @@ public class K8sImpl implements K8s {
     public void updateResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                operation().inNamespace(namespace).createOrReplace(topicResource);
+                operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(topicResource);
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);

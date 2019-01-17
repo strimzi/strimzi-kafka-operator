@@ -6,8 +6,12 @@ package io.strimzi.operator.topic;
 
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -653,5 +657,45 @@ public class TopicOperatorIT {
 
     // TODO: What happens if we create and then change labels to the resource predicate isn't matched any more
     //       What then happens if we change labels back?
+
+
+    @Test
+    public void testKafkaTopicCreatedWithOwnerRef(TestContext context) {
+        String topicName = "test-kafka-topic-with-owner-ref";
+
+        // create a CM which will be owner reference for the topic
+        String cmName = "Hodor";
+        HashMap<String, String> cmData = new HashMap<>();
+        cmData.put("Strimzi", "rulez");
+        kubeClient.configMaps().inNamespace(NAMESPACE).create(new ConfigMapBuilder().withNewMetadata().withName(cmName)
+                .withNamespace(NAMESPACE).endMetadata().withApiVersion("v1").withData(cmData).build());
+        String uid = kubeClient.configMaps().inNamespace(NAMESPACE).withName(cmName).get().getMetadata().getUid();
+
+        ObjectMeta metadata = new ObjectMeta();
+
+        OwnerReference or = new OwnerReferenceBuilder().withName(cmName)
+                .withApiVersion("v1")
+                .withController(false)
+                .withBlockOwnerDeletion(false)
+                .withUid(uid)
+                .withKind("ConfigMap")
+                .build();
+
+        metadata.getOwnerReferences().add(or);
+
+        Map<String, String> annos = new HashMap<>();
+        annos.put("Iam", "Groot");
+
+        metadata.setAnnotations(annos);
+
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), metadata).build();
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
+
+        createKafkaTopicResource(context, topicResource);
+
+        assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().size());
+        assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
+
+    }
 
 }
