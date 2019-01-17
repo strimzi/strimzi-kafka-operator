@@ -664,9 +664,9 @@ public class TopicOperatorIT {
         String topicName = "test-kafka-topic-with-owner-ref";
 
         // create a CM which will be owner reference for the topic
-        String cmName = "Hodor";
+        String cmName = "hodor";
         HashMap<String, String> cmData = new HashMap<>();
-        cmData.put("Strimzi", "rulez");
+        cmData.put("strimzi", "rulez");
         kubeClient.configMaps().inNamespace(NAMESPACE).create(new ConfigMapBuilder().withNewMetadata().withName(cmName)
                 .withNamespace(NAMESPACE).endMetadata().withApiVersion("v1").withData(cmData).build());
         String uid = kubeClient.configMaps().inNamespace(NAMESPACE).withName(cmName).get().getMetadata().getUid();
@@ -684,7 +684,7 @@ public class TopicOperatorIT {
         metadata.getOwnerReferences().add(or);
 
         Map<String, String> annos = new HashMap<>();
-        annos.put("Iam", "Groot");
+        annos.put("iam", "groot");
 
         metadata.setAnnotations(annos);
 

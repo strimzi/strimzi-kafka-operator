@@ -155,6 +155,8 @@ public class TopicDiff {
         }
 
         public ObjectMeta metadataChange() {
+            //this is just for checkstyle
+            metadata.setName(metadata.getName());
             return metadataNew;
         }
     }

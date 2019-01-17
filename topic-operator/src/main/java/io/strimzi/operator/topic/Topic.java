@@ -215,9 +215,10 @@ public class Topic {
         if (numReplicas != topic.numReplicas) return false;
         if (!topicName.equals(topic.topicName)) return false;
         if (!config.equals(topic.config)) return false;
-        if (metadata == null && topic.metadata != null) return false;
-        if (metadata == null || topic.metadata == null) return true;
-        return metadata.equals(topic.metadata);
+        if (metadata == null) {
+            return topic.metadata == null;
+        } else
+            return metadata.equals(topic.metadata);
     }
 
     @Override
