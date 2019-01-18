@@ -21,6 +21,8 @@ import java.util.Set;
  */
 public class TopicDiff {
 
+    private final ObjectMeta objectMeta;
+
     private static abstract class Difference {
         private Difference() {}
 
@@ -114,56 +116,7 @@ public class TopicDiff {
         }
     }
 
-    private static class MetadataDifference extends Difference {
-        public static final String ADDRESS = "metadata";
-        private ObjectMeta metadata;
-        private ObjectMeta metadataNew;
 
-        public MetadataDifference(ObjectMeta metadata, ObjectMeta metadataNew) {
-            this.metadata = metadata;
-            this.metadataNew = metadataNew;
-        }
-
-        @Override
-        public String address() {
-            return ADDRESS;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            MetadataDifference that = (MetadataDifference) o;
-
-            if (metadata == null) {
-                return that.metadata == null;
-            } else {
-                return metadata.equals(that.metadata);
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return metadataNew.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return "metadataNew=" + metadataNew;
-        }
-
-        @Override
-        protected void apply(Topic.Builder builder) {
-            builder.withMetadata(this.metadataNew);
-        }
-
-        public ObjectMeta metadataChange() {
-            //this is just for checkstyle
-            metadata.setName(metadata.getName());
-            return metadataNew;
-        }
-    }
 
     private static class AddedConfigEntry extends Difference {
         public static final String ADDRESS_PREFIX = "config:";
@@ -213,47 +166,6 @@ public class TopicDiff {
         }
     }
 
-    private static class AddedMetadataEntry extends Difference {
-        public static final String ADDRESS = "metadata";
-        private final ObjectMeta metadata;
-
-        public AddedMetadataEntry(ObjectMeta metadata) {
-            if (metadata == null) {
-                throw new IllegalArgumentException();
-            }
-            this.metadata = metadata;
-        }
-
-        @Override
-        public String address() {
-            return ADDRESS;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            AddedMetadataEntry that = (AddedMetadataEntry) o;
-            return metadata.equals(that.metadata);
-        }
-
-        @Override
-        public int hashCode() {
-            return metadata.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return "metadata +'" + metadata.toString() + '\'';
-        }
-
-        @Override
-        protected void apply(Topic.Builder builder) {
-            builder.withMetadata(this.metadata);
-        }
-    }
-
     private static class RemovedConfigEntry extends Difference {
         public static final String ADDRESS_PREFIX = "config:";
         private String configKey;
@@ -295,8 +207,9 @@ public class TopicDiff {
 
     private final Map<String, Difference> differences;
 
-    private TopicDiff(Map<String, Difference> differences) {
+    private TopicDiff(Map<String, Difference> differences, ObjectMeta objectMeta) {
         this.differences = differences;
+        this.objectMeta = objectMeta;
     }
 
     /**
@@ -343,11 +256,7 @@ public class TopicDiff {
                 }
             }
         }
-        if (source.getMetadata() != null && !source.getMetadata().equals(target.getMetadata())) {
-            MetadataDifference metadataDifference = new MetadataDifference(source.getMetadata(), target.getMetadata());
-            differences.put(metadataDifference.address(), metadataDifference);
-        }
-        return new TopicDiff(differences);
+        return new TopicDiff(differences, target.getMetadata());
     }
 
     @Override
@@ -397,10 +306,6 @@ public class TopicDiff {
         return false;
     }
 
-    public boolean changesMetadata() {
-        return this.differences.containsKey(MetadataDifference.ADDRESS);
-    }
-
     public boolean changesReplicationFactor() {
         return this.differences.containsKey(NumReplicasDifference.ADDRESS);
     }
@@ -416,6 +321,7 @@ public class TopicDiff {
         for (Difference d : differences.values()) {
             d.apply(builder);
         }
+        builder.withMetadata(objectMeta);
         return builder.build();
     }
 
@@ -461,7 +367,7 @@ public class TopicDiff {
         }
         Map<String, Difference> union = new HashMap<>(this.differences);
         union.putAll(other.differences);
-        return new TopicDiff(union);
+        return new TopicDiff(union, other.objectMeta);
     }
 }
 
