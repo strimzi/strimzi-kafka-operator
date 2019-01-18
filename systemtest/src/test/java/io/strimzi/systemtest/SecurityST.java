@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.AvailabilityVerifier;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
@@ -50,8 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(SecurityST.NAMESPACE)
-@ClusterOperator
+@Tag(REGRESSION)
 class SecurityST extends AbstractST {
 
     public static final String NAMESPACE = "security-cluster-test";
@@ -494,8 +491,12 @@ class SecurityST extends AbstractST {
     }
 
     @BeforeAll
-    static void createClusterOperator() {
-        applyRoleBindings(NAMESPACE);
+    void createClusterOperator() {
+        LOGGER.info("Creating resources before the test class");
+        createTestClassResources();
+
+        prepareEnvForOperator(NAMESPACE);
+        applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
     }

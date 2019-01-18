@@ -33,7 +33,6 @@ class RecoveryST extends AbstractST {
     static final String CLUSTER_NAME = "recovery-cluster";
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
-    private static Resources classResources;
 
     @Test
     void testRecoveryFromEntityOperatorDeletion() {
@@ -186,19 +185,16 @@ class RecoveryST extends AbstractST {
     }
 
     @BeforeAll
-    static void createClassResources(TestInfo testInfo) {
+    void createClassResources(TestInfo testInfo) {
         LOGGER.info("Creating resources before the test class");
-        applyRoleBindings(NAMESPACE);
+        createTestClassResources();
+
+        prepareEnvForOperator(NAMESPACE);
+        applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
-        classResources = new Resources(namespacedClient());
-        classResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
-        testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
-    private static Resources classResources() {
-        return classResources;
+        testClassResources.kafkaEphemeral(CLUSTER_NAME, 1).done();
     }
 
     private void assertNoErrorLogged() {

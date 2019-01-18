@@ -21,8 +21,6 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.systemtest.timemeasuring.Operation;
 import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -31,6 +29,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,8 +77,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(KafkaST.NAMESPACE)
-@ClusterOperator
 class KafkaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
@@ -995,9 +992,19 @@ class KafkaST extends AbstractST {
     }
 
     @BeforeAll
-    static void createClusterOperator() {
-        applyRoleBindings(NAMESPACE);
+    void setupEnvironment() {
+        LOGGER.info("Creating resources before the test class");
+        createTestClassResources();
+
+        prepareEnvForOperator(NAMESPACE);
+        applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        testClassResources.deleteResources();
+        teardownEnvForOperator();
     }
 }

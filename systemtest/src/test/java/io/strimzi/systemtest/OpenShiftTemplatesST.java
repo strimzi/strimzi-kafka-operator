@@ -21,17 +21,18 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.test.annotations.Namespace;
-import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.Arrays;
 
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,23 +46,14 @@ import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
  * not that the created resource is processed by operator(s) in the appropriate way.
  */
 @ExtendWith(StrimziExtension.class)
-@OpenShiftOnly
-@Namespace(OpenShiftTemplatesST.NAMESPACE)
-@Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
-@Resources(value = "../examples/templates/topic-operator", asAdmin = true)
-@Resources(value = TestUtils.CRD_KAFKA, asAdmin = true)
-@Resources(value = TestUtils.CRD_KAFKA_CONNECT, asAdmin = true)
-@Resources(value = TestUtils.CRD_KAFKA_CONNECT_S2I, asAdmin = true)
-@Resources(value = TestUtils.CRD_TOPIC, asAdmin = true)
-@Resources(value = "src/rbac/role-edit-kafka.yaml", asAdmin = true)
-public class OpenShiftTemplatesST {
+public class OpenShiftTemplatesST extends AbstractST {
 
     public static final String NAMESPACE = "template-test";
 
     public static KubeClusterResource cluster = new KubeClusterResource();
 
     private ObjectMapper mapper = new ObjectMapper();
-    private Oc oc = (Oc) cluster.client();
+    private Oc oc = (Oc) kubeClient;
     private KubernetesClient client = new DefaultKubernetesClient();
 
     private Kafka getKafkaWithName(String clusterName) {
@@ -214,8 +206,22 @@ public class OpenShiftTemplatesST {
         assertEquals(Integer.valueOf(2), topic.getSpec().getReplicas());
     }
 
-    @BeforeEach
-    void prepareTest() {
-        cluster.before();
+    @BeforeAll
+    void setupEnvironment() {
+        createNamespaces(NAMESPACE);
+        createCustomResources(Arrays.asList(
+                "../examples/templates/cluster-operator",
+                "../examples/templates/topic-operator",
+                TestUtils.CRD_KAFKA,
+                TestUtils.CRD_KAFKA_CONNECT,
+                TestUtils.CRD_KAFKA_CONNECT_S2I,
+                TestUtils.CRD_TOPIC,
+                "src/rbac/role-edit-kafka.yaml"));
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        deleteCustomResources();
+        deleteNamespaces();
     }
 }

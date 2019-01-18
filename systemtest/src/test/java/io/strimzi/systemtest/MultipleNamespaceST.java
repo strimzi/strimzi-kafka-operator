@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -15,10 +13,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
@@ -27,9 +26,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(MultipleNamespaceST.CO_NAMESPACE)
-@Namespace(value = MultipleNamespaceST.TO_NAMESPACE, use = false)
-@ClusterOperator
 class MultipleNamespaceST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
     static final String CO_NAMESPACE = "multiple-namespace-test";
@@ -37,7 +33,6 @@ class MultipleNamespaceST extends AbstractST {
     private static final String TOPIC_NAME = "my-topic";
     private static final String TOPIC_INSTALL_DIR = "../examples/topic/kafka-topic.yaml";
 
-    private static Resources classResources;
     private static Resources secondNamespaceResources;
 
     /**
@@ -101,14 +96,17 @@ class MultipleNamespaceST extends AbstractST {
     }
 
     @BeforeAll
-    static void createClassResources(TestInfo testInfo) {
+    void createClassResources() {
         LOGGER.info("Creating resources before the test class");
-        applyRoleBindings(CO_NAMESPACE, CO_NAMESPACE, TO_NAMESPACE);
+        createTestClassResources();
+
+        prepareEnvForOperator(DEFAULT_NAMESPACE, Arrays.asList(DEFAULT_NAMESPACE, SECOND_NAMESPACE), Collections.emptyList());
+        applyRoleBindings(DEFAULT_NAMESPACE, DEFAULT_NAMESPACE);
+        applyRoleBindings(DEFAULT_NAMESPACE, SECOND_NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(String.join(",", CO_NAMESPACE, TO_NAMESPACE)).done();
 
-        classResources = new Resources(namespacedClient());
-        classResources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -119,10 +117,6 @@ class MultipleNamespaceST extends AbstractST {
             .done();
 
         testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
-    private static Resources classResources() {
-        return classResources;
     }
 
     private void deployNewTopic(String namespace, String topic) {
