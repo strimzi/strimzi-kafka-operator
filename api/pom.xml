@@ -44,7 +44,6 @@
         <dependency>
             <groupId>io.sundr</groupId>
             <artifactId>builder-annotations</artifactId>
-            <version>${sundrio.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

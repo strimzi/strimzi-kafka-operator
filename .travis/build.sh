@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
+# The first segment of the version number is '1' for releases < 9; then '9', '10', '11', ...
+JAVA_MAJOR_VERSION=$(java -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
+if [ ${JAVA_MAJOR_VERSION} -gt 1 ] ; then
+  export JAVA_VERSION=${JAVA_MAJOR_VERSION}
+fi
+
 export PULL_REQUEST=${PULL_REQUEST:-true}
 export BRANCH=${BRANCH:-master}
 export TAG=${TAG:-latest}
@@ -9,7 +15,10 @@ export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
 
 make docu_check
-make findbugs
+if [ ${JAVA_MAJOR_VERSION} -eq 1 ] ; then
+  # only need to check source code once.  findbugs does not support > 1.8 and spotbugs generates spurious warnings
+  make findbugs
+fi
 make docker_build
 
 if [ ! -e  documentation/book/appendix_crds.adoc ] ; then
