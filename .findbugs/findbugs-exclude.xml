@@ -16,4 +16,5 @@
   <Match>
     <Class name="~io\.fabric8\.kubernetes\.api\.model\.(Doneable).+(\$.*)?" />
   </Match>
+
 </FindBugsFilter>
