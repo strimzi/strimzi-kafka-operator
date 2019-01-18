@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -95,14 +96,30 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         Future<Void> f = Future.succeededFuture();
         for (int i = 0; i < replicas; i++) {
             String podName = name + "-" + i;
-            String pvcName = AbstractModel.getPersistentVolumeClaimName(name, i);
             Pod pod = podOperations.get(namespace, podName);
 
             if (pod != null) {
                 if (Annotations.booleanAnnotation(pod, ANNO_STRIMZI_IO_DELETE_POD_AND_PVC,
                         false, ANNO_OP_STRIMZI_IO_DELETE_POD_AND_PVC)) {
-                    f = f.compose(ignored -> deletePvc(ss, pvcName))
-                            .compose(ignored -> maybeRestartPod(ss, podName, p -> true));
+
+                    f = f.compose(ignored -> {
+                        Map<String, String> ssLabels = ss.getMetadata().getLabels();
+                        // get all the PVCs created for a SS from the claim template
+                        Labels pvcSelector =
+                                Labels.forCluster(ssLabels.get(Labels.STRIMZI_CLUSTER_LABEL))
+                                        .withKind(ssLabels.get(Labels.STRIMZI_KIND_LABEL))
+                                        .withName(name);
+                        List<PersistentVolumeClaim> pvcs = pvcOperations.list(namespace, pvcSelector);
+                        List<Future> result = new ArrayList<>();
+                        for (PersistentVolumeClaim pvc: pvcs) {
+                            String pvcName = pvc.getMetadata().getName();
+                            // filtering on the right PVC related to the pod to delete
+                            if (pvcName.endsWith(podName)) {
+                                result.add(deletePvc(ss, pvcName));
+                            }
+                        }
+                        return CompositeFuture.join(result);
+                    }).compose(ignored -> maybeRestartPod(ss, podName, p -> true));
 
                 }
             }
@@ -315,7 +332,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             List<Volume> volumes = current.getSpec().getTemplate().getSpec().getVolumes();
             for (int i = 0; i < volumes.size(); i++) {
                 Volume vol = volumes.get(i);
-                if (AbstractModel.VOLUME_NAME.equals(vol.getName()) && vol.getEmptyDir() != null) {
+                if (vol.getName().startsWith(AbstractModel.VOLUME_NAME) && vol.getEmptyDir() != null) {
                     desired.getSpec().getTemplate().getSpec().getVolumes().add(0, volumes.get(i));
                     break;
                 }
@@ -325,7 +342,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             List<Volume> volumes = desired.getSpec().getTemplate().getSpec().getVolumes();
             for (int i = 0; i < volumes.size(); i++) {
                 Volume vol = volumes.get(i);
-                if (AbstractModel.VOLUME_NAME.equals(vol.getName()) && vol.getEmptyDir() != null) {
+                if (vol.getName().startsWith(AbstractModel.VOLUME_NAME) && vol.getEmptyDir() != null) {
                     volumes.remove(i);
                     break;
                 }

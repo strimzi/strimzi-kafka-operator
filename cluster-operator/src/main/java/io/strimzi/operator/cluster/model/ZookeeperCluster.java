@@ -437,10 +437,10 @@ public class ZookeeperCluster extends AbstractModel {
         return volumeList;
     }
 
-    private List<PersistentVolumeClaim> getVolumeClaims() {
+    /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
         if (storage instanceof PersistentClaimStorage) {
-            pvcList.add(createPersistentVolumeClaim(VOLUME_NAME));
+            pvcList.add(createPersistentVolumeClaim(VOLUME_NAME, (PersistentClaimStorage) storage));
         }
         return pvcList;
     }

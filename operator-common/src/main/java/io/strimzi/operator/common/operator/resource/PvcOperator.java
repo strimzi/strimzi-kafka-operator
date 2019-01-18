@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 /**
@@ -29,14 +28,5 @@ public class PvcOperator extends AbstractResourceOperator<KubernetesClient, Pers
     @Override
     protected MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> operation() {
         return client.persistentVolumeClaims();
-    }
-
-    @Override
-    public Future<ReconcileResult<PersistentVolumeClaim>> reconcile(String namespace, String name, PersistentVolumeClaim resource) {
-        if (resource != null) {
-            throw new UnsupportedOperationException(); // should never happen
-        } else {
-            return super.reconcile(namespace, name, null);
-        }
     }
 }

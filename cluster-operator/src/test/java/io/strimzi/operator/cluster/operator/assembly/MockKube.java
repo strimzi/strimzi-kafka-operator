@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -63,6 +64,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
 
 import io.fabric8.openshift.api.model.DoneableRoute;
@@ -189,7 +192,7 @@ public class MockKube {
         MixedOperation<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> mockEndpoints = buildEndpoints();
         MixedOperation<Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> mockSvc = buildServices();
         MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods = buildPods();
-        MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods);
+        MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods, mockPvcs);
         MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> mockDep = buildDeployments(mockPods);
         MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> mockSecrets = buildSecrets();
         MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> mockServiceAccounts = buildServiceAccount();
@@ -333,7 +336,9 @@ public class MockKube {
         }.build();
     }
 
-    private MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> buildStatefulSets(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods) {
+    private MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>
+        buildStatefulSets(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods,
+                      MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs) {
         MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> result = new AbstractMockBuilder<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>(
                 StatefulSet.class, StatefulSetList.class, DoneableStatefulSet.class, castClass(RollableScalableResource.class), ssDb) {
 
@@ -379,6 +384,32 @@ public class MockKube {
                         //        pod);
                         mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(podName).create(pod);
                         addPodRestarter(mockPods, resourceName, podNum, podName);
+
+                        if (value.getSpec().getVolumeClaimTemplates().size() > 0) {
+
+                            for (PersistentVolumeClaim pvcTemplate: value.getSpec().getVolumeClaimTemplates()) {
+
+                                String pvcName = pvcTemplate.getMetadata().getName() + "-" + podName;
+                                if (mockPvcs.inNamespace(argument.getMetadata().getNamespace()).withName(pvcName).get() == null) {
+
+                                    Map<String, String> labels = new HashMap<>();
+                                    labels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
+                                    labels.put(Labels.STRIMZI_CLUSTER_LABEL, value.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL));
+                                    labels.put(Labels.STRIMZI_NAME_LABEL, argument.getMetadata().getName());
+
+                                    LOGGER.debug("create Pvc {} because it's in VolumeClaimTemplate of StatefulSet {}", pvcName, resourceName);
+                                    PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
+                                            .withNewMetadata()
+                                                .withLabels(labels)
+                                                .withNamespace(argument.getMetadata().getNamespace())
+                                                .withName(pvcName)
+                                            .endMetadata()
+                                            .build();
+                                    mockPvcs.inNamespace(argument.getMetadata().getNamespace()).withName(pvcName).create(pvc);
+                                }
+                            }
+
+                        }
                     }
                     return argument;
                 });
