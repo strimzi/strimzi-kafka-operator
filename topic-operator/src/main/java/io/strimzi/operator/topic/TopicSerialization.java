@@ -132,37 +132,35 @@ public class TopicSerialization {
         ObjectMeta om = topic.getMetadata();
         if (om != null) {
             om.setName(resourceName.toString());
-            om.setLabels(resourcePredicate.labels());
+            Map<String, String> lbls = new HashMap<>();
+            lbls.putAll(resourcePredicate.labels());
+            if (topic.getMetadata().getLabels() != null)
+                lbls.putAll(topic.getMetadata().getLabels());
+            om.setLabels(lbls);
             om.setOwnerReferences(topic.getMetadata().getOwnerReferences());
             om.setAnnotations(topic.getMetadata().getAnnotations());
-            KafkaTopic kt = new KafkaTopicBuilder().withApiVersion("v1")
-                    .withMetadata(om)
-                    // TODO .withUid()
-                    .withNewSpec()
-                    .withTopicName(topic.getTopicName().toString())
-                    .withPartitions(topic.getNumPartitions())
-                    .withReplicas((int) topic.getNumReplicas())
-                    .withConfig(new LinkedHashMap<>(topic.getConfig()))
-                    .endSpec()
-                    .build();
-            // for some reason when the `topic.getMetadata().getAnnotations()` is null
-            // topic is created with annotations={} (empty map but should be null aswell)
-            kt.getMetadata().setAnnotations(topic.getMetadata().getAnnotations());
-            return kt;
         } else {
-            return new KafkaTopicBuilder().withApiVersion("v1")
-                    .withMetadata(new ObjectMetaBuilder()
+            om = new ObjectMetaBuilder()
                     .withName(resourceName.toString())
-                    .withLabels(resourcePredicate.labels()).build())
-                    // TODO .withUid()
-                .withNewSpec()
-                    .withTopicName(topic.getTopicName().toString())
-                    .withPartitions(topic.getNumPartitions())
-                    .withReplicas((int) topic.getNumReplicas())
-                    .withConfig(new LinkedHashMap<>(topic.getConfig()))
-                .endSpec()
-            .build();
+                    .withLabels(resourcePredicate.labels())
+                    .build();
         }
+
+        KafkaTopic kt = new KafkaTopicBuilder().withApiVersion("v1")
+                .withMetadata(om)
+                // TODO .withUid()
+                .withNewSpec()
+                .withTopicName(topic.getTopicName().toString())
+                .withPartitions(topic.getNumPartitions())
+                .withReplicas((int) topic.getNumReplicas())
+                .withConfig(new LinkedHashMap<>(topic.getConfig()))
+                .endSpec()
+                .build();
+        // for some reason when the `topic.getMetadata().getAnnotations()` is null
+        // topic is created with annotations={} (empty map but should be null as well)
+        if (topic.getMetadata() != null)
+            kt.getMetadata().setAnnotations(topic.getMetadata().getAnnotations());
+        return kt;
     }
 
 
@@ -221,27 +219,8 @@ public class TopicSerialization {
         Topic.Builder builder = new Topic.Builder()
                 .withTopicName(meta.getDescription().name())
                 .withNumPartitions(meta.getDescription().partitions().size())
-                .withNumReplicas((short) meta.getDescription().partitions().get(0).replicas().size());
-        for (ConfigEntry entry: meta.getConfig().entries()) {
-            if (!entry.isDefault()) {
-                builder.withConfigEntry(entry.name(), entry.value());
-            }
-        }
-        return builder.build();
-    }
-
-    /**
-     * Create a Topic to reflect the given TopicMetadata.
-     */
-    public static Topic fromTopicMetadata(TopicMetadata meta, ObjectMeta k8sMeta) {
-        if (meta == null) {
-            return null;
-        }
-        Topic.Builder builder = new Topic.Builder()
-                .withTopicName(meta.getDescription().name())
-                .withNumPartitions(meta.getDescription().partitions().size())
                 .withNumReplicas((short) meta.getDescription().partitions().get(0).replicas().size())
-                .withMetadata(k8sMeta);
+                .withMetadata(null);
         for (ConfigEntry entry: meta.getConfig().entries()) {
             if (!entry.isDefault()) {
                 builder.withConfigEntry(entry.name(), entry.value());

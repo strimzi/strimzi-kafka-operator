@@ -136,7 +136,11 @@ public class TopicDiff {
 
             MetadataDifference that = (MetadataDifference) o;
 
-            return metadataNew.equals(that.metadataNew);
+            if (metadata == null) {
+                return that.metadata == null;
+            } else {
+                return metadata.equals(that.metadata);
+            }
         }
 
         @Override

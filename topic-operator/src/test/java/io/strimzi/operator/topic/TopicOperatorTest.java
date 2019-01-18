@@ -247,7 +247,7 @@ public class TopicOperatorTest {
         topicOperator.onTopicCreated(topicName, ar -> {
             assertSucceeded(context, ar);
             mockK8s.assertExists(context, resourceName);
-            Topic t = TopicSerialization.fromTopicMetadata(topicMetadata, metadata);
+            Topic t = TopicSerialization.fromTopicMetadata(topicMetadata);
             mockTopicStore.assertContains(context, t);
             async.complete();
         });
@@ -284,7 +284,7 @@ public class TopicOperatorTest {
             assertSucceeded(context, ar);
             context.assertEquals(4, counter.get());
             mockK8s.assertExists(context, resourceName);
-            mockTopicStore.assertContains(context, TopicSerialization.fromTopicMetadata(topicMetadata, metadata));
+            mockTopicStore.assertContains(context, TopicSerialization.fromTopicMetadata(topicMetadata));
             async.complete();
         });
     }
