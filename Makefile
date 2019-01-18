@@ -74,7 +74,7 @@ helm_pkg:
 	rm -rf strimzi-$(RELEASE_VERSION)/charts/
 
 docu_versions:
-	documentation/ref-kafka-versions.sh kafka-versions > documentation/book/ref-kafka-versions.adoc
+	documentation/snip-kafka-versions.sh kafka-versions > documentation/book/snip-kafka-versions.adoc
 
 docu_html: docu_htmlclean docu_check docu_versions
 	mkdir -p documentation/html

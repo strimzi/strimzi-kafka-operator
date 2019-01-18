@@ -5,18 +5,12 @@
 [id='con-upgrading-kafka-versions-{context}']
 = Upgrading Kafka versions
 
-A given version of the Cluster Operator embeds certain information about a given set of Kafka versions. 
-
 How the Cluster Operator will perform an upgrade depends on the differences between:
 
-* the interbroker protocol version of the two Kafka versions.
-* the log message format version of the two Kafka versions.
-* the version of Zookeeper used by the two Kafka versions.
+* The interbroker protocol version of the two Kafka versions
+* The log message format version of the two Kafka versions
+* The version of Zookeeper used by the two Kafka versions
 
-When all of these are the same, as is typically the case for a patch level upgrade (for example 2.0.0 to 2.0.1), then the upgrade can be done using a single rolling update of the Kafka brokers.
+When each of these versions is the same, as is typically the case for a patch level upgrade (for example 2.0.0 to 2.0.1), then the Cluster Operator can perform the upgrade using a single rolling update of the Kafka brokers. 
+When one or more of these versions differ, the Cluster Operator will require two or three rolling updates of the Kafka brokers to perform the upgrade.
 
-When one or more of these differ, the upgrade process will involve two or three rolling updates of the Kafka brokers.
-
-Consult the following table to determine whether your intended upgrade is a simple one.
-
-include::ref-kafka-versions.adoc[leveloffset=+1]
