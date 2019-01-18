@@ -140,7 +140,8 @@ public class KafkaUserModel {
                     clientsCaKeySecret,
                     CERTS_EXPIRATION_DAYS,
                     30,
-                    false);
+                    false,
+                    null);
             this.caCert = clientsCa.currentCaCertBase64();
             if (userSecret != null) {
                 // Secret already exists -> lets verify if it has keys from the same CA

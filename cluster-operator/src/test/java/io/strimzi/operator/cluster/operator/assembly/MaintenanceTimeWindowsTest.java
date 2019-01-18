@@ -479,7 +479,7 @@ public class MaintenanceTimeWindowsTest {
                 return true;
             }
         };
-        this.reconciliationState.clientsCa = new ClientsCa(null, null, this.clientsCaSecret, null, null, 0, 0, true) {
+        this.reconciliationState.clientsCa = new ClientsCa(null, null, this.clientsCaSecret, null, null, 0, 0, true, null) {
 
             @Override
             public boolean certRenewed() {
@@ -508,6 +508,13 @@ public class MaintenanceTimeWindowsTest {
         this.reconciliationState.entityOperator = eo;
         this.reconciliationState.eoDeployment = eoDep;
         this.reconciliationState.clusterCa = new ClusterCa(null, null, this.clusterCaSecret, null) {
+
+            @Override
+            public boolean certRenewed() {
+                return true;
+            }
+        };
+        this.reconciliationState.clientsCa = new ClientsCa(null, null, this.clientsCaSecret, null, null, 1, 1, false, null) {
 
             @Override
             public boolean certRenewed() {

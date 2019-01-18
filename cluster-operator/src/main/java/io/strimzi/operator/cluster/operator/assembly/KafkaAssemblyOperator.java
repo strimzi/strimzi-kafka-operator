@@ -76,6 +76,7 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_FROM_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
@@ -149,6 +150,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
         createReconciliationState(reconciliation, kafkaAssembly)
                 .reconcileCas()
+                // Roll everything if a new CA is added to the trust store.
+                .compose(state -> state.rollingUpdateForNewCaKey())
                 .compose(state -> state.clusterOperatorSecret())
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
@@ -313,8 +316,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.clusterCa = new ClusterCa(certManager, name, clusterCaCertSecret, clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
                                 ModelUtils.getRenewalDays(clusterCaConfig),
-                                clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority());
-                        clusterCa.createOrRenew(
+                                clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority(),
+                                clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
+                        clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
                                 ownerRef);
 
@@ -326,8 +330,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clientsCaKeyName, clientsCaKeySecret,
                                 ModelUtils.getCertificateValidity(clientsCaConfig),
                                 ModelUtils.getRenewalDays(clientsCaConfig),
-                                clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority());
-                        clientsCa.createOrRenew(reconciliation.namespace(), reconciliation.name(),
+                                clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
+                                clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
+                        clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
                                 caLabels.toMap(), ownerRef);
 
                         secretOperations.reconcile(reconciliation.namespace(), clusterCaCertName, this.clusterCa.caCertSecret())
@@ -344,6 +349,60 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 result.completer()
             );
             return result;
+        }
+
+        /**
+         * Perform a rolling update of the cluster so that CA certificates get added to their truststores,
+         * or expired CA certificates get removed from their truststores.
+         * Note this is only necessary when the CA certificate has changed due to a new CA key.
+         * It is not necessary when the CA certificate is replace while retaining the existing key.
+         */
+        Future<ReconciliationState> rollingUpdateForNewCaKey() {
+            List<String> reason = new ArrayList<>(4);
+            if (this.clusterCa.keyReplaced()) {
+                reason.add("trust new cluster CA certificate signed by new key");
+            }
+            if (this.clientsCa.keyReplaced()) {
+                reason.add("trust new clients CA certificate signed by new key");
+            }
+            if (!reason.isEmpty()) {
+                String reasons = reason.stream().collect(Collectors.joining(", "));
+                return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                        .compose(ss -> {
+                            return zkSetOperations.maybeRollingUpdate(ss, pod -> {
+                                log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reasons);
+                                return true;
+                            });
+                        })
+                        .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
+                        .compose(ss -> {
+                            return kafkaSetOperations.maybeRollingUpdate(ss, pod -> {
+                                log.debug("{}: Rolling Pod {} to {}", reconciliation, pod.getMetadata().getName(), reasons);
+                                return true;
+                            });
+                        })
+                        .compose(i -> deploymentOperations.getAsync(namespace, TopicOperator.topicOperatorName(name)))
+                        .compose(dep -> {
+                            if (dep != null) {
+                                log.debug("{}: Rolling Deployment {} to {}", reconciliation, TopicOperator.topicOperatorName(name), reasons);
+                                return deploymentOperations.rollingUpdate(namespace, TopicOperator.topicOperatorName(name), operationTimeoutMs);
+                            } else {
+                                return Future.succeededFuture();
+                            }
+                        })
+                        .compose(i -> deploymentOperations.getAsync(namespace, EntityOperator.entityOperatorName(name)))
+                        .compose(dep -> {
+                            if (dep != null) {
+                                log.debug("{}: Rolling Deployment {} to {}", reconciliation, EntityOperator.entityOperatorName(name), reasons);
+                                return deploymentOperations.rollingUpdate(namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs);
+                            } else {
+                                return Future.succeededFuture();
+                            }
+                        })
+                        .map(i -> this);
+            } else {
+                return Future.succeededFuture(this);
+            }
         }
 
         Future<ReconciliationState> kafkaManualRollingUpdate() {
@@ -1565,20 +1624,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorDeployment(Supplier<Date> dateSupplier) {
 
             if (this.entityOperator != null) {
-
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
                 if (future != null) {
                     return future.compose(dep -> {
                         // getting the current cluster CA generation from the current deployment, if exists
-                        int caCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
+                        int clusterCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
+                        int clientsCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clientsCa);
                         // if maintenance windows are satisfied, the cluster CA generation could be changed
                         // and EO needs a rolling update updating the related annotation
                         boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
                         if (isSatisfiedBy) {
-                            caCertGeneration = getCaCertGeneration(this.clusterCa);
+                            clusterCaCertGeneration = getCaCertGeneration(this.clusterCa);
+                            clientsCaCertGeneration = getCaCertGeneration(this.clientsCa);
                         }
                         Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
-                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
+                        Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
+                                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCaCertGeneration));
                         return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
                     }).map(i -> this);
                 }

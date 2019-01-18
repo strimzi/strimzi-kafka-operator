@@ -71,6 +71,7 @@ public class AvailabilityVerifier {
         producerProperties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
         producerProperties.setProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG, "1000");
         producerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
+        producerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-producer");
 
         consumerProperties = new Properties();
         consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
@@ -80,27 +81,30 @@ public class AvailabilityVerifier {
         consumerProperties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         consumerProperties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         consumerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
+        consumerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-consumer");
 
         try {
-            String clusterCaCert = client.secrets().inNamespace(namespace).withName(KafkaResources.clusterCaCertificateSecretName(clusterName)).get().getData().get("ca.crt");
             String tsPassword = "foo";
+            File tsFile = File.createTempFile(getClass().getName(), ".truststore");
+            tsFile.deleteOnExit();
             KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
             ts.load(null, tsPassword.toCharArray());
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(clusterCaCert)));
-            ts.setCertificateEntry("cluster-ca", cert);
-            producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
-            consumerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
-            File tsFile = File.createTempFile(getClass().getName(), ".truststore");
-            tsFile.deleteOnExit();
+            for (Map.Entry<String, String> entry : client.secrets().inNamespace(namespace).withName(KafkaResources.clusterCaCertificateSecretName(clusterName)).get().getData().entrySet()) {
+                String clusterCaCert = entry.getValue();
+                Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(clusterCaCert)));
+                ts.setCertificateEntry(entry.getKey(), cert);
+            }
             FileOutputStream tsOs = new FileOutputStream(tsFile);
             try {
-                producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
-                consumerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
                 ts.store(tsOs, tsPassword.toCharArray());
             } finally {
                 tsOs.close();
             }
+            producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
+            consumerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
+            producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
+            consumerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
             producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());
             consumerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());
         } catch (Exception e) {
@@ -132,11 +136,6 @@ public class AvailabilityVerifier {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-
-
-
-
     }
 
     private File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
@@ -217,11 +216,14 @@ public class AvailabilityVerifier {
             throw new IllegalStateException();
         }
         go = true;
+        double targetRate = 50;
         this.producer = new KafkaProducer<>(producerProperties);
         this.sender = new Thread(() -> {
             long msgId = 0;
             Map<Class, Integer> producerErrors = new HashMap<>();
             long sent = 0;
+            long sent0 = 0;
+            long t0 = System.nanoTime();
             while (go) {
                 try {
                     producer.send(new ProducerRecord<>("my-topic", msgId++, System.nanoTime()), (recordMeta, error) -> {
@@ -230,6 +232,7 @@ public class AvailabilityVerifier {
                         }
                     });
                     sent++;
+                    sent0++;
                 } catch (Exception e) {
                     incrementErrCount(e, producerErrors);
                 }
@@ -237,6 +240,15 @@ public class AvailabilityVerifier {
                 AvailabilityVerifier.this.producerStats = null;
                 if (result != null) {
                     result.publishProducerStats(sent, producerErrors);
+                }
+                double rate = ((double) sent0) / ((System.nanoTime() - t0) / 1e9);
+                if (rate > targetRate) {
+                    while (rate > targetRate) {
+                        // spin!
+                        rate = ((double) sent0) / ((System.nanoTime() - t0) / 1e9);
+                    }
+                    sent0 = 0;
+                    t0 = System.nanoTime();
                 }
             }
         });
