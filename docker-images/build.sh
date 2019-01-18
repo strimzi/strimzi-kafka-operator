@@ -18,15 +18,17 @@ function build {
     targets="$@"
     build_args="$DOCKER_BUILD_ARGS"
     tag="${DOCKER_TAG:-latest}"
+    JAVA_VERSION=${JAVA_VERSION:-1.8.0}
+
     # Images not depending on Kafka version
     for image in $(echo "$java_images $stunnel_images"); do
-        make -C "$image" "$targets"
+        DOCKER_BUILD_ARGS="--build-arg JAVA_VERSION=${JAVA_VERSION}" make -C "$image" "$targets"
     done
     # Images depending on Kafka version (possibly indirectly thru FROM)
     for kafka_version in ${!checksums[@]}; do
         sha=${checksums[$kafka_version]}
         for image in $(echo "$kafka_images"); do
-            DOCKER_BUILD_ARGS="--build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_SHA512=${sha} ${build_args}" \
+            DOCKER_BUILD_ARGS="--build-arg JAVA_VERSION=${JAVA_VERSION} --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_SHA512=${sha} ${build_args}" \
             DOCKER_TAG="${tag}-kafka-${kafka_version}" \
             BUILD_TAG="build-kafka-${kafka_version}" \
             make -C "$image" "$targets"
