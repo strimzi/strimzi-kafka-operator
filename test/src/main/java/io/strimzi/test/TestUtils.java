@@ -50,8 +50,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public final class TestUtils {
 
@@ -101,7 +101,12 @@ public final class TestUtils {
         LOGGER.debug("Waiting for {}", description);
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (true) {
-            boolean result = ready.getAsBoolean();
+            boolean result;
+            try {
+                result = ready.getAsBoolean();
+            } catch (Exception e) {
+                result = false;
+            }
             long timeLeft = deadline - System.currentTimeMillis();
             if (result) {
                 return timeLeft;
@@ -371,7 +376,7 @@ public final class TestUtils {
      * {@code strimzi-cluster-operator} {@code ServiceAccount} in the given namespace.
      * @param roleBindingFile
      * @param namespace
-     * @return
+     * @return role
      */
     public static String changeRoleBindingSubject(File roleBindingFile, String namespace) {
         YAMLMapper mapper = new YAMLMapper();

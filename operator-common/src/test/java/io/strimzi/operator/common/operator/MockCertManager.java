@@ -123,11 +123,11 @@ public class MockCertManager implements CertManager {
     }
 
     public static String clientsCaCert() {
-        return Base64.getEncoder().encodeToString(CLUSTER_CERT.getBytes(Charset.defaultCharset()));
+        return Base64.getEncoder().encodeToString(CLIENTS_CERT.getBytes(Charset.defaultCharset()));
     }
 
     public static String clientsCaKey() {
-        return Base64.getEncoder().encodeToString(CLUSTER_KEY.getBytes(Charset.defaultCharset()));
+        return Base64.getEncoder().encodeToString(CLIENTS_KEY.getBytes(Charset.defaultCharset()));
     }
 
     private void write(File keyFile, String str) throws IOException {
@@ -176,7 +176,7 @@ public class MockCertManager implements CertManager {
      */
     @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
-        // TODO
+        generateSelfSignedCert(keyFile, certFile, sbj, days);
     }
 
     /**

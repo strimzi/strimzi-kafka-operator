@@ -7,9 +7,9 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static java.util.Arrays.asList;
 
@@ -18,22 +18,22 @@ import static java.util.Arrays.asList;
  */
 public class KafkaConnectConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_OPTIONS;
-    private static final Properties DEFAULTS;
+    private static final Map<String, String> DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(KafkaConnectSpec.FORBIDDEN_PREFIXES.split(", "));
 
-        DEFAULTS = new Properties();
-        DEFAULTS.setProperty("group.id", "connect-cluster");
-        DEFAULTS.setProperty("offset.storage.topic", "connect-cluster-offsets");
-        DEFAULTS.setProperty("config.storage.topic", "connect-cluster-configs");
-        DEFAULTS.setProperty("status.storage.topic", "connect-cluster-status");
-        DEFAULTS.setProperty("key.converter", "org.apache.kafka.connect.json.JsonConverter");
-        DEFAULTS.setProperty("value.converter", "org.apache.kafka.connect.json.JsonConverter");
-        DEFAULTS.setProperty("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter");
-        DEFAULTS.setProperty("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter");
-        DEFAULTS.setProperty("internal.key.converter.schemas.enable", "false");
-        DEFAULTS.setProperty("internal.value.converter.schemas.enable", "false");
+        DEFAULTS = new HashMap<>();
+        DEFAULTS.put("group.id", "connect-cluster");
+        DEFAULTS.put("offset.storage.topic", "connect-cluster-offsets");
+        DEFAULTS.put("config.storage.topic", "connect-cluster-configs");
+        DEFAULTS.put("status.storage.topic", "connect-cluster-status");
+        DEFAULTS.put("key.converter", "org.apache.kafka.connect.json.JsonConverter");
+        DEFAULTS.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
+        DEFAULTS.put("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter");
+        DEFAULTS.put("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter");
+        DEFAULTS.put("internal.key.converter.schemas.enable", "false");
+        DEFAULTS.put("internal.value.converter.schemas.enable", "false");
     }
 
     /**

@@ -4,6 +4,9 @@
  */
 package io.strimzi.test;
 
+import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.annotations.Resources;
+import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.Assertions;
@@ -64,7 +67,7 @@ class StrimziExtensionTest {
     @Namespace("test")
     @Resources("foo")
     @ExtendWith(StrimziExtension.class)
-    static class ClsWithClusterResource {
+    public static class ClsWithClusterResource {
 
         public static KubeClusterResource cluster = new MockKubeClusterResource() {
         };

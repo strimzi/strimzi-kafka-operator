@@ -1,10 +1,7 @@
 #!/bin/bash
 set -x
 
-# Disable Kafka's GC logging (which logs to a file)...
-export GC_LOG_ENABLED="false"
-# ... but enable equivalent GC logging to stdout
-##export KAFKA_GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
+. ./set_kafka_gc_options.sh
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
   export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/log4j.properties"

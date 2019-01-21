@@ -38,7 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -175,13 +174,16 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(healthDelay), containers.get(0).getLivenessProbe().getInitialDelaySeconds());
         assertEquals(new Integer(healthTimeout), containers.get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
-        String expectedConfig = "timeTick=2000" + LINE_SEPARATOR +
-                        "autopurge.purgeInterval=1" + LINE_SEPARATOR +
-                        "syncLimit=2" + LINE_SEPARATOR +
-                        "initLimit=5" + LINE_SEPARATOR +
-                        "foo=bar" + LINE_SEPARATOR;
-        assertEquals(expectedConfig, AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
-        assertEquals(ZookeeperCluster.DEFAULT_KAFKA_GC_LOGGING, AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_OPTS));
+        OrderedProperties expectedConfig = new OrderedProperties()
+                .addPair("timeTick", "2000")
+                .addPair("autopurge.purgeInterval", "1")
+                .addPair("syncLimit", "2")
+                .addPair("initLimit", "5")
+                .addPair("foo", "bar");
+        OrderedProperties actual = new OrderedProperties()
+                .addStringPairs(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
+        assertEquals(expectedConfig, actual);
+        assertEquals(ZookeeperCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(1);
         assertEquals(ZookeeperClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
@@ -273,7 +275,7 @@ public class ZookeeperClusterTest {
     @Test
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
-        clusterCa.createOrRenew(namespace, cluster, emptyMap(), null);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null);
 
         Secret secret = zc.generateNodesSecret(clusterCa, ka);
         assertEquals(set(

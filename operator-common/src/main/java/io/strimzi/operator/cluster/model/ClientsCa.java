@@ -5,16 +5,17 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.CertificateExpirationPolicy;
 import io.strimzi.certs.CertManager;
 
 public class ClientsCa extends Ca {
     public ClientsCa(CertManager certManager, String caCertSecretName, Secret clientsCaCert,
                      String caSecretKeyName, Secret clientsCaKey,
-                     int validityDays, int renewalDays, boolean generateCa) {
+                     int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
         super(certManager, "clients-ca",
                 caCertSecretName, forceRenewal(clientsCaCert, clientsCaKey, "clients-ca.key"),
                 caSecretKeyName, adapt060ClientsCaSecret(clientsCaKey),
-                validityDays, renewalDays, generateCa);
+                validityDays, renewalDays, generateCa, policy);
     }
 
     /**

@@ -2,7 +2,8 @@
 
 function get_heap_size {
   CONTAINER_MEMORY_IN_BYTES=`cat /sys/fs/cgroup/memory/memory.limit_in_bytes`
-  DEFAULT_MEMORY_CEILING=$((2**60-1))
+   # use max of 31G memory, java performs much better with Compressed Ordinary Object Pointers
+  DEFAULT_MEMORY_CEILING=$((31 * 2**20))
   if [ "${CONTAINER_MEMORY_IN_BYTES}" -lt "${DEFAULT_MEMORY_CEILING}" ]; then
     if [ -z $CONTAINER_HEAP_PERCENT ]; then
       CONTAINER_HEAP_PERCENT=0.50

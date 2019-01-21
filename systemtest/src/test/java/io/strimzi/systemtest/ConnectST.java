@@ -7,9 +7,9 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.Namespace;
-import io.strimzi.test.StrimziExtension;
+import io.strimzi.test.annotations.ClusterOperator;
+import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,8 +34,8 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.StrimziExtension.ACCEPTANCE;
-import static io.strimzi.test.StrimziExtension.REGRESSION;
+import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -53,7 +53,7 @@ class ConnectST extends AbstractST {
     public static final String NAMESPACE = "connect-cluster-test";
     public static final String KAFKA_CLUSTER_NAME = "connect-tests";
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME);
-    private static final String EXPECTED_CONFIG = "group.id=connect-cluster\n" +
+    private static final Map EXPECTED_CONFIG = loadProperties("group.id=connect-cluster\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
             "internal.key.converter.schemas.enable=false\n" +
             "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
@@ -62,7 +62,7 @@ class ConnectST extends AbstractST {
             "offset.storage.topic=connect-cluster-offsets\n" +
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
             "internal.value.converter.schemas.enable=false\n" +
-            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
+            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n");
 
     private static Resources classResources;
 
@@ -77,8 +77,7 @@ class ConnectST extends AbstractST {
 
         assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
                 hasItem(KAFKA_CONNECT_BOOTSTRAP_SERVERS)));
-        assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONNECT_CONFIGURATION"),
-                hasItem(EXPECTED_CONFIG)));
+        assertEquals(EXPECTED_CONFIG, getPropertiesFromJson(kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"));
         testDockerImagesForKafkaConnect();
     }
 

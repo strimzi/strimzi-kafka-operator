@@ -7,9 +7,9 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static java.util.Arrays.asList;
 
@@ -19,17 +19,17 @@ import static java.util.Arrays.asList;
 public class ZookeeperConfiguration extends AbstractConfiguration {
 
     private static final List<String> FORBIDDEN_OPTIONS;
-    private static final Properties DEFAULTS;
+    private static final Map<String, String> DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(
                 ZookeeperClusterSpec.FORBIDDEN_PREFIXES.split(" *, *"));
 
-        DEFAULTS = new Properties();
-        DEFAULTS.setProperty("timeTick", "2000");
-        DEFAULTS.setProperty("initLimit", "5");
-        DEFAULTS.setProperty("syncLimit", "2");
-        DEFAULTS.setProperty("autopurge.purgeInterval", "1");
+        DEFAULTS = new HashMap<>();
+        DEFAULTS.put("timeTick", "2000");
+        DEFAULTS.put("initLimit", "5");
+        DEFAULTS.put("syncLimit", "2");
+        DEFAULTS.put("autopurge.purgeInterval", "1");
     }
 
     /**

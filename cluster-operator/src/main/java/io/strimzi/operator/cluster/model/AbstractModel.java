@@ -94,15 +94,15 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";
-    public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_OPTS = "STRIMZI_KAFKA_GC_LOG_OPTS";
-    public static final String ENV_VAR_STRIMZI_GC_LOG_OPTS = "STRIMZI_GC_LOG_OPTS";
+    public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
+    public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
     private static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
     @Deprecated
     private static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
 
-    protected static final String DEFAULT_KAFKA_GC_LOGGING = "-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps";
-    protected static final String DEFAULT_STRIMZI_GC_LOGGING = "-XX:NativeMemoryTracking=summary -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps";
+    protected static final String DEFAULT_KAFKA_GC_LOG_ENABLED = String.valueOf(true);
+    protected static final String DEFAULT_STRIMZI_GC_LOG_ENABED = String.valueOf(true);
 
     protected final String cluster;
     protected final String namespace;
@@ -267,14 +267,9 @@ public abstract class AbstractModel {
         this.isMetricsEnabled = isMetricsEnabled;
     }
 
-    public String getGcLoggingOptions() {
-        return gcLoggingEnabled ? DEFAULT_KAFKA_GC_LOGGING : " ";
-    }
-
     protected void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
     }
-
 
     protected abstract String getDefaultLogConfigFileName();
 
@@ -477,7 +472,7 @@ public abstract class AbstractModel {
 
     /**
      * Set the configuration object which might be passed to the cluster as EnvVar
-     *getPersistentVolumeClaimName
+     *
      * @param configuration Configuration object with cluster configuration
      */
     protected void setConfiguration(AbstractConfiguration configuration) {
