@@ -32,7 +32,7 @@ public class BaseITST {
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
-    private static KubeClient<?> kubeClient = cluster.client();
+    public static KubeClient<?> kubeClient = cluster.client();
 
     private static List<String> deploymentResources;
     private static List<String> deploymentNamespaces;

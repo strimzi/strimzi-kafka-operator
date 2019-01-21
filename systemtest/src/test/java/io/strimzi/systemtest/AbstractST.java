@@ -20,7 +20,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -42,12 +41,13 @@ import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.TimeoutException;
-import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterException;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.file.Path;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,8 +69,11 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
+import static io.strimzi.test.TestUtils.entriesToMap;
+import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.extensions.StrimziExtension.CO_INSTALL_DIR;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
@@ -114,9 +117,26 @@ public abstract class AbstractST extends BaseITST {
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
     private static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
 
-    public static KubeClusterResource cluster = new KubeClusterResource();
-    protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
-    static KubeClient<?> kubeClient = cluster.client();
+    public static final String NOTEARDOWN = "NOTEARDOWN";
+    public static final String KAFKA_PERSISTENT_YAML = "../examples/kafka/kafka-persistent.yaml";
+    public static final String KAFKA_CONNECT_YAML = "../examples/kafka-connect/kafka-connect.yaml";
+    public static final String KAFKA_CONNECT_S2I_CM = "../examples/configmaps/cluster-operator/kafka-connect-s2i.yaml";
+    public static final String CO_INSTALL_DIR = "../install/cluster-operator";
+    public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
+    public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
+    public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
+    public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
+    public static final String STRIMZI_ORG = "strimzi";
+    public static final String STRIMZI_TAG = "latest";
+    public static final String IMAGE_PULL_POLICY = "Always";
+    public static final String REQUESTS_MEMORY = "512Mi";
+    public static final String REQUESTS_CPU = "200m";
+    public static final String LIMITS_MEMORY = "512Mi";
+    public static final String LIMITS_CPU = "1000m";
+    public static final String OPERATOR_LOG_LEVEL = "INFO";
+    private static final String DEFAULT_TAG = "";
+    private static final String TAG_LIST_NAME = "junitTags";
+    private static final String START_TIME = "start time";
 
     Resources resources;
     static Resources testClassResources;
@@ -125,6 +145,10 @@ public abstract class AbstractST extends BaseITST {
 
     protected static NamespacedKubernetesClient namespacedClient() {
         return client.inNamespace(kubeClient.namespace());
+    }
+
+    protected HelmClient helmClient() {
+        return cluster.helmClient();
     }
 
     static String kafkaClusterName(String clusterName) {
@@ -1159,5 +1183,37 @@ public abstract class AbstractST extends BaseITST {
 
     static void applyRoleBindings(String namespace) {
         applyRoleBindings(namespace, namespace);
+    }
+
+    void deployClusterOperatorViaHelmChart() {
+        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", STRIMZI_ORG);
+        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", STRIMZI_TAG);
+
+        Map<String, String> values = Collections.unmodifiableMap(Stream.of(
+                entry("imageRepositoryOverride", dockerOrg),
+                entry("imageTagOverride", dockerTag),
+                entry("image.pullPolicy", IMAGE_PULL_POLICY),
+                entry("resources.requests.memory", REQUESTS_MEMORY),
+                entry("resources.requests.cpu", REQUESTS_CPU),
+                entry("resources.limits.memory", LIMITS_MEMORY),
+                entry("resources.limits.cpu", LIMITS_CPU),
+                entry("logLevel", OPERATOR_LOG_LEVEL))
+                .collect(entriesToMap()));
+
+        LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
+        Path pathToChart = new File(HELM_CHART).toPath();
+        String oldNamespace = kubeClient.namespace("kube-system");
+        LOGGER.info(oldNamespace);
+        InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
+        String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
+        kubeClient.applyContent(helmServiceAccount);
+        helmClient().init();
+        kubeClient.namespace(oldNamespace);
+        helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
+    }
+
+    void deleteClusterOperatorViaHelmChart() {
+        LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
+        helmClient().delete(HELM_RELEASE_NAME);
     }
 }

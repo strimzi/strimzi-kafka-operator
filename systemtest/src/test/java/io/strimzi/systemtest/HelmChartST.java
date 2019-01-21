@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,8 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(HelmChartST.NAMESPACE)
-@ClusterOperator(useHelmChart = true)
 @Tag(REGRESSION)
 class HelmChartST extends AbstractST {
 
@@ -54,17 +50,13 @@ class HelmChartST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
-        createTestClassResources();
-
-        prepareEnvForOperator(NAMESPACE);
-        applyRoleBindings(NAMESPACE, NAMESPACE);
-        // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
+        createNamespaces(NAMESPACE);
+        deployClusterOperatorViaHelmChart();
     }
 
     @AfterAll
     void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
+        deleteClusterOperatorViaHelmChart();
+        deleteNamespaces();
     }
 }

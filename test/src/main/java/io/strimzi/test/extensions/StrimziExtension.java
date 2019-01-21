@@ -4,12 +4,10 @@
  */
 package io.strimzi.test.extensions;
 
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.annotations.Resources;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -19,41 +17,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.io.File;
-import java.io.InputStream;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static io.strimzi.test.TestUtils.entriesToMap;
-import static io.strimzi.test.TestUtils.entry;
-import static io.strimzi.test.TestUtils.indent;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 /**
  * A test extension which sets up Strimzi resources in a Kubernetes cluster
@@ -62,8 +36,7 @@ import static java.util.Collections.singletonList;
  * OpenShift (if the thing under test is OpenShift-specific). JUnit5 annotation {@link Tag} can be used for execute/skip specific
  * test classes and/or test methods.
  */
-public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, AfterEachCallback, BeforeEachCallback,
-        ExecutionCondition {
+public class StrimziExtension implements ExecutionCondition {
     private static final Logger LOGGER = LogManager.getLogger(StrimziExtension.class);
 
     /**
@@ -72,26 +45,9 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
      * in the state it was in when the test failed.
      */
     public static final String NOTEARDOWN = "NOTEARDOWN";
-    public static final String KAFKA_PERSISTENT_YAML = "../examples/kafka/kafka-persistent.yaml";
-    public static final String KAFKA_CONNECT_YAML = "../examples/kafka-connect/kafka-connect.yaml";
-    public static final String KAFKA_CONNECT_S2I_CM = "../examples/configmaps/cluster-operator/kafka-connect-s2i.yaml";
-    public static final String CO_INSTALL_DIR = "../install/cluster-operator";
-    public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
-    public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
-    public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
-    public static final String STRIMZI_ORG = "strimzi";
-    public static final String STRIMZI_TAG = "latest";
-    public static final String IMAGE_PULL_POLICY = "Always";
-    public static final String REQUESTS_MEMORY = "512Mi";
-    public static final String REQUESTS_CPU = "200m";
-    public static final String LIMITS_MEMORY = "512Mi";
-    public static final String LIMITS_CPU = "1000m";
-    public static final String OPERATOR_LOG_LEVEL = "INFO";
     private static final String DEFAULT_TAG = "";
     private static final String TAG_LIST_NAME = "junitTags";
-    private static final String START_TIME = "start time";
-    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
 
     /**
      * Tag for acceptance tests, which are triggered for each push/pr/merge on travis-ci
@@ -115,79 +71,8 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
     private KubeClusterResource clusterResource;
     private Class testClass;
-    private Statement classStatement;
-    private Statement methodStatement;
     private Collection<String> declaredTags;
     private Collection<String> enabledTags;
-
-    @Override
-    public void afterAll(ExtensionContext context) {
-        deleteResource((Bracket) classStatement);
-    }
-
-    @Override
-    public void beforeAll(ExtensionContext context) {
-        classStatement = new Bracket(null, () -> e -> {
-            LOGGER.info("Failed to set up test class {}, due to {}", testClass.getName(), e, e);
-        }) {
-            @Override
-            protected void before() {
-            }
-
-            @Override
-            protected void after() {
-            }
-        };
-        classStatement = withClusterOperator(testClass, classStatement);
-        classStatement = withResources(testClass, classStatement);
-        classStatement = withNamespaces(testClass, classStatement);
-        classStatement = withLogging(testClass, classStatement);
-        try {
-            Bracket current = (Bracket) classStatement;
-            while (current != null) {
-                current.before();
-                current = (Bracket) current.statement;
-            }
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-        }
-    }
-
-    @Override
-    public void afterEach(ExtensionContext context) {
-        deleteResource((Bracket) methodStatement);
-    }
-
-    @Override
-    public void beforeEach(ExtensionContext context) {
-        Method testMethod = context.getTestMethod().get();
-
-        methodStatement = new Bracket(null, () -> e -> {
-            LOGGER.info("Failed to set up test class {}, due to {}", testClass.getName(), e, e);
-        }) {
-            @Override
-            protected void before() {
-            }
-
-            @Override
-            protected void after() {
-            }
-        };
-
-        methodStatement = withClusterOperator(testMethod, methodStatement);
-        methodStatement = withResources(testMethod, methodStatement);
-        methodStatement = withNamespaces(testMethod, methodStatement);
-        methodStatement = withLogging(testMethod, methodStatement);
-        try {
-            Bracket current = (Bracket) methodStatement;
-            while (current != null) {
-                current.before();
-                current = (Bracket) current.statement;
-            }
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-        }
-    }
 
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
@@ -202,83 +87,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 return ConditionEvaluationResult.enabled("Test method is enabled");
             }
             return ConditionEvaluationResult.disabled("Test method is disabled");
-        }
-    }
-
-    private void deleteResource(Bracket resource) {
-        if (resource != null) {
-            deleteResource((Bracket) resource.statement);
-            resource.after();
-        }
-    }
-
-    /**
-     * Class for annotations routine execution
-     */
-    abstract class Bracket extends Statement implements Runnable {
-        public final Statement statement;
-        private final Thread hook = new Thread(this);
-        private final Supplier<Consumer<? super Throwable>> onError;
-
-        public Bracket(Statement statement, Supplier<Consumer<? super Throwable>> onError) {
-            this.statement = statement;
-            this.onError = onError;
-        }
-
-        @Override
-        public void evaluate() throws Throwable {
-            // All this fuss just to ensure that the first thrown exception is what propagates
-            Throwable thrown = null;
-            try {
-                Runtime.getRuntime().addShutdownHook(hook);
-                before();
-                statement.evaluate();
-            } catch (Throwable e) {
-                thrown = e;
-                if (onError != null) {
-                    try {
-                        onError.get().accept(e);
-                    } catch (Throwable t) {
-                        thrown.addSuppressed(t);
-                    }
-                }
-            } finally {
-                try {
-                    Runtime.getRuntime().removeShutdownHook(hook);
-                    runAfter();
-                } catch (Throwable e) {
-                    if (thrown != null) {
-                        thrown.addSuppressed(e);
-                        throw thrown;
-                    } else {
-                        thrown = e;
-                    }
-                }
-                if (thrown != null) {
-                    throw thrown;
-                }
-            }
-        }
-
-        /**
-         * Runs before the test
-         */
-        protected abstract void before();
-
-        /**
-         * Runs after the test, even it if failed or the JVM can killed
-         */
-        protected abstract void after();
-
-        @Override
-        public void run() {
-            runAfter();
-        }
-
-        public void runAfter() {
-            if (System.getenv(NOTEARDOWN) == null) {
-                after();
-            }
         }
     }
 
@@ -416,317 +224,6 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
 
     protected HelmClient helmClient() {
         return clusterResource().helmClient();
-    }
-
-    class ResourceAction<T extends ResourceAction<T>> implements Supplier<Consumer<Throwable>> {
-
-        protected List<Consumer<Throwable>> list = new ArrayList<>();
-
-        public ResourceAction getResources(ResourceMatcher resources) {
-            list.add(new DescribeErrorAction(resources));
-            return this;
-        }
-
-        public ResourceAction getResources(String kind, String pattern) {
-            return getResources(new ResourceMatcher(kind, pattern));
-        }
-
-        public ResourceAction getPo() {
-            return getPo(".*");
-        }
-
-        public ResourceAction getPo(String pattern) {
-            return getResources(new ResourceMatcher("pod", pattern));
-        }
-
-        public ResourceAction getDep() {
-            return getDep(".*");
-        }
-
-        public ResourceAction getDep(String pattern) {
-            return getResources(new ResourceMatcher("deployment", pattern));
-        }
-
-        public ResourceAction getSs() {
-            return getSs(".*");
-        }
-
-        public ResourceAction getSs(String pattern) {
-            return getResources(new ResourceMatcher("statefulset", pattern));
-        }
-
-        /**
-         * Gets a result.
-         *
-         * @return a result
-         */
-        @Override
-        public Consumer<Throwable> get() {
-            return t -> {
-                for (Consumer<Throwable> x : list) {
-                    x.accept(t);
-                }
-            };
-        }
-    }
-
-    static class ResourceName {
-        public final String kind;
-        public final String name;
-
-        public ResourceName(String kind, String name) {
-            this.kind = kind;
-            this.name = name;
-        }
-    }
-
-    class ResourceMatcher implements Supplier<List<ResourceName>> {
-        public final String kind;
-        public final String namePattern;
-
-        public ResourceMatcher(String kind, String namePattern) {
-            this.kind = kind;
-            this.namePattern = namePattern;
-        }
-
-        @Override
-        public List<ResourceName> get() {
-            return kubeClient().list(kind).stream()
-                    .filter(name -> name.matches(namePattern))
-                    .map(name -> new ResourceName(kind, name))
-                    .collect(Collectors.toList());
-        }
-    }
-
-    class DescribeErrorAction implements Consumer<Throwable> {
-
-        private final Supplier<List<ResourceName>> resources;
-
-        public DescribeErrorAction(Supplier<List<ResourceName>> resources) {
-            this.resources = resources;
-        }
-
-        @Override
-        public void accept(Throwable t) {
-            for (ResourceName resource : resources.get()) {
-                LOGGER.info("Description of {} '{}':{}{}", resource.kind, resource.name,
-                        System.lineSeparator(), indent(kubeClient().getResourceAsYaml(resource.kind, resource.name)));
-            }
-        }
-    }
-
-    /**
-     * Get the (possibly @Repeatable) annotations on the given element.
-     *
-     * @param annotatedElement test method, class or field
-     * @param annotationType annotation type
-     * @return list of element's annotations
-     */
-    @SuppressWarnings("unchecked")
-    private <A extends Annotation> List<A> annotations(AnnotatedElement annotatedElement, Class<A> annotationType) {
-        final List<A> list;
-        A annotation = annotatedElement.getAnnotation(annotationType);
-
-        if (annotation != null) {
-            list = singletonList(annotation);
-        } else {
-            A[] annotations = annotatedElement.getAnnotationsByType(annotationType);
-            if (annotations.length != 0) {
-                list = asList(annotations);
-            } else {
-                list = emptyList();
-            }
-
-        }
-        return list;
-    }
-
-    /**
-     * ClusterOperator annotation handler
-     */
-    private Statement withClusterOperator(AnnotatedElement element,
-                                          Statement statement) {
-        Statement last = statement;
-        for (ClusterOperator cc : annotations(element, ClusterOperator.class)) {
-            boolean useHelmChart = cc.useHelmChart() || Boolean.parseBoolean(System.getProperty("useHelmChart", Boolean.FALSE.toString()));
-            if (useHelmChart) {
-                last = installOperatorFromHelmChart(element, last, cc);
-            } else {
-                last = installOperatorFromExamples(element, last, cc);
-            }
-        }
-        return last;
-    }
-
-    /**
-     * Namespace annotation handler
-     */
-    private Statement withNamespaces(AnnotatedElement element,
-                                     Statement statement) {
-        Statement last = statement;
-        for (Namespace namespace : annotations(element, Namespace.class)) {
-            last = new Bracket(last, null) {
-                String previousNamespace = null;
-
-                @Override
-                protected void before() {
-                    LOGGER.info("Creating namespace '{}' before test per @Namespace annotation on {}", namespace.value(), name(element));
-                    kubeClient().createNamespace(namespace.value());
-                    previousNamespace = namespace.use() ? kubeClient().namespace(namespace.value()) : kubeClient().namespace();
-                }
-
-                @Override
-                protected void after() {
-                    LOGGER.info("Deleting namespace '{}' after test per @Namespace annotation on {}", namespace.value(), name(element));
-                    kubeClient().deleteNamespace(namespace.value());
-                    kubeClient().namespace(previousNamespace);
-                }
-            };
-        }
-        return last;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Statement installOperatorFromExamples(AnnotatedElement element, Statement last, ClusterOperator cc) {
-        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
-                !file.getName().matches(".*(Binding|Deployment)-.*")
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
-        last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
-                .getDep(CO_DEPLOYMENT_NAME)) {
-            Stack<String> deletable = new Stack<>();
-
-            @Override
-            protected void before() {
-                // Here we record the state of the cluster
-                LOGGER.info("Creating cluster operator {} before test per @ClusterOperator annotation on {}", cc, name(element));
-                for (Map.Entry<File, String> entry : yamls.entrySet()) {
-                    LOGGER.info("creating possibly modified version of {}", entry.getKey());
-                    deletable.push(entry.getValue());
-
-                    kubeClient().namespace(annotations(element, Namespace.class).get(0).value());
-                    kubeClient().clientWithAdmin().applyContent(entry.getValue());
-                }
-            }
-
-            @Override
-            protected void after() {
-                LOGGER.info("Deleting cluster operator {} after test per @ClusterOperator annotation on {}", cc, name(element));
-                while (!deletable.isEmpty()) {
-                    kubeClient().clientWithAdmin().deleteContent(deletable.pop());
-                }
-            }
-        };
-        return last;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Statement installOperatorFromHelmChart(AnnotatedElement element, Statement last, ClusterOperator cc) {
-        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", STRIMZI_ORG);
-        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", STRIMZI_TAG);
-
-        Map<String, String> values = Collections.unmodifiableMap(Stream.of(
-                entry("imageRepositoryOverride", dockerOrg),
-                entry("imageTagOverride", dockerTag),
-                entry("image.pullPolicy", IMAGE_PULL_POLICY),
-                entry("resources.requests.memory", REQUESTS_MEMORY),
-                entry("resources.requests.cpu", REQUESTS_CPU),
-                entry("resources.limits.memory", LIMITS_MEMORY),
-                entry("resources.limits.cpu", LIMITS_CPU),
-                entry("logLevel", OPERATOR_LOG_LEVEL))
-                .collect(entriesToMap()));
-
-        /* These entries aren't applied to the deployment yaml at this time */
-        Map<String, String> envVars = Collections.unmodifiableMap(Arrays.stream(cc.envVariables())
-                .map(var -> entry(String.format("env.%s", var.key()), var.value()))
-                .collect(entriesToMap()));
-
-        Map<String, String> allValues = Stream.of(values, envVars).flatMap(m -> m.entrySet().stream())
-                .collect(entriesToMap());
-
-        last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
-                .getDep(CO_DEPLOYMENT_NAME)) {
-            @Override
-            protected void before() {
-                // Here we record the state of the cluster
-                LOGGER.info("Creating cluster operator with Helm Chart {} before test per @ClusterOperator annotation on {}", cc, name(element));
-                Path pathToChart = new File(HELM_CHART).toPath();
-                String oldNamespace = kubeClient().namespace("kube-system");
-                InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
-                String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
-                kubeClient().applyContent(helmServiceAccount);
-                helmClient().init();
-                kubeClient().namespace(oldNamespace);
-                helmClient().install(pathToChart, HELM_RELEASE_NAME, allValues);
-            }
-
-            @Override
-            protected void after() {
-                LOGGER.info("Deleting cluster operator with Helm Chart {} after test per @ClusterOperator annotation on {}", cc, name(element));
-                helmClient().delete(HELM_RELEASE_NAME);
-            }
-        };
-        return last;
-    }
-
-    /**
-     * Resources annotation handler
-     */
-    private Statement withResources(AnnotatedElement element,
-                                    Statement statement) {
-        Statement last = statement;
-        for (Resources resources : annotations(element, Resources.class)) {
-            last = new Bracket(last, null) {
-                @Override
-                protected void before() {
-                    // Here we record the state of the cluster
-                    LOGGER.info("Creating resources {}, before test per @Resources annotation on {}", Arrays.toString(resources.value()), name(element));
-                    kubeClient().create(resources.value());
-                }
-
-                private KubeClient kubeClient() {
-                    KubeClient client = StrimziExtension.this.kubeClient();
-                    if (resources.asAdmin()) {
-                        client = client.clientWithAdmin();
-                    }
-                    return client;
-                }
-
-                @Override
-                protected void after() {
-                    LOGGER.info("Deleting resources {}, after test per @Resources annotation on {}", Arrays.toString(resources.value()), name(element));
-                    // Here we verify the cluster is in the same state
-                    kubeClient().delete(resources.value());
-                }
-            };
-        }
-        return last;
-    }
-
-    private Statement withLogging(AnnotatedElement element, Statement statement) {
-        return new Bracket(statement, null) {
-            private long t0;
-
-            @Override
-            protected void before() {
-                t0 = System.currentTimeMillis();
-                LOGGER.info("Starting {}", name(element));
-            }
-
-            @Override
-            protected void after() {
-                LOGGER.info("Finished {}: took {}",
-                        name(element),
-                        duration(System.currentTimeMillis() - t0));
-            }
-        };
-    }
-
-    private static String duration(long millis) {
-        long ms = millis % 1_000;
-        long time = millis / 1_000;
-        long minutes = time / 60;
-        long seconds = time % 60;
-        return minutes + "m" + seconds + "." + ms + "s";
     }
 
     private String name(AnnotatedElement a) {
