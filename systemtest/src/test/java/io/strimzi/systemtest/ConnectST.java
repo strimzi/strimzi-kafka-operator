@@ -258,9 +258,9 @@ class ConnectST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
+        prepareEnvForOperator(NAMESPACE);
         createTestClassResources();
 
-        prepareEnvForOperator(NAMESPACE);
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();

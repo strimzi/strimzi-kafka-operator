@@ -102,6 +102,7 @@ class UserST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         prepareEnvForOperator(NAMESPACE);
+
         createTestClassResources();
         applyRoleBindings(NAMESPACE, NAMESPACE);
         // 050-Deployment

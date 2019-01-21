@@ -34,10 +34,9 @@ public class BaseITST {
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
     public static KubeClient<?> kubeClient = cluster.client();
 
-    private static List<String> deploymentResources;
-    private static List<String> deploymentNamespaces;
-    private static String clientNamespace;
-    private static Map<File, String> clusterOperatorMap;
+    private static List<String> deploymentResources = Collections.EMPTY_LIST;
+    private static List<String> deploymentNamespaces = Collections.EMPTY_LIST;
+    private static Map<File, String> clusterOperatorMap = Collections.EMPTY_MAP;
 
     protected static String testClass;
     protected static String testName;
@@ -60,7 +59,6 @@ public class BaseITST {
     }
 
     private void createNamespaces(String useNamespace, List<String> namespaces) {
-        clientNamespace = useNamespace;
         deploymentNamespaces = namespaces;
         for (String namespace: namespaces) {
             LOGGER.info("Creating namespace: {}", namespace);
@@ -83,16 +81,14 @@ public class BaseITST {
             kubeClient.waitForResourceDeletion("Namespace", namespace);
             LOGGER.info("Namespace {} deleted", namespace);
         }
-        LOGGER.info("Using namespace {}", clientNamespace);
-        kubeClient.namespace(clientNamespace);
+        LOGGER.info("Using namespace {}", cluster.defaultNamespace());
+        kubeClient.namespace(cluster.defaultNamespace());
     }
 
     protected void createCustomResources(List<String> resources) {
-        LOGGER.info(System.getProperty("user.dir"));
         deploymentResources = resources;
         for (String resource : resources) {
             LOGGER.info("Creating resources {}", resource);
-            LOGGER.info(kubeClient.namespace());
             kubeClient.clientWithAdmin().create(resource);
         }
     }

@@ -8,6 +8,7 @@ import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -98,9 +99,9 @@ class MultipleNamespaceST extends AbstractST {
     @BeforeAll
     void createClassResources() {
         LOGGER.info("Creating resources before the test class");
+        prepareEnvForOperator(DEFAULT_NAMESPACE, Arrays.asList(DEFAULT_NAMESPACE, SECOND_NAMESPACE), Collections.emptyList());
         createTestClassResources();
 
-        prepareEnvForOperator(DEFAULT_NAMESPACE, Arrays.asList(DEFAULT_NAMESPACE, SECOND_NAMESPACE), Collections.emptyList());
         applyRoleBindings(DEFAULT_NAMESPACE, DEFAULT_NAMESPACE);
         applyRoleBindings(DEFAULT_NAMESPACE, SECOND_NAMESPACE);
         // 050-Deployment
@@ -135,5 +136,10 @@ class MultipleNamespaceST extends AbstractST {
         kubeClient.namespace(namespace);
         kubeClient.deleteByName("KafkaTopic", topic);
         kubeClient.namespace(CO_NAMESPACE);
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        teardownEnvForOperator();
     }
 }
