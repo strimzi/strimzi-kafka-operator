@@ -24,8 +24,6 @@ import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(RecoveryST.NAMESPACE)
-@ClusterOperator
 @Tag(REGRESSION)
 class RecoveryST extends AbstractST {
 

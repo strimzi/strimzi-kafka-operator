@@ -45,8 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(ConnectST.NAMESPACE)
-@ClusterOperator
 class ConnectST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);

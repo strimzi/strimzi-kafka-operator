@@ -21,8 +21,6 @@ import static org.junit.Assert.assertTrue;
  * validation done by K8S.
  */
 @ExtendWith(StrimziExtension.class)
-@Namespace(KafkaCrdIT.NAMESPACE)
-@Resources(value = TestUtils.CRD_KAFKA, asAdmin = true)
 public class KafkaCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkacrd-it";
 
