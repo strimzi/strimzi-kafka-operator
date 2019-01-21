@@ -660,7 +660,7 @@ public class TopicOperatorIT {
 
 
     @Test
-    public void testKafkaTopicCreatedWithOwnerRef(TestContext context) {
+    public void testKafkaTopicWithOwnerRef(TestContext context) {
         String topicName = "test-kafka-topic-with-owner-ref-1";
 
         // this CM is created to be the owner of the KafkaTopic we're about to create.
