@@ -22,6 +22,8 @@ import java.util.Objects;
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 public class KafkaExternalBootstrapService implements KubernetesResource {
+    private static final long serialVersionUID = 7105212236247449919L;
+
     @JsonProperty("nodePort")
     private Integer nodePort;
 

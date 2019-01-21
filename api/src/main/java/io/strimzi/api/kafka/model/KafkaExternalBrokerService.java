@@ -24,6 +24,7 @@ import java.util.Objects;
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 public class KafkaExternalBrokerService implements KubernetesResource {
+    private static final long serialVersionUID = -7537621108590168627L;
 
     @JsonProperty("index")
     private Integer index;
