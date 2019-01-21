@@ -40,6 +40,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaExternalBrokerService;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaListenerExternalLoadBalancer;
 import io.strimzi.api.kafka.model.KafkaListenerExternalNodePort;
@@ -77,7 +78,7 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     private static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
     private static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
-    private static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_HOST = "EXTERNAL_ADVERTISED_HOST";
+    private static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES = "EXTERNAL_ADVERTISED_ADDRESSES";
     /** {@code TRUE} when the CLIENT listener (PLAIN transport) should be enabled*/
     private static final String ENV_VAR_KAFKA_CLIENT_ENABLED = "KAFKA_CLIENT_ENABLED";
     /** The authentication to configure for the CLIENT listener (PLAIN transport). */
@@ -451,7 +452,17 @@ public class KafkaCluster extends AbstractModel {
         if (isExposed()) {
             String externalBootstrapServiceName = externalBootstrapServiceName(cluster);
 
-            List<ServicePort> ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+            List<ServicePort> ports;
+            if (isExposedWithNodePort()) {
+                KafkaListenerExternalNodePort externalNodePort = (KafkaListenerExternalNodePort) listeners.getExternal();
+                if (externalNodePort.getBootstrap() != null && externalNodePort.getBootstrap().getNodePort() != null) {
+                    ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, externalNodePort.getBootstrap().getNodePort(), "TCP"));
+                } else {
+                    ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+                }
+            } else {
+                ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+            }
 
             return createService(externalBootstrapServiceName, getExternalServiceType(), ports, getLabelsWithName(externalBootstrapServiceName, templateExternalBootstrapServiceLabels), getSelectorLabels(), mergeAnnotations(Collections.EMPTY_MAP, templateExternalBootstrapServiceAnnotations));
         }
@@ -470,7 +481,24 @@ public class KafkaCluster extends AbstractModel {
             String perPodServiceName = externalServiceName(cluster, pod);
 
             List<ServicePort> ports = new ArrayList<>(1);
-            ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+            if (isExposedWithNodePort()) {
+                KafkaListenerExternalNodePort externalNodePort = (KafkaListenerExternalNodePort) listeners.getExternal();
+                if (externalNodePort.getBrokers() != null) {
+                    Integer nodePort = externalNodePort.getBrokers().stream()
+                        .filter(broker -> broker.getIndex() == pod)
+                        .map(KafkaExternalBrokerService::getNodePort)
+                        .findAny().orElse(null);
+                    if (nodePort != null) {
+                        ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, nodePort, "TCP"));
+                    } else {
+                        ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+                    }
+                } else {
+                    ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+                }
+            } else {
+                ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+            }
 
             Labels selector = Labels.fromMap(getSelectorLabels()).withStatefulSetPod(kafkaPodName(cluster, pod));
 
@@ -707,9 +735,9 @@ public class KafkaCluster extends AbstractModel {
 
             if (isExposedWithNodePort()) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
-                String advertisedHost = ((KafkaListenerExternalNodePort) listeners.getExternal()).getAdvertisedHost();
-                if (advertisedHost != null && !advertisedHost.trim().isEmpty()) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_HOST, advertisedHost));
+                KafkaListenerExternalNodePort externalNodePort = (KafkaListenerExternalNodePort) listeners.getExternal();
+                if (externalNodePort.getBrokers() != null && !externalNodePort.getBrokers().isEmpty()) {
+                    varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES, buildAdvertisedAddressesString(externalNodePort.getBrokers())));
                 }
             }
 
@@ -725,6 +753,15 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return initContainers;
+    }
+
+    private String buildAdvertisedAddressesString(List<KafkaExternalBrokerService> brokers) {
+        return brokers.stream()
+                .filter(broker -> broker.getIndex() != null)
+                .map(broker -> broker.getIndex().toString() + "://" +
+                        (broker.getAdvertisedHost() != null ? broker.getAdvertisedHost() : "") + ":" +
+                        (broker.getAdvertisedPort() != null ? broker.getAdvertisedPort() : ""))
+                .collect(Collectors.joining(" "));
     }
 
     @Override

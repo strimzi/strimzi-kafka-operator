@@ -74,14 +74,21 @@ if [ "$KAFKA_EXTERNAL_ENABLED" ]; then
   elif [ "$KAFKA_EXTERNAL_ENABLED" = "loadbalancer" ]; then
     ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${ADDRESSES[$KAFKA_BROKER_ID]}:9094"
   elif [ "$KAFKA_EXTERNAL_ENABLED" = "nodeport" ]; then
-    if [ -e $KAFKA_HOME/init/external.address ]; then
+    EXTERNAL_PORT=${ADDRESSES[$KAFKA_BROKER_ID]}
+    if [ -e $KAFKA_HOME/init/external.address.$KAFKA_BROKER_ID.port ]; then
+      EXTERNAL_PORT=$(cat $KAFKA_HOME/init/external.address.$KAFKA_BROKER_ID.port)
+    fi
+
+    if [ -e $KAFKA_HOME/init/external.address.$KAFKA_BROKER_ID.host ]; then
+      EXTERNAL_ADDRESS=$(cat $KAFKA_HOME/init/external.address.$KAFKA_BROKER_ID.host)
+    elif [ -e $KAFKA_HOME/init/external.address ]; then
       EXTERNAL_ADDRESS=$(cat $KAFKA_HOME/init/external.address)
     else
       echo "-E- External address not found"
       exit 1
     fi
 
-    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${EXTERNAL_ADDRESS}:${ADDRESSES[$KAFKA_BROKER_ID]}"
+    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${EXTERNAL_ADDRESS}:${EXTERNAL_PORT}"
   fi
 
   if [ "$KAFKA_EXTERNAL_TLS" = "true" ]; then

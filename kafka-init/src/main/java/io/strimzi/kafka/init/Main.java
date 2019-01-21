@@ -33,6 +33,7 @@ public class Main {
             if (!writer.writeExternalAddress()) {
                 System.exit(1);
             }
+            writer.writeExternalBrokerAddresses();
         }
 
         client.close();

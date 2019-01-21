@@ -206,8 +206,6 @@ spec:
                     external:
                       type: object
                       properties:
-                        advertisedHost:
-                          type: string
                         authentication:
                           type: object
                           properties:
@@ -218,6 +216,24 @@ spec:
                               - scram-sha-512
                           required:
                           - type
+                        bootstrap:
+                          type: object
+                          properties:
+                            nodePort:
+                              type: integer
+                        brokers:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              index:
+                                type: integer
+                              advertisedHost:
+                                type: string
+                              advertisedPort:
+                                type: integer
+                              nodePort:
+                                type: integer
                         networkPolicyPeers:
                           type: array
                           items:

@@ -33,7 +33,8 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
     private KafkaListenerAuthentication auth;
     private boolean tls = true;
     private List<NetworkPolicyPeer> networkPolicyPeers;
-    private String advertisedHost;
+    private KafkaExternalBootstrapService bootstrap;
+    private List<KafkaExternalBrokerService> brokers;
 
     @Description("Must be `" + TYPE_NODEPORT + "`")
     @Override
@@ -77,13 +78,23 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
         this.networkPolicyPeers = networkPolicyPeers;
     }
 
-    @Description("Explicitly sets advertised host name")
+    @Description("Configures external bootstrap service")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getAdvertisedHost() {
-        return advertisedHost;
+    public KafkaExternalBootstrapService getBootstrap() {
+        return bootstrap;
     }
 
-    public void setAdvertisedHost(String advertisedHost) {
-        this.advertisedHost = advertisedHost;
+    public void setBootstrap(KafkaExternalBootstrapService bootstrap) {
+        this.bootstrap = bootstrap;
+    }
+
+    @Description("Configures broker service and advertised address")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<KafkaExternalBrokerService> getBrokers() {
+        return brokers;
+    }
+
+    public void setBrokers(List<KafkaExternalBrokerService> brokers) {
+        this.brokers = brokers;
     }
 }

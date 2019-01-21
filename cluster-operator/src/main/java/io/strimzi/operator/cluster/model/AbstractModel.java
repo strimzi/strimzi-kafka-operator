@@ -600,6 +600,18 @@ public abstract class AbstractModel {
         return servicePort;
     }
 
+    protected ServicePort createServicePort(String name, int port, int targetPort, int nodePort, String protocol) {
+        ServicePort servicePort = new ServicePortBuilder()
+            .withName(name)
+            .withProtocol(protocol)
+            .withPort(port)
+            .withNewTargetPort(targetPort)
+            .withNewNodePort(nodePort)
+            .build();
+        log.trace("Created service port {}", servicePort);
+        return servicePort;
+    }
+
     protected PersistentVolumeClaim createPersistentVolumeClaim(String name) {
         PersistentClaimStorage storage = (PersistentClaimStorage) this.storage;
         Map<String, Quantity> requests = new HashMap<>();
