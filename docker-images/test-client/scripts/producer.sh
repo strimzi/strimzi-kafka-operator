@@ -1,10 +1,6 @@
 #!/bin/bash
 set -x
 
-# Disable Kafka's GC logging (which logs to a file)...
-export GC_LOG_ENABLED="false"
-# ... but enable equivalent GC logging to stdout
-##export KAFKA_GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
   export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/log4j.properties"
@@ -31,6 +27,8 @@ fi
 
 echo "Starting Producer with configuration:"
 echo "${PRODUCER_CONFIGURATION}" | tee /tmp/producer.properties
+
+. ./set_kafka_gc_options.sh
 
 # starting Kafka server with final configuration
 $KAFKA_HOME/bin/kafka-verifiable-producer.sh --producer.config /tmp/producer.properties $PRODUCER_OPTS

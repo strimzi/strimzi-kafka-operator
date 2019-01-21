@@ -175,15 +175,15 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(healthTimeout), containers.get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
         OrderedProperties expectedConfig = new OrderedProperties()
-                    .addPair("timeTick", "2000")
-                    .addPair("autopurge.purgeInterval", "1")
-                    .addPair("syncLimit", "2")
-                    .addPair("initLimit", "5")
-                    .addPair("foo", "bar");
+                .addPair("timeTick", "2000")
+                .addPair("autopurge.purgeInterval", "1")
+                .addPair("syncLimit", "2")
+                .addPair("initLimit", "5")
+                .addPair("foo", "bar");
         OrderedProperties actual = new OrderedProperties()
-                    .addStringPairs(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
+                .addStringPairs(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
         assertEquals(expectedConfig, actual);
-        assertEquals(ZookeeperCluster.DEFAULT_KAFKA_GC_LOGGING, AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_OPTS));
+        assertEquals(ZookeeperCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(1);
         assertEquals(ZookeeperClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
