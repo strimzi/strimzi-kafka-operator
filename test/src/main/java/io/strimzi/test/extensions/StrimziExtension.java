@@ -2,9 +2,14 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test;
+package io.strimzi.test.extensions;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.strimzi.test.annotations.ClusterOperator;
+import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.annotations.OpenShiftOnly;
+import io.strimzi.test.annotations.Resources;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -361,7 +366,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     }
 
     /**
-     * Get the value of the @ClassRule-annotated KubeClusterResource field
+     * Get the value of the KubeClusterResource field with name 'cluster'
      */
     private KubeClusterResource clusterResource() {
         if (clusterResource == null) {
@@ -451,7 +456,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         }
     }
 
-    class ResourceName {
+    static class ResourceName {
         public final String kind;
         public final String name;
 

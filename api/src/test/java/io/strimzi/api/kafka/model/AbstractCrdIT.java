@@ -7,13 +7,12 @@ package io.strimzi.api.kafka.model;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
-import org.junit.ClassRule;
+import org.junit.Before;
 
 import static org.junit.Assert.assertNotNull;
 
 public abstract class AbstractCrdIT {
 
-    @ClassRule
     public static KubeClusterResource cluster = new KubeClusterResource();
 
     protected <T extends CustomResource> void createDelete(Class<T> resourceClass, String resource) {
@@ -54,5 +53,10 @@ public abstract class AbstractCrdIT {
         } else if (thrown2 != null) {
             throw thrown2;
         }
+    }
+
+    @Before
+    public void setupTests() {
+        cluster.before();
     }
 }

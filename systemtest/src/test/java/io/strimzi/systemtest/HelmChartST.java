@@ -4,9 +4,9 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.Namespace;
-import io.strimzi.test.StrimziExtension;
+import io.strimzi.test.annotations.ClusterOperator;
+import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.strimzi.test.StrimziExtension.REGRESSION;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(HelmChartST.NAMESPACE)
