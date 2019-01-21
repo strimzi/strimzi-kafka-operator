@@ -4,13 +4,13 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.test.annotations.Namespace;
-import io.strimzi.test.annotations.Resources;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.Collections;
 
 import static org.junit.Assert.assertTrue;
 
@@ -20,9 +20,6 @@ import static org.junit.Assert.assertTrue;
  * I.e. that such instance resources obtained from POJOs are valid according to the schema
  * validation done by K8S.
  */
-@ExtendWith(StrimziExtension.class)
-@Namespace(KafkaUserCrdIT.NAMESPACE)
-@Resources(value = TestUtils.CRD_KAFKA_USER, asAdmin = true)
 public class KafkaUserCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkausercrd-it";
 
@@ -48,5 +45,18 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("spec.authentication in body is required"));
         }
+    }
+
+    @BeforeAll
+    void setupEnvironment() {
+        createNamespaces(NAMESPACE);
+        createCustomResources(Collections.singletonList(
+                TestUtils.CRD_KAFKA_USER));
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        deleteCustomResources();
+        deleteNamespaces();
     }
 }

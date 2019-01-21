@@ -15,6 +15,7 @@ import java.lang.annotation.Target;
  * which enables to create resources before, and delete resources after,
  * the tests.
  */
+@Deprecated
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(Resources.Container.class)

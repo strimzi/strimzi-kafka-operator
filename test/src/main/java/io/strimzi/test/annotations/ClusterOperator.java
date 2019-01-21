@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
  * which enables to create a cluster operator before, and delete a cluster operator after,
  * the tests.
  */
+@Deprecated
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ClusterOperator {

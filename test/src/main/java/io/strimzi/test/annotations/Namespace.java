@@ -15,6 +15,7 @@ import java.lang.annotation.Target;
  * which enables to create namespaces before, and delete namespaces after,
  * the tests.
  */
+@Deprecated
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(Namespace.Container.class)

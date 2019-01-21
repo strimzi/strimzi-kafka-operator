@@ -4,13 +4,13 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.test.annotations.Namespace;
-import io.strimzi.test.annotations.Resources;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.Collections;
 
 import static org.junit.Assert.assertTrue;
 
@@ -20,9 +20,6 @@ import static org.junit.Assert.assertTrue;
  * I.e. that such instance resources obtained from POJOs are valid according to the schema
  * validation done by K8S.
  */
-@ExtendWith(StrimziExtension.class)
-@Namespace(KafkaTopicCrdIT.NAMESPACE)
-@Resources(value = TestUtils.CRD_TOPIC, asAdmin = true)
 public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     public static final String NAMESPACE = "topiccrd-it";
@@ -43,12 +40,25 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaTopicWithMissingProperty() {
+    void testKafkaTopicWithMissingProperty() {
         try {
             createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("spec.partitions in body is required"));
             assertTrue(e.getMessage().contains("spec.replicas in body is required"));
         }
+    }
+
+    @BeforeAll
+    void setupEnvironment() {
+        createNamespaces(NAMESPACE);
+        createCustomResources(Collections.singletonList(
+                TestUtils.CRD_TOPIC));
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        deleteCustomResources();
+        deleteNamespaces();
     }
 }

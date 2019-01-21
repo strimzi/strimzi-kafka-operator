@@ -39,6 +39,7 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.systemtest.timemeasuring.Operation;
 import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
+import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.TimeoutException;
 import io.strimzi.test.k8s.KubeClient;
@@ -47,15 +48,9 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.TestInstance;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -89,10 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class AbstractST {
-
-    private static final String CO_INSTALL_DIR = "../install/cluster-operator";
+public abstract class AbstractST extends BaseITST {
 
     static {
         Crds.registerCustomKinds();
@@ -126,16 +118,9 @@ public abstract class AbstractST {
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
     static KubeClient<?> kubeClient = cluster.client();
 
-    private static List<String> deploymentResources;
-    private static List<String> deploymentNamespaces;
-    private static String clientNamespace;
-    private static Map<File, String> clusterOperatorMap;
-
     Resources resources;
     static Resources testClassResources;
     static String operationID;
-    static String testClass;
-    static String testName;
     Random rng = new Random();
 
     protected static NamespacedKubernetesClient namespacedClient() {
@@ -1174,97 +1159,5 @@ public abstract class AbstractST {
 
     static void applyRoleBindings(String namespace) {
         applyRoleBindings(namespace, namespace);
-    }
-
-    protected void applyClusterOperatorInstallFiles() {
-        clusterOperatorMap = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
-                !file.getName().matches(".*(Binding|Deployment)-.*")
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
-        for (Map.Entry<File, String> entry : clusterOperatorMap.entrySet()) {
-            LOGGER.info("Creating possibly modified version of {}", entry.getKey());
-            kubeClient.clientWithAdmin().applyContent(entry.getValue());
-        }
-    }
-
-    protected void deleteClusterOperatorInstallFiles() {
-        for (Map.Entry<File, String> entry : clusterOperatorMap.entrySet()) {
-            LOGGER.info("Deleting {}", entry.getKey());
-            kubeClient.clientWithAdmin().deleteContent(entry.getValue());
-        }
-    }
-
-    protected void createNamespaces(String useNamespace, List<String> namespaces) {
-        clientNamespace = useNamespace;
-        deploymentNamespaces = namespaces;
-        for (String namespace: namespaces) {
-            LOGGER.info("Creating namespace: {}", namespace);
-            kubeClient.createNamespace(namespace);
-            kubeClient.waitForResourceCreation("Namespace", namespace);
-            LOGGER.info("Namespace {} created", namespace);
-        }
-        LOGGER.info("Using namespace {}", useNamespace);
-        kubeClient.namespace(useNamespace);
-    }
-
-    protected void createNamespaces(String useNamespace) {
-        createNamespaces(useNamespace, Collections.singletonList(useNamespace));
-    }
-
-    protected void deleteNamespaces() {
-        for (String namespace: deploymentNamespaces) {
-            LOGGER.info("Deleting namespace: {}", namespace);
-            kubeClient.deleteNamespace(namespace);
-            kubeClient.waitForResourceDeletion("Namespace", namespace);
-            LOGGER.info("Namespace {} deleted", namespace);
-        }
-        LOGGER.info("Using namespace {}", clientNamespace);
-        kubeClient.namespace(clientNamespace);
-    }
-
-    protected void createCustomResources(List<String> resources) {
-        LOGGER.info(System.getProperty("user.dir"));
-        deploymentResources = resources;
-        for (String resource : resources) {
-            LOGGER.info("Creating resources {}", resource);
-            LOGGER.info(kubeClient.namespace());
-            kubeClient.clientWithAdmin().create(resource);
-        }
-    }
-
-    protected void deleteCustomResources() {
-        for (String resource : deploymentResources) {
-            LOGGER.info("Deleting resources {}", resource);
-            kubeClient.delete(resource);
-        }
-    }
-
-    protected void prepareEnvForOperator(String clientNamespace, List<String> namespaces, List<String> resources) {
-        createNamespaces(clientNamespace, namespaces);
-        createCustomResources(resources);
-        applyClusterOperatorInstallFiles();
-    }
-
-    protected void prepareEnvForOperator(String clientNamespace, List<String> resources) {
-        prepareEnvForOperator(clientNamespace, Collections.singletonList(clientNamespace), resources);
-    }
-
-    protected void prepareEnvForOperator(String clientNamespace) {
-        prepareEnvForOperator(clientNamespace, Collections.singletonList(clientNamespace), Collections.emptyList());
-    }
-
-    protected void teardownEnvForOperator() {
-        deleteClusterOperatorInstallFiles();
-        deleteCustomResources();
-        deleteNamespaces();
-    }
-
-    @BeforeEach
-    void setTestName(TestInfo testInfo) {
-        testName = testInfo.getTestMethod().get().getName();
-    }
-
-    @BeforeAll
-    static void createTestClassResources(TestInfo testInfo) {
-        testClass = testInfo.getTestClass().get().getSimpleName();
     }
 }

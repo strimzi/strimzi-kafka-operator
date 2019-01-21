@@ -5,13 +5,14 @@
 package io.strimzi.api.kafka.model;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.Before;
 
 import static org.junit.Assert.assertNotNull;
 
-public abstract class AbstractCrdIT {
+public abstract class AbstractCrdIT extends BaseITST {
 
     public static KubeClusterResource cluster = new KubeClusterResource();
 

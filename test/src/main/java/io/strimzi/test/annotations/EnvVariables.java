@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  */
+@Deprecated
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EnvVariables {
