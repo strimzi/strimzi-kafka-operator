@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +17,7 @@ public class Topic {
         private int numPartitions;
         private short numReplicas = -1;
         private Map<String, String> config = new HashMap<>();
+        private ObjectMeta metadata = new ObjectMeta();
         private ResourceName resourceName;
 
         public Builder() {
@@ -22,30 +25,46 @@ public class Topic {
         }
 
         public Builder(String topicName, int numPartitions) {
-            this(new TopicName(topicName), numPartitions, (short) -1, null);
+            this(new TopicName(topicName), numPartitions, (short) -1, null, null);
         }
 
         public Builder(TopicName topicName, int numPartitions) {
-            this(topicName, numPartitions, (short) -1, null);
+            this(topicName, numPartitions, (short) -1, null, null);
         }
 
         public Builder(String topicName, int numPartitions, Map<String, String> config) {
-            this(new TopicName(topicName), numPartitions, (short) -1, config);
+            this(new TopicName(topicName), numPartitions, (short) -1, config, null);
         }
 
         public Builder(TopicName topicName, int numPartitions, Map<String, String> config) {
-            this(topicName, numPartitions, (short) -1, config);
+            this(topicName, numPartitions, (short) -1, config, null);
         }
 
         public Builder(String topicName, int numPartitions, short numReplicas, Map<String, String> config) {
-            this(new TopicName(topicName), numPartitions, numReplicas, config);
+            this(new TopicName(topicName), numPartitions, numReplicas, config, null);
         }
 
         public Builder(TopicName topicName, int numPartitions, short numReplicas, Map<String, String> config) {
-            this(topicName, topicName.asMapName(), numPartitions, numReplicas, config);
+            this(topicName, topicName.asMapName(), numPartitions, numReplicas, config, null);
         }
 
-        public Builder(TopicName topicName, ResourceName resourceName, int numPartitions, short numReplicas, Map<String, String> config) {
+        public Builder(String topicName, int numPartitions, short numReplicas, Map<String, String> config, ObjectMeta metadata) {
+            this(new TopicName(topicName), numPartitions, numReplicas, config, metadata);
+        }
+
+        public Builder(TopicName topicName, int numPartitions, short numReplicas, Map<String, String> config, ObjectMeta metadata) {
+            this(topicName, topicName.asMapName(), numPartitions, numReplicas, config, metadata);
+        }
+
+        public Builder(String topicName, int numPartitions, Map<String, String> config, ObjectMeta metadata) {
+            this(new TopicName(topicName), numPartitions, (short) -1, config, metadata);
+        }
+
+        public Builder(TopicName topicName, int numPartitions, Map<String, String> config, ObjectMeta metadata) {
+            this(topicName, numPartitions, (short) -1, config, metadata);
+        }
+
+        public Builder(TopicName topicName, ResourceName resourceName, int numPartitions, short numReplicas, Map<String, String> config, ObjectMeta metadata) {
             this.topicName = topicName;
             this.resourceName = resourceName;
             this.numPartitions = numPartitions;
@@ -53,6 +72,7 @@ public class Topic {
             if (config != null) {
                 this.config.putAll(config);
             }
+            this.metadata = metadata;
         }
 
         public Builder(Topic topic) {
@@ -61,6 +81,7 @@ public class Topic {
             this.numReplicas = topic.numReplicas;
             this.resourceName = topic.resourceName;
             this.config.putAll(topic.config);
+            this.metadata = topic.metadata;
         }
 
         public Builder withTopicName(TopicName name) {
@@ -99,6 +120,11 @@ public class Topic {
             return this;
         }
 
+        public Builder withMetadata(ObjectMeta metadata) {
+            this.metadata = metadata;
+            return this;
+        }
+
         public Builder withConfigEntry(String configKey, String configValue) {
             this.config.put(configKey, configValue);
             return this;
@@ -110,7 +136,7 @@ public class Topic {
         }
 
         public Topic build() {
-            return new Topic(topicName, resourceName, numPartitions, numReplicas, config);
+            return new Topic(topicName, resourceName, numPartitions, numReplicas, config, metadata);
         }
     }
 
@@ -121,6 +147,8 @@ public class Topic {
     private final int numPartitions;
 
     private final Map<String, String> config;
+
+    private final ObjectMeta metadata;
 
     private final short numReplicas;
 
@@ -152,12 +180,17 @@ public class Topic {
         return config;
     }
 
-    private Topic(TopicName topicName, ResourceName resourceName, int numPartitions, short numReplicas, Map<String, String> config) {
+    public ObjectMeta getMetadata() {
+        return metadata;
+    }
+
+    private Topic(TopicName topicName, ResourceName resourceName, int numPartitions, short numReplicas, Map<String, String> config, ObjectMeta metadata) {
         this.topicName = topicName;
         this.resourceName = resourceName;
         this.numPartitions = numPartitions;
         this.numReplicas = numReplicas;
         this.config = Collections.unmodifiableMap(config);
+        this.metadata = metadata;
     }
 
     @Override
@@ -167,6 +200,7 @@ public class Topic {
                 ", numPartitions=" + numPartitions +
                 ", numReplicas=" + numReplicas +
                 ", config=" + config +
+                ", metadata=" + metadata +
                 '}';
     }
 
@@ -180,7 +214,11 @@ public class Topic {
         if (numPartitions != topic.numPartitions) return false;
         if (numReplicas != topic.numReplicas) return false;
         if (!topicName.equals(topic.topicName)) return false;
-        return config.equals(topic.config);
+        if (!config.equals(topic.config)) return false;
+        if (metadata == null) {
+            return topic.metadata == null;
+        } else
+            return metadata.equals(topic.metadata);
     }
 
     @Override
@@ -189,6 +227,7 @@ public class Topic {
         result = 31 * result + numPartitions;
         result = 31 * result + numReplicas;
         result = 31 * result + config.hashCode();
+        result = 31 * result + metadata.hashCode();
         return result;
     }
 }
