@@ -17,7 +17,6 @@ public class ExecutionListener implements TestExecutionListener {
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
-        LOGGER.info("ExecutionListener End!!!");
         TimeMeasuringSystem.printAndSaveResults(TEST_LOG_DIR);
     }
 }

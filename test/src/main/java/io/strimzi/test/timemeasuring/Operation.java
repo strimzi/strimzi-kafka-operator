@@ -12,4 +12,6 @@ public enum Operation {
     SCALE_DOWN,
     CO_CREATION,
     CO_DELETION,
+    MM_DEPLOYMENT,
+    CLUSTER_RECOVERY,
 }

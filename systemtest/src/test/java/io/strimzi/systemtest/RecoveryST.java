@@ -32,7 +32,7 @@ class RecoveryST extends AbstractST {
 
     @Test
     void testRecoveryFromEntityOperatorDeletion() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
         String entityOperatorDeploymentName = entityOperatorDeploymentName(CLUSTER_NAME);
         LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", CLUSTER_NAME);
@@ -43,13 +43,14 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for recovery {}", entityOperatorDeploymentName);
         kubeClient.waitForDeployment(entityOperatorDeploymentName, 1);
 
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoErrorLogged();
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
     void testRecoveryFromKafkaStatefulSetDeletion() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
         String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
@@ -60,13 +61,14 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
         kubeClient.waitForStatefulSet(kafkaStatefulSetName, 1);
 
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoErrorLogged();
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
     void testRecoveryFromZookeeperStatefulSetDeletion() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
         String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
         LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
@@ -77,13 +79,14 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
         kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 3);
 
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoErrorLogged();
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
     void testRecoveryFromKafkaServiceDeletion() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
         String kafkaServiceName = kafkaServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
@@ -93,13 +96,14 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
         kubeClient.waitForResourceCreation(SERVICE, kafkaServiceName);
 
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoErrorLogged();
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
     void testRecoveryFromZookeeperServiceDeletion() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
         String zookeeperServiceName = zookeeperServiceName(CLUSTER_NAME);
 
@@ -110,13 +114,14 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for creation {}", zookeeperServiceName);
         kubeClient.waitForResourceCreation(SERVICE, zookeeperServiceName);
 
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoErrorLogged();
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
     void testRecoveryFromKafkaHeadlessServiceDeletion() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
         String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
@@ -126,13 +131,14 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
         kubeClient.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
 
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoErrorLogged();
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
     void testRecoveryFromZookeeperHeadlessServiceDeletion() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
         String zookeeperHeadlessServiceName = zookeeperHeadlessServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
@@ -142,13 +148,14 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
         kubeClient.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
 
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoErrorLogged();
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
     void testRecoveryFromKafkaMetricsConfigDeletion() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
         String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", CLUSTER_NAME);
@@ -159,8 +166,9 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for creation {}", kafkaMetricsConfigName);
         kubeClient.waitForResourceCreation(CM, kafkaMetricsConfigName);
 
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoErrorLogged();
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @Test
@@ -176,8 +184,9 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Waiting for creation {}", zookeeperMetricsConfigName);
         kubeClient.waitForResourceCreation(CM, zookeeperMetricsConfigName);
 
+        TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
-        assertNoErrorLogged();
+        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 
     @BeforeAll
@@ -191,11 +200,5 @@ class RecoveryST extends AbstractST {
         testClassResources.clusterOperator(NAMESPACE).done();
 
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 1).done();
-    }
-
-    private void assertNoErrorLogged() {
-        TimeMeasuringSystem.stopOperation(operationID);
-        //Test that CO doesn't have any exceptions in log
-        assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
     }
 }

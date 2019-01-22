@@ -57,6 +57,7 @@ public class BaseITST {
     }
 
     private void deleteClusterOperatorInstallFiles() {
+        TimeMeasuringSystem.setTestName(testClass, testClass);
         TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
         for (Map.Entry<File, String> entry : clusterOperatorMap.entrySet()) {
             LOGGER.info("Removing configuration file: {}", entry.getKey());

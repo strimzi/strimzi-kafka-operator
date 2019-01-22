@@ -705,7 +705,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(CCI_FLAKY)
     void testMirrorMaker() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String nameProducerSource = "send-messages-producer-source";
         String nameConsumerSource = "send-messages-consumer-source";
@@ -745,7 +745,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(CCI_FLAKY)
     void testMirrorMakerTlsAuthenticated() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String nameProducerSource = "send-messages-producer-source";
         String nameConsumerSource = "send-messages-consumer-source";
@@ -838,7 +838,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(CCI_FLAKY)
     void testMirrorMakerTlsScramSha() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
         String nameProducerSource = "send-messages-producer-source";
