@@ -80,7 +80,7 @@ if [ "$KAFKA_EXTERNAL_ENABLED" ]; then
     fi
 
     if [ -e $KAFKA_HOME/init/external.address.$KAFKA_BROKER_ID.host ]; then
-      EXTERNAL_ADDRESS=$(cat $KAFKA_HOME/init/external.address.$KAFKA_BROKER_ID.host)
+      EXTERNAL_ADDRESS=$(cat $KAFKA_HOME/init/external.address.${KAFKA_BROKER_ID}.host)
     elif [ -e $KAFKA_HOME/init/external.address ]; then
       EXTERNAL_ADDRESS=$(cat $KAFKA_HOME/init/external.address)
     else

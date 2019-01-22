@@ -6,10 +6,10 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -21,7 +21,7 @@ import java.util.Objects;
     generateBuilderPackage = false,
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
-public class KafkaExternalBootstrapService implements KubernetesResource {
+public class KafkaExternalBootstrapService implements Serializable {
     private static final long serialVersionUID = 7105212236247449919L;
 
     @JsonProperty("nodePort")
@@ -36,10 +36,12 @@ public class KafkaExternalBootstrapService implements KubernetesResource {
 
     @Description("Bootstrap service node port")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("nodePort")
     public Integer getNodePort() {
         return nodePort;
     }
 
+    @JsonProperty("nodePort")
     public void setNodePort(Integer nodePort) {
         this.nodePort = nodePort;
     }

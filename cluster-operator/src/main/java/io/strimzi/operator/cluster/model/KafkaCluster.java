@@ -453,13 +453,15 @@ public class KafkaCluster extends AbstractModel {
             String externalBootstrapServiceName = externalBootstrapServiceName(cluster);
 
             List<ServicePort> ports;
+            Integer nodePort = null;
             if (isExposedWithNodePort()) {
                 KafkaListenerExternalNodePort externalNodePort = (KafkaListenerExternalNodePort) listeners.getExternal();
-                if (externalNodePort.getBootstrap() != null && externalNodePort.getBootstrap().getNodePort() != null) {
-                    ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, externalNodePort.getBootstrap().getNodePort(), "TCP"));
-                } else {
-                    ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
+                if (externalNodePort.getBootstrap() != null) {
+                    nodePort = externalNodePort.getBootstrap().getNodePort();
                 }
+            }
+            if (nodePort != null) {
+                ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, nodePort, "TCP"));
             } else {
                 ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
             }
@@ -481,21 +483,18 @@ public class KafkaCluster extends AbstractModel {
             String perPodServiceName = externalServiceName(cluster, pod);
 
             List<ServicePort> ports = new ArrayList<>(1);
+            Integer nodePort = null;
             if (isExposedWithNodePort()) {
                 KafkaListenerExternalNodePort externalNodePort = (KafkaListenerExternalNodePort) listeners.getExternal();
                 if (externalNodePort.getBrokers() != null) {
-                    Integer nodePort = externalNodePort.getBrokers().stream()
-                        .filter(broker -> broker.getIndex() == pod)
+                    nodePort = externalNodePort.getBrokers().stream()
+                        .filter(broker -> broker != null && broker.getIndex() != null && broker.getIndex() == pod)
                         .map(KafkaExternalBrokerService::getNodePort)
                         .findAny().orElse(null);
-                    if (nodePort != null) {
-                        ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, nodePort, "TCP"));
-                    } else {
-                        ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
-                    }
-                } else {
-                    ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
                 }
+            }
+            if (nodePort != null) {
+                ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, nodePort, "TCP"));
             } else {
                 ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, "TCP"));
             }
@@ -757,7 +756,7 @@ public class KafkaCluster extends AbstractModel {
 
     private String buildAdvertisedAddressesString(List<KafkaExternalBrokerService> brokers) {
         return brokers.stream()
-                .filter(broker -> broker.getIndex() != null)
+                .filter(broker -> broker != null && broker.getIndex() != null)
                 .map(broker -> broker.getIndex().toString() + "://" +
                         (broker.getAdvertisedHost() != null ? broker.getAdvertisedHost() : "") + ":" +
                         (broker.getAdvertisedPort() != null ? broker.getAdvertisedPort() : ""))

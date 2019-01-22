@@ -80,20 +80,24 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
 
     @Description("Configures external bootstrap service")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("bootstrap")
     public KafkaExternalBootstrapService getBootstrap() {
         return bootstrap;
     }
 
+    @JsonProperty("bootstrap")
     public void setBootstrap(KafkaExternalBootstrapService bootstrap) {
         this.bootstrap = bootstrap;
     }
 
     @Description("Configures broker service and advertised address")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("brokers")
     public List<KafkaExternalBrokerService> getBrokers() {
         return brokers;
     }
 
+    @JsonProperty("brokers")
     public void setBrokers(List<KafkaExternalBrokerService> brokers) {
         this.brokers = brokers;
     }

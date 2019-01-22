@@ -7,10 +7,10 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -23,7 +23,7 @@ import java.util.Objects;
     generateBuilderPackage = false,
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
-public class KafkaExternalBrokerService implements KubernetesResource {
+public class KafkaExternalBrokerService implements Serializable {
     private static final long serialVersionUID = -7537621108590168627L;
 
     @JsonProperty("index")
@@ -46,40 +46,49 @@ public class KafkaExternalBrokerService implements KubernetesResource {
     }
 
     @Description("Index of the kafka broker (broker ID)")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("index")
     public Integer getIndex() {
         return index;
     }
 
+    @JsonProperty("index")
     public void setIndex(Integer index) {
         this.index = index;
     }
 
     @Description("External advertised host")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonProperty("advertisedHost")
     public String getAdvertisedHost() {
         return advertisedHost;
     }
 
+    @JsonProperty("advertisedHost")
     public void setAdvertisedHost(String advertisedHost) {
         this.advertisedHost = advertisedHost;
     }
 
     @Description("External advertised port")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("advertisedPort")
     public Integer getAdvertisedPort() {
         return advertisedPort;
     }
 
+    @JsonProperty("advertisedPort")
     public void setAdvertisedPort(Integer advertisedPort) {
         this.advertisedPort = advertisedPort;
     }
 
     @Description("Broker service node port")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("nodePort")
     public Integer getNodePort() {
         return nodePort;
     }
 
+    @JsonProperty("nodePort")
     public void setNodePort(Integer nodePort) {
         this.nodePort = nodePort;
     }
