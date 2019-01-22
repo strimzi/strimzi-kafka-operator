@@ -115,7 +115,8 @@ public class MockKafka implements Kafka {
             Topic.Builder topicBuilder = new Topic.Builder()
                     .withTopicName(newTopic.name())
                     .withNumPartitions(newTopic.numPartitions())
-                    .withNumReplicas(newTopic.replicationFactor());
+                    .withNumReplicas(newTopic.replicationFactor())
+                    .withMetadata(t.getMetadata());
             try {
                 Field field = NewTopic.class.getDeclaredField("configs");
                 field.setAccessible(true);

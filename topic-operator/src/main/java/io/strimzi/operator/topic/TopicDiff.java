@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,6 +20,8 @@ import java.util.Set;
  * </code></pre>
  */
 public class TopicDiff {
+
+    private final ObjectMeta objectMeta;
 
     private static abstract class Difference {
         private Difference() {}
@@ -112,6 +116,8 @@ public class TopicDiff {
         }
     }
 
+
+
     private static class AddedConfigEntry extends Difference {
         public static final String ADDRESS_PREFIX = "config:";
         private final String configKey;
@@ -201,8 +207,9 @@ public class TopicDiff {
 
     private final Map<String, Difference> differences;
 
-    private TopicDiff(Map<String, Difference> differences) {
+    private TopicDiff(Map<String, Difference> differences, ObjectMeta objectMeta) {
         this.differences = differences;
+        this.objectMeta = objectMeta;
     }
 
     /**
@@ -249,7 +256,7 @@ public class TopicDiff {
                 }
             }
         }
-        return new TopicDiff(differences);
+        return new TopicDiff(differences, target.getMetadata());
     }
 
     @Override
@@ -314,6 +321,7 @@ public class TopicDiff {
         for (Difference d : differences.values()) {
             d.apply(builder);
         }
+        builder.withMetadata(objectMeta);
         return builder.build();
     }
 
@@ -359,7 +367,7 @@ public class TopicDiff {
         }
         Map<String, Difference> union = new HashMap<>(this.differences);
         union.putAll(other.differences);
-        return new TopicDiff(union);
+        return new TopicDiff(union, other.objectMeta);
     }
 }
 

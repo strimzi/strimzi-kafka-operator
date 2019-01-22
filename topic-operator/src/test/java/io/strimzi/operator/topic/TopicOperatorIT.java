@@ -6,8 +6,12 @@ package io.strimzi.operator.topic;
 
 import io.debezium.kafka.KafkaCluster;
 import io.debezium.kafka.ZookeeperServer;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -653,4 +657,68 @@ public class TopicOperatorIT {
     // TODO: What happens if we create and then change labels to the resource predicate isn't matched any more
     //       What then happens if we change labels back?
 
+
+    @Test
+    public void testKafkaTopicWithOwnerRef(TestContext context) {
+        String topicName = "test-kafka-topic-with-owner-ref-1";
+
+        // this CM is created to be the owner of the KafkaTopic we're about to create.
+        String cmName = "hodor";
+        HashMap<String, String> cmData = new HashMap<>();
+        cmData.put("strimzi", "rulez");
+        kubeClient.configMaps().inNamespace(NAMESPACE).create(new ConfigMapBuilder().withNewMetadata().withName(cmName)
+                .withNamespace(NAMESPACE).endMetadata().withApiVersion("v1").withData(cmData).build());
+        String uid = kubeClient.configMaps().inNamespace(NAMESPACE).withName(cmName).get().getMetadata().getUid();
+
+        ObjectMeta metadata = new ObjectMeta();
+        OwnerReference or = new OwnerReferenceBuilder().withName(cmName)
+                .withApiVersion("v1")
+                .withController(false)
+                .withBlockOwnerDeletion(false)
+                .withUid(uid)
+                .withKind("ConfigMap")
+                .build();
+
+        metadata.getOwnerReferences().add(or);
+        Map<String, String> annos = new HashMap<>();
+        annos.put("iam", "groot");
+        Map<String, String> lbls = new HashMap<>();
+        lbls.put("iam", "root");
+        metadata.setAnnotations(annos);
+        metadata.setLabels(lbls);
+
+        // create topic and test OR, labels, annotations
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), metadata).build();
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        createKafkaTopicResource(context, topicResource);
+        assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().size());
+        assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
+        assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
+        assertEquals("groot", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"));
+        assertEquals(2, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
+        assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
+
+        // edit kafka topic
+        topicName = "test-kafka-topic-with-owner-ref-2";
+        Topic topic2 = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), metadata).build();
+        KafkaTopic topicResource2 = TopicSerialization.toTopicResource(topic2, resourcePredicate);
+        topicResource = TopicSerialization.toTopicResource(topic2, resourcePredicate);
+        topicResource.getMetadata().getAnnotations().put("han", "solo");
+        createKafkaTopicResource(context, topicResource2);
+        assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
+        assertEquals(2, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
+        assertEquals("groot", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"));
+        assertEquals("solo", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("han"));
+
+        // edit k8s topic
+        topicName = "test-kafka-topic-with-owner-ref-3";
+        Topic topic3 = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), metadata).build();
+        topic3.getMetadata().getLabels().put("stan", "lee");
+        topicResource = TopicSerialization.toTopicResource(topic3, resourcePredicate);
+        createKafkaTopicResource(context, topicResource);
+        assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
+        assertEquals(3, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
+        assertEquals("lee", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("stan"));
+        assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
+    }
 }

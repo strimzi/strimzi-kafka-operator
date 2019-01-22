@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -20,6 +21,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +44,9 @@ public class TopicSerializationTest {
         builder.withNumReplicas((short) 1);
         builder.withNumPartitions(2);
         builder.withConfigEntry("cleanup.policy", "bar");
+        ObjectMeta metadata = new ObjectMeta();
+        metadata.setAnnotations(new HashMap<>());
+        builder.withMetadata(metadata);
         Topic wroteTopic = builder.build();
         KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, resourcePredicate);
 
