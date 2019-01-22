@@ -4,10 +4,8 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.systemtest.timemeasuring.Operation;
-import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

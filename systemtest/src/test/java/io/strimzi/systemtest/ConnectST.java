@@ -7,8 +7,6 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;

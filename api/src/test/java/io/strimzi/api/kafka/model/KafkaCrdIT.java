@@ -4,13 +4,15 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.test.annotations.Namespace;
-import io.strimzi.test.annotations.Resources;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.KubeClusterException;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.Collections;
 
 import static org.junit.Assert.assertTrue;
 
@@ -117,5 +119,18 @@ public class KafkaCrdIT extends AbstractCrdIT {
         } catch (KubeClusterException.InvalidResource e) {
             assertTrue(e.getMessage().contains("spec.kafka.storage.type in body should be one of [ephemeral persistent-claim jbod]"));
         }
+    }
+
+    @BeforeAll
+    void setupEnvironment() {
+        createNamespaces(NAMESPACE);
+        createCustomResources(Collections.singletonList(
+                TestUtils.CRD_KAFKA_CONNECT));
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        deleteCustomResources();
+        deleteNamespaces();
     }
 }

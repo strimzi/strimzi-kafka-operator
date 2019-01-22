@@ -6,6 +6,7 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -113,5 +114,6 @@ class UserST extends AbstractST {
     void teardownEnvironment() {
         testClassResources.deleteResources();
         teardownEnvForOperator();
+        TimeMeasuringSystem.printAndSaveResults(TEST_LOG_DIR);
     }
 }

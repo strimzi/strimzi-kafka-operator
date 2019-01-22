@@ -22,6 +22,7 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -30,7 +31,7 @@
         <dependency>
             <groupId>org.valid4j</groupId>
             <artifactId>json-path-matchers</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -43,12 +44,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
             <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -57,11 +58,12 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>test</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-client</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
@@ -74,12 +76,13 @@
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${jupiter.version}</version>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
@@ -97,18 +100,13 @@
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
             <version>${junit.platform.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

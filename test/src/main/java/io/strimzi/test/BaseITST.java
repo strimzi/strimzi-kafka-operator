@@ -7,6 +7,8 @@ package io.strimzi.test;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,20 +44,25 @@ public class BaseITST {
     protected static String testName;
 
     private void applyClusterOperatorInstallFiles() {
+        TimeMeasuringSystem.setTestName(testClass, testClass);
+        TimeMeasuringSystem.startOperation(Operation.CO_CREATION);
         clusterOperatorMap = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
                 !file.getName().matches(".*(Binding|Deployment)-.*")
         ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
         for (Map.Entry<File, String> entry : clusterOperatorMap.entrySet()) {
-            LOGGER.info("Creating possibly modified version of {}", entry.getKey());
+            LOGGER.info("Applying configuration file: {}", entry.getKey());
             kubeClient.clientWithAdmin().applyContent(entry.getValue());
         }
+        TimeMeasuringSystem.stopOperation(Operation.CO_CREATION);
     }
 
     private void deleteClusterOperatorInstallFiles() {
+        TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
         for (Map.Entry<File, String> entry : clusterOperatorMap.entrySet()) {
-            LOGGER.info("Deleting {}", entry.getKey());
+            LOGGER.info("Removing configuration file: {}", entry.getKey());
             kubeClient.clientWithAdmin().deleteContent(entry.getValue());
         }
+        TimeMeasuringSystem.stopOperation(Operation.CO_DELETION);
     }
 
     private void createNamespaces(String useNamespace, List<String> namespaces) {
@@ -118,6 +125,14 @@ public class BaseITST {
         deleteClusterOperatorInstallFiles();
         deleteCustomResources();
         deleteNamespaces();
+    }
+
+    private static String duration(long millis) {
+        long ms = millis % 1_000;
+        long time = millis / 1_000;
+        long minutes = time / 60;
+        long seconds = time % 60;
+        return minutes + "m" + seconds + "." + ms + "s";
     }
 
     @BeforeEach

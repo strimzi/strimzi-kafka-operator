@@ -3,7 +3,7 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-package io.strimzi.systemtest.timemeasuring;
+package io.strimzi.test.timemeasuring;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -61,7 +61,9 @@ public class TimeMeasuringSystem {
 
     private String createOperationsID(Operation operation) {
         String id = operation.toString();
-        if (!operation.equals(Operation.TEST_EXECUTION)) {
+        if (!operation.equals(Operation.TEST_EXECUTION)
+                && !operation.equals(Operation.CO_CREATION)
+                && !operation.equals(Operation.CO_DELETION)) {
             id = String.format("%s-%s", id, UUID.randomUUID().toString().split("-")[0]);
         }
         return id;
@@ -97,6 +99,12 @@ public class TimeMeasuringSystem {
     private void setEndTime(String id) {
         if (id.equals(Operation.TEST_EXECUTION.toString())) {
             id = createOperationsID(Operation.TEST_EXECUTION);
+        }
+        if (id.equals(Operation.CO_CREATION.toString())) {
+            id = createOperationsID(Operation.CO_CREATION);
+        }
+        if (id.equals(Operation.CO_DELETION.toString())) {
+            id = createOperationsID(Operation.CO_DELETION);
         }
         try {
             measuringMap.get(testClass).get(testName).get(id).setEndTime(System.currentTimeMillis());
