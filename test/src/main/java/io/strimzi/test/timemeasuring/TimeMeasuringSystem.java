@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -109,8 +110,8 @@ public class TimeMeasuringSystem {
         try {
             measuringMap.get(testClass).get(testName).get(id).setEndTime(System.currentTimeMillis());
             LOGGER.info("End time of operation {} is correctly stored", id);
-        } catch (Exception ex) {
-            LOGGER.warn("End time of operation {} is not set due to exception", id);
+        } catch (NullPointerException | ClassCastException ex) {
+            LOGGER.warn("End time of operation {} is not set due to exception: {}", id, ex);
         }
     }
 
@@ -149,7 +150,7 @@ public class TimeMeasuringSystem {
             Path logPath = Paths.get(path, "timeMeasuring");
             Files.createDirectories(logPath);
             Files.write(Paths.get(logPath.toString(),
-                    String.format("%s-%s.json", name, dateFormat.format(timestamp))), json.getBytes());
+                    String.format("%s-%s.json", name, dateFormat.format(timestamp))), json.getBytes(Charset.forName("UTF-8")));
         } catch (Exception ex) {
             LOGGER.warn("Cannot save output of time measuring: " + ex.getMessage());
         }
@@ -218,7 +219,7 @@ public class TimeMeasuringSystem {
     /**
      * Test time duration class for data about each operation.
      */
-    private class MeasureRecord {
+    private static class MeasureRecord {
         private long startTime;
         private long endTime;
         private long duration;

@@ -98,7 +98,7 @@ class KafkaST extends AbstractST {
     @OpenShiftOnly
     @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
     void testDeployKafkaClusterViaTemplate() {
-        Oc oc = (Oc) kubeClient;
+        Oc oc = (Oc) KUBE_CLIENT;
         String clusterName = "openshift-my-cluster";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
         oc.waitForStatefulSet(zookeeperClusterName(clusterName), 3);
@@ -128,7 +128,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
         //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
 
-        final int initialReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int initialReplicas = client.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(3, initialReplicas);
         // scale up
         final int scaleTo = initialReplicas + 1;
@@ -138,7 +138,7 @@ class KafkaST extends AbstractST {
         final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas + 1));
-        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
+        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
         // (execute bash because we want the env vars expanded in the pod)
@@ -161,9 +161,9 @@ class KafkaST extends AbstractST {
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setReplicas(initialReplicas);
         });
-        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
+        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
 
-        final int finalReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int finalReplicas = client.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
         versions = getBrokerApiVersions(firstPodName);
 
@@ -187,7 +187,7 @@ class KafkaST extends AbstractST {
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
         KubernetesClient client = new DefaultKubernetesClient();
-        final int initialZkReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int initialZkReplicas = client.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(3, initialZkReplicas);
 
         final int scaleZkTo = initialZkReplicas + 4;
@@ -276,16 +276,16 @@ class KafkaST extends AbstractST {
         int expectedKafkaPods = 2;
         List<Date> zkPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedZKPods; i++) {
-            zkPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", zookeeperPodName(CLUSTER_NAME, i)));
+            zkPodStartTime.add(KUBE_CLIENT.getResourceCreateTimestamp("pod", zookeeperPodName(CLUSTER_NAME, i)));
         }
         List<Date> kafkaPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedKafkaPods; i++) {
-            kafkaPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", kafkaPodName(CLUSTER_NAME, i)));
+            kafkaPodStartTime.add(KUBE_CLIENT.getResourceCreateTimestamp("pod", kafkaPodName(CLUSTER_NAME, i)));
         }
 
         LOGGER.info("Verify values before update");
         for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
+            String kafkaPodJson = KUBE_CLIENT.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
                     hasItem("transaction.state.log.replication.factor=1\ndefault.replication.factor=1\noffsets.topic.replication.factor=1\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
@@ -293,7 +293,7 @@ class KafkaST extends AbstractST {
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
+            String zkPodJson = KUBE_CLIENT.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
                     hasItem("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
@@ -316,17 +316,17 @@ class KafkaST extends AbstractST {
         });
 
         for (int i = 0; i < expectedZKPods; i++) {
-            kubeClient.waitForResourceUpdate("pod", zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
-            kubeClient.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
+            KUBE_CLIENT.waitForResourceUpdate("pod", zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
+            KUBE_CLIENT.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
         }
         for (int i = 0; i < expectedKafkaPods; i++) {
-            kubeClient.waitForResourceUpdate("pod", kafkaPodName(CLUSTER_NAME, i), kafkaPodStartTime.get(i));
-            kubeClient.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
+            KUBE_CLIENT.waitForResourceUpdate("pod", kafkaPodName(CLUSTER_NAME, i), kafkaPodStartTime.get(i));
+            KUBE_CLIENT.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
         }
 
         LOGGER.info("Verify values after update");
         for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
+            String kafkaPodJson = KUBE_CLIENT.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
                     hasItem("transaction.state.log.replication.factor=2\ndefault.replication.factor=2\noffsets.topic.replication.factor=2\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
@@ -334,7 +334,7 @@ class KafkaST extends AbstractST {
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
+            String zkPodJson = KUBE_CLIENT.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
                     hasItem("timeTick=2100\nautopurge.purgeInterval=1\nsyncLimit=3\ninitLimit=6\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
@@ -552,21 +552,21 @@ class KafkaST extends AbstractST {
                 .endEntityOperator()
             .endSpec().done();
 
-        assertResources(kubeClient.namespace(), kafkaPodName(CLUSTER_NAME, 0),
+        assertResources(KUBE_CLIENT.namespace(), kafkaPodName(CLUSTER_NAME, 0),
                 "2Gi", "400m", "2Gi", "400m");
         assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0),
                 "-Xmx1g", "-Xms1G", "-server", "-XX:+UseG1GC");
 
-        assertResources(kubeClient.namespace(), zookeeperPodName(CLUSTER_NAME, 0),
+        assertResources(KUBE_CLIENT.namespace(), zookeeperPodName(CLUSTER_NAME, 0),
                 "1Gi", "300m", "1Gi", "300m");
         assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
-        String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems()
+        String podName = client.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
                 .findFirst().get().getMetadata().getName();
 
-        assertResources(kubeClient.namespace(), podName,
+        assertResources(KUBE_CLIENT.namespace(), podName,
                 "500M", "300m", "500M", "300m");
     }
 
@@ -587,7 +587,7 @@ class KafkaST extends AbstractST {
             .endSpec().done();
 
         //Creating topics for testing
-        kubeClient.create(TOPIC_CM);
+        KUBE_CLIENT.create(TOPIC_CM);
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
@@ -597,13 +597,13 @@ class KafkaST extends AbstractST {
 
         createTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
-        assertThat(kubeClient.list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
+        assertThat(KUBE_CLIENT.list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
 
         //Updating first topic using pod CLI
         updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
                 hasItems("PartitionCount:2"));
-        KafkaTopic testTopic = fromYamlString(kubeClient.get("kafkatopic", "my-topic"), KafkaTopic.class);
+        KafkaTopic testTopic = fromYamlString(KUBE_CLIENT.get("kafkatopic", "my-topic"), KafkaTopic.class);
         assertNotNull(testTopic);
         assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
@@ -614,17 +614,17 @@ class KafkaST extends AbstractST {
         });
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
-        testTopic = fromYamlString(kubeClient.get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
+        testTopic = fromYamlString(KUBE_CLIENT.get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
         assertNotNull(testTopic);
         assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
 
         //Deleting first topic by deletion of CM
-        kubeClient.deleteByName("kafkatopic", "topic-from-cli");
+        KUBE_CLIENT.deleteByName("kafkatopic", "topic-from-cli");
 
         //Deleting another topic using pod CLI
         deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
-        kubeClient.waitForResourceDeletion("kafkatopic", "my-topic");
+        KUBE_CLIENT.waitForResourceDeletion("kafkatopic", "my-topic");
         Thread.sleep(10000L);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
@@ -662,7 +662,7 @@ class KafkaST extends AbstractST {
         }
 
         //Verifying docker image for entity-operator
-        String entityOperatorPodName = kubeClient.listResourcesByLabel("pod",
+        String entityOperatorPodName = KUBE_CLIENT.listResourcesByLabel("pod",
                 "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
         String imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "topic-operator");
         assertEquals(imgFromDeplConf.get(TO_IMAGE), imgFromPod);
@@ -689,12 +689,12 @@ class KafkaST extends AbstractST {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
-        kubeClient.waitForPod(kafkaPodName);
+        KUBE_CLIENT.waitForPod(kafkaPodName);
 
-        String rackId = kubeClient.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
+        String rackId = KUBE_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
         assertEquals("zone", rackId);
 
-        String brokerRack = kubeClient.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
+        String brokerRack = KUBE_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
         List<Event> events = getEvents("Pod", kafkaPodName);
@@ -726,7 +726,7 @@ class KafkaST extends AbstractST {
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
         waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
-            !kubeClient.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
+            !KUBE_CLIENT.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
         // Create job to send 20 records using Kafka producer for source cluster
@@ -819,7 +819,7 @@ class KafkaST extends AbstractST {
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join the group
         waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
-            !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
+            !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
         // Create job to send 20 records using Kafka producer for source cluster
@@ -927,7 +927,7 @@ class KafkaST extends AbstractST {
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
         waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
-            !kubeClient.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
+            !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
         // Create job to send 20 records using Kafka producer for source cluster

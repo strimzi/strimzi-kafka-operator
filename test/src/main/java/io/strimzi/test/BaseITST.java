@@ -32,16 +32,16 @@ public class BaseITST {
     private static final Logger LOGGER = LogManager.getLogger(BaseITST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
 
-    public static KubeClusterResource cluster = new KubeClusterResource();
-    protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
-    public static KubeClient<?> kubeClient = cluster.client();
+    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
+    protected static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient();
+    public static final KubeClient<?> KUBE_CLIENT = CLUSTER.client();
 
-    private static List<String> deploymentResources = Collections.EMPTY_LIST;
-    private static List<String> deploymentNamespaces = Collections.EMPTY_LIST;
-    private static Map<File, String> clusterOperatorMap = Collections.EMPTY_MAP;
+    private List<String> deploymentResources = Collections.EMPTY_LIST;
+    private List<String> deploymentNamespaces = Collections.EMPTY_LIST;
+    private Map<File, String> clusterOperatorMap = Collections.EMPTY_MAP;
 
-    protected static String testClass;
-    protected static String testName;
+    protected String testClass;
+    protected String testName;
 
     private void applyClusterOperatorInstallFiles() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
@@ -51,7 +51,7 @@ public class BaseITST {
         ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
         for (Map.Entry<File, String> entry : clusterOperatorMap.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
-            kubeClient.clientWithAdmin().applyContent(entry.getValue());
+            KUBE_CLIENT.clientWithAdmin().applyContent(entry.getValue());
         }
         TimeMeasuringSystem.stopOperation(Operation.CO_CREATION);
     }
@@ -61,7 +61,7 @@ public class BaseITST {
         TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
         for (Map.Entry<File, String> entry : clusterOperatorMap.entrySet()) {
             LOGGER.info("Removing configuration file: {}", entry.getKey());
-            kubeClient.clientWithAdmin().deleteContent(entry.getValue());
+            KUBE_CLIENT.clientWithAdmin().deleteContent(entry.getValue());
         }
         TimeMeasuringSystem.stopOperation(Operation.CO_DELETION);
     }
@@ -70,12 +70,12 @@ public class BaseITST {
         deploymentNamespaces = namespaces;
         for (String namespace: namespaces) {
             LOGGER.info("Creating namespace: {}", namespace);
-            kubeClient.createNamespace(namespace);
-            kubeClient.waitForResourceCreation("Namespace", namespace);
+            KUBE_CLIENT.createNamespace(namespace);
+            KUBE_CLIENT.waitForResourceCreation("Namespace", namespace);
             LOGGER.info("Namespace {} created", namespace);
         }
         LOGGER.info("Using namespace {}", useNamespace);
-        kubeClient.namespace(useNamespace);
+        KUBE_CLIENT.namespace(useNamespace);
     }
 
     protected void createNamespaces(String useNamespace) {
@@ -85,26 +85,26 @@ public class BaseITST {
     protected void deleteNamespaces() {
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting namespace: {}", namespace);
-            kubeClient.deleteNamespace(namespace);
-            kubeClient.waitForResourceDeletion("Namespace", namespace);
+            KUBE_CLIENT.deleteNamespace(namespace);
+            KUBE_CLIENT.waitForResourceDeletion("Namespace", namespace);
             LOGGER.info("Namespace {} deleted", namespace);
         }
-        LOGGER.info("Using namespace {}", cluster.defaultNamespace());
-        kubeClient.namespace(cluster.defaultNamespace());
+        LOGGER.info("Using namespace {}", CLUSTER.defaultNamespace());
+        KUBE_CLIENT.namespace(CLUSTER.defaultNamespace());
     }
 
     protected void createCustomResources(List<String> resources) {
         deploymentResources = resources;
         for (String resource : resources) {
             LOGGER.info("Creating resources {}", resource);
-            kubeClient.clientWithAdmin().create(resource);
+            KUBE_CLIENT.clientWithAdmin().create(resource);
         }
     }
 
     protected void deleteCustomResources() {
         for (String resource : deploymentResources) {
             LOGGER.info("Deleting resources {}", resource);
-            kubeClient.delete(resource);
+            KUBE_CLIENT.delete(resource);
         }
     }
 
@@ -128,21 +128,13 @@ public class BaseITST {
         deleteNamespaces();
     }
 
-    private static String duration(long millis) {
-        long ms = millis % 1_000;
-        long time = millis / 1_000;
-        long minutes = time / 60;
-        long seconds = time % 60;
-        return minutes + "m" + seconds + "." + ms + "s";
-    }
-
     @BeforeEach
     void setTestName(TestInfo testInfo) {
         testName = testInfo.getTestMethod().get().getName();
     }
 
     @BeforeAll
-    static void createTestClassResources(TestInfo testInfo) {
+    void createTestClassResources(TestInfo testInfo) {
         testClass = testInfo.getTestClass().get().getSimpleName();
     }
 }

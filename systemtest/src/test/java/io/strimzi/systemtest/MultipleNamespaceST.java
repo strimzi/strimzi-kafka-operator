@@ -60,8 +60,8 @@ class MultipleNamespaceST extends AbstractST {
         secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", kafkaName, TO_NAMESPACE);
-        kubeClient.namespace(TO_NAMESPACE);
-        kubeClient.waitForStatefulSet(kafkaName, 3);
+        KUBE_CLIENT.namespace(TO_NAMESPACE);
+        KUBE_CLIENT.waitForStatefulSet(kafkaName, 3);
     }
 
     /**
@@ -78,22 +78,22 @@ class MultipleNamespaceST extends AbstractST {
         secondNamespaceResources.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", TO_NAMESPACE);
-        kubeClient.namespace(TO_NAMESPACE);
-        kubeClient.waitForDeployment(CLUSTER_NAME + "-mirror-maker", 1);
+        KUBE_CLIENT.namespace(TO_NAMESPACE);
+        KUBE_CLIENT.waitForDeployment(CLUSTER_NAME + "-mirror-maker", 1);
     }
 
     @BeforeEach
     void createSecondNamespaceResources() {
-        kubeClient.namespace(TO_NAMESPACE);
+        KUBE_CLIENT.namespace(TO_NAMESPACE);
         secondNamespaceResources = new Resources(namespacedClient());
-        kubeClient.namespace(CO_NAMESPACE);
+        KUBE_CLIENT.namespace(CO_NAMESPACE);
     }
 
     @AfterEach
     void deleteSecondNamespaceResources() throws Exception {
         secondNamespaceResources.deleteResources();
         waitForDeletion(TEARDOWN_GLOBAL_WAIT, TO_NAMESPACE, CO_NAMESPACE, TO_NAMESPACE);
-        kubeClient.namespace(CO_NAMESPACE);
+        KUBE_CLIENT.namespace(CO_NAMESPACE);
     }
 
     @BeforeAll
@@ -116,8 +116,6 @@ class MultipleNamespaceST extends AbstractST {
                 .endEntityOperator()
             .endSpec()
             .done();
-
-        testClass = testInfo.getTestClass().get().getSimpleName();
     }
 
     private void deployNewTopic(String namespace, String topic) {

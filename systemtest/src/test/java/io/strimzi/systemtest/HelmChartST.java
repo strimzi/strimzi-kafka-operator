@@ -32,8 +32,8 @@ class HelmChartST extends AbstractST {
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
         LOGGER.info("Running testDeployKafkaClusterViaHelmChart {}", CLUSTER_NAME);
-        kubeClient.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 1);
-        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
+        KUBE_CLIENT.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 1);
+        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
     }
 
     @BeforeEach

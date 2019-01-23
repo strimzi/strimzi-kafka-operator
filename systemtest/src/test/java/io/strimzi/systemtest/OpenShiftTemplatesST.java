@@ -52,7 +52,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     public static KubeClusterResource cluster = new KubeClusterResource();
 
     private ObjectMapper mapper = new ObjectMapper();
-    private Oc oc = (Oc) kubeClient;
+    private Oc oc = (Oc) KUBE_CLIENT;
     private KubernetesClient client = new DefaultKubernetesClient();
 
     private Kafka getKafkaWithName(String clusterName) {
