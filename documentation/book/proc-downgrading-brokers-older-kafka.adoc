@@ -9,8 +9,25 @@
 
 You can downgrade a {ProductName} Kafka cluster from one version to a lower version; for example, from 2.1.0 to 2.0.0.
 
-IMPORTANT: Downgrading is not possible if the version being downgraded _from_ has ever used a `log.message.format.version` that's not supported by the version being downgraded _to_. 
-For example if a 2.1.0 cluster has _always_ been configured with `log.message.format.version=2.0` then downgrading to 2.0 is possible, but downgrading to 1.1.0 is not possible.
+IMPORTANT: Downgrading is not possible if the version being downgraded _from_ has ever used a `log.message.format.version` that's not supported by the version being downgraded _to_ (including where the default value for `log.message.format.version` is used). 
++For example, consider:
++
+[source,yaml]
+----
+apiVersion: v1alpha1
+kind: Kafka
+spec:
+  # ...
+  kafka:
+    version: 2.1.0
+    config:
+      log.message.format.version: "2.0"
+      # ...
+----
++
+This resource can be downgraded to Kafka version 2.0.0 because the `log.message.format.version` has not been changed.
+If the `log.message.format.version` were absent (so that the parameter took its default value for a 2.1.0 broker of 2.1), or was `"2.1"` then downgrade would not be possible.
+
 
 .Prerequisites
 
@@ -21,9 +38,9 @@ For example if a 2.1.0 cluster has _always_ been configured with `log.message.fo
 
 .Procedure
 
-. Change the `Kafka.spec.kafka.version` to specify the version being upgraded _to_.
-If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's
-`STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image`.
+. Change the `Kafka.spec.kafka.version` to specify the version being downgraded _to_.
+If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's `STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image` as well.
++
 For example, if downgrading from Kafka 2.1.0 to 2.0.0:
 +
 [source,yaml]
@@ -33,25 +50,37 @@ kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.0.0
+    version: 2.0.0 <1>
     config:
-      log.message.format.version: "2.0"
+      log.message.format.version: "2.0" <2>
       # ...
 ----
+<1> This is changed to the downgraded version
+<2> This is unchanged
 +
 NOTE: It is necessary to format the value of `log.message.format.version` as a string to prevent it being interpreted as a number.
 
-. Wait for the Cluster Operator to downgrade the cluster, by inspecting the Cluster Operator logs and looking for a `INFO` level message like:
-`Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed` (if two rolling updates were required), or
-`Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed` (if a single rolling update was required).
+. Wait for the Cluster Operator to downgrade the cluster.
+If the old and new versions of Kafka have a different interbroker protocol version look in the Cluster Operator logs for a `INFO` level message like:
++
+[source]
+----
+Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed
+----
++
+Alternatively, if the old and new versions of Kafka have the same interbroker protocol version look in the Cluster Operator logs for an INFO level message in the following format:
++
+[source]
+----
+Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed
+----
++
 For example, using `grep`:
 +
 [source,shell,subs="+quotes"]
 ----
 oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
 ----
-
-
 
 . Downgrade each client application to use the old version of the client libraries.
 

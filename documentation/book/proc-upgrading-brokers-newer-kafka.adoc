@@ -43,8 +43,7 @@ NOTE: You must format the value of `log.message.format.version` as a string to p
 If `log.message.format.version` is unset then set it and wait for the resulting rolling restart of the Kafka cluster to complete.
 
 . Change the `Kafka.spec.kafka.version` to specify the new version, but leave the `log.message.format.version` as the old version.
-If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's
-`STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image` as well.
+If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's `STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image` as well.
 +
 For example, if upgrading from Kafka 2.0.0 to 2.1.0:
 +
@@ -65,9 +64,17 @@ spec:
 
 . Wait for the Cluster Operator to upgrade the cluster.
 If the old and new versions of Kafka have different interbroker protocol versions, look in the Cluster Operator logs for an `INFO` level message like:
-`Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed`.
++
+[source]
+----
+Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed
+----
 Alternatively, if the old and new versions of Kafka have the same interbroker protocol version, look in the Cluster Operator logs for an `INFO` level message like:
-`Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed`.
++
+[source]
+----
+Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed
+----
 +
 For example, using `grep`:
 +

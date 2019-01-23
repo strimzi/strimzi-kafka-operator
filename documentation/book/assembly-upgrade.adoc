@@ -6,10 +6,12 @@
 = {ProductName} and Kafka upgrades
 
 Each version of {ProductName} supports a range of versions of Apache Kafka.
-You can upgrade to a higher Kafka version as long as that version is supported by your version of {ProductName}. In some cases, you can also downgrade to a lower supported Kafka version.
+You can upgrade to a higher Kafka version as long as that version is supported by your version of {ProductName}.
+In some cases, you can also downgrade to a lower supported Kafka version.
 
 When a newer version of {ProductName} is available, it may provide support for newer versions of Kafka. 
-Therefore, you will need to upgrade to the new version of {ProductName} before you can upgrade to a higher supported Kafka version. Upgrading the version of {ProductName} is done by upgrading the Cluster Operator deployment to the new version.
+Therefore, you will need to upgrade to the new version of {ProductName} before you can upgrade to a higher supported Kafka version.
+Upgrading the version of {ProductName} is done by upgrading the Cluster Operator deployment to the new version.
 
 include::proc-upgrading-the-cluster-operator.adoc[leveloffset=+1]
 

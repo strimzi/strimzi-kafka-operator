@@ -30,7 +30,7 @@ for x in $($GREP -E '^[^#]' "$FILE" | $SED -E 's/ +/|/g'); do
             echo -n "|$y "
         fi
     done
-    echo "|3.4.9"
+    echo "|3.4.13"
 done
 default_version=$($GREP -E '^[0-9.]+ +default' $FILE | $SED -E 's/(^[0-9.]+).*/\1/')
 
