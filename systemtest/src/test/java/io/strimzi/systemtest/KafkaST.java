@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -38,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -96,8 +96,8 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     @OpenShiftOnly
-    @Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
     void testDeployKafkaClusterViaTemplate() {
+        createCustomResources(Collections.singletonList("../examples/templates/cluster-operator"));
         Oc oc = (Oc) KUBE_CLIENT;
         String clusterName = "openshift-my-cluster";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
@@ -115,6 +115,7 @@ class KafkaST extends AbstractST {
         client.pods().list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
                 .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
+        deleteCustomResources();
     }
 
     @Test

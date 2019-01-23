@@ -4,10 +4,7 @@
  */
 package io.strimzi.test.extensions;
 
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -30,10 +27,8 @@ import java.util.Collections;
 import java.util.HashSet;
 
 /**
- * A test extension which sets up Strimzi resources in a Kubernetes cluster
- * according to annotations ({@link Namespace}, {@link Resources}, {@link ClusterOperator})
- * on the test class and/or test methods. {@link OpenShiftOnly} can be used to ignore tests when not running on
- * OpenShift (if the thing under test is OpenShift-specific). JUnit5 annotation {@link Tag} can be used for execute/skip specific
+ * A test extension which checks if tests should be ignored or not by annotation {@link OpenShiftOnly}.
+ * JUnit5 annotation {@link Tag} can be used for execute/skip specific
  * test classes and/or test methods.
  */
 public class StrimziExtension implements ExecutionCondition {

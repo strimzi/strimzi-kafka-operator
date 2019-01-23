@@ -478,7 +478,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     String startTimeMeasuring(Operation operation) {
-        TimeMeasuringSystem.setTestName(BaseITST.testClass, BaseITST.testName);
+        TimeMeasuringSystem.setTestName(testClass, testName);
         return TimeMeasuringSystem.startOperation(operation);
     }
 
@@ -1011,8 +1011,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     void collectLogs() {
         // Get current date to create a unique folder
         String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-        String logDir = !BaseITST.testName.isEmpty() ?
-                TEST_LOG_DIR + BaseITST.testClass + "." + BaseITST.testName + "_" + currentDate
+        String logDir = !testName.isEmpty() ?
+                TEST_LOG_DIR + testClass + "." + testName + "_" + currentDate
                 : TEST_LOG_DIR + currentDate;
 
         LogCollector logCollector = new LogCollector(BaseITST.CLIENT.inNamespace(BaseITST.KUBE_CLIENT.namespace()), new File(logDir));
@@ -1199,7 +1199,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 TestUtils.entry("logLevel", OPERATOR_LOG_LEVEL))
                 .collect(TestUtils.entriesToMap()));
 
-        LOGGER.info("Creating cluster operator with Helm Chart before test class {}", BaseITST.testClass);
+        LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = BaseITST.KUBE_CLIENT.namespace("kube-system");
         LOGGER.info(oldNamespace);
@@ -1212,7 +1212,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     void deleteClusterOperatorViaHelmChart() {
-        LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", BaseITST.testClass);
+        LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
         helmClient().delete(HELM_RELEASE_NAME);
     }
 }
