@@ -192,7 +192,7 @@ public class KafkaClusterTest {
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
-                .withNewPersistentClaimStorageStorage().withSelector(selector).endPersistentClaimStorageStorage()
+                .withNewPersistentClaimStorageStorage().withSelector(selector).withSize("100Gi").endPersistentClaimStorageStorage()
                 .endKafka()
                 .endSpec()
                 .build();
@@ -207,7 +207,7 @@ public class KafkaClusterTest {
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
-                .withNewPersistentClaimStorageStorage().withSelector(emptyMap()).endPersistentClaimStorageStorage()
+                .withNewPersistentClaimStorageStorage().withSelector(emptyMap()).withSize("100Gi").endPersistentClaimStorageStorage()
                 .endKafka()
                 .endSpec()
                 .build();
@@ -325,7 +325,7 @@ public class KafkaClusterTest {
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(false).build())
+                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(false).withSize("100Gi").build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -337,7 +337,7 @@ public class KafkaClusterTest {
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(true).build())
+                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(true).withSize("100Gi").build())
                     .endKafka()
                 .endSpec()
                 .build();
