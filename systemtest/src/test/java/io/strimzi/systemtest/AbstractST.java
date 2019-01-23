@@ -139,6 +139,10 @@ public abstract class AbstractST {
         return clusterName + "-connect";
     }
 
+    static String kafkaMirrorMakerName(String clusterName) {
+        return clusterName + "-mirror-maker";
+    }
+
     static String kafkaPodName(String clusterName, int podId) {
         return KafkaResources.kafkaPodName(clusterName, podId);
     }

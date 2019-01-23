@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.systemtest.timemeasuring.Operation;
 import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.annotations.ClusterOperator;
@@ -19,19 +20,21 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(LogLevelST.NAMESPACE)
+@Namespace(LogSettingST.NAMESPACE)
 @ClusterOperator
 @Tag(REGRESSION)
-class LogLevelST extends AbstractST {
+class LogSettingST extends AbstractST {
     static final String NAMESPACE = "log-level-cluster-test";
-    private static final Logger LOGGER = LogManager.getLogger(LogLevelST.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogSettingST.class);
     private static final String KAFKA_MAP = String.format("%s-%s", CLUSTER_NAME, "kafka-config");
     private static final String ZOOKEEPER_MAP = String.format("%s-%s", CLUSTER_NAME, "zookeeper-config");
     private static final String TO_MAP = String.format("%s-%s", CLUSTER_NAME, "entity-topic-operator-config");
@@ -46,6 +49,8 @@ class LogLevelST extends AbstractST {
     private static final String DEBUG = "DEBUG";
     private static final String FATAL = "FATAL";
     private static final String OFF = "OFF";
+
+    private static final String CG_LOGGING_NAME = "cg-logging";
 
     private static final Map<String, String> KAFKA_LOGGERS = new HashMap<String, String>() {
         {
@@ -91,9 +96,6 @@ class LogLevelST extends AbstractST {
         }
     };
 
-    private static Resources classResources;
-
-
     @Test
     void testKafkaLoggers() {
         int duration = TimeMeasuringSystem.getCurrentDuration(testClass, testClass, operationID);
@@ -130,6 +132,29 @@ class LogLevelST extends AbstractST {
         assertTrue(checkLogLevel(MIRROR_MAKER_LOGGERS, duration, MM_MAP), "Mirror maker's log level is set properly");
     }
 
+    @Test
+    void testCgLoggingEnabled() {
+        assertTrue(checkCgLogging(kafkaPodName(CLUSTER_NAME, 0), "kafka"), "Kafka CG logging is set properly");
+        assertTrue(checkCgLogging(zookeeperPodName(CLUSTER_NAME, 0), "zookeeper"), "Zookeeper CG logging is set properly");
+
+        assertTrue(checkCgLoggingOperator(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO CG logging is set properly");
+        assertTrue(checkCgLoggingOperator(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO CG logging is set properly");
+
+        assertTrue(checkCgLogging(kafkaConnectName(CLUSTER_NAME)), "Connect CG logging is set properly");
+        assertTrue(checkCgLogging(kafkaMirrorMakerName(CLUSTER_NAME)), "Mirror-maker CG logging is set properly");
+    }
+
+    @Test
+    void testCgLoggingDisabled() {
+        assertFalse(checkCgLogging(kafkaPodName(CG_LOGGING_NAME, 0), "kafka"), "Kafka CG logging is set properly");
+        assertFalse(checkCgLogging(zookeeperPodName(CG_LOGGING_NAME, 0), "zookeeper"), "Zookeeper CG logging is set properly");
+
+        assertFalse(checkCgLoggingOperator(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO CG logging is set properly");
+        assertFalse(checkCgLoggingOperator(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO CG logging is set properly");
+
+        assertFalse(checkCgLogging(kafkaConnectName(CG_LOGGING_NAME)), "Connect CG logging is set properly");
+        assertFalse(checkCgLogging(kafkaMirrorMakerName(CG_LOGGING_NAME)), "Mirror-maker CG logging is set properly");
+    }
     private boolean checkLogLevel(Map<String, String> loggers, int since, String configMapName) {
         boolean result = false;
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
@@ -147,6 +172,35 @@ class LogLevelST extends AbstractST {
         return result;
     }
 
+    private boolean checkCgLogging(String podName, String container) {
+        String log = kubeClient.logs(podName, container);
+        return log.contains("GC pause");
+    }
+
+    private boolean checkCgLogging(String component) {
+        return checkCgLoggingOperator(component, "");
+    }
+
+    private boolean checkCgLoggingOperator(String component, String container) {
+        List<Pod> pods = client.pods().list().getItems();
+        for (Pod pod : pods) {
+            String podName = pod.getMetadata().getName();
+            if (podName.startsWith(component)) {
+                if (container.equals("topic-operator")) {
+                    String log = kubeClient.logs(podName, "topic-operator");
+                    return log.contains("GC pause");
+                }
+                if (container.equals("user-operator")) {
+                    String log = kubeClient.logs(podName, "user-operator");
+                    return log.contains("GC pause");
+                }
+                String log = kubeClient.logs(podName);
+                return log.contains("GC pause");
+            }
+        }
+        return true;
+    }
+
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         LOGGER.info("Create resources for the tests");
@@ -156,7 +210,6 @@ class LogLevelST extends AbstractST {
 
         testClass = testInfo.getTestClass().get().getSimpleName();
         operationID = startDeploymentMeasuring();
-        String targetKafka = CLUSTER_NAME + "-target";
 
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -185,7 +238,32 @@ class LogLevelST extends AbstractST {
             .endSpec()
             .done();
 
-        testClassResources.kafkaEphemeral(targetKafka, 3).done();
+        testClassResources.kafkaEphemeral(CG_LOGGING_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewJvmOptions()
+                            .withGcLoggingEnabled(false)
+                        .endJvmOptions()
+                    .endKafka()
+                    .editZookeeper()
+                        .withNewJvmOptions()
+                            .withGcLoggingEnabled(false)
+                        .endJvmOptions()
+                    .endZookeeper()
+                    .editOrNewEntityOperator()
+                        .editOrNewTopicOperator()
+                            .withNewJvmOptions()
+                                .withGcLoggingEnabled(false)
+                            .endJvmOptions()
+                        .endTopicOperator()
+                        .editOrNewUserOperator()
+                            .withNewJvmOptions()
+                                .withGcLoggingEnabled(false)
+                            .endJvmOptions()
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .done();
 
         testClassResources.kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
@@ -194,15 +272,29 @@ class LogLevelST extends AbstractST {
                 .endInlineLogging()
             .endSpec().done();
 
-        testClassResources.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, targetKafka, "my-group", 1, false)
+        testClassResources.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, CG_LOGGING_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                   .withLoggers(MIRROR_MAKER_LOGGERS)
                 .endInlineLogging()
             .endSpec()
             .done();
-    }
 
+        testClassResources.kafkaConnect(CG_LOGGING_NAME, 1)
+                .editSpec()
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(false)
+                    .endJvmOptions()
+                .endSpec().done();
+
+        testClassResources.kafkaMirrorMaker(CG_LOGGING_NAME, CLUSTER_NAME, CG_LOGGING_NAME, "my-group", 1, false)
+                .editSpec()
+                    .withNewJvmOptions()
+                       .withGcLoggingEnabled(false)
+                    .endJvmOptions()
+                .endSpec()
+                .done();
+    }
 
     @AfterAll
     static void deleteClassResources() {
