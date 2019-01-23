@@ -12,29 +12,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
-import java.util.Map;
 
 @ExtendWith(ExtensionContextParameterResolver.class)
 public interface TestSeparator {
     Logger LOGGER = LogManager.getLogger(TestSeparator.class);
     String SEPARATOR_CHAR = "#";
-
-    static void printThreadDump() {
-        Map<Thread, StackTraceElement[]> allThreads = Thread.getAllStackTraces();
-        for (Thread thread : allThreads.keySet()) {
-            StringBuilder sb = new StringBuilder();
-            Thread key = thread;
-            StackTraceElement[] trace = allThreads.get(key);
-            sb.append(key).append("\r\n");
-            for (StackTraceElement aTrace : trace) {
-                sb.append(" ").append(aTrace).append("\r\n");
-            }
-            LOGGER.error(sb.toString());
-        }
-    }
 
     @BeforeEach
     default void beforeEachTest(TestInfo testInfo) {
@@ -45,15 +29,8 @@ public interface TestSeparator {
     }
 
     @AfterEach
-    default void afterEachTest(TestInfo testInfo, ExtensionContext context) {
+    default void afterEachTest(TestInfo testInfo) {
         TimeMeasuringSystem.stopOperation(Operation.TEST_EXECUTION);
-        if (context.getExecutionException().isPresent()) { // on failed
-            Throwable ex = context.getExecutionException().get();
-            if (ex instanceof OutOfMemoryError) {
-                LOGGER.error("Got OOM, dumping thread info");
-                printThreadDump();
-            }
-        }
         LOGGER.info(String.format("%s.%s-FINISHED", testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName()));
         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
     }

@@ -17,8 +17,10 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +38,9 @@ public class BaseITST {
     protected static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient();
     public static final KubeClient<?> KUBE_CLIENT = CLUSTER.client();
 
-    private List<String> deploymentResources = Collections.EMPTY_LIST;
-    private List<String> deploymentNamespaces = Collections.EMPTY_LIST;
-    private Map<File, String> clusterOperatorMap = Collections.EMPTY_MAP;
+    private List<String> deploymentResources = new ArrayList<>();
+    private List<String> deploymentNamespaces = new ArrayList<>();
+    private Map<File, String> clusterOperatorMap = new HashMap<>();
 
     protected String testClass;
     protected String testName;
@@ -79,7 +81,7 @@ public class BaseITST {
      * @param namespaces list of namespaces which will be created
      */
     private void createNamespaces(String useNamespace, List<String> namespaces) {
-        deploymentNamespaces = namespaces;
+        deploymentNamespaces.addAll(namespaces);
         for (String namespace: namespaces) {
             LOGGER.info("Creating namespace: {}", namespace);
             KUBE_CLIENT.createNamespace(namespace);
@@ -91,7 +93,8 @@ public class BaseITST {
     }
 
     /**
-     * Create namespace for test resources.
+     * Create namespace for test resources. Deletion is up to caller and can be managed
+     * by calling {@link #deleteNamespaces()}
      * @param useNamespace namespace which will be created and used as default by kubernetes client
      */
     protected void createNamespace(String useNamespace) {
@@ -99,9 +102,10 @@ public class BaseITST {
     }
 
     /**
-     * Delete all created namespaces.
+     * Delete all created namespaces. Namespaces are deleted in the reverse order than they were created.
      */
     protected void deleteNamespaces() {
+        Collections.reverse(deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting namespace: {}", namespace);
             KUBE_CLIENT.deleteNamespace(namespace);
@@ -113,7 +117,8 @@ public class BaseITST {
     }
 
     /**
-     * Apply custom resources for CO such as templates.
+     * Apply custom resources for CO such as templates. Deletion is up to caller and can be managed
+     * by calling {@link #deleteCustomResources()}
      * @param resources list of paths to yaml files with resources specifications
      */
     protected void createCustomResources(List<String> resources) {
@@ -125,7 +130,7 @@ public class BaseITST {
     }
 
     /**
-     * Delete custom resources such as templates.
+     * Delete custom resources such as templates. Resources are deleted in the reverse order than they were created.
      */
     protected void deleteCustomResources() {
         Collections.reverse(deploymentResources);
