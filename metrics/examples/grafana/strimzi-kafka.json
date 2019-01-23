@@ -783,7 +783,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Disk Usage",
+      "title": "Used Disk Space",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1678,7 +1678,7 @@
       },
       "yaxes": [
         {
-          "format": "short",
+          "format": "bytes",
           "label": null,
           "logBase": 1,
           "max": null,
