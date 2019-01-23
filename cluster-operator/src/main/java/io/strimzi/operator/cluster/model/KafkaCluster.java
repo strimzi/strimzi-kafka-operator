@@ -284,6 +284,12 @@ public class KafkaCluster extends AbstractModel {
             result.setMetricsEnabled(true);
             result.setMetricsConfig(metrics.entrySet());
         }
+        if (kafkaClusterSpec.getStorage() instanceof PersistentClaimStorage) {
+            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) kafkaClusterSpec.getStorage();
+            if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
+                throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+            }
+        }
         result.setStorage(kafkaClusterSpec.getStorage());
         result.setUserAffinity(kafkaClusterSpec.getAffinity());
         result.setResources(kafkaClusterSpec.getResources());

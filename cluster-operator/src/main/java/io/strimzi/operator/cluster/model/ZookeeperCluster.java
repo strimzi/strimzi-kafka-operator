@@ -182,6 +182,12 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setMetricsEnabled(true);
             zk.setMetricsConfig(metrics.entrySet());
         }
+        if (zookeeperClusterSpec.getStorage() instanceof PersistentClaimStorage) {
+            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) zookeeperClusterSpec.getStorage();
+            if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
+                throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+            }
+        }
         zk.setStorage(zookeeperClusterSpec.getStorage());
         zk.setConfiguration(new ZookeeperConfiguration(zookeeperClusterSpec.getConfig().entrySet()));
         zk.setResources(zookeeperClusterSpec.getResources());
