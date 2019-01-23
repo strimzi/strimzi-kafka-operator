@@ -38,7 +38,7 @@ spec:
       # ...
 ----
 +
-NOTE: You must format the value of `log.message.format.version` as a string to prevent it being interpreted as a number.
+NOTE: You must format the value of `log.message.format.version` as a string to prevent it from being interpreted as a number.
 +
 If `log.message.format.version` is unset then set it and wait for the resulting rolling restart of the Kafka cluster to complete.
 
@@ -61,12 +61,12 @@ spec:
       # ...
 ----
 <1> This is changed to the new version
-<2> This is still the old version
+<2> This remains at the old version
 
 . Wait for the Cluster Operator to upgrade the cluster.
-If the old and new versions of Kafka have a different interbroker protocol version look in the Cluster Operator logs for a `INFO` level message like:
+If the old and new versions of Kafka have different interbroker protocol versions, look in the Cluster Operator logs for an `INFO` level message like:
 `Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed`.
-Alternatively, if the old and new versions of Kafka have the same interbroker protocol version look in the Cluster Operator logs for a `INFO` level message like:
+Alternatively, if the old and new versions of Kafka have the same interbroker protocol version, look in the Cluster Operator logs for an `INFO` level message like:
 `Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed`.
 +
 For example, using `grep`:
@@ -78,7 +78,7 @@ oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version upgrade from [
 
 . Upgrade all your client applications to use the new version of the client libraries.
 +
-WARNING: You will not be able to downgrade after this step. If, for whatever reason, you need to revert the update at this point, follow the procedure xref:proc-downgrading-brokers-older-kafka-{context}[]. 
+WARNING: You cannot downgrade after completing this step. If, for whatever reason, you need to revert the update at this point, follow the procedure xref:proc-downgrading-brokers-older-kafka-{context}[]. 
 
 
 . If the log message format versions, as identified in step 1, are the same proceed to the next step. 

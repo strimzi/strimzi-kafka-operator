@@ -5,7 +5,7 @@
 
 [id='assembly-upgrading-kafka-versions-{context}']
 
-= Upgrading and Downgrading Kafka versions
+= Upgrading and downgrading Kafka versions
 
 include::con-versions-and-images.adoc[leveloffset=+1]
 
