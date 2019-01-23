@@ -11,9 +11,12 @@ public class Kubectl extends BaseKubeClient<Kubectl> {
 
     public static final String KUBECTL = "kubectl";
 
-    @Override
-    public String defaultNamespace() {
-        return "default";
+    public Kubectl(String context) {
+        super(context, "default");
+    }
+
+    public Kubectl() {
+        this(null);
     }
 
     @Override
@@ -22,7 +25,7 @@ public class Kubectl extends BaseKubeClient<Kubectl> {
     }
 
     @Override
-    public Kubectl clientWithAdmin() {
-        return this;
+    public Kubectl clientWithContext(String ctx) {
+        return new Kubectl(ctx);
     }
 }

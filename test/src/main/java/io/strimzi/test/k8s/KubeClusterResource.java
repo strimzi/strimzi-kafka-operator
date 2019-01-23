@@ -34,18 +34,6 @@ public class KubeClusterResource {
         this.client = client;
     }
 
-    public KubeClusterResource(KubeCluster cluster, KubeClient client, HelmClient helmClient) {
-        bootstrap = false;
-        this.cluster = cluster;
-        this.client = client;
-        this.helmClient = helmClient;
-    }
-
-    /** Gets the namespace in use */
-    public String defaultNamespace() {
-        return client().defaultNamespace();
-    }
-
     public KubeClient client() {
         if (bootstrap && client == null) {
             this.client = KubeClient.findClient(cluster());

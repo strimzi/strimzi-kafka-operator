@@ -212,3 +212,23 @@ Ex)
 ### Log level
 
 To set the log level of Strimzi for system tests need to add system property `TEST_STRIMZI_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
+
+### Test Cluster
+
+The integration and system tests are run against a cluster specified in the environment variable `TEST_CLUSTER`.
+For certain well-known values, local VM-based clusters are used.  For any other value, the environment variable
+specifies the context name of the kubectl context.
+
+| TEST_CLUSTER | test cluster usage |
+| ------------ | ------------- |
+| oc        | openshift cluster with current context |
+| kubectl   | kubectl cluster with current context |
+| *&lt;not set>* | try "minishift", "minikube", and both of the above |
+| *ctx_name* | use kubectl/oc --context *ctx_name* |
+
+For example, to use the local minikube cluster with system test, use `TEST_CLUSTER=minikube ./systemtest/scripts/run_tests.sh`.
+To use an existing openshift or kubernetes cluster configured with the context name dev-test, use `TEST_CLUSTER=dev-test ./systemtest/scripts/run_tests.sh`.
+
+If you want to use a different context for administrative actions, set the environment variable ```TEST_CLUSTER_ADMIN```
+to the name of a context with administrative rights to the test cluster.  Be sure that the ```TEST_CLUSTER``` context and
+the ```TEST_CLUSTER_ADMIN``` context refer to the same physical cluster.

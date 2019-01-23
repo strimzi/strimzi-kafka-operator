@@ -33,12 +33,11 @@ public interface KubeClient<K extends KubeClient<K>> {
         return client;
     }
 
-    String defaultNamespace();
-
     /** Deletes the resources by resource name. */
-    K deleteByName(String resourceType, String resourceName);
+    KubeClient<K> deleteByName(String resourceType, String resourceName);
 
-    String namespace(String namespace);
+    /** set the namespace to use */
+    void namespace(String namespace);
 
     /** Returns namespace for cluster */
     String namespace();
@@ -46,46 +45,35 @@ public interface KubeClient<K extends KubeClient<K>> {
     boolean clientAvailable();
 
     /** Creates the resources in the given files. */
-    K create(File... files);
+    KubeClient<K> create(File... files);
 
     /** Creates the resources in the given files. */
-    K apply(File... files);
+    KubeClient<K> apply(File... files);
 
     /** Deletes the resources in the given files. */
-    K delete(File... files);
+    KubeClient<K> delete(File... files);
 
-    default K create(String... files) {
+    default KubeClient<K> create(String... files) {
         return create(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
     }
 
-    default K apply(String... files) {
-        return apply(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
-    }
-
-    default K delete(String... files) {
+    default KubeClient<K> delete(String... files) {
         return delete(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
     }
 
     /** Replaces the resources in the given files. */
-    K replace(File... files);
-
-    /**
-     * Replace with the given YAML.
-     * @param yamlContent The replacement YAML.
-     * @return This kube client.
-     */
-    K replaceContent(String yamlContent);
+    KubeClient<K> replace(File... files);
 
     /** Returns an equivalent client, but logged in as cluster admin. */
-    K clientWithAdmin();
+    KubeClient<K> clientWithAdmin();
 
-    K applyContent(String yamlContent);
+    KubeClient<K> applyContent(String yamlContent);
 
-    K deleteContent(String yamlContent);
+    KubeClient<K> deleteContent(String yamlContent);
 
-    K createNamespace(String name);
+    KubeClient<K> createNamespace(String name);
 
-    K deleteNamespace(String name);
+    KubeClient<K> deleteNamespace(String name);
 
     /**
      * Execute the given {@code command} in the given {@code pod}.
@@ -112,13 +100,20 @@ public interface KubeClient<K extends KubeClient<K>> {
     ProcessResult exec(String... command);
 
     /**
+     * Create the command modified with context and namespace
+     * @param params The command parameters
+     * @return This kube client.
+     */
+    List<String> cmdWithContext(String... params);
+
+    /**
      * Wait for the deployment with the given {@code name} to
      * have replicas==readyReplicas && replicas==expected.
      * @param name The deployment name.
      * @param expected Number of expected pods
      * @return This kube client.
      */
-    K waitForDeployment(String name, int expected);
+    KubeClient<K> waitForDeployment(String name, int expected);
 
     /**
      * Wait for the deploymentConfig with the given {@code name} to
@@ -126,14 +121,14 @@ public interface KubeClient<K extends KubeClient<K>> {
      * @param name The deploymentConfig name.
      * @return This kube client.
      */
-    K waitForDeploymentConfig(String name);
+    KubeClient<K> waitForDeploymentConfig(String name);
 
     /**
      * Wait for the pod with the given {@code name} to be in the ready state.
      * @param name The pod name.
      * @return This kube client.
      */
-    K waitForPod(String name);
+    KubeClient<K> waitForPod(String name);
 
     /**
      * Wait for the statefulset with the given {@code name} to have
@@ -141,7 +136,7 @@ public interface KubeClient<K extends KubeClient<K>> {
      * wait for the pods to be in the ready state.
      * * @return This kube client.
      */
-    K waitForStatefulSet(String name, int expectPods);
+    KubeClient<K> waitForStatefulSet(String name, int expectPods);
 
     /**
      * Wait for the resource with the given {@code name} to be created.
@@ -149,7 +144,7 @@ public interface KubeClient<K extends KubeClient<K>> {
      * @param resourceName The resource name.
      * @return This kube client.
      */
-    K waitForResourceCreation(String resourceType, String resourceName);
+    KubeClient<K> waitForResourceCreation(String resourceType, String resourceName);
 
     /**
      * Get the content of the given {@code resource} with the given {@code name} as YAML.
@@ -165,13 +160,11 @@ public interface KubeClient<K extends KubeClient<K>> {
      */
     String getEvents();
 
-    K waitForResourceDeletion(String resourceType, String resourceName);
+    KubeClient<K> waitForResourceDeletion(String resourceType, String resourceName);
 
     List<String> list(String resourceType);
 
     String getResourceAsYaml(String resourceType, String resourceName);
-
-    String describe(String resourceType, String resourceName);
 
     default String logs(String pod) {
         return logs(pod, null);
@@ -190,7 +183,7 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String getResourceAsJson(String resourceType, String resourceName);
 
-    K waitForResourceUpdate(String resourceType, String resourceName, Date startTime);
+    KubeClient<K> waitForResourceUpdate(String resourceType, String resourceName, Date startTime);
 
     Date getResourceCreateTimestamp(String pod, String s);
 

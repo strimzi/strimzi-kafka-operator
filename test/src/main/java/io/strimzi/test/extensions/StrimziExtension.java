@@ -5,15 +5,15 @@
 package io.strimzi.test.extensions;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.annotations.Resources;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -299,8 +299,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
      */
     private boolean isWrongClusterType(AnnotatedElement element) {
         boolean result = element.getAnnotation(OpenShiftOnly.class) != null
-                && !(clusterResource().cluster() instanceof OpenShift
-                || clusterResource().cluster() instanceof Minishift);
+                && !(clusterResource().cluster() instanceof OpenShift);
         if (result) {
             LOGGER.info("{} is @OpenShiftOnly, but the running cluster is not OpenShift: Ignoring {}",
                     name(testClass),
@@ -566,20 +565,24 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         Statement last = statement;
         for (Namespace namespace : annotations(element, Namespace.class)) {
             last = new Bracket(last, null) {
-                String previousNamespace = null;
 
                 @Override
                 protected void before() {
                     LOGGER.info("Creating namespace '{}' before test per @Namespace annotation on {}", namespace.value(), name(element));
-                    kubeClient().createNamespace(namespace.value());
-                    previousNamespace = namespace.use() ? kubeClient().namespace(namespace.value()) : kubeClient().namespace();
+                    try {
+                        kubeClient().createNamespace(namespace.value());
+                    } catch (KubeClusterException.AlreadyExists kce) {
+                        LOGGER.info("Ignoring namespace {} AlreadyExists", namespace.value());
+                    }
+                    if (namespace.use()) {
+                        kubeClient().namespace(namespace.value());
+                    }
                 }
 
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting namespace '{}' after test per @Namespace annotation on {}", namespace.value(), name(element));
                     kubeClient().deleteNamespace(namespace.value());
-                    kubeClient().namespace(previousNamespace);
                 }
             };
         }
@@ -650,12 +653,11 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                 // Here we record the state of the cluster
                 LOGGER.info("Creating cluster operator with Helm Chart {} before test per @ClusterOperator annotation on {}", cc, name(element));
                 Path pathToChart = new File(HELM_CHART).toPath();
-                String oldNamespace = kubeClient().namespace("kube-system");
+                kubeClient().namespace("kube-system");
                 InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
                 String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
                 kubeClient().applyContent(helmServiceAccount);
                 helmClient().init();
-                kubeClient().namespace(oldNamespace);
                 helmClient().install(pathToChart, HELM_RELEASE_NAME, allValues);
             }
 

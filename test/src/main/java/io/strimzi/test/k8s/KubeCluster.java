@@ -15,19 +15,16 @@ import java.util.Locale;
  */
 public interface KubeCluster {
 
+    // The context name for the test cluster
     String ENV_VAR_TEST_CLUSTER = "TEST_CLUSTER";
+    // The context name for the test cluster with administrative rights
+    String ENV_VAR_TEST_CLUSTER_ADMIN = "TEST_CLUSTER_ADMIN";
 
     /** Return true iff this kind of cluster installed on the local machine. */
     boolean isAvailable();
 
     /** Return true iff this kind of cluster is running on the local machine */
     boolean isClusterUp();
-
-    /** Attempt to start a cluster */
-    void clusterUp();
-
-    /** Attempt to stop a cluster */
-    void clusterDown();
 
     /** Return a default client for this kind of cluster. */
     KubeClient defaultClient();
@@ -41,25 +38,22 @@ public interface KubeCluster {
     static KubeCluster bootstrap() {
         Logger logger = LogManager.getLogger(KubeCluster.class);
 
-        KubeCluster[] clusters = null;
+        KubeCluster[] clusters;
         String clusterName = System.getenv(ENV_VAR_TEST_CLUSTER);
         if (clusterName != null) {
             switch (clusterName.toLowerCase(Locale.ENGLISH)) {
                 case "oc":
                     clusters = new KubeCluster[]{new OpenShift()};
                     break;
-                case "minikube":
-                    clusters = new KubeCluster[]{new Minikube()};
-                    break;
-                case "minishift":
-                    clusters = new KubeCluster[]{new Minishift()};
+                case "kubectl":
+                    clusters = new KubeCluster[]{new KubectlCluster()};
                     break;
                 default:
-                    throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER + "=" + clusterName + " is not a supported cluster type");
+                    clusters = new KubeCluster[]{new OpenShift(clusterName), new KubectlCluster(clusterName)};
+                    break;
             }
-        }
-        if (clusters == null) {
-            clusters = new KubeCluster[]{new OpenShift(), new Minikube(), new Minishift()};
+        } else {
+            clusters = new KubeCluster[]{new OpenShift("minishift"), new KubectlCluster("minikube"), new OpenShift(), new KubectlCluster()};
         }
         KubeCluster cluster = null;
         for (KubeCluster kc : clusters) {

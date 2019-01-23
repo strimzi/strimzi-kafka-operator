@@ -76,7 +76,6 @@ public class TopicOperatorIT {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
 
     public static KubeClusterResource testCluster = new KubeClusterResource();
-    private static String oldNamespace;
 
     private final LabelPredicate resourcePredicate = LabelPredicate.fromString(
             "strimzi.io/kind=topic");
@@ -109,7 +108,7 @@ public class TopicOperatorIT {
     public static void setupKubeCluster() {
         testCluster.client().clientWithAdmin()
                 .createNamespace(NAMESPACE);
-        oldNamespace = testCluster.client().namespace(NAMESPACE);
+        testCluster.client().namespace(NAMESPACE);
         testCluster.client().clientWithAdmin()
                 .create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .create(TestUtils.CRD_TOPIC)
@@ -123,7 +122,6 @@ public class TopicOperatorIT {
                 .delete(TestUtils.CRD_TOPIC)
                 .delete("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .deleteNamespace(NAMESPACE);
-        testCluster.client().clientWithAdmin().namespace(oldNamespace);
     }
 
     @Before
