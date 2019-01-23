@@ -40,7 +40,7 @@ public interface TestSeparator {
     default void beforeEachTest(TestInfo testInfo) {
         TimeMeasuringSystem.setTestName(testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName());
         TimeMeasuringSystem.startOperation(Operation.TEST_EXECUTION);
-        LOGGER.info(String.join("", Collections.nCopies(100, SEPARATOR_CHAR)));
+        LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
         LOGGER.info(String.format("%s.%s-STARTED", testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName()));
     }
 
@@ -52,11 +52,9 @@ public interface TestSeparator {
             if (ex instanceof OutOfMemoryError) {
                 LOGGER.error("Got OOM, dumping thread info");
                 printThreadDump();
-            } else {
-                LOGGER.error("Caught exception {}", ex);
             }
         }
         LOGGER.info(String.format("%s.%s-FINISHED", testInfo.getTestClass().get().getName(), testInfo.getTestMethod().get().getName()));
-        LOGGER.info(String.join("", Collections.nCopies(100, SEPARATOR_CHAR)));
+        LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
     }
 }

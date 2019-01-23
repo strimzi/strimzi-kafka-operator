@@ -51,7 +51,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        createNamespaces(NAMESPACE);
+        createNamespace(NAMESPACE);
         createCustomResources(Collections.singletonList(
                 TestUtils.CRD_TOPIC));
     }

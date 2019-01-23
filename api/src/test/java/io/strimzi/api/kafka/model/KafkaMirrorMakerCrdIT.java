@@ -82,7 +82,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        createNamespaces(NAMESPACE);
+        createNamespace(NAMESPACE);
         createCustomResources(Collections.singletonList(
                 TestUtils.CRD_KAFKA_MIRROR_MAKER));
     }

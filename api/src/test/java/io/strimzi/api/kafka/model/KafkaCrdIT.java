@@ -123,9 +123,9 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        createNamespaces(NAMESPACE);
+        createNamespace(NAMESPACE);
         createCustomResources(Collections.singletonList(
-                TestUtils.CRD_KAFKA_CONNECT));
+                TestUtils.CRD_KAFKA));
     }
 
     @AfterAll

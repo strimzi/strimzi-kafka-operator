@@ -43,6 +43,10 @@ public class BaseITST {
     protected String testClass;
     protected String testName;
 
+    /**
+     * Perform application of ServiceAccount, Roles and CRDs needed for proper cluster operator deployment.
+     * Configuration files are loaded from install/cluster-operator directory.
+     */
     private void applyClusterOperatorInstallFiles() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
         TimeMeasuringSystem.startOperation(Operation.CO_CREATION);
@@ -56,6 +60,9 @@ public class BaseITST {
         TimeMeasuringSystem.stopOperation(Operation.CO_CREATION);
     }
 
+    /**
+     * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
+     */
     private void deleteClusterOperatorInstallFiles() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
         TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
@@ -66,6 +73,11 @@ public class BaseITST {
         TimeMeasuringSystem.stopOperation(Operation.CO_DELETION);
     }
 
+    /**
+     * Create namespaces for test resources.
+     * @param useNamespace namespace which will be used as default by kubernetes client
+     * @param namespaces list of namespaces which will be created
+     */
     private void createNamespaces(String useNamespace, List<String> namespaces) {
         deploymentNamespaces = namespaces;
         for (String namespace: namespaces) {
@@ -78,10 +90,17 @@ public class BaseITST {
         KUBE_CLIENT.namespace(useNamespace);
     }
 
-    protected void createNamespaces(String useNamespace) {
+    /**
+     * Create namespace for test resources.
+     * @param useNamespace namespace which will be created and used as default by kubernetes client
+     */
+    protected void createNamespace(String useNamespace) {
         createNamespaces(useNamespace, Collections.singletonList(useNamespace));
     }
 
+    /**
+     * Delete all created namespaces.
+     */
     protected void deleteNamespaces() {
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting namespace: {}", namespace);
@@ -93,35 +112,64 @@ public class BaseITST {
         KUBE_CLIENT.namespace(CLUSTER.defaultNamespace());
     }
 
+    /**
+     * Apply custom resources for CO such as templates.
+     * @param resources list of paths to yaml files with resources specifications
+     */
     protected void createCustomResources(List<String> resources) {
-        deploymentResources = resources;
+        deploymentResources.addAll(resources);
         for (String resource : resources) {
             LOGGER.info("Creating resources {}", resource);
             KUBE_CLIENT.clientWithAdmin().create(resource);
         }
     }
 
+    /**
+     * Delete custom resources such as templates.
+     */
     protected void deleteCustomResources() {
+        Collections.reverse(deploymentResources);
         for (String resource : deploymentResources) {
             LOGGER.info("Deleting resources {}", resource);
             KUBE_CLIENT.delete(resource);
         }
     }
 
+    /**
+     * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
+     * specific config files such as ServiceAccount, Roles and CRDs.
+     * @param clientNamespace namespace which will be created and used as default by kube client
+     * @param namespaces list of namespaces which will be created
+     * @param resources list of path to yaml files with resources specifications
+     */
     protected void prepareEnvForOperator(String clientNamespace, List<String> namespaces, List<String> resources) {
         createNamespaces(clientNamespace, namespaces);
         createCustomResources(resources);
         applyClusterOperatorInstallFiles();
     }
 
+    /**
+     * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
+     * specific config files such as ServiceAccount, Roles and CRDs.
+     * @param clientNamespace namespace which will be created and used as default by kube client
+     * @param resources list of path to yaml files with resources specifications
+     */
     protected void prepareEnvForOperator(String clientNamespace, List<String> resources) {
         prepareEnvForOperator(clientNamespace, Collections.singletonList(clientNamespace), resources);
     }
 
+    /**
+     * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
+     * specific config files such as ServiceAccount, Roles and CRDs.
+     * @param clientNamespace namespace which will be created and used as default by kube client
+     */
     protected void prepareEnvForOperator(String clientNamespace) {
         prepareEnvForOperator(clientNamespace, Collections.singletonList(clientNamespace), Collections.emptyList());
     }
 
+    /**
+     * Clear cluster from all created namespaces and configurations files for cluster operator.
+     */
     protected void teardownEnvForOperator() {
         deleteClusterOperatorInstallFiles();
         deleteCustomResources();
