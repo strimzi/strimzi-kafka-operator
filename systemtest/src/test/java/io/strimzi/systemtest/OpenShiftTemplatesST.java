@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -45,6 +46,7 @@ import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
  * not that the created resource is processed by operator(s) in the appropriate way.
  */
 @ExtendWith(StrimziExtension.class)
+@OpenShiftOnly
 public class OpenShiftTemplatesST extends AbstractST {
 
     public static final String NAMESPACE = "template-test";

@@ -440,7 +440,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     public Map<String, String> getImagesFromConfig() {
         Map<String, String> images = new HashMap<>();
-        for (Container c : CLIENT.extensions().deployments().inNamespace(KUBE_CLIENT.namespace()).withName("strimzi-luster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : CLIENT.extensions().deployments().inNamespace(KUBE_CLIENT.namespace()).withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }

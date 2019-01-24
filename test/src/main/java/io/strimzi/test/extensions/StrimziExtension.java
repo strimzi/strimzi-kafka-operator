@@ -188,7 +188,7 @@ public class StrimziExtension implements ExecutionCondition {
     private KubeClusterResource clusterResource() {
         if (clusterResource == null) {
             try {
-                Field field = testClass.getField("cluster");
+                Field field = testClass.getField("CLUSTER");
                 clusterResource = (KubeClusterResource) field.get(KubeClusterResource.class);
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 e.printStackTrace();
