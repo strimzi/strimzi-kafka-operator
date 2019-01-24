@@ -289,22 +289,35 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 |string
 |authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
-|bootstrap           1.2+<.<|Configures external bootstrap service.
-|xref:type-KafkaExternalBootstrapService-{context}[`KafkaExternalBootstrapService`]
-|brokers             1.2+<.<|Configures broker service and advertised address.
-|xref:type-KafkaExternalBrokerService-{context}[`KafkaExternalBrokerService`] array
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
+|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
 |tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
+|====
+
+[id='type-KafkaExternalServiceOverrides-{context}']
+### `KafkaExternalServiceOverrides` schema reference
+
+Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
+
+
+[options="header"]
+|====
+|Field             |Description
+|bootstrap  1.2+<.<|External bootstrap service configuration.
+|xref:type-KafkaExternalBootstrapService-{context}[`KafkaExternalBootstrapService`]
+|brokers    1.2+<.<|External broker services configuration.
+|xref:type-KafkaExternalBrokerService-{context}[`KafkaExternalBrokerService`] array
 |====
 
 [id='type-KafkaExternalBootstrapService-{context}']
 ### `KafkaExternalBootstrapService` schema reference
 
-Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
+Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
 
 
 [options="header"]
@@ -317,17 +330,17 @@ Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExterna
 [id='type-KafkaExternalBrokerService-{context}']
 ### `KafkaExternalBrokerService` schema reference
 
-Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
+Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
 
 
 [options="header"]
 |====
 |Field                  |Description
-|index           1.2+<.<|Index of the kafka broker (broker ID).
+|broker          1.2+<.<|Index of the kafka broker (broker identifier).
 |integer
-|advertisedHost  1.2+<.<|External advertised host.
+|advertisedHost  1.2+<.<|Externally advertised host.
 |string
-|advertisedPort  1.2+<.<|External advertised port.
+|advertisedPort  1.2+<.<|Externally advertised port.
 |integer
 |nodePort        1.2+<.<|Broker service node port.
 |integer

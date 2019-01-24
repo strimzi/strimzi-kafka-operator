@@ -585,24 +585,21 @@ public abstract class AbstractModel {
     }
 
     protected ServicePort createServicePort(String name, int port, int targetPort, String protocol) {
-        ServicePort servicePort = new ServicePortBuilder()
-                .withName(name)
-                .withProtocol(protocol)
-                .withPort(port)
-                .withNewTargetPort(targetPort)
-                .build();
+        ServicePort servicePort = createServicePort(name, port, targetPort, null, protocol);
         log.trace("Created service port {}", servicePort);
         return servicePort;
     }
 
-    protected ServicePort createServicePort(String name, int port, int targetPort, int nodePort, String protocol) {
-        ServicePort servicePort = new ServicePortBuilder()
+    protected ServicePort createServicePort(String name, int port, int targetPort, Integer nodePort, String protocol) {
+        ServicePortBuilder builder = new ServicePortBuilder()
             .withName(name)
             .withProtocol(protocol)
             .withPort(port)
-            .withNewTargetPort(targetPort)
-            .withNewNodePort(nodePort)
-            .build();
+            .withNewTargetPort(targetPort);
+        if (nodePort != null) {
+            builder.withNewNodePort(nodePort);
+        }
+        ServicePort servicePort = builder.build();
         log.trace("Created service port {}", servicePort);
         return servicePort;
     }

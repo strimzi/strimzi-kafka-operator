@@ -19,18 +19,15 @@ public class BrokerAddress {
         return index;
     }
 
-
     public String getAdvertisedHost() {
         return advertisedHost;
     }
-
 
     public Integer getAdvertisedPort() {
         return advertisedPort;
     }
 
-
-    public static BrokerAddress buildFromString(String address) {
+    public static BrokerAddress parse(String address) {
         String[] indexAndAddress = address.split("://");
         Integer index = Integer.parseInt(indexAndAddress[0]);
         String[] hostAndPort = indexAndAddress[1].split(":");

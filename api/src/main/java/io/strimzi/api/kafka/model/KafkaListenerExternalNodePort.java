@@ -33,8 +33,7 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
     private KafkaListenerAuthentication auth;
     private boolean tls = true;
     private List<NetworkPolicyPeer> networkPolicyPeers;
-    private KafkaExternalBootstrapService bootstrap;
-    private List<KafkaExternalBrokerService> brokers;
+    private KafkaExternalServiceOverrides overrides;
 
     @Description("Must be `" + TYPE_NODEPORT + "`")
     @Override
@@ -78,27 +77,13 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
         this.networkPolicyPeers = networkPolicyPeers;
     }
 
-    @Description("Configures external bootstrap service")
+    @Description("Overrides for external bootstrap and broker services and externally advertised addresses")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("bootstrap")
-    public KafkaExternalBootstrapService getBootstrap() {
-        return bootstrap;
+    public KafkaExternalServiceOverrides getOverrides() {
+        return overrides;
     }
 
-    @JsonProperty("bootstrap")
-    public void setBootstrap(KafkaExternalBootstrapService bootstrap) {
-        this.bootstrap = bootstrap;
-    }
-
-    @Description("Configures broker service and advertised address")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("brokers")
-    public List<KafkaExternalBrokerService> getBrokers() {
-        return brokers;
-    }
-
-    @JsonProperty("brokers")
-    public void setBrokers(List<KafkaExternalBrokerService> brokers) {
-        this.brokers = brokers;
+    public void setOverrides(KafkaExternalServiceOverrides overrides) {
+        this.overrides = overrides;
     }
 }

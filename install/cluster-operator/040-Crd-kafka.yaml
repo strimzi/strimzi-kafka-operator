@@ -216,24 +216,6 @@ spec:
                               - scram-sha-512
                           required:
                           - type
-                        bootstrap:
-                          type: object
-                          properties:
-                            nodePort:
-                              type: integer
-                        brokers:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              index:
-                                type: integer
-                              advertisedHost:
-                                type: string
-                              advertisedPort:
-                                type: integer
-                              nodePort:
-                                type: integer
                         networkPolicyPeers:
                           type: array
                           items:
@@ -284,6 +266,27 @@ spec:
                                             type: string
                                   matchLabels:
                                     type: object
+                        overrides:
+                          type: object
+                          properties:
+                            bootstrap:
+                              type: object
+                              properties:
+                                nodePort:
+                                  type: integer
+                            brokers:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  broker:
+                                    type: integer
+                                  advertisedHost:
+                                    type: string
+                                  advertisedPort:
+                                    type: integer
+                                  nodePort:
+                                    type: integer
                         tls:
                           type: boolean
                         type:

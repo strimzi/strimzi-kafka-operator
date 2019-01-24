@@ -5,7 +5,6 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
@@ -24,7 +23,6 @@ import java.util.Objects;
 public class KafkaExternalBootstrapService implements Serializable {
     private static final long serialVersionUID = 7105212236247449919L;
 
-    @JsonProperty("nodePort")
     private Integer nodePort;
 
     public KafkaExternalBootstrapService() {
@@ -36,12 +34,10 @@ public class KafkaExternalBootstrapService implements Serializable {
 
     @Description("Bootstrap service node port")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("nodePort")
     public Integer getNodePort() {
         return nodePort;
     }
 
-    @JsonProperty("nodePort")
     public void setNodePort(Integer nodePort) {
         this.nodePort = nodePort;
     }

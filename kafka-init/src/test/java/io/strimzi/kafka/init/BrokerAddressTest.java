@@ -13,7 +13,7 @@ public class BrokerAddressTest {
     public void testSetHostAndPort() {
         String addresses = "0://test0:0";
 
-        BrokerAddress brokerAddress = BrokerAddress.buildFromString(addresses);
+        BrokerAddress brokerAddress = BrokerAddress.parse(addresses);
 
         assertEquals(brokerAddress.getAdvertisedHost(), "test0");
         assertEquals(brokerAddress.getAdvertisedPort(), new Integer(0));
@@ -23,7 +23,7 @@ public class BrokerAddressTest {
     public void testHostNotPresent() {
         String addresses = "0://:0";
 
-        BrokerAddress brokerAddress = BrokerAddress.buildFromString(addresses);
+        BrokerAddress brokerAddress = BrokerAddress.parse(addresses);
 
         assertEquals(brokerAddress.getAdvertisedHost(), null);
         assertEquals(brokerAddress.getAdvertisedPort(), new Integer(0));
@@ -33,7 +33,7 @@ public class BrokerAddressTest {
     public void testPortNotPresent() {
         String addresses = "0://test0:";
 
-        BrokerAddress brokerAddress = BrokerAddress.buildFromString(addresses);
+        BrokerAddress brokerAddress = BrokerAddress.parse(addresses);
 
         assertEquals(brokerAddress.getAdvertisedHost(), "test0");
         assertEquals(brokerAddress.getAdvertisedPort(), null);
@@ -43,7 +43,7 @@ public class BrokerAddressTest {
     public void testHostAndPortNotPresent() {
         String addresses = "0://:";
 
-        BrokerAddress brokerAddress = BrokerAddress.buildFromString(addresses);
+        BrokerAddress brokerAddress = BrokerAddress.parse(addresses);
 
         assertEquals(brokerAddress.getAdvertisedHost(), null);
         assertEquals(brokerAddress.getAdvertisedPort(), null);

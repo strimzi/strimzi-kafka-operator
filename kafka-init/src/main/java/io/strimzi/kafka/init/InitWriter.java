@@ -83,9 +83,8 @@ public class InitWriter {
             return true;
         }
         Arrays.stream(config.getExternalAdvertisedAddresses().split(" "))
-                .map(BrokerAddress::buildFromString)
+                .map(BrokerAddress::parse)
                 .forEach(this::writeBrokerAddress);
-
 
         return true;
     }
