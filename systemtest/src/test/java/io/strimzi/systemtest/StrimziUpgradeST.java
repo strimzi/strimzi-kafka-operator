@@ -87,9 +87,9 @@ public class StrimziUpgradeST extends AbstractST {
             String zkSsName = KafkaResources.zookeeperStatefulSetName("my-cluster");
             String kafkaSsName = KafkaResources.kafkaStatefulSetName("my-cluster");
             String eoDepName = KafkaResources.entityOperatorDeploymentName("my-cluster");
-            Map<String, String> zkPods = StUtils.ssSnapshot(client, NAMESPACE, zkSsName);
-            Map<String, String> kafkaPods = StUtils.ssSnapshot(client, NAMESPACE, kafkaSsName);
-            Map<String, String> eoPods = StUtils.depSnapshot(client, NAMESPACE, eoDepName);
+            Map<String, String> zkPods = StUtils.ssSnapshot(NAMESPACE, zkSsName);
+            Map<String, String> kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaSsName);
+            Map<String, String> eoPods = StUtils.depSnapshot(NAMESPACE, eoDepName);
 
             List<Pod> pods = client.pods().inNamespace(NAMESPACE).withLabels(client.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels()).list().getItems();
             for (Pod pod : pods) {
@@ -103,18 +103,18 @@ public class StrimziUpgradeST extends AbstractST {
             kubeClient.waitForDeployment("strimzi-cluster-operator", 1);
 
             LOGGER.info("Waiting for ZK SS roll");
-            StUtils.waitTillSsHasRolled(client, NAMESPACE, zkSsName, zkPods);
+            StUtils.waitTillSsHasRolled(NAMESPACE, zkSsName, zkPods);
             LOGGER.info("Checking ZK pods using new image");
             waitTillAllPodsUseImage(client.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
                     "strimzi/zookeeper:latest-kafka-2.0.0");
             LOGGER.info("Waiting for Kafka SS roll");
-            StUtils.waitTillSsHasRolled(client, NAMESPACE, kafkaSsName, kafkaPods);
+            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, kafkaPods);
             LOGGER.info("Checking Kafka pods using new image");
             waitTillAllPodsUseImage(client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
                     "strimzi/kafka:latest-kafka-2.1.0");
             LOGGER.info("Waiting for EO Dep roll");
             // Check the TO and UO also got upgraded
-            StUtils.waitTillDepHasRolled(client, NAMESPACE, eoDepName, eoPods);
+            StUtils.waitTillDepHasRolled(NAMESPACE, eoDepName, eoPods);
             LOGGER.info("Checking EO pod using new image");
             waitTillAllContainersUseImage(
                     client.extensions().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),

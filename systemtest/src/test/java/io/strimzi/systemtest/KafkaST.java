@@ -111,7 +111,7 @@ class KafkaST extends AbstractST {
 
         client.pods().list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-                .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
+                .forEach(p -> kubernetes.waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
     }
 
     @Test
@@ -201,8 +201,8 @@ class KafkaST extends AbstractST {
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getZookeeper().setReplicas(scaleZkTo);
         });
-        kubeClient.waitForPod(newZkPodName[0]);
-        kubeClient.waitForPod(newZkPodName[1]);
+        kubernetes.waitForPod(newZkPodName[0]);
+        kubernetes.waitForPod(newZkPodName[1]);
 
         // check the new node is either in leader or follower state
         waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
@@ -327,11 +327,11 @@ class KafkaST extends AbstractST {
 
         for (int i = 0; i < expectedZKPods; i++) {
             kubeClient.waitForResourceUpdate("pod", zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
-            kubeClient.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
+            kubernetes.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
         }
         for (int i = 0; i < expectedKafkaPods; i++) {
             kubeClient.waitForResourceUpdate("pod", kafkaPodName(CLUSTER_NAME, i), kafkaPodStartTime.get(i));
-            kubeClient.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
+            kubernetes.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
         }
 
         LOGGER.info("Verify values after update");
@@ -699,12 +699,12 @@ class KafkaST extends AbstractST {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
-        kubeClient.waitForPod(kafkaPodName);
+        kubernetes.waitForPod(kafkaPodName);
 
-        String rackId = kubeClient.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
+        String rackId = kubernetes.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id");
         assertEquals("zone", rackId);
 
-        String brokerRack = kubeClient.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
+        String brokerRack = kubernetes.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack");
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
         List<Event> events = getEvents("Pod", kafkaPodName);

@@ -173,9 +173,6 @@ class StrimziExtensionTest {
         launcher.registerTestExecutionListeners(listener);
         launcher.execute(request);
 
-        when(MOCK_KUBE_CLIENT.logs("pod1")).thenReturn("these\nare\nthe\nlogs\nfrom\npod\n1");
-        when(MOCK_KUBE_CLIENT.logs("pod2")).thenReturn("these\nare\nthe\nlogs\nfrom\npod\n2");
-
         if (!listener.getSummary().getFailures().isEmpty()) {
             listener.getSummary().getFailures().get(0).getException().printStackTrace();
         }

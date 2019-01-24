@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,12 +56,12 @@ class ConnectS2IST extends AbstractST {
 
         // Start a new image build using the plugins directory
         kubeClient.exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath());
-        kubeClient.waitForResourceDeletion("pod", connectS2IPodName);
+        kubernetes.waitForPodDeletion(connectS2IPodName);
 
         kubeClient.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
 
-        connectS2IPodName = kubeClient.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
-        String plugins = kubeClient.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
+        connectS2IPodName = ((Pod) kubernetes.listPods(Collections.singletonMap("type", "kafka-connect-s2i")).get(0)).getMetadata().getName();
+        String plugins = kubernetes.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins");
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
     }

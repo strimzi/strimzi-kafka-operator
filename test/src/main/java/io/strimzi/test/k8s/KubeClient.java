@@ -66,9 +66,6 @@ public interface KubeClient<K extends KubeClient<K>> {
         return delete(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
     }
 
-    /** Replaces the resources in the given files. */
-    K replace(File... files);
-
     /**
      * Replace with the given YAML.
      * @param yamlContent The replacement YAML.
@@ -173,12 +170,6 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String describe(String resourceType, String resourceName);
 
-    default String logs(String pod) {
-        return logs(pod, null);
-    }
-
-    String logs(String pod, String container);
-
     /**
      * @param resourceType The type of resource
      * @param resourceName The name of resource
@@ -195,4 +186,6 @@ public interface KubeClient<K extends KubeClient<K>> {
     Date getResourceCreateTimestamp(String pod, String s);
 
     List<String> listResourcesByLabel(String resourceType, String label);
+
+    Kubernetes kubeAPIClient();
 }

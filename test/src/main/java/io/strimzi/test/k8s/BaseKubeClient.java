@@ -7,6 +7,8 @@ package io.strimzi.test.k8s;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigBuilder;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,6 +42,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     public static final String SERVICE = "service";
     public static final String CM = "cm";
     private String namespace = defaultNamespace();
+    private Kubernetes kubernetes;
 
     protected abstract String cmd();
 
@@ -58,10 +61,18 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     private static final Context NOOP = new Context();
 
+    public Kubernetes kubeAPIClient() {
+        if (this.kubernetes == null) {
+            this.kubernetes = new Kubernetes();
+        }
+        return this.kubernetes;
+    }
+
     @Override
     public String namespace(String namespace) {
         String previous = this.namespace;
         this.namespace = namespace;
+        this.kubernetes.namespace(namespace);
         return previous;
     }
 
@@ -169,14 +180,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
             }
         }
         return error;
-    }
-
-    @Override
-    public K replace(File... files) {
-        try (Context context = defaultContext()) {
-            execRecursive("replace", files, (f1, f2) -> f1.getName().compareTo(f2.getName()));
-            return (K) this;
-        }
     }
 
     @Override
@@ -397,17 +400,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     @Override
     public String describe(String resourceType, String resourceName) {
         return Exec.exec(namespacedCommand("describe", resourceType, resourceName)).out();
-    }
-
-    @Override
-    public String logs(String pod, String container) {
-        String[] args;
-        if (container != null) {
-            args = new String[]{"logs", pod, "-c", container};
-        } else {
-            args = new String[]{"logs", pod};
-        }
-        return Exec.exec(namespacedCommand(args)).out();
     }
 
     @Override
