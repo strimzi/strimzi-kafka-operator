@@ -877,7 +877,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * Create a Job which which produce and then consume messages to a given topic.
      * The job will be deleted from the kubernetes cluster at the end of the test.
      * @param name The name of the {@code Job} and also the consumer group id.
-     *             The Job's pod will also use this in a {@code job=&gt;name&lt;} selector.
+     *             The Job's pod will also use this in a {@code job=&lt;name&gt;} selector.
      * @param topic The topic to send messages over
      * @param messagesCount The number of messages to send and receive.
      * @param kafkaUser The user to send and receive the messages as.
