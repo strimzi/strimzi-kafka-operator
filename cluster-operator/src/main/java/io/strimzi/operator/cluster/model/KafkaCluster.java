@@ -41,6 +41,7 @@ import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExternalBrokerService;
+import io.strimzi.api.kafka.model.KafkaExternalServiceOverrides;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaListenerExternalLoadBalancer;
 import io.strimzi.api.kafka.model.KafkaListenerExternalNodePort;
@@ -1100,6 +1101,18 @@ public class KafkaCluster extends AbstractModel {
      */
     public boolean isExposedWithNodePort()  {
         return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalNodePort;
+    }
+
+    /**
+     * Returns KafkaExternalServiceOverrides when the Kafka cluster is exposed to the outside using NodePort type services
+     *
+     * @return
+     */
+    public KafkaExternalServiceOverrides getExternalNodePortServiceOverrides() {
+        if (isExposedWithNodePort()) {
+            return ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
+        }
+        return null;
     }
 
     /**

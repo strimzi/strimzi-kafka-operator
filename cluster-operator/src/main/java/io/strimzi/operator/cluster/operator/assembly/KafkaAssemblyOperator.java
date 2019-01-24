@@ -23,6 +23,8 @@ import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaExternalBrokerService;
+import io.strimzi.api.kafka.model.KafkaExternalServiceOverrides;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
@@ -1228,7 +1230,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         this.kafkaExternalDnsNames.put(podNumber, serviceAddress);
                                     }
                                 } else if (kafkaCluster.isExposedWithNodePort()) {
-                                    serviceAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
+                                    serviceAddress = getExternalNodePortServiceAddress(serviceName, podNumber,
+                                        kafkaCluster.getExternalNodePortServiceOverrides());
                                 }
 
                                 this.kafkaExternalAddresses.put(podNumber, serviceAddress);
@@ -1263,6 +1266,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 });
 
             return withVoid(blockingFuture);
+        }
+
+        private String getExternalNodePortServiceAddress(String serviceName, int podNumber,
+                                                         KafkaExternalServiceOverrides externalNodePortServiceOverrides) {
+            if (externalNodePortServiceOverrides != null && externalNodePortServiceOverrides.getBrokers() != null) {
+                String advertisedHost = externalNodePortServiceOverrides.getBrokers().stream()
+                    .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber)
+                    .map(KafkaExternalBrokerService::getAdvertisedHost)
+                    .findAny()
+                    .orElse(null);
+                if (advertisedHost != null && !advertisedHost.isEmpty()) {
+                    return advertisedHost;
+                }
+            }
+            return serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
         }
 
         Future<ReconciliationState> kafkaBootstrapRouteReady() {
