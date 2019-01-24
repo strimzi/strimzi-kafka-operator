@@ -282,13 +282,6 @@ public abstract class AbstractST {
         return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
     }
 
-    List<Event> getEvents(String resourceType, String resourceName) {
-        return client.events().inNamespace(kubeClient.namespace()).list().getItems().stream()
-                .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
-                .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
-                .collect(Collectors.toList());
-    }
-
     public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
@@ -312,9 +305,9 @@ public abstract class AbstractST {
     }
 
     protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = client.pods().inNamespace(namespace).withName(podName).get();
+        Pod po = kubeClient.kubeAPIClient().getPod(namespace, podName);
         assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-            client.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
+            kubeClient.kubeAPIClient().listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
         Container container = po.getSpec().getContainers().get(0);
         Map<String, Quantity> limits = container.getResources().getLimits();
         assertEquals(memoryLimit, limits.get("memory").getAmount());
@@ -403,7 +396,7 @@ public abstract class AbstractST {
 
     public Map<String, String> getImagesFromConfig() {
         Map<String, String> images = new HashMap<>();
-        for (Container c : client.extensions().deployments().inNamespace(kubeClient.namespace()).withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : kubeClient.kubeAPIClient().getDeployment(kubeClient.namespace(), "strimzi-cluster-operator").getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }
@@ -1064,18 +1057,18 @@ public abstract class AbstractST {
     void waitForDeletion(long time, String namespace) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
-        long podCount = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+        long podCount = kubeClient.kubeAPIClient().listPods(namespace).stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+            List<Pod> podStream = kubeClient.kubeAPIClient().listPods(namespace).stream().filter(
                 p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             podStream.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
             // Delete remaining pods if there are some
-            podStream.forEach(p -> kubeClient.kubeAPIClient().waitForPodDeletion(client.getNamespace(), p.getMetadata().getName()));
+            podStream.forEach(p -> kubeClient.kubeAPIClient().waitForPodDeletion(kubeClient.namespace(), p.getMetadata().getName()));
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
     }

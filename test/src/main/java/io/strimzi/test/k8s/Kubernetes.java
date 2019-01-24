@@ -1,6 +1,7 @@
 package io.strimzi.test.k8s;
 
 import io.fabric8.kubernetes.api.model.ContainerStatus;
+import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
@@ -23,15 +24,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-public class Kubernetes<K extends Kubernetes<K>> {
+public class Kubernetes {
 
     static final long GLOBAL_TIMEOUT = 300000;
     static final long GLOBAL_POLL_INTERVAL = 1000;
     private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
 
-    private KubernetesClient client = new DefaultKubernetesClient();
+    private KubernetesClient client = getInstance();
     private String namespace;
+
+    private static class ClientHolder {
+        static final KubernetesClient CLIENT = new DefaultKubernetesClient();
+    }
+
+    public static KubernetesClient getInstance() {
+        return ClientHolder.CLIENT;
+    }
 
     public String namespace(String namespace) {
         String previous = this.namespace;
@@ -39,15 +49,13 @@ public class Kubernetes<K extends Kubernetes<K>> {
         return previous;
     }
 
-    public K createNameSpace(String name) {
+    public void createNameSpace(String name) {
         Namespace ns = new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build();
         client.namespaces().createOrReplace(ns);
-        return (K) this;
     }
 
-    public K deleteNamespace(String name) {
+    public void deleteNamespace(String name) {
         client.namespaces().withName(name).delete();
-        return (K) this;
     }
 
     public String execInPod(String podName, String... command) {
@@ -150,6 +158,14 @@ public class Kubernetes<K extends Kubernetes<K>> {
         return client.pods().withLabels(labelSelector).list().getItems();
     }
 
+    public List<Pod> listPods(String namespace) {
+        return client.pods().inNamespace(namespace).list().getItems();
+    }
+
+    public List<Pod> listPods() {
+        return client.pods().list().getItems();
+    }
+
     /**
      * Gets pod
      */
@@ -229,5 +245,12 @@ public class Kubernetes<K extends Kubernetes<K>> {
         } else {
             return client.pods().withName(podName).getLog();
         }
+    }
+
+    public List<Event> getEvents(String resourceType, String resourceName) {
+        return client.events().inNamespace(namespace).list().getItems().stream()
+                .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
+                .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
+                .collect(Collectors.toList());
     }
 }

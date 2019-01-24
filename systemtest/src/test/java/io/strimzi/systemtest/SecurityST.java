@@ -232,10 +232,10 @@ class SecurityST extends AbstractST {
         String bobUserName = "bob";
         resources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("", 1_000, 60_000, () -> {
-            return client.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null;
+            return kubeClient.kubeAPIClient().getSecret(bobUserName) != null;
         },
             () -> {
-                LOGGER.error("Couldn't find user secret {}", client.secrets().inNamespace(NAMESPACE).list().getItems());
+                LOGGER.error("Couldn't find user secret {}", kubeClient.kubeAPIClient().getListSecrets());
             });
 
         mp = waitForInitialAvailability(bobUserName);
@@ -249,8 +249,8 @@ class SecurityST extends AbstractST {
         String aliceUserName = "alice";
         resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
         waitFor("Alic's secret to exist", 1_000, 60_000,
-            () -> client.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
-            () -> LOGGER.error("Couldn't find user secret {}", client.secrets().inNamespace(NAMESPACE).list().getItems()));
+            () -> kubeClient.kubeAPIClient().getSecret(aliceUserName) != null,
+            () -> LOGGER.error("Couldn't find user secret {}", kubeClient.kubeAPIClient().getListSecrets()));
 
         AvailabilityVerifier mp = waitForInitialAvailability(aliceUserName);
 
@@ -323,7 +323,7 @@ class SecurityST extends AbstractST {
     }
 
     private AvailabilityVerifier waitForInitialAvailability(String userName) {
-        AvailabilityVerifier mp = new AvailabilityVerifier(client, NAMESPACE, CLUSTER_NAME, userName);
+        AvailabilityVerifier mp = new AvailabilityVerifier(kubeClient.kubeAPIClient().getInstance(), NAMESPACE, CLUSTER_NAME, userName);
         mp.start();
 
         TestUtils.waitFor("Some messages sent received", 1_000, TIMEOUT_FOR_SEND_RECEIVE_MSG,

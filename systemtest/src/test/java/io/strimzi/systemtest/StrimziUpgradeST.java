@@ -91,7 +91,7 @@ public class StrimziUpgradeST extends AbstractST {
             Map<String, String> kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaSsName);
             Map<String, String> eoPods = StUtils.depSnapshot(NAMESPACE, eoDepName);
 
-            List<Pod> pods = client.pods().inNamespace(NAMESPACE).withLabels(client.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels()).list().getItems();
+            List<Pod> pods = kubeClient.kubeAPIClient().listPods(kubeClient.kubeAPIClient().getStatefulSetSelectors(NAMESPACE, zkSsName).getMatchLabels());
             for (Pod pod : pods) {
                 LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
             }
@@ -105,23 +105,23 @@ public class StrimziUpgradeST extends AbstractST {
             LOGGER.info("Waiting for ZK SS roll");
             StUtils.waitTillSsHasRolled(NAMESPACE, zkSsName, zkPods);
             LOGGER.info("Checking ZK pods using new image");
-            waitTillAllPodsUseImage(client.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
+            waitTillAllPodsUseImage(kubeClient.kubeAPIClient().getStatefulSetSelectors(NAMESPACE, zkSsName).getMatchLabels(),
                     "strimzi/zookeeper:latest-kafka-2.0.0");
             LOGGER.info("Waiting for Kafka SS roll");
             StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, kafkaPods);
             LOGGER.info("Checking Kafka pods using new image");
-            waitTillAllPodsUseImage(client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
+            waitTillAllPodsUseImage(kubeClient.kubeAPIClient().getStatefulSetSelectors(NAMESPACE, kafkaSsName).getMatchLabels(),
                     "strimzi/kafka:latest-kafka-2.1.0");
             LOGGER.info("Waiting for EO Dep roll");
             // Check the TO and UO also got upgraded
             StUtils.waitTillDepHasRolled(NAMESPACE, eoDepName, eoPods);
             LOGGER.info("Checking EO pod using new image");
             waitTillAllContainersUseImage(
-                    client.extensions().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
+                    kubeClient.kubeAPIClient().getDeploymentSelectors(NAMESPACE, eoDepName).getMatchLabels(),
                     0,
                     "strimzi/topic-operator:latest");
             waitTillAllContainersUseImage(
-                    client.extensions().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
+                    kubeClient.kubeAPIClient().getDeploymentSelectors(NAMESPACE, eoDepName).getMatchLabels(),
                     1,
                     "strimzi/user-operator:latest");
 
@@ -144,7 +144,7 @@ public class StrimziUpgradeST extends AbstractST {
 
     private void waitTillAllContainersUseImage(Map<String, String> matchLabels, int container, String image) {
         TestUtils.waitFor("All pods matching " + matchLabels + " to have image " + image, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
-            List<Pod> pods1 = client.pods().inNamespace(NAMESPACE).withLabels(matchLabels).list().getItems();
+            List<Pod> pods1 = kubeClient.kubeAPIClient().listPods(matchLabels);
             for (Pod pod : pods1) {
                 if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
                     return false;

@@ -111,7 +111,7 @@ class KafkaST extends AbstractST {
 
         client.pods().list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-                .forEach(p -> kubernetes.waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
+                .forEach(p -> kubeClient.kubeAPIClient().waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
     }
 
     @Test
@@ -145,7 +145,7 @@ class KafkaST extends AbstractST {
         }
 
         //Test that the new pod does not have errors or failures in events
-        List<Event> events = getEvents("Pod", newPodName);
+        List<Event> events = kubeClient.kubeAPIClient().getEvents("Pod", newPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         //Test that CO doesn't have any exceptions in log
@@ -169,9 +169,9 @@ class KafkaST extends AbstractST {
                 "Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh");
 
         //Test that the new broker has event 'Killing'
-        assertThat(getEvents("Pod", newPodName), hasAllOfReasons(Killing));
+        assertThat(kubeClient.kubeAPIClient().getEvents("Pod", newPodName), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
+        assertThat(kubeClient.kubeAPIClient().getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
@@ -201,19 +201,19 @@ class KafkaST extends AbstractST {
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getZookeeper().setReplicas(scaleZkTo);
         });
-        kubernetes.waitForPod(newZkPodName[0]);
-        kubernetes.waitForPod(newZkPodName[1]);
+        kubeClient.kubeAPIClient().waitForPod(newZkPodName[0]);
+        kubeClient.kubeAPIClient().waitForPod(newZkPodName[1]);
 
         // check the new node is either in leader or follower state
         waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
 
         //Test that first pod does not have errors or failures in events
-        List<Event> eventsForFirstPod = getEvents("Pod", newZkPodName[0]);
+        List<Event> eventsForFirstPod = kubeClient.kubeAPIClient().getEvents("Pod", newZkPodName[0]);
         assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForFirstPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         //Test that second pod does not have errors or failures in events
-        List<Event> eventsForSecondPod = getEvents("Pod", newZkPodName[1]);
+        List<Event> eventsForSecondPod = kubeClient.kubeAPIClient().getEvents("Pod", newZkPodName[1]);
         assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
@@ -232,9 +232,9 @@ class KafkaST extends AbstractST {
         waitForZkMntr(Pattern.compile("zk_server_state\\s+standalone"), 0);
 
         //Test that the second pod has event 'Killing'
-        assertThat(getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
+        assertThat(kubeClient.kubeAPIClient().getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
+        assertThat(kubeClient.kubeAPIClient().getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -327,11 +327,11 @@ class KafkaST extends AbstractST {
 
         for (int i = 0; i < expectedZKPods; i++) {
             kubeClient.waitForResourceUpdate("pod", zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
-            kubernetes.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
+            kubeClient.kubeAPIClient().waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
         }
         for (int i = 0; i < expectedKafkaPods; i++) {
             kubeClient.waitForResourceUpdate("pod", kafkaPodName(CLUSTER_NAME, i), kafkaPodStartTime.get(i));
-            kubernetes.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
+            kubeClient.kubeAPIClient().waitForPod(kafkaPodName(CLUSTER_NAME,  i));
         }
 
         LOGGER.info("Verify values after update");
@@ -699,15 +699,15 @@ class KafkaST extends AbstractST {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
-        kubernetes.waitForPod(kafkaPodName);
+        kubeClient.kubeAPIClient().waitForPod(kafkaPodName);
 
-        String rackId = kubernetes.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id");
+        String rackId = kubeClient.kubeAPIClient().execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id");
         assertEquals("zone", rackId);
 
-        String brokerRack = kubernetes.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack");
+        String brokerRack = kubeClient.kubeAPIClient().execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack");
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
-        List<Event> events = getEvents("Pod", kafkaPodName);
+        List<Event> events = kubeClient.kubeAPIClient().getEvents("Pod", kafkaPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
     }
