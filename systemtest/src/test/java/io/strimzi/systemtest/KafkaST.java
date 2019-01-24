@@ -58,6 +58,7 @@ import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.extensions.StrimziExtension.TOPIC_CM;
 import static io.strimzi.test.TestUtils.fromYamlString;
@@ -178,7 +179,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testZookeeperScaleUpScaleDown() {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -242,7 +243,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testCustomAndUpdatedValues() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
@@ -356,7 +357,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @Tag(ACCEPTANCE)
+    @Tag(FLAKY)
     void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
         int messagesCount = 20;
@@ -376,7 +377,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testSendMessagesTlsAuthenticated() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-auth";
@@ -413,7 +414,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testSendMessagesPlainScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-plain-scram-sha";
@@ -460,7 +461,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testSendMessagesTlsScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-scram-sha";
@@ -713,7 +714,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testMirrorMaker() {
         operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -753,7 +754,7 @@ class KafkaST extends AbstractST {
      * Test mirroring messages by Mirror Maker over tls transport using mutual tls auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testMirrorMakerTlsAuthenticated() {
         operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -846,7 +847,7 @@ class KafkaST extends AbstractST {
      * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testMirrorMakerTlsScramSha() {
         operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String kafkaUserSource = "my-user-source";

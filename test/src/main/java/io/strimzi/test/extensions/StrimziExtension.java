@@ -96,6 +96,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     /** Tags */
     public static final String ACCEPTANCE = "acceptance";
     public static final String REGRESSION = "regression";
+    public static final String FLAKY = "flaky";
 
     private static DefaultKubernetesClient client = new DefaultKubernetesClient();
 

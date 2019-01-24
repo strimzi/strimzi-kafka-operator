@@ -14,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,14 +21,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.File;
 import java.io.IOException;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(ConnectS2IST.NAMESPACE)
 @ClusterOperator
-@Disabled
 class ConnectS2IST extends AbstractST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
@@ -40,7 +38,7 @@ class ConnectS2IST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testDeployS2IWithMongoDBPlugin() throws IOException {
         resources().kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
             .editMetadata()
