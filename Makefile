@@ -55,9 +55,9 @@ release_helm_version:
 	$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
 
 release_helm_repo:
-	echo "Updating Helm Repository broker.yaml"
-	helm repo broker ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./helm-charts/broker.yaml
-	mv ./broker.yaml ./helm-charts/broker.yaml
+	echo "Updating Helm Repository index.yaml"
+	helm repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./helm-charts/index.yaml
+	mv ./index.yaml ./helm-charts/index.yaml
 
 release_single_file:
 	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/cluster-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-cluster-operator-$(RELEASE_VERSION).yaml
@@ -79,7 +79,7 @@ docu_versions:
 docu_html: docu_htmlclean docu_check docu_versions
 	mkdir -p documentation/html
 	$(CP) -vrL documentation/book/images documentation/html/images
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/book/master.adoc -o documentation/html/broker.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/book/master.adoc -o documentation/html/index.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
 
 
@@ -102,7 +102,7 @@ pushtonexus:
 
 release_docu: docu_html docu_htmlnoheader
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs
-	$(CP) -rv documentation/html/broker.html strimzi-$(RELEASE_VERSION)/docs/
+	$(CP) -rv documentation/html/index.html strimzi-$(RELEASE_VERSION)/docs/
 	$(CP) -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/images/
 
 docu_clean: docu_htmlclean docu_htmlnoheaderclean

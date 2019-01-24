@@ -24,7 +24,7 @@ The build also uses an Java annotation processor. Some IDEs (such as IntelliJ) d
 To build this project you must first install several command line utilities.
 
 - [`make`](https://www.gnu.org/software/make/) - Make build system
-- [`mvn`](https://maven.apache.org/broker.html) - Maven CLI
+- [`mvn`](https://maven.apache.org/index.html) - Maven CLI
 - [`helm`](https://helm.sh/) - Helm Package Management System for Kubernetes
     - After installing Helm be sure to run `helm init`.
 - [`asciidoctor`](https://asciidoctor.org/) - Documentation generation (use `gem` to install latest version for your platform)
@@ -162,12 +162,12 @@ Attach the TAR.GZ/ZIP archives, YAML files (for installation from URL) and the H
 8. On the `master` git branch
   * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. 
   For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
-  * Copy the `helm-charts/broker.yaml` from the `release` branch to `master`.
+  * Copy the `helm-charts/index.yaml` from the `release` branch to `master`.
 9. Update the website
   * Add release documentation to `strimzi.github.io/docs/`.  Update references to docs in 
-  `strimzi.github.io/documentation/broker.md`.
-  * Update the Helm Chart repository file by copying `strimzi-kafka-operator/helm-charts/broker.yaml` to
-  `strimzi.github.io/charts/broker.yaml`.
+  `strimzi.github.io/documentation/index.md`.
+  * Update the Helm Chart repository file by copying `strimzi-kafka-operator/helm-charts/index.yaml` to
+  `strimzi.github.io/charts/index.yaml`.
 10. The maven artifacts (`api` module) will be automatically staged from TravisCI during the tag build. 
 It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
 
