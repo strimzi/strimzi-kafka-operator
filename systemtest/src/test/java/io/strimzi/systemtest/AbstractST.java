@@ -73,7 +73,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
-import static io.strimzi.test.StrimziExtension.CO_INSTALL_DIR;
+import static io.strimzi.test.extensions.StrimziExtension.CO_INSTALL_DIR;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
