@@ -464,6 +464,7 @@ public class KafkaAssemblyOperatorMockTest {
         Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                 .withNewPersistentClaimStorageStorage()
                     .withStorageClass(changedClass)
+                    .withSize("100Gi")
                 .endPersistentClaimStorageStorage().endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
@@ -594,6 +595,7 @@ public class KafkaAssemblyOperatorMockTest {
         Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                 .withNewPersistentClaimStorageStorage()
                 .withDeleteClaim(!originalKafkaDeleteClaim)
+                .withSize("100Gi")
                 .endPersistentClaimStorageStorage().endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
