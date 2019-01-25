@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 public class KafkaUserModel {
     private static final Logger log = LogManager.getLogger(KafkaUserModel.class.getName());
 
-    private final static int CERTS_EXPIRATION_DAYS = 356;
     public static final String KEY_PASSWORD = "password";
 
     protected final String namespace;
@@ -49,6 +48,8 @@ public class KafkaUserModel {
     protected String scramSha512Password;
 
     protected Set<SimpleAclRule> simpleAclRules = null;
+    public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
+    public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
 
     /**
      * Constructor
@@ -133,13 +134,23 @@ public class KafkaUserModel {
         } else if (clientsCaKeySecret == null) {
             throw new NoCertificateSecretException("The Clients CA Key Secret is missing");
         } else {
+            String valStr = System.getenv(ENV_VAR_CLIENTS_CA_VALIDITY);
+            String renStr = System.getenv(ENV_VAR_CLIENTS_CA_RENEWAL);
+
+            int validity = 0;
+            int renewal = 0;
+            if (valStr != null)
+                validity = Integer.parseInt(valStr);
+            if (renStr != null)
+                renewal = Integer.parseInt(renStr);
+
             ClientsCa clientsCa = new ClientsCa(certManager,
                     clientsCaCertSecret.getMetadata().getName(),
                     clientsCaCertSecret,
                     clientsCaCertSecret.getMetadata().getName(),
                     clientsCaKeySecret,
-                    CERTS_EXPIRATION_DAYS,
-                    30,
+                    validity,
+                    renewal,
                     false,
                     null);
             this.caCert = clientsCa.currentCaCertBase64();

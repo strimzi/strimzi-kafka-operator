@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -74,6 +75,8 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME).withValue(KafkaCluster.clientsCaKeySecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clientsCaCertSecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(KafkaCluster.DEFAULT_STRIMZI_GC_LOG_ENABED).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY).withValue(Integer.toString(EntityUserOperator.DEFAULT_CERTS_VALIDITY_DAYS)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL).withValue(Integer.toString(EntityUserOperator.DEFAULT_CERTS_RENEWAL_DAYS)).build());
         return expected;
     }
 
@@ -162,5 +165,38 @@ public class EntityUserOperatorTest {
         assertEquals("TCP", container.getPorts().get(0).getProtocol());
         assertEquals("/opt/user-operator/custom-config/", container.getVolumeMounts().get(0).getMountPath());
         assertEquals("entity-user-operator-metrics-and-logging", container.getVolumeMounts().get(0).getName());
+    }
+
+    @Test
+    public void testFromCrdCAvalidityAndRenewal() {
+        EntityUserOperatorSpec entityUserOperatorSpec = new EntityUserOperatorSpecBuilder()
+                .build();
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+                .withUserOperator(entityUserOperatorSpec)
+                .build();
+        CertificateAuthority ca = new CertificateAuthority();
+        ca.setValidityDays(42);
+        ca.setRenewalDays(69);
+        Kafka customValues =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                        .withEntityOperator(entityOperatorSpec)
+                        .withClientsCa(ca)
+                        .endSpec()
+                        .build();
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(customValues);
+
+        Kafka defaultValues =
+                new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                        .withEntityOperator(entityOperatorSpec)
+                        .endSpec()
+                        .build();
+        EntityUserOperator entityUserOperator2 = EntityUserOperator.fromCrd(defaultValues);
+
+        assertEquals(42, entityUserOperator.getClientsCaValidityDays());
+        assertEquals(69, entityUserOperator.getClientsCaRenewalDays());
+        assertEquals(EntityUserOperator.DEFAULT_CERTS_VALIDITY_DAYS, entityUserOperator2.getClientsCaValidityDays());
+        assertEquals(EntityUserOperator.DEFAULT_CERTS_RENEWAL_DAYS, entityUserOperator2.getClientsCaRenewalDays());
     }
 }

@@ -34,6 +34,9 @@ public class EntityUserOperator extends AbstractModel {
     protected static final int HEALTHCHECK_PORT = 8081;
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
 
+    public final static int DEFAULT_CERTS_VALIDITY_DAYS = 365;
+    public final static int DEFAULT_CERTS_RENEWAL_DAYS = 30;
+
     // User Operator configuration keys
     public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_LABELS";
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
@@ -42,12 +45,16 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
     public static final String ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
+    public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
+    public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
 
     private String zookeeperConnect;
     private String watchedNamespace;
     private String resourceLabels;
     private long reconciliationIntervalMs;
     private long zookeeperSessionTimeoutMs;
+    private long clientsCaValidityDays;
+    private long clientsCaRenewalDays;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -75,6 +82,8 @@ public class EntityUserOperator extends AbstractModel {
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
+        this.clientsCaValidityDays = DEFAULT_CERTS_VALIDITY_DAYS;
+        this.clientsCaRenewalDays = DEFAULT_CERTS_RENEWAL_DAYS;
     }
 
     public void setWatchedNamespace(String watchedNamespace) {
@@ -91,6 +100,22 @@ public class EntityUserOperator extends AbstractModel {
 
     public long getReconciliationIntervalMs() {
         return reconciliationIntervalMs;
+    }
+
+    public void setClientsCaValidityDays(long clientsCaValidityDays) {
+        this.clientsCaValidityDays = clientsCaValidityDays;
+    }
+
+    public long getClientsCaValidityDays() {
+        return this.clientsCaValidityDays;
+    }
+
+    public void setClientsCaRenewalDays(long clientsCaRenewalDays) {
+        this.clientsCaRenewalDays = clientsCaRenewalDays;
+    }
+
+    public long getClientsCaRenewalDays() {
+        return this.clientsCaRenewalDays;
     }
 
     public void setZookeeperSessionTimeoutMs(long zookeeperSessionTimeoutMs) {
@@ -166,6 +191,10 @@ public class EntityUserOperator extends AbstractModel {
                 result.setLogging(userOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? true : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(userOperatorSpec.getResources());
+                if (kafkaAssembly.getSpec().getClientsCa() != null) {
+                    result.setClientsCaValidityDays(kafkaAssembly.getSpec().getClientsCa().getValidityDays());
+                    result.setClientsCaRenewalDays(kafkaAssembly.getSpec().getClientsCa().getRenewalDays());
+                }
             }
         }
         return result;
@@ -197,6 +226,8 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaCluster.clientsCaCertSecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Long.toString(clientsCaValidityDays)));
+        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Long.toString(clientsCaRenewalDays)));
         return varList;
     }
 
