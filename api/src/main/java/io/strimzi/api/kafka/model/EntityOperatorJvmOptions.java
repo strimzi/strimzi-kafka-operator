@@ -30,8 +30,9 @@ public class EntityOperatorJvmOptions implements Serializable {
         return gcLoggingEnabled;
     }
 
-    public void setGcLoggingEnabled(boolean gcLoggingEnabled) {
-        this.gcLoggingEnabled = gcLoggingEnabled;
+    public void setGcLoggingEnabled(Boolean gcLoggingEnabled) {
+        if (gcLoggingEnabled != null)
+            this.gcLoggingEnabled = gcLoggingEnabled;
     }
 }
 
