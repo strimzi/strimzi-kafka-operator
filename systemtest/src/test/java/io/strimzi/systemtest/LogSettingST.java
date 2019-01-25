@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.systemtest.timemeasuring.Operation;
 import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
@@ -134,11 +136,11 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testCgLoggingEnabled() {
-        assertTrue(checkCgLogging(kafkaPodName(CLUSTER_NAME, 0), "kafka"), "Kafka CG logging is set properly");
-        assertTrue(checkCgLogging(zookeeperPodName(CLUSTER_NAME, 0), "zookeeper"), "Zookeeper CG logging is set properly");
+        assertTrue(checkCgLogging(kafkaPodName(CLUSTER_NAME, 0)), "Kafka CG logging is set properly");
+        assertTrue(checkCgLogging(zookeeperPodName(CLUSTER_NAME, 0)), "Zookeeper CG logging is set properly");
 
-        assertTrue(checkCgLoggingOperator(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO CG logging is set properly");
-        assertTrue(checkCgLoggingOperator(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO CG logging is set properly");
+        assertTrue(checkCgLogging(entityOperatorDeploymentName(CLUSTER_NAME)), "TO CG logging is set properly");
+        assertTrue(checkCgLogging(entityOperatorDeploymentName(CLUSTER_NAME)), "UO CG logging is set properly");
 
         assertTrue(checkCgLogging(kafkaConnectName(CLUSTER_NAME)), "Connect CG logging is set properly");
         assertTrue(checkCgLogging(kafkaMirrorMakerName(CLUSTER_NAME)), "Mirror-maker CG logging is set properly");
@@ -146,11 +148,11 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testCgLoggingDisabled() {
-        assertFalse(checkCgLogging(kafkaPodName(CG_LOGGING_NAME, 0), "kafka"), "Kafka CG logging is set properly");
-        assertFalse(checkCgLogging(zookeeperPodName(CG_LOGGING_NAME, 0), "zookeeper"), "Zookeeper CG logging is set properly");
+        assertFalse(checkCgLogging(kafkaPodName(CG_LOGGING_NAME, 0)), "Kafka CG logging is set properly");
+        assertFalse(checkCgLogging(zookeeperPodName(CG_LOGGING_NAME, 0)), "Zookeeper CG logging is set properly");
 
-        assertFalse(checkCgLoggingOperator(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO CG logging is set properly");
-        assertFalse(checkCgLoggingOperator(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO CG logging is set properly");
+        assertFalse(checkCgLogging(entityOperatorDeploymentName(CLUSTER_NAME)), "TO CG logging is set properly");
+        assertFalse(checkCgLogging(entityOperatorDeploymentName(CLUSTER_NAME)), "UO CG logging is set properly");
 
         assertFalse(checkCgLogging(kafkaConnectName(CG_LOGGING_NAME)), "Connect CG logging is set properly");
         assertFalse(checkCgLogging(kafkaMirrorMakerName(CG_LOGGING_NAME)), "Mirror-maker CG logging is set properly");
@@ -172,33 +174,33 @@ class LogSettingST extends AbstractST {
         return result;
     }
 
-    private boolean checkCgLogging(String podName, String container) {
-        String log = kubeClient.logs(podName, container);
-        return log.contains("GC pause");
-    }
+//    private boolean checkCgLogging(String podName, String container) {
+//        String log = kubeClient.logs(podName, container);
+//        return log.contains("GC pause");
+//    }
+//
+//    private boolean checkCgLogging(String component) {
+//        return this.checkCgLogging(component, "");
+//    }
 
-    private boolean checkCgLogging(String component) {
-        return checkCgLoggingOperator(component, "");
-    }
-
-    private boolean checkCgLoggingOperator(String component, String container) {
+    private boolean checkCgLogging(String componentName) {
         List<Pod> pods = client.pods().list().getItems();
+        Boolean loggingEnabled = true;
         for (Pod pod : pods) {
             String podName = pod.getMetadata().getName();
-            if (podName.startsWith(component)) {
-                if (container.equals("topic-operator")) {
-                    String log = kubeClient.logs(podName, "topic-operator");
-                    return log.contains("GC pause");
+            if (podName.startsWith(componentName)) {
+                for (Container c : pod.getSpec().getContainers()) {
+                    if (!c.getName().contains("tls-sidecar")) {
+                        for (EnvVar env : c.getEnv()) {
+                            if (!env.getName().contains("GC_LOG_ENABLED") || !env.getValue().contains("true")) {
+                                loggingEnabled = false;
+                            }
+                        }
+                    }
                 }
-                if (container.equals("user-operator")) {
-                    String log = kubeClient.logs(podName, "user-operator");
-                    return log.contains("GC pause");
-                }
-                String log = kubeClient.logs(podName);
-                return log.contains("GC pause");
             }
         }
-        return true;
+        return loggingEnabled;
     }
 
     @BeforeAll
