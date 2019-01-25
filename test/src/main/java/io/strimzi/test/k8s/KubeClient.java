@@ -186,6 +186,4 @@ public interface KubeClient<K extends KubeClient<K>> {
     Date getResourceCreateTimestamp(String pod, String s);
 
     List<String> listResourcesByLabel(String resourceType, String label);
-
-    Kubernetes kubeAPIClient();
 }

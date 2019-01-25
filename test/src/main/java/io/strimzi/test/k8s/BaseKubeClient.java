@@ -43,7 +43,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     public static final String SERVICE = "service";
     public static final String CM = "cm";
     private String namespace = defaultNamespace();
-    private Kubernetes kubernetes = getKubernetes(namespace);
 
     protected abstract String cmd();
 
@@ -62,15 +61,11 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     private static final Context NOOP = new Context();
 
-    public Kubernetes kubeAPIClient() {
-        return kubernetes;
-    }
-
     @Override
     public String namespace(String namespace) {
         String previous = this.namespace;
         this.namespace = namespace;
-        kubernetes.namespace(namespace);
+        getKubernetes().namespace(namespace);
         return previous;
     }
 

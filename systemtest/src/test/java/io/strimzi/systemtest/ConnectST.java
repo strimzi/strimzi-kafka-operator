@@ -97,13 +97,13 @@ class ConnectST extends AbstractST {
 
         String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");
         String kafkaConnectPodName = kubeClient.listResourcesByLabel("pod", "type=kafka-connect").get(0);
-        kubeClient.kubeAPIClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
+        kubernetes.execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
         sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME, 2);
 
         TestUtils.waitFor("messages in file sink", 1_000, 30_000,
-            () -> kubeClient.kubeAPIClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").equals("0\n1\n"));
+            () -> kubernetes.execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").equals("0\n1\n"));
     }
 
     @Test
@@ -160,8 +160,8 @@ class ConnectST extends AbstractST {
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {
-            kubeClient.kubeAPIClient().waitForPod(pod);
-            List<Event> events = kubeClient.kubeAPIClient().getEvents("Pod", pod);
+            kubernetes.waitForPod(pod);
+            List<Event> events = kubernetes.getEvents("Pod", pod);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         }
@@ -174,7 +174,7 @@ class ConnectST extends AbstractST {
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         assertEquals(initialReplicas, connectPods.size());
         for (String pod : connectPods) {
-            List<Event> events = kubeClient.kubeAPIClient().getEvents("Pod", pod);
+            List<Event> events = kubernetes.getEvents("Pod", pod);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         }
@@ -240,7 +240,7 @@ class ConnectST extends AbstractST {
         String connectImageName = getContainerImageNameFromPod(kubeClient.listResourcesByLabel("pod",
                 "strimzi.io/kind=KafkaConnect").get(0));
 
-        String connectVersion = Crds.kafkaConnectOperation(kubeClient.kubeAPIClient().getInstance()).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
+        String connectVersion = Crds.kafkaConnectOperation(kubernetes.getInstance()).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
         if (connectVersion == null) {
             connectVersion = "2.1.0";
         }
@@ -266,7 +266,7 @@ class ConnectST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
-        classResources = new Resources(kubeClient.kubeAPIClient().getInstance());
+        classResources = new Resources(kubernetes.getInstance());
 
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");

@@ -34,21 +34,15 @@ public class Kubernetes {
     static final long GLOBAL_POLL_INTERVAL = 1000;
     private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
 
-    private NamespacedKubernetesClient client;
+    private NamespacedKubernetesClient client = new DefaultKubernetesClient().inNamespace("default");
 
     private static Kubernetes INSTANCE;
 
-    public static Kubernetes getKubernetes(String namespace) {
+    public static Kubernetes getKubernetes() {
         if (INSTANCE == null) {
-            INSTANCE = new Kubernetes(namespace);
-        } else {
-            INSTANCE.namespace(namespace);
+            INSTANCE = new Kubernetes();
         }
         return INSTANCE;
-    }
-
-    private Kubernetes (String namespace) {
-        client = new DefaultKubernetesClient().inNamespace(namespace);
     }
 
     public NamespacedKubernetesClient getInstance() {

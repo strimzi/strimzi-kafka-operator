@@ -74,6 +74,7 @@ import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.TestUtils.writeFile;
+import static io.strimzi.test.k8s.Kubernetes.getKubernetes;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -112,6 +113,7 @@ public abstract class AbstractST {
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     static KubeClient<?> kubeClient = cluster.client();
+    static Kubernetes kubernetes = getKubernetes();
 
     Resources resources;
     static Resources testClassResources;
@@ -174,7 +176,7 @@ public abstract class AbstractST {
 
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
         void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
-        Resource<T, D> namedResource = Crds.operation(kubeClient.kubeAPIClient().getInstance(), crdClass, listClass, doneableClass).inNamespace(kubeClient.namespace()).withName(resourceName);
+        Resource<T, D> namedResource = Crds.operation(kubernetes.getInstance(), crdClass, listClass, doneableClass).inNamespace(kubeClient.namespace()).withName(resourceName);
         T resource = namedResource.get();
         editor.accept(resource);
         namedResource.replace(resource);
@@ -196,7 +198,7 @@ public abstract class AbstractST {
         AtomicReference<String> versions = new AtomicReference<>();
         TestUtils.waitFor("kafka-broker-api-versions.sh success", GET_BROKER_API_INTERVAL, GET_BROKER_API_TIMEOUT, () -> {
             try {
-                String output = kubeClient.kubeAPIClient().execInPod(podName,
+                String output = kubernetes.execInPod(podName,
                         "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092");
                 versions.set(output);
                 return true;
@@ -217,7 +219,7 @@ public abstract class AbstractST {
             String zookeeperPort = String.valueOf(2181 * 10 + podIndex);
             TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
                 try {
-                    String output = kubeClient.kubeAPIClient().execInPod(zookeeperPod,
+                    String output = kubernetes.execInPod(zookeeperPod,
                         "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort);
 
                     if (pattern.matcher(output).find()) {
@@ -231,7 +233,7 @@ public abstract class AbstractST {
                 () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
                     pattern.pattern(),
                     System.lineSeparator(),
-                    indent(kubeClient.kubeAPIClient().execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort)))
+                    indent(kubernetes.execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort)))
             );
         }
     }
@@ -282,12 +284,12 @@ public abstract class AbstractST {
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
-        kubeClient.kubeAPIClient().execInPod(podName, "/bin/bash", "-c", command);
+        kubernetes.execInPod(podName, "/bin/bash", "-c", command);
     }
 
     public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
         LOGGER.info("Consuming messages");
-        String output = kubeClient.kubeAPIClient().execInPod(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
+        String output = kubernetes.execInPod(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
                 "bin/kafka-verifiable-consumer.sh --broker-list " +
                         KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --group-id " + groupID + " & sleep "
                         + timeout + "; kill %1");
@@ -298,9 +300,9 @@ public abstract class AbstractST {
     }
 
     protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = kubeClient.kubeAPIClient().getPod(podName);
+        Pod po = kubernetes.getPod(podName);
         assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-            kubeClient.kubeAPIClient().listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
+            kubernetes.listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
         Container container = po.getSpec().getContainers().get(0);
         Map<String, Quantity> limits = container.getResources().getLimits();
         assertEquals(memoryLimit, limits.get("memory").getAmount());
@@ -336,7 +338,7 @@ public abstract class AbstractST {
 
     private List<List<String>> commandLines(String podName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        String output = kubeClient.kubeAPIClient().execInPod(podName, "/bin/bash", "-c",
+        String output = kubernetes.execInPod(podName, "/bin/bash", "-c",
                 "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
         );
         for (String cmdLine : output.split("\n")) {
@@ -354,14 +356,14 @@ public abstract class AbstractST {
     public List<String> listTopicsUsingPodCLI(String clusterName, int zkPodId) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return asList(kubeClient.kubeAPIClient().execInPod(podName, "/bin/bash", "-c",
+        return asList(kubernetes.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --list --zookeeper localhost:" + port).split("\\s+"));
     }
 
     public String createTopicUsingPodCLI(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return kubeClient.kubeAPIClient().execInPod(podName, "/bin/bash", "-c",
+        return kubernetes.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --create " + " --topic " + topic +
                         " --replication-factor " + replicationFactor + " --partitions " + partitions);
     }
@@ -369,27 +371,27 @@ public abstract class AbstractST {
     public String deleteTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return kubeClient.kubeAPIClient().execInPod(podName, "/bin/bash", "-c",
+        return kubernetes.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --delete --topic " + topic);
     }
 
     public List<String>  describeTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return asList(kubeClient.kubeAPIClient().execInPod(podName, "/bin/bash", "-c",
+        return asList(kubernetes.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --describe --topic " + topic).split("\\s+"));
     }
 
     public String updateTopicPartitionsCountUsingPodCLI(String clusterName, int zkPodId, String topic, int partitions) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return kubeClient.kubeAPIClient().execInPod(podName, "/bin/bash", "-c",
+        return kubernetes.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --alter --topic " + topic + " --partitions " + partitions);
     }
 
     public Map<String, String> getImagesFromConfig() {
         Map<String, String> images = new HashMap<>();
-        for (Container c : kubeClient.kubeAPIClient().getDeployment("strimzi-cluster-operator").getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : kubernetes.getDeployment("strimzi-cluster-operator").getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }
@@ -414,12 +416,12 @@ public abstract class AbstractST {
 
     protected void createResources() {
         LOGGER.info("Creating resources before the test");
-        resources = new Resources(kubeClient.kubeAPIClient().getInstance());
+        resources = new Resources(kubernetes.getInstance());
     }
 
     protected static void createClusterOperatorResources() {
         LOGGER.info("Creating cluster operator resources");
-        testClassResources = new Resources(kubeClient.kubeAPIClient().getInstance());
+        testClassResources = new Resources(kubernetes.getInstance());
     }
 
     protected void deleteResources() throws Exception {
@@ -448,7 +450,7 @@ public abstract class AbstractST {
     }
 
     String podNameWithLabels(Map<String, String> labels) {
-        List<Pod> pods = kubeClient.kubeAPIClient().listPods(labels);
+        List<Pod> pods = kubernetes.listPods(labels);
         if (pods.size() != 1) {
             fail("There are " + pods.size() +  " pods with labels " + labels);
         }
@@ -461,7 +463,7 @@ public abstract class AbstractST {
      */
     void checkPings(int messagesCount, Job job) {
         String podName = jobPodName(job);
-        String log = kubeClient.kubeAPIClient().logs(podName, null);
+        String log = kubernetes.logs(podName, null);
         Pattern p = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
         Matcher m = p.matcher(log);
         boolean producerSuccess = false;
@@ -495,7 +497,7 @@ public abstract class AbstractST {
         try {
             LOGGER.debug("Waiting for Job completion: {}", job);
             waitFor("Job completion", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
-                Job jobs = kubeClient.kubeAPIClient().getJob(job.getMetadata().getName());
+                Job jobs = kubernetes.getJob(job.getMetadata().getName());
                 JobStatus status;
                 if (jobs == null || (status = jobs.getStatus()) == null) {
                     LOGGER.debug("Poll job is null");
@@ -519,22 +521,22 @@ public abstract class AbstractST {
         } catch (TimeoutException e) {
             LOGGER.info("Original Job: {}", job);
             try {
-                LOGGER.info("Job: {}", indent(toYamlString(kubeClient.kubeAPIClient().getJob(job.getMetadata().getName()))));
+                LOGGER.info("Job: {}", indent(toYamlString(kubernetes.getJob(job.getMetadata().getName()))));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Job not available: {}", t.getMessage());
             }
             try {
-                LOGGER.info("Pod: {}", indent(TestUtils.toYamlString(kubeClient.kubeAPIClient().getPod(jobPodName(job)))));
+                LOGGER.info("Pod: {}", indent(TestUtils.toYamlString(kubernetes.getPod(jobPodName(job)))));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Pod not available: {}", t.getMessage());
             }
             try {
-                LOGGER.info("Job timeout: Job Pod logs\n----\n{}\n----", indent(kubeClient.kubeAPIClient().logs(jobPodName(job), null)));
+                LOGGER.info("Job timeout: Job Pod logs\n----\n{}\n----", indent(kubernetes.logs(jobPodName(job), null)));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Pod logs not available: {}", t.getMessage());
             }
             try {
-                LOGGER.info("Job timeout: User Operator Pod logs\n----\n{}\n----", indent(kubeClient.kubeAPIClient().logs(userOperatorPodName(), "user-operator")));
+                LOGGER.info("Job timeout: User Operator Pod logs\n----\n{}\n----", indent(kubernetes.logs(userOperatorPodName(), "user-operator")));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Pod logs not available: {}", t.getMessage());
             }
@@ -543,7 +545,7 @@ public abstract class AbstractST {
     }
 
     String saslConfigs(KafkaUser kafkaUser) {
-        Secret secret = kubeClient.kubeAPIClient().getSecret(kafkaUser.getMetadata().getName());
+        Secret secret = kubernetes.getSecret(kafkaUser.getMetadata().getName());
 
         String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
         if (password == null) {
@@ -653,7 +655,7 @@ public abstract class AbstractST {
 
         PodSpec producerPodSpec = createPodSpecForProducer(cb, kafkaUser, tlsListener, bootstrapServer).build();
 
-        Job job = resources().deleteLater(kubeClient.kubeAPIClient().createJob(new JobBuilder()
+        Job job = resources().deleteLater(kubernetes.createJob(new JobBuilder()
                 .withNewMetadata()
                 .withName(name)
                 .endMetadata()
@@ -770,7 +772,7 @@ public abstract class AbstractST {
 
         PodSpec consumerPodSpec = createPodSpecForConsumer(cb, kafkaUser, tlsListener, bootstrapServer).build();
 
-        Job job = resources().deleteLater(kubeClient.kubeAPIClient().createJob(new JobBuilder()
+        Job job = resources().deleteLater(kubernetes.createJob(new JobBuilder()
             .withNewMetadata()
                 .withName(name)
             .endMetadata()
@@ -793,7 +795,7 @@ public abstract class AbstractST {
      */
     void checkRecordsForConsumer(int messagesCount, Job job) {
         String podName = jobPodName(job);
-        String log = kubeClient.kubeAPIClient().logs(podName, null);
+        String log = kubernetes.logs(podName, null);
         Pattern p = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
         Matcher m = p.matcher(log);
         boolean consumerSuccess = false;
@@ -939,7 +941,7 @@ public abstract class AbstractST {
                     .endVolume();
         }
 
-        Job job = resources().deleteLater(kubeClient.kubeAPIClient().createJob(new JobBuilder()
+        Job job = resources().deleteLater(kubernetes.createJob(new JobBuilder()
                 .withNewMetadata()
                 .withName(name)
                 .endMetadata()
@@ -967,7 +969,7 @@ public abstract class AbstractST {
                 TEST_LOG_DIR + testClass + "." + testName + "_" + currentDate
                 : TEST_LOG_DIR + currentDate;
 
-        LogCollector logCollector = new LogCollector(kubeClient.kubeAPIClient().getInstance(), new File(logDir));
+        LogCollector logCollector = new LogCollector(kubernetes.getInstance(), new File(logDir));
         logCollector.collectEvents();
         logCollector.collectConfigMaps();
         logCollector.collectLogsFromPods();
@@ -1030,7 +1032,7 @@ public abstract class AbstractST {
 
     void waitTillSecretExists(String secretName) {
         waitFor("secret " + secretName + " exists", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> kubeClient.kubeAPIClient().getSecret(secretName) != null);
+            () -> kubernetes.getSecret(secretName) != null);
         try {
             Thread.sleep(60000L);
         } catch (InterruptedException e) {
@@ -1041,18 +1043,18 @@ public abstract class AbstractST {
     void waitForDeletion(long time, String namespace) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
-        long podCount = kubeClient.kubeAPIClient().listPods().stream().filter(
+        long podCount = kubernetes.listPods().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> podStream = kubeClient.kubeAPIClient().listPods().stream().filter(
+            List<Pod> podStream = kubernetes.listPods().stream().filter(
                 p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             podStream.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
             // Delete remaining pods if there are some
-            podStream.forEach(p -> kubeClient.kubeAPIClient().waitForPodDeletion(p.getMetadata().getName()));
+            podStream.forEach(p -> kubernetes.waitForPodDeletion(p.getMetadata().getName()));
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
     }

@@ -15,6 +15,7 @@ import io.strimzi.systemtest.Resources;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,10 +32,13 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static io.strimzi.test.k8s.Kubernetes.getKubernetes;
+
 public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
     private static KubeClient kubeClient = AbstractST.cluster.client();
+    private static Kubernetes kubernetes = getKubernetes();
 
     private StUtils() { }
 
@@ -43,7 +47,7 @@ public class StUtils {
      * matching the given {@code selector}.
      */
     private static Map<String, String> podSnapshot(String namespace, LabelSelector selector) {
-        List<Pod> pods = kubeClient.kubeAPIClient().listPods(selector);
+        List<Pod> pods = kubernetes.listPods(selector);
         return pods.stream()
                 .collect(
                         Collectors.toMap(pod -> pod.getMetadata().getName(),
@@ -52,14 +56,14 @@ public class StUtils {
 
     /** Returns a map of pod name to resource version for the pods currently in the given statefulset */
     public static Map<String, String> ssSnapshot(String namespace, String name) {
-        StatefulSet statefulSet = kubeClient.kubeAPIClient().getStatefulSet(name);
+        StatefulSet statefulSet = kubernetes.getStatefulSet(name);
         LabelSelector selector = statefulSet.getSpec().getSelector();
         return podSnapshot(namespace, selector);
     }
 
     /** Returns a map of pod name to resource version for the pods currently in the given deployment */
     public static Map<String, String> depSnapshot(String namespace, String name) {
-        Deployment deployment = kubeClient.kubeAPIClient().getDeployment(name);
+        Deployment deployment = kubernetes.getDeployment(name);
         LabelSelector selector = deployment.getSpec().getSelector();
         return podSnapshot(namespace, selector);
     }
@@ -72,7 +76,7 @@ public class StUtils {
         LabelSelector selector = null;
         int times = 60;
         do {
-            selector = kubeClient.kubeAPIClient().getStatefulSetSelectors(name);
+            selector = kubernetes.getStatefulSetSelectors(name);
             if (selector == null) {
                 if (times-- == 0) {
                     throw new RuntimeException("Retry failed");
@@ -113,7 +117,7 @@ public class StUtils {
 
     private static boolean depHasRolled(String namespace, String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
-        Map<String, String> map = podSnapshot(namespace, kubeClient.kubeAPIClient().getDeploymentSelectors(name));
+        Map<String, String> map = podSnapshot(namespace, kubernetes.getDeploymentSelectors(name));
         LOGGER.debug("Current  snapshot: {}", new TreeMap(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
@@ -145,7 +149,7 @@ public class StUtils {
         long timeLeft = TestUtils.waitFor("Deployment roll of " + name,
             1_000, 300_000, () -> depHasRolled(namespace, name, snapshot));
         StUtils.waitForDeploymentReady(name);
-        StUtils.waitForPodsReady(namespace, kubeClient.kubeAPIClient().getDeploymentSelectors(name), true);
+        StUtils.waitForPodsReady(namespace, kubernetes.getDeploymentSelectors(name), true);
         return depSnapshot(namespace, name);
     }
 
@@ -179,15 +183,15 @@ public class StUtils {
     public static void waitForAllStatefulSetPodsReady(String namespace, String name) {
         LOGGER.info("Waiting for StatefulSet {} to be ready", name);
         TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient.kubeAPIClient().getStatefulSetStatus(name));
+            () -> kubernetes.getStatefulSetStatus(name));
         LOGGER.info("StatefulSet {} is ready", name);
         LOGGER.info("Waiting for Pods of StatefulSet {} to be ready", name);
-        waitForPodsReady(namespace, kubeClient.kubeAPIClient().getStatefulSetSelectors(name), true);
+        waitForPodsReady(namespace, kubernetes.getStatefulSetSelectors(name), true);
     }
 
     public static void waitForPodsReady(String namespace, LabelSelector selector, boolean containers) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
-            List<Pod> pods = kubeClient.kubeAPIClient().listPods(selector);
+            List<Pod> pods = kubernetes.listPods(selector);
             if (pods.isEmpty()) {
                 LOGGER.debug("Not ready (no pods matching {})", selector);
                 return false;
@@ -217,7 +221,7 @@ public class StUtils {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
         TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-                () -> kubeClient.kubeAPIClient().getPod(name) == null);
+                () -> kubernetes.getPod(name) == null);
     }
 
     /**
@@ -226,7 +230,7 @@ public class StUtils {
     public static void waitForDeploymentReady(String name) {
         LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient.kubeAPIClient().getDeploymentStatus(name));
+            () -> kubernetes.getDeploymentStatus(name));
         LOGGER.info("Deployment {} is ready", name);
     }
 
@@ -236,7 +240,7 @@ public class StUtils {
     public static void waitForDeploymentConfigReady(String namespace, String name) {
         LOGGER.info("Waiting for Deployment Config {}", name);
         TestUtils.waitFor("deployment config " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS,
-                () -> kubeClient.kubeAPIClient().getDeploymentConfigStatus(name));
+                () -> kubernetes.getDeploymentConfigStatus(name));
         LOGGER.info("Deployment Config {} is ready", name);
     }
 

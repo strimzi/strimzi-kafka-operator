@@ -90,7 +90,7 @@ class MultipleNamespaceST extends AbstractST {
     @BeforeEach
     void createSecondNamespaceResources() {
         kubeClient.namespace(SECOND_NAMESPACE);
-        secondNamespaceResources = new Resources(kubeClient.kubeAPIClient().getInstance());
+        secondNamespaceResources = new Resources(kubernetes.getInstance());
         kubeClient.namespace(DEFAULT_NAMESPACE);
     }
 
@@ -109,7 +109,7 @@ class MultipleNamespaceST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(String.join(",", DEFAULT_NAMESPACE, SECOND_NAMESPACE)).done();
 
-        classResources = new Resources(kubeClient.kubeAPIClient().getInstance());
+        classResources = new Resources(kubernetes.getInstance());
         classResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()

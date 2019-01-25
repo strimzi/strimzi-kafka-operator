@@ -57,12 +57,12 @@ class ConnectS2IST extends AbstractST {
 
         // Start a new image build using the plugins directory
         kubeClient.exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath());
-        kubeClient.kubeAPIClient().waitForPodDeletion(connectS2IPodName);
+        kubernetes.waitForPodDeletion(connectS2IPodName);
 
         kubeClient.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
 
-        connectS2IPodName = ((Pod) kubeClient.kubeAPIClient().listPods(Collections.singletonMap("type", "kafka-connect-s2i")).get(0)).getMetadata().getName();
-        String plugins = kubeClient.kubeAPIClient().execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins");
+        connectS2IPodName = ((Pod) kubernetes.listPods(Collections.singletonMap("type", "kafka-connect-s2i")).get(0)).getMetadata().getName();
+        String plugins = kubernetes.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins");
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
     }
@@ -84,7 +84,7 @@ class ConnectS2IST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
-        classResources = new Resources(kubeClient.kubeAPIClient().getInstance());
+        classResources = new Resources(kubernetes.getInstance());
         classResources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
     }
 
