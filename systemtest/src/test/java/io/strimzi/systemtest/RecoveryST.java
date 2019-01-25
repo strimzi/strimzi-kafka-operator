@@ -9,6 +9,7 @@ import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -192,7 +193,7 @@ class RecoveryST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
-        classResources = new Resources(namespacedClient());
+        classResources = new Resources(kubeClient.kubeAPIClient().getInstance());
         classResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
         testClass = testInfo.getTestClass().get().getSimpleName();
     }

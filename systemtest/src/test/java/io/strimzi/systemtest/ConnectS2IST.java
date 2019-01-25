@@ -10,6 +10,7 @@ import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -83,7 +84,7 @@ class ConnectS2IST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
-        classResources = new Resources(namespacedClient());
+        classResources = new Resources(kubeClient.kubeAPIClient().getInstance());
         classResources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
     }
 

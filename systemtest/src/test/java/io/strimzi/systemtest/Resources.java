@@ -21,8 +21,8 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
@@ -78,13 +78,13 @@ public class Resources {
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
 
-    private final NamespacedKubernetesClient client;
+    private final KubernetesClient client;
 
-    Resources(NamespacedKubernetesClient client) {
+    Resources(KubernetesClient client) {
         this.client = client;
     }
 
-    private NamespacedKubernetesClient client() {
+    private KubernetesClient client() {
         return client;
     }
 
@@ -425,14 +425,14 @@ public class Resources {
         String namespace = kafka.getMetadata().getNamespace();
         waitForStatefulSet(namespace, KafkaResources.zookeeperStatefulSetName(name));
         waitForStatefulSet(namespace, KafkaResources.kafkaStatefulSetName(name));
-        StUtils.waitForDeploymentReady(namespace, KafkaResources.entityOperatorDeploymentName(name));
+        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
         return kafka;
     }
 
     KafkaConnect waitFor(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting for Kafka Connect {}", kafkaConnect.getMetadata().getName());
         String namespace = kafkaConnect.getMetadata().getNamespace();
-        StUtils.waitForDeploymentReady(namespace, kafkaConnect.getMetadata().getName() + "-connect");
+        StUtils.waitForDeploymentReady(kafkaConnect.getMetadata().getName() + "-connect");
         return kafkaConnect;
     }
 
@@ -446,14 +446,13 @@ public class Resources {
     private KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
         String namespace = kafkaMirrorMaker.getMetadata().getNamespace();
-        StUtils.waitForDeploymentReady(namespace, kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker");
+        StUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker");
         return kafkaMirrorMaker;
     }
 
     private Deployment waitFor(Deployment clusterOperator) {
         LOGGER.info("Waiting for Cluster Operator {}", clusterOperator.getMetadata().getName());
-        String namespace = client.getNamespace();
-        StUtils.waitForDeploymentReady(namespace, clusterOperator.getMetadata().getName());
+        StUtils.waitForDeploymentReady(clusterOperator.getMetadata().getName());
         return clusterOperator;
     }
 
@@ -667,7 +666,7 @@ public class Resources {
 
     DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String clientNamespace) {
         LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
-        client.inNamespace(clientNamespace).rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
+        client.rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
         return new DoneableKubernetesRoleBinding(roleBinding);
     }
 
@@ -687,7 +686,7 @@ public class Resources {
 
     DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String clientNamespace) {
         LOGGER.info("Apply ClusterRoleBinding in namespace {}", clientNamespace);
-        client.inNamespace(clientNamespace).rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
+        client.rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
         return new DoneableKubernetesClusterRoleBinding(clusterRoleBinding);
     }
 }

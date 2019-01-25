@@ -91,7 +91,7 @@ public class StrimziUpgradeST extends AbstractST {
             Map<String, String> kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaSsName);
             Map<String, String> eoPods = StUtils.depSnapshot(NAMESPACE, eoDepName);
 
-            List<Pod> pods = kubeClient.kubeAPIClient().listPods(kubeClient.kubeAPIClient().getStatefulSetSelectors(NAMESPACE, zkSsName).getMatchLabels());
+            List<Pod> pods = kubeClient.kubeAPIClient().listPods(kubeClient.kubeAPIClient().getStatefulSetSelectors(zkSsName).getMatchLabels());
             for (Pod pod : pods) {
                 LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
             }
@@ -105,23 +105,23 @@ public class StrimziUpgradeST extends AbstractST {
             LOGGER.info("Waiting for ZK SS roll");
             StUtils.waitTillSsHasRolled(NAMESPACE, zkSsName, zkPods);
             LOGGER.info("Checking ZK pods using new image");
-            waitTillAllPodsUseImage(kubeClient.kubeAPIClient().getStatefulSetSelectors(NAMESPACE, zkSsName).getMatchLabels(),
+            waitTillAllPodsUseImage(kubeClient.kubeAPIClient().getStatefulSetSelectors(zkSsName).getMatchLabels(),
                     "strimzi/zookeeper:latest-kafka-2.0.0");
             LOGGER.info("Waiting for Kafka SS roll");
             StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, kafkaPods);
             LOGGER.info("Checking Kafka pods using new image");
-            waitTillAllPodsUseImage(kubeClient.kubeAPIClient().getStatefulSetSelectors(NAMESPACE, kafkaSsName).getMatchLabels(),
+            waitTillAllPodsUseImage(kubeClient.kubeAPIClient().getStatefulSetSelectors(kafkaSsName).getMatchLabels(),
                     "strimzi/kafka:latest-kafka-2.1.0");
             LOGGER.info("Waiting for EO Dep roll");
             // Check the TO and UO also got upgraded
             StUtils.waitTillDepHasRolled(NAMESPACE, eoDepName, eoPods);
             LOGGER.info("Checking EO pod using new image");
             waitTillAllContainersUseImage(
-                    kubeClient.kubeAPIClient().getDeploymentSelectors(NAMESPACE, eoDepName).getMatchLabels(),
+                    kubeClient.kubeAPIClient().getDeploymentSelectors(eoDepName).getMatchLabels(),
                     0,
                     "strimzi/topic-operator:latest");
             waitTillAllContainersUseImage(
-                    kubeClient.kubeAPIClient().getDeploymentSelectors(NAMESPACE, eoDepName).getMatchLabels(),
+                    kubeClient.kubeAPIClient().getDeploymentSelectors(eoDepName).getMatchLabels(),
                     1,
                     "strimzi/user-operator:latest");
 

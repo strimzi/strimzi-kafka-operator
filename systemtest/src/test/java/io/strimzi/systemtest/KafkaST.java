@@ -111,7 +111,7 @@ class KafkaST extends AbstractST {
 
         client.pods().list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-                .forEach(p -> kubeClient.kubeAPIClient().waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
+                .forEach(p -> kubeClient.kubeAPIClient().waitForPodDeletion(p.getMetadata().getName()));
     }
 
     @Test
@@ -436,7 +436,7 @@ class KafkaST extends AbstractST {
         resources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
-        String brokerPodLog = podLog(CLUSTER_NAME + "-kafka-0", "kafka");
+        String brokerPodLog = kubeClient.kubeAPIClient().logs(CLUSTER_NAME + "-kafka-0", "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUser) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
         boolean found = false;

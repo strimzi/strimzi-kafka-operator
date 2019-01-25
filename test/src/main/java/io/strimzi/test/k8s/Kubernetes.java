@@ -9,8 +9,10 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -32,20 +34,30 @@ public class Kubernetes {
     static final long GLOBAL_POLL_INTERVAL = 1000;
     private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
 
-    private KubernetesClient client = getInstance();
-    private String namespace;
+    private NamespacedKubernetesClient client;
 
-    private static class ClientHolder {
-        static final KubernetesClient CLIENT = new DefaultKubernetesClient();
+    private static Kubernetes INSTANCE;
+
+    public static Kubernetes getKubernetes(String namespace) {
+        if (INSTANCE == null) {
+            INSTANCE = new Kubernetes(namespace);
+        } else {
+            INSTANCE.namespace(namespace);
+        }
+        return INSTANCE;
     }
 
-    public static KubernetesClient getInstance() {
-        return ClientHolder.CLIENT;
+    private Kubernetes (String namespace) {
+        client = new DefaultKubernetesClient().inNamespace(namespace);
+    }
+
+    public NamespacedKubernetesClient getInstance() {
+        return client;
     }
 
     public String namespace(String namespace) {
-        String previous = this.namespace;
-        this.namespace = namespace;
+        String previous = client.getNamespace();
+        this.client = client.inNamespace(namespace);
         return previous;
     }
 
@@ -62,7 +74,7 @@ public class Kubernetes {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
         CompletableFuture<String> data = new CompletableFuture<>();
-        try (ExecWatch execWatch = client.pods().inNamespace(namespace)
+        try (ExecWatch execWatch = client.pods()
                 .withName(podName)
                 .readingInput(null)
                 .writingOutput(baos)
@@ -93,7 +105,7 @@ public class Kubernetes {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
         CompletableFuture<String> data = new CompletableFuture<>();
-        try (ExecWatch execWatch = client.pods().inNamespace(namespace)
+        try (ExecWatch execWatch = client.pods()
                 .withName(podName).inContainer(container)
                 .readingInput(null)
                 .writingOutput(baos)
@@ -120,18 +132,11 @@ public class Kubernetes {
         }
     }
 
-    public void waitForPodDeletion(String namespace, String name) {
-        LOGGER.info("Waiting when Pod {} will be deleted", name);
-
-        TestUtils.waitFor("pod " + name + " deletion", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-                () -> client.pods().inNamespace(namespace).withName(name).get() == null);
-    }
-
     public void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
         TestUtils.waitFor("pod " + name + " deletion", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-                () -> client.pods().inNamespace(namespace).withName(name).get() == null);
+                () -> client.pods().withName(name).get() == null);
     }
 
 
@@ -140,7 +145,7 @@ public class Kubernetes {
 
         TestUtils.waitFor("pod " + name + " will be ready", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
                 () -> {
-                    List<ContainerStatus> statuses =  client.pods().inNamespace(namespace).withName(name).get().getStatus().getContainerStatuses();
+                    List<ContainerStatus> statuses =  client.pods().withName(name).get().getStatus().getContainerStatuses();
                     for (ContainerStatus containerStatus : statuses) {
                         if (!containerStatus.getReady()) {
                             return false;
@@ -150,16 +155,12 @@ public class Kubernetes {
                 });
     }
 
-    public List<Pod> listPods(String namespace, LabelSelector selector) {
-        return client.pods().inNamespace(namespace).withLabelSelector(selector).list().getItems();
+    public List<Pod> listPods(LabelSelector selector) {
+        return client.pods().withLabelSelector(selector).list().getItems();
     }
 
     public List<Pod> listPods(Map<String, String> labelSelector) {
         return client.pods().withLabels(labelSelector).list().getItems();
-    }
-
-    public List<Pod> listPods(String namespace) {
-        return client.pods().inNamespace(namespace).list().getItems();
     }
 
     public List<Pod> listPods() {
@@ -169,57 +170,57 @@ public class Kubernetes {
     /**
      * Gets pod
      */
-    public Pod getPod(String namespace, String name) {
-        return client.pods().inNamespace(namespace).withName(name).get();
+    public Pod getPod(String name) {
+        return client.pods().withName(name).get();
     }
 
     /**
      * Gets stateful set
      */
-    public StatefulSet getStatefulSet(String namespace, String statefulSetName) {
-        return  client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).get();
+    public StatefulSet getStatefulSet(String statefulSetName) {
+        return  client.apps().statefulSets().withName(statefulSetName).get();
     }
 
     /**
      * Gets stateful set selectors
      */
-    public LabelSelector getStatefulSetSelectors(String namespace, String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).get().getSpec().getSelector();
+    public LabelSelector getStatefulSetSelectors(String statefulSetName) {
+        return client.apps().statefulSets().withName(statefulSetName).get().getSpec().getSelector();
     }
 
     /**
      * Gets stateful set status
      */
-    public boolean getStatefulSetStatus(String namespace, String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).isReady();
+    public boolean getStatefulSetStatus(String statefulSetName) {
+        return client.apps().statefulSets().withName(statefulSetName).isReady();
     }
 
     /**
      * Gets deployment
      */
-    public Deployment getDeployment(String namespace, String deploymentName) {
-        return client.extensions().deployments().inNamespace(namespace).withName(deploymentName).get();
+    public Deployment getDeployment(String deploymentName) {
+        return client.extensions().deployments().withName(deploymentName).get();
     }
 
     /**
      * Gets deployment status
      */
-    public LabelSelector getDeploymentSelectors(String namespace, String deploymentName) {
-        return client.extensions().deployments().inNamespace(namespace).withName(deploymentName).get().getSpec().getSelector();
+    public LabelSelector getDeploymentSelectors(String deploymentName) {
+        return client.extensions().deployments().withName(deploymentName).get().getSpec().getSelector();
     }
 
     /**
      * Gets deployment status
      */
-    public boolean getDeploymentStatus(String namespace, String deploymentName) {
-        return client.extensions().deployments().inNamespace(namespace).withName(deploymentName).isReady();
+    public boolean getDeploymentStatus(String deploymentName) {
+        return client.extensions().deployments().withName(deploymentName).isReady();
     }
 
     /**
      * Gets deployment config status
      */
-    public boolean getDeploymentConfigStatus(String namespace, String deploymentCofigName) {
-        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespace).withName(deploymentCofigName).isReady();
+    public boolean getDeploymentConfigStatus(String deploymentCofigName) {
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().withName(deploymentCofigName).isReady();
     }
 
     public Secret createSecret(Secret secret) {
@@ -239,6 +240,14 @@ public class Kubernetes {
         return client.secrets().list().getItems();
     }
 
+    public Job createJob(Job job) {
+        return client.extensions().jobs().create(job);
+    }
+
+    public Job getJob(String jobName) {
+        return client.extensions().jobs().withName(jobName).get();
+    }
+
     public String logs(String podName, String containerName) {
         if (containerName != null) {
             return client.pods().withName(podName).inContainer(containerName).getLog();
@@ -248,7 +257,7 @@ public class Kubernetes {
     }
 
     public List<Event> getEvents(String resourceType, String resourceName) {
-        return client.events().inNamespace(namespace).list().getItems().stream()
+        return client.events().list().getItems().stream()
                 .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
                 .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
                 .collect(Collectors.toList());

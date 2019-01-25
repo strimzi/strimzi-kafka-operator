@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static io.strimzi.test.k8s.Kubernetes.getKubernetes;
 import static java.lang.String.join;
 import static java.util.Arrays.asList;
 
@@ -42,7 +43,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     public static final String SERVICE = "service";
     public static final String CM = "cm";
     private String namespace = defaultNamespace();
-    private Kubernetes kubernetes = new Kubernetes();
+    private Kubernetes kubernetes = getKubernetes(namespace);
 
     protected abstract String cmd();
 
@@ -62,14 +63,14 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     private static final Context NOOP = new Context();
 
     public Kubernetes kubeAPIClient() {
-        return this.kubernetes;
+        return kubernetes;
     }
 
     @Override
     public String namespace(String namespace) {
         String previous = this.namespace;
         this.namespace = namespace;
-        this.kubernetes.namespace(namespace);
+        kubernetes.namespace(namespace);
         return previous;
     }
 

@@ -11,6 +11,7 @@ import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -239,7 +240,7 @@ class ConnectST extends AbstractST {
         String connectImageName = getContainerImageNameFromPod(kubeClient.listResourcesByLabel("pod",
                 "strimzi.io/kind=KafkaConnect").get(0));
 
-        String connectVersion = Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
+        String connectVersion = Crds.kafkaConnectOperation(kubeClient.kubeAPIClient().getInstance()).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
         if (connectVersion == null) {
             connectVersion = "2.1.0";
         }
@@ -265,7 +266,7 @@ class ConnectST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
-        classResources = new Resources(namespacedClient());
+        classResources = new Resources(kubeClient.kubeAPIClient().getInstance());
 
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");

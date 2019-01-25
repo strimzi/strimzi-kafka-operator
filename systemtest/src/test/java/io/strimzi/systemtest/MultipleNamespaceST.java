@@ -8,6 +8,7 @@ import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -89,7 +90,7 @@ class MultipleNamespaceST extends AbstractST {
     @BeforeEach
     void createSecondNamespaceResources() {
         kubeClient.namespace(SECOND_NAMESPACE);
-        secondNamespaceResources = new Resources(namespacedClient());
+        secondNamespaceResources = new Resources(kubeClient.kubeAPIClient().getInstance());
         kubeClient.namespace(DEFAULT_NAMESPACE);
     }
 
@@ -108,7 +109,7 @@ class MultipleNamespaceST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(String.join(",", DEFAULT_NAMESPACE, SECOND_NAMESPACE)).done();
 
-        classResources = new Resources(namespacedClient());
+        classResources = new Resources(kubeClient.kubeAPIClient().getInstance());
         classResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()

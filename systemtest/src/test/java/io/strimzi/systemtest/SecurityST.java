@@ -15,6 +15,7 @@ import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
+import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -323,6 +324,7 @@ class SecurityST extends AbstractST {
     }
 
     private AvailabilityVerifier waitForInitialAvailability(String userName) {
+        kubeClient.kubeAPIClient();
         AvailabilityVerifier mp = new AvailabilityVerifier(kubeClient.kubeAPIClient().getInstance(), NAMESPACE, CLUSTER_NAME, userName);
         mp.start();
 
