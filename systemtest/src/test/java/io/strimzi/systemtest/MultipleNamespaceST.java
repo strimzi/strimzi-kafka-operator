@@ -19,7 +19,6 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
@@ -97,14 +96,14 @@ class MultipleNamespaceST extends AbstractST {
     @AfterEach
     void deleteSecondNamespaceResources() throws Exception {
         secondNamespaceResources.deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, TO_NAMESPACE, Arrays.asList(CO_NAMESPACE, TO_NAMESPACE));
+        waitForDeletion(TEARDOWN_GLOBAL_WAIT, TO_NAMESPACE, CO_NAMESPACE, TO_NAMESPACE);
         kubeClient.namespace(CO_NAMESPACE);
     }
 
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         LOGGER.info("Creating resources before the test class");
-        applyRoleBindings(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, TO_NAMESPACE));
+        applyRoleBindings(CO_NAMESPACE, CO_NAMESPACE, TO_NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(String.join(",", CO_NAMESPACE, TO_NAMESPACE)).done();
 

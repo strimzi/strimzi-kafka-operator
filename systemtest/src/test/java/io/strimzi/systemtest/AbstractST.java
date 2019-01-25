@@ -1064,49 +1064,62 @@ public abstract class AbstractST {
         }
     }
 
-    void waitForPodDeletion(String namespace, String name) {
-        LOGGER.info("Waiting when Pod {} will be deleted", name);
+    void waitForPodDeletion(String namespace, String podName) {
+        LOGGER.info("Waiting when Pod {} will be deleted", podName);
 
-        TestUtils.waitFor("statefulset " + name, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> client.pods().inNamespace(namespace).withName(name).get() == null);
+        TestUtils.waitFor("statefulset " + podName, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+            () -> client.pods().inNamespace(namespace).withName(podName).get() == null);
     }
 
-    void waitForDeletion(long time, String namespace, List<String> clientNamespaces) throws Exception {
+    /**
+     * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
+     * @param time timeout in miliseconds
+     * @param coNamespace namespace where cluster operator is deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
+     * @throws Exception exception
+     */
+    void waitForDeletion(long time, String coNamespace, String... bindingsNamespaces) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
-        long podCount = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+        long podCount = client.pods().inNamespace(coNamespace).list().getItems().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> pods = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+            List<Pod> pods = client.pods().inNamespace(coNamespace).list().getItems().stream().filter(
                 p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             pods.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
 
-            recreateTestEnv(namespace, clientNamespaces);
+            recreateTestEnv(coNamespace, bindingsNamespaces);
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
     }
 
-    void waitForDeletion(long time, String namespace) throws Exception {
-        waitForDeletion(time, namespace, Collections.singletonList(namespace));
+    /**
+     * Wait till all pods in specific namespace are deleted and recreate testing environment in case of some pods cannot be deleted.
+     * @param time timeout in miliseconds
+     * @param coNamespace namespace where cluster operator is deployed to
+     * @throws Exception exception
+     */
+    void waitForDeletion(long time, String coNamespace) throws Exception {
+        waitForDeletion(time, coNamespace, coNamespace);
     }
 
     /**
      * Recreate namespace and CO after test failure
-     * @param namespace namespace where CO will be deployed to
-     * @param clientNamespaces list of namespaces where Bindings should be deployed to
+     * @param coNamespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
      */
-    void recreateTestEnv(String namespace, List<String> clientNamespaces) {
+    void recreateTestEnv(String coNamespace, String... bindingsNamespaces) {
         LOGGER.info("There are some unexpected pods! Cleanup is not finished properly! Wait till env will be recreated.");
         testClassResources.deleteResources();
         kubeClient.namespace(DEFAULT_NAMESPACE);
-        kubeClient.deleteNamespace(namespace);
-        kubeClient.waitForResourceDeletion("Namespace", namespace);
-        kubeClient.createNamespace(namespace);
-        kubeClient.namespace(namespace);
+        kubeClient.deleteNamespace(coNamespace);
+        kubeClient.waitForResourceDeletion("Namespace", coNamespace);
+        kubeClient.createNamespace(coNamespace);
+        kubeClient.namespace(coNamespace);
 
         Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
                 !file.getName().matches(".*(Binding|Deployment)-.*")
@@ -1119,9 +1132,9 @@ public abstract class AbstractST {
 
         testClassResources = new Resources(namespacedClient());
 
-        applyRoleBindings(namespace, clientNamespaces);
+        applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
-        testClassResources.clusterOperator(namespace).done();
+        testClassResources.clusterOperator(coNamespace).done();
         LOGGER.info("Env recreated.");
     }
 
@@ -1130,7 +1143,7 @@ public abstract class AbstractST {
      * @param namespace namespace where CO will be deployed to
      * @param clientNamespaces list of namespaces where Bindings should be deployed to
      */
-    static void applyRoleBindings(String namespace, List<String> clientNamespaces) {
+    static void applyRoleBindings(String namespace, String... clientNamespaces) {
         for (String clientNamespace : clientNamespaces) {
             // 020-RoleBinding
             testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
@@ -1146,7 +1159,7 @@ public abstract class AbstractST {
     }
 
     static void applyRoleBindings(String namespace) {
-        applyRoleBindings(namespace, Collections.singletonList(namespace));
+        applyRoleBindings(namespace, namespace);
     }
 
     @BeforeEach

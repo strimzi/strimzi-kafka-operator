@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,8 +63,6 @@ class ConnectST extends AbstractST {
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
             "internal.value.converter.schemas.enable=false\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n");
-
-    private static Resources classResources;
 
     @Test
     @Tag(ACCEPTANCE)
@@ -262,26 +259,20 @@ class ConnectST extends AbstractST {
     @BeforeAll
     static void createClassResources() {
         LOGGER.info("Creating resources before the test class");
-        applyRoleBindings(NAMESPACE, Collections.singletonList(NAMESPACE));
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
-
-        classResources = new Resources(namespacedClient());
 
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
         kafkaConfig.put("transaction.state.log.replication.factor", "3");
         kafkaConfig.put("transaction.state.log.min.isr", "2");
 
-        classResources().kafkaEphemeral(KAFKA_CLUSTER_NAME, 3)
+        testClassResources.kafkaEphemeral(KAFKA_CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec().done();
-    }
-
-    private static Resources classResources() {
-        return classResources;
     }
 }
