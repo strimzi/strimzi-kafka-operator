@@ -178,18 +178,15 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName) {
         List<EnvVar> envVars = client.apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        for (EnvVar env : envVars) {
-            LOGGER.info("{}={}", env.getName(), env.getValue());
-            if (env.getName().contains("GC_LOG_ENABLED")) {
-                LOGGER.info(env.getValue());
-                return env.getValue().contains("true");
-            }
-        }
-        return false;
+        return checkEnvVarValue(envVars);
     }
 
     private Boolean checkGcLoggingStatefulSets(String statefulSetName) {
         List<EnvVar> envVars = client.apps().statefulSets().withName(statefulSetName).get().getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        return checkEnvVarValue(envVars);
+    }
+
+    private Boolean checkEnvVarValue(List<EnvVar> envVars) {
         for (EnvVar env : envVars) {
             LOGGER.info("{}={}", env.getName(), env.getValue());
             if (env.getName().contains("GC_LOG_ENABLED")) {
