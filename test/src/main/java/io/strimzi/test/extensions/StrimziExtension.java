@@ -102,11 +102,16 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
      */
     public static final String REGRESSION = "regression";
     /**
-     * Tag for tests, which's results are not 100% reliable on all testing environments.
+     * Tag for tests, which results are not 100% reliable on all testing environments.
      */
     public static final String FLAKY = "flaky";
+    /**
+     * Tag for tests, which are failing only on Openstack VMs
+     */
+    public static final String OPENSTACK_FLAKY = "openstack_flaky";
 
     private static DefaultKubernetesClient client = new DefaultKubernetesClient();
+
 
     private KubeClusterResource clusterResource;
     private Class testClass;
