@@ -36,6 +36,7 @@ release_version:
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_.-]\+/value: $(RELEASE_VERSION)/}' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 
 release_maven:
 	echo "Update pom versions to $(RELEASE_VERSION)"
@@ -51,8 +52,12 @@ release_helm_version:
 	echo "Updating default image tags in Helm Chart to $(RELEASE_VERSION)"
 	# Update default image tag in chart values.yaml to RELEASE_VERSION
 	$(SED) -i 's/\(tag: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
+	# Update default image tagPrefix in chart values.yaml to RELEASE_VERSION
+	$(SED) -i 's/\(tagPrefix: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
 	# Update default image tag in chart README.md config grid with RELEASE_VERSION
 	$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
+	# Update default image tag in chart README.md config grid with RELEASE_VERSION
+	$(SED) -i 's/\(image\.tagPrefix[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
 
 release_helm_repo:
 	echo "Updating Helm Repository index.yaml"
