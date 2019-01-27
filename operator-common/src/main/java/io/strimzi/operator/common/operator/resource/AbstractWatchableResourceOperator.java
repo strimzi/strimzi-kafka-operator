@@ -23,6 +23,8 @@ public abstract class AbstractWatchableResourceOperator<
         R extends Resource<T, D>>
         extends AbstractResourceOperator<C, T, L, D, R> {
 
+    public final static String ANY_NAMESPACE = "*";
+
     /**
      * Constructor.
      *
@@ -34,11 +36,35 @@ public abstract class AbstractWatchableResourceOperator<
         super(vertx, client, resourceKind);
     }
 
-    public Watch watch(String namespace, Watcher<T> watcher) {
+    protected Watch watchInAnyNamespace(Watcher<T> watcher) {
+        return operation().inAnyNamespace().watch(watcher);
+    }
+
+    protected Watch watchInNamespace(String namespace, Watcher<T> watcher) {
         return operation().inNamespace(namespace).watch(watcher);
     }
 
-    public Watch watch(String namespace, Labels selector, Watcher<T> watcher) {
+    public Watch watch(String namespace, Watcher<T> watcher) {
+        if (ANY_NAMESPACE.equals(namespace))    {
+            return watchInAnyNamespace(watcher);
+        } else {
+            return watchInNamespace(namespace, watcher);
+        }
+    }
+
+    protected Watch watchInAnyNamespace(Labels selector, Watcher<T> watcher) {
+        return operation().inAnyNamespace().withLabels(selector.toMap()).watch(watcher);
+    }
+
+    protected Watch watchInNamespace(String namespace, Labels selector, Watcher<T> watcher) {
         return operation().inNamespace(namespace).withLabels(selector.toMap()).watch(watcher);
+    }
+
+    public Watch watch(String namespace, Labels selector, Watcher<T> watcher) {
+        if (ANY_NAMESPACE.equals(namespace))    {
+            return watchInAnyNamespace(selector, watcher);
+        } else {
+            return watchInNamespace(namespace, selector, watcher);
+        }
     }
 }

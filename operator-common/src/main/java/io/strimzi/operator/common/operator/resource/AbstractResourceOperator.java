@@ -7,6 +7,9 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -203,11 +206,35 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
      */
     @SuppressWarnings("unchecked")
     public List<T> list(String namespace, Labels selector) {
+        if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
+            return listInAnyNamespace(selector);
+        } else {
+            return listInNamespace(namespace, selector);
+        }
+    }
+
+    protected List<T> listInAnyNamespace(Labels selector) {
+        FilterWatchListMultiDeletable<T, L, Boolean, Watch, Watcher<T>> operation = operation().inAnyNamespace();
+
+        if (selector != null) {
+            Map<String, String> labels = selector.toMap();
+            return operation.withLabels(labels)
+                    .list()
+                    .getItems();
+        } else {
+            return operation
+                    .list()
+                    .getItems();
+        }
+    }
+
+    public List<T> listInNamespace(String namespace, Labels selector) {
         NonNamespaceOperation<T, L, D, R> tldrNonNamespaceOperation = operation().inNamespace(namespace);
+
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
             return tldrNonNamespaceOperation.withLabels(labels)
-            .list()
+                    .list()
                     .getItems();
         } else {
             return tldrNonNamespaceOperation

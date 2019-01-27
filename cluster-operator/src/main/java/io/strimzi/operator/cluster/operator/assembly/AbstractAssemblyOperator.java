@@ -209,16 +209,16 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
         List<T> desiredResources = resourceOperator.list(namespace, Labels.EMPTY);
-        Set<String> desiredNames = desiredResources.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
+        Set<NamespacedResourceName> desiredNames = desiredResources.stream().map(cr -> new NamespacedResourceName(cr.getMetadata().getNamespace(), cr.getMetadata().getName())).collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, Labels.EMPTY, desiredNames);
 
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
         Labels resourceSelector = Labels.EMPTY.withKind(assemblyType.name);
         List<? extends HasMetadata> resources = getResources(namespace, resourceSelector);
         // now extract the cluster name from those
-        Set<String> resourceNames = resources.stream()
+        Set<NamespacedResourceName> resourceNames = resources.stream()
                 .filter(r -> !r.getKind().equals(kind)) // exclude desired resource
-                .map(Labels::cluster)
+                .map(resource -> new NamespacedResourceName(resource.getMetadata().getNamespace(), resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL)))
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, resourceSelector, resourceNames);
 
@@ -228,8 +228,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         // Using futures would be more complex for no benefit
         CountDownLatch latch = new CountDownLatch(desiredNames.size());
 
-        for (String name: desiredNames) {
-            Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, namespace, name);
+        for (NamespacedResourceName name: desiredNames) {
+            Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, name.getNamespace(), name.getName());
             reconcileAssembly(reconciliation, result -> {
                 handleResult(reconciliation, result);
                 latch.countDown();
@@ -253,24 +253,25 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
             future -> {
                 Watch watch = resourceOperator.watch(namespace, new Watcher<T>() {
                     @Override
-                    public void eventReceived(Action action, T cm) {
-                        String name = cm.getMetadata().getName();
+                    public void eventReceived(Action action, T cr) {
+                        String name = cr.getMetadata().getName();
+                        String actualNamespace = cr.getMetadata().getNamespace();
                         switch (action) {
                             case ADDED:
                             case DELETED:
                             case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", assemblyType, namespace, name);
-                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, namespace, action);
+                                Reconciliation reconciliation = new Reconciliation("watch", assemblyType, actualNamespace, name);
+                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, actualNamespace, action);
                                 reconcileAssembly(reconciliation, result -> {
                                     handleResult(reconciliation, result);
                                 });
                                 break;
                             case ERROR:
-                                log.error("Failed {} {} in namespace{} ", kind, name, namespace);
+                                log.error("Failed {} {} in namespace{} ", kind, name, actualNamespace);
                                 reconcileAll("watch error", namespace);
                                 break;
                             default:
-                                log.error("Unknown action: {} in namespace {}", name, namespace);
+                                log.error("Unknown action: {} in namespace {}", name, actualNamespace);
                                 reconcileAll("watch unknown", namespace);
                         }
                     }
@@ -320,5 +321,52 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
             }
         }
         return onlyMetricsSettingChanged && diff.size() == 1;
+    }
+
+    private class NamespacedResourceName    {
+        private final String namespace;
+        private final String name;
+
+        public NamespacedResourceName(String namespace, String name)   {
+            this.namespace = namespace;
+            this.name = name;
+        }
+
+        public String getNamespace() {
+            return namespace;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            } else if (obj == null) {
+                return false;
+            } else if (obj instanceof AbstractAssemblyOperator.NamespacedResourceName) {
+                NamespacedResourceName nrn = (NamespacedResourceName) obj;
+                if ((nrn.getName() == null && name == null) ||
+                        (nrn.getName().equals(name) && ((nrn.getNamespace() == null && namespace == null)
+                                || nrn.getNamespace().equals(namespace)))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = namespace != null ? namespace.hashCode() : 0;
+            result = 31 * result + (name != null ? name.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return namespace + "/" + name;
+        }
     }
 }
