@@ -193,7 +193,7 @@ class RecoveryST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
-        classResources = new Resources(kubernetes.getInstance());
+        classResources = new Resources();
         classResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
         testClass = testInfo.getTestClass().get().getSimpleName();
     }

@@ -400,28 +400,28 @@ public abstract class AbstractST {
     }
 
     public String getContainerImageNameFromPod(String podName) {
-        String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[*].image").toString().replaceAll("[\"\\[\\]\\\\]", "");
+        return kubernetes.getPod(podName).getSpec().getContainers().get(0).getImage();
     }
 
     public String getContainerImageNameFromPod(String podName, String containerName) {
-        String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[?(@.name =='" + containerName + "')].image").toString().replaceAll("[\"\\[\\]\\\\]", "");
+        return kubernetes.getPod(podName).getSpec().getContainers().stream()
+                .filter(c -> c.getName().equals(containerName))
+                .findFirst().get().getImage();
     }
 
     public String  getInitContainerImageName(String podName) {
-        String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
+        return kubernetes.getPod(podName).getSpec().getInitContainers().stream()
+                .findFirst().get().getImage();
     }
 
     protected void createResources() {
         LOGGER.info("Creating resources before the test");
-        resources = new Resources(kubernetes.getInstance());
+        resources = new Resources();
     }
 
     protected static void createClusterOperatorResources() {
         LOGGER.info("Creating cluster operator resources");
-        testClassResources = new Resources(kubernetes.getInstance());
+        testClassResources = new Resources();
     }
 
     protected void deleteResources() throws Exception {

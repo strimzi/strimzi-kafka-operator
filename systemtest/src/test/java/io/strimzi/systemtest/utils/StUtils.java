@@ -10,11 +10,8 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Resources;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,7 +34,6 @@ import static io.strimzi.test.k8s.Kubernetes.getKubernetes;
 public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
-    private static KubeClient kubeClient = AbstractST.cluster.client();
     private static Kubernetes kubernetes = getKubernetes();
 
     private StUtils() { }

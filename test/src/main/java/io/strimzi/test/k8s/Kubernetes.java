@@ -1,20 +1,30 @@
 package io.strimzi.test.k8s;
 
 import io.fabric8.kubernetes.api.model.ContainerStatus;
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.fabric8.kubernetes.api.model.batch.Job;
+import io.fabric8.kubernetes.api.model.batch.JobList;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.test.TestUtils;
 import okhttp3.Response;
@@ -55,9 +65,13 @@ public class Kubernetes {
         return previous;
     }
 
-    public void createNameSpace(String name) {
+    public void createNamespace(String name) {
         Namespace ns = new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build();
         client.namespaces().createOrReplace(ns);
+    }
+
+    public String getNamespace() {
+        return client.getNamespace();
     }
 
     public void deleteNamespace(String name) {
@@ -189,6 +203,10 @@ public class Kubernetes {
         return client.apps().statefulSets().withName(statefulSetName).isReady();
     }
 
+    public Deployment createOrReplaceDeployment (Deployment deployment) {
+        return client.apps().deployments().createOrReplace(deployment);
+    }
+
     /**
      * Gets deployment
      */
@@ -242,6 +260,10 @@ public class Kubernetes {
         return client.extensions().jobs().withName(jobName).get();
     }
 
+    public MixedOperation<Job, JobList, DoneableJob, ScalableResource<Job, DoneableJob>> listJobs() {
+        return client.extensions().jobs();
+    }
+
     public String logs(String podName, String containerName) {
         if (containerName != null) {
             return client.pods().withName(podName).inContainer(containerName).getLog();
@@ -255,5 +277,17 @@ public class Kubernetes {
                 .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
                 .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
                 .collect(Collectors.toList());
+    }
+
+    public KubernetesRoleBinding createOrReplaceKubernetesRoleBinding (KubernetesRoleBinding kubernetesRoleBinding) {
+        return client.rbac().kubernetesRoleBindings().createOrReplace(kubernetesRoleBinding);
+    }
+
+    public KubernetesClusterRoleBinding createOrReplaceKubernetesClusterRoleBinding (KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
+        return client.rbac().kubernetesClusterRoleBindings().createOrReplace(kubernetesClusterRoleBinding);
+    }
+
+    public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources (CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
+        return client.customResources(crd,resourceType, listClass, doneClass);
     }
 }

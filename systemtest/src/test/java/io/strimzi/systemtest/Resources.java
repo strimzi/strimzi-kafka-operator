@@ -55,6 +55,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -78,15 +79,7 @@ public class Resources {
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
 
-    private final KubernetesClient client;
-
-    Resources(KubernetesClient client) {
-        this.client = client;
-    }
-
-    private KubernetesClient client() {
-        return client;
-    }
+    private Kubernetes kubernetes = Kubernetes.getKubernetes();
 
     private MixedOperation<Kafka, KafkaAssemblyList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafka() {
         return customResourcesWithCascading(Kafka.class, KafkaAssemblyList.class, DoneableKafka.class);
@@ -94,35 +87,35 @@ public class Resources {
 
     // This logic is necessary only for the deletion of resources with `cascading: true`
     private <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) client()).getHttpClient(), client().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
+        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) kubernetes.getInstance()).getHttpClient(), kubernetes.getInstance().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, kubernetes.getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
     }
 
     private MixedOperation<KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnect() {
-        return client()
+        return kubernetes
                 .customResources(Crds.kafkaConnect(),
                         KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class);
     }
 
     private MixedOperation<KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2I() {
-        return client()
+        return kubernetes
                 .customResources(Crds.kafkaConnectS2I(),
                         KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class);
     }
 
     private MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> kafkaMirrorMaker() {
-        return client()
+        return kubernetes
                 .customResources(Crds.mirrorMaker(),
                         KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
     }
 
     private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> kafkaTopic() {
-        return client()
+        return kubernetes
                 .customResources(Crds.topic(),
                         KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     private MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUser() {
-        return client()
+        return kubernetes
                 .customResources(Crds.kafkaUser(),
                         KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
     }
@@ -202,7 +195,7 @@ public class Resources {
     }
 
     Job deleteLater(Job resource) {
-        return deleteLater(client().extensions().jobs(), resource);
+        return deleteLater(kubernetes.listJobs(), resource);
     }
 
     void deleteResources() {
@@ -217,7 +210,7 @@ public class Resources {
 
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
         return new KafkaBuilder()
-                    .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+                    .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(kubernetes.getNamespace()).build())
                     .withNewSpec()
                         .withNewKafka()
                             .withReplicas(kafkaReplicas)
@@ -274,7 +267,7 @@ public class Resources {
             TestUtils.waitFor("Kafka creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
-                        kafka().inNamespace(client().getNamespace()).createOrReplace(k);
+                        kafka().inNamespace(kubernetes.getNamespace()).createOrReplace(k);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
@@ -296,7 +289,7 @@ public class Resources {
 
     private KafkaConnectBuilder defaultKafkaConnect(String name, int kafkaConnectReplicas) {
         return new KafkaConnectBuilder()
-            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(kubernetes.getNamespace()).build())
             .withNewSpec()
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectReplicas)
@@ -314,7 +307,7 @@ public class Resources {
             TestUtils.waitFor("KafkaConnect creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
-                        kafkaConnect().inNamespace(client().getNamespace()).createOrReplace(kC);
+                        kafkaConnect().inNamespace(kubernetes.getNamespace()).createOrReplace(kC);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
@@ -342,7 +335,7 @@ public class Resources {
 
     private KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, int kafkaConnectS2IReplicas) {
         return new KafkaConnectS2IBuilder()
-            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(kubernetes.getNamespace()).build())
             .withNewSpec()
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectS2IReplicas)
@@ -354,7 +347,7 @@ public class Resources {
             TestUtils.waitFor("KafkaConnectS2I creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
-                        kafkaConnectS2I().inNamespace(client().getNamespace()).createOrReplace(kCS2I);
+                        kafkaConnectS2I().inNamespace(kubernetes.getNamespace()).createOrReplace(kCS2I);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
@@ -376,7 +369,7 @@ public class Resources {
 
     private KafkaMirrorMakerBuilder defaultMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
         return new KafkaMirrorMakerBuilder()
-            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
+            .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(kubernetes.getNamespace()).build())
             .withNewSpec()
                 .withNewConsumer()
                     .withBootstrapServers(tlsListener ? sourceBootstrapServer + "-kafka-bootstrap:9093" : sourceBootstrapServer + "-kafka-bootstrap:9092")
@@ -401,7 +394,7 @@ public class Resources {
             TestUtils.waitFor("Kafka Mirror Maker creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
-                        kafkaMirrorMaker().inNamespace(client().getNamespace()).createOrReplace(k);
+                        kafkaMirrorMaker().inNamespace(kubernetes.getNamespace()).createOrReplace(k);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
@@ -482,7 +475,7 @@ public class Resources {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect {}", kafkaConnect.getMetadata().getName());
         String namespace = kafkaConnect.getMetadata().getNamespace();
 
-        client.pods().inNamespace(namespace).list().getItems().stream()
+        kubernetes.listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnect.getMetadata().getName() + "-connect-"))
                 .forEach(p -> StUtils.waitForPodDeletion(namespace, p.getMetadata().getName()));
     }
@@ -491,7 +484,7 @@ public class Resources {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
         String namespace = kafkaConnectS2I.getMetadata().getNamespace();
 
-        client.pods().inNamespace(namespace).list().getItems().stream()
+        kubernetes.listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnectS2I.getMetadata().getName() + "-connect-"))
                 .forEach(p -> StUtils.waitForPodDeletion(namespace, p.getMetadata().getName()));
     }
@@ -500,7 +493,7 @@ public class Resources {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
         String namespace = kafkaMirrorMaker.getMetadata().getNamespace();
 
-        client.pods().inNamespace(namespace).list().getItems().stream()
+        kubernetes.listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
                 .forEach(p -> StUtils.waitForPodDeletion(namespace, p.getMetadata().getName()));
     }
@@ -514,7 +507,7 @@ public class Resources {
                 .withMetadata(
                         new ObjectMetaBuilder()
                                 .withName(topicName)
-                                .withNamespace(client().getNamespace())
+                                .withNamespace(kubernetes.getNamespace())
                                 .addToLabels("strimzi.io/cluster", clusterName)
                 .build())
                 .withNewSpec()
@@ -535,7 +528,7 @@ public class Resources {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
                         .withName(name)
-                        .withNamespace(client().getNamespace())
+                        .withNamespace(kubernetes.getNamespace())
                         .addToLabels("strimzi.io/cluster", clusterName)
                         .build())
                 .withNewSpec()
@@ -549,7 +542,7 @@ public class Resources {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
                         .withName(name)
-                        .withNamespace(client().getNamespace())
+                        .withNamespace(kubernetes.getNamespace())
                         .addToLabels("strimzi.io/cluster", clusterName)
                         .build())
                 .withNewSpec()
@@ -561,7 +554,7 @@ public class Resources {
 
     DoneableKafkaUser user(KafkaUser user) {
         return new DoneableKafkaUser(user, ku -> {
-            KafkaUser resource = kafkaUser().inNamespace(client().getNamespace()).createOrReplace(ku);
+            KafkaUser resource = kafkaUser().inNamespace(kubernetes.getNamespace()).createOrReplace(ku);
             LOGGER.info("Created KafkaUser {}", resource.getMetadata().getName());
             return deleteLater(resource);
         });
@@ -626,7 +619,7 @@ public class Resources {
             TestUtils.waitFor("Cluster operator creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
-                        client.apps().deployments().createOrReplace(co);
+                        kubernetes.createOrReplaceDeployment(co);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
@@ -666,7 +659,7 @@ public class Resources {
 
     DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String clientNamespace) {
         LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
-        client.rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
+        kubernetes.createOrReplaceKubernetesRoleBinding(roleBinding);
         return new DoneableKubernetesRoleBinding(roleBinding);
     }
 
@@ -686,7 +679,7 @@ public class Resources {
 
     DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String clientNamespace) {
         LOGGER.info("Apply ClusterRoleBinding in namespace {}", clientNamespace);
-        client.rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
+        kubernetes.createOrReplaceKubernetesClusterRoleBinding(clusterRoleBinding);
         return new DoneableKubernetesClusterRoleBinding(clusterRoleBinding);
     }
 }

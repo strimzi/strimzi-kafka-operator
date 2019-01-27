@@ -84,7 +84,7 @@ class ConnectS2IST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
-        classResources = new Resources(kubernetes.getInstance());
+        classResources = new Resources();
         classResources().kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
     }
 
