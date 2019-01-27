@@ -35,7 +35,11 @@ release_version:
 	echo "Changing Docker image tags to :$(RELEASE_VERSION)"
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_.-]\+/value: $(RELEASE_VERSION)/}' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
+	# Zookeeper needs to have special handling, because it has strange tag bot no image map
+	# The firs line below handles the Zoo tag
+	# The one below it handles all tags whcih are not Zookeeper
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/}' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_(ZOOKEEPER)![a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 
 release_maven:
