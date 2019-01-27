@@ -240,4 +240,9 @@ public class StUtils {
         LOGGER.info("Deployment Config {} is ready", name);
     }
 
+    public static String getPodNameByPrefix (String prefix) {
+        return kubernetes.listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
+                .findFirst().get().getMetadata().getName();
+    }
+
 }
