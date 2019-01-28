@@ -18,12 +18,22 @@ The availability of Kafka clusters managed by the Cluster Operator is not affect
 +
 * Add `Kafka.spec.kafka.version` with the value `2.0.1`
 * Add `KafkaConnect.spec.version` with the value `2.0.1`
-* Add `KafkaConnectS2I.spec.kafka.version` with the value `2.0.1`
+* Add `KafkaConnectS2I.spec.version` with the value `2.0.1`
 * Add `KafkaMirrorMaker.spec.version` with the value `2.0.1`
 +
 Wait for the associated rolling updates to complete.
 
-. Backup the existing Cluster Operator resources:
+. Backup the existing Cluster Operator resources.
++
+ifdef::Kubernetes[]
+On {KubernetesName} use `kubectl get`:
++
+----
+kubectl get -l app=strimzi > strimzi-backup.yaml
+----
++
+endif::Kubernetes[]
+On {OpenShiftName} use `oc get`:
 +
 ----
 oc get -l app=strimzi > strimzi-backup.yaml
@@ -37,7 +47,17 @@ include:frag-cluster-operator-namespace-sed.adoc[]
 If you modified one or more environment variables in your existing Cluster Operator `Deployment`, edit
 `install/cluster-operator/050-Deployment-cluster-operator.yaml` to reflect the changes that you made.
 
-. When you have an updated configuration you can deploy it along with the rest of the install resources:
+. When you have an updated configuration you can deploy it along with the rest of the install resources.
++
+ifdef::Kubernetes[]
+On {KubernetesName} use `kubectl apply`:
++
+----
+kubectl apply -f install/cluster-operator
+----
++
+endif::Kubernetes[]
+On {OpenShiftName} use `oc apply`:
 +
 ----
 oc apply -f install/cluster-operator
