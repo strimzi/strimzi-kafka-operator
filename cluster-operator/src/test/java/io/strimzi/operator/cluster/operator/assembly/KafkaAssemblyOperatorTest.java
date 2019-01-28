@@ -860,7 +860,7 @@ public class KafkaAssemblyOperatorTest {
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
         RoleBindingOperator mockRbo = supplier.roleBindingOperator;
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
-        String clusterCmNamespace = "myNamespace";
+        String clusterCmNamespace = "test";
 
         Kafka foo = getKafkaAssembly("foo");
         Kafka bar = getKafkaAssembly("bar");

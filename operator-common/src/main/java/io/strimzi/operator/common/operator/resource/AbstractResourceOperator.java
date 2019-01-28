@@ -228,7 +228,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
         }
     }
 
-    public List<T> listInNamespace(String namespace, Labels selector) {
+    protected List<T> listInNamespace(String namespace, Labels selector) {
         NonNamespaceOperation<T, L, D, R> tldrNonNamespaceOperation = operation().inNamespace(namespace);
 
         if (selector != null) {

@@ -63,7 +63,7 @@ public class ClusterOperatorTest {
 
     @Test
     public void startStopMultiNamespaceOs(TestContext context) {
-        startStop(context, "namespace1, namespace2", true);
+        startStop(context, "namespace1,namespace2", true);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class ClusterOperatorTest {
 
     @Test
     public void startStopMultiNamespaceK8s(TestContext context) {
-        startStop(context, "namespace1, namespace2", false);
+        startStop(context, "namespace1,namespace2", false);
     }
 
     /**
