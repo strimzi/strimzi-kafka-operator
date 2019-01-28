@@ -79,7 +79,7 @@ public class ClusterOperatorConfigTest {
     public void testListOfNamespaces() {
 
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
-        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "foo, bar ,, baz , ");
+        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "foo,bar,baz");
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
         assertEquals(new HashSet<>(asList("foo", "bar", "baz")), config.getNamespaces());
@@ -100,5 +100,22 @@ public class ClusterOperatorConfigTest {
     public void testEmptyEnvVars() {
 
         ClusterOperatorConfig.fromMap(Collections.emptyMap());
+    }
+
+    @Test
+    public void testAnyNamespace() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "*");
+
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        assertEquals(new HashSet<>(asList("*")), config.getNamespaces());
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testAnyNamespaceInList() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "foo,*,bar,baz");
+
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
     }
 }

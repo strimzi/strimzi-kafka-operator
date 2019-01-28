@@ -7,12 +7,15 @@ package io.strimzi.operator.cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableSet;
@@ -73,7 +76,15 @@ public class ClusterOperatorConfig {
         if (namespacesList == null || namespacesList.isEmpty()) {
             throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
         } else {
-            namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
+            if (namespacesList.equals(AbstractWatchableResourceOperator.ANY_NAMESPACE)) {
+                namespaces = Collections.singleton(AbstractWatchableResourceOperator.ANY_NAMESPACE);
+            } else {
+                if (namespacesList.matches("([a-z0-9.-]+,)*[a-z0-9.-]+")) {
+                    namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
+                } else {
+                    throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE + " is not a valid list of namespaces.");
+                }
+            }
         }
 
         long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
