@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorJvmOptions;
 import io.strimzi.systemtest.timemeasuring.Operation;
@@ -138,8 +139,8 @@ class LogSettingST extends AbstractST {
         assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka CG logging is enabled");
         assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper CG logging is enabled");
 
-        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME)), "TO CG logging is enabled");
-        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME)), "UO CG logging is enabled");
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO CG logging is enabled");
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO CG logging is enabled");
 
         assertTrue(checkGcLoggingDeployments(kafkaConnectName(CLUSTER_NAME)), "Connect CG logging is enabled");
         assertTrue(checkGcLoggingDeployments(kafkaMirrorMakerName(CLUSTER_NAME)), "Mirror-maker CG logging is enabled");
@@ -150,8 +151,8 @@ class LogSettingST extends AbstractST {
         assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(CG_LOGGING_NAME)), "Kafka CG logging is disabled");
         assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(CG_LOGGING_NAME)), "Zookeeper CG logging is disabled");
 
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(CG_LOGGING_NAME)), "TO CG logging is disabled");
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(CG_LOGGING_NAME)), "UO CG logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(CG_LOGGING_NAME), "topic-operator"), "TO CG logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(CG_LOGGING_NAME), "user-operator"), "UO CG logging is disabled");
 
         assertFalse(checkGcLoggingDeployments(kafkaConnectName(CG_LOGGING_NAME)), "Connect CG logging is disabled");
         assertFalse(checkGcLoggingDeployments(kafkaMirrorMakerName(CG_LOGGING_NAME)), "Mirror-maker CG logging is disabled");
@@ -176,21 +177,41 @@ class LogSettingST extends AbstractST {
     }
 
 
+    private Boolean checkGcLoggingDeployments(String deploymentName, String containerName) {
+        LOGGER.info("Checking deployment: {}", deploymentName);
+        List<Container> containers = client.apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers();
+        Container container = getContainerByName(containerName, containers);
+        LOGGER.info("Checking container with name: {}", container.getName());
+        return checkEnvVarValue(container.getEnv());
+    }
+
     private Boolean checkGcLoggingDeployments(String deploymentName) {
-        List<EnvVar> envVars = client.apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        return checkEnvVarValue(envVars);
+        LOGGER.info("Checking deployment: {}", deploymentName);
+        Container container = client.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        LOGGER.info("Checking container with name: {}", container.getName());
+        return checkEnvVarValue(container.getEnv());
     }
 
     private Boolean checkGcLoggingStatefulSets(String statefulSetName) {
-        List<EnvVar> envVars = client.apps().statefulSets().withName(statefulSetName).get().getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        return checkEnvVarValue(envVars);
+        LOGGER.info("Checking stateful set: {}", statefulSetName);
+        Container container = client.inNamespace(NAMESPACE).apps().statefulSets().withName(statefulSetName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        LOGGER.info("Checking container with name: {}", container.getName());
+        return checkEnvVarValue(container.getEnv());
+    }
+
+    private Container getContainerByName(String containerName, List<Container> containers) {
+        for (Container container : containers) {
+            if (container.getName().equals(containerName)) {
+                return container;
+            }
+        }
+        return null;
     }
 
     private Boolean checkEnvVarValue(List<EnvVar> envVars) {
         for (EnvVar env : envVars) {
-            LOGGER.info("{}={}", env.getName(), env.getValue());
             if (env.getName().contains("GC_LOG_ENABLED")) {
-                LOGGER.info(env.getValue());
+                LOGGER.info("{}={}", env.getName(), env.getValue());
                 return env.getValue().contains("true");
             }
         }
@@ -235,7 +256,7 @@ class LogSettingST extends AbstractST {
             .done();
 
         EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
-        entityOperatorJvmOptions.setGcLoggingEnabled(false);
+        entityOperatorJvmOptions.setGcLoggingEnabled(Boolean.FALSE);
 
         testClassResources.kafkaEphemeral(CG_LOGGING_NAME, 3)
                 .editSpec()
@@ -249,14 +270,12 @@ class LogSettingST extends AbstractST {
                             .withGcLoggingEnabled(false)
                         .endJvmOptions()
                     .endZookeeper()
-                    .editOrNewEntityOperator()
-                        .editOrNewTopicOperator()
-                            .withNewJvmOptionsLike(entityOperatorJvmOptions)
-                            .endJvmOptions()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                            .withJvmOptions(entityOperatorJvmOptions)
                         .endTopicOperator()
-                        .editOrNewUserOperator()
-                            .withNewJvmOptionsLike(entityOperatorJvmOptions)
-                            .endJvmOptions()
+                        .withNewUserOperator()
+                            .withJvmOptions(entityOperatorJvmOptions)
                         .endUserOperator()
                     .endEntityOperator()
                 .endSpec()
