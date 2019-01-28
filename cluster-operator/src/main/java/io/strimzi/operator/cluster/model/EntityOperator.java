@@ -33,8 +33,6 @@ import static java.util.Arrays.asList;
  * Represents the Entity Operator deployment
  */
 public class EntityOperator extends AbstractModel {
-
-    private static final String CERTS_SUFFIX = "-certs";
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
     protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_NAME = "eo-certs";
     protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/eo-certs/";
@@ -101,7 +99,7 @@ public class EntityOperator extends AbstractModel {
     }
 
     public static String secretName(String cluster) {
-        return KafkaResources.entityOperatorDeploymentName(cluster) + CERTS_SUFFIX;
+        return KafkaResources.entityOperatorSecretName(cluster);
     }
 
     public void setDeployed(boolean isDeployed) {
