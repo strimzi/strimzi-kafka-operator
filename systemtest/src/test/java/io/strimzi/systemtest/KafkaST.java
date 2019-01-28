@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -227,7 +228,7 @@ class KafkaST extends AbstractST {
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getZookeeper().setReplicas(1);
         });
-        kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  1));
+        kubernetes.waitForPodDeletion(zookeeperPodName(CLUSTER_NAME,  1));
         // Wait for the one remaining node to enter standalone mode
         waitForZkMntr(Pattern.compile("zk_server_state\\s+standalone"), 0);
 
@@ -286,16 +287,16 @@ class KafkaST extends AbstractST {
         int expectedKafkaPods = 2;
         List<Date> zkPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedZKPods; i++) {
-            zkPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", zookeeperPodName(CLUSTER_NAME, i)));
+            zkPodStartTime.add(kubernetes.getPodCreateTimestamp(zookeeperPodName(CLUSTER_NAME, i)));
         }
         List<Date> kafkaPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedKafkaPods; i++) {
-            kafkaPodStartTime.add(kubeClient.getResourceCreateTimestamp("pod", kafkaPodName(CLUSTER_NAME, i)));
+            kafkaPodStartTime.add(kubernetes.getPodCreateTimestamp(kafkaPodName(CLUSTER_NAME, i)));
         }
 
         LOGGER.info("Verify values before update");
         for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
+            String kafkaPodJson = TestUtils.toJsonString(kubernetes.getPod(kafkaPodName(CLUSTER_NAME, i)));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
                     hasItem("transaction.state.log.replication.factor=1\ndefault.replication.factor=1\noffsets.topic.replication.factor=1\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
@@ -303,7 +304,7 @@ class KafkaST extends AbstractST {
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
+            String zkPodJson = TestUtils.toJsonString(kubernetes.getPod(zookeeperPodName(CLUSTER_NAME, i)));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
                     hasItem("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
@@ -336,7 +337,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Verify values after update");
         for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = kubeClient.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
+            String kafkaPodJson = TestUtils.toJsonString(kubernetes.getPod(kafkaPodName(CLUSTER_NAME, i)));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
                     hasItem("transaction.state.log.replication.factor=2\ndefault.replication.factor=2\noffsets.topic.replication.factor=2\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
@@ -344,7 +345,7 @@ class KafkaST extends AbstractST {
         }
         LOGGER.info("Testing Zookeepers");
         for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = kubeClient.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
+            String zkPodJson = TestUtils.toJsonString(kubernetes.getPod(zookeeperPodName(CLUSTER_NAME, i)));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
                     hasItem("timeTick=2100\nautopurge.purgeInterval=1\nsyncLimit=3\ninitLimit=6\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
@@ -562,21 +563,21 @@ class KafkaST extends AbstractST {
                 .endEntityOperator()
             .endSpec().done();
 
-        assertResources(kubeClient.namespace(), kafkaPodName(CLUSTER_NAME, 0),
+        assertResources(kubernetes.getNamespace(), kafkaPodName(CLUSTER_NAME, 0),
                 "2Gi", "400m", "2Gi", "400m");
         assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0),
                 "-Xmx1g", "-Xms1G", "-server", "-XX:+UseG1GC");
 
-        assertResources(kubeClient.namespace(), zookeeperPodName(CLUSTER_NAME, 0),
+        assertResources(kubernetes.getNamespace(), zookeeperPodName(CLUSTER_NAME, 0),
                 "1Gi", "300m", "1Gi", "300m");
         assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
-        String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems()
+        String podName = kubernetes.listPods()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
                 .findFirst().get().getMetadata().getName();
 
-        assertResources(kubeClient.namespace(), podName,
+        assertResources(kubernetes.getNamespace(), podName,
                 "500M", "300m", "500M", "300m");
     }
 
@@ -672,8 +673,8 @@ class KafkaST extends AbstractST {
         }
 
         //Verifying docker image for entity-operator
-        String entityOperatorPodName = kubeClient.listResourcesByLabel("pod",
-                "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
+        String entityOperatorPodName = kubernetes.listPods(Collections.singletonMap("strimzi.io/name", clusterName + "-entity-operator"))
+                .get(0).getMetadata().getName();
         String imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "topic-operator");
         assertEquals(imgFromDeplConf.get(TO_IMAGE), imgFromPod);
         imgFromPod = getContainerImageNameFromPod(entityOperatorPodName, "user-operator");

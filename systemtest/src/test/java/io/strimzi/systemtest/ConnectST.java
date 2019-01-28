@@ -253,7 +253,7 @@ class ConnectST extends AbstractST {
         //Verifying docker image for kafka connect
         String connectImageName = getContainerImageNameFromPod(kubernetes.listPods(Collections.singletonMap("strimzi.io/kind", "KafkaConnect")).get(0).getMetadata().getName());
 
-        String connectVersion = Crds.kafkaConnectOperation(kubernetes.getInstance()).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
+        String connectVersion = Crds.kafkaConnectOperation(kubernetes.getInstance()).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
         if (connectVersion == null) {
             connectVersion = "2.1.0";
         }

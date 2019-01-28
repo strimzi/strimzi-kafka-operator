@@ -176,7 +176,7 @@ public abstract class AbstractST {
 
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
         void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
-        Resource<T, D> namedResource = Crds.operation(kubernetes.getInstance(), crdClass, listClass, doneableClass).inNamespace(kubeClient.namespace()).withName(resourceName);
+        Resource<T, D> namedResource = Crds.operation(kubernetes.getInstance(), crdClass, listClass, doneableClass).inNamespace(kubernetes.getNamespace()).withName(resourceName);
         T resource = namedResource.get();
         editor.accept(resource);
         namedResource.replace(resource);

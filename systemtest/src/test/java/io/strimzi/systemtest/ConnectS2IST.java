@@ -4,13 +4,11 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
-import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -53,7 +51,7 @@ class ConnectS2IST extends AbstractST {
 
         File dir = StUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.3.0/debezium-connector-mongodb-0.3.0-plugin.zip");
 
-        String connectS2IPodName = kubeClient.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
+        String connectS2IPodName = kubernetes.listPods(Collections.singletonMap("type", "type=kafka-connect-s2i")).get(0).getMetadata().getName();
 
         // Start a new image build using the plugins directory
         kubeClient.exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath());
@@ -61,7 +59,7 @@ class ConnectS2IST extends AbstractST {
 
         kubeClient.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
 
-        connectS2IPodName = ((Pod) kubernetes.listPods(Collections.singletonMap("type", "kafka-connect-s2i")).get(0)).getMetadata().getName();
+        connectS2IPodName = kubernetes.listPods(Collections.singletonMap("type", "kafka-connect-s2i")).get(0).getMetadata().getName();
         String plugins = kubernetes.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins");
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));

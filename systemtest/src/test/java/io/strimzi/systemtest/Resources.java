@@ -453,7 +453,7 @@ public class Resources {
      * Wait until the SS is ready and all of its Pods are also ready
      */
     public void waitForStatefulSet(String namespace, String name) {
-        StUtils.waitForAllStatefulSetPodsReady(namespace, name);
+        StUtils.waitForAllStatefulSetPodsReady(name);
     }
 
     private void waitForDeploymentConfig(String namespace, String name) {

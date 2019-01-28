@@ -137,7 +137,7 @@ public class StUtils {
                     return false;
                 }
             });
-        StUtils.waitForAllStatefulSetPodsReady(namespace, name);
+        StUtils.waitForAllStatefulSetPodsReady(name);
         return ssSnapshot(namespace, name);
     }
 
@@ -145,7 +145,7 @@ public class StUtils {
         long timeLeft = TestUtils.waitFor("Deployment roll of " + name,
             1_000, 300_000, () -> depHasRolled(namespace, name, snapshot));
         StUtils.waitForDeploymentReady(name);
-        StUtils.waitForPodsReady(namespace, kubernetes.getDeploymentSelectors(name), true);
+        StUtils.waitForPodsReady(kubernetes.getDeploymentSelectors(name), true);
         return depSnapshot(namespace, name);
     }
 
@@ -176,16 +176,16 @@ public class StUtils {
     /**
      * Wait until the SS is ready and all of its Pods are also ready
      */
-    public static void waitForAllStatefulSetPodsReady(String namespace, String name) {
+    public static void waitForAllStatefulSetPodsReady(String name) {
         LOGGER.info("Waiting for StatefulSet {} to be ready", name);
         TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubernetes.getStatefulSetStatus(name));
         LOGGER.info("StatefulSet {} is ready", name);
         LOGGER.info("Waiting for Pods of StatefulSet {} to be ready", name);
-        waitForPodsReady(namespace, kubernetes.getStatefulSetSelectors(name), true);
+        waitForPodsReady(kubernetes.getStatefulSetSelectors(name), true);
     }
 
-    public static void waitForPodsReady(String namespace, LabelSelector selector, boolean containers) {
+    public static void waitForPodsReady(LabelSelector selector, boolean containers) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = kubernetes.listPods(selector);
             if (pods.isEmpty()) {

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -35,8 +36,8 @@ class HelmChartST extends AbstractST {
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
         LOGGER.info("Running testDeployKafkaClusterViaHelmChart {}", CLUSTER_NAME);
-        kubeClient.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 1);
-        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
+        StUtils.waitForAllStatefulSetPodsReady(zookeeperClusterName(CLUSTER_NAME));
+        StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(CLUSTER_NAME));
     }
 
     @BeforeEach

@@ -1,5 +1,6 @@
 package io.strimzi.test.k8s;
 
+import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.Event;
@@ -32,6 +33,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -180,6 +185,18 @@ public class Kubernetes {
      */
     public Pod getPod(String name) {
         return client.pods().withName(name).get();
+    }
+
+    public Date getPodCreateTimestamp(String podName) {
+        DateFormat df = new SimpleDateFormat("yyyyMMdd'T'kkmmss'Z'");
+        Pod pod = getPod(podName);
+        Date parsedDate = null;
+        try {
+            df.parse(pod.getMetadata().getCreationTimestamp());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return parsedDate;
     }
 
     /**

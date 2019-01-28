@@ -4,7 +4,9 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -54,7 +56,7 @@ class UserST extends AbstractST {
         KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         kubeClient.waitForResourceCreation("secret", kafkaUser);
 
-        String kafkaUserSecret = kubeClient.getResourceAsJson("secret", kafkaUser);
+        String kafkaUserSecret = TestUtils.toJsonString(kubernetes.getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
@@ -79,15 +81,15 @@ class UserST extends AbstractST {
                 .endKafkaUserScramSha512ClientAuthenticationAuthentication()
             .endSpec().done();
 
-        kafkaUserSecret = kubeClient.getResourceAsJson("secret", kafkaUser);
+        kafkaUserSecret = TestUtils.toJsonString(kubernetes.getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
-        kafkaUserAsJson = kubeClient.getResourceAsJson("KafkaUser", kafkaUser);
+        kafkaUserAsJson = TestUtils.toJsonString(Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(kafkaUser).get());
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
-        kubeClient.deleteByName("KafkaUser", kafkaUser);
+        Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(kafkaUser).delete();
         kubeClient.waitForResourceDeletion("KafkaUser", kafkaUser);
     }
 
