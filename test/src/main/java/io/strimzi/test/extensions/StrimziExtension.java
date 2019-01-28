@@ -106,9 +106,9 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
      */
     public static final String FLAKY = "flaky";
     /**
-     * Tag for tests, which are failing only on Openstack VMs
+     * Tag for tests, which are failing only on CCI VMs
      */
-    public static final String OPENSTACK_FLAKY = "openstack_flaky";
+    public static final String CCI_FLAKY = "cci_flaky";
 
     private static DefaultKubernetesClient client = new DefaultKubernetesClient();
 
