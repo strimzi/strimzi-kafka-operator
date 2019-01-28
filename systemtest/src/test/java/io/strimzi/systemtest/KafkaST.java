@@ -358,7 +358,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @Tag(CCI_FLAKY)
+    @Tag(ACCEPTANCE)
     void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
         int messagesCount = 20;
