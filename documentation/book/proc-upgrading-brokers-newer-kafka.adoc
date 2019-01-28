@@ -41,7 +41,7 @@ spec:
 NOTE: You must format the value of `log.message.format.version` as a string to prevent it from being interpreted as a number.
 +
 If `log.message.format.version` is unset then set it and wait for the resulting rolling restart of the Kafka cluster to complete.
-
++
 . Change the `Kafka.spec.kafka.version` to specify the new version, but leave the `log.message.format.version` as the old version.
 If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's `STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image` as well.
 +
