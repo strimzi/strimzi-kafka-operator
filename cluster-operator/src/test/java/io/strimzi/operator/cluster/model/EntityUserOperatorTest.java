@@ -75,8 +75,8 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME).withValue(KafkaCluster.clientsCaKeySecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clientsCaCertSecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(KafkaCluster.DEFAULT_STRIMZI_GC_LOG_ENABED).build());
-        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY).withValue(Integer.toString(EntityUserOperator.DEFAULT_CERTS_VALIDITY_DAYS)).build());
-        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL).withValue(Integer.toString(EntityUserOperator.DEFAULT_CERTS_RENEWAL_DAYS)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY).withValue(Integer.toString(EntityUserOperatorSpec.DEFAULT_CERTS_VALIDITY_DAYS)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL).withValue(Integer.toString(EntityUserOperatorSpec.DEFAULT_CERTS_RENEWAL_DAYS)).build());
         return expected;
     }
 
@@ -196,7 +196,7 @@ public class EntityUserOperatorTest {
 
         assertEquals(42, entityUserOperator.getClientsCaValidityDays());
         assertEquals(69, entityUserOperator.getClientsCaRenewalDays());
-        assertEquals(EntityUserOperator.DEFAULT_CERTS_VALIDITY_DAYS, entityUserOperator2.getClientsCaValidityDays());
-        assertEquals(EntityUserOperator.DEFAULT_CERTS_RENEWAL_DAYS, entityUserOperator2.getClientsCaRenewalDays());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_CERTS_VALIDITY_DAYS, entityUserOperator2.getClientsCaValidityDays());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_CERTS_RENEWAL_DAYS, entityUserOperator2.getClientsCaRenewalDays());
     }
 }

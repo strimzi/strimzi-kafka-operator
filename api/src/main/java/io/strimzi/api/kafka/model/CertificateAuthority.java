@@ -39,7 +39,7 @@ public class CertificateAuthority implements Serializable {
 
     @Description("The number of days generated certificates should be valid for. The default is 365.")
     @Minimum(1)
-    public int getValidityDays() {
+    public Integer getValidityDays() {
         return validityDays;
     }
 
@@ -64,7 +64,7 @@ public class CertificateAuthority implements Serializable {
             "When `generateCertificateAuthority` is true, this will cause extra logging at WARN level about the pending certificate expiry. " +
             "Default is 30.")
     @Minimum(1)
-    public int getRenewalDays() {
+    public Integer getRenewalDays() {
         return renewalDays;
     }
 

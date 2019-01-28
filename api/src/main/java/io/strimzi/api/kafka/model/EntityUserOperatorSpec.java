@@ -39,6 +39,8 @@ public class EntityUserOperatorSpec implements Serializable {
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
     public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 6;
+    public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
+    public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
 
     private String watchedNamespace;
     private String image = DEFAULT_IMAGE;

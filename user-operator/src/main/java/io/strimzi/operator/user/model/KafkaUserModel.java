@@ -16,6 +16,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.operator.PasswordGenerator;
 import org.apache.logging.log4j.LogManager;
@@ -134,15 +135,9 @@ public class KafkaUserModel {
         } else if (clientsCaKeySecret == null) {
             throw new NoCertificateSecretException("The Clients CA Key Secret is missing");
         } else {
-            String valStr = System.getenv(ENV_VAR_CLIENTS_CA_VALIDITY);
-            String renStr = System.getenv(ENV_VAR_CLIENTS_CA_RENEWAL);
-
-            int validity = 0;
-            int renewal = 0;
-            if (valStr != null)
-                validity = Integer.parseInt(valStr);
-            if (renStr != null)
-                renewal = Integer.parseInt(renStr);
+            UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
+            int validity = (int) config.getClientsCaValidityDays();
+            int renewal = (int) config.getClientsCaRenewalDays();
 
             ClientsCa clientsCa = new ClientsCa(certManager,
                     clientsCaCertSecret.getMetadata().getName(),

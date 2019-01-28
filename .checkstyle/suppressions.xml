@@ -51,4 +51,8 @@
     <suppress checks="ClassDataAbstractionCoupling"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]Main.java"/>
 
+    <!-- user operator -->
+    <suppress checks="NPathComplexity"
+              files="io[/\\]strimzi[/\\]operator[/\\]user[/\\]UserOperatorConfig.java"/>
+
 </suppressions>
