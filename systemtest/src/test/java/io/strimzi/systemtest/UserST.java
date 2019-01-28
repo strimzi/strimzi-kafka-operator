@@ -6,6 +6,7 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
@@ -20,9 +21,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @ExtendWith(StrimziExtension.class)
@@ -54,7 +55,7 @@ class UserST extends AbstractST {
             .endSpec().build()).done();
 
         KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
-        kubeClient.waitForResourceCreation("secret", kafkaUser);
+        StUtils.waitForSecretReady(kafkaUser);
 
         String kafkaUserSecret = TestUtils.toJsonString(kubernetes.getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
@@ -63,7 +64,8 @@ class UserST extends AbstractST {
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
 
-        String kafkaUserAsJson = kubeClient.getResourceAsJson("KafkaUser", kafkaUser);
+        KafkaUser kUser = Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(kafkaUser).get();
+        String kafkaUserAsJson = TestUtils.toJsonString(kUser);
 
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
@@ -81,16 +83,18 @@ class UserST extends AbstractST {
                 .endKafkaUserScramSha512ClientAuthenticationAuthentication()
             .endSpec().done();
 
+        StUtils.waitForSecretReady(kafkaUser);
         kafkaUserSecret = TestUtils.toJsonString(kubernetes.getSecret(kafkaUser));
         assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
-        kafkaUserAsJson = TestUtils.toJsonString(Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(kafkaUser).get());
+        kUser = Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(kafkaUser).get();
+        kafkaUserAsJson = TestUtils.toJsonString(kUser);
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
-        Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(kafkaUser).delete();
-        kubeClient.waitForResourceDeletion("KafkaUser", kafkaUser);
+        Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).delete(kUser);
+        StUtils.waitForKafkaUserDeletion(kafkaUser);
     }
 
     @BeforeEach

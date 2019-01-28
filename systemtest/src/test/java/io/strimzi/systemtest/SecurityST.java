@@ -9,13 +9,12 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.AvailabilityVerifier;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
-import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -39,9 +38,9 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaCertificateSecr
 import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -179,7 +178,7 @@ class SecurityST extends AbstractST {
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("", 1_000, TIMEOUT_FOR_GET_SECRETS, () -> kubernetes.getSecret("alice") != null,
-            () -> LOGGER.error("Couldn't find user secret {}", kubernetes.getListSecrets()));
+            () -> LOGGER.error("Couldn't find user secret {}", kubernetes.listSecrets()));
 
         AvailabilityVerifier mp = waitForInitialAvailability(userName);
 
@@ -236,7 +235,7 @@ class SecurityST extends AbstractST {
             return kubernetes.getSecret(bobUserName) != null;
         },
             () -> {
-                LOGGER.error("Couldn't find user secret {}", kubernetes.getListSecrets());
+                LOGGER.error("Couldn't find user secret {}", kubernetes.listSecrets());
             });
 
         mp = waitForInitialAvailability(bobUserName);
@@ -251,7 +250,7 @@ class SecurityST extends AbstractST {
         resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
         waitFor("Alic's secret to exist", 1_000, 60_000,
             () -> kubernetes.getSecret(aliceUserName) != null,
-            () -> LOGGER.error("Couldn't find user secret {}", kubernetes.getListSecrets()));
+            () -> LOGGER.error("Couldn't find user secret {}", kubernetes.listSecrets()));
 
         AvailabilityVerifier mp = waitForInitialAvailability(aliceUserName);
 
@@ -317,7 +316,7 @@ class SecurityST extends AbstractST {
         resources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("Bob's secret to exist", 1_000, 60_000,
             () -> kubernetes.getSecret(bobUserName) != null,
-            () -> LOGGER.error("Couldn't find user secret {}", kubernetes.getListSecrets()));
+            () -> LOGGER.error("Couldn't find user secret {}", kubernetes.listSecrets()));
 
         mp = waitForInitialAvailability(bobUserName);
         mp.stop(30_000);

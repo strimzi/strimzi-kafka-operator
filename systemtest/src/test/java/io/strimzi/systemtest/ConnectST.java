@@ -5,15 +5,13 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -39,9 +37,9 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
+import static io.strimzi.test.TestUtils.getFileAsString;
 import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -168,8 +166,8 @@ class ConnectST extends AbstractST {
                 .collect(Collectors.toList());
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {
-            kubernetes.waitForPod(pod);
-            List<Event> events = kubernetes.getEvents("Pod", pod);
+            StUtils.waitForPod(pod);
+            List<Event> events = kubernetes.listEvents("Pod", pod);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         }
@@ -184,7 +182,7 @@ class ConnectST extends AbstractST {
                 .collect(Collectors.toList());
         assertEquals(initialReplicas, connectPods.size());
         for (String pod : connectPods) {
-            List<Event> events = kubernetes.getEvents("Pod", pod);
+            List<Event> events = kubernetes.listEvents("Pod", pod);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         }
@@ -225,7 +223,7 @@ class ConnectST extends AbstractST {
 
         StUtils.waitForDeploymentReady(kafkaConnectName(KAFKA_CLUSTER_NAME));
         for (String connectPod : connectPods) {
-            kubernetes.waitForPodDeletion(connectPod);
+            StUtils.waitForPodDeletion(connectPod);
         }
         LOGGER.info("Verify values after update");
         connectPods = kubernetes.listPods(Collections.singletonMap("strimzi.io/kind", "KafkaConnect")).stream()

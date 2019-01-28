@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.systemtest.Resources;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Kubernetes;
@@ -185,6 +186,27 @@ public class StUtils {
         waitForPodsReady(kubernetes.getStatefulSetSelectors(name), true);
     }
 
+    public static void waitForSecretReady (String secretName) {
+        TestUtils.waitFor("Expected secret exists", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
+            return kubernetes.getSecret(secretName) != null;
+        });
+    }
+
+    public static void waitForPod(String name) {
+        LOGGER.info("Waiting when Pod {} will be ready", name);
+
+        TestUtils.waitFor("pod " + name + " will be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> {
+                    List<ContainerStatus> statuses =  kubernetes.getPod(name).getStatus().getContainerStatuses();
+                    for (ContainerStatus containerStatus : statuses) {
+                        if (!containerStatus.getReady()) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+    }
+
     public static void waitForPodsReady(LabelSelector selector, boolean containers) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = kubernetes.listPods(selector);
@@ -213,7 +235,7 @@ public class StUtils {
         });
     }
 
-    public static void waitForPodDeletion(String namespace, String name) {
+    public static void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
         TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
@@ -231,6 +253,16 @@ public class StUtils {
     }
 
     /**
+     * Wait until the deployment will be deleted
+     */
+    public static void waitForDeploymentDeletion(String name) {
+        LOGGER.info("Waiting for Deployment deletion {}", name);
+        TestUtils.waitFor("deployment is deleted" + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> !kubernetes.getDeploymentStatus(name));
+        LOGGER.info("Deployment {} was deleted", name);
+    }
+
+    /**
      * Wait until the deployment config is ready
      */
     public static void waitForDeploymentConfigReady(String namespace, String name) {
@@ -240,9 +272,66 @@ public class StUtils {
         LOGGER.info("Deployment Config {} is ready", name);
     }
 
+    /**
+     * Wait until the statefulSet is ready
+     */
+    public static void waitForStatefulSetReady(String name) {
+        LOGGER.info("Waiting for StatefulSet {}", name);
+        TestUtils.waitFor("StatefulSet " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> kubernetes.getStatefulSetStatus(name));
+        LOGGER.info("StatefulSet {} is ready", name);
+    }
+
+
+    /**
+     * Wait until the stateful set will be deleted
+     */
+    public static void waitForStatefulSetDeletion(String name) {
+        LOGGER.info("Waiting for StatefulSet deletion {}", name);
+        TestUtils.waitFor("StatefulSet is deleted" + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> !kubernetes.getStatefulSetStatus(name));
+        LOGGER.info("StatefulSet {} was deleted", name);
+    }
+
+    /**
+     * Wait until the service is ready
+     */
+    public static void waitForServiceReady(String name) {
+        LOGGER.info("Waiting for service {}", name);
+        TestUtils.waitFor("Service " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> kubernetes.getServiceStatus(name));
+        LOGGER.info("Service {} is ready", name);
+    }
+
+    /**
+     * Wait until the config map is ready
+     */
+    public static void waitForConfigMapReady(String name) {
+        LOGGER.info("Waiting for config map {}", name);
+        TestUtils.waitFor("Config map " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> kubernetes.getConfigMapStatus(name));
+        LOGGER.info("Config map {} is ready", name);
+    }
+
+    /**
+     * Wait until the config map will be deleted
+     */
+    public static void waitForConfigMapDeletion(String name) {
+        LOGGER.info("Waiting for config map deletion {}", name);
+        TestUtils.waitFor("Config map " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> !kubernetes.getConfigMapStatus(name));
+        LOGGER.info("Config map {} was deleted", name);
+    }
+
     public static String getPodNameByPrefix (String prefix) {
         return kubernetes.listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
                 .findFirst().get().getMetadata().getName();
     }
 
+    public static void waitForKafkaUserDeletion (String userName) {
+        LOGGER.info("Waiting for Kafka user deletion {}", userName);
+        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS, () -> {
+            return Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(userName).get() == null;
+        });
+    }
 }

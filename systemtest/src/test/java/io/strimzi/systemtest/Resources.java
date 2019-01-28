@@ -7,21 +7,19 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -87,7 +85,7 @@ public class Resources {
 
     // This logic is necessary only for the deletion of resources with `cascading: true`
     private <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) kubernetes.getInstance()).getHttpClient(), kubernetes.getInstance().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, kubernetes.getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
+        return new CustomResourceOperationsImpl<T, L, D>(kubernetes.getInstance().getHttpClient(), kubernetes.getInstance().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, kubernetes.getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
     }
 
     private MixedOperation<KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnect() {
@@ -465,10 +463,10 @@ public class Resources {
         String namespace = kafka.getMetadata().getNamespace();
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
-            StUtils.waitForPodDeletion(namespace, kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
+            StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
-                StUtils.waitForPodDeletion(namespace, kafka.getMetadata().getName() + "-kafka-" + podIndex));
+                StUtils.waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
     }
 
     private void waitForDeletion(KafkaConnect kafkaConnect) {
@@ -477,7 +475,7 @@ public class Resources {
 
         kubernetes.listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnect.getMetadata().getName() + "-connect-"))
-                .forEach(p -> StUtils.waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
@@ -486,7 +484,7 @@ public class Resources {
 
         kubernetes.listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnectS2I.getMetadata().getName() + "-connect-"))
-                .forEach(p -> StUtils.waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
@@ -495,7 +493,7 @@ public class Resources {
 
         kubernetes.listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
-                .forEach(p -> StUtils.waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     DoneableKafkaTopic topic(String clusterName, String topicName) {

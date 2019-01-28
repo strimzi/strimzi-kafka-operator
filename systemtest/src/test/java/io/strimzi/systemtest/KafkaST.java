@@ -21,12 +21,13 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.systemtest.timemeasuring.Operation;
 import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
+import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.extensions.StrimziExtension;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,12 +59,12 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static io.strimzi.test.extensions.StrimziExtension.TOPIC_CM;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.test.extensions.StrimziExtension.TOPIC_CM;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
@@ -112,7 +113,7 @@ class KafkaST extends AbstractST {
 
         client.pods().list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-                .forEach(p -> kubernetes.waitForPodDeletion(p.getMetadata().getName()));
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
     }
 
     @Test
@@ -146,7 +147,7 @@ class KafkaST extends AbstractST {
         }
 
         //Test that the new pod does not have errors or failures in events
-        List<Event> events = kubernetes.getEvents("Pod", newPodName);
+        List<Event> events = kubernetes.listEvents("Pod", newPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
         //Test that CO doesn't have any exceptions in log
@@ -170,9 +171,9 @@ class KafkaST extends AbstractST {
                 "Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh");
 
         //Test that the new broker has event 'Killing'
-        assertThat(kubernetes.getEvents("Pod", newPodName), hasAllOfReasons(Killing));
+        assertThat(kubernetes.listEvents("Pod", newPodName), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(kubernetes.getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
+        assertThat(kubernetes.listEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
@@ -202,19 +203,19 @@ class KafkaST extends AbstractST {
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getZookeeper().setReplicas(scaleZkTo);
         });
-        kubernetes.waitForPod(newZkPodName[0]);
-        kubernetes.waitForPod(newZkPodName[1]);
+        StUtils.waitForPod(newZkPodName[0]);
+        StUtils.waitForPod(newZkPodName[1]);
 
         // check the new node is either in leader or follower state
         waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
 
         //Test that first pod does not have errors or failures in events
-        List<Event> eventsForFirstPod = kubernetes.getEvents("Pod", newZkPodName[0]);
+        List<Event> eventsForFirstPod = kubernetes.listEvents("Pod", newZkPodName[0]);
         assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForFirstPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
         //Test that second pod does not have errors or failures in events
-        List<Event> eventsForSecondPod = kubernetes.getEvents("Pod", newZkPodName[1]);
+        List<Event> eventsForSecondPod = kubernetes.listEvents("Pod", newZkPodName[1]);
         assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
 
@@ -228,14 +229,14 @@ class KafkaST extends AbstractST {
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getZookeeper().setReplicas(1);
         });
-        kubernetes.waitForPodDeletion(zookeeperPodName(CLUSTER_NAME,  1));
+        StUtils.waitForPodDeletion(zookeeperPodName(CLUSTER_NAME,  1));
         // Wait for the one remaining node to enter standalone mode
         waitForZkMntr(Pattern.compile("zk_server_state\\s+standalone"), 0);
 
         //Test that the second pod has event 'Killing'
-        assertThat(kubernetes.getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
+        assertThat(kubernetes.listEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(kubernetes.getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
+        assertThat(kubernetes.listEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -328,11 +329,11 @@ class KafkaST extends AbstractST {
 
         for (int i = 0; i < expectedZKPods; i++) {
             kubeClient.waitForResourceUpdate("pod", zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
-            kubernetes.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
+            StUtils.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
         }
         for (int i = 0; i < expectedKafkaPods; i++) {
             kubeClient.waitForResourceUpdate("pod", kafkaPodName(CLUSTER_NAME, i), kafkaPodStartTime.get(i));
-            kubernetes.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
+            StUtils.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
         }
 
         LOGGER.info("Verify values after update");
@@ -700,7 +701,7 @@ class KafkaST extends AbstractST {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
-        kubernetes.waitForPod(kafkaPodName);
+        StUtils.waitForPod(kafkaPodName);
 
         String rackId = kubernetes.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id");
         assertEquals("zone", rackId);
@@ -708,7 +709,7 @@ class KafkaST extends AbstractST {
         String brokerRack = kubernetes.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack");
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
-        List<Event> events = kubernetes.getEvents("Pod", kafkaPodName);
+        List<Event> events = kubernetes.listEvents("Pod", kafkaPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
     }
