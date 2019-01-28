@@ -135,27 +135,27 @@ class LogSettingST extends AbstractST {
     }
 
     @Test
-    void testCgLoggingEnabled() {
-        assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka CG logging is enabled");
-        assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper CG logging is enabled");
+    void testGcLoggingEnabled() {
+        assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is enabled");
+        assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is enabled");
 
-        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO CG logging is enabled");
-        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO CG logging is enabled");
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO GC logging is enabled");
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO GC logging is enabled");
 
-        assertTrue(checkGcLoggingDeployments(kafkaConnectName(CLUSTER_NAME)), "Connect CG logging is enabled");
-        assertTrue(checkGcLoggingDeployments(kafkaMirrorMakerName(CLUSTER_NAME)), "Mirror-maker CG logging is enabled");
+        assertTrue(checkGcLoggingDeployments(kafkaConnectName(CLUSTER_NAME)), "Connect GC logging is enabled");
+        assertTrue(checkGcLoggingDeployments(kafkaMirrorMakerName(CLUSTER_NAME)), "Mirror-maker GC logging is enabled");
     }
 
     @Test
-    void testCgLoggingDisabled() {
-        assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(GC_LOGGING_NAME)), "Kafka CG logging is disabled");
-        assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(GC_LOGGING_NAME)), "Zookeeper CG logging is disabled");
+    void testGcLoggingDisabled() {
+        assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(GC_LOGGING_NAME)), "Kafka GC logging is disabled");
+        assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(GC_LOGGING_NAME)), "Zookeeper GC logging is disabled");
 
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_NAME), "topic-operator"), "TO CG logging is disabled");
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_NAME), "user-operator"), "UO CG logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_NAME), "topic-operator"), "TO GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_NAME), "user-operator"), "UO GC logging is disabled");
 
-        assertFalse(checkGcLoggingDeployments(kafkaConnectName(GC_LOGGING_NAME)), "Connect CG logging is disabled");
-        assertFalse(checkGcLoggingDeployments(kafkaMirrorMakerName(GC_LOGGING_NAME)), "Mirror-maker CG logging is disabled");
+        assertFalse(checkGcLoggingDeployments(kafkaConnectName(GC_LOGGING_NAME)), "Connect GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(kafkaMirrorMakerName(GC_LOGGING_NAME)), "Mirror-maker GC logging is disabled");
     }
 
 
