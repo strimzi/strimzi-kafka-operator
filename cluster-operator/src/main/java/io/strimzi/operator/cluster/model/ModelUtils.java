@@ -198,13 +198,13 @@ public class ModelUtils {
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 
-    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName, String keyCertName, Labels labels, OwnerReference ownerReference) {
+    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName, String commonName, String keyCertName, Labels labels, OwnerReference ownerReference) {
         Map<String, String> data = new HashMap<>();
         if (secret == null || clusterCa.certRenewed()) {
             log.debug("Generating certificates");
             try {
                 log.debug(keyCertName + " certificate to generate");
-                CertAndKey eoCertAndKey = clusterCa.generateSignedCert(secretName, Ca.IO_STRIMZI);
+                CertAndKey eoCertAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
                 data.put(keyCertName + ".key", eoCertAndKey.keyAsBase64String());
                 data.put(keyCertName + ".crt", eoCertAndKey.certAsBase64String());
             } catch (IOException e) {
