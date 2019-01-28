@@ -360,7 +360,7 @@ public class TopicOperator extends AbstractModel {
      */
     public Secret generateSecret(ClusterCa clusterCa) {
         Secret topicOperatorSecret = clusterCa.topicOperatorSecret();
-        // TO is using the keyCertName as "entity-operato". This is not typo.
+        // TO is using the keyCertName as "entity-operator". This is not typo.
         return ModelUtils.buildSecret(clusterCa, topicOperatorSecret, namespace, TopicOperator.secretName(cluster), name, "entity-operator", labels, createOwnerReference());
     }
 
