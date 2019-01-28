@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.DoneableCustomResourceDefin
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -76,6 +77,16 @@ public class ClusterOperatorTest {
         startStop(context, "namespace1,namespace2", false);
     }
 
+    @Test
+    public void startStopAllNamespacesOs(TestContext context) {
+        startStopAllNamespaces(context, "*", true);
+    }
+
+    @Test
+    public void startStopAllNamespacesK8s(TestContext context) {
+        startStopAllNamespaces(context, "*", false);
+    }
+
     /**
      * Does the CC start and then stop a verticle per namespace?
      * @param context
@@ -128,6 +139,19 @@ public class ClusterOperatorTest {
             when(mockNamespacedCms.withLabels(any())).thenReturn(mockNamespacedCms);
             when(mockCms.inNamespace(namespace)).thenReturn(mockNamespacedCms);
         }
+
+        FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
+        when(mockFilteredCms.watch(any())).thenAnswer(invo -> {
+            numWatchers.incrementAndGet();
+            Watch mockWatch = mock(Watch.class);
+            doAnswer(invo2 -> {
+                ((Watcher) invo.getArgument(0)).onClose(null);
+                return null;
+            }).when(mockWatch).close();
+            return mockWatch;
+        });
+        when(mockCms.inAnyNamespace()).thenReturn(mockFilteredCms);
+
         Async async = context.async();
 
         Map<String, String> env = new HashMap<>();
@@ -160,4 +184,82 @@ public class ClusterOperatorTest {
         }
     }
 
+    /**
+     * Does the CC start and then stop with the namespace wildcard (*)?
+     * @param context
+     * @param namespaces
+     */
+    private void startStopAllNamespaces(TestContext context, String namespaces, boolean openShift) {
+        AtomicInteger numWatchers = new AtomicInteger(0);
+        KubernetesClient client;
+        if (openShift) {
+            client = mock(OpenShiftClient.class);
+            when(client.isAdaptable(eq(OpenShiftClient.class))).thenReturn(true);
+            when(client.adapt(eq(OpenShiftClient.class))).thenReturn((OpenShiftClient) client);
+        } else {
+            client = mock(KubernetesClient.class);
+            when(client.isAdaptable(eq(OpenShiftClient.class))).thenReturn(false);
+        }
+        when(client.isAdaptable(eq(OkHttpClient.class))).thenReturn(true);
+        try {
+            when(client.getMasterUrl()).thenReturn(new URL("http://localhost"));
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        MixedOperation mockCms = mock(MixedOperation.class);
+        //when(client.configMaps()).thenReturn(mockCms);
+        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition, Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
+        Resource<CustomResourceDefinition, DoneableCustomResourceDefinition> y = mock(Resource.class);
+        if (openShift) {
+            when(y.get()).thenReturn(Crds.kafkaConnectS2I());
+        } else {
+            when(y.get()).thenReturn(null);
+        }
+        when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(y);
+        when(client.customResourceDefinitions()).thenReturn(mockCrds);
+        when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
+
+        FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
+        when(mockFilteredCms.watch(any())).thenAnswer(invo -> {
+            numWatchers.incrementAndGet();
+            Watch mockWatch = mock(Watch.class);
+            doAnswer(invo2 -> {
+                ((Watcher) invo.getArgument(0)).onClose(null);
+                return null;
+            }).when(mockWatch).close();
+            return mockWatch;
+        });
+        when(mockCms.inAnyNamespace()).thenReturn(mockFilteredCms);
+
+        Async async = context.async();
+
+        Map<String, String> env = new HashMap<>();
+        env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
+        env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
+        Main.run(vertx, client, openShift, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+            context.assertNull(ar.cause(), "Expected all verticles to start OK");
+            async.complete();
+        });
+        async.await();
+
+        context.assertEquals(1, vertx.deploymentIDs().size(), "A verticle per namespace");
+
+        List<Async> asyncs = new ArrayList<>();
+        for (String deploymentId: vertx.deploymentIDs()) {
+            Async async2 = context.async();
+            asyncs.add(async2);
+            vertx.undeploy(deploymentId, ar -> {
+                context.assertNull(ar.cause(), "Didn't expect error when undeploying verticle " + deploymentId);
+                async2.complete();
+            });
+        }
+
+        for (Async async2: asyncs) {
+            async2.await();
+        }
+
+        if (numWatchers.get() > (openShift ? 4 : 3)) {
+            context.fail("Looks like there were more watchers than we should");
+        }
+    }
 }
