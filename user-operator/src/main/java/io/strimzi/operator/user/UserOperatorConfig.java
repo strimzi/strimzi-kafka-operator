@@ -38,8 +38,6 @@ public class UserOperatorConfig {
     private final String caCertSecretName;
     private final String caKeySecretName;
     private final String caNamespace;
-    private final long clientsCaValidityDays;
-    private final long clientsCaRenewalDays;
 
     /**
      * Constructor
@@ -51,8 +49,6 @@ public class UserOperatorConfig {
      * @param labels    Map with labels which should be used to find the KafkaUser resources
      * @param caCertSecretName    Name of the secret containing the Certification Authority
      * @param caNamespace   Namespace with the CA secret
-     * @param clientsCaValidityDays    Number of days the certificate is valid
-     * @param clientsCaRenewalDays    Number of days the certificate should be renewed
      */
     public UserOperatorConfig(String namespace,
                               long reconciliationIntervalMs,
@@ -60,9 +56,7 @@ public class UserOperatorConfig {
                               long zookeeperSessionTimeoutMs,
                               Labels labels, String caCertSecretName,
                               String caKeySecretName,
-                              String caNamespace,
-                              long clientsCaValidityDays,
-                              long clientsCaRenewalDays) {
+                              String caNamespace) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.zookeperConnect = zookeperConnect;
@@ -71,8 +65,6 @@ public class UserOperatorConfig {
         this.caCertSecretName = caCertSecretName;
         this.caKeySecretName = caKeySecretName;
         this.caNamespace = caNamespace;
-        this.clientsCaValidityDays = clientsCaValidityDays;
-        this.clientsCaRenewalDays = clientsCaRenewalDays;
     }
 
     /**
@@ -129,19 +121,25 @@ public class UserOperatorConfig {
             caNamespace = namespace;
         }
 
-        long clientsCaValidityDays = EntityUserOperatorSpec.DEFAULT_CERTS_VALIDITY_DAYS;
-        String clientsCaValidityDaysEnvVar = map.get(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY);
-        if (clientsCaValidityDaysEnvVar != null) {
-            clientsCaValidityDays = Long.parseLong(clientsCaValidityDaysEnvVar);
-        }
+        return new UserOperatorConfig(namespace, reconciliationInterval, zookeeperConnect, zookeeperSessionTimeoutMs, labels, caCertSecretName, caKeySecretName, caNamespace);
+    }
 
-        long clientsCaRenewalDays = EntityUserOperatorSpec.DEFAULT_CERTS_RENEWAL_DAYS;
-        String clientsCaRenewalDaysEnvVar = map.get(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL);
-        if (clientsCaRenewalDaysEnvVar != null) {
-            clientsCaRenewalDays = Long.parseLong(clientsCaRenewalDaysEnvVar);
-        }
+    public static int getClientsCaValidityDays() {
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, EntityUserOperatorSpec.DEFAULT_CERTS_VALIDITY_DAYS);
+    }
 
-        return new UserOperatorConfig(namespace, reconciliationInterval, zookeeperConnect, zookeeperSessionTimeoutMs, labels, caCertSecretName, caKeySecretName, caNamespace, clientsCaValidityDays, clientsCaRenewalDays);
+    public static int getClientsCaRenewalDays() {
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, EntityUserOperatorSpec.DEFAULT_CERTS_RENEWAL_DAYS);
+    }
+
+    private static int getIntProperty(String name, int defaultValue) {
+        Map<String, String> map = System.getenv();
+        int value = defaultValue;
+        String intEnvVar = map.get(name);
+        if (intEnvVar != null) {
+            value = Integer.parseInt(intEnvVar);
+        }
+        return value;
     }
 
     /**
@@ -198,20 +196,6 @@ public class UserOperatorConfig {
      */
     public long getZookeeperSessionTimeoutMs() {
         return zookeeperSessionTimeoutMs;
-    }
-
-    /**
-     * @return  CA validity days
-     */
-    public long getClientsCaValidityDays() {
-        return clientsCaValidityDays;
-    }
-
-    /**
-     * @return  CA renewal days
-     */
-    public long getClientsCaRenewalDays() {
-        return clientsCaRenewalDays;
     }
 
     @Override

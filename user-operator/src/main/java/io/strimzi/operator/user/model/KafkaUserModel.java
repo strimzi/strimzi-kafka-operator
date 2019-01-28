@@ -86,7 +86,8 @@ public class KafkaUserModel {
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
 
         if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
-            result.maybeGenerateCertificates(certManager, clientsCaCert, clientsCaKey, userSecret);
+            result.maybeGenerateCertificates(certManager, clientsCaCert, clientsCaKey, userSecret,
+                    UserOperatorConfig.getClientsCaValidityDays(), UserOperatorConfig.getClientsCaRenewalDays());
         } else if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
             result.maybeGeneratePassword(passwordGenerator, userSecret);
         }
@@ -129,23 +130,19 @@ public class KafkaUserModel {
      */
     public void maybeGenerateCertificates(CertManager certManager,
                                           Secret clientsCaCertSecret, Secret clientsCaKeySecret,
-                                          Secret userSecret) {
+                                          Secret userSecret, int validityDays, int renewalDays) {
         if (clientsCaCertSecret == null) {
             throw new NoCertificateSecretException("The Clients CA Cert Secret is missing");
         } else if (clientsCaKeySecret == null) {
             throw new NoCertificateSecretException("The Clients CA Key Secret is missing");
         } else {
-            UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
-            int validity = (int) config.getClientsCaValidityDays();
-            int renewal = (int) config.getClientsCaRenewalDays();
-
             ClientsCa clientsCa = new ClientsCa(certManager,
                     clientsCaCertSecret.getMetadata().getName(),
                     clientsCaCertSecret,
                     clientsCaCertSecret.getMetadata().getName(),
                     clientsCaKeySecret,
-                    validity,
-                    renewal,
+                    validityDays,
+                    renewalDays,
                     false,
                     null);
             this.caCert = clientsCa.currentCaCertBase64();
