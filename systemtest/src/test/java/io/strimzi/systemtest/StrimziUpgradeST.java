@@ -43,6 +43,9 @@ public class StrimziUpgradeST extends AbstractST {
         Arrays.stream(root.listFiles()).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 kubeClient.applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
+            }
+            else if (f.getName().matches("050-Deployment.*")) {
+                kubeClient.applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
             } else {
                 kubeClient.apply(f);
             }
