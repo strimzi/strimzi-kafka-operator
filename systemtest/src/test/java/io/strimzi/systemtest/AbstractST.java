@@ -360,7 +360,7 @@ public abstract class AbstractST {
 
     void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "ERROR", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
