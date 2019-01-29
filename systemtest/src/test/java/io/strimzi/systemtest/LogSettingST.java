@@ -24,10 +24,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(StrimziExtension.class)
@@ -176,46 +178,37 @@ class LogSettingST extends AbstractST {
         return result;
     }
 
-
     private Boolean checkGcLoggingDeployments(String deploymentName, String containerName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
         List<Container> containers = client.apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers();
         Container container = getContainerByName(containerName, containers);
         LOGGER.info("Checking container with name: {}", container.getName());
-        return checkEnvVarValue(container.getEnv());
+        return checkEnvVarValue(container);
     }
 
     private Boolean checkGcLoggingDeployments(String deploymentName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
         Container container = client.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
-        return checkEnvVarValue(container.getEnv());
+        return checkEnvVarValue(container);
     }
 
     private Boolean checkGcLoggingStatefulSets(String statefulSetName) {
         LOGGER.info("Checking stateful set: {}", statefulSetName);
         Container container = client.inNamespace(NAMESPACE).apps().statefulSets().withName(statefulSetName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
-        return checkEnvVarValue(container.getEnv());
+        return checkEnvVarValue(container);
     }
 
     private Container getContainerByName(String containerName, List<Container> containers) {
-        for (Container container : containers) {
-            if (container.getName().equals(containerName)) {
-                return container;
-            }
-        }
-        return null;
+        return containers.stream().filter(c -> c.getName().equals(containerName)).findFirst().orElse(null);
     }
 
-    private Boolean checkEnvVarValue(List<EnvVar> envVars) {
-        for (EnvVar env : envVars) {
-            if (env.getName().contains("GC_LOG_ENABLED")) {
-                LOGGER.info("{}={}", env.getName(), env.getValue());
-                return env.getValue().contains("true");
-            }
-        }
-        return false;
+    private Boolean checkEnvVarValue(Container container) {
+        assertNotNull(container, "Container is null!");
+
+        List<EnvVar> loggingEnvVar = container.getEnv().stream().filter(envVar -> envVar.getName().contains("GC_LOG_ENABLED")).collect(Collectors.toList());
+        return loggingEnvVar.get(0).getValue().contains("true");
     }
 
     @BeforeAll
@@ -256,7 +249,7 @@ class LogSettingST extends AbstractST {
             .done();
 
         EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
-        entityOperatorJvmOptions.setGcLoggingEnabled(Boolean.FALSE);
+        entityOperatorJvmOptions.setGcLoggingEnabled(false);
 
         testClassResources.kafkaEphemeral(GC_LOGGING_NAME, 3)
                 .editSpec()
