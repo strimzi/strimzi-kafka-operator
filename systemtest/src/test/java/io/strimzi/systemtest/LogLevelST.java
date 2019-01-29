@@ -6,6 +6,7 @@ package io.strimzi.systemtest;
 
 import io.strimzi.systemtest.timemeasuring.Operation;
 import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -134,7 +135,7 @@ class LogLevelST extends AbstractST {
         boolean result = false;
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
             LOGGER.info("Check log level setting since {} seconds. Logger: {} Expected: {}", since, entry.getKey(), entry.getValue());
-            String configMap = kubeClient.get("configMap", configMapName);
+            String configMap = TestUtils.toJsonString(kubernetes.getConfigMap(configMapName));
             String loggerConfig = String.format("%s=%s", entry.getKey(), entry.getValue());
             result = configMap.contains(loggerConfig);
 

@@ -112,6 +112,9 @@ public abstract class AbstractST {
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
 
     public static KubeClusterResource cluster = new KubeClusterResource();
+
+    // This field has been deprecated, please use Kubernetes client
+    @Deprecated
     static KubeClient<?> kubeClient = cluster.client();
     static Kubernetes kubernetes = getKubernetes();
 

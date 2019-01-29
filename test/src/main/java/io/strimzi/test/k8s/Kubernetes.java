@@ -1,5 +1,6 @@
 package io.strimzi.test.k8s;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -83,6 +84,10 @@ public class Kubernetes {
 
     public void deleteConfigMap (String configMapName) {
         CLIENT.inNamespace(namespace).configMaps().withName(configMapName).delete();
+    }
+
+    public ConfigMap getConfigMap (String configMapName) {
+        return CLIENT.inNamespace(namespace).configMaps().withName(configMapName).get();
     }
 
     public boolean getConfigMapStatus (String configMapName) {
