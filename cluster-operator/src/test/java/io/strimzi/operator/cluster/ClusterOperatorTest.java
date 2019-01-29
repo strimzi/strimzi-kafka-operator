@@ -140,18 +140,6 @@ public class ClusterOperatorTest {
             when(mockCms.inNamespace(namespace)).thenReturn(mockNamespacedCms);
         }
 
-        FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
-        when(mockFilteredCms.watch(any())).thenAnswer(invo -> {
-            numWatchers.incrementAndGet();
-            Watch mockWatch = mock(Watch.class);
-            doAnswer(invo2 -> {
-                ((Watcher) invo.getArgument(0)).onClose(null);
-                return null;
-            }).when(mockWatch).close();
-            return mockWatch;
-        });
-        when(mockCms.inAnyNamespace()).thenReturn(mockFilteredCms);
-
         Async async = context.async();
 
         Map<String, String> env = new HashMap<>();
