@@ -208,6 +208,7 @@ class LogSettingST extends AbstractST {
         assertNotNull(container, "Container is null!");
 
         List<EnvVar> loggingEnvVar = container.getEnv().stream().filter(envVar -> envVar.getName().contains("GC_LOG_ENABLED")).collect(Collectors.toList());
+        LOGGER.info("{}={}", loggingEnvVar.get(0).getName(), loggingEnvVar.get(0).getValue());
         return loggingEnvVar.get(0).getValue().contains("true");
     }
 
