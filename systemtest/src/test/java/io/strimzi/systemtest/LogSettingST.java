@@ -54,7 +54,8 @@ class LogSettingST extends AbstractST {
     private static final String FATAL = "FATAL";
     private static final String OFF = "OFF";
 
-    private static final String GC_LOGGING_NAME = "gc-logging";
+    private static final String GC_LOGGING_SET_NAME = "gc-set-logging";
+    private static final String GC_LOGGING_NONSET_NAME = "gc-nonset-logging";
 
     private static final Map<String, String> KAFKA_LOGGERS = new HashMap<String, String>() {
         {
@@ -137,7 +138,7 @@ class LogSettingST extends AbstractST {
     }
 
     @Test
-    void testGcLoggingEnabled() {
+    void testGcLoggingSetEnabled() {
         assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is enabled");
         assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is enabled");
 
@@ -149,17 +150,25 @@ class LogSettingST extends AbstractST {
     }
 
     @Test
-    void testGcLoggingDisabled() {
-        assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(GC_LOGGING_NAME)), "Kafka GC logging is disabled");
-        assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(GC_LOGGING_NAME)), "Zookeeper GC logging is disabled");
+    void testGcLoggingSetDisabled() {
+        assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(GC_LOGGING_SET_NAME)), "Kafka GC logging is disabled");
+        assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(GC_LOGGING_SET_NAME)), "Zookeeper GC logging is disabled");
 
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_NAME), "topic-operator"), "TO GC logging is disabled");
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_NAME), "user-operator"), "UO GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), "TO GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), "UO GC logging is disabled");
 
-        assertFalse(checkGcLoggingDeployments(kafkaConnectName(GC_LOGGING_NAME)), "Connect GC logging is disabled");
-        assertFalse(checkGcLoggingDeployments(kafkaMirrorMakerName(GC_LOGGING_NAME)), "Mirror-maker GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(kafkaConnectName(GC_LOGGING_SET_NAME)), "Connect GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(kafkaMirrorMakerName(GC_LOGGING_SET_NAME)), "Mirror-maker GC logging is disabled");
     }
 
+    @Test
+    void testGcLoggingNonSetEnabled() {
+        assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(GC_LOGGING_NONSET_NAME)), "Kafka GC logging is enabled");
+        assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(GC_LOGGING_NONSET_NAME)), "Zookeeper GC logging is enabled");
+
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_NONSET_NAME), "topic-operator"), "TO GC logging is enabled");
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_NONSET_NAME), "user-operator"), "UO GC logging is enabled");
+    }
 
     private boolean checkLoggersLevel(Map<String, String> loggers, int since, String configMapName) {
         boolean result = false;
@@ -252,37 +261,40 @@ class LogSettingST extends AbstractST {
         EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
         entityOperatorJvmOptions.setGcLoggingEnabled(false);
 
-        testClassResources.kafkaEphemeral(GC_LOGGING_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
-                        .endJvmOptions()
-                    .endKafka()
-                    .editZookeeper()
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
-                        .endJvmOptions()
-                    .endZookeeper()
-                    .withNewEntityOperator()
-                        .withNewTopicOperator()
-                            .withJvmOptions(entityOperatorJvmOptions)
-                        .endTopicOperator()
-                        .withNewUserOperator()
-                            .withJvmOptions(entityOperatorJvmOptions)
-                        .endUserOperator()
-                    .endEntityOperator()
-                .endSpec()
-                .done();
+        testClassResources.kafkaEphemeral(GC_LOGGING_SET_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(false)
+                    .endJvmOptions()
+                .endKafka()
+                .editZookeeper()
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(false)
+                    .endJvmOptions()
+                .endZookeeper()
+                .withNewEntityOperator()
+                    .withNewTopicOperator()
+                        .withJvmOptions(entityOperatorJvmOptions)
+                    .endTopicOperator()
+                    .withNewUserOperator()
+                        .withJvmOptions(entityOperatorJvmOptions)
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .done();
 
         testClassResources.kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
                 .endInlineLogging()
+                .withNewJvmOptions()
+                    .withGcLoggingEnabled(true)
+                .endJvmOptions()
             .endSpec().done();
 
-        testClassResources.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_NAME, "my-group", 1, false)
+        testClassResources.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                   .withLoggers(MIRROR_MAKER_LOGGERS)
@@ -290,20 +302,43 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .done();
 
-        testClassResources.kafkaConnect(GC_LOGGING_NAME, 1)
+        testClassResources.kafkaConnect(GC_LOGGING_SET_NAME, 1)
                 .editSpec()
                     .withNewJvmOptions()
                         .withGcLoggingEnabled(false)
                     .endJvmOptions()
                 .endSpec().done();
 
-        testClassResources.kafkaMirrorMaker(GC_LOGGING_NAME, CLUSTER_NAME, GC_LOGGING_NAME, "my-group", 1, false)
+        testClassResources.kafkaMirrorMaker(GC_LOGGING_SET_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
                 .editSpec()
                     .withNewJvmOptions()
                        .withGcLoggingEnabled(false)
                     .endJvmOptions()
                 .endSpec()
                 .done();
+
+        testClassResources.kafkaEphemeral(GC_LOGGING_NONSET_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .withNewJvmOptions()
+                    .endJvmOptions()
+                .endKafka()
+                .editZookeeper()
+                    .withNewJvmOptions()
+                    .endJvmOptions()
+                .endZookeeper()
+                .withNewEntityOperator()
+                    .withNewTopicOperator()
+                        .withNewJvmOptions()
+                        .endJvmOptions()
+                    .endTopicOperator()
+                    .withNewUserOperator()
+                        .withNewJvmOptions()
+                        .endJvmOptions()
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .done();
     }
 
     @AfterAll
