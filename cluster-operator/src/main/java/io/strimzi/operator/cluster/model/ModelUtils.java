@@ -57,7 +57,7 @@ public class ModelUtils {
     }
 
     public static int getCertificateValidity(CertificateAuthority certificateAuthority) {
-        int validity = AbstractModel.CERTS_EXPIRATION_DAYS;
+        int validity = AbstractModel.CERTS_VALIDITY_DAYS;
         if (certificateAuthority != null
                 && certificateAuthority.getValidityDays() > 0) {
             validity = certificateAuthority.getValidityDays();
@@ -66,7 +66,7 @@ public class ModelUtils {
     }
 
     public static int getRenewalDays(CertificateAuthority certificateAuthority) {
-        return certificateAuthority != null ? certificateAuthority.getRenewalDays() : 30;
+        return certificateAuthority != null ? certificateAuthority.getRenewalDays() : AbstractModel.CERTS_RENEWAL_DAYS;
     }
 
     /**

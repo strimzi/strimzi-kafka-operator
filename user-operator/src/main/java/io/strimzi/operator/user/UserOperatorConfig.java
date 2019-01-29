@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.user;
 
-import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 
@@ -125,16 +124,17 @@ public class UserOperatorConfig {
     }
 
     public static int getClientsCaValidityDays() {
-        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, EntityUserOperatorSpec.DEFAULT_CERTS_VALIDITY_DAYS);
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY);
     }
 
     public static int getClientsCaRenewalDays() {
-        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, EntityUserOperatorSpec.DEFAULT_CERTS_RENEWAL_DAYS);
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL);
     }
 
-    private static int getIntProperty(String name, int defaultValue) {
+    private static int getIntProperty(String name) {
+        // default value is set in operator
         Map<String, String> map = System.getenv();
-        int value = defaultValue;
+        int value = 0;
         String intEnvVar = map.get(name);
         if (intEnvVar != null) {
             value = Integer.parseInt(intEnvVar);
