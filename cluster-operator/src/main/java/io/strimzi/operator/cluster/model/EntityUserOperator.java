@@ -53,8 +53,8 @@ public class EntityUserOperator extends AbstractModel {
     private String resourceLabels;
     private long reconciliationIntervalMs;
     private long zookeeperSessionTimeoutMs;
-    private long clientsCaValidityDays;
-    private long clientsCaRenewalDays;
+    private int clientsCaValidityDays;
+    private int clientsCaRenewalDays;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -102,7 +102,7 @@ public class EntityUserOperator extends AbstractModel {
         return reconciliationIntervalMs;
     }
 
-    public void setClientsCaValidityDays(long clientsCaValidityDays) {
+    public void setClientsCaValidityDays(int clientsCaValidityDays) {
         this.clientsCaValidityDays = clientsCaValidityDays;
     }
 
@@ -110,7 +110,7 @@ public class EntityUserOperator extends AbstractModel {
         return this.clientsCaValidityDays;
     }
 
-    public void setClientsCaRenewalDays(long clientsCaRenewalDays) {
+    public void setClientsCaRenewalDays(int clientsCaRenewalDays) {
         this.clientsCaRenewalDays = clientsCaRenewalDays;
     }
 
@@ -226,8 +226,8 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaCluster.clientsCaCertSecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Long.toString(clientsCaValidityDays)));
-        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Long.toString(clientsCaRenewalDays)));
+        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
+        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
         return varList;
     }
 
