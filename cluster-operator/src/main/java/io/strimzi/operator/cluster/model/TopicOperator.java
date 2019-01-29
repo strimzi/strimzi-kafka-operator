@@ -107,7 +107,6 @@ public class TopicOperator extends AbstractModel {
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
-        this.validLoggerFields = getDefaultLogConfig();
     }
 
 

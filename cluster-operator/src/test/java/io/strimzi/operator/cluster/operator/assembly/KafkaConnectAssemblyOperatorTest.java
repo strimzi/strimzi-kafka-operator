@@ -67,17 +67,9 @@ public class KafkaConnectAssemblyOperatorTest {
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
             emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"), emptyMap(), emptyMap()) { };
     protected static Vertx vertx;
-    public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
-    public static final String LOGGING_CONFIG = "#Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.\n" +
-            "\n" +
-            "log4j.rootLogger=${connect.root.logger.level}, CONSOLE\n" +
-            "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
-            "log4j.logger.org.reflections=ERROR\n" +
-            "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-            "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-            "connect.root.logger.level=INFO\n" +
-            "log4j.logger.org.apache.zookeeper=ERROR\n" +
-            "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n";
+    private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
+    private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties("kafkaConnectDefaultLoggingProperties")
+            .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
 
     @BeforeClass
     public static void before() {

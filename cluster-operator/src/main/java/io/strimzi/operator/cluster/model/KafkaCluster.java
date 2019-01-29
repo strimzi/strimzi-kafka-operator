@@ -191,7 +191,6 @@ public class KafkaCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
 
         this.initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
-        this.validLoggerFields = getDefaultLogConfig();
     }
 
     public static String kafkaClusterName(String cluster) {

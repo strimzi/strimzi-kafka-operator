@@ -180,4 +180,21 @@ public class OrderedPropertiesTest {
             .addPair("unicode", "\u0123X\uAbBa");
         Assert.assertEquals(expected.asMap(), actual);
     }
+
+    @Test
+    public void pairsWithComment() {
+        Assert.assertEquals("# this is a comment\n" +
+                "first=1\n" +
+                "second=2\n" +
+                "third=3\n" +
+                "FOURTH=4\n", createTestKeyValues().asPairsWithComment("this is a comment"));
+    }
+
+    @Test
+    public void pairsWithMultineComment() {
+        Assert.assertEquals("# this\n" +
+                "# is\n" +
+                "# a\n" +
+                "# comment\\\n", new OrderedProperties().asPairsWithComment("this\nis\n\ra\rcomment\\"));
+    }
 }
