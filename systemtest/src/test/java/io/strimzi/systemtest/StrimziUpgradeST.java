@@ -7,7 +7,6 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.annotations.ClusterOperator;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
@@ -15,7 +14,6 @@ import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -31,7 +29,6 @@ import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(StrimziUpgradeST.NAMESPACE)
-@ClusterOperator
 @Tag(FLAKY)
 public class StrimziUpgradeST extends AbstractST {
 
