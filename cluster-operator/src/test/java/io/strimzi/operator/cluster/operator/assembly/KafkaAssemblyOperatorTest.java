@@ -944,7 +944,6 @@ public class KafkaAssemblyOperatorTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        String clusterCmNamespace = "test";
 
         Kafka foo = getKafkaAssembly("foo");
         foo.getMetadata().setNamespace("namespace1");
@@ -975,11 +974,6 @@ public class KafkaAssemblyOperatorTest {
                 asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift))
         );
 
-        //when(mockSecretOps.get(eq("namespace1"), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
-        //        .thenReturn(
-        //                fooSecrets.get(0));
-        //when(mockSecretOps.reconcile(eq("namespace1"), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
-
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(bar, VERSIONS);
@@ -987,17 +981,14 @@ public class KafkaAssemblyOperatorTest {
                 asList(barCluster.generateStatefulSet(openShift))
         );
         when(mockSecretOps.list(eq("*"), eq(barLabels))).thenAnswer(
-                invocation -> new ArrayList<>(asList(
-                        barClientsCa.caKeySecret(),
-                        barClientsCa.caCertSecret(),
-                        barCluster.generateBrokersSecret(),
-                        barClusterCa.caCertSecret()))
+            invocation -> new ArrayList<>(asList(
+                    barClientsCa.caKeySecret(),
+                    barClientsCa.caCertSecret(),
+                    barCluster.generateBrokersSecret(),
+                    barClusterCa.caCertSecret()))
         );
-        //when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
-        //when(mockSecretOps.reconcile(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
-        //Set<String> deleted = new CopyOnWriteArraySet<>();
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
