@@ -188,7 +188,6 @@ class RecoveryST extends AbstractST {
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         LOGGER.info("Creating resources before the test class");
-        setNamespacesInfo(NAMESPACE);
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();

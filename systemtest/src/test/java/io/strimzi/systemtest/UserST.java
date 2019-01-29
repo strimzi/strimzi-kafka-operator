@@ -104,7 +104,6 @@ class UserST extends AbstractST {
 
     @BeforeAll
     static void createClusterOperator() {
-        setNamespacesInfo(NAMESPACE);
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();

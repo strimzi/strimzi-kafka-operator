@@ -50,11 +50,9 @@ import java.io.StringReader;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -127,9 +125,6 @@ public abstract class AbstractST {
     static String testClass;
     static String testName;
     Random rng = new Random();
-
-    public static String baseClusterOperatorNamespace = kubeClient.defaultNamespace();
-    public static List<String> baseBindingsNamespaces = new ArrayList<>();
 
     protected static NamespacedKubernetesClient namespacedClient() {
         return client.inNamespace(kubeClient.namespace());
@@ -1080,9 +1075,10 @@ public abstract class AbstractST {
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
      * @param time timeout in miliseconds
      * @param coNamespace namespace where cluster operator is deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
      * @throws Exception exception
      */
-    void waitForDeletion(long time, String coNamespace) throws Exception {
+    void waitForDeletion(long time, String coNamespace, String... bindingsNamespaces) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
         long podCount = client.pods().inNamespace(coNamespace).list().getItems().stream().filter(
@@ -1096,9 +1092,19 @@ public abstract class AbstractST {
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
 
-            recreateTestEnv(baseClusterOperatorNamespace, baseBindingsNamespaces);
+            recreateTestEnv(coNamespace, bindingsNamespaces);
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
+    }
+
+    /**
+     * Wait till all pods in specific namespace are deleted and recreate testing environment in case of some pods cannot be deleted.
+     * @param time timeout in miliseconds
+     * @param coNamespace namespace where cluster operator is deployed to
+     * @throws Exception exception
+     */
+    void waitForDeletion(long time, String coNamespace) throws Exception {
+        waitForDeletion(time, coNamespace, coNamespace);
     }
 
     /**
@@ -1106,7 +1112,7 @@ public abstract class AbstractST {
      * @param coNamespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
      */
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+    void recreateTestEnv(String coNamespace, String... bindingsNamespaces) {
         LOGGER.info("There are some unexpected pods! Cleanup is not finished properly! Wait till env will be recreated.");
         testClassResources.deleteResources();
         kubeClient.namespace(DEFAULT_NAMESPACE);
@@ -1135,35 +1141,25 @@ public abstract class AbstractST {
     /**
      * Method for apply Strimzi cluster operator specific Role and CLusterRole bindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
-     * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
+     * @param clientNamespaces list of namespaces where Bindings should be deployed to
      */
-    static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
-        for (String bindingsNamespace : bindingsNamespaces) {
+    static void applyRoleBindings(String namespace, String... clientNamespaces) {
+        for (String clientNamespace : clientNamespaces) {
             // 020-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
             // 021-ClusterRoleBinding
-            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
             // 030-ClusterRoleBinding
-            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
+            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, clientNamespace);
             // 031-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, clientNamespace);
             // 032-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, clientNamespace);
         }
     }
 
     static void applyRoleBindings(String namespace) {
-        applyRoleBindings(namespace, Collections.singletonList(namespace));
-    }
-
-    public static void setNamespacesInfo(String coNamespace, String... bindigsNamespaces) {
-        baseClusterOperatorNamespace = coNamespace;
-        baseBindingsNamespaces = asList(bindigsNamespaces);
-    }
-
-    public static void setNamespacesInfo(String coNamespace) {
-        baseClusterOperatorNamespace = coNamespace;
-        baseBindingsNamespaces = asList(coNamespace);
+        applyRoleBindings(namespace, namespace);
     }
 
     @BeforeEach
@@ -1175,12 +1171,5 @@ public abstract class AbstractST {
     static void createTestClassResources(TestInfo testInfo) {
         createClusterOperatorResources();
         testClass = testInfo.getTestClass().get().getSimpleName();
-    }
-
-    @AfterEach
-    void teardownEnvironmet(ExtensionContext context) {
-        if (context.getExecutionException().isPresent()) {
-            recreateTestEnv(baseClusterOperatorNamespace, baseBindingsNamespaces);
-        }
     }
 }
