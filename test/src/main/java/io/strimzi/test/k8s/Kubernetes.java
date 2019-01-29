@@ -63,7 +63,7 @@ public class Kubernetes {
     }
 
     public String namespace(String namespace) {
-        String previous = CLIENT.getNamespace();
+        String previous = this.namespace;
         this.namespace = namespace;
         return previous;
     }
@@ -81,12 +81,12 @@ public class Kubernetes {
         CLIENT.namespaces().withName(name).delete();
     }
 
-    public void deleteConfigMap (String configManName) {
-        CLIENT.inNamespace(namespace).configMaps().withName(configManName).delete();
+    public void deleteConfigMap (String configMapName) {
+        CLIENT.inNamespace(namespace).configMaps().withName(configMapName).delete();
     }
 
-    public boolean getConfigMapStatus (String configManName) {
-        return CLIENT.inNamespace(namespace).configMaps().withName(configManName).isReady();
+    public boolean getConfigMapStatus (String configMapName) {
+        return CLIENT.inNamespace(namespace).configMaps().withName(configMapName).isReady();
     }
 
 
@@ -171,7 +171,7 @@ public class Kubernetes {
         return CLIENT.inNamespace(namespace).pods().withName(name).get();
     }
 
-    public Date getPodCreateTimestamp(String podName) {
+    public Date getCreationTimestampForPod(String podName) {
         DateFormat df = new SimpleDateFormat("yyyyMMdd'T'kkmmss'Z'");
         Pod pod = getPod(podName);
         Date parsedDate = null;

@@ -59,12 +59,10 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static io.strimzi.test.extensions.StrimziExtension.TOPIC_CM;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
@@ -111,9 +109,8 @@ class KafkaST extends AbstractST {
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
 
-        client.pods().list().getItems().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
+        StUtils.waitForStatefulSetDeletion(kafkaClusterName(clusterName));
+        StUtils.waitForStatefulSetDeletion(zookeeperClusterName(clusterName));
     }
 
     @Test
@@ -125,9 +122,8 @@ class KafkaST extends AbstractST {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
-        //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
 
-        final int initialReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int initialReplicas = kubernetes.getStatefulSet(kafkaClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(3, initialReplicas);
         // scale up
         final int scaleTo = initialReplicas + 1;
@@ -137,7 +133,7 @@ class KafkaST extends AbstractST {
         final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas + 1));
-        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
+        StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(CLUSTER_NAME));
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
         // (execute bash because we want the env vars expanded in the pod)
@@ -161,9 +157,9 @@ class KafkaST extends AbstractST {
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setReplicas(initialReplicas);
         });
-        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
+        StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(CLUSTER_NAME));
 
-        final int finalReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int finalReplicas = kubernetes.getStatefulSet(kafkaClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
         versions = getBrokerApiVersions(firstPodName);
 
@@ -186,9 +182,7 @@ class KafkaST extends AbstractST {
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
-        //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(CLUSTER_NAME), 1);
-        KubernetesClient client = new DefaultKubernetesClient();
-        final int initialZkReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
+        final int initialZkReplicas = kubernetes.getStatefulSet(zookeeperClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(1, initialZkReplicas);
 
         // scale up
@@ -288,11 +282,11 @@ class KafkaST extends AbstractST {
         int expectedKafkaPods = 2;
         List<Date> zkPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedZKPods; i++) {
-            zkPodStartTime.add(kubernetes.getPodCreateTimestamp(zookeeperPodName(CLUSTER_NAME, i)));
+            zkPodStartTime.add(kubernetes.getCreationTimestampForPod(zookeeperPodName(CLUSTER_NAME, i)));
         }
         List<Date> kafkaPodStartTime = new ArrayList<>();
         for (int i = 0; i < expectedKafkaPods; i++) {
-            kafkaPodStartTime.add(kubernetes.getPodCreateTimestamp(kafkaPodName(CLUSTER_NAME, i)));
+            kafkaPodStartTime.add(kubernetes.getCreationTimestampForPod(kafkaPodName(CLUSTER_NAME, i)));
         }
 
         LOGGER.info("Verify values before update");
@@ -328,11 +322,11 @@ class KafkaST extends AbstractST {
         });
 
         for (int i = 0; i < expectedZKPods; i++) {
-            kubeClient.waitForResourceUpdate("pod", zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
+            StUtils.waitForPodUpdate(zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
             StUtils.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
         }
         for (int i = 0; i < expectedKafkaPods; i++) {
-            kubeClient.waitForResourceUpdate("pod", kafkaPodName(CLUSTER_NAME, i), kafkaPodStartTime.get(i));
+            StUtils.waitForPodUpdate(kafkaPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
             StUtils.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
         }
 
@@ -599,23 +593,24 @@ class KafkaST extends AbstractST {
             .endSpec().done();
 
         //Creating topics for testing
-        kubeClient.create(TOPIC_CM);
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_TOPIC_CREATION, () -> {
+        String topicName = "my-topic";
+        resources().topic(CLUSTER_NAME, topicName).done();
+        TestUtils.waitFor("wait for " + topicName + " to be created in Kafka", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
-            return topics.contains("my-topic");
+            return topics.contains(topicName);
         });
 
-        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem("my-topic"));
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItem(topicName));
 
         createTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli", 1, 1);
-        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
-        assertThat(kubeClient.list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems(topicName, "topic-from-cli"));
+        assertThat(kubeClient.list("kafkatopic"), hasItems(topicName, "topic-from-cli", topicName));
 
         //Updating first topic using pod CLI
-        updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
-        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
+        updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, topicName, 2);
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, topicName),
                 hasItems("PartitionCount:2"));
-        KafkaTopic testTopic = fromYamlString(kubeClient.get("kafkatopic", "my-topic"), KafkaTopic.class);
+        KafkaTopic testTopic = Crds.topicOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(topicName).get();
         assertNotNull(testTopic);
         assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
@@ -626,20 +621,20 @@ class KafkaST extends AbstractST {
         });
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-from-cli"),
                 hasItems("PartitionCount:2"));
-        testTopic = fromYamlString(kubeClient.get("kafkatopic", "topic-from-cli"), KafkaTopic.class);
+        testTopic = Crds.topicOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName("topic-from-cli").get();
         assertNotNull(testTopic);
         assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
 
         //Deleting first topic by deletion of CM
-        kubeClient.deleteByName("kafkatopic", "topic-from-cli");
+        Crds.topicOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName("topic-from-cli").delete();
 
         //Deleting another topic using pod CLI
-        deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
-        kubeClient.waitForResourceDeletion("kafkatopic", "my-topic");
+        deleteTopicUsingPodCLI(CLUSTER_NAME, 0, topicName);
+        StUtils.waitForKafkaTopicDeletion(topicName);
         Thread.sleep(10000L);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
-        assertThat(topics, not(hasItems("my-topic")));
+        assertThat(topics, not(hasItems(topicName)));
         assertThat(topics, not(hasItems("topic-from-cli")));
     }
 

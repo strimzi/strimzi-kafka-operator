@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -235,6 +236,12 @@ public class StUtils {
         });
     }
 
+    public static void waitForPodUpdate(String podName, Date startTime) {
+        TestUtils.waitFor(podName + " update",Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+            startTime.before(kubernetes.getCreationTimestampForPod(podName))
+        );
+    }
+
     public static void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
@@ -330,8 +337,15 @@ public class StUtils {
 
     public static void waitForKafkaUserDeletion (String userName) {
         LOGGER.info("Waiting for Kafka user deletion {}", userName);
-        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS, () -> {
-            return Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(userName).get() == null;
-        });
+        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS, () ->
+            Crds.kafkaUserOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(userName).get() == null
+        );
+    }
+
+    public static void waitForKafkaTopicDeletion (String topicName) {
+        LOGGER.info("Waiting for Kafka topic deletion {}", topicName);
+        TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS, () ->
+                Crds.topicOperation(kubernetes.getInstance()).inNamespace(kubernetes.getNamespace()).withName(topicName).get() == null
+        );
     }
 }
