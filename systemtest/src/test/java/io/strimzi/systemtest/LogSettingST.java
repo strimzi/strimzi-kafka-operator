@@ -180,7 +180,7 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName, String containerName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        List<Container> containers = client.apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers();
+        List<Container> containers = client.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers();
         Container container = getContainerByName(containerName, containers);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
