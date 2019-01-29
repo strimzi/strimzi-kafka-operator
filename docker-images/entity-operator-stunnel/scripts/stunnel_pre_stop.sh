@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 GRACE_PERIOD=$1
 TIMER="0"

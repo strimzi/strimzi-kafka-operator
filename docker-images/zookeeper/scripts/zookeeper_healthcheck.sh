@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ZOOKEEPER_ID=$(hostname | awk -F'-' '{print $NF+1}')
 CLIENT_PORT=$(expr 21810 + $ZOOKEEPER_ID - 1)

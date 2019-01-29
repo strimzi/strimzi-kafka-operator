@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export BASE_HOSTNAME=$(hostname | rev | cut -d "-" -f2- | rev)
 export BASE_FQDN=$(hostname -f | cut -d "." -f2-)

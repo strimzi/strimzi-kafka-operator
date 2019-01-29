@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set +x
 
 if [ -z "$KAFKA_CONNECT_PLUGIN_PATH" ]; then

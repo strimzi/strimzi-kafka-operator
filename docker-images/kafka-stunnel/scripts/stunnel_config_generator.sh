@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # path were the Secret with broker certificates is mounted
 KAFKA_CERTS_KEYS=/etc/tls-sidecar/kafka-brokers
