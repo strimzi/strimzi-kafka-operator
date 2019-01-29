@@ -213,7 +213,7 @@ public class ZookeeperClusterTest {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                     .editKafka()
-                        .withNewEphemeralStorageStorage().endEphemeralStorageStorage()
+                        .withNewEphemeralStorage().endEphemeralStorage()
                     .endKafka()
                 .endSpec()
             .build();
@@ -224,7 +224,7 @@ public class ZookeeperClusterTest {
         ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                     .editKafka()
-                        .withNewPersistentClaimStorageStorage().withDeleteClaim(false).endPersistentClaimStorageStorage()
+                        .withNewPersistentClaimStorage().withDeleteClaim(false).endPersistentClaimStorage()
                     .endKafka()
                 .endSpec()
             .build();
@@ -235,7 +235,7 @@ public class ZookeeperClusterTest {
         ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                     .editZookeeper()
-                        .withNewPersistentClaimStorageStorage().withDeleteClaim(true).withSize("100Gi").endPersistentClaimStorageStorage()
+                        .withNewPersistentClaimStorage().withDeleteClaim(true).withSize("100Gi").endPersistentClaimStorage()
                     .endZookeeper()
                 .endSpec()
             .build();
