@@ -21,6 +21,7 @@ import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -209,8 +210,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
         List<T> desiredResources = resourceOperator.list(namespace, Labels.EMPTY);
-        Set<NamespacedResourceName> desiredNames = desiredResources.stream()
-                .map(cr -> new NamespacedResourceName(cr.getMetadata().getNamespace(), cr.getMetadata().getName()))
+        Set<NamespaceAndName> desiredNames = desiredResources.stream()
+                .map(cr -> new NamespaceAndName(cr.getMetadata().getNamespace(), cr.getMetadata().getName()))
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, Labels.EMPTY, desiredNames);
 
@@ -218,10 +219,10 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         Labels resourceSelector = Labels.EMPTY.withKind(assemblyType.name);
         List<? extends HasMetadata> resources = getResources(namespace, resourceSelector);
         // now extract the cluster name from those
-        Set<NamespacedResourceName> resourceNames = resources.stream()
+        Set<NamespaceAndName> resourceNames = resources.stream()
                 .filter(r -> !r.getKind().equals(kind)) // exclude desired resource
                 .map(resource ->
-                        new NamespacedResourceName(
+                        new NamespaceAndName(
                                 resource.getMetadata().getNamespace(),
                                 resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL)
                         )
@@ -235,7 +236,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         // Using futures would be more complex for no benefit
         CountDownLatch latch = new CountDownLatch(desiredNames.size());
 
-        for (NamespacedResourceName name: desiredNames) {
+        for (NamespaceAndName name: desiredNames) {
             Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, name.getNamespace(), name.getName());
             reconcileAssembly(reconciliation, result -> {
                 handleResult(reconciliation, result);
@@ -328,52 +329,5 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
             }
         }
         return onlyMetricsSettingChanged && diff.size() == 1;
-    }
-
-    private class NamespacedResourceName    {
-        private final String namespace;
-        private final String name;
-
-        public NamespacedResourceName(String namespace, String name)   {
-            this.namespace = namespace;
-            this.name = name;
-        }
-
-        public String getNamespace() {
-            return namespace;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            } else if (obj == null) {
-                return false;
-            } else if (obj instanceof AbstractAssemblyOperator.NamespacedResourceName) {
-                NamespacedResourceName nrn = (NamespacedResourceName) obj;
-                if ((nrn.getName() == null && name == null) ||
-                        (nrn.getName().equals(name) && ((nrn.getNamespace() == null && namespace == null)
-                                || nrn.getNamespace().equals(namespace)))) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = namespace != null ? namespace.hashCode() : 0;
-            result = 31 * result + (name != null ? name.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return namespace + "/" + name;
-        }
     }
 }
