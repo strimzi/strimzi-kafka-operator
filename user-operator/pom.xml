@@ -16,9 +16,6 @@
         </license>
     </licenses>
 
-    <properties>
-        <sundrio.version>0.7.1</sundrio.version>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>

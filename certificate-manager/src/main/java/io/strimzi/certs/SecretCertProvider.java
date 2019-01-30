@@ -13,7 +13,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 /**
  * Provides Kubernetes secrets containing certificates
@@ -102,13 +106,14 @@ public class SecretCertProvider {
      */
     public Secret createSecret(String namespace, String name, Map<String, String> data,
                                Map<String, String> labels, Map<String, String> annotations, OwnerReference ownerReference) {
+        List<OwnerReference> or = ownerReference != null ? singletonList(ownerReference) : emptyList();
         Secret secret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
                     .withLabels(labels)
                     .withAnnotations(annotations)
-                    .withOwnerReferences(ownerReference)
+                    .withOwnerReferences(or)
                 .endMetadata()
                 .withData(data)
                 .build();

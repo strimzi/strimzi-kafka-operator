@@ -46,8 +46,8 @@ class UserST extends AbstractST {
                             .endKafkaListenerAuthenticationTlsAuth()
                         .endTls()
                         .endListeners()
-                    .withNewKafkaAuthorizationSimpleAuthorization()
-                    .endKafkaAuthorizationSimpleAuthorization()
+                    .withNewKafkaAuthorizationSimple()
+                    .endKafkaAuthorizationSimple()
                 .endKafka()
             .endSpec().build()).done();
 
@@ -75,8 +75,8 @@ class UserST extends AbstractST {
                 .withName(kafkaUser)
             .endMetadata()
             .editSpec()
-                .withNewKafkaUserScramSha512ClientAuthenticationAuthentication()
-                .endKafkaUserScramSha512ClientAuthenticationAuthentication()
+                .withNewKafkaUserScramSha512ClientAuthentication()
+                .endKafkaUserScramSha512ClientAuthentication()
             .endSpec().done();
 
         kafkaUserSecret = kubeClient.getResourceAsJson("secret", kafkaUser);
