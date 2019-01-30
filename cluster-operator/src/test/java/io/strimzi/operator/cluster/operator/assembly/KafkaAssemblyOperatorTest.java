@@ -860,7 +860,7 @@ public class KafkaAssemblyOperatorTest {
         ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
         RoleBindingOperator mockRbo = supplier.roleBindingOperator;
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
-        String clusterCmNamespace = "myNamespace";
+        String clusterCmNamespace = "test";
 
         Kafka foo = getKafkaAssembly("foo");
         Kafka bar = getKafkaAssembly("bar");
@@ -929,6 +929,82 @@ public class KafkaAssemblyOperatorTest {
 
         // Now try to reconcile all the Kafka clusters
         ops.reconcileAll("test", clusterCmNamespace).await();
+
+        async.await();
+
+        context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
+    }
+
+    @Test
+    public void testReconcileAllNamespaces(TestContext context) throws InterruptedException {
+        Async async = context.async(2);
+
+        // create CM, Service, headless service, statefulset
+        ResourceOperatorSupplier supplier = supplierWithMocks();
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+
+        Kafka foo = getKafkaAssembly("foo");
+        foo.getMetadata().setNamespace("namespace1");
+        Kafka bar = getKafkaAssembly("bar");
+        bar.getMetadata().setNamespace("namespace2");
+        when(mockKafkaOps.list(eq("*"), any())).thenReturn(
+                asList(foo, bar)
+        );
+        // when requested Custom Resource for a specific Kafka cluster
+        when(mockKafkaOps.get(eq("namespace1"), eq("foo"))).thenReturn(foo);
+        when(mockKafkaOps.get(eq("namespace2"), eq("bar"))).thenReturn(bar);
+
+        // providing certificates Secrets for existing clusters
+        List<Secret> fooSecrets = ResourceUtils.createKafkaClusterInitialSecrets("namespace1", "foo");
+        List<Secret> barSecrets = ResourceUtils.createKafkaClusterSecretsWithReplicas("namespace2", "bar",
+                bar.getSpec().getKafka().getReplicas(),
+                bar.getSpec().getZookeeper().getReplicas());
+        ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa("bar",
+                ModelUtils.findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")),
+                ModelUtils.findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
+        ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa("bar",
+                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")),
+                ModelUtils.findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
+
+        // providing the list of ALL StatefulSets for all the Kafka clusters
+        Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
+        when(mockKsOps.list(eq("*"), eq(newLabels))).thenReturn(
+                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift))
+        );
+
+        // providing the list StatefulSets for already "existing" Kafka clusters
+        Labels barLabels = Labels.forCluster("bar");
+        KafkaCluster barCluster = KafkaCluster.fromCrd(bar, VERSIONS);
+        when(mockKsOps.list(eq("*"), eq(barLabels))).thenReturn(
+                asList(barCluster.generateStatefulSet(openShift))
+        );
+        when(mockSecretOps.list(eq("*"), eq(barLabels))).thenAnswer(
+            invocation -> new ArrayList<>(asList(
+                    barClientsCa.caKeySecret(),
+                    barClientsCa.caCertSecret(),
+                    barCluster.generateBrokersSecret(),
+                    barClusterCa.caCertSecret()))
+        );
+
+        Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
+
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
+                ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                certManager,
+                supplier,
+                VERSIONS) {
+            @Override
+            public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
+                createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
+                async.countDown();
+                return Future.succeededFuture();
+            }
+        };
+
+        // Now try to reconcile all the Kafka clusters
+        ops.reconcileAll("test", "*").await();
 
         async.await();
 
