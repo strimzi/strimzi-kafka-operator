@@ -9,7 +9,7 @@
 
 You can downgrade a {ProductName} Kafka cluster from one version to a lower version; for example, from 2.1.0 to 2.0.0.
 
-IMPORTANT: Downgrading is not possible if the version being downgraded _from_ has ever used a `log.message.format.version` that's not supported by the version being downgraded _to_ (including where the default value for `log.message.format.version` is used). 
+IMPORTANT: Downgrading is not possible if the version being downgraded _from_ has ever used a `log.message.format.version` that is not supported by the version being downgraded _to_ (including where the default value for `log.message.format.version` is used). 
 +For example, consider:
 +
 [source,yaml]
@@ -61,14 +61,14 @@ spec:
 NOTE: It is necessary to format the value of `log.message.format.version` as a string to prevent it being interpreted as a number.
 
 . Wait for the Cluster Operator to downgrade the cluster.
-If the old and new versions of Kafka have a different interbroker protocol version look in the Cluster Operator logs for a `INFO` level message like:
+If both the previous and new versions of Kafka have a different interbroker protocol version look in the Cluster Operator logs for an `INFO` level message like:
 +
 [source]
 ----
 Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version downgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed
 ----
 +
-Alternatively, if the old and new versions of Kafka have the same interbroker protocol version look in the Cluster Operator logs for an INFO level message in the following format:
+Alternatively, if both the previous and new versions of Kafka have the same interbroker protocol version look in the Cluster Operator logs for an `INFO` level message in the following format:
 +
 [source]
 ----
@@ -82,6 +82,6 @@ For example, using `grep`:
 oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
 ----
 
-. Downgrade each client application to use the old version of the client libraries.
+. Downgrade each client application to use the previous version of the client libraries.
 
 .Additional resources

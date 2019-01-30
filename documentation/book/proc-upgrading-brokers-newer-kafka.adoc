@@ -16,12 +16,12 @@ This procedure describes how to upgrade a {ProductName} Kafka cluster from one v
 
 .Procedure
 
-. Consult the table below and determine whether the new Kafka version has a different log message format version than the old version. 
+. Consult the table below and determine whether the new Kafka version has a different log message format version than the previous version. 
 +
 include::snip-kafka-versions.adoc[leveloffset=+1]
 +
 If the log message format versions are the same proceed to the next step. 
-Otherwise ensure the `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the old version.
+Otherwise, ensure the `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the previous version.
 +
 For example, if upgrading from 2.0.0:
 +
@@ -42,7 +42,7 @@ NOTE: You must format the value of `log.message.format.version` as a string to p
 +
 If `log.message.format.version` is unset then set it and wait for the resulting rolling restart of the Kafka cluster to complete.
 +
-. Change the `Kafka.spec.kafka.version` to specify the new version, but leave the `log.message.format.version` as the old version.
+. Change the `Kafka.spec.kafka.version` to specify the new version, but leave the `log.message.format.version` as the previous version.
 If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's `STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image` as well.
 +
 For example, if upgrading from Kafka 2.0.0 to 2.1.0:
@@ -60,7 +60,7 @@ spec:
       # ...
 ----
 <1> This is changed to the new version
-<2> This remains at the old version
+<2> This remains at the previous version
 
 . Wait for the Cluster Operator to upgrade the cluster.
 If the old and new versions of Kafka have different interbroker protocol versions, look in the Cluster Operator logs for an `INFO` level message like:
