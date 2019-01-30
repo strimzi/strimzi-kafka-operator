@@ -77,12 +77,12 @@ public class ClusterOperatorConfig {
         } else {
             if (namespacesList.equals(AbstractWatchableResourceOperator.ANY_NAMESPACE)) {
                 namespaces = Collections.singleton(AbstractWatchableResourceOperator.ANY_NAMESPACE);
+            } else if (namespacesList.matches("([a-z0-9.-]+,)*[a-z0-9.-]+")) {
+                namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
             } else {
-                if (namespacesList.matches("([a-z0-9.-]+,)*[a-z0-9.-]+")) {
-                    namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
-                } else {
-                    throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE + " is not a valid list of namespaces.");
-                }
+                throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE
+                        + " is not a valid list of namespaces nor the 'any namespace' wildcard "
+                        + AbstractWatchableResourceOperator.ANY_NAMESPACE);
             }
         }
 

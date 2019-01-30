@@ -88,7 +88,7 @@ public class ClusterOperatorTest {
     }
 
     /**
-     * Does the CC start and then stop a verticle per namespace?
+     * Does the CO start and then stop a verticle per namespace?
      * @param context
      * @param namespaces
      */
@@ -110,15 +110,14 @@ public class ClusterOperatorTest {
             throw new RuntimeException(e);
         }
         MixedOperation mockCms = mock(MixedOperation.class);
-        //when(client.configMaps()).thenReturn(mockCms);
         NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition, Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
-        Resource<CustomResourceDefinition, DoneableCustomResourceDefinition> y = mock(Resource.class);
+        Resource<CustomResourceDefinition, DoneableCustomResourceDefinition> mockResource = mock(Resource.class);
         if (openShift) {
-            when(y.get()).thenReturn(Crds.kafkaConnectS2I());
+            when(mockResource.get()).thenReturn(Crds.kafkaConnectS2I());
         } else {
-            when(y.get()).thenReturn(null);
+            when(mockResource.get()).thenReturn(null);
         }
-        when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(y);
+        when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResourceDefinitions()).thenReturn(mockCrds);
         when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
 
@@ -173,7 +172,7 @@ public class ClusterOperatorTest {
     }
 
     /**
-     * Does the CC start and then stop with the namespace wildcard (*)?
+     * Does the CO start and then stop with the namespace wildcard (*)?
      * @param context
      * @param namespaces
      */
@@ -195,15 +194,14 @@ public class ClusterOperatorTest {
             throw new RuntimeException(e);
         }
         MixedOperation mockCms = mock(MixedOperation.class);
-        //when(client.configMaps()).thenReturn(mockCms);
         NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition, Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
-        Resource<CustomResourceDefinition, DoneableCustomResourceDefinition> y = mock(Resource.class);
+        Resource<CustomResourceDefinition, DoneableCustomResourceDefinition> mockResource = mock(Resource.class);
         if (openShift) {
-            when(y.get()).thenReturn(Crds.kafkaConnectS2I());
+            when(mockResource.get()).thenReturn(Crds.kafkaConnectS2I());
         } else {
-            when(y.get()).thenReturn(null);
+            when(mockResource.get()).thenReturn(null);
         }
-        when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(y);
+        when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResourceDefinitions()).thenReturn(mockCrds);
         when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
 

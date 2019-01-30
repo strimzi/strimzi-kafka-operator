@@ -209,7 +209,9 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
         List<T> desiredResources = resourceOperator.list(namespace, Labels.EMPTY);
-        Set<NamespacedResourceName> desiredNames = desiredResources.stream().map(cr -> new NamespacedResourceName(cr.getMetadata().getNamespace(), cr.getMetadata().getName())).collect(Collectors.toSet());
+        Set<NamespacedResourceName> desiredNames = desiredResources.stream()
+                .map(cr -> new NamespacedResourceName(cr.getMetadata().getNamespace(), cr.getMetadata().getName()))
+                .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, Labels.EMPTY, desiredNames);
 
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
@@ -218,7 +220,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         // now extract the cluster name from those
         Set<NamespacedResourceName> resourceNames = resources.stream()
                 .filter(r -> !r.getKind().equals(kind)) // exclude desired resource
-                .map(resource -> new NamespacedResourceName(resource.getMetadata().getNamespace(), resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL)))
+                .map(resource ->
+                        new NamespacedResourceName(
+                                resource.getMetadata().getNamespace(),
+                                resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL)
+                        )
+                )
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, resourceSelector, resourceNames);
 
@@ -247,32 +254,32 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      */
     protected abstract List<HasMetadata> getResources(String namespace, Labels selector);
 
-    public Future<Watch> createWatch(String namespace, Consumer<KubernetesClientException> onClose) {
+    public Future<Watch> createWatch(String watchNamespace, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();
         vertx.<Watch>executeBlocking(
             future -> {
-                Watch watch = resourceOperator.watch(namespace, new Watcher<T>() {
+                Watch watch = resourceOperator.watch(watchNamespace, new Watcher<T>() {
                     @Override
                     public void eventReceived(Action action, T cr) {
                         String name = cr.getMetadata().getName();
-                        String actualNamespace = cr.getMetadata().getNamespace();
+                        String resourceNamespace = cr.getMetadata().getNamespace();
                         switch (action) {
                             case ADDED:
                             case DELETED:
                             case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", assemblyType, actualNamespace, name);
-                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, actualNamespace, action);
+                                Reconciliation reconciliation = new Reconciliation("watch", assemblyType, resourceNamespace, name);
+                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, resourceNamespace, action);
                                 reconcileAssembly(reconciliation, result -> {
                                     handleResult(reconciliation, result);
                                 });
                                 break;
                             case ERROR:
-                                log.error("Failed {} {} in namespace{} ", kind, name, actualNamespace);
-                                reconcileAll("watch error", namespace);
+                                log.error("Failed {} {} in namespace{} ", kind, name, resourceNamespace);
+                                reconcileAll("watch error", watchNamespace);
                                 break;
                             default:
-                                log.error("Unknown action: {} in namespace {}", name, actualNamespace);
-                                reconcileAll("watch unknown", namespace);
+                                log.error("Unknown action: {} in namespace {}", name, resourceNamespace);
+                                reconcileAll("watch unknown", watchNamespace);
                         }
                     }
 
