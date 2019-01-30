@@ -75,9 +75,9 @@ public class ClusterOperatorConfig {
         if (namespacesList == null || namespacesList.isEmpty()) {
             throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
         } else {
-            if (namespacesList.equals(AbstractWatchableResourceOperator.ANY_NAMESPACE)) {
+            if (namespacesList.trim().equals(AbstractWatchableResourceOperator.ANY_NAMESPACE)) {
                 namespaces = Collections.singleton(AbstractWatchableResourceOperator.ANY_NAMESPACE);
-            } else if (namespacesList.matches("([a-z0-9.-]+,)*[a-z0-9.-]+")) {
+            } else if (namespacesList.matches("(\\s?[a-z0-9.-]+\\s?,)*\\s?[a-z0-9.-]+\\s?")) {
                 namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
             } else {
                 throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE

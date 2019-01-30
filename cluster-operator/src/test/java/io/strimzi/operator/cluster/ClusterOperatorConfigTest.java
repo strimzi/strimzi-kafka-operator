@@ -77,14 +77,20 @@ public class ClusterOperatorConfigTest {
 
     @Test
     public void testListOfNamespaces() {
-
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "foo,bar,baz");
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
         assertEquals(new HashSet<>(asList("foo", "bar", "baz")), config.getNamespaces());
-        assertEquals(30_000, config.getReconciliationIntervalMs());
-        assertEquals(30_000, config.getOperationTimeoutMs());
+    }
+
+    @Test
+    public void testListOfNamespacesWithSpaces() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, " foo ,bar , baz ");
+
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        assertEquals(new HashSet<>(asList("foo", "bar", "baz")), config.getNamespaces());
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -106,6 +112,15 @@ public class ClusterOperatorConfigTest {
     public void testAnyNamespace() {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "*");
+
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        assertEquals(new HashSet<>(asList("*")), config.getNamespaces());
+    }
+
+    @Test
+    public void testAnyNamespaceWithSpaces() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, " * ");
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
         assertEquals(new HashSet<>(asList("*")), config.getNamespaces());
