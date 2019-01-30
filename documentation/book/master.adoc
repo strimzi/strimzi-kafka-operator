@@ -1,3 +1,4 @@
+include::common/version-dependent-attrs.adoc[]
 include::common/attributes.adoc[]
 
 :context: str

@@ -75,6 +75,7 @@ helm_pkg:
 
 docu_versions:
 	documentation/snip-kafka-versions.sh kafka-versions > documentation/book/snip-kafka-versions.adoc
+	documentation/version-dependent-attrs.sh kafka-versions > documentation/book/common/version-dependent-attrs.adoc
 
 docu_html: docu_htmlclean docu_check docu_versions
 	mkdir -p documentation/html
