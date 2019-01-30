@@ -53,6 +53,8 @@ import java.util.Arrays;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -141,6 +143,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     private static final String START_TIME = "start time";
 
     public static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
+
+    private String baseClusterOperatorNamespace = "";
+    private List<String> baseBindingsNamespaces = new ArrayList<>();
 
     Resources resources;
     static Resources testClassResources;
@@ -1098,45 +1103,32 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     /**
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
      * @param time timeout in miliseconds
-     * @param coNamespace namespace where cluster operator is deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
+     * @param namespace namespace where we expect no pods or only CO pod
      * @throws Exception exception
      */
-    void waitForDeletion(long time, String coNamespace, String... bindingsNamespaces) throws Exception {
+    void waitForDeletion(long time, String namespace) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
-        long podCount = CLIENT.pods().inNamespace(coNamespace).list().getItems().stream().filter(
+        long podCount = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> pods = CLIENT.pods().inNamespace(coNamespace).list().getItems().stream().filter(
+            List<Pod> pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
                 p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             pods.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
-
-            recreateTestEnv(coNamespace, bindingsNamespaces);
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
     }
 
     /**
-     * Wait till all pods in specific namespace are deleted and recreate testing environment in case of some pods cannot be deleted.
-     * @param time timeout in miliseconds
-     * @param coNamespace namespace where cluster operator is deployed to
-     * @throws Exception exception
-     */
-    void waitForDeletion(long time, String coNamespace) throws Exception {
-        waitForDeletion(time, coNamespace, coNamespace);
-    }
-
-    /**
      * Recreate namespace and CO after test failure
      * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
-    void recreateTestEnv(String coNamespace, String... bindingsNamespaces) {
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         LOGGER.info("There are some unexpected pods! Cleanup is not finished properly! Wait till env will be recreated.");
         testClassResources.deleteResources();
         KUBE_CLIENT.namespace(DEFAULT_NAMESPACE);
@@ -1163,29 +1155,45 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Method for apply Strimzi cluster operator specific Role and CLusterRole bindings for specific namespaces.
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
-     * @param clientNamespaces list of namespaces where Bindings should be deployed to
+     * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
      */
-    static void applyRoleBindings(String namespace, String... clientNamespaces) {
-        for (String clientNamespace : clientNamespaces) {
+    private static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
+        for (String bindingsNamespace : bindingsNamespaces) {
             // 020-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 021-ClusterRoleBinding
-            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 030-ClusterRoleBinding
-            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
             // 031-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
             // 032-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
         }
     }
 
+    /**
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO will be deployed to
+     */
     static void applyRoleBindings(String namespace) {
-        applyRoleBindings(namespace, namespace);
+        applyRoleBindings(namespace, Collections.singletonList(namespace));
     }
 
+    /**
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
+     */
+    static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
+        applyRoleBindings(namespace, Arrays.asList(bindingsNamespaces));
+    }
+
+    /**
+     * Deploy CO via helm chart. Using config file stored in test resources.
+     */
     void deployClusterOperatorViaHelmChart() {
         String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", STRIMZI_ORG);
         String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", STRIMZI_TAG);
@@ -1213,8 +1221,32 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
     }
 
+    /**
+     * Delete CO deployed via helm chart.
+     */
     void deleteClusterOperatorViaHelmChart() {
         LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
         helmClient().delete(HELM_RELEASE_NAME);
+    }
+
+    /**
+     * Set information about CO and bindings namespaces for recovery in case of test failure.
+     * @param coNamespace cluster operator namespace
+     * @param bindingsNamespaces array of bindings namespaces, make sure, that first namespace from this array is namespace where CO is deployed
+     */
+    void setTestNamespaceInfo(String coNamespace, String... bindingsNamespaces) {
+        baseClusterOperatorNamespace = coNamespace;
+        baseBindingsNamespaces = Arrays.asList(bindingsNamespaces);
+    }
+
+    void setTestNamespaceInfo(String coNamespace) {
+        setTestNamespaceInfo(coNamespace, coNamespace);
+    }
+
+    @AfterEach
+    void teardownEnvironment(ExtensionContext context) {
+        if (context.getExecutionException().isPresent()) {
+            recreateTestEnv(baseClusterOperatorNamespace, baseBindingsNamespaces);
+        }
     }
 }

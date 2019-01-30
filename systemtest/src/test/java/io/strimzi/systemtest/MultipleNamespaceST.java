@@ -92,13 +92,14 @@ class MultipleNamespaceST extends AbstractST {
     @AfterEach
     void deleteSecondNamespaceResources() throws Exception {
         secondNamespaceResources.deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, TO_NAMESPACE, CO_NAMESPACE, TO_NAMESPACE);
+        waitForDeletion(TEARDOWN_GLOBAL_WAIT, TO_NAMESPACE);
         KUBE_CLIENT.namespace(CO_NAMESPACE);
     }
 
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
+        setTestNamespaceInfo(CO_NAMESPACE, CO_NAMESPACE, TO_NAMESPACE);
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, TO_NAMESPACE), Collections.emptyList());
         createTestClassResources();
 
@@ -106,7 +107,10 @@ class MultipleNamespaceST extends AbstractST {
         applyRoleBindings(CO_NAMESPACE, TO_NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(String.join(",", CO_NAMESPACE, TO_NAMESPACE)).done();
+        deployTestSpecificResources();
+    }
 
+    private void deployTestSpecificResources() {
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
@@ -114,8 +118,7 @@ class MultipleNamespaceST extends AbstractST {
                         .withWatchedNamespace(TO_NAMESPACE)
                     .endTopicOperator()
                 .endEntityOperator()
-            .endSpec()
-            .done();
+            .endSpec().done();
     }
 
     private void deployNewTopic(String namespace, String topic) {
@@ -139,5 +142,11 @@ class MultipleNamespaceST extends AbstractST {
     @AfterAll
     void teardownEnvironment() {
         teardownEnvForOperator();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployTestSpecificResources();
     }
 }

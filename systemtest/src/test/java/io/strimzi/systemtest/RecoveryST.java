@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.List;
+
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.k8s.BaseKubeClient.CM;
 import static io.strimzi.test.k8s.BaseKubeClient.DEPLOYMENT;
@@ -191,6 +193,7 @@ class RecoveryST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
+        setTestNamespaceInfo(NAMESPACE);
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
@@ -198,6 +201,16 @@ class RecoveryST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
+        deployTestSpecificResources();
+    }
+
+    void deployTestSpecificResources() {
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 1).done();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployTestSpecificResources();
     }
 }

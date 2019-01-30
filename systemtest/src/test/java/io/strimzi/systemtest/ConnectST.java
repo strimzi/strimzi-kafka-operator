@@ -254,13 +254,17 @@ class ConnectST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
+        setTestNamespaceInfo(NAMESPACE);
         prepareEnvForOperator(NAMESPACE);
         createTestClassResources();
 
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
+        deployTestSpecificResources();
+    }
 
+    void deployTestSpecificResources() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
         kafkaConfig.put("transaction.state.log.replication.factor", "3");
@@ -278,5 +282,11 @@ class ConnectST extends AbstractST {
     void teardownEnvironment() {
         testClassResources.deleteResources();
         teardownEnvForOperator();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployTestSpecificResources();
     }
 }

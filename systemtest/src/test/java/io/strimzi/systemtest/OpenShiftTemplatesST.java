@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -26,6 +25,8 @@ import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,11 +51,12 @@ import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 @OpenShiftOnly
 public class OpenShiftTemplatesST extends AbstractST {
 
+    private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
+
     public static final String NAMESPACE = "template-test";
 
     public static KubeClusterResource cluster = new KubeClusterResource();
 
-    private ObjectMapper mapper = new ObjectMapper();
     private Oc oc = (Oc) KUBE_CLIENT;
     private KubernetesClient client = new DefaultKubernetesClient();
 
@@ -209,6 +212,8 @@ public class OpenShiftTemplatesST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment() {
+        LOGGER.info("Creating resources before the test class");
+        setTestNamespaceInfo(NAMESPACE);
         createNamespace(NAMESPACE);
         createCustomResources(Arrays.asList(
                 "../examples/templates/cluster-operator",
@@ -224,5 +229,10 @@ public class OpenShiftTemplatesST extends AbstractST {
     void teardownEnvironment() {
         deleteCustomResources();
         deleteNamespaces();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        LOGGER.info("Skip env recreation after failed tests!");
     }
 }

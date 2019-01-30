@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -71,18 +72,29 @@ class ConnectS2IST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
+        setTestNamespaceInfo(NAMESPACE);
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
-        testClassResources.kafkaEphemeral(CONNECT_CLUSTER_NAME, 3).done();
+        deployTestSpecificResources();
     }
 
     @AfterAll
     void teardownEnvironment() {
         testClassResources.deleteResources();
         teardownEnvForOperator();
+    }
+
+    void deployTestSpecificResources() {
+        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3).done();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployTestSpecificResources();
     }
 }

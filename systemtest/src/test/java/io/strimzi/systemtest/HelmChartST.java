@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.List;
+
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
@@ -49,6 +51,7 @@ class HelmChartST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
+        setTestNamespaceInfo(NAMESPACE);
         createNamespace(NAMESPACE);
         deployClusterOperatorViaHelmChart();
     }
@@ -57,5 +60,12 @@ class HelmChartST extends AbstractST {
     void teardownEnvironment() {
         deleteClusterOperatorViaHelmChart();
         deleteNamespaces();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        deleteClusterOperatorViaHelmChart();
+        deleteNamespaces();
+        createNamespace(NAMESPACE);
     }
 }
