@@ -97,12 +97,12 @@ class MultipleNamespaceST extends AbstractST {
     }
 
     @BeforeAll
-    void createClassResources() {
+    void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, TO_NAMESPACE), Collections.emptyList());
         createTestClassResources();
 
-        applyRoleBindings(CO_NAMESPACE, CO_NAMESPACE);
+        applyRoleBindings(CO_NAMESPACE);
         applyRoleBindings(CO_NAMESPACE, TO_NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(String.join(",", CO_NAMESPACE, TO_NAMESPACE)).done();

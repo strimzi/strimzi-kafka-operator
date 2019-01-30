@@ -491,12 +491,12 @@ class SecurityST extends AbstractST {
     }
 
     @BeforeAll
-    void createClusterOperator() {
+    void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
     }

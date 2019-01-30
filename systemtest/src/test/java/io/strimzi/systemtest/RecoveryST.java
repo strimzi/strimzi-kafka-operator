@@ -12,7 +12,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
@@ -190,12 +189,12 @@ class RecoveryST extends AbstractST {
     }
 
     @BeforeAll
-    void createClassResources(TestInfo testInfo) {
+    void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 

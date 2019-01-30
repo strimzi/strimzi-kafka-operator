@@ -997,7 +997,7 @@ class KafkaST extends AbstractST {
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
     }
