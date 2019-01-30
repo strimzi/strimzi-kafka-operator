@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -e
 
 export PULL_REQUEST=${PULL_REQUEST:-true}

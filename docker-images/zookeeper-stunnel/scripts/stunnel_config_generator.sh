@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # path were the Secret with ZK nodes certificates is mounted
 NODE_CERTS_KEYS=/etc/tls-sidecar/zookeeper-nodes

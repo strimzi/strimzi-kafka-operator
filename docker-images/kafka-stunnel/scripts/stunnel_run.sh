@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export BASE_HOSTNAME=$(hostname | rev | cut -d "-" -f2- | rev)
 export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
