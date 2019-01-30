@@ -63,15 +63,15 @@ spec:
 <2> This remains at the previous version
 
 . Wait for the Cluster Operator to upgrade the cluster.
-If the old and new versions of Kafka have different interbroker protocol versions, look in the Cluster Operator logs for an `INFO` level message like:
+If the old and new versions of Kafka have different interbroker protocol versions, look in the Cluster Operator logs for an `INFO` level message in the following format:
 +
-[source]
+[source,subs="+quotes"]
 ----
 Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed
 ----
-Alternatively, if the old and new versions of Kafka have the same interbroker protocol version, look in the Cluster Operator logs for an `INFO` level message like:
+Alternatively, if the old and new versions of Kafka have the same interbroker protocol version, look in the Cluster Operator logs for an `INFO` level message  in the following format:
 +
-[source]
+[source,subs="+quotes"]
 ----
 Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed
 ----
@@ -108,4 +108,4 @@ Wait for the Cluster Operator to update the cluster.
 
 .Additional resources
 
-* See xref:proc-downgrading-brokers-older-kafka-{context}[] for the procedure to downgrade a {ProductName} Kafka cluster from one version to a lower version, for example 2.0.1 to 2.0.0.
+* See xref:proc-downgrading-brokers-older-kafka-str[] for the procedure to downgrade a {ProductName} Kafka cluster from one version to a lower version, for example 2.0.1 to 2.0.0.
