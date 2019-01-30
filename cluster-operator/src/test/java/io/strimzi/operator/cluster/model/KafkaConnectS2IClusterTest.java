@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -13,6 +14,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -494,7 +496,8 @@ public class KafkaConnectS2IClusterTest {
         ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
                 .withName("MY_ENV_VAR")
                 .withNewValueFrom()
-                .withNewSecretKeyRef("my-secret", "my-key", false)
+                .withSecretKeyRef(new SecretKeySelectorBuilder().withName("my-secret").withKey("my-key").withOptional(false).build())
+                //.withNewSecretKeyRef("my-secret", "my-key", false)
                 .endValueFrom()
                 .build();
 
@@ -521,7 +524,8 @@ public class KafkaConnectS2IClusterTest {
         ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
                 .withName("MY_ENV_VAR")
                 .withNewValueFrom()
-                .withNewConfigMapKeyRef("my-map", "my-key", false)
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-map").withKey("my-key").withOptional(false).build())
+                    //.withNewConfigMapKeyRef("my-map", "my-key", false)
                 .endValueFrom()
                 .build();
 
@@ -664,8 +668,10 @@ public class KafkaConnectS2IClusterTest {
         ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
                 .withName("MY_ENV_VAR")
                 .withNewValueFrom()
-                .withNewConfigMapKeyRef("my-map", "my-key", false)
-                .withNewSecretKeyRef("my-secret", "my-key", false)
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-map").withKey("my-key").withOptional(false).build())
+                    //.withNewConfigMapKeyRef("my-map", "my-key", false)
+                    .withSecretKeyRef(new SecretKeySelectorBuilder().withName("my-secret").withKey("my-key").withOptional(false).build())
+                    //.withNewSecretKeyRef("my-secret", "my-key", false)
                 .endValueFrom()
                 .build();
 
