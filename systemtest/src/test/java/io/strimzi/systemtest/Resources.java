@@ -221,7 +221,7 @@ public class Resources {
                     .withNewSpec()
                         .withNewKafka()
                             .withReplicas(kafkaReplicas)
-                            .withNewEphemeralStorageStorage().endEphemeralStorageStorage()
+                            .withNewEphemeralStorage().endEphemeralStorage()
                             .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                             .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                             .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
@@ -260,7 +260,7 @@ public class Resources {
                 .withInitialDelaySeconds(15)
                 .withTimeoutSeconds(5)
                 .endLivenessProbe()
-                            .withNewEphemeralStorageStorage().endEphemeralStorageStorage()
+                            .withNewEphemeralStorage().endEphemeralStorage()
                         .endZookeeper()
                         .withNewEntityOperator()
                             .withNewTopicOperator().withImage(TestUtils.changeOrgAndTag("strimzi/topic-operator:latest")).endTopicOperator()
@@ -559,8 +559,8 @@ public class Resources {
                         .addToLabels("strimzi.io/cluster", clusterName)
                         .build())
                 .withNewSpec()
-                    .withNewKafkaUserTlsClientAuthenticationAuthentication()
-                    .endKafkaUserTlsClientAuthenticationAuthentication()
+                    .withNewKafkaUserTlsClientAuthentication()
+                    .endKafkaUserTlsClientAuthentication()
                 .endSpec()
                 .build());
     }
@@ -573,8 +573,8 @@ public class Resources {
                         .addToLabels("strimzi.io/cluster", clusterName)
                         .build())
                 .withNewSpec()
-                    .withNewKafkaUserScramSha512ClientAuthenticationAuthentication()
-                    .endKafkaUserScramSha512ClientAuthenticationAuthentication()
+                    .withNewKafkaUserScramSha512ClientAuthentication()
+                    .endKafkaUserScramSha512ClientAuthentication()
                 .endSpec()
                 .build());
     }

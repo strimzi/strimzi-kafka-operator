@@ -462,10 +462,10 @@ public class KafkaAssemblyOperatorMockTest {
         String changedClass = originalStorageClass + "2";
 
         Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
-                .withNewPersistentClaimStorageStorage()
+                .withNewPersistentClaimStorage()
                     .withStorageClass(changedClass)
                     .withSize("100Gi")
-                .endPersistentClaimStorageStorage().endKafka().endSpec().build();
+                .endPersistentClaimStorage().endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed storage class");
@@ -506,13 +506,13 @@ public class KafkaAssemblyOperatorMockTest {
         Kafka changedClusterCm = null;
         if (kafkaStorage instanceof EphemeralStorage) {
             changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
-                    .withNewPersistentClaimStorageStorage()
+                    .withNewPersistentClaimStorage()
                         .withSize("123")
-                    .endPersistentClaimStorageStorage().endKafka().endSpec().build();
+                    .endPersistentClaimStorage().endKafka().endSpec().build();
         } else if (kafkaStorage instanceof PersistentClaimStorage) {
             changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
-                    .withNewEphemeralStorageStorage()
-                    .endEphemeralStorageStorage().endKafka().endSpec().build();
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage().endKafka().endSpec().build();
         } else {
             fail();
         }
@@ -593,10 +593,10 @@ public class KafkaAssemblyOperatorMockTest {
 
         // Try to update the storage class
         Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
-                .withNewPersistentClaimStorageStorage()
+                .withNewPersistentClaimStorage()
                 .withDeleteClaim(!originalKafkaDeleteClaim)
                 .withSize("100Gi")
-                .endPersistentClaimStorageStorage().endKafka().endSpec().build();
+                .endPersistentClaimStorage().endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed delete claim");
