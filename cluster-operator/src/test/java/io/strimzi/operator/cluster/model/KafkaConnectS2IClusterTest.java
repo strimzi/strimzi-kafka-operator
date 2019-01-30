@@ -496,8 +496,7 @@ public class KafkaConnectS2IClusterTest {
         ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
                 .withName("MY_ENV_VAR")
                 .withNewValueFrom()
-                .withSecretKeyRef(new SecretKeySelectorBuilder().withName("my-secret").withKey("my-key").withOptional(false).build())
-                //.withNewSecretKeyRef("my-secret", "my-key", false)
+                    .withSecretKeyRef(new SecretKeySelectorBuilder().withName("my-secret").withKey("my-key").withOptional(false).build())
                 .endValueFrom()
                 .build();
 
@@ -525,7 +524,6 @@ public class KafkaConnectS2IClusterTest {
                 .withName("MY_ENV_VAR")
                 .withNewValueFrom()
                     .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-map").withKey("my-key").withOptional(false).build())
-                    //.withNewConfigMapKeyRef("my-map", "my-key", false)
                 .endValueFrom()
                 .build();
 
@@ -669,9 +667,7 @@ public class KafkaConnectS2IClusterTest {
                 .withName("MY_ENV_VAR")
                 .withNewValueFrom()
                     .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-map").withKey("my-key").withOptional(false).build())
-                    //.withNewConfigMapKeyRef("my-map", "my-key", false)
                     .withSecretKeyRef(new SecretKeySelectorBuilder().withName("my-secret").withKey("my-key").withOptional(false).build())
-                    //.withNewSecretKeyRef("my-secret", "my-key", false)
                 .endValueFrom()
                 .build();
 
