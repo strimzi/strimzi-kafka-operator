@@ -99,11 +99,11 @@ class MultipleNamespaceST extends AbstractST {
     @BeforeAll
     void createClassResources() {
         LOGGER.info("Creating resources before the test class");
-        prepareEnvForOperator(DEFAULT_NAMESPACE, Arrays.asList(DEFAULT_NAMESPACE, SECOND_NAMESPACE), Collections.emptyList());
+        prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, TO_NAMESPACE), Collections.emptyList());
         createTestClassResources();
 
-        applyRoleBindings(DEFAULT_NAMESPACE, DEFAULT_NAMESPACE);
-        applyRoleBindings(DEFAULT_NAMESPACE, SECOND_NAMESPACE);
+        applyRoleBindings(CO_NAMESPACE, CO_NAMESPACE);
+        applyRoleBindings(CO_NAMESPACE, TO_NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(String.join(",", CO_NAMESPACE, TO_NAMESPACE)).done();
 
@@ -120,10 +120,10 @@ class MultipleNamespaceST extends AbstractST {
 
     private void deployNewTopic(String namespace, String topic) {
         LOGGER.info("Creating topic {} in namespace {}", topic, namespace);
-        kubeClient.namespace(namespace);
-        kubeClient.create(new File(TOPIC_INSTALL_DIR));
+        KUBE_CLIENT.namespace(namespace);
+        KUBE_CLIENT.create(new File(TOPIC_INSTALL_DIR));
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 5000, 120000, () -> {
-            kubeClient.namespace(CO_NAMESPACE);
+            KUBE_CLIENT.namespace(CO_NAMESPACE);
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics2.contains(topic);
         });
@@ -131,9 +131,9 @@ class MultipleNamespaceST extends AbstractST {
 
     private void deleteNewTopic(String namespace, String topic) {
         LOGGER.info("Deleting topic {} in namespace {}", topic, namespace);
-        kubeClient.namespace(namespace);
-        kubeClient.deleteByName("KafkaTopic", topic);
-        kubeClient.namespace(CO_NAMESPACE);
+        KUBE_CLIENT.namespace(namespace);
+        KUBE_CLIENT.deleteByName("KafkaTopic", topic);
+        KUBE_CLIENT.namespace(CO_NAMESPACE);
     }
 
     @AfterAll

@@ -57,7 +57,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
@@ -80,11 +79,7 @@ import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
-import static io.strimzi.test.TestUtils.entriesToMap;
-import static io.strimzi.test.extensions.StrimziExtension.CO_INSTALL_DIR;
 import static java.util.Arrays.asList;
-
-import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1144,11 +1139,11 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     void recreateTestEnv(String coNamespace, String... bindingsNamespaces) {
         LOGGER.info("There are some unexpected pods! Cleanup is not finished properly! Wait till env will be recreated.");
         testClassResources.deleteResources();
-        kubeClient.namespace(DEFAULT_NAMESPACE);
-        kubeClient.deleteNamespace(coNamespace);
-        kubeClient.waitForResourceDeletion("Namespace", coNamespace);
-        kubeClient.createNamespace(coNamespace);
-        kubeClient.namespace(coNamespace);
+        KUBE_CLIENT.namespace(DEFAULT_NAMESPACE);
+        KUBE_CLIENT.deleteNamespace(coNamespace);
+        KUBE_CLIENT.waitForResourceDeletion("Namespace", coNamespace);
+        KUBE_CLIENT.createNamespace(coNamespace);
+        KUBE_CLIENT.namespace(coNamespace);
 
         Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
                 !file.getName().matches(".*(Binding|Deployment)-.*")
@@ -1156,7 +1151,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         // Here we record the state of the cluster
         for (Map.Entry<File, String> entry : yamls.entrySet()) {
             LOGGER.info("creating possibly modified version of {}", entry.getKey());
-            kubeClient.clientWithAdmin().applyContent(entry.getValue());
+            KUBE_CLIENT.clientWithAdmin().applyContent(entry.getValue());
         }
 
         testClassResources = new Resources(namespacedClient());

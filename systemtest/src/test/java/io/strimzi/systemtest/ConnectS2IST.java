@@ -5,8 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
@@ -15,7 +13,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +31,6 @@ class ConnectS2IST extends AbstractST {
     public static final String CONNECT_CLUSTER_NAME = "connect-s2i-tests";
     public static final String CONNECT_DEPLOYMENT_NAME = CONNECT_CLUSTER_NAME + "-connect";
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
-    private static Resources classResources;
 
     @Test
     @OpenShiftOnly

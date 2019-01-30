@@ -5,8 +5,6 @@
 package io.strimzi.test.extensions;
 
 import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.k8s.HelmClient;
-import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
@@ -60,9 +58,6 @@ public class StrimziExtension implements ExecutionCondition {
      * Tag for tests, which are failing only on CCI VMs
      */
     public static final String CCI_FLAKY = "cci_flaky";
-
-    private static DefaultKubernetesClient client = new DefaultKubernetesClient();
-
 
     private KubeClusterResource clusterResource;
     private Class testClass;
@@ -211,14 +206,6 @@ public class StrimziExtension implements ExecutionCondition {
             return Collections.emptySet();
         }
         return new HashSet<>(Arrays.asList(commaSeparated.split(",+")));
-    }
-
-    protected KubeClient<?> kubeClient() {
-        return clusterResource().client();
-    }
-
-    protected HelmClient helmClient() {
-        return clusterResource().helmClient();
     }
 
     private String name(AnnotatedElement a) {

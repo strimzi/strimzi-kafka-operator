@@ -216,7 +216,7 @@ class KafkaST extends AbstractST {
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
         for (String name : newZkPodNames) {
-            kubeClient.waitForResourceDeletion("po", name);
+            KUBE_CLIENT.waitForResourceDeletion("po", name);
         }
 
         // Wait for one zk pods will became leader and others follower state
@@ -974,7 +974,7 @@ class KafkaST extends AbstractST {
 
     void waitForZkPods(List<String> newZkPodNames) {
         for (String name : newZkPodNames) {
-            kubeClient.waitForPod(name);
+            KUBE_CLIENT.waitForPod(name);
             LOGGER.info("Pod {} is ready", name);
         }
         waitForZkRollUp();
