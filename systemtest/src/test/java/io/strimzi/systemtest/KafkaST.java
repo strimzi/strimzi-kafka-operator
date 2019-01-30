@@ -161,7 +161,6 @@ class KafkaST extends AbstractST {
         // scale down
         LOGGER.info("Scaling down");
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
-        //client.apps().statefulSets().inNamespace(DEFAULT_NAMESPACE).withName(kafkaStatefulSetName(CLUSTER_NAME)).scale(initialReplicas, true);
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setReplicas(initialReplicas);
         });
@@ -996,7 +995,7 @@ class KafkaST extends AbstractST {
 
     @BeforeAll
     static void createClusterOperator() {
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
     }

@@ -495,7 +495,7 @@ class SecurityST extends AbstractST {
 
     @BeforeAll
     static void createClusterOperator() {
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
     }
