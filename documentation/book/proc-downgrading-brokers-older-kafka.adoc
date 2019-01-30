@@ -9,6 +9,8 @@
 
 You can downgrade a {ProductName} Kafka cluster from one version to a lower version; for example, from 2.1.0 to 2.0.0.
 
+In this procedure the term _previous version_ means the version being downgraded _to_ (such as 2.0.0), and the term _new version_ means the version being downgraded _from_ (such as 2.1.0).
+
 IMPORTANT: Downgrading is not possible if the version being downgraded _from_ has ever used a `log.message.format.version` that is not supported by the version being downgraded _to_ (including where the default value for `log.message.format.version` is used). 
 +For example, consider:
 +
