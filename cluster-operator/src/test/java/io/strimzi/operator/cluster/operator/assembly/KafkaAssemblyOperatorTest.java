@@ -373,6 +373,9 @@ public class KafkaAssemblyOperatorTest {
             }
             return Future.succeededFuture(ReconcileResult.created(desired));
         });
+        when(mockDepOps.getAsync(anyString(), anyString())).thenReturn(
+                Future.succeededFuture()
+        );
 
         when(mockSecretOps.list(anyString(), any())).thenReturn(
                 secrets
@@ -727,10 +730,17 @@ public class KafkaAssemblyOperatorTest {
             when(mockDepOps.get(clusterNamespace, TopicOperator.topicOperatorName(clusterName))).thenReturn(
                     originalTopicOperator.generateDeployment(true)
             );
+            when(mockDepOps.getAsync(clusterNamespace, TopicOperator.topicOperatorName(clusterName))).thenReturn(
+                    Future.succeededFuture(originalTopicOperator.generateDeployment(true))
+            );
         }
+
         if (originalEntityOperator != null) {
             when(mockDepOps.get(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
                     originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP)
+            );
+            when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
+                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP))
             );
         }
 
