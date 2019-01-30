@@ -1,0 +1,66 @@
+// Module included in the following assemblies:
+//
+// assembly-cluster-operator.adoc
+// assembly-operators-cluster-operator.adoc
+
+[id='deploying-cluster-operator-kubernetes-to-watch-whole-cluster-{context}']
+= Deploying the Cluster Operator to watch the whole cluster
+
+Cluster Operator can be installed to manage Kafka, Kafka Connect and Kafka Mirror Maker in the whole {ProductPlatformName} cluster across all {Namespaces}.
+
+.Prerequisites
+
+* Running {ProductPlatformName} cluster
+
+.Procedure
+
+. Edit the file `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` and set the value of the environment variable `STRIMZI_NAMESPACE` to `*`.
+For example:
++
+[source,yaml]
+----
+apiVersion: extensions/v1beta1
+kind: Deployment
+spec:
+  template:
+    spec:
+      serviceAccountName: strimzi-cluster-operator
+      containers:
+      - name: strimzi-cluster-operator
+        image: strimzi/cluster-operator:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: STRIMZI_NAMESPACE
+          value: "*"
+----
+
+. To give the Cluster Operator access to all {Namespaces}, create the `ClusterRoleBindings`.
+Replace the `_my-namespace_` or `_my-project_` with the {Namespace} where the cluster operator will be installed.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl create`:
+[source,shell,subs=+quotes]
+kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount _my-namespace_:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount _my-namespace_:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-topic-operator-delegation --clusterrole=strimzi-topic-operator --serviceaccount _my-namespace_:strimzi-cluster-operator
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc adm policy`:
++
+[source,shell,subs=+quotes]
+oc adm policy add-cluster-role-to-user strimzi-cluster-operator-namespaced --serviceaccount strimzi-cluster-operator -n _my-project_
+oc adm policy add-cluster-role-to-user strimzi-entity-operator --serviceaccount strimzi-cluster-operator -n _my-project_
+oc adm policy add-cluster-role-to-user strimzi-topic-operator --serviceaccount strimzi-cluster-operator -n _my-project_
+
+. Deploy the Cluster Operator
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f install/cluster-operator -n _my-namespace_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f install/cluster-operator -n _my-project_
