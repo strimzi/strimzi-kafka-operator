@@ -20,8 +20,8 @@ public class NamespaceAndNameTest {
 
     @Test
     public void testToString()   {
-        NamespaceAndName NaN = new NamespaceAndName("namespace1", "name1");
+        NamespaceAndName nan = new NamespaceAndName("namespace1", "name1");
 
-        Assert.assertEquals("namespace1/name1", NaN.toString());
+        Assert.assertEquals("namespace1/name1", nan.toString());
     }
 }
