@@ -4,8 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -30,7 +28,7 @@ import java.util.Map;
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
         "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
-public class EntityUserOperatorSpec implements Serializable {
+public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -109,12 +107,12 @@ public class EntityUserOperatorSpec implements Serializable {
         this.logging = logging;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

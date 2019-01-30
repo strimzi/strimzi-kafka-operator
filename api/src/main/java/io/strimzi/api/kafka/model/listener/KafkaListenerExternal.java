@@ -4,8 +4,6 @@
  */
 package io.strimzi.api.kafka.model.listener;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -13,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -31,7 +30,8 @@ import java.util.Map;
         @JsonSubTypes.Type(name = KafkaListenerExternalNodePort.TYPE_NODEPORT, value = KafkaListenerExternalNodePort.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public abstract class KafkaListenerExternal implements Serializable {
+@EqualsAndHashCode
+public abstract class KafkaListenerExternal implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private Map<String, Object> additionalProperties;
@@ -60,12 +60,12 @@ public abstract class KafkaListenerExternal implements Serializable {
 
     public abstract void setNetworkPolicyPeers(List<NetworkPolicyPeer> networkPolicyPeers);
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

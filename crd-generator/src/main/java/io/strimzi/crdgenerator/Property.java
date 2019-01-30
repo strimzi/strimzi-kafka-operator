@@ -102,8 +102,8 @@ class Property implements AnnotatedElement {
                     && !returnType.equals(void.class);
             boolean isNotInherited = !hasMethod(CustomResource.class, method)
                     && !hasMethod(HasMetadata.class, method);
-            boolean isNotIgnored = !method.isAnnotationPresent(JsonIgnore.class)
-                    && !method.isAnnotationPresent(JsonAnyGetter.class);
+            boolean isNotIgnored = !hasJsonIgnore(method)
+                    && !hasAnyGetter(method);
             if (isGetter
                     && isNotInherited
                     && isNotIgnored) {
@@ -121,6 +121,51 @@ class Property implements AnnotatedElement {
         }
         JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
         return sortedProperties(order != null ? order.value() : null, unordered);
+    }
+
+    private static boolean hasAnyGetter(Method method) {
+        Annotation annotation = findAnnotation(JsonAnyGetter.class, method, method.getDeclaringClass());
+        return annotation != null && ((JsonAnyGetter) annotation).enabled();
+    }
+
+    private static boolean hasAnySetter(Method method) {
+        Annotation annotation = findAnnotation(JsonAnySetter.class, method, method.getDeclaringClass());
+        return annotation != null && ((JsonAnySetter) annotation).enabled();
+    }
+
+    private static boolean hasJsonIgnore(Method method) {
+        Annotation annotation = findAnnotation(JsonIgnore.class, method, method.getDeclaringClass());
+        return annotation != null && ((JsonIgnore) annotation).value();
+    }
+
+    private static <A extends Annotation> A findAnnotation(Class<A> annotationClass, Method method, Class<?> c) {
+        do {
+            A a = methodAnnotation(annotationClass, method, c);
+            if (a != null) {
+                return a;
+            }
+            for (Class<?> iface : c.getInterfaces()) {
+                a = findAnnotation(annotationClass, method, iface);
+                if (a != null) {
+                    return a;
+                }
+            }
+            c = c.getSuperclass();
+        } while (c != null);
+        return null;
+    }
+
+    private static <A extends Annotation> A methodAnnotation(Class<A> annotationClass, Method method, Class<?> lookupClass) {
+        try {
+            Method m = lookupClass.getMethod(method.getName(), method.getParameterTypes());
+            A a = m.getAnnotation(annotationClass);
+            if (a != null) {
+                return a;
+            }
+        } catch (NoSuchMethodException e) {
+            // ignore
+        }
+        return null;
     }
 
     private static boolean isAnySetter(Method method) {
@@ -163,11 +208,11 @@ class Property implements AnnotatedElement {
         boolean anySetter = false;
         for (Method method : crdClass.getMethods()) {
             if (isAnySetter(method) &&
-                    method.isAnnotationPresent(JsonAnySetter.class)) {
+                    hasAnySetter(method)) {
                 anySetter = true;
             }
             if (isAnyGetter(method) &&
-                    method.isAnnotationPresent(JsonAnyGetter.class)) {
+                    hasAnyGetter(method)) {
                 anyGetter = true;
             }
             if (anyGetter && anySetter) {

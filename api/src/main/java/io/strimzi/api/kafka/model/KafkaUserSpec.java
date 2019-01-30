@@ -4,13 +4,10 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.crdgenerator.annotations.Description;
-
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -28,7 +25,8 @@ import static java.util.Collections.emptyMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "authentication" })
 @EqualsAndHashCode
-public class KafkaUserSpec  implements Serializable {
+public class KafkaUserSpec  implements UnknownPropertyPreserving, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private KafkaUserAuthentication authentication;
@@ -55,12 +53,12 @@ public class KafkaUserSpec  implements Serializable {
         this.authorization = authorization;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

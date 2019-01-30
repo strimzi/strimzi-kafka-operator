@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.util.Map;
 
@@ -18,6 +19,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "bootstrapServers", "logging"})
+@EqualsAndHashCode
 public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
     private static final long serialVersionUID = 1L;
 

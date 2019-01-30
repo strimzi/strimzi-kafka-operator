@@ -4,17 +4,15 @@
  */
 package io.strimzi.api.kafka.model.listener;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.sundr.builder.annotations.Buildable;
 
 import static java.util.Collections.emptyMap;
 
@@ -28,7 +26,8 @@ import static java.util.Collections.emptyMap;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"plain", "tls", "external"})
-public class KafkaListeners implements Serializable {
+@EqualsAndHashCode
+public class KafkaListeners implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private KafkaListenerTls tls;
@@ -66,12 +65,12 @@ public class KafkaListeners implements Serializable {
         this.external = external;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 @Buildable(
         editableEnabled = false,
@@ -17,6 +18,7 @@ import io.sundr.builder.annotations.Buildable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
         "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "logging", "metrics", "template"})
+@EqualsAndHashCode
 public class KafkaConnectS2ISpec extends KafkaConnectSpec {
 
     private static final long serialVersionUID = 1L;

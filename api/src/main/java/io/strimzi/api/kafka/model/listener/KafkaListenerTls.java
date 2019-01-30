@@ -4,14 +4,13 @@
  */
 package io.strimzi.api.kafka.model.listener;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -29,7 +28,8 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class KafkaListenerTls implements Serializable {
+@EqualsAndHashCode
+public class KafkaListenerTls implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private KafkaListenerAuthentication auth;
@@ -47,6 +47,7 @@ public class KafkaListenerTls implements Serializable {
         this.auth = auth;
     }
 
+
     @Description("List of peers which should be able to connect to this listener. " +
             "Peers in this list are combined using a logical OR operation. " +
             "If this field is empty or missing, all connections will be allowed for this listener. " +
@@ -61,12 +62,12 @@ public class KafkaListenerTls implements Serializable {
         this.networkPolicyPeers = networkPolicyPeers;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
@@ -24,6 +25,7 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "authentication"})
+@EqualsAndHashCode
 public class KafkaListenerExternalRoute extends KafkaListenerExternal {
     private static final long serialVersionUID = 1L;
 
@@ -46,10 +48,12 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
         return auth;
     }
 
+    @Override
     public void setAuth(KafkaListenerAuthentication auth) {
         this.auth = auth;
     }
 
+    @Override
     @Description("List of peers which should be able to connect to this listener. " +
             "Peers in this list are combined using a logical OR operation. " +
             "If this field is empty or missing, all connections will be allowed for this listener. " +
@@ -60,6 +64,7 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
         return networkPolicyPeers;
     }
 
+    @Override
     public void setNetworkPolicyPeers(List<NetworkPolicyPeer> networkPolicyPeers) {
         this.networkPolicyPeers = networkPolicyPeers;
     }

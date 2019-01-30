@@ -85,6 +85,10 @@
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-server-mock</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>test</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

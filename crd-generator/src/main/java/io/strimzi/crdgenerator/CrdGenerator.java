@@ -299,13 +299,54 @@ public class CrdGenerator {
                 hasAnyGetterAndAnySetter(c);
             }
         }
+        checkInherits(crdClass, "java.io.Serializable");
+        if (crdClass.getName().startsWith("io.strimzi.api.")) {
+            checkInherits(crdClass, "io.strimzi.api.kafka.model.UnknownPropertyPreserving");
+        }
+        if (!Modifier.isAbstract(crdClass.getModifiers())) {
+            checkClassOverrides(crdClass, "hashCode");
+        }
+        checkClassOverrides(crdClass, "equals", Object.class);
+    }
+
+    private void checkInherits(Class<?> crdClass, String className) {
+        if (!inherits(crdClass, className)) {
+            err(crdClass + " does not inherit " + className);
+        }
+    }
+
+    private boolean inherits(Class<?> crdClass, String className) {
+        Class<?> c = crdClass;
+        boolean found = false;
+        outer: do {
+            if (className.equals(c.getName())) {
+                found = true;
+                break outer;
+            }
+            for (Class<?> i : c.getInterfaces()) {
+                if (inherits(i, className)) {
+                    found = true;
+                    break outer;
+                }
+            }
+            c = c.getSuperclass();
+        } while (c != null);
+        return found;
     }
 
     private void checkForBuilderClass(Class<?> crdClass, String builderClass) {
         try {
             Class.forName(builderClass, false, crdClass.getClassLoader());
         } catch (ClassNotFoundException e) {
-            err(crdClass + " isn't annotated with @Buildable (" + builderClass + " does not exist)");
+            err(crdClass + " is not annotated with @Buildable (" + builderClass + " does not exist)");
+        }
+    }
+
+    private void checkClassOverrides(Class<?> crdClass, String methodName, Class<?>... parameterTypes) {
+        try {
+            crdClass.getDeclaredMethod(methodName, parameterTypes);
+        } catch (NoSuchMethodException e) {
+            err(crdClass + " does not override " + methodName);
         }
     }
 

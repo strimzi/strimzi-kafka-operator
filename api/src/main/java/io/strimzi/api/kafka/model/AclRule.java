@@ -4,19 +4,16 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.sundr.builder.annotations.Buildable;
+import io.vertx.core.cli.annotations.DefaultValue;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
-import lombok.EqualsAndHashCode;
 
 /**
  * A representation of a single ACL rule for SimpleAclAuthorizer
@@ -28,7 +25,8 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class AclRule implements Serializable {
+public class AclRule implements UnknownPropertyPreserving, Serializable {
+
     private static final long serialVersionUID = 1L;
 
     private AclRuleType type = AclRuleType.ALLOW;
@@ -93,12 +91,12 @@ public class AclRule implements Serializable {
         this.operation = operation;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
