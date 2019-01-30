@@ -1,0 +1,2 @@
+* Strimzi 0.8.x and 0.9.0 are based on Kafka 2.0.0
+* Strimzi 0.10.0 is based on Kafka 2.1.0, and supports Kafka 2.0.1
