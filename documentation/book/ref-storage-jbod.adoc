@@ -1,0 +1,31 @@
+// Module included in the following assemblies:
+//
+// assembly-storage.adoc
+
+[id='ref-jbod-storage-{context}']
+= JBOD storage
+
+TODO: introduction or concept ???
+
+To use JBOD storage, the `type` has to be set to `jbod`.
+A JBOD storage is described by one or more volumes and each of them can be an Ephemeral or a Persistent one.
+
+Using the `volumes` property is possible to declare the disks which make the JBOD storage.
+
+.Example fragment of JBOD storage configuration
+[source,yaml]
+----
+# ...
+storage:
+  type: jbod
+  volumes:
+  - id: 0
+    type: persistent-claim
+    size: 100Gi
+    deleteClaim: false
+  - id: 1
+    type: persistent-claim
+    size: 100Gi
+    deleteClaim: false
+# ...
+----
