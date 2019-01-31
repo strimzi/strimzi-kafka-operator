@@ -14,7 +14,6 @@ import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -41,6 +40,8 @@ public class StrimziUpgradeST extends AbstractST {
         Arrays.stream(root.listFiles()).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 kubeClient.applyContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
+            } else if (f.getName().matches("050-Deployment.*")) {
+                kubeClient.applyContent(TestUtils.changeDeploymentNamespaceUpgrade(f, NAMESPACE));
             } else {
                 kubeClient.apply(f);
             }
@@ -162,12 +163,5 @@ public class StrimziUpgradeST extends AbstractST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteResources();
-    }
-
-    @BeforeAll
-    static void createClusterOperator() {
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
     }
 }
