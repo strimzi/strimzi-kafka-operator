@@ -10,8 +10,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -52,8 +50,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         createNamespace(NAMESPACE);
-        createCustomResources(Collections.singletonList(
-                TestUtils.CRD_TOPIC));
+        createCustomResources(TestUtils.CRD_TOPIC);
     }
 
     @AfterAll

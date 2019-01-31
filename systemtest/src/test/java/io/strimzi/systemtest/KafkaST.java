@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -97,7 +96,7 @@ class KafkaST extends AbstractST {
     @Tag(REGRESSION)
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
-        createCustomResources(Collections.singletonList("../examples/templates/cluster-operator"));
+        createCustomResources("../examples/templates/cluster-operator");
         Oc oc = (Oc) KUBE_CLIENT;
         String clusterName = "openshift-my-cluster";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));

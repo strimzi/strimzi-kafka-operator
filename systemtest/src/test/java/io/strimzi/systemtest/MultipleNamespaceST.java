@@ -18,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
@@ -100,7 +99,7 @@ class MultipleNamespaceST extends AbstractST {
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
         setTestNamespaceInfo(CO_NAMESPACE, CO_NAMESPACE, TO_NAMESPACE);
-        prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, TO_NAMESPACE), Collections.emptyList());
+        prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, TO_NAMESPACE));
         createTestClassResources();
 
         applyRoleBindings(CO_NAMESPACE);

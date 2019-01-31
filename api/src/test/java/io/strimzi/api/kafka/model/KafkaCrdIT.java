@@ -12,8 +12,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Collections;
-
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -124,8 +122,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         createNamespace(NAMESPACE);
-        createCustomResources(Collections.singletonList(
-                TestUtils.CRD_KAFKA));
+        createCustomResources(TestUtils.CRD_KAFKA);
     }
 
     @AfterAll

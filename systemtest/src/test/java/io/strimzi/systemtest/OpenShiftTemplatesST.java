@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.test.TestUtils.map;
@@ -215,14 +214,13 @@ public class OpenShiftTemplatesST extends AbstractST {
         LOGGER.info("Creating resources before the test class");
         setTestNamespaceInfo(NAMESPACE);
         createNamespace(NAMESPACE);
-        createCustomResources(Arrays.asList(
-                "../examples/templates/cluster-operator",
+        createCustomResources("../examples/templates/cluster-operator",
                 "../examples/templates/topic-operator",
                 TestUtils.CRD_KAFKA,
                 TestUtils.CRD_KAFKA_CONNECT,
                 TestUtils.CRD_KAFKA_CONNECT_S2I,
                 TestUtils.CRD_TOPIC,
-                "src/rbac/role-edit-kafka.yaml"));
+                "src/rbac/role-edit-kafka.yaml");
     }
 
     @AfterAll

@@ -119,10 +119,10 @@ public class BaseITST {
     /**
      * Apply custom resources for CO such as templates. Deletion is up to caller and can be managed
      * by calling {@link #deleteCustomResources()}
-     * @param resources list of paths to yaml files with resources specifications
+     * @param resources array of paths to yaml files with resources specifications
      */
-    protected void createCustomResources(List<String> resources) {
-        deploymentResources.addAll(resources);
+    protected void createCustomResources(String... resources) {
+        deploymentResources.addAll(Arrays.asList(resources));
         for (String resource : resources) {
             LOGGER.info("Creating resources {}", resource);
             KUBE_CLIENT.clientWithAdmin().create(resource);
@@ -158,7 +158,7 @@ public class BaseITST {
      * @param namespaces list of namespaces which will be created
      * @param resources list of path to yaml files with resources specifications
      */
-    protected void prepareEnvForOperator(String clientNamespace, List<String> namespaces, List<String> resources) {
+    protected void prepareEnvForOperator(String clientNamespace, List<String> namespaces, String... resources) {
         createNamespaces(clientNamespace, namespaces);
         createCustomResources(resources);
         applyClusterOperatorInstallFiles();
@@ -170,7 +170,7 @@ public class BaseITST {
      * @param clientNamespace namespace which will be created and used as default by kube client
      * @param resources list of path to yaml files with resources specifications
      */
-    protected void prepareEnvForOperator(String clientNamespace, List<String> resources) {
+    protected void prepareEnvForOperator(String clientNamespace, String... resources) {
         prepareEnvForOperator(clientNamespace, Collections.singletonList(clientNamespace), resources);
     }
 
@@ -180,7 +180,7 @@ public class BaseITST {
      * @param clientNamespace namespace which will be created and used as default by kube client
      */
     protected void prepareEnvForOperator(String clientNamespace) {
-        prepareEnvForOperator(clientNamespace, Collections.singletonList(clientNamespace), Collections.emptyList());
+        prepareEnvForOperator(clientNamespace, Collections.singletonList(clientNamespace));
     }
 
     /**

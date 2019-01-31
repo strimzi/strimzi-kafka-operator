@@ -1233,7 +1233,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     @AfterEach
-    void teardownEnvironment(ExtensionContext context) {
+    void recreateEnvironmentAfterFailure(ExtensionContext context) {
         if (context.getExecutionException().isPresent()) {
             recreateTestEnv(baseClusterOperatorNamespace, baseBindingsNamespaces);
         }

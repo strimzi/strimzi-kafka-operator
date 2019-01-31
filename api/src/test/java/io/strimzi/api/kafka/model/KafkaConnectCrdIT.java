@@ -10,8 +10,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -103,8 +101,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         createNamespace(NAMESPACE);
-        createCustomResources(Collections.singletonList(
-                TestUtils.CRD_KAFKA_CONNECT));
+        createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
     }
 
     @AfterAll
