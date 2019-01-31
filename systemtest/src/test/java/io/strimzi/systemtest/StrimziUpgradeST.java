@@ -164,11 +164,4 @@ public class StrimziUpgradeST extends AbstractST {
     void deleteTestResources() throws Exception {
         deleteResources();
     }
-
-    @BeforeAll
-    static void createClusterOperator() {
-        applyRoleBindings(NAMESPACE);
-        // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE).done();
-    }
 }
