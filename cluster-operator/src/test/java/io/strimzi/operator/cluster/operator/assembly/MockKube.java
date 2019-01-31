@@ -64,8 +64,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
 
 import io.fabric8.openshift.api.model.DoneableRoute;
@@ -392,15 +390,10 @@ public class MockKube {
                                 String pvcName = pvcTemplate.getMetadata().getName() + "-" + podName;
                                 if (mockPvcs.inNamespace(argument.getMetadata().getNamespace()).withName(pvcName).get() == null) {
 
-                                    Map<String, String> labels = new HashMap<>();
-                                    labels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
-                                    labels.put(Labels.STRIMZI_CLUSTER_LABEL, value.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL));
-                                    labels.put(Labels.STRIMZI_NAME_LABEL, argument.getMetadata().getName());
-
                                     LOGGER.debug("create Pvc {} because it's in VolumeClaimTemplate of StatefulSet {}", pvcName, resourceName);
                                     PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
                                             .withNewMetadata()
-                                                .withLabels(labels)
+                                                .withLabels(argument.getSpec().getSelector().getMatchLabels())
                                                 .withNamespace(argument.getMetadata().getNamespace())
                                                 .withName(pvcName)
                                             .endMetadata()
