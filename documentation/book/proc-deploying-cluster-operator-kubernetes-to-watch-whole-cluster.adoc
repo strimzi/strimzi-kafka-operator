@@ -7,7 +7,7 @@
 = Deploying the Cluster Operator to watch the whole cluster
 
 Cluster Operator can be installed to manage Kafka, Kafka Connect and Kafka Mirror Maker in the whole {ProductPlatformName} cluster across all {Namespaces}.
-In this mode, the Cluster Operator will automatically start managing clusters in any new {Namespaces} which will be created while it is running and drop any {Namespaces} which will be deleted.
+In this mode, the Cluster Operator will automatically start managing clusters in any new {Namespaces} which will be created while it is running.
 
 .Prerequisites
 
