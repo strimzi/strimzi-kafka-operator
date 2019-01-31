@@ -64,6 +64,7 @@ import java.util.regex.Pattern;
 public class ZookeeperSetOperator extends StatefulSetOperator {
 
     private static final Logger log = LogManager.getLogger(ZookeeperSetOperator.class);
+    private static final Pattern CA_KEY_PATTERN = Pattern.compile("^---*BEGIN.*---*$(.*)^---*END.*---*$.*", Pattern.MULTILINE | Pattern.DOTALL);
 
     /**
      * Constructor
@@ -159,8 +160,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
             keyStore.load(null, password);
 
             String keyText = new String(decoder.decode(clusterSecretKey.getData().get("ca.key")), StandardCharsets.ISO_8859_1);
-            Pattern parse = Pattern.compile("^---*BEGIN.*---*$(.*)^---*END.*---*$.*", Pattern.MULTILINE | Pattern.DOTALL);
-            Matcher matcher = parse.matcher(keyText);
+            Matcher matcher = CA_KEY_PATTERN.matcher(keyText);
             if (!matcher.find()) {
                 throw new RuntimeException("Bad client (CO) key. Key misses BEGIN or END markers");
             }
@@ -175,7 +175,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
             X509Certificate coCert = (X509Certificate) x509.generateCertificate(new ByteArrayInputStream(coCertKey.cert()));
 
             String coCertKeyText = new String(coCertKey.key(), StandardCharsets.ISO_8859_1);
-            Matcher matcher2 = parse.matcher(coCertKeyText);
+            Matcher matcher2 = CA_KEY_PATTERN.matcher(coCertKeyText);
             if (!matcher2.find()) {
                 throw new RuntimeException("Bad client (CO) key. Key misses BEGIN or END markers");
             }

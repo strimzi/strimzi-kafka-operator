@@ -23,6 +23,9 @@ import static java.util.Arrays.asList;
 
 class Exec {
     private static final Logger LOGGER = LogManager.getLogger(Exec.class);
+    private static final Pattern ERROR_PATTERN = Pattern.compile("Error from server \\(([a-zA-Z0-9]+)\\):");
+    private static final Pattern INVALID_PATTERN = Pattern.compile("The ([a-zA-Z0-9]+) \"([a-z0-9.-]+)\" is invalid:");
+    private static final Pattern PATH_SPLITTER = Pattern.compile(System.getProperty("path.separator"));
 
     /**
      * Executes the given command in a subprocess.
@@ -67,8 +70,7 @@ class Exec {
             ProcessResult result = new ProcessResult(sc, stdout, stderr);
             if (sc != 0) {
                 String msg = "`" + join(" ", cmd) + "` got status code " + sc + " and stderr:\n------\n" + stderr + "\n------\nand stdout:\n------\n" + stdout + "\n------";
-                Pattern existenceRe = Pattern.compile("Error from server \\(([a-zA-Z0-9]+)\\):");
-                Matcher matcher = existenceRe.matcher(stderr);
+                Matcher matcher = ERROR_PATTERN.matcher(stderr);
                 KubeClusterException t = null;
                 if (matcher.find()) {
                     switch (matcher.group(1)) {
@@ -82,8 +84,7 @@ class Exec {
                             break;
                     }
                 }
-                Pattern invalidRe = Pattern.compile("The ([a-zA-Z0-9]+) \"([a-z0-9.-]+)\" is invalid:");
-                matcher = invalidRe.matcher(stderr);
+                matcher = INVALID_PATTERN.matcher(stderr);
                 if (matcher.find()) {
                     t = new KubeClusterException.InvalidResource(result, msg);
                 }
@@ -114,7 +115,7 @@ class Exec {
     }
 
     static boolean isExecutableOnPath(String cmd) {
-        for (String dir: System.getenv("PATH").split(Pattern.quote(System.getProperty("path.separator")))) {
+        for (String dir : PATH_SPLITTER.split(System.getenv("PATH"))) {
             if (new File(dir, cmd).canExecute()) {
                 return true;
             }

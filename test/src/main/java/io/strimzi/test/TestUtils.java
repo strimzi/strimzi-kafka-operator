@@ -71,6 +71,9 @@ public final class TestUtils {
 
     public static final String CRD_KAFKA_MIRROR_MAKER = "../install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
 
+    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)-kafka-([0-9.]+)$");
+    private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
+
     private TestUtils() {
         // All static methods
     }
@@ -147,8 +150,7 @@ public final class TestUtils {
 
     public static String changeOrgAndTag(String image, String newOrg, String newTag, String kafkaVersion) {
         image = image.replaceFirst("^strimzi/", newOrg + "/");
-        Pattern p = Pattern.compile(":([^:]*?)-kafka-([0-9.]+)$");
-        Matcher m = p.matcher(image);
+        Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
         StringBuffer sb = new StringBuffer();
         if (m.find()) {
             m.appendReplacement(sb, ":" + newTag + "-kafka-" + kafkaVersion);
@@ -171,8 +173,7 @@ public final class TestUtils {
     }
 
     public static String changeOrgAndTagInImageMap(String imageMap) {
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
-        Matcher m = p.matcher(imageMap);
+        Matcher m = VERSION_IMAGE_PATTERN.matcher(imageMap);
         StringBuffer sb = new StringBuffer();
         while (m.find()) {
             m.appendReplacement(sb, m.group("version") + "=" + TestUtils.changeOrgAndTag(m.group("image")));
