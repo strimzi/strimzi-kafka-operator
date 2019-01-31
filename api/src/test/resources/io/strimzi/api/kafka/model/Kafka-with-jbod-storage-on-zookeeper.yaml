@@ -15,13 +15,13 @@ spec:
     storage:
       type: jbod
       volumes:
-        - id: 1
+        - id: 0
           type: persistent-claim
           size: 100Gi
           deleteClaim: false
-        - id: 2
+        - id: 1
           type: persistent-claim
           size: 200Gi
           deleteClaim: true
-        - id: 3
+        - id: 2
           type: ephemeral

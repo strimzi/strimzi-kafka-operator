@@ -4,11 +4,20 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 /**
@@ -48,5 +57,67 @@ public class KafkaSetOperator extends StatefulSetOperator {
             return true;
         }
         return false;
+    }
+
+    private void revertVolumeChanges(StatefulSet current, StatefulSet desired) {
+
+        Container currentKafka =
+                current.getSpec().getTemplate().getSpec().getContainers().stream().filter(c -> c.getName().equals("kafka")).findFirst().get();
+        Container desiredKafka =
+                desired.getSpec().getTemplate().getSpec().getContainers().stream().filter(c -> c.getName().equals("kafka")).findFirst().get();
+
+        desiredKafka.setVolumeMounts(currentKafka.getVolumeMounts());
+
+        StatefulSet updated = new StatefulSetBuilder(desired)
+                .editSpec()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .editMatchingEnv(e -> e.getName().equals(KafkaCluster.ENV_VAR_KAFKA_LOG_DIRS))
+                                    .withValue(desiredKafka.getVolumeMounts().stream()
+                                        .filter(vm -> vm.getMountPath().contains(AbstractModel.VOLUME_NAME))
+                                        .map(vm -> vm.getMountPath())
+                                        .collect(Collectors.joining(",")))
+                                .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        desired.setSpec(updated.getSpec());
+    }
+
+    @Override
+    protected StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
+
+        List<PersistentVolumeClaim> currentPvcs = current.getSpec().getVolumeClaimTemplates();
+        List<PersistentVolumeClaim> desiredPvcs = desired.getSpec().getVolumeClaimTemplates();
+
+        if (desiredPvcs.size() != currentPvcs.size()) {
+            log.warn("Adding or removing Kafka persistent storage is not possible. The changes will be ignored.");
+            revertVolumeChanges(current, desired);
+        } else {
+
+            for (PersistentVolumeClaim currentPvc : currentPvcs) {
+
+                Optional<PersistentVolumeClaim> pvc =
+                        desiredPvcs.stream()
+                                .filter(desiredPvc -> desiredPvc.getMetadata().getName().equals(currentPvc.getMetadata().getName()))
+                                .findFirst();
+
+                if (!pvc.isPresent()) {
+                    log.warn("Changing Kafka persistent storage ids is not possible. The changes will be ignored.");
+                    revertVolumeChanges(current, desired);
+
+                } else if (!pvc.get().getSpec().getResources().getRequests().get("storage").getAmount()
+                        .equals(currentPvc.getSpec().getResources().getRequests().get("storage").getAmount())) {
+
+                    log.warn("Changing Kafka storage size is not possible. The changes will be ignored.");
+                }
+            }
+        }
+
+        return super.revertStorageChanges(current, desired);
     }
 }

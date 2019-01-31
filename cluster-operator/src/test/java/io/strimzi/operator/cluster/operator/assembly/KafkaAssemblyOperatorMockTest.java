@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
@@ -28,6 +27,7 @@ import io.strimzi.api.kafka.model.ResourcesBuilder;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -57,10 +57,11 @@ import org.junit.runners.Parameterized;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
@@ -71,6 +72,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
@@ -115,7 +117,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         public String toString() {
             return "zkReplicas=" + zkReplicas +
-                    ",zkStorage=" + kafkaStorage +
+                    ",zkStorage=" + zkStorage +
                     ",kafkaReplicas=" + kafkaReplicas +
                     ",kafkaStorage=" + kafkaStorage +
                     ",resources=" + resources;
@@ -281,8 +283,6 @@ public class KafkaAssemblyOperatorMockTest {
     /** Create a cluster from a Kafka Cluster CM */
     @Test
     public void testCreateUpdate(TestContext context) {
-        Set<String> expectedClaims = resilientPvcs();
-
         KafkaAssemblyOperator kco = createCluster(context);
         LOGGER.info("Reconciling again -> update");
         Async updateAsync = context.async();
@@ -298,49 +298,6 @@ public class KafkaAssemblyOperatorMockTest {
         context.assertEquals(expectedClaims,
                 mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().stream()
                         .map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toSet()));
-    }
-
-    /**
-     * Create PVCs for appropriate for the kafka and ZK storage test parameters,
-     * return the names of the PVCs which shouldn't be deleted according to the deleteClaim config
-     */
-    private Set<String> resilientPvcs() {
-        Set<String> expectedClaims = new HashSet<>();
-        Set<String> kafkaPvcNames = createPvcs(kafkaStorage,
-                kafkaReplicas, podId -> KafkaCluster.getPersistentVolumeClaimName(KafkaCluster.kafkaClusterName(CLUSTER_NAME), podId)
-        );
-        if (!deleteClaim(kafkaStorage)) {
-            expectedClaims.addAll(kafkaPvcNames);
-        }
-        Set<String> zkPvcNames = createPvcs(zkStorage,
-                zkReplicas, podId -> ZookeeperCluster.getPersistentVolumeClaimName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME), podId)
-        );
-        if (!deleteClaim(zkStorage)) {
-            expectedClaims.addAll(zkPvcNames);
-        }
-        return expectedClaims;
-    }
-
-    /**
-     * Create PVCs in the mockClient
-     * according to the given storage, number of replicas and naming scheme,
-     * return the names of the PVCs created
-     */
-    private Set<String> createPvcs(Storage storage, int replicas, Function<Integer, String> pvcNameFn) {
-        Set<String> expectedClaims = new HashSet<>();
-        if (storage instanceof PersistentClaimStorage) {
-            for (int i = 0; i < replicas; i++) {
-                String pvcName = pvcNameFn.apply(i);
-                mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withName(pvcName).create(
-                        new PersistentVolumeClaimBuilder().withNewMetadata()
-                                .withNamespace(NAMESPACE)
-                                .withName(pvcName)
-                                .endMetadata()
-                                .build());
-                expectedClaims.add(pvcName);
-            }
-        }
-        return expectedClaims;
     }
 
     @Test
@@ -464,7 +421,7 @@ public class KafkaAssemblyOperatorMockTest {
         Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                 .withNewPersistentClaimStorage()
                     .withStorageClass(changedClass)
-                    .withSize("100Gi")
+                    .withSize("123")
                 .endPersistentClaimStorage().endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
@@ -577,25 +534,37 @@ public class KafkaAssemblyOperatorMockTest {
     public void testUpdateKafkaWithChangedDeleteClaim(TestContext context) {
         Assume.assumeTrue(kafkaStorage instanceof PersistentClaimStorage);
 
+        KafkaAssemblyOperator kco = createCluster(context);
+
+        Map<String, String> labels = new HashMap<>();
+        labels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
+        labels.put(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME);
+        labels.put(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(CLUSTER_NAME));
+
+        Set<String> kafkaPvcs = mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withLabels(labels).list().getItems()
+                .stream()
+                .map(pvc -> pvc.getMetadata().getName())
+                .collect(Collectors.toSet());
+
+        labels.put(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME));
+
+        Set<String> zkPvcs = mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withLabels(labels).list().getItems()
+                .stream()
+                .map(pvc -> pvc.getMetadata().getName())
+                .collect(Collectors.toSet());
+
         Set<String> allPvcs = new HashSet<>();
-        Set<String> kafkaPvcs = createPvcs(kafkaStorage,
-                kafkaReplicas, podId -> KafkaCluster.getPersistentVolumeClaimName(KafkaCluster.kafkaClusterName(CLUSTER_NAME), podId)
-        );
-        Set<String> zkPvcs = createPvcs(zkStorage,
-                zkReplicas, podId -> ZookeeperCluster.getPersistentVolumeClaimName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME), podId)
-        );
         allPvcs.addAll(kafkaPvcs);
         allPvcs.addAll(zkPvcs);
-
-        KafkaAssemblyOperator kco = createCluster(context);
 
         boolean originalKafkaDeleteClaim = deleteClaim(kafkaStorage);
 
         // Try to update the storage class
         Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
                 .withNewPersistentClaimStorage()
+                .withSize("123")
+                .withStorageClass("foo")
                 .withDeleteClaim(!originalKafkaDeleteClaim)
-                .withSize("100Gi")
                 .endPersistentClaimStorage().endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
@@ -607,6 +576,14 @@ public class KafkaAssemblyOperatorMockTest {
             updateAsync.complete();
         });
         updateAsync.await();
+
+        // check that the new delete-claim annotation is on the PVCs
+        for (String pvcName: kafkaPvcs) {
+            assertEquals(!originalKafkaDeleteClaim,
+                Boolean.valueOf(mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withName(pvcName).get()
+                    .getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM)));
+        }
+
 
         LOGGER.info("Reconciling again -> delete");
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();

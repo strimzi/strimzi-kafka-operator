@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.11.0
+
+* Add support for JBOD storage for Kafka brokers
+
 ## 0.10.0
 
 * Support for Kafka 2.1.0
