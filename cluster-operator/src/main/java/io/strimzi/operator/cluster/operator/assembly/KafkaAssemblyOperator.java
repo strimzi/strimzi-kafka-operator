@@ -155,9 +155,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
         createReconciliationState(reconciliation, kafkaAssembly)
                 .reconcileCas()
+                .compose(state -> state.clusterOperatorSecret())
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
-                .compose(state -> state.clusterOperatorSecret())
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
                 .compose(state -> state.getZookeeperDescription())

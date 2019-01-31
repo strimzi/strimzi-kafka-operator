@@ -23,10 +23,15 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -115,7 +120,7 @@ public class PartialRollingUpdateTest {
                 .end()
                 .build();
 
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, bootstrapClient, true, 60_000L);
+        ResourceOperatorSupplier supplier = supplier(bootstrapClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 new MockCertManager(), supplier, VERSIONS);
 
@@ -144,6 +149,17 @@ public class PartialRollingUpdateTest {
         this.clientsCaKey = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get();
     }
 
+    ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
+        ZookeeperLeaderFinder leaderFinder = new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, bootstrapClient),
+            () -> new BackOff(5_000, 2, 4)) {
+            @Override
+            protected Future<Boolean> isLeader(Pod pod, NetClientOptions options) {
+                return Future.succeededFuture(true);
+            }
+        };
+        return new ResourceOperatorSupplier(vertx, bootstrapClient, leaderFinder, true, 60_000L);
+    }
+
     private void startKube() {
         CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
 
@@ -156,7 +172,7 @@ public class PartialRollingUpdateTest {
                 .withInitialSecrets(set(clusterCaCert, clusterCaKey, clientsCaCert, clientsCaKey))
                 .build();
 
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, mockClient, true, 60_000L);
+        ResourceOperatorSupplier supplier = supplier(mockClient);
 
         this.kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 new MockCertManager(), supplier, VERSIONS);
