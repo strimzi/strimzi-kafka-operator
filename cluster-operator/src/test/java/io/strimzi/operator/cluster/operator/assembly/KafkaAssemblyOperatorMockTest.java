@@ -422,7 +422,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .withNewPersistentClaimStorage()
                     .withStorageClass(changedClass)
                     .withSize("123")
-                .endPersistentClaimStorageStorage().endKafka().endSpec().build();
+                .endPersistentClaimStorage().endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed storage class");
@@ -561,11 +561,11 @@ public class KafkaAssemblyOperatorMockTest {
 
         // Try to update the storage class
         Kafka changedClusterCm = new KafkaBuilder(cluster).editSpec().editKafka()
-                .withNewPersistentClaimStorageStorage()
+                .withNewPersistentClaimStorage()
                 .withSize("123")
                 .withStorageClass("foo")
                 .withDeleteClaim(!originalKafkaDeleteClaim)
-                .endPersistentClaimStorageStorage().endKafka().endSpec().build();
+                .endPersistentClaimStorage().endKafka().endSpec().build();
         kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed delete claim");

@@ -220,7 +220,7 @@ public class ZookeeperClusterTest {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                     .editZookeeper()
-                        .withNewPersistentClaimStorageStorage().withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorageStorage()
+                        .withNewPersistentClaimStorage().withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorage()
                     .endZookeeper()
                 .endSpec()
                 .build();
