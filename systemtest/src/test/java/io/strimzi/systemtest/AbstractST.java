@@ -114,6 +114,7 @@ public abstract class AbstractST {
     static final long GLOBAL_TIMEOUT = 300000;
     static final long GLOBAL_POLL_INTERVAL = 1000;
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
+    private static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
@@ -488,8 +489,7 @@ public abstract class AbstractST {
     void checkPings(int messagesCount, Job job) {
         String podName = jobPodName(job);
         String log = podLog(podName);
-        Pattern p = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
-        Matcher m = p.matcher(log);
+        Matcher m = BRACE_PATTERN.matcher(log);
         boolean producerSuccess = false;
         boolean consumerSuccess = false;
         while (m.find()) {
@@ -820,8 +820,7 @@ public abstract class AbstractST {
     void checkRecordsForConsumer(int messagesCount, Job job) {
         String podName = jobPodName(job);
         String log = podLog(podName);
-        Pattern p = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
-        Matcher m = p.matcher(log);
+        Matcher m = BRACE_PATTERN.matcher(log);
         boolean consumerSuccess = false;
         while (m.find()) {
             String json = m.group();

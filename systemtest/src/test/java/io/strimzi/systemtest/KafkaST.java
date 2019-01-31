@@ -86,6 +86,7 @@ class KafkaST extends AbstractST {
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
+    private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     static KubernetesClient client = new DefaultKubernetesClient();
 
@@ -205,7 +206,7 @@ class KafkaST extends AbstractST {
 
         waitForZkPods(newZkPodNames);
         // check the new node is either in leader or follower state
-        waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2, 3, 4, 5, 6);
+        waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2, 3, 4, 5, 6);
         checkZkPodsLog(newZkPodNames);
 
         //Test that CO doesn't have any exceptions in log
@@ -222,7 +223,7 @@ class KafkaST extends AbstractST {
         }
 
         // Wait for one zk pods will became leader and others follower state
-        waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
+        waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
         assertThat(getEvents("Pod", newZkPodNames.get(4)), hasAllOfReasons(Killing));

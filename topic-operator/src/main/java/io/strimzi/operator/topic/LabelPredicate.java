@@ -17,6 +17,11 @@ import java.util.regex.Pattern;
  */
 public class LabelPredicate implements Predicate<HasMetadata> {
 
+    private static final Pattern VALUE_PATTERN = Pattern.compile("([a-z0-9A-Z]([a-z0-9A-Z_.-]*[a-z0-9A-Z])?)?");
+    private static final Pattern KEY_PATTERN = Pattern.compile("([a-z0-9.-]*/)?([a-z0-9A-Z](?:[a-z0-9A-Z_.-]*[a-z0-9A-Z])?)");
+    private static final Pattern COMMA_SPLITTER = Pattern.compile(",");
+    private static final Pattern EQUAL_SPLITTER = Pattern.compile("=");
+
     private final Map<String, String> labels;
 
     public LabelPredicate(String... labels) {
@@ -65,16 +70,14 @@ public class LabelPredicate implements Predicate<HasMetadata> {
         if (value.length() > 63) {
             throw new IllegalArgumentException("The label value is too long (63 character max)");
         }
-        Pattern valuePattern = Pattern.compile("([a-z0-9A-Z]([a-z0-9A-Z_.-]*[a-z0-9A-Z])?)?");
-        Matcher matcher = valuePattern.matcher(value);
+        Matcher matcher = VALUE_PATTERN.matcher(value);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("The label value is invalid");
         }
     }
 
     private static void checkLabelKey(String key) {
-        Pattern keyPattern = Pattern.compile("([a-z0-9.-]*/)?([a-z0-9A-Z](?:[a-z0-9A-Z_.-]*[a-z0-9A-Z])?)");
-        Matcher keyMatcher = keyPattern.matcher(key);
+        Matcher keyMatcher = KEY_PATTERN.matcher(key);
         if (keyMatcher.matches()) {
             String prefix = keyMatcher.group(1);
             if (prefix != null && !isSubdomain(prefix.substring(0, prefix.length() - 1))) {
@@ -100,8 +103,7 @@ public class LabelPredicate implements Predicate<HasMetadata> {
      * @return The label predicate
      */
     public static LabelPredicate fromString(String string) throws IllegalArgumentException {
-        Pattern p = Pattern.compile(",");
-        Matcher m = p.matcher(string);
+        Matcher m = COMMA_SPLITTER.matcher(string);
         int lastEnd = 0;
         while (m.find()) {
             String pair = string.substring(lastEnd, m.start());
@@ -115,10 +117,10 @@ public class LabelPredicate implements Predicate<HasMetadata> {
             throw new IllegalArgumentException();
         }
 
-        String[] pairs = string.trim().split(",");
+        String[] pairs = COMMA_SPLITTER.split(string.trim());
         Map<String, String> map = new HashMap<>(pairs.length);
         for (String pair : pairs) {
-            String[] keyValue = pair.split("=", 2);
+            String[] keyValue = EQUAL_SPLITTER.split(pair, 2);
             if (keyValue.length < 2) {
                 throw new IllegalArgumentException("Couldn't parse the label=value pair: " + pair);
             }

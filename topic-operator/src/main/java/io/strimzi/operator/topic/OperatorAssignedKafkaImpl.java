@@ -47,6 +47,10 @@ import java.util.regex.Pattern;
  */
 public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
 
+    private static final Pattern REASSIGN_FAILED = Pattern.compile("Reassignment of partition .* failed");
+    private static final Pattern REASSIGN_COMPLETE = Pattern.compile("Reassignment of partition .* completed successfully");
+    private static final Pattern REASSIGN_INPROGRESS = Pattern.compile("Reassignment of partition .* is still in progress");
+
     private final static Logger LOGGER = LogManager.getLogger(OperatorAssignedKafkaImpl.class);
     private final Config config;
 
@@ -192,11 +196,11 @@ public class OperatorAssignedKafkaImpl extends BaseKafkaImpl {
         @Override
         public Void apply(String line) {
             if (line.contains("Partitions reassignment failed due to")
-                    || Pattern.matches("Reassignment of partition .* failed", line)) {
+                    || REASSIGN_FAILED.matcher(line).matches()) {
                 throw new OperatorException("Reassigment failed: " + line);
-            } else if (Pattern.matches("Reassignment of partition .* completed successfully", line)) {
+            } else if (REASSIGN_COMPLETE.matcher(line).matches()) {
                 complete++;
-            } else if (Pattern.matches("Reassignment of partition .* is still in progress", line)) {
+            } else if (REASSIGN_INPROGRESS.matcher(line).matches()) {
                 inProgress++;
             }
             return null;

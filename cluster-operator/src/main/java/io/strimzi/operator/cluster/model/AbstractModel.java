@@ -100,6 +100,7 @@ public abstract class AbstractModel {
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
+    private static final Pattern LOGGER_PATTERN = Pattern.compile("\\$\\{(.*)\\}, ([A-Z]+)");
 
     protected static final String DEFAULT_KAFKA_GC_LOG_ENABLED = String.valueOf(true);
     protected static final String DEFAULT_STRIMZI_GC_LOG_ENABED = String.valueOf(true);
@@ -354,8 +355,7 @@ public abstract class AbstractModel {
                 if ((asList(validLoggerValues).contains(tmpEntry.replaceAll(",[ ]+CONSOLE", ""))) || (asList(validLoggerValues).contains(tmpEntry))) {
                     // correct value
                 } else {
-                    Pattern p = Pattern.compile("\\$\\{(.*)\\}, ([A-Z]+)");
-                    Matcher m = p.matcher(tmpEntry);
+                    Matcher m = LOGGER_PATTERN.matcher(tmpEntry);
 
                     String logger = "";
                     String value = "";
