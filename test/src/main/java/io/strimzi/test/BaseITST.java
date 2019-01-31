@@ -90,6 +90,7 @@ public class BaseITST {
         }
         LOGGER.info("Using namespace {}", useNamespace);
         KUBE_CLIENT.namespace(useNamespace);
+        LOGGER.info("Created namespaces: {}", deploymentNamespaces);
     }
 
     /**
@@ -105,7 +106,9 @@ public class BaseITST {
      * Delete all created namespaces. Namespaces are deleted in the reverse order than they were created.
      */
     protected void deleteNamespaces() {
+        LOGGER.info("Going to delete following namespaces: {}", deploymentNamespaces);
         Collections.reverse(deploymentNamespaces);
+        LOGGER.info("Going to delete following namespaces: {}", deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting namespace: {}", namespace);
             KUBE_CLIENT.deleteNamespace(namespace);
