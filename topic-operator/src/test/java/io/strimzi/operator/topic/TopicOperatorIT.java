@@ -24,7 +24,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -74,7 +73,6 @@ public class TopicOperatorIT extends BaseITST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
 
-    public static KubeClusterResource testCluster = new KubeClusterResource();
     private static String oldNamespace;
 
     private final LabelPredicate resourcePredicate = LabelPredicate.fromString(
@@ -106,10 +104,10 @@ public class TopicOperatorIT extends BaseITST {
 
     @BeforeClass
     public static void setupKubeCluster() {
-        testCluster.client().clientWithAdmin()
+        CLUSTER.client().clientWithAdmin()
                 .createNamespace(NAMESPACE);
-        oldNamespace = testCluster.client().namespace(NAMESPACE);
-        testCluster.client().clientWithAdmin()
+        oldNamespace = CLUSTER.client().namespace(NAMESPACE);
+        CLUSTER.client().clientWithAdmin()
                 .create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .create(TestUtils.CRD_TOPIC)
                 .create("src/test/resources/TopicOperatorIT-rbac.yaml");
@@ -117,18 +115,18 @@ public class TopicOperatorIT extends BaseITST {
 
     @AfterClass
     public static void teardownKubeCluster() {
-        testCluster.client().clientWithAdmin()
+        CLUSTER.client().clientWithAdmin()
                 .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
                 .delete(TestUtils.CRD_TOPIC)
                 .delete("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .deleteNamespace(NAMESPACE);
-        testCluster.client().clientWithAdmin().namespace(oldNamespace);
+        CLUSTER.client().clientWithAdmin().namespace(oldNamespace);
     }
 
     @Before
     public void setup(TestContext context) throws Exception {
         LOGGER.info("Setting up test");
-        testCluster.before();
+        CLUSTER.before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
         kafkaCluster = new KafkaCluster();
         kafkaCluster.addBrokers(1);

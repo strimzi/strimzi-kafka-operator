@@ -115,7 +115,7 @@ class KafkaST extends AbstractST {
         client.pods().list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
                 .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
-        deleteCustomResources();
+        deleteCustomResources("../examples/templates/cluster-operator");
     }
 
     @Test
@@ -216,7 +216,7 @@ class KafkaST extends AbstractST {
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
         for (String name : newZkPodNames) {
-            KUBE_CLIENT.waitForResourceDeletion("po", name);
+            KUBE_CLIENT.waitForResourceDeletion("pod", name);
         }
 
         // Wait for one zk pods will became leader and others follower state

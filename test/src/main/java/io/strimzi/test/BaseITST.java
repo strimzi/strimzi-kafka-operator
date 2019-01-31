@@ -141,6 +141,17 @@ public class BaseITST {
     }
 
     /**
+     * Delete custom resources such as templates. Resources are deleted in the reverse order than they were created.
+     */
+    protected void deleteCustomResources(String... resources) {
+        for (String resource : resources) {
+            LOGGER.info("Deleting resources {}", resource);
+            KUBE_CLIENT.delete(resource);
+            deploymentResources.remove(resource);
+        }
+    }
+
+    /**
      * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
      * specific config files such as ServiceAccount, Roles and CRDs.
      * @param clientNamespace namespace which will be created and used as default by kube client

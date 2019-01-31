@@ -7,14 +7,11 @@ package io.strimzi.api.kafka.model;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.Before;
 
 import static org.junit.Assert.assertNotNull;
 
 public abstract class AbstractCrdIT extends BaseITST {
-
-    public static KubeClusterResource cluster = new KubeClusterResource();
 
     protected <T extends CustomResource> void createDelete(Class<T> resourceClass, String resource) {
         String ssStr = TestUtils.readResource(resourceClass, resource);
@@ -35,13 +32,13 @@ public abstract class AbstractCrdIT extends BaseITST {
         RuntimeException thrown2 = null;
         try {
             try {
-                cluster.client().applyContent(ssStr);
+                CLUSTER.client().applyContent(ssStr);
             } catch (RuntimeException t) {
                 thrown = t;
             }
         } finally {
             try {
-                cluster.client().deleteContent(ssStr);
+                CLUSTER.client().deleteContent(ssStr);
             } catch (RuntimeException t) {
                 thrown2 = t;
             }
@@ -58,6 +55,6 @@ public abstract class AbstractCrdIT extends BaseITST {
 
     @Before
     public void setupTests() {
-        cluster.before();
+        CLUSTER.before();
     }
 }

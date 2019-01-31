@@ -102,9 +102,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
-    protected static final String KAFKA_CONNECT_S2I_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_S2I_IMAGES";
-    protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
-    protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
@@ -113,7 +110,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
-    private static final String DEFAULT_NAMESPACE = "myproject";
+    private static final String DEFAULT_NAMESPACE = KUBE_CLIENT.defaultNamespace();
     private static final long GET_BROKER_API_TIMEOUT = 60_000L;
     private static final long GET_BROKER_API_INTERVAL = 5_000L;
     static final long GLOBAL_TIMEOUT = 300000;
@@ -121,12 +118,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
     private static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
 
-    public static final String NOTEARDOWN = "NOTEARDOWN";
-    public static final String KAFKA_PERSISTENT_YAML = "../examples/kafka/kafka-persistent.yaml";
-    public static final String KAFKA_CONNECT_YAML = "../examples/kafka-connect/kafka-connect.yaml";
-    public static final String KAFKA_CONNECT_S2I_CM = "../examples/configmaps/cluster-operator/kafka-connect-s2i.yaml";
     public static final String CO_INSTALL_DIR = "../install/cluster-operator";
-    public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
     public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
@@ -138,13 +130,10 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
     public static final String OPERATOR_LOG_LEVEL = "INFO";
-    private static final String DEFAULT_TAG = "";
-    private static final String TAG_LIST_NAME = "junitTags";
-    private static final String START_TIME = "start time";
 
     public static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
 
-    private String baseClusterOperatorNamespace = "";
+    private String baseClusterOperatorNamespace = DEFAULT_NAMESPACE;
     private List<String> baseBindingsNamespaces = new ArrayList<>();
 
     Resources resources;
@@ -469,7 +458,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     protected static void createTestClassResources() {
-        LOGGER.info("Creating cluster operator resources");
+        LOGGER.info("Creating test class resources");
         testClassResources = new Resources(namespacedClient());
     }
 
@@ -545,7 +534,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Waits for a job to complete successfully, Failing
+     * Waits for a job to complete successfully, {@link org.junit.jupiter.api.Assertions#fail()}ing
      * if it completes with any failed pods.
      * @throws TimeoutException if the job doesn't complete quickly enough.
      */
@@ -891,7 +880,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         String connect = tlsListener ? KafkaResources.tlsBootstrapAddress(CLUSTER_NAME) : KafkaResources.plainBootstrapAddress(CLUSTER_NAME);
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("ping")
-                .withImage(changeOrgAndTag(changeOrgAndTag("strimzi/test-client:latest-kafka-2.0.0")))
+                .withImage(changeOrgAndTag("strimzi/test-client:latest-kafka-2.0.0"))
                 .addNewEnv().withName("PRODUCER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                                 "--topic " + topic + " " +
