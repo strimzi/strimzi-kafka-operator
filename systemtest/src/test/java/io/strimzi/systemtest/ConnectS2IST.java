@@ -21,7 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.File;
 import java.io.IOException;
 
-import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
@@ -38,7 +38,7 @@ class ConnectS2IST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(CCI_FLAKY)
+    @Tag(FLAKY)
     void testDeployS2IWithMongoDBPlugin() throws IOException {
         resources().kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
             .editMetadata()
