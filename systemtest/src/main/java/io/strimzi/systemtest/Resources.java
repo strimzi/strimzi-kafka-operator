@@ -76,6 +76,7 @@ public class Resources {
     private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
     private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
     public static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
+    private static final String KAFKA_VERSION = "2.1.0";
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
@@ -369,6 +370,7 @@ public class Resources {
         return new KafkaConnectS2IBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
+                .withVersion(KAFKA_VERSION)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectS2IReplicas)
             .endSpec();

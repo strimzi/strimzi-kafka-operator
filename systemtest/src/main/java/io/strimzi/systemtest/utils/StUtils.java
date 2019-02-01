@@ -147,7 +147,7 @@ public class StUtils {
     }
 
     public static File downloadAndUnzip(String url) throws IOException {
-        InputStream bais = (InputStream) URI.create(url).toURL().getContent();
+        InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
         File dir = Files.createTempDirectory(StUtils.class.getName()).toFile();
         dir.deleteOnExit();
         ZipInputStream zin = new ZipInputStream(bais);

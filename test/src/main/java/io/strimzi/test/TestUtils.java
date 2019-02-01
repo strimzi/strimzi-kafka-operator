@@ -71,7 +71,7 @@ public final class TestUtils {
 
     public static final String CRD_KAFKA_MIRROR_MAKER = "../install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
 
-    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)-kafka-([0-9.]+)$");
+    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)-kafka-(?<version>[0-9.])");
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
     private TestUtils() {
@@ -148,12 +148,12 @@ public final class TestUtils {
         return "";
     }
 
-    public static String changeOrgAndTag(String image, String newOrg, String newTag, String kafkaVersion) {
+    public static String changeOrgAndTag(String image, String newOrg, String newTag) {
         image = image.replaceFirst("^strimzi/", newOrg + "/");
         Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
         StringBuffer sb = new StringBuffer();
         if (m.find()) {
-            m.appendReplacement(sb, ":" + newTag + "-kafka-" + kafkaVersion);
+            m.appendReplacement(sb, ":" + newTag + "-kafka-" + m.group("version"));
             m.appendTail(sb);
             image = sb.toString();
         } else {
@@ -165,11 +165,9 @@ public final class TestUtils {
     public static String changeOrgAndTag(String image) {
         String strimziOrg = "strimzi";
         String strimziTag = "latest";
-        String kafkaVersion = "2.1.0";
         String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", strimziOrg);
         String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", strimziTag);
-        kafkaVersion = System.getenv().getOrDefault("KAFKA_VERSION", kafkaVersion);
-        return changeOrgAndTag(image, dockerOrg, dockerTag, kafkaVersion);
+        return changeOrgAndTag(image, dockerOrg, dockerTag);
     }
 
     public static String changeOrgAndTagInImageMap(String imageMap) {
