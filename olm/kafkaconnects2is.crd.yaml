@@ -54,6 +54,8 @@ spec:
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
+                gcLoggingEnabled:
+                  type: boolean
             affinity:
               type: object
               properties:
@@ -81,6 +83,19 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                              matchFields:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    operator:
+                                      type: string
+                                    values:
+                                      type: array
+                                      items:
+                                        type: string
                           weight:
                             type: integer
                     requiredDuringSchedulingIgnoredDuringExecution:
@@ -92,6 +107,19 @@ spec:
                             type: object
                             properties:
                               matchExpressions:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    operator:
+                                      type: string
+                                    values:
+                                      type: array
+                                      items:
+                                        type: string
+                              matchFields:
                                 type: array
                                 items:
                                   type: object
@@ -236,6 +264,20 @@ spec:
                               type: string
                           topologyKey:
                             type: string
+            logging:
+              type: object
+              properties:
+                loggers:
+                  type: object
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum:
+                  - inline
+                  - external
+              required:
+              - type
             metrics:
               type: object
             template:
@@ -243,13 +285,92 @@ spec:
               properties:
                 deployment:
                   type: object
-                  properties: {}
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
                 pod:
                   type: object
-                  properties: {}
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
+                    imagePullSecrets:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                    securityContext:
+                      type: object
+                      properties:
+                        fsGroup:
+                          type: integer
+                        runAsGroup:
+                          type: integer
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                        seLinuxOptions:
+                          type: object
+                          properties:
+                            level:
+                              type: string
+                            role:
+                              type: string
+                            type:
+                              type: string
+                            user:
+                              type: string
+                        supplementalGroups:
+                          type: array
+                          items:
+                            type: integer
+                        sysctls:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                    terminationGracePeriodSeconds:
+                      type: integer
+                      minimum: 0
                 apiService:
                   type: object
-                  properties: {}
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
+                podDisruptionBudget:
+                  type: object
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
+                    maxUnavailable:
+                      type: integer
+                      minimum: 0
             authentication:
               type: object
               properties:
@@ -289,22 +410,91 @@ spec:
               type: string
             config:
               type: object
-            insecureSourceRepository:
-              type: boolean
-            logging:
+            externalConfiguration:
               type: object
               properties:
-                loggers:
-                  type: object
-                name:
-                  type: string
-                type:
-                  type: string
-                  enum:
-                  - inline
-                  - external
-              required:
-              - type
+                env:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      valueFrom:
+                        type: object
+                        properties:
+                          configMapKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                          secretKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                    required:
+                    - name
+                    - valueFrom
+                volumes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      configMap:
+                        type: object
+                        properties:
+                          defaultMode:
+                            type: integer
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                mode:
+                                  type: integer
+                                path:
+                                  type: string
+                          name:
+                            type: string
+                          optional:
+                            type: boolean
+                      name:
+                        type: string
+                      secret:
+                        type: object
+                        properties:
+                          defaultMode:
+                            type: integer
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                mode:
+                                  type: integer
+                                path:
+                                  type: string
+                          optional:
+                            type: boolean
+                          secretName:
+                            type: string
+                    required:
+                    - name
+            insecureSourceRepository:
+              type: boolean
             resources:
               type: object
               properties:
@@ -358,5 +548,7 @@ spec:
                     type: integer
                   value:
                     type: string
+            version:
+              type: string
           required:
           - bootstrapServers

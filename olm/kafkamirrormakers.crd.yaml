@@ -204,6 +204,19 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                              matchFields:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    operator:
+                                      type: string
+                                    values:
+                                      type: array
+                                      items:
+                                        type: string
                           weight:
                             type: integer
                     requiredDuringSchedulingIgnoredDuringExecution:
@@ -215,6 +228,19 @@ spec:
                             type: object
                             properties:
                               matchExpressions:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    operator:
+                                      type: string
+                                    values:
+                                      type: array
+                                      items:
+                                        type: string
+                              matchFields:
                                 type: array
                                 items:
                                   type: object
@@ -385,6 +411,8 @@ spec:
                 -Xmx:
                   type: string
                   pattern: '[0-9]+[mMgG]?'
+                gcLoggingEnabled:
+                  type: boolean
             logging:
               type: object
               properties:
@@ -406,10 +434,84 @@ spec:
               properties:
                 deployment:
                   type: object
-                  properties: {}
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
                 pod:
                   type: object
-                  properties: {}
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
+                    imagePullSecrets:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                    securityContext:
+                      type: object
+                      properties:
+                        fsGroup:
+                          type: integer
+                        runAsGroup:
+                          type: integer
+                        runAsNonRoot:
+                          type: boolean
+                        runAsUser:
+                          type: integer
+                        seLinuxOptions:
+                          type: object
+                          properties:
+                            level:
+                              type: string
+                            role:
+                              type: string
+                            type:
+                              type: string
+                            user:
+                              type: string
+                        supplementalGroups:
+                          type: array
+                          items:
+                            type: integer
+                        sysctls:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                    terminationGracePeriodSeconds:
+                      type: integer
+                      minimum: 0
+                podDisruptionBudget:
+                  type: object
+                  properties:
+                    metadata:
+                      type: object
+                      properties:
+                        labels:
+                          type: object
+                        annotations:
+                          type: object
+                    maxUnavailable:
+                      type: integer
+                      minimum: 0
+            version:
+              type: string
           required:
           - replicas
           - whitelist
