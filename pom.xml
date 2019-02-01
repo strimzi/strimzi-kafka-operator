@@ -498,6 +498,7 @@
                                 <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredDependency>org.junit.jupiter</ignoredDependency>
+                                <ignoredDependency>org.junit.vintage</ignoredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>
