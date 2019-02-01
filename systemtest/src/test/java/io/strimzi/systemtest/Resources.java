@@ -271,7 +271,7 @@ public class Resources {
 
     DoneableKafka kafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
-            TestUtils.waitFor("Kafka creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("Kafka creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_READINESS,
                 () -> {
                     try {
                         kafka().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -351,7 +351,7 @@ public class Resources {
 
     private DoneableKafkaConnectS2I kafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I) {
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kCS2I -> {
-            TestUtils.waitFor("KafkaConnectS2I creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("KafkaConnectS2I creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_READINESS,
                 () -> {
                     try {
                         kafkaConnectS2I().inNamespace(client().getNamespace()).createOrReplace(kCS2I);
