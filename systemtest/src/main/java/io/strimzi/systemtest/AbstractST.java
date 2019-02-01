@@ -63,7 +63,6 @@ import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -1118,29 +1117,19 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
     void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info("There are some unexpected pods! Cleanup is not finished properly! Wait till env will be recreated.");
         testClassResources.deleteResources();
-        KUBE_CLIENT.namespace(DEFAULT_NAMESPACE);
-        KUBE_CLIENT.deleteNamespace(coNamespace);
-        KUBE_CLIENT.waitForResourceDeletion("Namespace", coNamespace);
-        KUBE_CLIENT.createNamespace(coNamespace);
-        KUBE_CLIENT.namespace(coNamespace);
 
-        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
-                !file.getName().matches(".*(Binding|Deployment)-.*")
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
-        // Here we record the state of the cluster
-        for (Map.Entry<File, String> entry : yamls.entrySet()) {
-            LOGGER.info("creating possibly modified version of {}", entry.getKey());
-            KUBE_CLIENT.clientWithAdmin().applyContent(entry.getValue());
-        }
+        deleteClusterOperatorInstallFiles();
+        deleteNamespaces();
+
+        createNamespaces(coNamespace, bindingsNamespaces);
+        applyClusterOperatorInstallFiles();
 
         testClassResources = new Resources(namespacedClient());
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
         testClassResources.clusterOperator(coNamespace).done();
-        LOGGER.info("Env recreated.");
     }
 
     /**
@@ -1235,7 +1224,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     @AfterEach
     void recreateEnvironmentAfterFailure(ExtensionContext context) {
         if (context.getExecutionException().isPresent()) {
+            LOGGER.info("Test execution contains exception, going to recreate test environment");
             recreateTestEnv(baseClusterOperatorNamespace, baseBindingsNamespaces);
+            LOGGER.info("Env recreated.");
         }
     }
 }

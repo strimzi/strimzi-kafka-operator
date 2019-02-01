@@ -49,7 +49,7 @@ public class BaseITST {
      * Perform application of ServiceAccount, Roles and CRDs needed for proper cluster operator deployment.
      * Configuration files are loaded from install/cluster-operator directory.
      */
-    private void applyClusterOperatorInstallFiles() {
+    protected void applyClusterOperatorInstallFiles() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
         TimeMeasuringSystem.startOperation(Operation.CO_CREATION);
         clusterOperatorMap = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
@@ -65,7 +65,7 @@ public class BaseITST {
     /**
      * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
      */
-    private void deleteClusterOperatorInstallFiles() {
+    protected void deleteClusterOperatorInstallFiles() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
         TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
         for (Map.Entry<File, String> entry : clusterOperatorMap.entrySet()) {
@@ -80,7 +80,7 @@ public class BaseITST {
      * @param useNamespace namespace which will be used as default by kubernetes client
      * @param namespaces list of namespaces which will be created
      */
-    private void createNamespaces(String useNamespace, List<String> namespaces) {
+    protected void createNamespaces(String useNamespace, List<String> namespaces) {
         deploymentNamespaces.addAll(namespaces);
         for (String namespace: namespaces) {
             LOGGER.info("Creating namespace: {}", namespace);
@@ -95,7 +95,7 @@ public class BaseITST {
 
     /**
      * Create namespace for test resources. Deletion is up to caller and can be managed
-     * by calling {@link #deleteNamespaces()}
+     * by calling {@link #deleteNamespaces()} or {@link #teardownEnvForOperator()}
      * @param useNamespace namespace which will be created and used as default by kubernetes client
      */
     protected void createNamespace(String useNamespace) {
