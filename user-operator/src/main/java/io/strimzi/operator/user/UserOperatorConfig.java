@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user;
 
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 
@@ -124,22 +125,20 @@ public class UserOperatorConfig {
     }
 
     public static int getClientsCaValidityDays() {
-        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY);
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, AbstractModel.DEFAULT_CERTS_VALIDITY_DAYS);
     }
 
     public static int getClientsCaRenewalDays() {
-        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL);
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, AbstractModel.DEFAULT_CERTS_RENEWAL_DAYS);
     }
 
-    private static int getIntProperty(String name) {
-        // default value is set in operator
-        Map<String, String> map = System.getenv();
-        int value = 0;
-        String intEnvVar = map.get(name);
-        if (intEnvVar != null) {
-            value = Integer.parseInt(intEnvVar);
+    private static int getIntProperty(String name, int defaultVal) {
+        String env = System.getenv(name);
+        if (env != null) {
+            return Integer.parseInt(env);
+        } else {
+            return defaultVal;
         }
-        return value;
     }
 
     /**
