@@ -20,10 +20,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -40,7 +40,7 @@ public class BaseITST {
 
     private List<String> deploymentResources = new ArrayList<>();
     private List<String> deploymentNamespaces = new ArrayList<>();
-    private Map<File, String> clusterOperatorMap = new HashMap<>();
+    private Stack<String> clusterOperatorConfigs = new Stack<>();
 
     protected String testClass;
     protected String testName;
@@ -57,10 +57,9 @@ public class BaseITST {
         ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
-            clusterOperatorMap.put(entry.getKey(), entry.getValue());
+            clusterOperatorConfigs.push(entry.getValue());
             KUBE_CLIENT.clientWithAdmin().applyContent(entry.getValue());
         }
-        LOGGER.info(clusterOperatorMap.keySet().toString());
         TimeMeasuringSystem.stopOperation(Operation.CO_CREATION);
     }
 
@@ -70,11 +69,9 @@ public class BaseITST {
     protected void deleteClusterOperatorInstallFiles() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
         TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
-        LOGGER.info(clusterOperatorMap.keySet().toString());
-        for (Map.Entry<File, String> entry : clusterOperatorMap.entrySet()) {
-            LOGGER.info("Removing configuration file: {}", entry.getKey());
-            KUBE_CLIENT.clientWithAdmin().deleteContent(entry.getValue());
-            clusterOperatorMap.remove(entry.getKey());
+
+        while (!clusterOperatorConfigs.empty()) {
+            KUBE_CLIENT.clientWithAdmin().deleteContent(clusterOperatorConfigs.pop());
         }
         TimeMeasuringSystem.stopOperation(Operation.CO_DELETION);
     }
@@ -111,7 +108,6 @@ public class BaseITST {
      * Delete all created namespaces. Namespaces are deleted in the reverse order than they were created.
      */
     protected void deleteNamespaces() {
-        LOGGER.info("Going to delete following namespaces: {}", deploymentNamespaces);
         Collections.reverse(deploymentNamespaces);
         LOGGER.info("Going to delete following namespaces: {}", deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
@@ -119,8 +115,9 @@ public class BaseITST {
             KUBE_CLIENT.deleteNamespace(namespace);
             KUBE_CLIENT.waitForResourceDeletion("Namespace", namespace);
             LOGGER.info("Namespace {} deleted", namespace);
-            deploymentNamespaces.remove(namespace);
         }
+        deploymentNamespaces.clear();
+        LOGGER.info("Namespaces after deletion: {}", deploymentNamespaces);
         LOGGER.info("Using namespace {}", CLUSTER.defaultNamespace());
         KUBE_CLIENT.namespace(CLUSTER.defaultNamespace());
     }
@@ -148,8 +145,8 @@ public class BaseITST {
         for (String resource : deploymentResources) {
             LOGGER.info("Deleting resources {}", resource);
             KUBE_CLIENT.delete(resource);
-            deploymentResources.remove(resource);
         }
+        deploymentResources.clear();
         LOGGER.info("Custom resources after delete: {}", deploymentResources);
     }
 
