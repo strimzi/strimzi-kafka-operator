@@ -62,7 +62,7 @@ public class ZookeeperClusterSpec implements Serializable {
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
-    private Map<String, Object> metrics = new HashMap<>(0);
+    private Map<String, Object> metrics;
     private Affinity affinity;
     private List<Toleration> tolerations;
     private ZookeeperClusterTemplate template;
