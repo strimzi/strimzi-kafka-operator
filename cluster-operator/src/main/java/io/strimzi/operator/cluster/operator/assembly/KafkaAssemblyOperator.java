@@ -1525,27 +1525,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> topicOperatorDeployment(Supplier<Date> dateSupplier) {
-
             if (this.topicOperator != null) {
-
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.topicOperator.getName());
-                if (future != null) {
-                    return future.compose(dep -> {
-                        // getting the current cluster CA generation from the current deployment, if exists
-                        int caCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
-                        // if maintenance windows are satisfied, the cluster CA generation could be changed
-                        // and EO needs a rolling update updating the related annotation
-                        boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
-                        if (isSatisfiedBy) {
-                            caCertGeneration = getCaCertGeneration(this.clusterCa);
-                        }
-                        Annotations.annotations(toDeployment.getSpec().getTemplate()).put(
-                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-                        return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
-                    }).map(i -> this);
-                }
+                return future.compose(dep -> {
+                    // getting the current cluster CA generation from the current deployment, if exists
+                    int caCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
+                    // if maintenance windows are satisfied, the cluster CA generation could be changed
+                    // and EO needs a rolling update updating the related annotation
+                    boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
+                    if (isSatisfiedBy) {
+                        caCertGeneration = getCaCertGeneration(this.clusterCa);
+                    }
+                    Annotations.annotations(toDeployment.getSpec().getTemplate()).put(
+                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                    return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
+                }).map(i -> this);
+            } else  {
+                return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), null));
             }
-            return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> topicOperatorSecret() {
@@ -1642,30 +1639,28 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorDeployment(Supplier<Date> dateSupplier) {
-
             if (this.entityOperator != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
-                if (future != null) {
-                    return future.compose(dep -> {
-                        // getting the current cluster CA generation from the current deployment, if exists
-                        int clusterCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
-                        int clientsCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clientsCa);
-                        // if maintenance windows are satisfied, the cluster CA generation could be changed
-                        // and EO needs a rolling update updating the related annotation
-                        boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
-                        if (isSatisfiedBy) {
-                            clusterCaCertGeneration = getCaCertGeneration(this.clusterCa);
-                            clientsCaCertGeneration = getCaCertGeneration(this.clientsCa);
-                        }
-                        Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
-                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
-                        Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
-                                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCaCertGeneration));
-                        return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
-                    }).map(i -> this);
-                }
+                return future.compose(dep -> {
+                    // getting the current cluster CA generation from the current deployment, if exists
+                    int clusterCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
+                    int clientsCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clientsCa);
+                    // if maintenance windows are satisfied, the cluster CA generation could be changed
+                    // and EO needs a rolling update updating the related annotation
+                    boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
+                    if (isSatisfiedBy) {
+                        clusterCaCertGeneration = getCaCertGeneration(this.clusterCa);
+                        clientsCaCertGeneration = getCaCertGeneration(this.clientsCa);
+                    }
+                    Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
+                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
+                    Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
+                            Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCaCertGeneration));
+                    return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
+                }).map(i -> this);
+            } else  {
+                return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), null));
             }
-            return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> entityOperatorSecret() {
