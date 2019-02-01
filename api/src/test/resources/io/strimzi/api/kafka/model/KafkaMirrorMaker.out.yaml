@@ -2,9 +2,7 @@
 apiVersion: "kafka.strimzi.io/v1alpha1"
 kind: "KafkaMirrorMaker"
 metadata:
-  finalizers: []
   name: "test-kafka-mirror-maker"
-  ownerReferences: []
 spec:
   replicas: 1
   image: "foo"
@@ -19,4 +17,3 @@ spec:
     bootstrapServers: "my-target-kafka:9092"
     config:
       foo: "buz"
-  metrics: {}
