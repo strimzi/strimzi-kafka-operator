@@ -12,6 +12,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -170,6 +171,11 @@ public class StrimziUpgradeST extends AbstractST {
         setTestNamespaceInfo(NAMESPACE);
         createNamespace(NAMESPACE);
     }
+    @AfterAll
+    void teardownEnvironment() {
+        deleteNamespaces();
+    }
+
 
     @Override
     void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
