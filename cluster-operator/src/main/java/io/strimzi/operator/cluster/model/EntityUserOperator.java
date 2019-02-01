@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
@@ -33,9 +34,6 @@ public class EntityUserOperator extends AbstractModel {
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8081;
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
-
-    public final static int DEFAULT_CERTS_VALIDITY_DAYS = 365;
-    public final static int DEFAULT_CERTS_RENEWAL_DAYS = 30;
 
     // User Operator configuration keys
     public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_LABELS";
@@ -82,8 +80,8 @@ public class EntityUserOperator extends AbstractModel {
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
-        this.clientsCaValidityDays = DEFAULT_CERTS_VALIDITY_DAYS;
-        this.clientsCaRenewalDays = DEFAULT_CERTS_RENEWAL_DAYS;
+        this.clientsCaValidityDays = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
+        this.clientsCaRenewalDays = CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS;
     }
 
     public void setWatchedNamespace(String watchedNamespace) {

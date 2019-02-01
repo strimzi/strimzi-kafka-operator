@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.user;
 
-import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 
@@ -125,11 +125,11 @@ public class UserOperatorConfig {
     }
 
     public static int getClientsCaValidityDays() {
-        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, AbstractModel.DEFAULT_CERTS_VALIDITY_DAYS);
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
     }
 
     public static int getClientsCaRenewalDays() {
-        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, AbstractModel.DEFAULT_CERTS_RENEWAL_DAYS);
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
     }
 
     private static int getIntProperty(String name, int defaultVal) {

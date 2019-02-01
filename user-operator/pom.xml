@@ -108,12 +108,6 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.strimzi</groupId>
-            <artifactId>cluster-operator</artifactId>
-            <version>0.11.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>

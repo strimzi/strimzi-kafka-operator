@@ -36,6 +36,8 @@ public class CertificateAuthority implements Serializable {
     private int renewalDays;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
     private CertificateExpirationPolicy certificateExpirationPolicy;
+    public static final int DEFAULT_CERTS_VALIDITY_DAYS = 365;
+    public static final int DEFAULT_CERTS_RENEWAL_DAYS = 30;
 
     @Description("The number of days generated certificates should be valid for. The default is 365.")
     @Minimum(1)
