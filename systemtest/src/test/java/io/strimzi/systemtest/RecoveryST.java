@@ -175,7 +175,7 @@ class RecoveryST extends AbstractST {
 
     @Test
     void testRecoveryFromZookeeperMetricsConfigDeletion() {
-        operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
         // kafka cluster already deployed
         String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);
         LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", CLUSTER_NAME);
