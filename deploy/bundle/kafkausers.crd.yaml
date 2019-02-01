@@ -1,0 +1,93 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: kafkausers.kafka.strimzi.io
+  labels:
+    app: strimzi
+spec:
+  group: kafka.strimzi.io
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    kind: KafkaUser
+    listKind: KafkaUserList
+    singular: kafkauser
+    plural: kafkausers
+    shortNames:
+    - ku
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          type: object
+          properties:
+            authentication:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - tls
+                  - scram-sha-512
+              required:
+              - type
+            authorization:
+              type: object
+              properties:
+                acls:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      host:
+                        type: string
+                      operation:
+                        type: string
+                        enum:
+                        - Read
+                        - Write
+                        - Create
+                        - Delete
+                        - Alter
+                        - Describe
+                        - ClusterAction
+                        - AlterConfigs
+                        - DescribeConfigs
+                        - IdempotentWrite
+                        - All
+                      resource:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          patternType:
+                            type: string
+                            enum:
+                            - literal
+                            - prefix
+                          type:
+                            type: string
+                            enum:
+                            - topic
+                            - group
+                            - cluster
+                            - transactionalId
+                        required:
+                        - type
+                      type:
+                        type: string
+                        enum:
+                        - allow
+                        - deny
+                    required:
+                    - operation
+                    - resource
+                type:
+                  type: string
+                  enum:
+                  - simple
+              required:
+              - acls
+              - type
+          required:
+          - authentication
