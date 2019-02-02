@@ -110,6 +110,13 @@
             <version>${jupiter.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- The vintage engine is needed to execute Unit Tests with JUnit4 (Integration tests use JUnit5) -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

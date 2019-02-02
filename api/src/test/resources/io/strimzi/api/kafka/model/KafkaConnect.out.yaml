@@ -2,9 +2,7 @@
 apiVersion: "kafka.strimzi.io/v1alpha1"
 kind: "KafkaConnect"
 metadata:
-  finalizers: []
   name: "test-kafka-connect"
-  ownerReferences: []
 spec:
   replicas: 6
   image: "foo"
@@ -20,7 +18,6 @@ spec:
   logging:
     type: "inline"
     loggers: {}
-  metrics: {}
   config:
     name: "bar"
   bootstrapServers: "kafka:9092"
@@ -39,21 +36,13 @@ spec:
     volumes:
     - name: "secret-volume"
       secret:
-        items: []
         secretName: "ssh-key-secret"
     - name: "foo"
       secret:
-        items:
-        - key: "username"
-          path: "my-group/my-username"
         secretName: "mysecret"
     - name: "config-map-volume"
       configMap:
-        items: []
         name: "my-config-map"
     - name: "config-vol"
       configMap:
-        items:
-        - key: "log_level"
-          path: "log_level"
         name: "log-config"
