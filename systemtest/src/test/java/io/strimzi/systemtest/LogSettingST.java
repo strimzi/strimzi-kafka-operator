@@ -7,10 +7,8 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorJvmOptions;
-import io.strimzi.systemtest.timemeasuring.Operation;
-import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,7 +16,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
@@ -33,8 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(LogSettingST.NAMESPACE)
-@ClusterOperator
 @Tag(REGRESSION)
 class LogSettingST extends AbstractST {
     static final String NAMESPACE = "log-level-cluster-test";
@@ -174,12 +169,12 @@ class LogSettingST extends AbstractST {
         boolean result = false;
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
             LOGGER.info("Check log level setting since {} seconds. Logger: {} Expected: {}", since, entry.getKey(), entry.getValue());
-            String configMap = kubeClient.get("configMap", configMapName);
+            String configMap = KUBE_CLIENT.get("configMap", configMapName);
             String loggerConfig = String.format("%s=%s", entry.getKey(), entry.getValue());
             result = configMap.contains(loggerConfig);
 
             if (result) {
-                String log = kubeClient.searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
+                String log = KUBE_CLIENT.searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
                 result = log.isEmpty();
             }
         }
@@ -189,7 +184,7 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName, String containerName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        List<Container> containers = client.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers();
+        List<Container> containers = CLIENT.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers();
         Container container = getContainerByName(containerName, containers);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
@@ -197,14 +192,14 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        Container container = client.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = CLIENT.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
 
     private Boolean checkGcLoggingStatefulSets(String statefulSetName) {
         LOGGER.info("Checking stateful set: {}", statefulSetName);
-        Container container = client.inNamespace(NAMESPACE).apps().statefulSets().withName(statefulSetName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = CLIENT.inNamespace(NAMESPACE).apps().statefulSets().withName(statefulSetName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
@@ -222,13 +217,12 @@ class LogSettingST extends AbstractST {
     }
 
     @BeforeAll
-    static void createClassResources(TestInfo testInfo) {
+    void createClassResources() {
         LOGGER.info("Create resources for the tests");
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
 
-        testClass = testInfo.getTestClass().get().getSimpleName();
         operationID = startDeploymentMeasuring();
 
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
@@ -346,7 +340,7 @@ class LogSettingST extends AbstractST {
         TimeMeasuringSystem.stopOperation(operationID);
     }
 
-    private static String startDeploymentMeasuring() {
+    private String startDeploymentMeasuring() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
         return TimeMeasuringSystem.startOperation(Operation.CLASS_EXECUTION);
     }
