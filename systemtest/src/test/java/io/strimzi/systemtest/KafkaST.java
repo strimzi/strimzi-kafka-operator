@@ -232,7 +232,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(FLAKY)
+    @Tag(REGRESSION)
     void testCustomAndUpdatedValues() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
@@ -287,7 +287,11 @@ class KafkaST extends AbstractST {
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = KUBE_CLIENT.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("transaction.state.log.replication.factor=1\ndefault.replication.factor=1\noffsets.topic.replication.factor=1\n")));
+                    hasItem("transaction.state.log.replication.factor=1")));
+            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
+                    hasItem("default.replication.factor=1")));
+            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
+                    hasItem("offsets.topic.replication.factor=1")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
