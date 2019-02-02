@@ -95,7 +95,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         super(namespace, cluster, labels);
         this.name = kafkaMirrorMakerClusterName(cluster);
         this.serviceName = serviceName(cluster);
-        this.validLoggerFields = getDefaultLogConfig();
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";

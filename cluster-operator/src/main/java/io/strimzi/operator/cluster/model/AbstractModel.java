@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -66,12 +67,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -149,7 +148,7 @@ public abstract class AbstractModel {
     private Affinity userAffinity;
     private List<Toleration> tolerations;
 
-    protected Map validLoggerFields;
+    protected final Map<String, String> validLoggerFields;
     private final String[] validLoggerValues = new String[]{"INFO", "ERROR", "WARN", "TRACE", "DEBUG", "FATAL", "OFF" };
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
@@ -187,6 +186,7 @@ public abstract class AbstractModel {
         this.cluster = cluster;
         this.namespace = namespace;
         this.labels = labels.withCluster(cluster);
+        this.validLoggerFields = getDefaultLogConfig().asMap();
     }
 
     public Labels getLabels() {
@@ -278,50 +278,35 @@ public abstract class AbstractModel {
      * Returns map with all available loggers for current pod and default values.
      * @return
      */
-    protected Properties getDefaultLogConfig() {
-        Properties properties = new Properties();
-        String defaultLogConfigFileName = getDefaultLogConfigFileName();
-        try {
-            properties = getDefaultLoggingProperties(defaultLogConfigFileName);
-        } catch (IOException e) {
-            log.warn("Unable to read default log config from '{}'", defaultLogConfigFileName);
+    protected OrderedProperties getDefaultLogConfig() {
+        return getOrderedProperties(getDefaultLogConfigFileName());
+    }
+
+    @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION") // InputStream is closed by properties.addStringPairs
+    public static OrderedProperties getOrderedProperties(String configFileName) {
+        OrderedProperties properties = new OrderedProperties();
+        if (configFileName != null && !configFileName.isEmpty()) {
+            InputStream is = AbstractModel.class.getResourceAsStream("/" + configFileName);
+            if (is == null) {
+                log.warn("Cannot find resource '{}'", configFileName);
+            } else {
+                try {
+                    properties.addStringPairs(is);
+                } catch (IOException e) {
+                    log.warn("Unable to read default log config from '{}'", configFileName);
+                }
+            }
         }
         return properties;
     }
 
     /**
-     * Takes resource file containing default log4j properties and returns it as a Properties.
-     * @param defaultConfigResourceFileName name of file, where default log4j properties are stored
-     * @return
-     */
-    protected Properties getDefaultLoggingProperties(String defaultConfigResourceFileName) throws IOException {
-        Properties defaultSettings = new Properties();
-        InputStream is = null;
-        try {
-            is = AbstractModel.class.getResourceAsStream("/" + defaultConfigResourceFileName);
-            defaultSettings.load(is);
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
-        return defaultSettings;
-    }
-
-    /**
      * Transforms map to log4j properties file format
-     * @param newSettings map with properties
+     * @param properties map with properties
      * @return
      */
-    protected static String createPropertiesString(Properties newSettings) {
-        StringWriter sw = new StringWriter();
-        try {
-            newSettings.store(sw, "Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
-        } catch (IOException e) {
-            log.warn("Error creating properties", e);
-        }
-        // remove date comment, because it is updated with each reconciliation which leads to restarting pods
-        return sw.toString().replaceAll("#[A-Za-z]+ [A-Za-z]+ [0-9]+ [0-9]+:[0-9]+:[0-9]+ [A-Z]+ [0-9]+", "");
+    protected static String createPropertiesString(OrderedProperties properties) {
+        return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
     }
 
     public Logging getLogging() {
@@ -381,8 +366,8 @@ public abstract class AbstractModel {
                 }
             });
             // update fields otherwise use default values
-            Properties newSettings = getDefaultLogConfig();
-            newSettings.putAll(((InlineLogging) logging).getLoggers());
+            OrderedProperties newSettings = getDefaultLogConfig();
+            newSettings.addMapPairs(((InlineLogging) logging).getLoggers());
             return createPropertiesString(newSettings);
         } else if (logging instanceof ExternalLogging) {
             if (externalCm != null) {

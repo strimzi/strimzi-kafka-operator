@@ -47,7 +47,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      */
     private KafkaConnectS2ICluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
-        this.validLoggerFields = getDefaultLogConfig();
     }
 
     public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2I kafkaConnectS2I, KafkaVersion.Lookup versions) {

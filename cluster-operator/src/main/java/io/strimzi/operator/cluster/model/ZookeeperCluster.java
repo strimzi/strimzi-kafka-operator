@@ -144,7 +144,6 @@ public class ZookeeperCluster extends AbstractModel {
 
         this.logAndMetricsConfigVolumeName = "zookeeper-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
-        this.validLoggerFields = getDefaultLogConfig();
     }
 
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {

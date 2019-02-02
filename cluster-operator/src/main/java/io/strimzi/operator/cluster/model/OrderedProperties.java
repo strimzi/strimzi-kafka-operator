@@ -8,15 +8,19 @@ import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 /**
  * A Set of insertion ordered Name/Value pairs.
@@ -92,6 +96,18 @@ public class OrderedProperties {
     }
 
     /**
+     * Parse key/value pairs and add to the current pair set.
+     * Read map values from an InputStream.  The InputStream is closed after all values are read.
+     * @param is The UTF-8 input stream containing name=value pairs separated by newlines.
+     *
+     * @return this instance for chaining
+     */
+    public OrderedProperties addStringPairs(InputStream is) throws IOException {
+        new PropertiesReader(pairs).read(is);
+        return this;
+    }
+
+    /**
      * Add a key/value pair
      * @param key The key
      * @param value The value
@@ -111,7 +127,20 @@ public class OrderedProperties {
      * @return String with one or more lines containing key=value pairs with the configuration options.
      */
     public String asPairs() {
-        return new PropertiesWriter(pairs).writeString();
+        return asPairsWithComment(null);
+    }
+
+    /**
+     * Generate a string with pairs formatted as key=value separated by newlines.  This string is
+     * expected to be used as an environment variable in a bash script and subsequently used in a bash
+     * <a href="https://www.tldp.org/LDP/abs/html/here-docs.html">here document</a> to create a
+     * properties file.
+     *
+     * @param comment A comment to be prepended to the output, or null for no comment.
+     * @return String with one or more lines containing key=value pairs with the configuration options.
+     */
+    public String asPairsWithComment(String comment) {
+        return new PropertiesWriter(pairs).writeString(comment);
     }
 
     /**
@@ -162,6 +191,15 @@ public class OrderedProperties {
             } catch (IOException e) {
                 throw new IllegalStateException("StringReader should not cause IOException", e);
             }
+        }
+
+        /**
+         * Read map values from an InputStream.  The InputStream is closed after all values are read.
+         *
+         * @param is The UTF-8 input stream containing name=value pairs separated by newlines.
+         */
+        public void read(InputStream is) throws IOException {
+            read(new InputStreamReader(is, StandardCharsets.UTF_8));
         }
 
         /**
@@ -364,6 +402,7 @@ public class OrderedProperties {
      * An instance of this class is thread-safe as long as iterating the wrapped map is thread-safe.
      */
     static private class PropertiesWriter {
+        public static final Pattern LINE_SPLITTER = Pattern.compile("[\\r\\n]+");
         private final Map<String, String> map;
         private BufferedWriter bufferedWriter;
 
@@ -375,11 +414,12 @@ public class OrderedProperties {
          * Write map values to a String.
          *
          * @return A String containing name=value pairs separated by newlines.
+         * @param comment A comment to be prepended to the output, or null for no comment.
          */
-        public String writeString() {
+        public String writeString(String comment) {
             StringWriter sw = new StringWriter();
             try {
-                write(sw);
+                write(sw, comment);
             } catch (IOException e) {
                 throw new IllegalStateException("StringWriter should not cause IOException", e);
             }
@@ -390,18 +430,24 @@ public class OrderedProperties {
          * Write map values to Writer.  The Writer is not closed.
          *
          * @param writer Writer to write values to.
+         * @param comment A comment to be prepended to the output, or null for no comment.
          */
-        public void write(Writer writer) throws IOException {
-            write(new BufferedWriter(writer));
+        public void write(Writer writer, String comment) throws IOException {
+            write(new BufferedWriter(writer), comment);
         }
 
         /**
          * Write map values to BufferedWriter.  The BufferedWriter is not closed.
          *
          * @param bufferedWriter BufferedWriter to write values to.
+         * @param comment A comment to be prepended to the output, or null for no comment.
          */
-        public void write(BufferedWriter bufferedWriter) throws IOException {
+        public void write(BufferedWriter bufferedWriter, String comment) throws IOException {
             this.bufferedWriter = bufferedWriter;
+            if (comment != null) {
+                writeComment(bufferedWriter, comment);
+            }
+
             for (Map.Entry<String, String> entry : map.entrySet()) {
                 escapeKey(entry.getKey());
                 bufferedWriter.append('=');
@@ -409,6 +455,20 @@ public class OrderedProperties {
                 bufferedWriter.newLine();
             }
             bufferedWriter.flush();
+        }
+
+        /**
+         * Write comment to a Writer, handling newlines embedded in the comment
+         * @param bufferedWriter BufferedWriter to write.
+         * @param comment A comment to be written
+         * @throws IOException
+         */
+        private static void writeComment(BufferedWriter bufferedWriter, String comment) throws IOException {
+            for (String line : LINE_SPLITTER.split(comment)) {
+                bufferedWriter.write("# ");
+                bufferedWriter.write(line);
+                bufferedWriter.newLine();
+            }
         }
 
         /**
