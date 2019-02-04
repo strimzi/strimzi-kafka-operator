@@ -59,10 +59,12 @@ to use (default is `latest`).
 
 ### Alternate Docker image JRE
 
-The docker images can be built with an alternate java version by adding the environment variable JAVA_VERSION.
-For example, to build docker images that have java 11 package use `JAVA_VERSION=11 make docker_build`.
-If not present, JAVA_VERSION is defaulted to **1.8.0**.  At present, JAVA_VERSION does not determine the jdk which builds
-the operator, only the JRE which runs the operator and kafka components.
+The docker images can be built with an alternate java version by setting the environment variable
+`JAVA_VERSION`.  For example, to build docker images that have the java 11 JRE installed use
+`JAVA_VERSION=11 make docker_build`.  If not present, JAVA_VERSION is defaulted to **1.8.0**.
+
+If `JAVA_VERSION` environment variable is set, a profile in the parent pom.xml will set the
+`maven.compiler.source` and `maven.compiler.target` properties.
 
 ### Tagging and pushing Docker images
 
