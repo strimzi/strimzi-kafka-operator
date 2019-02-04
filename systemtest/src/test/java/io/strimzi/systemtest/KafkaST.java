@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -943,24 +942,6 @@ class KafkaST extends AbstractST {
         Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-target", nameConsumerTarget, topicName, messagesCount, userTarget, true));
         // Check consumed messages in target cluster
         checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
-    }
-
-    @Test
-    void testEntityUserOperatorValidityAndRenewal() {
-        int validity = 100;
-        int renewal = 42;
-        resources().kafkaEphemeral(CLUSTER_NAME, 1)
-            .editSpec()
-                .withNewClientsCa()
-                    .withRenewalDays(renewal)
-                    .withValidityDays(validity)
-                .endClientsCa()
-            .endSpec()
-            .done();
-
-        List<EnvVar> envvar = client.apps().deployments().inNamespace(NAMESPACE).withName(entityOperatorDeploymentName(CLUSTER_NAME)).get().getSpec().getTemplate().getSpec().getContainers().get(1).getEnv();
-        assertEquals(validity, Integer.parseInt(envvar.stream().filter(a -> a.getName().equals("STRIMZI_CA_VALIDITY")).findFirst().get().getValue()));
-        assertEquals(renewal, Integer.parseInt(envvar.stream().filter(a -> a.getName().equals("STRIMZI_CA_RENEWAL")).findFirst().get().getValue()));
     }
 
     void waitForZkRollUp() {

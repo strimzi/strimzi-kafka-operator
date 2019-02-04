@@ -1073,4 +1073,28 @@ public class KafkaClusterTest {
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
     }
+
+    @Test
+    public void testEntityUserOperatorValidityAndRenewal() {
+        int validity = 100;
+        int renewal = 42;
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .withNewClientsCa()
+                .withRenewalDays(renewal)
+                .withValidityDays(validity)
+                .endClientsCa()
+                .withNewEntityOperator()
+                .withNewUserOperator()
+                .endUserOperator()
+                .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityUserOperator f = EntityUserOperator.fromCrd(kafkaAssembly);
+        List<EnvVar> envvar = f.getEnvVars();
+        assertEquals(validity, Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY)).findFirst().get().getValue()));
+        assertEquals(renewal, Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL)).findFirst().get().getValue()));
+    }
 }
