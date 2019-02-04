@@ -80,7 +80,7 @@ class RecoveryST extends AbstractST {
         kubeClient.waitForResourceDeletion(STATEFUL_SET, zookeeperStatefulSetName);
 
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
-        kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 1);
+        kubeClient.waitForStatefulSet(zookeeperStatefulSetName, 3);
 
         //Test that CO doesn't have any exceptions in log
         assertNoErrorLogged();

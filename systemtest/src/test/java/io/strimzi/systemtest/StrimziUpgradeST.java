@@ -25,11 +25,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
 @Namespace(StrimziUpgradeST.NAMESPACE)
-@Tag(FLAKY)
+@Tag(REGRESSION)
 public class StrimziUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
