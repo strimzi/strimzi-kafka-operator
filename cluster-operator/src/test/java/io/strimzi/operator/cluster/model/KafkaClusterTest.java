@@ -629,7 +629,7 @@ public class KafkaClusterTest {
                         .withNewKafkaListenerExternalNodePort()
                             .withTls(false)
                             .withOverrides(new KafkaExternalServiceOverrides(new KafkaExternalBootstrapService(10),
-                                Collections.singletonList(new KafkaExternalBrokerService(0, "test", 0, 100))))
+                                Collections.singletonList(new KafkaExternalBrokerService(0, "test", 32001, 32101))))
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
                 .endKafka()
@@ -669,7 +669,7 @@ public class KafkaClusterTest {
             assertEquals("NodePort", srv.getSpec().getType());
             assertEquals(KafkaCluster.kafkaPodName(cluster, i), srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL));
             if (i == 0) { // pod with index 0 will have overriden port
-                assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, 100, "TCP")), srv.getSpec().getPorts());
+                assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, 32101, "TCP")), srv.getSpec().getPorts());
             } else {
                 assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
             }
