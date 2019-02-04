@@ -29,8 +29,6 @@ The type of storage is specified in the `type` field.
 
 IMPORTANT: Once the Kafka cluster is deployed, the storage cannot be changed.
 
-//include::ref-storage.adoc[leveloffset=+1]
-
 include::ref-storage-ephemeral.adoc[leveloffset=+1]
 
 include::ref-storage-persistent.adoc[leveloffset=+1]

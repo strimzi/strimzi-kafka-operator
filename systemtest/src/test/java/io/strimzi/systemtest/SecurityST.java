@@ -38,6 +38,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaCertificateSecr
 import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -51,7 +52,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @ExtendWith(StrimziExtension.class)
 @Namespace(SecurityST.NAMESPACE)
 @ClusterOperator
-@Tag(REGRESSION)
 class SecurityST extends AbstractST {
 
     public static final String NAMESPACE = "security-cluster-test";
@@ -67,6 +67,7 @@ class SecurityST extends AbstractST {
     private static final long TIMEOUT_FOR_CLUSTER_STABLE = 1_200_000;
 
     @Test
+    @Tag(REGRESSION)
     void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
         resources().kafkaEphemeral(CLUSTER_NAME, 2)
@@ -173,6 +174,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
+    @Tag(FLAKY)
     void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException {
         createCluster();
         String userName = "alice";
@@ -244,7 +246,8 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    public void testAutoReplaceCaKeysTriggeredByAnno() throws InterruptedException {
+    @Tag(FLAKY)
+    void testAutoReplaceCaKeysTriggeredByAnno() throws InterruptedException {
         createCluster();
         String aliceUserName = "alice";
         resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
@@ -358,21 +361,21 @@ class SecurityST extends AbstractST {
                 .editSpec()
                     .editKafka()
                         .editListeners()
-                            .withNewKafkaListenerExternalRouteExternal()
-                            .endKafkaListenerExternalRouteExternal()
+                            .withNewKafkaListenerExternalRoute()
+                            .endKafkaListenerExternalRoute()
                         .endListeners()
                         .withConfig(singletonMap("default.replication.factor", 3))
-                        .withNewPersistentClaimStorageStorage()
+                        .withNewPersistentClaimStorage()
                             .withSize("2Gi")
                             .withDeleteClaim(true)
-                        .endPersistentClaimStorageStorage()
+                        .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
                         .withReplicas(3)
-                        .withNewPersistentClaimStorageStorage()
+                        .withNewPersistentClaimStorage()
                             .withSize("2Gi")
                             .withDeleteClaim(true)
-                        .endPersistentClaimStorageStorage()
+                        .endPersistentClaimStorage()
                     .endZookeeper()
                 .endSpec()
                 .done();
@@ -380,6 +383,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
+    @Tag(REGRESSION)
     void testAutoRenewCaCertsTriggerByExpiredCertificate() throws InterruptedException {
         // 1. Create the Secrets already, and a certificate that's already expired
         String clusterCaKey = createSecret("cluster-ca.key", clusterCaKeySecretName(CLUSTER_NAME), "ca.key");
@@ -491,7 +495,7 @@ class SecurityST extends AbstractST {
 
     @BeforeAll
     static void createClusterOperator() {
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
     }

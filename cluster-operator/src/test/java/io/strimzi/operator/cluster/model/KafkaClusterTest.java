@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Probe;
@@ -27,6 +28,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
@@ -66,7 +68,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -195,7 +196,7 @@ public class KafkaClusterTest {
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
-                .withNewPersistentClaimStorageStorage().withSelector(selector).withSize("100Gi").endPersistentClaimStorageStorage()
+                .withNewPersistentClaimStorage().withSelector(selector).withSize("100Gi").endPersistentClaimStorage()
                 .endKafka()
                 .endSpec()
                 .build();
@@ -210,7 +211,7 @@ public class KafkaClusterTest {
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
-                .withNewPersistentClaimStorageStorage().withSelector(emptyMap()).withSize("100Gi").endPersistentClaimStorageStorage()
+                .withNewPersistentClaimStorage().withSelector(emptyMap()).withSize("100Gi").endPersistentClaimStorage()
                 .endKafka()
                 .endSpec()
                 .build();
@@ -239,7 +240,7 @@ public class KafkaClusterTest {
                 new KafkaBuilder(kafkaAssembly)
                         .editSpec()
                             .editKafka()
-                                .withNewPersistentClaimStorageStorage().withSize("1Gi").endPersistentClaimStorageStorage()
+                                .withNewPersistentClaimStorage().withSize("1Gi").endPersistentClaimStorage()
                                 .withNewRack().withTopologyKey("rack-key").endRack()
                             .endKafka()
                         .endSpec().build();
@@ -269,6 +270,8 @@ public class KafkaClusterTest {
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
         assertEquals("foo=bar" + LINE_SEPARATOR, AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
         assertEquals(KafkaCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
+        assertEquals(kc.dataVolumeMountPaths.stream().map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(",")),
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_KAFKA_LOG_DIRS));
         assertEquals(KafkaCluster.BROKER_CERTS_VOLUME, containers.get(0).getVolumeMounts().get(2).getName());
         assertEquals(KafkaCluster.BROKER_CERTS_VOLUME_MOUNT, containers.get(0).getVolumeMounts().get(2).getMountPath());
         assertEquals(KafkaCluster.CLUSTER_CA_CERTS_VOLUME, containers.get(0).getVolumeMounts().get(1).getName());
@@ -316,39 +319,6 @@ public class KafkaClusterTest {
         }
     }
 
-    @Test
-    public void testDeleteClaim() {
-        Kafka assembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
-        KafkaCluster kc = KafkaCluster.fromCrd(assembly, VERSIONS);
-        StatefulSet ss = kc.generateStatefulSet(true);
-        assertFalse(KafkaCluster.deleteClaim(ss));
-
-        assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
-                .editSpec()
-                    .editKafka()
-                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(false).withSize("100Gi").build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        kc = KafkaCluster.fromCrd(assembly, VERSIONS);
-        ss = kc.generateStatefulSet(true);
-        assertFalse(KafkaCluster.deleteClaim(ss));
-
-        assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
-                .editSpec()
-                    .editKafka()
-                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(true).withSize("100Gi").build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        kc = KafkaCluster.fromCrd(assembly, VERSIONS);
-        ss = kc.generateStatefulSet(true);
-        assertTrue(KafkaCluster.deleteClaim(ss));
-    }
-
     // TODO test volume claim templates
 
     @Test
@@ -361,9 +331,44 @@ public class KafkaClusterTest {
 
     @Test
     public void testPvcNames() {
+        Kafka assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(false).withSize("100Gi").build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(assembly, VERSIONS);
+
+        List<PersistentVolumeClaim> pvcs = kc.getVolumeClaims();
 
         for (int i = 0; i < replicas; i++) {
-            assertEquals(kc.VOLUME_NAME + "-" + KafkaCluster.kafkaPodName(cluster, i), kc.getPersistentVolumeClaimName(i));
+            assertEquals(kc.VOLUME_NAME + "-" + KafkaCluster.kafkaPodName(cluster, i),
+                    pvcs.get(0).getMetadata().getName() + "-" + KafkaCluster.kafkaPodName(cluster, i));
+        }
+
+        assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withStorage(new JbodStorageBuilder().withVolumes(
+                            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize("100Gi").build(),
+                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize("100Gi").build())
+                            .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        kc = KafkaCluster.fromCrd(assembly, VERSIONS);
+
+        pvcs = kc.getVolumeClaims();
+
+        for (int i = 0; i < replicas; i++) {
+            int id = 0;
+            for (PersistentVolumeClaim pvc : pvcs) {
+                assertEquals(kc.VOLUME_NAME + "-" + id++ + "-" + KafkaCluster.kafkaPodName(cluster, i),
+                        pvc.getMetadata().getName() + "-" + KafkaCluster.kafkaPodName(cluster, i));
+            }
         }
     }
 
@@ -407,10 +412,10 @@ public class KafkaClusterTest {
                 .editSpec()
                 .editKafka()
                 .withNewListeners()
-                    .withNewKafkaListenerExternalRouteExternal()
+                    .withNewKafkaListenerExternalRoute()
                         .withNewKafkaListenerAuthenticationTlsAuth()
                         .endKafkaListenerAuthenticationTlsAuth()
-                    .endKafkaListenerExternalRouteExternal()
+                    .endKafkaListenerExternalRoute()
                 .endListeners()
                 .endKafka()
                 .endSpec()
@@ -482,10 +487,10 @@ public class KafkaClusterTest {
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withNewKafkaListenerExternalLoadBalancerExternal()
+                            .withNewKafkaListenerExternalLoadBalancer()
                                 .withNewKafkaListenerAuthenticationTlsAuth()
                                 .endKafkaListenerAuthenticationTlsAuth()
-                            .endKafkaListenerExternalLoadBalancerExternal()
+                            .endKafkaListenerExternalLoadBalancer()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -536,9 +541,9 @@ public class KafkaClusterTest {
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withNewKafkaListenerExternalLoadBalancerExternal()
+                            .withNewKafkaListenerExternalLoadBalancer()
                                 .withTls(false)
-                            .endKafkaListenerExternalLoadBalancerExternal()
+                            .endKafkaListenerExternalLoadBalancer()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -567,10 +572,10 @@ public class KafkaClusterTest {
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withNewKafkaListenerExternalNodePortExternal()
+                            .withNewKafkaListenerExternalNodePort()
                                 .withNewKafkaListenerAuthenticationTlsAuth()
                                 .endKafkaListenerAuthenticationTlsAuth()
-                            .endKafkaListenerExternalNodePortExternal()
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -621,11 +626,11 @@ public class KafkaClusterTest {
             .editSpec()
                 .editKafka()
                     .withNewListeners()
-                        .withNewKafkaListenerExternalNodePortExternal()
+                        .withNewKafkaListenerExternalNodePort()
                             .withTls(false)
                             .withOverrides(new KafkaExternalServiceOverrides(new KafkaExternalBootstrapService(10),
                                 Collections.singletonList(new KafkaExternalBrokerService(0, "test", 0, 100))))
-                        .endKafkaListenerExternalNodePortExternal()
+                        .endKafkaListenerExternalNodePort()
                     .endListeners()
                 .endKafka()
             .endSpec()
@@ -679,9 +684,9 @@ public class KafkaClusterTest {
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                            .withNewKafkaListenerExternalNodePortExternal()
+                            .withNewKafkaListenerExternalNodePort()
                                 .withTls(false)
-                            .endKafkaListenerExternalNodePortExternal()
+                            .endKafkaListenerExternalNodePort()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -796,8 +801,8 @@ public class KafkaClusterTest {
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
-                        .withNewKafkaListenerExternalRouteExternal()
-                        .endKafkaListenerExternalRouteExternal()
+                        .withNewKafkaListenerExternalRoute()
+                        .endKafkaListenerExternalRoute()
                         .endListeners()
                         .withNewTemplate()
                             .withNewStatefulset()
@@ -930,9 +935,9 @@ public class KafkaClusterTest {
                             .withNewTls()
                                 .withNetworkPolicyPeers(peer2)
                             .endTls()
-                            .withNewKafkaListenerExternalRouteExternal()
+                            .withNewKafkaListenerExternalRoute()
                                 .withNetworkPolicyPeers(peer1, peer2)
-                            .endKafkaListenerExternalRouteExternal()
+                            .endKafkaListenerExternalRoute()
                         .endListeners()
                     .endKafka()
                 .endSpec()
@@ -968,8 +973,8 @@ public class KafkaClusterTest {
                             .endPlain()
                             .withNewTls()
                             .endTls()
-                            .withNewKafkaListenerExternalRouteExternal()
-                            .endKafkaListenerExternalRouteExternal()
+                            .withNewKafkaListenerExternalRoute()
+                            .endKafkaListenerExternalRoute()
                         .endListeners()
                     .endKafka()
                 .endSpec()

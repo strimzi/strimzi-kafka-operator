@@ -107,7 +107,6 @@ public class TopicOperator extends AbstractModel {
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
-        this.validLoggerFields = getDefaultLogConfig();
     }
 
 
@@ -360,7 +359,8 @@ public class TopicOperator extends AbstractModel {
      */
     public Secret generateSecret(ClusterCa clusterCa) {
         Secret topicOperatorSecret = clusterCa.topicOperatorSecret();
-        return ModelUtils.buildSecret(clusterCa, topicOperatorSecret, namespace, TopicOperator.secretName(cluster), "entity-operator", labels, createOwnerReference());
+        // TO is using the keyCertName as "entity-operator". This is not typo.
+        return ModelUtils.buildSecret(clusterCa, topicOperatorSecret, namespace, TopicOperator.secretName(cluster), name, "entity-operator", labels, createOwnerReference());
     }
 
     protected void setTlsSidecar(TlsSidecar tlsSidecar) {

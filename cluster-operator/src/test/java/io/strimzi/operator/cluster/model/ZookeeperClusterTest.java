@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
@@ -43,7 +44,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -205,45 +205,6 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(tlsHealthTimeout), tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds());
     }
 
-    /**
-     * Check that a ZookeeperCluster from a statefulset matches the one from a ConfigMap
-     */
-    @Test
-    public void testDeleteClaim() {
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
-                .editSpec()
-                    .editKafka()
-                        .withNewEphemeralStorageStorage().endEphemeralStorageStorage()
-                    .endKafka()
-                .endSpec()
-            .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
-        StatefulSet ss = zc.generateStatefulSet(true);
-        assertFalse(ZookeeperCluster.deleteClaim(ss));
-
-        ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
-                .editSpec()
-                    .editKafka()
-                        .withNewPersistentClaimStorageStorage().withDeleteClaim(false).endPersistentClaimStorageStorage()
-                    .endKafka()
-                .endSpec()
-            .build();
-        zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
-        ss = zc.generateStatefulSet(true);
-        assertFalse(ZookeeperCluster.deleteClaim(ss));
-
-        ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
-                .editSpec()
-                    .editZookeeper()
-                        .withNewPersistentClaimStorageStorage().withDeleteClaim(true).withSize("100Gi").endPersistentClaimStorageStorage()
-                    .endZookeeper()
-                .endSpec()
-            .build();
-        zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
-        ss = zc.generateStatefulSet(true);
-        assertTrue(ZookeeperCluster.deleteClaim(ss));
-    }
-
     // TODO test volume claim templates
 
     @Test
@@ -256,9 +217,20 @@ public class ZookeeperClusterTest {
 
     @Test
     public void testPvcNames() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewPersistentClaimStorage().withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorage()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        PersistentVolumeClaim pvc = zc.getVolumeClaims().get(0);
 
         for (int i = 0; i < replicas; i++) {
-            assertEquals(zc.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperClusterName(cluster) + "-" + i, zc.getPersistentVolumeClaimName(i));
+            assertEquals(zc.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperPodName(cluster, i),
+                    pvc.getMetadata().getName() + "-" + ZookeeperCluster.zookeeperPodName(cluster, i));
         }
     }
 

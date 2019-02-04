@@ -36,6 +36,7 @@ import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
@@ -51,6 +52,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
@@ -64,6 +67,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -96,6 +100,7 @@ public class KafkaCluster extends AbstractModel {
     private static final String ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS = "KAFKA_AUTHORIZATION_SUPER_USERS";
     public static final String ENV_VAR_KAFKA_ZOOKEEPER_CONNECT = "KAFKA_ZOOKEEPER_CONNECT";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
+    public static final String ENV_VAR_KAFKA_LOG_DIRS = "KAFKA_LOG_DIRS";
 
     public static final String ENV_VAR_KAFKA_CONFIGURATION = "KAFKA_CONFIGURATION";
 
@@ -167,6 +172,13 @@ public class KafkaCluster extends AbstractModel {
     private Map<String, CertAndKey> brokerCerts;
 
     /**
+     * Lists with volumes, persistent volume claims and related volume mount paths for the storage
+     */
+    List<Volume> dataVolumes = new ArrayList<>();
+    List<PersistentVolumeClaim> dataPvcs = new ArrayList<>();
+    List<VolumeMount> dataVolumeMountPaths = new ArrayList<>();
+
+    /**
      * Constructor
      *
      * @param namespace Kubernetes/OpenShift namespace where Kafka cluster resources are going to be created
@@ -194,7 +206,6 @@ public class KafkaCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
 
         this.initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
-        this.validLoggerFields = getDefaultLogConfig();
     }
 
     public static String kafkaClusterName(String cluster) {
@@ -294,6 +305,7 @@ public class KafkaCluster extends AbstractModel {
             }
         }
         result.setStorage(kafkaClusterSpec.getStorage());
+        result.setDataVolumesClaimsAndMountPaths(result.getStorage());
         result.setUserAffinity(kafkaClusterSpec.getAffinity());
         result.setResources(kafkaClusterSpec.getResources());
         result.setTolerations(kafkaClusterSpec.getTolerations());
@@ -651,11 +663,47 @@ public class KafkaCluster extends AbstractModel {
         return portList;
     }
 
+    /**
+     * Fill the with volumes, persistent volume claims and related volume mount paths for the storage
+     * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
+     *
+     * @param storage the Storage instance from which building volumes, persistent volume claims and
+     *                related volume mount paths
+     */
+    private void setDataVolumesClaimsAndMountPaths(Storage storage) {
+        if (storage != null) {
+            Integer id;
+            if (storage instanceof EphemeralStorage) {
+                id = ((EphemeralStorage) storage).getId();
+            } else if (storage instanceof PersistentClaimStorage) {
+                id = ((PersistentClaimStorage) storage).getId();
+            } else if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    setDataVolumesClaimsAndMountPaths(volume);
+                }
+                return;
+            } else {
+                throw new IllegalStateException("The declared storage is not supported");
+            }
+
+            String name = ModelUtils.getVolumePrefix(id);
+            String mountPath = this.mountPath + "/" + name;
+
+            if (storage instanceof EphemeralStorage) {
+                dataVolumes.add(createEmptyDirVolume(name));
+            } else if (storage instanceof PersistentClaimStorage) {
+                dataPvcs.add(createPersistentVolumeClaim(name, (PersistentClaimStorage) storage));
+            }
+            dataVolumeMountPaths.add(createVolumeMount(name, mountPath));
+        }
+    }
+
     private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
-        if (storage instanceof EphemeralStorage) {
-            volumeList.add(createEmptyDirVolume(VOLUME_NAME));
-        }
+        volumeList.addAll(dataVolumes);
 
         if (rack != null || isExposedWithNodePort()) {
             volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME));
@@ -668,17 +716,15 @@ public class KafkaCluster extends AbstractModel {
         return volumeList;
     }
 
-    private List<PersistentVolumeClaim> getVolumeClaims() {
+    /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
-        if (storage instanceof PersistentClaimStorage) {
-            pvcList.add(createPersistentVolumeClaim(VOLUME_NAME));
-        }
+        pvcList.addAll(dataPvcs);
         return pvcList;
     }
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
+        volumeMountList.addAll(dataVolumeMountPaths);
 
         volumeMountList.add(createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
@@ -865,6 +911,10 @@ public class KafkaCluster extends AbstractModel {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_AUTHORIZATION_SUPER_USERS, superUsers));
             }
         }
+
+        String logDirs = dataVolumeMountPaths.stream()
+                .map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(","));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_DIRS, logDirs));
 
         return varList;
     }
@@ -1104,15 +1154,26 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Returns KafkaExternalServiceOverrides when the Kafka cluster is exposed to the outside using NodePort type services
+     * Returns advertised address of external nodeport service
      *
      * @return
      */
-    public KafkaExternalServiceOverrides getExternalNodePortServiceOverrides() {
+    public Optional<String> getExternalNodePortServiceAddressOverride(String serviceName, int podNumber) {
         if (isExposedWithNodePort()) {
-            return ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
+            KafkaExternalServiceOverrides externalServiceOverrides =
+                ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
+            if (externalServiceOverrides != null && externalServiceOverrides.getBrokers() != null) {
+                String advertisedHost = externalServiceOverrides.getBrokers().stream()
+                    .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber)
+                    .map(KafkaExternalBrokerService::getAdvertisedHost)
+                    .findAny()
+                    .orElse(null);
+                if (advertisedHost != null && !advertisedHost.isEmpty()) {
+                    return Optional.of(advertisedHost);
+                }
+            }
         }
-        return null;
+        return Optional.empty();
     }
 
     /**

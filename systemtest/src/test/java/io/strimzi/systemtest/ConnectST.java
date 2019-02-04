@@ -64,8 +64,6 @@ class ConnectST extends AbstractST {
             "internal.value.converter.schemas.enable=false\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n");
 
-    private static Resources classResources;
-
     @Test
     @Tag(ACCEPTANCE)
     void testDeployUndeploy() {
@@ -261,26 +259,20 @@ class ConnectST extends AbstractST {
     @BeforeAll
     static void createClassResources() {
         LOGGER.info("Creating resources before the test class");
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
-
-        classResources = new Resources(namespacedClient());
 
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
         kafkaConfig.put("transaction.state.log.replication.factor", "3");
         kafkaConfig.put("transaction.state.log.min.isr", "2");
 
-        classResources().kafkaEphemeral(KAFKA_CLUSTER_NAME, 3)
+        testClassResources.kafkaEphemeral(KAFKA_CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec().done();
-    }
-
-    private static Resources classResources() {
-        return classResources;
     }
 }

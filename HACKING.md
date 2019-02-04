@@ -10,6 +10,7 @@ The build also uses an Java annotation processor. Some IDEs (such as IntelliJ) d
 - [Build Pre-requisites](#build-pre-requisites)
 - [Docker images](#docker-images)
     - [Building Docker images](#building-docker-images)
+    - [Alternate Docker image JRE](#alternate-docker-image-jre)
     - [Tagging and pushing Docker images](#tagging-and-pushing-docker-images)
 - [Building everything](#building-everything)
 - [Pushing images to the cluster's Docker repo](#pushing-images-to-the-clusters-docker-repo)
@@ -55,6 +56,13 @@ The `docker_build` target will always build the images under the
 the base image you might have just built without modifying all Dockerfiles. 
 The `DOCKER_TAG` environment variable configures the Docker tag 
 to use (default is `latest`).
+
+### Alternate Docker image JRE
+
+The docker images can be built with an alternate java version by adding the environment variable JAVA_VERSION.
+For example, to build docker images that have java 11 package use `JAVA_VERSION=11 make docker_build`.
+If not present, JAVA_VERSION is defaulted to **1.8.0**.  At present, JAVA_VERSION does not determine the jdk which builds
+the operator, only the JRE which runs the operator and kafka components.
 
 ### Tagging and pushing Docker images
 

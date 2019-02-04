@@ -65,8 +65,6 @@
 
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html[cron expression^]
 
-:DefaultKafkaVersion: 2.0.0
-
 // Docker image names
 :DockerTag: {ProductVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]

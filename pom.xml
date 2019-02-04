@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.10.0-SNAPSHOT</version>
+    <version>0.11.0-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -69,6 +69,7 @@
         <jacoco.version>0.7.9</jacoco.version>
         <license.maven.version>2.11</license.maven.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
+        <sundrio.version>0.15.1</sundrio.version>
 
         <fabric8.kubernetes-client.version>4.1.1</fabric8.kubernetes-client.version>
         <fabric8.openshift-client.version>4.1.1</fabric8.openshift-client.version>
@@ -497,6 +498,7 @@
                                 <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredDependency>org.junit.jupiter</ignoredDependency>
+                                <ignoredDependency>org.junit.vintage</ignoredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

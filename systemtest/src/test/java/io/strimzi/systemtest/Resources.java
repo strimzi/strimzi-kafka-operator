@@ -221,7 +221,7 @@ public class Resources {
                     .withNewSpec()
                         .withNewKafka()
                             .withReplicas(kafkaReplicas)
-                            .withNewEphemeralStorageStorage().endEphemeralStorageStorage()
+                            .withNewEphemeralStorage().endEphemeralStorage()
                             .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                             .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                             .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
@@ -245,7 +245,7 @@ public class Resources {
                             .withMetrics(new HashMap<>())
                         .endKafka()
                         .withNewZookeeper()
-                            .withReplicas(1)
+                            .withReplicas(3)
                             .withNewResources()
                                 .withNewRequests()
                                     .withMemory("1G")
@@ -260,7 +260,7 @@ public class Resources {
                 .withInitialDelaySeconds(15)
                 .withTimeoutSeconds(5)
                 .endLivenessProbe()
-                            .withNewEphemeralStorageStorage().endEphemeralStorageStorage()
+                            .withNewEphemeralStorage().endEphemeralStorage()
                         .endZookeeper()
                         .withNewEntityOperator()
                             .withNewTopicOperator().withImage(TestUtils.changeOrgAndTag("strimzi/topic-operator:latest")).endTopicOperator()
@@ -271,7 +271,7 @@ public class Resources {
 
     DoneableKafka kafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
-            TestUtils.waitFor("Kafka creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("Kafka creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_READINESS,
                 () -> {
                     try {
                         kafka().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -311,7 +311,7 @@ public class Resources {
 
     private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
         return new DoneableKafkaConnect(kafkaConnect, kC -> {
-            TestUtils.waitFor("KafkaConnect creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("KafkaConnect creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         kafkaConnect().inNamespace(client().getNamespace()).createOrReplace(kC);
@@ -351,7 +351,7 @@ public class Resources {
 
     private DoneableKafkaConnectS2I kafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I) {
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kCS2I -> {
-            TestUtils.waitFor("KafkaConnectS2I creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("KafkaConnectS2I creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_READINESS,
                 () -> {
                     try {
                         kafkaConnectS2I().inNamespace(client().getNamespace()).createOrReplace(kCS2I);
@@ -398,7 +398,7 @@ public class Resources {
 
     private DoneableKafkaMirrorMaker kafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker) {
         return new DoneableKafkaMirrorMaker(kafkaMirrorMaker, k -> {
-            TestUtils.waitFor("Kafka Mirror Maker creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("Kafka Mirror Maker creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         kafkaMirrorMaker().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -559,8 +559,8 @@ public class Resources {
                         .addToLabels("strimzi.io/cluster", clusterName)
                         .build())
                 .withNewSpec()
-                    .withNewKafkaUserTlsClientAuthenticationAuthentication()
-                    .endKafkaUserTlsClientAuthenticationAuthentication()
+                    .withNewKafkaUserTlsClientAuthentication()
+                    .endKafkaUserTlsClientAuthentication()
                 .endSpec()
                 .build());
     }
@@ -573,8 +573,8 @@ public class Resources {
                         .addToLabels("strimzi.io/cluster", clusterName)
                         .build())
                 .withNewSpec()
-                    .withNewKafkaUserScramSha512ClientAuthenticationAuthentication()
-                    .endKafkaUserScramSha512ClientAuthenticationAuthentication()
+                    .withNewKafkaUserScramSha512ClientAuthentication()
+                    .endKafkaUserScramSha512ClientAuthentication()
                 .endSpec()
                 .build());
     }
@@ -614,6 +614,8 @@ public class Resources {
                     envVar.setValue(namespace);
                     envVar.setValueFrom(null);
                     break;
+                case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
+                    envVar.setValue("30000");
                 default:
                     if (envVar.getName().contains("STRIMZI_DEFAULT")) {
                         envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));
@@ -643,7 +645,7 @@ public class Resources {
 
     DoneableDeployment clusterOperator(Deployment clusterOperator) {
         return new DoneableDeployment(clusterOperator, co -> {
-            TestUtils.waitFor("Cluster operator creation", TIMEOUT_FOR_RESOURCE_CREATION, POLL_INTERVAL_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("Cluster operator creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         client.apps().deployments().createOrReplace(co);

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # expand gc options based upon java version
 function get_gc_opts {

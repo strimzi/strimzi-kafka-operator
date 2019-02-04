@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 # S2I run script for extending the strimzi/kafka-connect image with additional Kafka Connect plugins

@@ -35,7 +35,12 @@ release_version:
 	echo "Changing Docker image tags to :$(RELEASE_VERSION)"
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_.-]\+/value: $(RELEASE_VERSION)/}' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
+	# Zookeeper needs to have special handling, because it has strange tag bot no image map
+	# The firs line below handles the Zoo tag
+	# The one below it handles all tags whcih are not Zookeeper
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/}' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_(ZOOKEEPER)![a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 
 release_maven:
 	echo "Update pom versions to $(RELEASE_VERSION)"
@@ -51,8 +56,12 @@ release_helm_version:
 	echo "Updating default image tags in Helm Chart to $(RELEASE_VERSION)"
 	# Update default image tag in chart values.yaml to RELEASE_VERSION
 	$(SED) -i 's/\(tag: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
+	# Update default image tagPrefix in chart values.yaml to RELEASE_VERSION
+	$(SED) -i 's/\(tagPrefix: \).*/\1$(RELEASE_VERSION)/g' $(CHART_PATH)values.yaml
 	# Update default image tag in chart README.md config grid with RELEASE_VERSION
 	$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
+	# Update default image tag in chart README.md config grid with RELEASE_VERSION
+	$(SED) -i 's/\(image\.tagPrefix[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $(CHART_PATH)README.md
 
 release_helm_repo:
 	echo "Updating Helm Repository index.yaml"
@@ -74,7 +83,8 @@ helm_pkg:
 	rm -rf strimzi-$(RELEASE_VERSION)/charts/
 
 docu_versions:
-	documentation/supported-version.sh kafka-versions > documentation/common/supported-kafka-versions.adoc
+	documentation/snip-kafka-versions.sh kafka-versions > documentation/book/snip-kafka-versions.adoc
+	documentation/version-dependent-attrs.sh kafka-versions > documentation/book/common/version-dependent-attrs.adoc
 
 docu_html: docu_htmlclean docu_check docu_versions
 	mkdir -p documentation/html

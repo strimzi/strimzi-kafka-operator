@@ -63,13 +63,16 @@ the documentation for more details.
 | `zookeeper.image.tag`                | ZooKeeper image tag                       | `latest`                                             |
 | `kafka.image.repository`             | Kafka image repository                    | `strimzi`                                            |
 | `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |
-| `kafka.image.tag`                    | Kafka image tag                           | `latest`                                             |
+| `kafka.image.tagPrefix`              | Kafka image tag prefix                    | `latest`                                             |
 | `kafkaConnect.image.repository`      | Kafka Connect image repository            | `strimzi`                                            |
 | `kafkaConnect.image.name`            | Kafka Connect image name                  | `kafka-connect`                                      |
-| `kafkaConnect.image.tag`             | Kafka Connect image tag                   | `latest`                                             |
+| `kafkaConnect.image.tagPrefix`       | Kafka Connect image tag prefix            | `latest`                                             |
 | `kafkaConnects2i.image.repository`   | Kafka Connect s2i image repository        | `strimzi`                                            |
 | `kafkaConnects2i.image.name`         | Kafka Connect s2i image name              | `kafka-connect-s2i`                                  |
-| `kafkaConnects2i.image.tag`          | Kafka Connect s2i image tag               | `latest`                                             |
+| `kafkaConnects2i.image.tagPrefix`    | Kafka Connect s2i image tag prefix        | `latest`                                             |
+| `kafkaMirrorMaker.image.repository`  | Kafka Mirror Maker image repository       | `strimzi`                                            |
+| `kafkaMirrorMaker.image.name`        | Kafka Mirror Maker image name             | `kafka`                                              |
+| `kafkaMirrorMaker.image.tagPrefix`   | Kafka Mirror Maker image tag prefix       | `latest`                                             |
 | `topicOperator.image.repository`     | Topic Operator image repository           | `strimzi`                                            |
 | `topicOperator.image.name`           | Topic Operator s2i image name             | `topic-operator`                                     |
 | `topicOperator.image.tag`            | Topic Operator s2i image tag              | `latest`                                             |

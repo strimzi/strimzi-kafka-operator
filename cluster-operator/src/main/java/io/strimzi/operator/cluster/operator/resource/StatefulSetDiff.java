@@ -4,59 +4,53 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.zjsonpatch.JsonDiff;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 import static java.lang.Integer.parseInt;
-import static java.util.Arrays.asList;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.zjsonpatch.JsonDiff;
+import java.util.regex.Pattern;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class StatefulSetDiff {
 
     private static final Logger log = LogManager.getLogger(StatefulSetDiff.class.getName());
 
-    private static final List<Pattern> IGNORABLE_PATHS;
-    static {
-        IGNORABLE_PATHS = asList(
-            "/spec/revisionHistoryLimit",
-            "/spec/template/metadata/annotations", // Actually it's only the statefulset-generation annotation we care about
-            "/spec/template/spec/initContainers/[0-9]+/imagePullPolicy",
-            "/spec/template/spec/initContainers/[0-9]+/resources",
-            "/spec/template/spec/initContainers/[0-9]+/terminationMessagePath",
-            "/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy",
-            "/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion",
-            "/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/value",
-            "/spec/template/spec/containers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion",
-            "/spec/template/spec/containers/[0-9]+/imagePullPolicy",
-            "/spec/template/spec/containers/[0-9]+/livenessProbe/failureThreshold",
-            "/spec/template/spec/containers/[0-9]+/livenessProbe/periodSeconds",
-            "/spec/template/spec/containers/[0-9]+/livenessProbe/successThreshold",
-            "/spec/template/spec/containers/[0-9]+/readinessProbe/failureThreshold",
-            "/spec/template/spec/containers/[0-9]+/readinessProbe/periodSeconds",
-            "/spec/template/spec/containers/[0-9]+/readinessProbe/successThreshold",
-            "/spec/template/spec/containers/[0-9]+/resources",
-            "/spec/template/spec/containers/[0-9]+/terminationMessagePath",
-            "/spec/template/spec/containers/[0-9]+/terminationMessagePolicy",
-            "/spec/template/spec/dnsPolicy",
-            "/spec/template/spec/restartPolicy",
-            "/spec/template/spec/schedulerName",
-            "/spec/template/spec/securityContext",
-            "/spec/template/spec/terminationGracePeriodSeconds",
-            "/spec/template/spec/volumes/[0-9]+/configMap/defaultMode",
-            "/spec/template/spec/volumes/[0-9]+/secret/defaultMode",
-            "/spec/volumeClaimTemplates/[0-9]+/status",
-            "/spec/volumeClaimTemplates/[0-9]+/spec/volumeMode",
-            "/spec/volumeClaimTemplates/[0-9]+/spec/dataSource",
-            "/spec/template/spec/serviceAccount",
-            "/status").stream().map(Pattern::compile).collect(Collectors.toList());
-    }
+    private static final Pattern IGNORABLE_PATHS = Pattern.compile(
+        "^(/spec/revisionHistoryLimit"
+        + "|/spec/template/metadata/annotations"  // Actually it's only the statefulset-generation annotation we care about
+        + "|/spec/template/spec/initContainers/[0-9]+/imagePullPolicy"
+        + "|/spec/template/spec/initContainers/[0-9]+/resources"
+        + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
+        + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"
+        + "|/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
+        + "|/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/value"
+        + "|/spec/template/spec/containers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
+        + "|/spec/template/spec/containers/[0-9]+/imagePullPolicy"
+        + "|/spec/template/spec/containers/[0-9]+/livenessProbe/failureThreshold"
+        + "|/spec/template/spec/containers/[0-9]+/livenessProbe/periodSeconds"
+        + "|/spec/template/spec/containers/[0-9]+/livenessProbe/successThreshold"
+        + "|/spec/template/spec/containers/[0-9]+/readinessProbe/failureThreshold"
+        + "|/spec/template/spec/containers/[0-9]+/readinessProbe/periodSeconds"
+        + "|/spec/template/spec/containers/[0-9]+/readinessProbe/successThreshold"
+        + "|/spec/template/spec/containers/[0-9]+/resources"
+        + "|/spec/template/spec/containers/[0-9]+/terminationMessagePath"
+        + "|/spec/template/spec/containers/[0-9]+/terminationMessagePolicy"
+        + "|/spec/template/spec/dnsPolicy"
+        + "|/spec/template/spec/restartPolicy"
+        + "|/spec/template/spec/schedulerName"
+        + "|/spec/template/spec/securityContext"
+        + "|/spec/template/spec/terminationGracePeriodSeconds"
+        + "|/spec/template/spec/volumes/[0-9]+/configMap/defaultMode"
+        + "|/spec/template/spec/volumes/[0-9]+/secret/defaultMode"
+        + "|/spec/volumeClaimTemplates/[0-9]+/status"
+        + "|/spec/volumeClaimTemplates/[0-9]+/spec/volumeMode"
+        + "|/spec/volumeClaimTemplates/[0-9]+/spec/dataSource"
+        + "|/spec/template/spec/serviceAccount"
+        + "|/status)$");
 
     private static boolean equalsOrPrefix(String path, String pathValue) {
         return pathValue.equals(path)
@@ -76,16 +70,16 @@ public class StatefulSetDiff {
         boolean changesSpecTemplateSpec = false;
         boolean changesLabels = false;
         boolean changesSpecReplicas = false;
-        outer: for (JsonNode d : diff) {
+        for (JsonNode d : diff) {
             String pathValue = d.get("path").asText();
-            for (Pattern pattern : IGNORABLE_PATHS) {
-                if (pattern.matcher(pathValue).matches()) {
-                    log.debug("StatefulSet {}/{} ignoring diff {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), d);
-                    continue outer;
-                }
+            if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
+                ObjectMeta md = current.getMetadata();
+                log.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
+                continue;
             }
             if (log.isDebugEnabled()) {
-                log.debug("StatefulSet {}/{} differs: {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), d);
+                ObjectMeta md = current.getMetadata();
+                log.debug("StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
                 log.debug("Current StatefulSet path {} has value {}", pathValue, getFromPath(current, pathValue));
                 log.debug("Desired StatefulSet path {} has value {}", pathValue, getFromPath(desired, pathValue));
             }

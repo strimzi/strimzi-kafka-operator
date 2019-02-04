@@ -66,14 +66,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.singletonMap("2.0.0", "strimzi/kafka-mirror-maker:latest-kafka-2.0.0"));
     protected static Vertx vertx;
-    public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
-    public static final String LOGGING_CONFIG = "#Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.\n" +
-            "\n" +
-            "log4j.rootLogger=${mirrormaker.root.logger}, CONSOLE\n" +
-            "mirrormaker.root.logger=INFO\n" +
-            "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-            "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-            "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n";
+    private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
+    private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties("mirrorMakerDefaultLoggingProperties")
+            .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
+
     private final String producerBootstrapServers = "foo-kafka:9092";
     private final String consumerBootstrapServers = "bar-kafka:9092";
     private final String groupId = "my-group-id";

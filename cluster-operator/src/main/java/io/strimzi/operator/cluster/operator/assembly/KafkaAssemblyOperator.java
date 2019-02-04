@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -22,9 +23,11 @@ import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaExternalBrokerService;
-import io.strimzi.api.kafka.model.KafkaExternalServiceOverrides;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
@@ -171,6 +174,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkRollingUpdate(this::dateSupplier))
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
+                .compose(state -> state.zkPersistentClaimDeletion())
                 .compose(state -> state.kafkaUpgrade())
                 .compose(state -> state.kafkaManualPodCleaning())
                 .compose(state -> state.kafkaManualRollingUpdate())
@@ -198,6 +202,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaScaleUp())
                 .compose(state -> state.kafkaServiceEndpointReady())
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
+                .compose(state -> state.kafkaPersistentClaimDeletion())
 
                 .compose(state -> state.getTopicOperatorDescription())
                 .compose(state -> state.topicOperatorServiceAccount())
@@ -996,6 +1001,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return Future.succeededFuture(this);
         }
 
+        Future<ReconciliationState> zkPersistentClaimDeletion() {
+            return persistentClaimDeletion(zkCluster.getStorage(), zkCluster.getReplicas(),
+                (storage, i) -> AbstractModel.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperClusterName(reconciliation.name()) + "-" + i);
+        }
+
         private Future<ReconciliationState> getKafkaClusterDescription() {
             Future<ReconciliationState> fut = Future.future();
 
@@ -1230,8 +1240,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         this.kafkaExternalDnsNames.put(podNumber, serviceAddress);
                                     }
                                 } else if (kafkaCluster.isExposedWithNodePort()) {
-                                    serviceAddress = getExternalNodePortServiceAddress(serviceName, podNumber,
-                                        kafkaCluster.getExternalNodePortServiceOverrides());
+                                    serviceAddress = kafkaCluster.getExternalNodePortServiceAddressOverride(serviceName, podNumber)
+                                        .orElse(serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString());
                                 }
 
                                 this.kafkaExternalAddresses.put(podNumber, serviceAddress);
@@ -1266,21 +1276,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 });
 
             return withVoid(blockingFuture);
-        }
-
-        private String getExternalNodePortServiceAddress(String serviceName, int podNumber,
-                                                         KafkaExternalServiceOverrides externalNodePortServiceOverrides) {
-            if (externalNodePortServiceOverrides != null && externalNodePortServiceOverrides.getBrokers() != null) {
-                String advertisedHost = externalNodePortServiceOverrides.getBrokers().stream()
-                    .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber)
-                    .map(KafkaExternalBrokerService::getAdvertisedHost)
-                    .findAny()
-                    .orElse(null);
-                if (advertisedHost != null && !advertisedHost.isEmpty()) {
-                    return advertisedHost;
-                }
-            }
-            return serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
         }
 
         Future<ReconciliationState> kafkaBootstrapRouteReady() {
@@ -1462,6 +1457,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return Future.succeededFuture(this);
         }
 
+        Future<ReconciliationState> kafkaPersistentClaimDeletion() {
+            return persistentClaimDeletion(kafkaCluster.getStorage(), kafkaCluster.getReplicas(),
+                (storage, i) -> {
+                    String name = ModelUtils.getVolumePrefix(storage.getId());
+                    return name + "-" + KafkaCluster.kafkaClusterName(reconciliation.name()) + "-" + i;
+                });
+        }
+
         private final Future<ReconciliationState> getTopicOperatorDescription() {
             Future<ReconciliationState> fut = Future.future();
 
@@ -1523,27 +1526,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> topicOperatorDeployment(Supplier<Date> dateSupplier) {
-
             if (this.topicOperator != null) {
-
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.topicOperator.getName());
-                if (future != null) {
-                    return future.compose(dep -> {
-                        // getting the current cluster CA generation from the current deployment, if exists
-                        int caCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
-                        // if maintenance windows are satisfied, the cluster CA generation could be changed
-                        // and EO needs a rolling update updating the related annotation
-                        boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
-                        if (isSatisfiedBy) {
-                            caCertGeneration = getCaCertGeneration(this.clusterCa);
-                        }
-                        Annotations.annotations(toDeployment.getSpec().getTemplate()).put(
-                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-                        return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
-                    }).map(i -> this);
-                }
+                return future.compose(dep -> {
+                    // getting the current cluster CA generation from the current deployment, if exists
+                    int caCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
+                    // if maintenance windows are satisfied, the cluster CA generation could be changed
+                    // and EO needs a rolling update updating the related annotation
+                    boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
+                    if (isSatisfiedBy) {
+                        caCertGeneration = getCaCertGeneration(this.clusterCa);
+                    }
+                    Annotations.annotations(toDeployment.getSpec().getTemplate()).put(
+                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+                    return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), toDeployment));
+                }).map(i -> this);
+            } else  {
+                return withVoid(deploymentOperations.reconcile(namespace, TopicOperator.topicOperatorName(name), null));
             }
-            return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> topicOperatorSecret() {
@@ -1640,30 +1640,28 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorDeployment(Supplier<Date> dateSupplier) {
-
             if (this.entityOperator != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
-                if (future != null) {
-                    return future.compose(dep -> {
-                        // getting the current cluster CA generation from the current deployment, if exists
-                        int clusterCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
-                        int clientsCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clientsCa);
-                        // if maintenance windows are satisfied, the cluster CA generation could be changed
-                        // and EO needs a rolling update updating the related annotation
-                        boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
-                        if (isSatisfiedBy) {
-                            clusterCaCertGeneration = getCaCertGeneration(this.clusterCa);
-                            clientsCaCertGeneration = getCaCertGeneration(this.clientsCa);
-                        }
-                        Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
-                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
-                        Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
-                                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCaCertGeneration));
-                        return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
-                    }).map(i -> this);
-                }
+                return future.compose(dep -> {
+                    // getting the current cluster CA generation from the current deployment, if exists
+                    int clusterCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clusterCa);
+                    int clientsCaCertGeneration = getDeploymentCaCertGeneration(dep, this.clientsCa);
+                    // if maintenance windows are satisfied, the cluster CA generation could be changed
+                    // and EO needs a rolling update updating the related annotation
+                    boolean isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
+                    if (isSatisfiedBy) {
+                        clusterCaCertGeneration = getCaCertGeneration(this.clusterCa);
+                        clientsCaCertGeneration = getCaCertGeneration(this.clientsCa);
+                    }
+                    Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
+                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
+                    Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
+                            Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCaCertGeneration));
+                    return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment));
+                }).map(i -> this);
+            } else  {
+                return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), null));
             }
-            return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> entityOperatorSecret() {
@@ -1787,6 +1785,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
         }
 
+        private PersistentVolumeClaim annotateDeleteClaim(String namespace, String pvcName, boolean isDeleteClaim) {
+            PersistentVolumeClaim pvc = pvcOperations.get(namespace, pvcName);
+            // this is called during a reconcile even when user is trying to change from ephemeral to persistent which
+            // is not allowed, so the PVC doesn't exist
+            if (pvc != null) {
+                Annotations.annotations(pvc).put(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM, String.valueOf(isDeleteClaim));
+            }
+            return pvc;
+        }
+
         Future<ReconciliationState> clusterOperatorSecret() {
             Labels labels = Labels.userLabels(kafkaAssembly.getMetadata().getLabels()).withKind(reconciliation.type().toString()).withCluster(reconciliation.name());
 
@@ -1799,52 +1807,57 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withController(false)
                     .build();
 
-            Secret secret = ModelUtils.buildSecret(clusterCa, clusterCa.clusterOperatorSecret(), namespace, ClusterOperator.secretName(name), "cluster-operator", labels, ownerRef);
+            Secret secret = ModelUtils.buildSecret(clusterCa, clusterCa.clusterOperatorSecret(), namespace, ClusterOperator.secretName(name), "cluster-operator", "cluster-operator", labels, ownerRef);
 
             return withVoid(secretOperations.reconcile(namespace, ClusterOperator.secretName(name),
                     secret));
+        }
+
+        private Future<ReconciliationState> persistentClaimDeletion(Storage storage, int replicas, BiFunction<PersistentClaimStorage, Integer, String> pvcName) {
+            if (storage instanceof PersistentClaimStorage) {
+                for (int i = 0; i < replicas; i++) {
+                    PersistentVolumeClaim pvc = annotateDeleteClaim(reconciliation.namespace(),
+                            pvcName.apply((PersistentClaimStorage) storage, i),
+                            ((PersistentClaimStorage) storage).isDeleteClaim());
+                    if (pvc != null) {
+                        pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc);
+                    }
+                }
+            } else if (storage instanceof JbodStorage) {
+                JbodStorage jbodStorage = (JbodStorage) storage;
+                for (int i = 0; i < replicas; i++) {
+                    for (SingleVolumeStorage volume : jbodStorage.getVolumes()) {
+                        if (volume instanceof PersistentClaimStorage) {
+                            PersistentVolumeClaim pvc = annotateDeleteClaim(reconciliation.namespace(),
+                                    pvcName.apply((PersistentClaimStorage) volume, i),
+                                    ((PersistentClaimStorage) volume).isDeleteClaim());
+                            if (pvc != null) {
+                                pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc);
+                            }
+                        }
+                    }
+                }
+            }
+            return Future.succeededFuture(this);
         }
     }
 
     private final Future<CompositeFuture> deleteKafka(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
-        log.debug("{}: delete kafka {}", reconciliation, name);
         String kafkaSsName = KafkaCluster.kafkaClusterName(name);
-        StatefulSet ss = kafkaSetOperations.get(namespace, kafkaSsName);
-        int replicas = ss != null ? ss.getSpec().getReplicas() : 0;
-        boolean deleteClaims = ss == null ? false : KafkaCluster.deleteClaim(ss);
-        List<Future> result = new ArrayList<>(deleteClaims ? replicas : 0);
 
-        if (deleteClaims) {
-            log.debug("{}: delete kafka {} PVCs", reconciliation, name);
-
-            for (int i = 0; i < replicas; i++) {
-                result.add(pvcOperations.reconcile(namespace,
-                        KafkaCluster.getPersistentVolumeClaimName(kafkaSsName, i), null));
-            }
-        }
-
-        return CompositeFuture.join(result);
+        Labels pvcSelector = Labels.forCluster(name).withKind(Kafka.RESOURCE_KIND).withName(kafkaSsName);
+        return deletePersistentVolumeClaim(namespace, pvcSelector);
     }
 
     private final Future<CompositeFuture> deleteZk(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
-        log.debug("{}: delete zookeeper {}", reconciliation, name);
         String zkSsName = ZookeeperCluster.zookeeperClusterName(name);
-        StatefulSet ss = zkSetOperations.get(namespace, zkSsName);
-        boolean deleteClaims = ss == null ? false : ZookeeperCluster.deleteClaim(ss);
-        List<Future> result = new ArrayList<>(deleteClaims ? ss.getSpec().getReplicas() : 0);
 
-        if (deleteClaims) {
-            log.debug("{}: delete zookeeper {} PVCs", reconciliation, name);
-            for (int i = 0; i < ss.getSpec().getReplicas(); i++) {
-                result.add(pvcOperations.reconcile(namespace, ZookeeperCluster.getPersistentVolumeClaimName(zkSsName, i), null));
-            }
-        }
-
-        return CompositeFuture.join(result);
+        Labels pvcSelector = Labels.forCluster(name).withKind(Kafka.RESOURCE_KIND).withName(zkSsName);
+        return deletePersistentVolumeClaim(namespace, pvcSelector);
     }
 
     @Override
@@ -1862,5 +1875,28 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     private Date dateSupplier() {
         return new Date();
+    }
+
+    /**
+     * Delete Persistent Volume Claims in the specified {@code namespace} and having the
+     * labels described by {@code pvcSelector} if the related {@link AbstractModel#ANNO_STRIMZI_IO_DELETE_CLAIM}
+     * annotation is
+     *
+     * @param namespace namespace where the Persistent Volume Claims to delete are
+     * @param pvcSelector labels to select the Persistent Volume Claims to delete
+     * @return
+     */
+    private Future<CompositeFuture> deletePersistentVolumeClaim(String namespace, Labels pvcSelector) {
+        List<PersistentVolumeClaim> pvcs = pvcOperations.list(namespace, pvcSelector);
+        List<Future> result = new ArrayList<>();
+
+        for (PersistentVolumeClaim pvc: pvcs) {
+            if (Annotations.booleanAnnotation(pvc, AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM,
+                    false, AbstractModel.ANNO_CO_STRIMZI_IO_DELETE_CLAIM)) {
+                log.debug("Delete selected PVCs with labels", pvcSelector);
+                result.add(pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), null));
+            }
+        }
+        return CompositeFuture.join(result);
     }
 }

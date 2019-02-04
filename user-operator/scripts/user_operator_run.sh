@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ -f /opt/user-operator/custom-config/log4j2.properties ];
 then

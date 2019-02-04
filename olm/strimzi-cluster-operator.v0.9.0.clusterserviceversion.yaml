@@ -1,0 +1,492 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: strimzi-cluster-operator.v0.9.0
+  namespace: placeholder
+  annotations:
+    alm-examples: |-
+      [{"apiVersion":"kafka.strimzi.io/v1alpha1","kind":"Kafka","metadata":{"name":"my-cluster"},"spec":{"kafka":{"replicas":3,"listeners":{"plain":{},"tls":{}},"config":{"offsets.topic.replication.factor":3,"transaction.state.log.replication.factor":3,"transaction.state.log.min.isr":2},"storage":{"type":"ephemeral"}},"zookeeper":{"replicas":3,"storage":{"type":"ephemeral"}},"entityOperator":{"topicOperator":{},"userOperator":{}}}}, {"apiVersion":"kafka.strimzi.io/v1alpha1","kind":"KafkaConnect","metadata":{"name":"my-connect-cluster"},"spec":{"replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1alpha1","kind":"KafkaConnectS2I","metadata":{"name":"my-connect-cluster"},"spec":{"replicas":1,"bootstrapServers":"my-cluster-kafka-bootstrap:9093","tls":{"trustedCertificates":[{"secretName":"my-cluster-cluster-ca-cert","certificate":"ca.crt"}]}}}, {"apiVersion":"kafka.strimzi.io/v1alpha1","kind":"KafkaTopic","metadata":{"name":"my-topic","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"partitions":10,"replicas":3,"config":{"retention.ms":604800000,"segment.bytes":1073741824}}}, {"apiVersion":"kafka.strimzi.io/v1alpha1","kind":"KafkaUser","metadata":{"name":"my-user","labels":{"strimzi.io/cluster":"my-cluster"}},"spec":{"authentication":{"type":"tls"},"authorization":{"type":"simple","acls":[{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"},{"resource":{"type":"group","name":"my-group","patternType":"literal"},"operation":"Read","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Write","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Create","host":"*"},{"resource":{"type":"topic","name":"my-topic","patternType":"literal"},"operation":"Describe","host":"*"}]}}}]
+    categories: "kafka,messaging,streaming"
+    certified: "false"
+    description: Strimzi provides a way to run an Apache Kafka cluster on Kubernetes or OpenShift in various deployment configurations.
+    containerImage: docker.io/strimzi/cluster-operator:0.9.0
+    createdAt: <2018-12-13T18:22:00Z>
+    support: Strimzi
+spec:
+  displayName: Strimzi
+  description: >
+    # Run Apache Kafka on Kubernetes and OpenShift
+
+    Strimzi provides a way to run an [Apache Kafka][kafka] cluster on 
+    [Kubernetes][k8s] or [OpenShift][os] in various deployment configurations.
+    See our [website][strimzi] for more details about the project.
+
+    ## Documentation
+
+    Documentation to the current _master_ branch as well as all releases can be found on our [website][strimzi].
+
+    ## Getting help
+
+    If you encounter any issues while using Strimzi, you can get help using:
+
+    - [Strimzi mailing list](https://www.redhat.com/mailman/listinfo/strimzi)
+    - [Strimzi Slack workspace](https://join.slack.com/t/strimzi/shared_invite/enQtMzU2Mjk3NTgxMzE5LTYyMTUwMGNlMDQwMzBhOGI4YmY4MjhiMDgyNjA5OTk2MTFiYjc4M2Q3NGU1YTFjOWRiMzM2NGMwNDUwMjBlNDY)
+
+    ## Contributing
+
+    You can contribute by:
+    - Raising any issues you find using Strimzi
+    - Fixing issues by opening Pull Requests
+    - Improving documentation
+    - Talking about Strimzi
+
+    All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi-kafka-operator/issues). Issues which 
+    might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi-kafka-operator/labels/good-start)
+    label.
+
+    The [Hacking guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/HACKING.md) describes how to build Strimzi and how to 
+    test your changes before submitting a patch or opening a PR.
+
+    The [Documentation Contributor Guide](http://strimzi.io/contributing/guide/) describes how to contribute to Strimzi documentation.
+
+    If you want to get in touch with us first before contributing, you can use:
+
+    - [Strimzi mailing list](https://www.redhat.com/mailman/listinfo/strimzi)
+    - [Strimzi Slack workspace](https://join.slack.com/t/strimzi/shared_invite/enQtMzU2Mjk3NTgxMzE5LTYyMTUwMGNlMDQwMzBhOGI4YmY4MjhiMDgyNjA5OTk2MTFiYjc4M2Q3NGU1YTFjOWRiMzM2NGMwNDUwMjBlNDY)
+
+    ## License
+    Strimzi is licensed under the [Apache License](./LICENSE), Version 2.0
+
+    [strimzi]: http://strimzi.io "Strimzi"
+    [kafka]: https://kafka.apache.org "Apache Kafka"
+    [k8s]: https://kubernetes.io/ "Kubernetes"
+    [os]: https://www.openshift.com/ "OpenShift"
+  keywords: ['kafka', 'messaging', 'enmasse', 'kafka-connect', 'kafka-streams', 'data-streaming', 'data-stream', 'data-streams']
+  icon:
+    - base64data: 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
+      mediatype: image/png
+  version: 0.9.0
+  maintainers:
+  - name: Strimzi
+    email: https://www.redhat.com/mailman/listinfo/strimzi
+  provider:
+    name: Strimzi
+  labels:
+    name: strimzi-cluster-operator
+  selector:
+    matchLabels:
+      name: strimzi-cluster-operator
+  links:
+  - name: Strimzi Cluster Operator Source Code
+    url: https://github.com/strimzi/strimzi-kafka-operator
+  installModes:
+  - type: OwnNamespace
+    supported: true
+  - type: SingleNamespace
+    supported: true
+  - type: MultiNamespace
+    supported: true
+  - type: AllNamespaces
+    supported: false
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - serviceAccountName: strimzi-cluster-operator
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
+          verbs:
+          - get
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - rolebindings
+          verbs:
+          - get
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - kafka.strimzi.io
+          resources:
+          - kafkas
+          - kafkaconnects
+          - kafkaconnects2is
+          - kafkamirrormakers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - endpoints
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - extensions
+          resources:
+          - deployments
+          - deployments/scale
+          - replicasets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - deployments/scale
+          - deployments/status
+          - statefulsets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+        - apiGroups:
+          - extensions
+          resources:
+          - replicationcontrollers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          - deploymentconfigs/scale
+          - deploymentconfigs/status
+          - deploymentconfigs/finalizers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - build.openshift.io
+          resources:
+          - buildconfigs
+          - builds
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - watch
+          - update
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - imagestreams
+          - imagestreams/status
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - replicationcontrollers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - extensions
+          resources:
+          - networkpolicies
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - get
+          - list
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - persistentvolumeclaims
+          verbs:
+          - get
+          - list
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          verbs:
+          - get
+          - create
+          - delete
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          verbs:
+          - get
+        - apiGroups:
+          - kafka.strimzi.io
+          resources:
+          - kafkatopics
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+        - apiGroups:
+          - kafka.strimzi.io
+          resources:
+          - kafkausers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - create
+          - patch
+          - update
+          - delete
+        - apiGroups:
+          - kafka.strimzi.io
+          resources:
+          - kafkatopics
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - patch
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+      deployments:
+      - name: strimzi-cluster-operator
+        spec:
+          replicas: 1
+          template:
+            metadata:
+              labels:
+                name: strimzi-cluster-operator
+            spec:
+              serviceAccountName: strimzi-cluster-operator
+              containers:
+              - name: strimzi-cluster-operator
+                image: strimzi/cluster-operator:0.9.0
+                imagePullPolicy: IfNotPresent
+                env:
+                - name: STRIMZI_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+                  value: "120000"
+                - name: STRIMZI_OPERATION_TIMEOUT_MS
+                  value: "300000"
+                - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
+                  value: strimzi/zookeeper:0.9.0
+                - name: STRIMZI_DEFAULT_KAFKA_IMAGE
+                  value: strimzi/kafka:0.9.0
+                - name: STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE
+                  value: strimzi/kafka-connect:0.9.0
+                - name: STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE
+                  value: strimzi/kafka-connect-s2i:0.9.0
+                - name: STRIMZI_DEFAULT_KAFKA_MIRRORMAKER_IMAGE
+                  value: strimzi/kafka-mirror-maker:0.9.0
+                - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
+                  value: strimzi/topic-operator:0.9.0
+                - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
+                  value: strimzi/user-operator:0.9.0
+                - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
+                  value: strimzi/kafka-init:0.9.0
+                - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
+                  value: strimzi/zookeeper-stunnel:0.9.0
+                - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
+                  value: strimzi/kafka-stunnel:0.9.0
+                - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
+                  value: strimzi/entity-operator-stunnel:0.9.0
+                - name: STRIMZI_LOG_LEVEL
+                  value: INFO
+                livenessProbe:
+                  httpGet:
+                    path: /healthy
+                    port: 8080
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
+                readinessProbe:
+                  httpGet:
+                    path: /ready
+                    port: 8080
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
+                resources:
+                  limits:
+                    cpu: 1000m
+                    memory: 256Mi
+                  requests:
+                    cpu: 200m
+                    memory: 256Mi
+          strategy:
+            type: Recreate
+  customresourcedefinitions:
+    owned:
+    - name: kafkaconnects.kafka.strimzi.io
+      version: v1alpha1
+      kind: KafkaConnect
+      displayName: Kafka Connect
+      description: Represents a Kafka Connect cluster
+    - name: kafkausers.kafka.strimzi.io
+      version: v1alpha1
+      kind: KafkaUser
+      displayName: Kafka User
+      description: Represents a user inside a Kafka cluster
+    - name: kafkaconnects2is.kafka.strimzi.io
+      version: v1alpha1
+      kind: KafkaConnectS2I
+      displayName: Kafka Connect Source to Image
+      description: Represents a Kafka Connect cluster with Source 2 Image support
+    - name: kafkamirrormakers.kafka.strimzi.io
+      version: v1alpha1
+      kind: KafkaMirrorMaker
+      displayName: Kafka Mirror Maker
+      description: Represents a Kafka MirrorMaker cluster
+    - name: kafkas.kafka.strimzi.io
+      version: v1alpha1
+      kind: Kafka
+      displayName: Kafka
+      description: Represents a Kafka cluster
+    - name: kafkatopics.kafka.strimzi.io
+      version: v1alpha1
+      kind: KafkaTopic
+      displayName: Kafka Topic
+      description: Represents a topic inside a Kafka cluster

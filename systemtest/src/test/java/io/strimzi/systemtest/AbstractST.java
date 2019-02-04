@@ -57,10 +57,12 @@ import org.junit.jupiter.api.TestInfo;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -71,6 +73,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
+import static io.strimzi.test.extensions.StrimziExtension.CO_INSTALL_DIR;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -105,11 +108,13 @@ public abstract class AbstractST {
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
+    private static final String DEFAULT_NAMESPACE = "myproject";
     private static final long GET_BROKER_API_TIMEOUT = 60_000L;
     private static final long GET_BROKER_API_INTERVAL = 5_000L;
     static final long GLOBAL_TIMEOUT = 300000;
     static final long GLOBAL_POLL_INTERVAL = 1000;
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
+    private static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
@@ -132,6 +137,10 @@ public abstract class AbstractST {
 
     static String kafkaConnectName(String clusterName) {
         return clusterName + "-connect";
+    }
+
+    static String kafkaMirrorMakerName(String clusterName) {
+        return clusterName + "-mirror-maker";
     }
 
     static String kafkaPodName(String clusterName, int podId) {
@@ -360,7 +369,7 @@ public abstract class AbstractST {
 
     void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "ERROR", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
@@ -484,8 +493,7 @@ public abstract class AbstractST {
     void checkPings(int messagesCount, Job job) {
         String podName = jobPodName(job);
         String log = podLog(podName);
-        Pattern p = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
-        Matcher m = p.matcher(log);
+        Matcher m = BRACE_PATTERN.matcher(log);
         boolean producerSuccess = false;
         boolean consumerSuccess = false;
         while (m.find()) {
@@ -816,8 +824,7 @@ public abstract class AbstractST {
     void checkRecordsForConsumer(int messagesCount, Job job) {
         String podName = jobPodName(job);
         String log = podLog(podName);
-        Pattern p = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
-        Matcher m = p.matcher(log);
+        Matcher m = BRACE_PATTERN.matcher(log);
         boolean consumerSuccess = false;
         while (m.find()) {
             String json = m.group();
@@ -1060,48 +1067,102 @@ public abstract class AbstractST {
         }
     }
 
-    void waitForPodDeletion(String namespace, String name) {
-        LOGGER.info("Waiting when Pod {} will be deleted", name);
+    void waitForPodDeletion(String namespace, String podName) {
+        LOGGER.info("Waiting when Pod {} will be deleted", podName);
 
-        TestUtils.waitFor("statefulset " + name, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> client.pods().inNamespace(namespace).withName(name).get() == null);
+        TestUtils.waitFor("statefulset " + podName, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+            () -> client.pods().inNamespace(namespace).withName(podName).get() == null);
     }
 
-    void waitForDeletion(long time, String namespace) throws Exception {
+    /**
+     * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
+     * @param time timeout in miliseconds
+     * @param coNamespace namespace where cluster operator is deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
+     * @throws Exception exception
+     */
+    void waitForDeletion(long time, String coNamespace, String... bindingsNamespaces) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
-        long podCount = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+        long podCount = client.pods().inNamespace(coNamespace).list().getItems().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> podStream = client.pods().inNamespace(namespace).list().getItems().stream().filter(
+            List<Pod> pods = client.pods().inNamespace(coNamespace).list().getItems().stream().filter(
                 p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
-            podStream.forEach(
+            pods.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
-            // Delete remaining pods if there are some
-            podStream.forEach(p -> waitForPodDeletion(client.getNamespace(), p.getMetadata().getName()));
+
+            recreateTestEnv(coNamespace, bindingsNamespaces);
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
     }
 
     /**
-     * Method for apply Strimzi cluster operator specific Role and CLusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO is deployed
-     * @param clientNamespace namespace, where bindings should be deployed
+     * Wait till all pods in specific namespace are deleted and recreate testing environment in case of some pods cannot be deleted.
+     * @param time timeout in miliseconds
+     * @param coNamespace namespace where cluster operator is deployed to
+     * @throws Exception exception
      */
-    static void applyRoleBindings(String namespace, String clientNamespace) {
-        // 020-RoleBinding
-        testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
-        // 021-ClusterRoleBinding
-        testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
-        // 030-ClusterRoleBinding
-        testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, clientNamespace);
-        // 031-RoleBinding
-        testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, clientNamespace);
-        // 032-RoleBinding
-        testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, clientNamespace);
+    void waitForDeletion(long time, String coNamespace) throws Exception {
+        waitForDeletion(time, coNamespace, coNamespace);
+    }
+
+    /**
+     * Recreate namespace and CO after test failure
+     * @param coNamespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
+     */
+    void recreateTestEnv(String coNamespace, String... bindingsNamespaces) {
+        LOGGER.info("There are some unexpected pods! Cleanup is not finished properly! Wait till env will be recreated.");
+        testClassResources.deleteResources();
+        kubeClient.namespace(DEFAULT_NAMESPACE);
+        kubeClient.deleteNamespace(coNamespace);
+        kubeClient.waitForResourceDeletion("Namespace", coNamespace);
+        kubeClient.createNamespace(coNamespace);
+        kubeClient.namespace(coNamespace);
+
+        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
+                !file.getName().matches(".*(Binding|Deployment)-.*")
+        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
+        // Here we record the state of the cluster
+        for (Map.Entry<File, String> entry : yamls.entrySet()) {
+            LOGGER.info("creating possibly modified version of {}", entry.getKey());
+            kubeClient.clientWithAdmin().applyContent(entry.getValue());
+        }
+
+        testClassResources = new Resources(namespacedClient());
+
+        applyRoleBindings(coNamespace, bindingsNamespaces);
+        // 050-Deployment
+        testClassResources.clusterOperator(coNamespace).done();
+        LOGGER.info("Env recreated.");
+    }
+
+    /**
+     * Method for apply Strimzi cluster operator specific Role and CLusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO will be deployed to
+     * @param clientNamespaces list of namespaces where Bindings should be deployed to
+     */
+    static void applyRoleBindings(String namespace, String... clientNamespaces) {
+        for (String clientNamespace : clientNamespaces) {
+            // 020-RoleBinding
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+            // 021-ClusterRoleBinding
+            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+            // 030-ClusterRoleBinding
+            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, clientNamespace);
+            // 031-RoleBinding
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, clientNamespace);
+            // 032-RoleBinding
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, clientNamespace);
+        }
+    }
+
+    static void applyRoleBindings(String namespace) {
+        applyRoleBindings(namespace, namespace);
     }
 
     @BeforeEach

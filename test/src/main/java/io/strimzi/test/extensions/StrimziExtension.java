@@ -93,11 +93,25 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
     private static final String START_TIME = "start time";
     private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
 
-    /** Tags */
+    /**
+     * Tag for acceptance tests, which are triggered for each push/pr/merge on travis-ci
+     */
     public static final String ACCEPTANCE = "acceptance";
+    /**
+     * Tag for regression tests which are stable.
+     */
     public static final String REGRESSION = "regression";
+    /**
+     * Tag for tests, which results are not 100% reliable on all testing environments.
+     */
+    public static final String FLAKY = "flaky";
+    /**
+     * Tag for tests, which are failing only on CCI VMs
+     */
+    public static final String CCI_FLAKY = "cci_flaky";
 
     private static DefaultKubernetesClient client = new DefaultKubernetesClient();
+
 
     private KubeClusterResource clusterResource;
     private Class testClass;

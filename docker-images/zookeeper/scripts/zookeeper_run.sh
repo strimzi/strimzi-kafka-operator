@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # volume for saving Zookeeper server logs
 export ZOOKEEPER_VOLUME="/var/lib/zookeeper/"

@@ -22,6 +22,13 @@ import java.util.regex.Pattern;
  */
 public class KafkaVersion implements Comparable<KafkaVersion> {
 
+    private static final Pattern KAFKA_VERSION_PATTERN = Pattern.compile(
+        "(?<version>[0-9.]+)\\s+" +
+        "(?<default>default)?\\s+" +
+        "(?<proto>[0-9.]+)\\s+" +
+        "(?<msg>[0-9.]+)\\s+" +
+        "(?<sha>[0-9A-Za-z]+)");
+
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource.
      * @param reader A leader for the version info.
@@ -35,13 +42,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         String line = reader.readLine();
         while (line != null) {
             if (!line.isEmpty() && !line.startsWith("#")) {
-                Pattern pattern = Pattern.compile(
-                        "(?<version>[0-9.]+)\\s+" +
-                                "(?<default>default)?\\s+" +
-                                "(?<proto>[0-9.]+)\\s+" +
-                                "(?<msg>[0-9.]+)\\s+" +
-                                "(?<sha>[0-9A-Za-z]+)");
-                Matcher matcher = pattern.matcher(line);
+                Matcher matcher = KAFKA_VERSION_PATTERN.matcher(line);
                 if (matcher.matches()) {
                     String version = matcher.group("version");
                     KafkaVersion kafkaVersion = new KafkaVersion(version,

@@ -43,6 +43,8 @@ public class ExamplesTest {
         Crds.registerCustomKinds();
     }
 
+    private static final Pattern PARAMETER_PATTERN = Pattern.compile("\\$\\{\\{(.+?)\\}?\\}");
+
     /**
      * Recurse through the examples directory looking for resources of the right type
      * and validating them.
@@ -169,8 +171,7 @@ public class ExamplesTest {
         }
         for (JsonNode object : rootNode.get("objects")) {
             String s = new YAMLMapper().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES).enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(object);
-            Pattern p = Pattern.compile("\\$\\{\\{(.+?)\\}?\\}");
-            Matcher matcher = p.matcher(s);
+            Matcher matcher = PARAMETER_PATTERN.matcher(s);
             StringBuilder sb = new StringBuilder();
             int last = 0;
             while (matcher.find()) {

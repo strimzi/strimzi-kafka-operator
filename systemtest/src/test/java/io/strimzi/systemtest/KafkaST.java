@@ -26,6 +26,7 @@ import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
@@ -42,9 +43,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Failed;
 import static io.strimzi.systemtest.k8s.Events.FailedSync;
@@ -58,6 +61,8 @@ import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.extensions.StrimziExtension.TOPIC_CM;
 import static io.strimzi.test.TestUtils.fromYamlString;
@@ -81,6 +86,7 @@ class KafkaST extends AbstractST {
 
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
+    private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
 
     static KubernetesClient client = new DefaultKubernetesClient();
 
@@ -89,6 +95,7 @@ class KafkaST extends AbstractST {
     private static final long TIMEOUT_FOR_TOPIC_CREATION = 60_000;
     private static final long POLL_INTERVAL_SECRET_CREATION = 5_000;
     private static final long TIMEOUT_FOR_SECRET_CREATION = 360_000;
+    private static final long TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION = 450_000;
 
     @Test
     @Tag(REGRESSION)
@@ -155,7 +162,6 @@ class KafkaST extends AbstractST {
         // scale down
         LOGGER.info("Scaling down");
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
-        //client.apps().statefulSets().inNamespace(DEFAULT_NAMESPACE).withName(kafkaStatefulSetName(CLUSTER_NAME)).scale(initialReplicas, true);
         replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setReplicas(initialReplicas);
         });
@@ -178,44 +184,30 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testZookeeperScaleUpScaleDown() {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
-        //kubeClient.waitForStatefulSet(zookeeperStatefulSetName(CLUSTER_NAME), 1);
         KubernetesClient client = new DefaultKubernetesClient();
         final int initialZkReplicas = client.apps().statefulSets().inNamespace(kubeClient.namespace()).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
-        assertEquals(1, initialZkReplicas);
+        assertEquals(3, initialZkReplicas);
 
-        // scale up
-        final int scaleZkTo = initialZkReplicas + 2;
-        final int[] newPodIds = {initialZkReplicas, initialZkReplicas + 1};
-        final String[] newZkPodName = {
-                zookeeperPodName(CLUSTER_NAME,  newPodIds[0]),
-                zookeeperPodName(CLUSTER_NAME,  newPodIds[1])
-        };
-        final String firstZkPodName = zookeeperPodName(CLUSTER_NAME,  0);
+        final int scaleZkTo = initialZkReplicas + 4;
+        final List<String> newZkPodNames = new ArrayList<String>() {{
+                for (int i = initialZkReplicas; i < scaleZkTo; i++) {
+                    add(zookeeperPodName(CLUSTER_NAME, i));
+                }
+            }};
+
         LOGGER.info("Scaling up to {}", scaleZkTo);
-        replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getZookeeper().setReplicas(scaleZkTo);
-        });
-        kubeClient.waitForPod(newZkPodName[0]);
-        kubeClient.waitForPod(newZkPodName[1]);
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo));
 
+        waitForZkPods(newZkPodNames);
         // check the new node is either in leader or follower state
-        waitForZkMntr(Pattern.compile("zk_server_state\\s+(leader|follower)"), 0, 1, 2);
-
-        //Test that first pod does not have errors or failures in events
-        List<Event> eventsForFirstPod = getEvents("Pod", newZkPodName[0]);
-        assertThat(eventsForFirstPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        assertThat(eventsForFirstPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
-
-        //Test that second pod does not have errors or failures in events
-        List<Event> eventsForSecondPod = getEvents("Pod", newZkPodName[1]);
-        assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        assertThat(eventsForSecondPod, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+        waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2, 3, 4, 5, 6);
+        checkZkPodsLog(newZkPodNames);
 
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
@@ -224,15 +216,17 @@ class KafkaST extends AbstractST {
         // scale down
         LOGGER.info("Scaling down");
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
-        replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getZookeeper().setReplicas(1);
-        });
-        kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  1));
-        // Wait for the one remaining node to enter standalone mode
-        waitForZkMntr(Pattern.compile("zk_server_state\\s+standalone"), 0);
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
+
+        for (String name : newZkPodNames) {
+            kubeClient.waitForResourceDeletion("po", name);
+        }
+
+        // Wait for one zk pods will became leader and others follower state
+        waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
-        assertThat(getEvents("Pod", newZkPodName[1]), hasAllOfReasons(Killing));
+        assertThat(getEvents("Pod", newZkPodNames.get(4)), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
@@ -242,7 +236,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testCustomAndUpdatedValues() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
@@ -376,7 +370,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(CCI_FLAKY)
     void testSendMessagesTlsAuthenticated() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-auth";
@@ -413,7 +407,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(CCI_FLAKY)
     void testSendMessagesPlainScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-plain-scram-sha";
@@ -460,7 +454,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(CCI_FLAKY)
     void testSendMessagesTlsScramSha() {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-scram-sha";
@@ -713,7 +707,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
+    @Tag(CCI_FLAKY)
     void testMirrorMaker() {
         operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -753,7 +747,7 @@ class KafkaST extends AbstractST {
      * Test mirroring messages by Mirror Maker over tls transport using mutual tls auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(CCI_FLAKY)
     void testMirrorMakerTlsAuthenticated() {
         operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -846,7 +840,7 @@ class KafkaST extends AbstractST {
      * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
      */
     @Test
-    @Tag(REGRESSION)
+    @Tag(CCI_FLAKY)
     void testMirrorMakerTlsScramSha() {
         operationID = startTimeMeasuring(Operation.TEST_EXECUTION);
         String kafkaUserSource = "my-user-source";
@@ -915,19 +909,19 @@ class KafkaST extends AbstractST {
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
                 .editSpec()
                     .editConsumer()
-                        .withNewKafkaMirrorMakerAuthenticationScramSha512Authentication()
+                        .withNewKafkaMirrorMakerAuthenticationScramSha512()
                             .withUsername(kafkaUserSource)
                             .withPasswordSecret(passwordSecretSource)
-                        .endKafkaMirrorMakerAuthenticationScramSha512Authentication()
+                        .endKafkaMirrorMakerAuthenticationScramSha512()
                         .withNewTls()
                             .withTrustedCertificates(certSecretSource)
                         .endTls()
                     .endConsumer()
                 .editProducer()
-                    .withNewKafkaMirrorMakerAuthenticationScramSha512Authentication()
+                    .withNewKafkaMirrorMakerAuthenticationScramSha512()
                         .withUsername(kafkaUserTarget)
                         .withPasswordSecret(passwordSecretTarget)
-                    .endKafkaMirrorMakerAuthenticationScramSha512Authentication()
+                    .endKafkaMirrorMakerAuthenticationScramSha512()
                     .withNewTls()
                         .withTrustedCertificates(certSecretTarget)
                     .endTls()
@@ -950,6 +944,45 @@ class KafkaST extends AbstractST {
         checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
     }
 
+    void waitForZkRollUp() {
+        LOGGER.info("Waiting for cluster stability");
+        Map<String, String>[] zkPods = new Map[1];
+        AtomicInteger count = new AtomicInteger();
+        zkPods[0] = StUtils.ssSnapshot(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+        TestUtils.waitFor("Cluster stable and ready", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION, () -> {
+            Map<String, String> zkSnapshot = StUtils.ssSnapshot(client, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+            boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
+            if (!zkSameAsLast) {
+                LOGGER.info("ZK Cluster not stable");
+            }
+            if (zkSameAsLast) {
+                int c = count.getAndIncrement();
+                LOGGER.info("All stable for {} polls", c);
+                return c > 60;
+            }
+            zkPods[0] = zkSnapshot;
+            count.set(0);
+            return false;
+        });
+    }
+
+    void checkZkPodsLog(List<String> newZkPodNames) {
+        for (String name : newZkPodNames) {
+            //Test that second pod does not have errors or failures in events
+            LOGGER.info("Checking logs fro pod {}", name);
+            List<Event> eventsForSecondPod = getEvents("Pod", name);
+            assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
+        }
+    }
+
+    void waitForZkPods(List<String> newZkPodNames) {
+        for (String name : newZkPodNames) {
+            kubeClient.waitForPod(name);
+            LOGGER.info("Pod {} is ready", name);
+        }
+        waitForZkRollUp();
+    }
+
     @BeforeEach
     void createTestResources() {
         createResources();
@@ -963,7 +996,7 @@ class KafkaST extends AbstractST {
 
     @BeforeAll
     static void createClusterOperator() {
-        applyRoleBindings(NAMESPACE, NAMESPACE);
+        applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
     }

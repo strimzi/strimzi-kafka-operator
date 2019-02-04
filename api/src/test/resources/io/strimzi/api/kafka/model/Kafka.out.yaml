@@ -2,9 +2,7 @@
 apiVersion: "kafka.strimzi.io/v1alpha1"
 kind: "Kafka"
 metadata:
-  finalizers: []
   name: "strimzi-ephemeral"
-  ownerReferences: []
 spec:
   kafka:
     replicas: 3
@@ -19,29 +17,23 @@ spec:
           type: "scram-sha-512"
         networkPolicyPeers:
         - namespaceSelector:
-            matchExpressions: []
             matchLabels:
               kafka-enabled: "true"
           podSelector:
-            matchExpressions: []
             matchLabels:
               app: "kafka-consumer"
         - podSelector:
-            matchExpressions: []
             matchLabels:
               app: "kafka-producer"
       tls:
         networkPolicyPeers:
         - namespaceSelector:
-            matchExpressions: []
             matchLabels:
               kafka-enabled: "true"
           podSelector:
-            matchExpressions: []
             matchLabels:
               app: "kafka-consumer"
         - podSelector:
-            matchExpressions: []
             matchLabels:
               app: "kafka-producer"
         authentication:
@@ -52,15 +44,12 @@ spec:
           type: "tls"
         networkPolicyPeers:
         - namespaceSelector:
-            matchExpressions: []
             matchLabels:
               kafka-enabled: "true"
           podSelector:
-            matchExpressions: []
             matchLabels:
               app: "kafka-consumer"
         - podSelector:
-            matchExpressions: []
             matchLabels:
               app: "kafka-producer"
     authorization:

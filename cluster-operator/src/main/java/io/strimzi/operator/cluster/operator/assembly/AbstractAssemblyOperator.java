@@ -21,6 +21,7 @@ import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -209,16 +210,23 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
         List<T> desiredResources = resourceOperator.list(namespace, Labels.EMPTY);
-        Set<String> desiredNames = desiredResources.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
+        Set<NamespaceAndName> desiredNames = desiredResources.stream()
+                .map(cr -> new NamespaceAndName(cr.getMetadata().getNamespace(), cr.getMetadata().getName()))
+                .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, Labels.EMPTY, desiredNames);
 
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
         Labels resourceSelector = Labels.EMPTY.withKind(assemblyType.name);
         List<? extends HasMetadata> resources = getResources(namespace, resourceSelector);
         // now extract the cluster name from those
-        Set<String> resourceNames = resources.stream()
+        Set<NamespaceAndName> resourceNames = resources.stream()
                 .filter(r -> !r.getKind().equals(kind)) // exclude desired resource
-                .map(Labels::cluster)
+                .map(resource ->
+                        new NamespaceAndName(
+                                resource.getMetadata().getNamespace(),
+                                resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL)
+                        )
+                )
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, resourceSelector, resourceNames);
 
@@ -228,8 +236,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         // Using futures would be more complex for no benefit
         CountDownLatch latch = new CountDownLatch(desiredNames.size());
 
-        for (String name: desiredNames) {
-            Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, namespace, name);
+        for (NamespaceAndName name: desiredNames) {
+            Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, name.getNamespace(), name.getName());
             reconcileAssembly(reconciliation, result -> {
                 handleResult(reconciliation, result);
                 latch.countDown();
@@ -247,31 +255,32 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      */
     protected abstract List<HasMetadata> getResources(String namespace, Labels selector);
 
-    public Future<Watch> createWatch(String namespace, Consumer<KubernetesClientException> onClose) {
+    public Future<Watch> createWatch(String watchNamespace, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();
         vertx.<Watch>executeBlocking(
             future -> {
-                Watch watch = resourceOperator.watch(namespace, new Watcher<T>() {
+                Watch watch = resourceOperator.watch(watchNamespace, new Watcher<T>() {
                     @Override
-                    public void eventReceived(Action action, T cm) {
-                        String name = cm.getMetadata().getName();
+                    public void eventReceived(Action action, T cr) {
+                        String name = cr.getMetadata().getName();
+                        String resourceNamespace = cr.getMetadata().getNamespace();
                         switch (action) {
                             case ADDED:
                             case DELETED:
                             case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", assemblyType, namespace, name);
-                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, namespace, action);
+                                Reconciliation reconciliation = new Reconciliation("watch", assemblyType, resourceNamespace, name);
+                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, resourceNamespace, action);
                                 reconcileAssembly(reconciliation, result -> {
                                     handleResult(reconciliation, result);
                                 });
                                 break;
                             case ERROR:
-                                log.error("Failed {} {} in namespace{} ", kind, name, namespace);
-                                reconcileAll("watch error", namespace);
+                                log.error("Failed {} {} in namespace{} ", kind, name, resourceNamespace);
+                                reconcileAll("watch error", watchNamespace);
                                 break;
                             default:
-                                log.error("Unknown action: {} in namespace {}", name, namespace);
-                                reconcileAll("watch unknown", namespace);
+                                log.error("Unknown action: {} in namespace {}", name, resourceNamespace);
+                                reconcileAll("watch unknown", watchNamespace);
                         }
                     }
 

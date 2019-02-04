@@ -17,7 +17,10 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.CpuMemory;
+import io.strimzi.api.kafka.model.JbodStorage;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
+import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.certs.CertAndKey;
@@ -198,13 +201,13 @@ public class ModelUtils {
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 
-    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName, String keyCertName, Labels labels, OwnerReference ownerReference) {
+    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName, String commonName, String keyCertName, Labels labels, OwnerReference ownerReference) {
         Map<String, String> data = new HashMap<>();
         if (secret == null || clusterCa.certRenewed()) {
             log.debug("Generating certificates");
             try {
                 log.debug(keyCertName + " certificate to generate");
-                CertAndKey eoCertAndKey = clusterCa.generateSignedCert(secretName, Ca.IO_STRIMZI);
+                CertAndKey eoCertAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
                 data.put(keyCertName + ".key", eoCertAndKey.keyAsBase64String());
                 data.put(keyCertName + ".crt", eoCertAndKey.certAsBase64String());
             } catch (IOException e) {
@@ -274,5 +277,30 @@ public class ModelUtils {
             model.templateImagePullSecrets = pod.getImagePullSecrets();
             model.templateSecurityContext = pod.getSecurityContext();
         }
+    }
+
+    /**
+     * Returns whether the given {@code Storage} instance is a persistent claim one or
+     * a JBOD containing at least one persistent volume.
+     *
+     * @param storage the Storage instance to check
+     */
+    public static boolean containsPersistentStorage(Storage storage) {
+        boolean isPersistentClaimStorage = storage instanceof PersistentClaimStorage;
+
+        if (!isPersistentClaimStorage && storage instanceof JbodStorage) {
+            isPersistentClaimStorage |= ((JbodStorage) storage).getVolumes()
+                    .stream().anyMatch(volume -> volume instanceof PersistentClaimStorage);
+        }
+        return isPersistentClaimStorage;
+    }
+
+    /**
+     * Returns the prefix used for volumes and persistent volume claims
+     *
+     * @param id identification number of the persistent storage
+     */
+    public static String getVolumePrefix(Integer id) {
+        return id == null ? AbstractModel.VOLUME_NAME : AbstractModel.VOLUME_NAME + "-" + id;
     }
 }

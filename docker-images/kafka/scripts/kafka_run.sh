@@ -1,17 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set +x
-
-# volume for saving Kafka server logs
-export KAFKA_VOLUME="/var/lib/kafka/"
-# base name for Kafka server data dir
-export KAFKA_LOG_BASE_NAME="kafka-log"
-export KAFKA_APP_LOGS_BASE_NAME="logs"
 
 export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
 echo "KAFKA_BROKER_ID=$KAFKA_BROKER_ID"
 
-# create data dir
-export KAFKA_LOG_DIRS=$KAFKA_VOLUME$KAFKA_LOG_BASE_NAME$KAFKA_BROKER_ID
+# Kafka server data dirs
 echo "KAFKA_LOG_DIRS=$KAFKA_LOG_DIRS"
 
 # Disable Kafka's GC logging (which logs to a file)...
