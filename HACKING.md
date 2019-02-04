@@ -223,3 +223,6 @@ Ex)
 ### Log level
 
 To set the log level of Strimzi for system tests need to add system property `TEST_STRIMZI_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
+
+### Execute ST with custom Kafka version
+To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` with one of the following values: `2.0.0`, `2.0.1`, `2.1.0`

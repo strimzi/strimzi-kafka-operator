@@ -7,13 +7,13 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
@@ -76,7 +76,7 @@ public class Resources {
     private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
     private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
     public static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
-    private static final String KAFKA_VERSION = "2.1.0";
+    private static final String KAFKA_VERSION = System.getenv().getOrDefault("ST_KAFKA_VERSION", "2.1.0");
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
@@ -246,6 +246,7 @@ public class Resources {
                     .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
                     .withNewSpec()
                         .withNewKafka()
+                            .withVersion(KAFKA_VERSION)
                             .withReplicas(kafkaReplicas)
                             .withNewEphemeralStorage().endEphemeralStorage()
                             .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
@@ -324,6 +325,7 @@ public class Resources {
         return new KafkaConnectBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
+                .withVersion(KAFKA_VERSION)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectReplicas)
                 .withNewResources()
@@ -405,6 +407,7 @@ public class Resources {
         return new KafkaMirrorMakerBuilder()
             .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
             .withNewSpec()
+                .withVersion(KAFKA_VERSION)
                 .withNewConsumer()
                     .withBootstrapServers(tlsListener ? sourceBootstrapServer + "-kafka-bootstrap:9093" : sourceBootstrapServer + "-kafka-bootstrap:9092")
                     .withGroupId(groupId)
@@ -619,10 +622,10 @@ public class Resources {
     }
 
     DoneableDeployment clusterOperator(String namespace) {
-        return clusterOperator(defaultCLusterOperator(namespace).build());
+        return clusterOperator(defaultClusterOperator(namespace).build());
     }
 
-    DeploymentBuilder defaultCLusterOperator(String namespace) {
+    DeploymentBuilder defaultClusterOperator(String namespace) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
