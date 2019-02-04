@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
@@ -17,13 +18,13 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.Oc;
-import io.strimzi.test.timemeasuring.Operation;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -57,12 +58,12 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -182,6 +183,19 @@ class KafkaST extends AbstractST {
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testEODeletion () {
+        // Deploy kafka cluster with EO
+        Kafka kafka = resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        // Remove EO from Kafka DTO
+        kafka.getSpec().setEntityOperator(null);
+        // Replace Kafka configuration with removed EO
+        resources.kafka(kafka).done();
+        // Wait when EO(UO + TO) will be removed
+        kubeClient.waitForResourceDeletion("deployment", entityOperatorDeploymentName(CLUSTER_NAME));
     }
 
     @Test
