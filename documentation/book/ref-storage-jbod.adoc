@@ -5,12 +5,13 @@
 [id='ref-jbod-storage-{context}']
 = JBOD storage
 
-The JBOD storage allows to provide more volumes to the Kafka brokers, for storing data.
-It represents a way for providing more space and having better performance.
+The JBOD storage allows you to provide more volumes to the Kafka brokers to store data.
+As well as providing more storage, using multiple disks can improve performance.
 
 To use JBOD storage, the `type` has to be set to `jbod`.
 A JBOD storage is described by one or more volumes and each of them can be an xref:ref-ephemeral-storage-{context}[Ephemeral] or a xref:ref-persistent-storage-{context}[Persistent] one.
 Each volume declaration follows the same rules and constraints as for Ephemeral and Persistent storage.
+For example, it is not possible to change the size for a Persistent storage when it is already provisioned.
 The JBOD storage provides a way for putting together more of them.
 
 Using the `volumes` property, it is possible to declare the disks which make the JBOD storage.
@@ -33,7 +34,6 @@ storage:
 # ...
 ----
 
-It is possible to update each volume following the rules of each declared Ephemeral and Persistent volume.
 It is not possible to change the `id` property for a volume.
 It is not possible to add or remove volumes from a JBOD storage configuration.
 
