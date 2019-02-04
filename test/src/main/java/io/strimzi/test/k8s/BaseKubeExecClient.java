@@ -29,9 +29,9 @@ import static io.strimzi.test.k8s.Kubernetes.getKubernetes;
 import static java.lang.String.join;
 import static java.util.Arrays.asList;
 
-public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements KubeClient<K> {
+public abstract class BaseKubeExecClient<K extends BaseKubeExecClient<K>> implements KubeExecClient<K> {
 
-    private static final Logger LOGGER = LogManager.getLogger(BaseKubeClient.class);
+    private static final Logger LOGGER = LogManager.getLogger(BaseKubeExecClient.class);
 
     public static final String CREATE = "create";
     public static final String APPLY = "apply";

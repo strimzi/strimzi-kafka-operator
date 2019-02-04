@@ -30,7 +30,7 @@ public interface KubeCluster {
     void clusterDown();
 
     /** Return a default client for this kind of cluster. */
-    KubeClient defaultClient();
+    KubeExecClient defaultClient();
 
     /**
      * Returns the cluster named by the TEST_CLUSTER environment variable, if set, otherwise finds a cluster that's

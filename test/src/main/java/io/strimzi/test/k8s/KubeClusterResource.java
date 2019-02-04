@@ -21,20 +21,20 @@ public class KubeClusterResource {
 
     private final boolean bootstrap;
     private KubeCluster cluster;
-    private KubeClient client;
+    private KubeExecClient client;
     private HelmClient helmClient;
 
     public KubeClusterResource() {
         bootstrap = true;
     }
 
-    public KubeClusterResource(KubeCluster cluster, KubeClient client) {
+    public KubeClusterResource(KubeCluster cluster, KubeExecClient client) {
         bootstrap = false;
         this.cluster = cluster;
         this.client = client;
     }
 
-    public KubeClusterResource(KubeCluster cluster, KubeClient client, HelmClient helmClient) {
+    public KubeClusterResource(KubeCluster cluster, KubeExecClient client, HelmClient helmClient) {
         bootstrap = false;
         this.cluster = cluster;
         this.client = client;
@@ -46,9 +46,9 @@ public class KubeClusterResource {
         return client().defaultNamespace();
     }
 
-    public KubeClient client() {
+    public KubeExecClient client() {
         if (bootstrap && client == null) {
-            this.client = KubeClient.findClient(cluster());
+            this.client = KubeExecClient.findClient(cluster());
         }
         return client;
     }
@@ -73,7 +73,7 @@ public class KubeClusterResource {
                 this.cluster = KubeCluster.bootstrap();
             }
             if (client == null) {
-                this.client = KubeClient.findClient(cluster);
+                this.client = KubeExecClient.findClient(cluster);
             }
         }
     }

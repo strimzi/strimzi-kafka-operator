@@ -7,7 +7,7 @@ package io.strimzi.test;
 import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.extensions.StrimziExtension;
-import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeExecClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 
 class StrimziExtensionTest {
 
-    private static final KubeClient MOCK_KUBE_CLIENT = mock(KubeClient.class);
+    private static final KubeExecClient MOCK_KUBE_CLIENT = mock(KubeExecClient.class);
 
     StrimziExtensionTest() throws InvocationTargetException {
     }
@@ -49,7 +49,7 @@ class StrimziExtensionTest {
         }
 
         @Override
-        public KubeClient<?> client() {
+        public KubeExecClient<?> client() {
             return MOCK_KUBE_CLIENT;
         }
 

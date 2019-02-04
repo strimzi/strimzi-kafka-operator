@@ -16,12 +16,12 @@ import static java.util.stream.Collectors.toList;
  * Abstraction for a kubernetes client.
  * @param <K> The subtype of KubeClient, for fluency.
  */
-public interface KubeClient<K extends KubeClient<K>> {
+public interface KubeExecClient<K extends KubeExecClient<K>> {
 
-    static KubeClient<?> findClient(KubeCluster cluster) {
-        KubeClient client = null;
-        List<KubeClient> kubeClients = Arrays.asList(cluster.defaultClient(), new Kubectl(), new Oc());
-        for (KubeClient kc: kubeClients) {
+    static KubeExecClient<?> findClient(KubeCluster cluster) {
+        KubeExecClient client = null;
+        List<KubeExecClient> kubeClients = Arrays.asList(cluster.defaultClient(), new Kubectl(), new Oc());
+        for (KubeExecClient kc: kubeClients) {
             if (kc.clientAvailable()) {
                 client = kc;
                 break;

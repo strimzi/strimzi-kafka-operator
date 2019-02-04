@@ -11,7 +11,7 @@ import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
-import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeExecClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
@@ -396,7 +396,7 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
         return new HashSet<>(Arrays.asList(commaSeparated.split(",+")));
     }
 
-    protected KubeClient<?> kubeClient() {
+    protected KubeExecClient<?> kubeClient() {
         return clusterResource().client();
     }
 
@@ -669,8 +669,8 @@ public class StrimziExtension implements AfterAllCallback, BeforeAllCallback, Af
                     kubeClient().create(resources.value());
                 }
 
-                private KubeClient kubeClient() {
-                    KubeClient client = StrimziExtension.this.kubeClient();
+                private KubeExecClient kubeClient() {
+                    KubeExecClient client = StrimziExtension.this.kubeClient();
                     if (resources.asAdmin()) {
                         client = client.clientWithAdmin();
                     }

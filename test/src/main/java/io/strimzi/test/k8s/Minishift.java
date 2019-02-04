@@ -34,7 +34,7 @@ public class Minishift implements KubeCluster {
     }
 
     @Override
-    public KubeClient defaultClient() {
+    public KubeExecClient defaultClient() {
         return new Oc();
     }
 

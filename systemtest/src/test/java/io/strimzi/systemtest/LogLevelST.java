@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
+import static io.strimzi.test.k8s.BaseKubeExecClient.STATEFUL_SET;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(StrimziExtension.class)

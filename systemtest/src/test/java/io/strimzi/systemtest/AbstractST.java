@@ -40,7 +40,7 @@ import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.TimeoutException;
-import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeExecClient;
 import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Kubernetes;
@@ -115,7 +115,7 @@ public abstract class AbstractST {
 
     // This field has been deprecated, please use Kubernetes client
     @Deprecated
-    static KubeClient<?> kubeClient = cluster.client();
+    static KubeExecClient<?> kubeClient = cluster.client();
     static Kubernetes kubernetes = getKubernetes();
 
     Resources resources;
