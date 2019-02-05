@@ -5,7 +5,7 @@ ENV STRIMZI_VERSION ${strimzi_version}
 
 COPY ./scripts/ /bin
 
-ADD target/topic-operator-${strimzi_version}.jar /
+COPY target/topic-operator-${strimzi_version}.jar /
 
 USER 1001
 
