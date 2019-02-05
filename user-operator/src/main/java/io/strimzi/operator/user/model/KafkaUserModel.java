@@ -16,6 +16,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.operator.PasswordGenerator;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +37,6 @@ import java.util.stream.Collectors;
 public class KafkaUserModel {
     private static final Logger log = LogManager.getLogger(KafkaUserModel.class.getName());
 
-    private final static int CERTS_EXPIRATION_DAYS = 356;
     public static final String KEY_PASSWORD = "password";
 
     protected final String namespace;
@@ -49,6 +49,8 @@ public class KafkaUserModel {
     protected String scramSha512Password;
 
     protected Set<SimpleAclRule> simpleAclRules = null;
+    public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
+    public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
 
     /**
      * Constructor
@@ -84,7 +86,8 @@ public class KafkaUserModel {
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
 
         if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
-            result.maybeGenerateCertificates(certManager, clientsCaCert, clientsCaKey, userSecret);
+            result.maybeGenerateCertificates(certManager, clientsCaCert, clientsCaKey, userSecret,
+                    UserOperatorConfig.getClientsCaValidityDays(), UserOperatorConfig.getClientsCaRenewalDays());
         } else if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
             result.maybeGeneratePassword(passwordGenerator, userSecret);
         }
@@ -127,7 +130,7 @@ public class KafkaUserModel {
      */
     public void maybeGenerateCertificates(CertManager certManager,
                                           Secret clientsCaCertSecret, Secret clientsCaKeySecret,
-                                          Secret userSecret) {
+                                          Secret userSecret, int validityDays, int renewalDays) {
         if (clientsCaCertSecret == null) {
             throw new NoCertificateSecretException("The Clients CA Cert Secret is missing");
         } else if (clientsCaKeySecret == null) {
@@ -138,8 +141,8 @@ public class KafkaUserModel {
                     clientsCaCertSecret,
                     clientsCaCertSecret.getMetadata().getName(),
                     clientsCaKeySecret,
-                    CERTS_EXPIRATION_DAYS,
-                    30,
+                    validityDays,
+                    renewalDays,
                     false,
                     null);
             this.caCert = clientsCa.currentCaCertBase64();

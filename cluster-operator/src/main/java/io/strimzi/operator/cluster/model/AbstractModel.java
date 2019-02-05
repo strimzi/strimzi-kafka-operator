@@ -81,7 +81,6 @@ public abstract class AbstractModel {
 
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
 
-    protected static final int CERTS_EXPIRATION_DAYS = 365;
     protected static final String DEFAULT_JVM_XMS = "128M";
 
     private static final Long DEFAULT_FS_GROUPID = 0L;

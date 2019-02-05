@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user;
 
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 
@@ -22,6 +23,8 @@ public class UserOperatorConfig {
     public static final String STRIMZI_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
     public static final String STRIMZI_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
+    public static final String STRIMZI_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
+    public static final String STRIMZI_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final String DEFAULT_ZOOKEEPER_CONNECT = "localhost:2181";
@@ -47,7 +50,13 @@ public class UserOperatorConfig {
      * @param caCertSecretName    Name of the secret containing the Certification Authority
      * @param caNamespace   Namespace with the CA secret
      */
-    public UserOperatorConfig(String namespace, long reconciliationIntervalMs, String zookeperConnect, long zookeeperSessionTimeoutMs, Labels labels, String caCertSecretName, String caKeySecretName, String caNamespace) {
+    public UserOperatorConfig(String namespace,
+                              long reconciliationIntervalMs,
+                              String zookeperConnect,
+                              long zookeeperSessionTimeoutMs,
+                              Labels labels, String caCertSecretName,
+                              String caKeySecretName,
+                              String caNamespace) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.zookeperConnect = zookeperConnect;
@@ -113,6 +122,23 @@ public class UserOperatorConfig {
         }
 
         return new UserOperatorConfig(namespace, reconciliationInterval, zookeeperConnect, zookeeperSessionTimeoutMs, labels, caCertSecretName, caKeySecretName, caNamespace);
+    }
+
+    public static int getClientsCaValidityDays() {
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
+    }
+
+    public static int getClientsCaRenewalDays() {
+        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
+    }
+
+    private static int getIntProperty(String name, int defaultVal) {
+        String env = System.getenv(name);
+        if (env != null) {
+            return Integer.parseInt(env);
+        } else {
+            return defaultVal;
+        }
     }
 
     /**

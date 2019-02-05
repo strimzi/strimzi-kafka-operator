@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
@@ -42,12 +43,16 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
     public static final String ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
+    public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
+    public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
 
     private String zookeeperConnect;
     private String watchedNamespace;
     private String resourceLabels;
     private long reconciliationIntervalMs;
     private long zookeeperSessionTimeoutMs;
+    private int clientsCaValidityDays;
+    private int clientsCaRenewalDays;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -75,6 +80,8 @@ public class EntityUserOperator extends AbstractModel {
         this.ancillaryConfigName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
+        this.clientsCaValidityDays = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
+        this.clientsCaRenewalDays = CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS;
     }
 
     public void setWatchedNamespace(String watchedNamespace) {
@@ -91,6 +98,22 @@ public class EntityUserOperator extends AbstractModel {
 
     public long getReconciliationIntervalMs() {
         return reconciliationIntervalMs;
+    }
+
+    public void setClientsCaValidityDays(int clientsCaValidityDays) {
+        this.clientsCaValidityDays = clientsCaValidityDays;
+    }
+
+    public long getClientsCaValidityDays() {
+        return this.clientsCaValidityDays;
+    }
+
+    public void setClientsCaRenewalDays(int clientsCaRenewalDays) {
+        this.clientsCaRenewalDays = clientsCaRenewalDays;
+    }
+
+    public long getClientsCaRenewalDays() {
+        return this.clientsCaRenewalDays;
     }
 
     public void setZookeeperSessionTimeoutMs(long zookeeperSessionTimeoutMs) {
@@ -166,6 +189,10 @@ public class EntityUserOperator extends AbstractModel {
                 result.setLogging(userOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? true : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(userOperatorSpec.getResources());
+                if (kafkaAssembly.getSpec().getClientsCa() != null) {
+                    result.setClientsCaValidityDays(kafkaAssembly.getSpec().getClientsCa().getValidityDays());
+                    result.setClientsCaRenewalDays(kafkaAssembly.getSpec().getClientsCa().getRenewalDays());
+                }
             }
         }
         return result;
@@ -197,6 +224,8 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaCluster.clientsCaCertSecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
+        varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
         return varList;
     }
 
