@@ -10,7 +10,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * Configures external broker service and advertised addresses
@@ -23,22 +22,12 @@ import java.util.Objects;
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 public class KafkaExternalBrokerService implements Serializable {
-    private static final long serialVersionUID = -7537621108590168627L;
+    private static final long serialVersionUID = 1L;
 
     private Integer broker;
     private String advertisedHost;
     private Integer advertisedPort;
     private Integer nodePort;
-
-    public KafkaExternalBrokerService() {
-    }
-
-    public KafkaExternalBrokerService(Integer broker, String advertisedHost, Integer advertisedPort, Integer nodePort) {
-        this.broker = broker;
-        this.advertisedHost = advertisedHost;
-        this.advertisedPort = advertisedPort;
-        this.nodePort = nodePort;
-    }
 
     @Description("Index of the kafka broker (broker identifier)")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -50,7 +39,7 @@ public class KafkaExternalBrokerService implements Serializable {
         this.broker = broker;
     }
 
-    @Description("Externally advertised host")
+    @Description("The host name which will be used in the brokers' `advertised.brokers`")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getAdvertisedHost() {
         return advertisedHost;
@@ -60,7 +49,7 @@ public class KafkaExternalBrokerService implements Serializable {
         this.advertisedHost = advertisedHost;
     }
 
-    @Description("Externally advertised port")
+    @Description("The port number which will be used in the brokers' `advertised.brokers`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getAdvertisedPort() {
         return advertisedPort;
@@ -70,7 +59,7 @@ public class KafkaExternalBrokerService implements Serializable {
         this.advertisedPort = advertisedPort;
     }
 
-    @Description("Broker service node port")
+    @Description("Node port for the broker service")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getNodePort() {
         return nodePort;
@@ -78,35 +67,5 @@ public class KafkaExternalBrokerService implements Serializable {
 
     public void setNodePort(Integer nodePort) {
         this.nodePort = nodePort;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        KafkaExternalBrokerService that = (KafkaExternalBrokerService) o;
-        return Objects.equals(broker, that.broker) &&
-            Objects.equals(advertisedHost, that.advertisedHost) &&
-            Objects.equals(advertisedPort, that.advertisedPort) &&
-            Objects.equals(nodePort, that.nodePort);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(broker, advertisedHost, advertisedPort, nodePort);
-    }
-
-    @Override
-    public String toString() {
-        return "KafkaExternalBrokerService{" +
-            "broker=" + broker +
-            ", advertisedHost='" + advertisedHost + '\'' +
-            ", advertisedPort=" + advertisedPort +
-            ", nodePort=" + nodePort +
-            '}';
     }
 }

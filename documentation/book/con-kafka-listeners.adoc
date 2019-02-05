@@ -86,6 +86,37 @@ When selecting the node address, the different address types are used with the f
 . InternalDNS
 . InternalIP
 
+It is possible to override the auto assigned node ports for bootstrap service and brokers, and advertised host and port for each broker.
+
+.An example where the external listener is configured with overrides for node ports and advertised addresses
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: nodeport
+    tls: true
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        nodePort: 30001
+      brokers:
+      - broker: 0
+        advertisedHost: example.host.1
+        advertisedPort: 32401
+        nodePort: 32401
+      - broker: 1
+        advertisedHost: example.host.2
+        advertisedPort: 32402
+        nodePort: 32402
+      - broker: 2
+        advertisedHost: example.host.3
+        advertisedPort: 32403
+        nodePort: 32403
+# ...
+----
+
 By default, TLS encryption is enabled.
 To disable it, set the `tls` field to `false`.
 

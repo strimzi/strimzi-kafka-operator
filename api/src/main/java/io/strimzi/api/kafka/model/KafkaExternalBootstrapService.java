@@ -9,7 +9,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * Configures external bootstrap service
@@ -21,18 +20,11 @@ import java.util.Objects;
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 public class KafkaExternalBootstrapService implements Serializable {
-    private static final long serialVersionUID = 7105212236247449919L;
+    private static final long serialVersionUID = 1L;
 
     private Integer nodePort;
 
-    public KafkaExternalBootstrapService() {
-    }
-
-    public KafkaExternalBootstrapService(Integer nodePort) {
-        this.nodePort = nodePort;
-    }
-
-    @Description("Bootstrap service node port")
+    @Description("Node port for the bootstrap service")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getNodePort() {
         return nodePort;
@@ -40,29 +32,5 @@ public class KafkaExternalBootstrapService implements Serializable {
 
     public void setNodePort(Integer nodePort) {
         this.nodePort = nodePort;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        KafkaExternalBootstrapService that = (KafkaExternalBootstrapService) o;
-        return Objects.equals(nodePort, that.nodePort);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(nodePort);
-    }
-
-    @Override
-    public String toString() {
-        return "KafkaExternalBootstrapService{" +
-            "nodePort=" + nodePort +
-            '}';
     }
 }

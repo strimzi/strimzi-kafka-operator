@@ -32,9 +32,7 @@ import io.strimzi.api.kafka.model.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaExternalBootstrapService;
 import io.strimzi.api.kafka.model.KafkaExternalBrokerService;
-import io.strimzi.api.kafka.model.KafkaExternalServiceOverrides;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
@@ -621,6 +619,9 @@ public class KafkaClusterTest {
 
     @Test
     public void testExternalNodePortOverrides() {
+        KafkaExternalBrokerService kafkaExternalBrokerService = new KafkaExternalBrokerService();
+        kafkaExternalBrokerService.setBroker(0);
+        kafkaExternalBrokerService.setNodePort(32101);
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
             image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
             .editSpec()
@@ -628,8 +629,12 @@ public class KafkaClusterTest {
                     .withNewListeners()
                         .withNewKafkaListenerExternalNodePort()
                             .withTls(false)
-                            .withOverrides(new KafkaExternalServiceOverrides(new KafkaExternalBootstrapService(10),
-                                Collections.singletonList(new KafkaExternalBrokerService(0, "test", 32001, 32101))))
+                            .withNewOverrides()
+                                .withNewBootstrap()
+                                    .withNodePort(32001)
+                                .endBootstrap()
+                                .withBrokers(kafkaExternalBrokerService)
+                            .endOverrides()
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
                 .endKafka()
@@ -659,7 +664,7 @@ public class KafkaClusterTest {
         assertEquals(KafkaCluster.externalBootstrapServiceName(cluster), ext.getMetadata().getName());
         assertEquals("NodePort", ext.getSpec().getType());
         assertEquals(kc.getSelectorLabels(), ext.getSpec().getSelector());
-        assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, 10, "TCP")), ext.getSpec().getPorts());
+        assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, 32001, "TCP")), ext.getSpec().getPorts());
         checkOwnerReference(kc.createOwnerReference(), ext);
 
         // Check per pod services
