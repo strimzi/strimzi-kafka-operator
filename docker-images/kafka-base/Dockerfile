@@ -1,17 +1,16 @@
-FROM centos:7
+FROM strimzi/java-base:latest
 
-ARG JAVA_VERSION
 ARG KAFKA_SHA512
 ARG KAFKA_VERSION
 
-RUN yum -y install java-${JAVA_VERSION}-openjdk-headless gettext nmap-ncat openssl && yum clean all -y
+RUN yum -y install gettext nmap-ncat openssl && yum clean all -y
 
 # set Kafka home folder
 ENV KAFKA_HOME=/opt/kafka
 
-# Add kafka user with UID 1001
+# Add kafka user with UID 1000
 # The user is in the group 0 to have access to the mounted volumes and storage
-RUN useradd -r -m -u 1001 -g 0 kafka
+RUN useradd -r -m -u 1000 -g 0 kafka
 
 # Set Scala and Kafka version
 ENV KAFKA_VERSION=${KAFKA_VERSION}
