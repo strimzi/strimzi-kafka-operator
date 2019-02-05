@@ -190,12 +190,20 @@ class KafkaST extends AbstractST {
     void testEODeletion () {
         // Deploy kafka cluster with EO
         Kafka kafka = resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        // Get pod name to check termination process
+        String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems()
+                .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
+                .findFirst().get().getMetadata().getName();
+
         // Remove EO from Kafka DTO
         kafka.getSpec().setEntityOperator(null);
         // Replace Kafka configuration with removed EO
         resources.kafka(kafka).done();
+
         // Wait when EO(UO + TO) will be removed
         kubeClient.waitForResourceDeletion("deployment", entityOperatorDeploymentName(CLUSTER_NAME));
+        kubeClient.waitForResourceDeletion("pod", podName);
     }
 
     @Test
