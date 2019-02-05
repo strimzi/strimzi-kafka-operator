@@ -44,6 +44,9 @@ grep_check '[[]id=(["'"'"'])[[:alnum:]_-]+(?!-[{]context[}])\1' "[id=...] should
 # leveloffset=+
 grep_check 'leveloffset+=[0-9]+'  "It should be leveloffset=+... not +="
 
+# include: should be include::
+grep_check 'include:[^:[ ]+[[]'  "It should be include::...[] (two colons) not include:...[]"
+
 if [ $fatal -gt 0 ]; then
   echo "ERROR: ${fatal} docs problems found."
   exit 1
