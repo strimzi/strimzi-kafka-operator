@@ -7,6 +7,11 @@ if [ ${JAVA_MAJOR_VERSION} -gt 1 ] ; then
   export JAVA_VERSION=${JAVA_MAJOR_VERSION}
 fi
 
+if [ ${JAVA_MAJOR_VERSION} -eq 1 ] ; then
+  # sme parts of the workflow should be done only one on the main build which is currently Java 8
+  export MAIN_BUILD="TRUE"
+fi
+
 export PULL_REQUEST=${PULL_REQUEST:-true}
 export BRANCH=${BRANCH:-master}
 export TAG=${TAG:-latest}
@@ -15,8 +20,7 @@ export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
 
 make docu_check
-if [ ${JAVA_MAJOR_VERSION} -eq 1 ] ; then
-  # only need to check source code once.  findbugs does not support > 1.8 and spotbugs generates spurious warnings
+if [ "${MAIN_BUILD}" -eq "TRUE" ] ; then
   make findbugs
 fi
 make docker_build
@@ -50,8 +54,6 @@ make docker_push
 OLD_DOCKER_ORG=$DOCKER_ORG
 export DOCKER_ORG="localhost:5000/strimzici"
 
-
-
 echo "Running systemtests"
 ./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}
 
@@ -69,15 +71,17 @@ elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     make docu_htmlnoheader
     echo "Not in master branch and not in release tag - nothing to push"
 else
-    echo "Login into Docker Hub ..."
-    docker login -u $DOCKER_USER -p $DOCKER_PASS
+    if [ "${MAIN_BUILD}" -eq "TRUE" ] ; then
+        echo "Login into Docker Hub ..."
+        docker login -u $DOCKER_USER -p $DOCKER_PASS
 
-    export DOCKER_ORG=strimzi
-    export DOCKER_TAG=$TAG
-    echo "Pushing to docker org $DOCKER_ORG"
-    make docker_push
-    if [ "$BRANCH" = "master" ]; then
-        make docu_pushtowebsite
+        export DOCKER_ORG=strimzi
+        export DOCKER_TAG=$TAG
+        echo "Pushing to docker org $DOCKER_ORG"
+        make docker_push
+        if [ "$BRANCH" = "master" ]; then
+            make docu_pushtowebsite
+        fi
+        make pushtonexus
     fi
-    make pushtonexus
 fi
