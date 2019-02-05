@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -41,6 +42,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -192,9 +194,11 @@ class KafkaST extends AbstractST {
         Kafka kafka = resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         // Get pod name to check termination process
-        String podName = client.pods().inNamespace(kubeClient.namespace()).list().getItems()
+        Optional<Pod> pod = client.pods().inNamespace(kubeClient.namespace()).list().getItems()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
-                .findFirst().get().getMetadata().getName();
+                .findFirst();
+
+        assertTrue(pod.isPresent(), "EO pod does not exist");
 
         // Remove EO from Kafka DTO
         kafka.getSpec().setEntityOperator(null);
@@ -203,7 +207,7 @@ class KafkaST extends AbstractST {
 
         // Wait when EO(UO + TO) will be removed
         kubeClient.waitForResourceDeletion("deployment", entityOperatorDeploymentName(CLUSTER_NAME));
-        kubeClient.waitForResourceDeletion("pod", podName);
+        kubeClient.waitForResourceDeletion("pod", pod.get().getMetadata().getName());
     }
 
     @Test
@@ -588,11 +592,12 @@ class KafkaST extends AbstractST {
         assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
-        String podName = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
+        Optional<Pod> pod = CLIENT.pods().inNamespace(kubeClient.namespace()).list().getItems()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
-                .findFirst().get().getMetadata().getName();
+                .findFirst();
+        assertTrue(pod.isPresent(), "EO pod does not exist");
 
-        assertResources(KUBE_CLIENT.namespace(), podName,
+        assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(),
                 "500M", "300m", "500M", "300m");
     }
 
