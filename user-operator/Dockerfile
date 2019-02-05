@@ -7,6 +7,5 @@ COPY ./scripts/ /bin
 
 ADD target/user-operator-${strimzi_version}.jar /
 
-USER 1001
-
+USER strimzi:root
 CMD /bin/user_operator_run.sh /user-operator-${STRIMZI_VERSION}.jar

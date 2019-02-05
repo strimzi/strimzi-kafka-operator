@@ -9,9 +9,10 @@ ENV STUNNEL_HOME=/opt/stunnel
 # The user is in the group 0 to have access to the mounted volumes and storage
 RUN useradd -r -m -u 1001 -g 0 stunnel
 
-RUN mkdir $STUNNEL_HOME && mkdir -p -m g+rw /usr/local/var/run/
+RUN mkdir -p $STUNNEL_HOME && mkdir -p -m g+rw /usr/local/var/run/
 
 # copy scripts for Stunnel
 COPY ./scripts/ $STUNNEL_HOME
 
+USER stunnel:root
 WORKDIR $STUNNEL_HOME

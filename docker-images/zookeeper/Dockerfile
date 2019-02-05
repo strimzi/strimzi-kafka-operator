@@ -6,6 +6,4 @@ EXPOSE 9404
 # copy scripts for starting Zookeeper
 COPY ./scripts/ $KAFKA_HOME
 
-USER 1001
-
 CMD ["/opt/kafka/zookeeper_run.sh"]

@@ -6,6 +6,4 @@ EXPOSE 9091 9092 9404
 # copy scripts for starting Kafka
 COPY ./scripts/ $KAFKA_HOME
 
-USER 1001
-
 CMD ["/opt/kafka/kafka_run.sh"]
