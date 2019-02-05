@@ -9,7 +9,7 @@
 
 * Modify the installation files according to the namespace the Cluster Operator is going to be installed in.
 +
-include:frag-cluster-operator-namespace-sed.adoc[]
+include::frag-cluster-operator-namespace-sed.adoc[]
 
 .Procedure
 
