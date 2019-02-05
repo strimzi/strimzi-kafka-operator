@@ -102,7 +102,7 @@ def buildStrimzi() {
 }
 
 def runSystemTests() {
-    sh "mvn -f ${WORKSPACE}/systemtest/pom.xml -P systemtests verify -DjunitTags=acceptance,regression -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dit.test=KafkaST#testMirrorMaker"
+    sh "mvn -f ${WORKSPACE}/systemtest/pom.xml -P systemtests verify -DjunitTags=acceptance,regression -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
 }
 
 def postAction(String artifactDir) {
