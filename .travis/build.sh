@@ -20,7 +20,7 @@ export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
 
 make docu_check
-if [ "${MAIN_BUILD}" -eq "TRUE" ] ; then
+if [ "${MAIN_BUILD}" = "TRUE" ] ; then
   make findbugs
 fi
 make docker_build
@@ -71,7 +71,7 @@ elif [ "$TAG" = "latest" ] && [ "$BRANCH" != "master" ]; then
     make docu_htmlnoheader
     echo "Not in master branch and not in release tag - nothing to push"
 else
-    if [ "${MAIN_BUILD}" -eq "TRUE" ] ; then
+    if [ "${MAIN_BUILD}" = "TRUE" ] ; then
         echo "Login into Docker Hub ..."
         docker login -u $DOCKER_USER -p $DOCKER_PASS
 
