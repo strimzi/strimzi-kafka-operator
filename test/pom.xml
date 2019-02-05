@@ -39,13 +39,13 @@
         <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-core</artifactId>
-            <version>0.8.1.Final</version>
+            <version>${debezium.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-core</artifactId>
-            <version>0.8.1.Final</version>
+            <version>${debezium.version}</version>
             <type>test-jar</type>
             <scope>compile</scope>
         </dependency>
