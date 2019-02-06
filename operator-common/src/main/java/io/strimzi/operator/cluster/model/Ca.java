@@ -210,7 +210,7 @@ public abstract class Ca {
                 throw new RuntimeException("The Secret " + secret.getMetadata().getNamespace() + "/" + secret.getMetadata().getName() + " is missing the key " + key);
             }
             String certData = secret.getData().get(cert);
-            if (keyData == null || certData == null) {
+            if (certData == null) {
                 throw new RuntimeException("The Secret " + secret.getMetadata().getNamespace() + "/" + secret.getMetadata().getName() + " is missing the key " + cert);
             }
             return new CertAndKey(
