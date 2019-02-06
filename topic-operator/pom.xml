@@ -77,13 +77,11 @@
         <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-core</artifactId>
-            <version>0.8.1.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-core</artifactId>
-            <version>0.8.1.Final</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
