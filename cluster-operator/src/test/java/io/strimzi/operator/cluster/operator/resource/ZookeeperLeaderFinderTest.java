@@ -121,18 +121,24 @@ public class ZookeeperLeaderFinderTest {
                 .connectHandler(socket -> {
                     log.debug("ZK {}: client connection to {}, from {}", id, socket.localAddress(), socket.remoteAddress());
                     socket.exceptionHandler(ex -> log.error(ex));
-                    socket.write("vesvsebserb\n");
-                    int attempt = attempts.getAndIncrement();
-                    if (isLeader.apply(attempt)) {
-                        log.debug("ZK {}: is leader on attempt {}", id, attempt);
-                        socket.write("Mode: ");
-                        socket.write("leader\n");
-                    } else {
-                        log.debug("ZK {}: is not leader on attempt {}", id, attempt);
-                    }
-                    socket.write("vesvsebserb\n");
-                    log.debug("ZK {}: Sent response, closing", id);
-                    socket.close();
+                    StringBuffer sb = new StringBuffer();
+                    socket.handler(buf -> {
+                        sb.append(buf.toString());
+                        if (sb.toString().startsWith("stat")) {
+                            socket.write("vesvsebserb\n");
+                            int attempt = attempts.getAndIncrement();
+                            if (isLeader.apply(attempt)) {
+                                log.debug("ZK {}: is leader on attempt {}", id, attempt);
+                                socket.write("Mode: ");
+                                socket.write("leader\n");
+                            } else {
+                                log.debug("ZK {}: is not leader on attempt {}", id, attempt);
+                            }
+                            socket.write("vesvsebserb\n");
+                            log.debug("ZK {}: Sent response, closing", id);
+                            socket.close();
+                        }
+                    });
                 })
                 .listen(ar -> {
                     if (ar.succeeded()) {

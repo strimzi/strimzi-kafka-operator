@@ -41,7 +41,9 @@ public class ZookeeperLeaderFinder {
 
     private static final Logger log = LogManager.getLogger(ZookeeperLeaderFinder.class);
 
-    static final int UNKNOWN_LEADER = -1;
+    private static final Pattern LEADER_MODE_PATTERN = Pattern.compile("^Mode: leader$", Pattern.MULTILINE);
+
+    public static final int UNKNOWN_LEADER = -1;
 
     private final Vertx vertx;
     private final SecretOperator secretOperator;
@@ -230,14 +232,13 @@ public class ZookeeperLeaderFinder {
         } catch (Throwable t) {
             return Future.failedFuture(t);
         }
-
     }
 
     /**
      * Returns whether the given pod is the zookeeper leader.
      */
     protected Future<Boolean> isLeader(Pod pod, NetClientOptions netClientOptions) {
-        Pattern p = Pattern.compile("^Mode: leader$", Pattern.MULTILINE);
+
         Future<Boolean> future = Future.future();
         String host = host(pod);
         int port = port(pod);
@@ -252,32 +253,32 @@ public class ZookeeperLeaderFinder {
                     NetSocket socket = ar.result();
                     socket.exceptionHandler(ex -> {
                         if (!future.tryFail(ex)) {
-                            log.debug("Ignoring error, since leader status of pod {} is already known: {}", pod.getMetadata().getName(), ex);
+                            log.debug("ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
+                                    host, port, pod.getMetadata().getName(), ex);
                         }
                     });
+                    StringBuilder sb = new StringBuilder();
+                    // We could use socket idle timeout, but this times out even if the server just responds
+                    // very slowly
+                    long timerId = vertx.setTimer(10_000, tid -> {
+                        log.debug("ZK {}:{}: Timeout waiting for Zookeeper {} to close socket",
+                                host, port, socket.remoteAddress());
+                        socket.close();
+                    });
                     socket.closeHandler(v -> {
-                        if (future.tryComplete(Boolean.FALSE)) {
-                            log.debug("ZK {}:{}: closing socked, was not leader", host, port);
+                        vertx.cancelTimer(timerId);
+                        Matcher matcher = LEADER_MODE_PATTERN.matcher(sb);
+                        boolean isLeader = matcher.find();
+                        log.debug("ZK {}:{}: {} leader", host, port, isLeader ? "is" : "is not");
+                        if (!future.tryComplete(isLeader)) {
+                            log.debug("ZK {}:{}: Ignoring leader result: Future is already complete",
+                                    host, port);
                         }
                     });
                     log.debug("ZK {}:{}: upgrading to TLS", host, port);
-                    StringBuilder sb = new StringBuilder();
                     socket.handler(buffer -> {
                         log.trace("buffer: {}", buffer);
-                        if (!future.isComplete()) {
-                            String s = buffer.getString(0, buffer.length(), "UTF-8");
-                            sb.append(s);
-                            log.trace("appended: {}", sb);
-                            Matcher m = p.matcher(sb);
-                            if (m.find()) {
-                                log.debug("ZK {}:{}: is leader", host, port);
-                                future.complete(Boolean.TRUE);
-                            }
-                            int i = sb.lastIndexOf("\n");
-                            if (i != -1) {
-                                sb.delete(0, i + 1);
-                            }
-                        }
+                        sb.append(buffer.toString());
                     });
                     log.debug("ZK {}:{}: sending stat", host, port);
                     socket.write("stat");
