@@ -251,16 +251,13 @@ public class ZookeeperLeaderFinder {
                     log.debug("ZK {}:{}: connected", host, port);
                     NetSocket socket = ar.result();
                     socket.exceptionHandler(ex -> {
-                        if (!future.isComplete()) {
-                            future.fail(ex);
-                        } else {
-                            log.debug("Ignoring error, since leader status of pod {} is already known", pod.getMetadata().getName());
+                        if (!future.tryFail(ex)) {
+                            log.debug("Ignoring error, since leader status of pod {} is already known: {}", pod.getMetadata().getName(), ex);
                         }
                     });
                     socket.closeHandler(v -> {
-                        if (!future.isComplete()) {
+                        if (future.tryComplete(Boolean.FALSE)) {
                             log.debug("ZK {}:{}: closing socked, was not leader", host, port);
-                            future.complete(Boolean.FALSE);
                         }
                     });
                     log.debug("ZK {}:{}: upgrading to TLS", host, port);
