@@ -23,3 +23,19 @@ data:
         annotations:
           summary: 'Kakfa no active controller'
           description: 'There is no active controller in the cluster'
+      - alert: UnderMinIsrPartitionCount
+        expr: kafka_server_replicamanager_underminisrpartitioncount > 0
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Kakfa under min ISR partitions'
+          description: 'There are {{ $value }} partitions under the min ISR on {{ $labels.kubernetes_pod_name }}'
+      - alert: OfflineLogDirectoryCount
+        expr: kafka_log_logmanager_offlinelogdirectorycount > 0
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Kakfa offline log directories'
+          description: 'There are {{ $value }} offline log directoris on {{ $labels.kubernetes_pod_name }}'

@@ -37,7 +37,7 @@ endif::Kubernetes[]
 
 === Prometheus
 
-The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml[`kubernetes.yaml`] YAML file describes all the resources required by Prometheus in order to effectively monitor a Strimzi Kafka & ZooKeeper cluster.
+The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml[`prometheus.yaml`] YAML file describes all the resources required by Prometheus in order to effectively monitor a Strimzi Kafka & ZooKeeper cluster.
 These resources lack important production configuration to run a healthy and highly available Prometheus server.
 They should only be used to demonstrate this Grafana dashboard example.
 
@@ -52,11 +52,11 @@ The following resources are defined:
 
 ==== Deploying on {OpenShiftName}
 
-The provided `kubernetes.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
+The provided `prometheus.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
 If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
 
 To deploy all these resources you can run the following.
 
@@ -67,11 +67,11 @@ oc apply -f prometheus.yaml
 ifdef::Kubernetes[]
 ==== Deploying on {KubernetesName}
 
-The provided `kubernetes.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
+The provided `prometheus.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
 If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/kubernetes.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
 
 To deploy all these resources you can run the following.
 
@@ -89,7 +89,7 @@ A Grafana server is necessary to get a visualisation of the Prometheus metrics. 
 To deploy Grafana the following commands should be executed:
 
 [source,shell,subs=attributes+]
-oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/kubernetes.yaml
+oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/grafana.yaml
 
 ifdef::Kubernetes[]
 ==== Deploying on {KubernetesName}
@@ -97,7 +97,7 @@ ifdef::Kubernetes[]
 To deploy Grafana the following commands should be executed:
 
 [source,shell,subs=attributes+]
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/kubernetes.yaml
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/grafana/grafana.yaml
 
 endif::Kubernetes[]
 
