@@ -29,7 +29,7 @@ public class KafkaExternalBrokerService implements Serializable {
     private Integer advertisedPort;
     private Integer nodePort;
 
-    @Description("Index of the kafka broker (broker identifier)")
+    @Description("Id of the kafka broker (broker identifier)")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getBroker() {
         return broker;

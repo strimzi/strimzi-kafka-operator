@@ -86,6 +86,11 @@ When selecting the node address, the different address types are used with the f
 . InternalDNS
 . InternalIP
 
+By default, TLS encryption is enabled.
+To disable it, set the `tls` field to `false`.
+
+NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
+
 It is possible to override the auto assigned node ports for bootstrap service and brokers, and advertised host and port for each broker.
 
 .An example where the external listener is configured with overrides for node ports and advertised addresses
@@ -100,27 +105,22 @@ listeners:
       type: tls
     overrides:
       bootstrap:
-        nodePort: 30001
+        nodePort: 32100
       brokers:
       - broker: 0
         advertisedHost: example.host.1
-        advertisedPort: 32401
-        nodePort: 32401
+        advertisedPort: 12340
+        nodePort: 32000
       - broker: 1
         advertisedHost: example.host.2
-        advertisedPort: 32402
-        nodePort: 32402
+        advertisedPort: 12341
+        nodePort: 32001
       - broker: 2
         advertisedHost: example.host.3
-        advertisedPort: 32403
-        nodePort: 32403
+        advertisedPort: 12342
+        nodePort: 32002
 # ...
 ----
-
-By default, TLS encryption is enabled.
-To disable it, set the `tls` field to `false`.
-
-NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
 For more information on using node ports to access Kafka, see xref:proc-accessing-kafka-using-nodeports-{context}[].
 

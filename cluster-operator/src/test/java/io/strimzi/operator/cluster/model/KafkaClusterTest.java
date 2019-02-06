@@ -643,7 +643,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         SortedMap<Integer, String> addresses = new TreeMap<>();
-        addresses.put(0, "32123");
+        addresses.put(0, "32101");
         addresses.put(1, "32456");
         addresses.put(2, "32789");
         kc.setExternalAddresses(addresses);
