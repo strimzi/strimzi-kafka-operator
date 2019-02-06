@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
@@ -24,8 +25,8 @@ import io.vertx.core.net.PemTrustOptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.List;
@@ -52,26 +53,65 @@ public class ZookeeperLeaderFinder {
         this.backOffSupplier = backOffSupplier;
     }
 
-    /*test*/ NetClientOptions clientOptions(CertAndKey coCertKey, Secret clusterCaCertificateSecret)
-            throws GeneralSecurityException, IOException {
-
-        CertificateFactory x509 = CertificateFactory.getInstance("X.509");
-        Base64.Decoder decoder = Base64.getDecoder();
-
-        // Validate the certificates are not corrupt
-        //x509.generateCertificate(new ByteArrayInputStream(decoder.decode(clusterCaCertificateSecret.getData().get(Ca.CA_CRT))));
-        //x509.generateCertificate(new ByteArrayInputStream(coCertKey.cert()));
-
-        log.debug("Cluster CA cert\n{}", Buffer.buffer(decoder.decode(clusterCaCertificateSecret.getData().get(Ca.CA_CRT))));
+    /*test*/ NetClientOptions clientOptions(Secret coCertKeySecret, Secret clusterCaCertificateSecret) {
         return new NetClientOptions()
                 .setConnectTimeout(10_000)
                 .setSsl(true)
-                //.setHostnameVerificationAlgorithm("HTTPS")
-                .setPemKeyCertOptions(new PemKeyCertOptions()
-                        .setCertValue(Buffer.buffer(coCertKey.cert()))
-                        .setKeyValue(Buffer.buffer(coCertKey.key())))
-                .setPemTrustOptions(new PemTrustOptions()
-                        .addCertValue(Buffer.buffer(decoder.decode(clusterCaCertificateSecret.getData().get(Ca.CA_CRT)))));
+                .setHostnameVerificationAlgorithm("HTTPS")
+                .setPemKeyCertOptions(keyCertOptions(coCertKeySecret))
+                .setPemTrustOptions(trustOptions(clusterCaCertificateSecret));
+    }
+
+    private CertificateFactory x509Factory() {
+        CertificateFactory x509;
+        try {
+            x509 = CertificateFactory.getInstance("X.509");
+        } catch (CertificateException e) {
+            throw new RuntimeException("No security provider supports X.509");
+        }
+        return x509;
+    }
+
+    /**
+     * Validate the cluster CA certificate passed in the given Secret
+     * and return the PemTrustOptions for trusting it.
+     */
+    protected PemTrustOptions trustOptions(Secret clusterCaCertificateSecret) {
+        Base64.Decoder decoder = Base64.getDecoder();
+        CertificateFactory x509 = x509Factory();
+        byte[] certBytes = decoder.decode(clusterCaCertificateSecret.getData().get(Ca.CA_CRT));
+        try {
+            x509.generateCertificate(new ByteArrayInputStream(certBytes));
+        } catch (CertificateException e) {
+            throw corruptCertificate(clusterCaCertificateSecret, Ca.CA_CRT, e);
+        }
+        return new PemTrustOptions()
+                .addCertValue(Buffer.buffer(certBytes));
+    }
+
+    private RuntimeException corruptCertificate(Secret secret, String certKey, CertificateException e) {
+        return new RuntimeException("Bad/corrupt certificate found in data." + certKey + " of Secret "
+                + secret.getMetadata().getName() + " in namespace " + secret.getMetadata().getNamespace(), e);
+    }
+
+    /**
+     * Validate the CO certificate and key passed in the given Secret
+     * and return the PemKeyCertOptions for using it for TLS authentication.
+     */
+    protected PemKeyCertOptions keyCertOptions(Secret coCertKeySecret) {
+        CertAndKey coCertKey = Ca.asCertAndKey(coCertKeySecret, "cluster-operator.key", "cluster-operator.crt");
+        if (coCertKey == null) {
+            throw missingSecretFuture(coCertKeySecret.getMetadata().getNamespace(), coCertKeySecret.getMetadata().getName());
+        }
+        CertificateFactory x509 = x509Factory();
+        try {
+            x509.generateCertificate(new ByteArrayInputStream(coCertKey.cert()));
+        } catch (CertificateException e) {
+            throw corruptCertificate(coCertKeySecret, "cluster-operator.crt", e);
+        }
+        return new PemKeyCertOptions()
+                .setCertValue(Buffer.buffer(coCertKey.cert()))
+                .setKeyValue(Buffer.buffer(coCertKey.key()));
     }
 
     /**
@@ -90,18 +130,14 @@ public class ZookeeperLeaderFinder {
         return CompositeFuture.join(brokersSecretFuture, clusterCaKeySecretFuture).compose(c -> {
             Secret brokersSecret = c.resultAt(0);
             if (brokersSecret == null) {
-                return missingSecretFuture(namespace, brokersSecretName);
+                return Future.failedFuture(missingSecretFuture(namespace, brokersSecretName));
             }
             Secret clusterCaCertificateSecret = c.resultAt(1);
             if (clusterCaCertificateSecret  == null) {
-                return missingSecretFuture(namespace, brokersSecretName);
+                return Future.failedFuture(missingSecretFuture(namespace, brokersSecretName));
             }
             try {
-                CertAndKey coCertKey = Ca.asCertAndKey(brokersSecret, "cluster-operator.key", "cluster-operator.crt");
-                if (coCertKey == null) {
-                    return missingSecretFuture(namespace, brokersSecretName);
-                }
-                NetClientOptions netClientOptions = clientOptions(coCertKey, clusterCaCertificateSecret);
+                NetClientOptions netClientOptions = clientOptions(brokersSecret, clusterCaCertificateSecret);
                 return zookeeperLeader(cluster, namespace, pods, netClientOptions);
             } catch (Throwable e) {
                 return Future.failedFuture(e);
@@ -110,9 +146,8 @@ public class ZookeeperLeaderFinder {
 
     }
 
-    private Future<Integer> missingSecretFuture(String namespace, String brokersSecretName) {
-        return Future.failedFuture(
-                new RuntimeException("Secret " + namespace + "/" + brokersSecretName + " does not exist"));
+    private RuntimeException missingSecretFuture(String namespace, String secretName) {
+        return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
     }
 
     private Future<Integer> zookeeperLeader(String cluster, String namespace, List<Pod> pods,
@@ -249,9 +284,23 @@ public class ZookeeperLeaderFinder {
         return future;
     }
 
+    // the Kubernetes service DNS domain is customizable on cluster creation but it's "cluster.local" by default
+    // there is no clean way to get it from a running application so we are passing it through an env var
+    public static final String KUBERNETES_SERVICE_DNS_DOMAIN =
+            System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
+
+    private static final Pattern PATTERN = Pattern.compile("^(.*)-zookeeper-[0-9]+$");
+
     /** The hostname for connecting to zookeeper in the given pod. */
     protected String host(Pod pod) {
-        return pod.getStatus().getPodIP();
+        String podName = pod.getMetadata().getName();
+        Matcher matcher = PATTERN.matcher(podName);
+        if (matcher.matches()) {
+            String cluster = matcher.group(1);
+            return String.format("%s.%s.%s.svc.%s", pod.getMetadata().getName(), ZookeeperCluster.headlessServiceName(cluster), pod.getMetadata().getNamespace(), KUBERNETES_SERVICE_DNS_DOMAIN);
+        } else {
+            throw new RuntimeException(podName + " did not match " + PATTERN.pattern());
+        }
     }
 
     /** The port number for connecting to zookeeper in the given pod. */

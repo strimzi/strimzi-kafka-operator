@@ -32,6 +32,8 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -155,6 +157,14 @@ public class PartialRollingUpdateTest {
             @Override
             protected Future<Boolean> isLeader(Pod pod, NetClientOptions options) {
                 return Future.succeededFuture(true);
+            }
+            @Override
+            protected PemTrustOptions trustOptions(Secret s) {
+                return new PemTrustOptions();
+            }
+            @Override
+            protected PemKeyCertOptions keyCertOptions(Secret s) {
+                return new PemKeyCertOptions();
             }
         };
         return new ResourceOperatorSupplier(vertx, bootstrapClient, leaderFinder, true, 60_000L);

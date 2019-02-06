@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -48,6 +49,8 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunnerWithParametersFactory;
@@ -253,6 +256,14 @@ public class KafkaAssemblyOperatorMockTest {
             @Override
             protected Future<Boolean> isLeader(Pod pod, NetClientOptions netClientOptions) {
                 return Future.succeededFuture(true);
+            }
+            @Override
+            protected PemTrustOptions trustOptions(Secret s) {
+                return new PemTrustOptions();
+            }
+            @Override
+            protected PemKeyCertOptions keyCertOptions(Secret s) {
+                return new PemKeyCertOptions();
             }
         };
         return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder, true, 2_000);

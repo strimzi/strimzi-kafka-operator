@@ -6,16 +6,13 @@ package io.strimzi.operator.common;
 
 /**
  * <p>Encapsulates computing delays for an exponential back-off, when an operation has to be retried.
- * The {@link #delayMs()} method will return an increasing delay to be used between operation attempts.
- * <pre>
- *        |<-- delayMs -->|<-- delayMs -->|
- *     attempt         attempt         attempt
- * </pre>
- * The delays after the 0th attempt is always 0ms and the remaining delays are computed by the formula
- * <pre>
- *     delayMs(n) = scaleMs * base ^ attempt
- * </pre>
- * <p>Thus the delay after the 1st attempt is {@code scaleMs}, and after the 2nd attempt is {@code scaleMs * base}.
+ * The {@link #delayMs()} method will return an increasing delay to be used between operation attempts.</p>
+ * <pre>{@literal
+ *     |<-attempt->    |<-attempt->        |<-attempt->|*fail*
+ *     |<-- delayMs -->|<---- delayMs ---->|           |}</pre>
+ * <p>The delays after the 0th attempt is always 0ms and the remaining delays are computed by the formula:</p>
+ * <pre>  delayMs(n) = scaleMs * base ^ attempt</pre>
+ * <p>Thus the delay after the 1st attempt is {@code scaleMs}, and after the 2nd attempt is {@code scaleMs * base}.</p>
  */
 public class BackOff {
 

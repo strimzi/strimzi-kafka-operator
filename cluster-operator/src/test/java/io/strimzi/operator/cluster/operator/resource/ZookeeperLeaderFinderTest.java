@@ -9,9 +9,9 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -71,7 +71,7 @@ public class ZookeeperLeaderFinderTest {
         }
 
         @Override
-        NetClientOptions clientOptions(CertAndKey coCertKey, Secret clusterCaCertificateSecret) {
+        NetClientOptions clientOptions(Secret coCertKeySecret, Secret clusterCaCertificateSecret) {
             return new NetClientOptions()
                     .setKeyCertOptions(coCertificate.keyCertOptions())
                     .setTrustOptions(zkCertificate.trustOptions())
@@ -286,6 +286,7 @@ public class ZookeeperLeaderFinderTest {
 
     @Test
     public void testTimeoutDueToNetworkExceptions(TestContext context) {
+        System.err.println(new BackOff(5_000, 2, 4).totalDelayMs());
         when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
                 .thenReturn(Future.succeededFuture(
                         new SecretBuilder()
@@ -412,5 +413,17 @@ public class ZookeeperLeaderFinderTest {
 
     Pod getPod(int id) {
         return new PodBuilder().withNewMetadata().withName("my-cluster-kafka-" + id).endMetadata().build();
+    }
+
+    @Test
+    public void testGetHost() {
+        Pod pod = new PodBuilder()
+                .withNewMetadata()
+                    .withName(ZookeeperCluster.zookeeperPodName("my-cluster", 3))
+                    .withNamespace("myproject")
+                .endMetadata()
+            .build();
+        assertEquals("my-cluster-zookeeper-3.my-cluster-zookeeper-nodes.myproject.svc.cluster.local",
+                new ZookeeperLeaderFinder(vertx, null, this::backoff).host(pod));
     }
 }
