@@ -219,6 +219,9 @@ class LogSettingST extends AbstractST {
     @BeforeAll
     void createClassResources() {
         LOGGER.info("Create resources for the tests");
+        prepareEnvForOperator(NAMESPACE);
+
+        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
@@ -311,7 +314,7 @@ class LogSettingST extends AbstractST {
                 .endSpec()
                 .done();
 
-        testClassResources.kafkaEphemeral(GC_LOGGING_NONSET_NAME, 3)
+        testClassResources.kafkaEphemeral(GC_LOGGING_NONSET_NAME, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -336,12 +339,19 @@ class LogSettingST extends AbstractST {
     }
 
     @AfterAll
-    static void deleteClassResources() {
+    void deleteClassResources() {
         TimeMeasuringSystem.stopOperation(operationID);
+        testClassResources.deleteResources();
+        teardownEnvForOperator();
     }
 
     private String startDeploymentMeasuring() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
         return TimeMeasuringSystem.startOperation(Operation.CLASS_EXECUTION);
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        LOGGER.info("Skip env recreation after failed tests!");
     }
 }

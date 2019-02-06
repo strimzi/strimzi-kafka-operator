@@ -287,11 +287,7 @@ class KafkaST extends AbstractST {
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = KUBE_CLIENT.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("transaction.state.log.replication.factor=1")));
-            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("default.replication.factor=1")));
-            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("offsets.topic.replication.factor=1")));
+                    hasItem("offsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1\ndefault.replication.factor=1")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
