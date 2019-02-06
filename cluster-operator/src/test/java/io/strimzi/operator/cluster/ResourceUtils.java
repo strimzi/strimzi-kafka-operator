@@ -6,8 +6,10 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -36,9 +38,17 @@ import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -423,5 +433,25 @@ public class ResourceUtils {
             });
         } catch (IOException e) {
         }
+    }
+
+    public static ZookeeperLeaderFinder zookeeperLeaderFinder(Vertx vertx, KubernetesClient client) {
+        return new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
+            () -> new BackOff(5_000, 2, 4)) {
+            @Override
+            protected Future<Boolean> isLeader(Pod pod, NetClientOptions options) {
+                return Future.succeededFuture(true);
+            }
+
+            @Override
+            protected PemTrustOptions trustOptions(Secret s) {
+                return new PemTrustOptions();
+            }
+
+            @Override
+            protected PemKeyCertOptions keyCertOptions(Secret s) {
+                return new PemKeyCertOptions();
+            }
+        };
     }
 }

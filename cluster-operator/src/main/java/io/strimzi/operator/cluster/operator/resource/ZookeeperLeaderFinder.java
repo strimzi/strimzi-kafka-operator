@@ -90,7 +90,7 @@ public class ZookeeperLeaderFinder {
     }
 
     private RuntimeException corruptCertificate(Secret secret, String certKey, CertificateException e) {
-        return new RuntimeException("Bad/corrupt certificate found in data." + certKey + " of Secret "
+        return new RuntimeException("Bad/corrupt certificate found in data." + certKey.replace(".", "\\.") + " of Secret "
                 + secret.getMetadata().getName() + " in namespace " + secret.getMetadata().getNamespace(), e);
     }
 
@@ -284,23 +284,9 @@ public class ZookeeperLeaderFinder {
         return future;
     }
 
-    // the Kubernetes service DNS domain is customizable on cluster creation but it's "cluster.local" by default
-    // there is no clean way to get it from a running application so we are passing it through an env var
-    public static final String KUBERNETES_SERVICE_DNS_DOMAIN =
-            System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
-
-    private static final Pattern PATTERN = Pattern.compile("^(.*)-zookeeper-[0-9]+$");
-
     /** The hostname for connecting to zookeeper in the given pod. */
     protected String host(Pod pod) {
-        String podName = pod.getMetadata().getName();
-        Matcher matcher = PATTERN.matcher(podName);
-        if (matcher.matches()) {
-            String cluster = matcher.group(1);
-            return String.format("%s.%s.%s.svc.%s", pod.getMetadata().getName(), ZookeeperCluster.headlessServiceName(cluster), pod.getMetadata().getNamespace(), KUBERNETES_SERVICE_DNS_DOMAIN);
-        } else {
-            throw new RuntimeException(podName + " did not match " + PATTERN.pattern());
-        }
+        ZookeeperCluster.podDnsName(pod.getMetadata().getNamespace(), pod.getMetadata().getName());
     }
 
     /** The port number for connecting to zookeeper in the given pod. */

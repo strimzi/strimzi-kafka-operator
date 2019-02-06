@@ -21,10 +21,6 @@ import java.util.regex.Pattern;
 
 public class ClusterCa extends Ca {
 
-    // the Kubernetes service DNS domain is customizable on cluster creation but it's "cluster.local" by default
-    // there is no clean way to get it from a running application so we are passing it through an env var
-    public static final String KUBERNETES_SERVICE_DNS_DOMAIN =
-            System.getenv().getOrDefault("KUBERNETES_SERVICE_DNS_DOMAIN", "cluster.local");
     private final String clusterName;
     private Secret entityOperatorSecret;
     private Secret topicOperatorSecret;
@@ -114,8 +110,8 @@ public class ClusterCa extends Ca {
             sbjAltNames.put("DNS.1", ZookeeperCluster.serviceName(cluster));
             sbjAltNames.put("DNS.2", String.format("%s.%s", ZookeeperCluster.serviceName(cluster), namespace));
             sbjAltNames.put("DNS.3", String.format("%s.%s.svc", ZookeeperCluster.serviceName(cluster), namespace));
-            sbjAltNames.put("DNS.4", String.format("%s.%s.svc.%s", ZookeeperCluster.serviceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
-            sbjAltNames.put("DNS.5", String.format("%s.%s.%s.svc.%s", ZookeeperCluster.zookeeperPodName(cluster, i), ZookeeperCluster.headlessServiceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.4", String.format("%s.%s.svc.%s", ZookeeperCluster.serviceName(cluster), namespace, ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.5", ZookeeperCluster.podDnsName(namespace, cluster, i));
 
             Subject subject = new Subject();
             subject.setOrganizationName("io.strimzi");
@@ -141,8 +137,8 @@ public class ClusterCa extends Ca {
             sbjAltNames.put("DNS.1", KafkaCluster.serviceName(cluster));
             sbjAltNames.put("DNS.2", String.format("%s.%s", KafkaCluster.serviceName(cluster), namespace));
             sbjAltNames.put("DNS.3", String.format("%s.%s.svc", KafkaCluster.serviceName(cluster), namespace));
-            sbjAltNames.put("DNS.4", String.format("%s.%s.svc.%s", KafkaCluster.serviceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
-            sbjAltNames.put("DNS.5", String.format("%s.%s.%s.svc.%s", KafkaCluster.kafkaPodName(cluster, i), KafkaCluster.headlessServiceName(cluster), namespace, KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.4", String.format("%s.%s.svc.%s", KafkaCluster.serviceName(cluster), namespace, ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN));
+            sbjAltNames.put("DNS.5", KafkaCluster.podDnsName(namespace, cluster, i));
             int nextDnsId = 6;
             int nextIpId = 1;
             if (externalBootstrapAddress != null)   {

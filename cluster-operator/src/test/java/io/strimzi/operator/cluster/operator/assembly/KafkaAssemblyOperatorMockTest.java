@@ -7,9 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -39,18 +37,12 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
-import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunnerWithParametersFactory;
@@ -251,21 +243,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {
-        ZookeeperLeaderFinder leaderFinder = new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, mockClient),
-            () -> new BackOff(5_000, 2, 4)) {
-            @Override
-            protected Future<Boolean> isLeader(Pod pod, NetClientOptions netClientOptions) {
-                return Future.succeededFuture(true);
-            }
-            @Override
-            protected PemTrustOptions trustOptions(Secret s) {
-                return new PemTrustOptions();
-            }
-            @Override
-            protected PemKeyCertOptions keyCertOptions(Secret s) {
-                return new PemKeyCertOptions();
-            }
-        };
+        ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, mockClient);
         return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder, true, 2_000);
     }
 

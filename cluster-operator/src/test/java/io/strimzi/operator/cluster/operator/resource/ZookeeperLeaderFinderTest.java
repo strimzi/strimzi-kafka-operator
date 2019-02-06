@@ -43,6 +43,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -237,6 +238,36 @@ public class ZookeeperLeaderFinderTest {
         assertEquals("The Secret testns/testcluster-cluster-operator-certs is missing the key cluster-operator.key",
                 finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                         asList(getPod(0), getPod(1))).cause().getMessage());
+    }
+
+    @Test
+    public void testSecretsCorrupted() {
+        SecretOperator mock = mock(SecretOperator.class);
+        ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, mock, this::backoff);
+
+        when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
+                .thenReturn(Future.succeededFuture(
+                        new SecretBuilder()
+                                .withNewMetadata()
+                                .withName(ClusterOperator.secretName(CLUSTER))
+                                .withNamespace(NAMESPACE)
+                                .endMetadata()
+                                .withData(map("cluster-operator.key", "notacert",
+                                        "cluster-operator.crt", "notacert"))
+                                .build()));
+        when(mock.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER))))
+                .thenReturn(Future.succeededFuture(
+                        new SecretBuilder()
+                                .withNewMetadata()
+                                .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER))
+                                .withNamespace(NAMESPACE)
+                                .endMetadata()
+                                .withData(map(Ca.CA_CRT, "notacert"))
+                                .build()));
+        Throwable cause = finder.findZookeeperLeader(CLUSTER, NAMESPACE,
+                asList(getPod(0), getPod(1))).cause();
+        assertTrue(cause instanceof RuntimeException);
+        assertEquals("Bad/corrupt certificate found in data.cluster-operator\\.crt of Secret testcluster-cluster-operator-certs in namespace testns", cause.getMessage());
     }
 
     @Test

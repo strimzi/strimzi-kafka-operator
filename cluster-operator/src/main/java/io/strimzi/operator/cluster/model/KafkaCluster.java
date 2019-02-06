@@ -216,6 +216,14 @@ public class KafkaCluster extends AbstractModel {
         return KafkaResources.bootstrapServiceName(cluster);
     }
 
+    public static String podDnsName(String namespace, String cluster, int podId) {
+        return String.format("%s.%s.%s.svc.%s",
+                KafkaCluster.kafkaPodName(cluster, podId),
+                KafkaCluster.headlessServiceName(cluster),
+                namespace,
+                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
+    }
+
     /**
      * Generates the name of the service used as bootstrap service for external clients
      *

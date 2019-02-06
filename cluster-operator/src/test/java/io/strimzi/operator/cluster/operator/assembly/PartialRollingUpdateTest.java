@@ -24,16 +24,10 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
-import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PemTrustOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -152,21 +146,7 @@ public class PartialRollingUpdateTest {
     }
 
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
-        ZookeeperLeaderFinder leaderFinder = new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, bootstrapClient),
-            () -> new BackOff(5_000, 2, 4)) {
-            @Override
-            protected Future<Boolean> isLeader(Pod pod, NetClientOptions options) {
-                return Future.succeededFuture(true);
-            }
-            @Override
-            protected PemTrustOptions trustOptions(Secret s) {
-                return new PemTrustOptions();
-            }
-            @Override
-            protected PemKeyCertOptions keyCertOptions(Secret s) {
-                return new PemKeyCertOptions();
-            }
-        };
+        ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient);
         return new ResourceOperatorSupplier(vertx, bootstrapClient, leaderFinder, true, 60_000L);
     }
 
