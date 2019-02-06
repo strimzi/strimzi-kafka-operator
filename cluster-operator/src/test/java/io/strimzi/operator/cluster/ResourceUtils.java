@@ -61,6 +61,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class ResourceUtils {
 
     private ResourceUtils() {

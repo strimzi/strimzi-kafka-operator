@@ -286,7 +286,7 @@ public class ZookeeperLeaderFinder {
 
     /** The hostname for connecting to zookeeper in the given pod. */
     protected String host(Pod pod) {
-        ZookeeperCluster.podDnsName(pod.getMetadata().getNamespace(), pod.getMetadata().getName());
+        return ZookeeperCluster.podDnsName(pod.getMetadata().getNamespace(), pod.getMetadata().getName());
     }
 
     /** The port number for connecting to zookeeper in the given pod. */
