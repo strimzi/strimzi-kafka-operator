@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+data:
+  rules.yml: |
+    groups:
+    - name: kafka
+      rules:
+      - alert: UnderReplicatedPartitions
+        expr: kafka_server_replicamanager_underreplicatedpartitions > 0
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Kakfa under replicated partitions'
+          description: 'There are {{ $value }} under replicated partitions on {{ $labels.kubernetes_pod_name }}'
+      - alert: NoActiveController
+        expr: sum(kafka_controller_kafkacontroller_activecontrollercount) == 0
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Kakfa no active controller'
+          description: 'There is no active controller in the cluster'
