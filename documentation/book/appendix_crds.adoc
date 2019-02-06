@@ -336,7 +336,7 @@ Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalService
 [options="header"]
 |====
 |Field                  |Description
-|broker          1.2+<.<|Index of the kafka broker (broker identifier).
+|broker          1.2+<.<|Id of the kafka broker (broker identifier).
 |integer
 |advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
 |string
