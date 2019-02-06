@@ -8,7 +8,9 @@ RELEASE_PATH ?= ../strimzi-$(RELEASE_VERSION)/examples/$(PROJECT_NAME)
 release:
 	mkdir -p $(RELEASE_PATH)
 	mkdir -p $(RELEASE_PATH)/grafana-dashboards
+	mkdir -p $(RELEASE_PATH)/prometheus-rules
 	$(CP) -r ./examples/kafka/* $(RELEASE_PATH)/
 	$(CP) -r ./examples/grafana/*.json $(RELEASE_PATH)/grafana-dashboards/
+	$(CP) -r ./examples/prometheus/prometheus-rules.yaml $(RELEASE_PATH)/prometheus-rules/
 
 .PHONY: all build clean docker_build docker_push docker_tag findbugs
