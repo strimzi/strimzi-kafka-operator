@@ -294,30 +294,30 @@ public class ZookeeperLeaderFinderTest {
                                 .withData(map(Ca.CA_CRT, "notacert"))
                                 .build()));
 
-        int[] ports = startMockZks(context, 2, (id, attempt) -> {
-            System.err.println("attempt " + attempt + " node " + id);
-            return false;
-        });
+        int[] ports = startMockZks(context, 2, (id, attempt) -> false);
 
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Async a = context.async();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                     asList(getPod(0), getPod(1)))
-            .compose(result -> {
-                context.assertEquals(-1, result);
-                for (FakeZk zk : zks) {
-                    context.assertEquals(MAX_ATTEMPTS + 1, zk.attempts.get(),
-                            "Unexpected number of attempts for node " + zk.id);
+            .setHandler(ar -> {
+                if (ar.succeeded()) {
+                    context.assertEquals(-1, ar.result());
+                    for (FakeZk zk : zks) {
+                        context.assertEquals(MAX_ATTEMPTS + 1, zk.attempts.get(),
+                                "Unexpected number of attempts for node " + zk.id);
+                    }
+                } else {
+                    ar.cause().printStackTrace();
+                    context.fail();
                 }
                 a.complete();
-                return Future.succeededFuture();
             });
     }
 
     @Test
     public void testTimeoutDueToNetworkExceptions(TestContext context) {
-        System.err.println(new BackOff(5_000, 2, 4).totalDelayMs());
         when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
                 .thenReturn(Future.succeededFuture(
                         new SecretBuilder()
@@ -388,14 +388,18 @@ public class ZookeeperLeaderFinderTest {
         Async a = context.async();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                 asList(getPod(0), getPod(1)))
-                .compose(result -> {
-                    context.assertEquals(leader, result);
-                    for (FakeZk zk : zks) {
-                        context.assertEquals(succeedOnAttempt + 1, zk.attempts.get(),
-                                "Unexpected number of attempts for node " + zk.id);
+                .setHandler(ar -> {
+                    if (ar.succeeded()) {
+                        context.assertEquals(leader, ar.result());
+                        for (FakeZk zk : zks) {
+                            context.assertEquals(succeedOnAttempt + 1, zk.attempts.get(),
+                                    "Unexpected number of attempts for node " + zk.id);
+                        }
+                    } else {
+                        ar.cause().printStackTrace();
+                        context.fail();
                     }
                     a.complete();
-                    return Future.succeededFuture();
                 });
     }
 
