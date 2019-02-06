@@ -43,6 +43,7 @@ public class ResourceOperatorSupplier {
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, boolean isOpenShift, long operationTimeoutMs) {
         this(vertx, client, new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
+            // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
             () -> new BackOff(5_000, 2, 4)),
                     isOpenShift, operationTimeoutMs);
     }

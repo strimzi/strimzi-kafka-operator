@@ -5,7 +5,17 @@
 package io.strimzi.operator.common;
 
 /**
- * Encapsulates computing delays for an exponential back-off.
+ * <p>Encapsulates computing delays for an exponential back-off, when an operation has to be retried.
+ * The {@link #delayMs()} method will return an increasing delay to be used between operation attempts.
+ * <pre>
+ *        |<-- delayMs -->|<-- delayMs -->|
+ *     attempt         attempt         attempt
+ * </pre>
+ * The delays after the 0th attempt is always 0ms and the remaining delays are computed by the formula
+ * <pre>
+ *     delayMs(n) = scaleMs * base ^ attempt
+ * </pre>
+ * <p>Thus the delay after the 1st attempt is {@code scaleMs}, and after the 2nd attempt is {@code scaleMs * base}.
  */
 public class BackOff {
 
@@ -18,14 +28,23 @@ public class BackOff {
     private final int maxAttempts;
     private int attempt = 0;
 
+    /**
+     * Computes delays according to {@code 200 * 2^attempt} with a maximum of 6 attempts.
+     */
     public BackOff() {
         this(DEFAULT_SCALE_MS, DEFAULT_BASE, DEFAULT_MAX_ATTEMPTS);
     }
 
+    /**
+     * Computes delays according to {@code 200 * 2^attempt} with the given maximum number of attempts.
+     */
     public BackOff(int maxAttempts) {
         this(DEFAULT_SCALE_MS, DEFAULT_BASE, maxAttempts);
     }
 
+    /**
+     * Computes delays according to {@code scaleMs * base^attempt} with the given maximum number of attempts.
+     */
     public BackOff(long scaleMs, int base, int maxAttempts) {
         if (scaleMs <= 0) {
             throw new IllegalArgumentException();
@@ -42,14 +61,14 @@ public class BackOff {
     }
 
     /**
-     * The maximum number of attempts
+     * The maximum number of attempts.
      */
     public int maxAttempts() {
         return maxAttempts;
     }
 
     /**
-     * The maximum number of attempts
+     * The maximum number of delays.
      */
     public int maxNumDelays() {
         return maxAttempts - 1;

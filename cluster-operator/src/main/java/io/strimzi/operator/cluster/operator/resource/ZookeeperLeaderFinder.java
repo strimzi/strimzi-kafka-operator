@@ -62,21 +62,16 @@ public class ZookeeperLeaderFinder {
         //x509.generateCertificate(new ByteArrayInputStream(decoder.decode(clusterCaCertificateSecret.getData().get(Ca.CA_CRT))));
         //x509.generateCertificate(new ByteArrayInputStream(coCertKey.cert()));
 
-        Buffer coCertBuffer = Buffer.buffer(coCertKey.cert());
-        log.debug("CO cert\n{}", coCertBuffer);
-        Buffer coKeyBuffer = Buffer.buffer(coCertKey.key());
-        //log.debug("CO key\n{}", coKeyBuffer);
-        Buffer clusterCaCertBuffer = Buffer.buffer(decoder.decode(clusterCaCertificateSecret.getData().get(Ca.CA_CRT)));
-        log.debug("Cluster CA cert\n{}", clusterCaCertBuffer);
+        log.debug("Cluster CA cert\n{}", Buffer.buffer(decoder.decode(clusterCaCertificateSecret.getData().get(Ca.CA_CRT))));
         return new NetClientOptions()
                 .setConnectTimeout(10_000)
                 .setSsl(true)
                 //.setHostnameVerificationAlgorithm("HTTPS")
                 .setPemKeyCertOptions(new PemKeyCertOptions()
-                        .setCertValue(coCertBuffer)
-                        .setKeyValue(coKeyBuffer))
+                        .setCertValue(Buffer.buffer(coCertKey.cert()))
+                        .setKeyValue(Buffer.buffer(coCertKey.key())))
                 .setPemTrustOptions(new PemTrustOptions()
-                        .addCertValue(clusterCaCertBuffer));
+                        .addCertValue(Buffer.buffer(decoder.decode(clusterCaCertificateSecret.getData().get(Ca.CA_CRT)))));
     }
 
     /**
@@ -141,7 +136,6 @@ public class ZookeeperLeaderFinder {
                         } else {
                             rescheduleOrComplete(tid);
                         }
-                        //f.fail(leader.cause());
                     }
                 });
             }
