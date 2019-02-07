@@ -50,17 +50,21 @@ The following resources are defined:
 * A `ConfigMap` to manage the configuration of Prometheus Server.
 * A `Service` to provide an easy to reference hostname for other services to connect to Prometheus server (such as Grafana).
 
+Prometheus also provides an alerting system through the https://prometheus.io/docs/alerting/alertmanager/[alert manager] component.
 In order to enable alerting, the provided https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml[`alerting-rules.yaml`] YAML file describes a `ConfigMap` resource which defines some sample alerting rules on Kafka and Zookeeper metrics.
+
+More information about how to set up alerting rules https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[here].
 
 ==== Deploying on {OpenShiftName}
 
 The provided `prometheus.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
+It also discovers an alert manager instance in the same namespace.
 If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
 
-The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules.
+The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules; download the resource file as follows:
 
 [source,shell,subs=attributes+]
 curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml
@@ -79,9 +83,9 @@ The provided `prometheus.yaml` file, with all the Prometheus related resources, 
 If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
 
-The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules.
+The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules; download the resource file as follows:
 
 [source,shell,subs=attributes+]
 curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml
@@ -166,9 +170,9 @@ This reference describes how to monitor cAdvisor metrics in various ways using P
 
 === Alerting
 
-Other than a server for scraping metrics, Prometheus provides an alert manager component for alerting.
-It is possible to declare alerting rules in order to notify the user about specific conditions in the metrics.
-Notifications can be delivered via email, on Slack channels and other built-in mechanisms.
+Other than a server for scraping metrics, Prometheus provides an alerting system through the alert manager component.
+It is possible to declare alerting rules in order to be notified about specific conditions in the metrics.
+Notifications can be sent via methods such as email, Slack, PagerDuty and HipChat
 
 The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager.yaml[`alertmanager.yaml`] YAML file describes all the resources required for deploying and configuring the alert manager.
 
@@ -178,10 +182,11 @@ The following resources are defined:
 * A `ConfigMap` to manage the configuration of the alert manager.
 * A `Service` to provide an easy to reference hostname for other services to connect to alert manager (such as Prometheus).
 
-The provided configuration configures the alert manager to send notification to Slack channels.
-Before deploying the alert manager it is needed to update a couple of parameters.
-The `slack_api_url` needs to be updated with the actual value of the Slack API URL related to application for the Slack workspace.
-The `channel` field needs to be updated with the actual Slack channel on which sending the notification.
+The provided sample configuration configures the alert manager to send notification to a Slack channel.
+Before deploying the alert manager it is needed to update the following parameters:
+
+* The `slack_api_url` field with the actual value of the Slack API URL related to the application for the Slack workspace.
+* The `channel` field with the actual Slack channel on which sending the notifications.
 
 ==== Deploying on {OpenShiftName}
 
