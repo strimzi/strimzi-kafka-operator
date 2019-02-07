@@ -66,7 +66,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      *
      * @return      Source ImageStream resource definition
      */
-    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift, String imagePullPolicy) {
+    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)

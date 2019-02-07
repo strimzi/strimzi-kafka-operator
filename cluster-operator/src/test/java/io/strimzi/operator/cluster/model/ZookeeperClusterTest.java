@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -486,5 +487,21 @@ public class ZookeeperClusterTest {
 
         PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
         assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
+    }
+
+    @Test
+    public void testImagePullPolicy() {
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap());
+        kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
+        ZookeeperCluster kc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.ALWAYS);
+        assertEquals(ImagePullPolicy.ALWAYS.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.ALWAYS.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
+
+        sts = zc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT);
+        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
     }
 }

@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -79,7 +80,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                                            NetworkPolicyOperator networkPolicyOperator,
                                            PodDisruptionBudgetOperator podDisruptionBudgetOperator,
                                            KafkaVersion.Lookup versions,
-                                           String imagePullPolicy) {
+                                           ImagePullPolicy imagePullPolicy) {
         super(vertx, isOpenShift, ResourceType.CONNECT_S2I, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;

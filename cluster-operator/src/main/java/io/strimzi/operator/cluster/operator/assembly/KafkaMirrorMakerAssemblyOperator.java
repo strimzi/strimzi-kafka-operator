@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Annotations;
@@ -70,7 +71,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                                             ServiceOperator serviceOperations,
                                             PodDisruptionBudgetOperator podDisruptionBudgetOperator,
                                             KafkaVersion.Lookup versions,
-                                            String imagePullPolicy) {
+                                            ImagePullPolicy imagePullPolicy) {
         super(vertx, isOpenShift, ResourceType.MIRRORMAKER, certManager, mirrorMakerOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
         this.deploymentOperations = deploymentOperations;
         this.configMapOperations = configMapOperations;

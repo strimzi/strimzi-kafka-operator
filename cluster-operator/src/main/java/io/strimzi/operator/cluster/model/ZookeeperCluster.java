@@ -317,7 +317,7 @@ public class ZookeeperCluster extends AbstractModel {
         return createHeadlessService(getServicePortList(), annotations);
     }
 
-    public StatefulSet generateStatefulSet(boolean isOpenShift, String imagePullPolicy) {
+    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
 
         return createStatefulSet(
                 emptyMap(),
@@ -360,7 +360,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers(String imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>();
 

@@ -533,14 +533,14 @@ public abstract class AbstractModel {
     /**
      * @return a list of init containers to add to the StatefulSet/Deployment
      */
-    protected List<Container> getInitContainers(String imagePullPolicy) {
+    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
         return null;
     }
 
     /**
      * @return a list of containers to add to the StatefulSet/Deployment
      */
-    protected abstract List<Container> getContainers(String imagePullPolicy);
+    protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
 
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
@@ -1035,15 +1035,15 @@ public abstract class AbstractModel {
      * @param image The image used for the container. From its tag we determine the default policy
      * @return  The Image Pull Policy: Always, Never or IfNotPresent
      */
-    protected String determineImagePullPolicy(String requestedImagePullPolicy, String image)  {
+    protected String determineImagePullPolicy(ImagePullPolicy requestedImagePullPolicy, String image)  {
         if (requestedImagePullPolicy != null)   {
-            return requestedImagePullPolicy;
+            return requestedImagePullPolicy.toString();
         }
 
         if (image.toLowerCase(Locale.ENGLISH).endsWith(":latest"))  {
-            return "Always";
+            return ImagePullPolicy.ALWAYS.toString();
         } else {
-            return "IfNotPresent";
+            return ImagePullPolicy.IFNOTPRESENT.toString();
         }
     }
 

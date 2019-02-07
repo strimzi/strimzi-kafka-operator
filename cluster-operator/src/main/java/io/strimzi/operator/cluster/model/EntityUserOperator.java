@@ -199,7 +199,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers(String imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
         return Collections.singletonList(new ContainerBuilder()
                 .withName(USER_OPERATOR_CONTAINER_NAME)

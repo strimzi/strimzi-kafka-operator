@@ -209,7 +209,7 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers(String imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
         return Collections.singletonList(new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_CONTAINER_NAME)

@@ -217,6 +217,17 @@ public class TopicOperatorTest {
         assertEquals("foo-topic-operator-config", volume.getConfigMap().getName());
     }
 
+    @Test
+    public void testImagePullPolicy() {
+        Deployment dep = tc.generateDeployment(true, ImagePullPolicy.ALWAYS);
+        assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
+
+        dep = tc.generateDeployment(true, ImagePullPolicy.IFNOTPRESENT);
+        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
+    }
+
     @AfterClass
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();

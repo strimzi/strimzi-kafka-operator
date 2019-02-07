@@ -165,7 +165,7 @@ public class EntityOperator extends AbstractModel {
         return null;
     }
 
-    public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, String imagePullPolicy) {
+    public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy) {
 
         if (!isDeployed()) {
             log.warn("Topic and/or User Operators not declared: Entity Operator will not be deployed");
@@ -188,7 +188,7 @@ public class EntityOperator extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers(String imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>();
 
         if (topicOperator != null) {

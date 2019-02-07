@@ -561,4 +561,15 @@ public class KafkaMirrorMakerClusterTest {
         PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();
         assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
     }
+
+    @Test
+    public void testImagePullPolicy() {
+        KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+
+        Deployment dep = kc.generateDeployment(Collections.EMPTY_MAP, true, ImagePullPolicy.ALWAYS);
+        assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+
+        dep = kc.generateDeployment(Collections.EMPTY_MAP, true, ImagePullPolicy.IFNOTPRESENT);
+        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+    }
 }

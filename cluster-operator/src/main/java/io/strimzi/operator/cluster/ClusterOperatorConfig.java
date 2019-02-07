@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.InvalidConfigurationException;
@@ -46,7 +47,7 @@ public class ClusterOperatorConfig {
     private final long operationTimeoutMs;
     private final boolean createClusterRoles;
     private final KafkaVersion.Lookup versions;
-    private final String imagePullPolicy;
+    private final ImagePullPolicy imagePullPolicy;
 
     /**
      * Constructor
@@ -57,7 +58,7 @@ public class ClusterOperatorConfig {
      * @param createClusterRoles true to create the cluster roles
      * @param versions The configured Kafka versions
      */
-    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, String imagePullPolicy) {
+    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -108,18 +109,18 @@ public class ClusterOperatorConfig {
             createClusterRoles = Boolean.parseBoolean(createClusterRolesEnvVar);
         }
 
-        String imagePullPolicy = null;
+        ImagePullPolicy imagePullPolicy = null;
         String imagePullPolicyEnvVar = map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY);
         if (imagePullPolicyEnvVar != null) {
             switch (imagePullPolicyEnvVar.toLowerCase(Locale.ENGLISH))  {
                 case "always":
-                    imagePullPolicy = "Always";
+                    imagePullPolicy = ImagePullPolicy.ALWAYS;
                     break;
                 case "ifnotpresent":
-                    imagePullPolicy = "IfNotPresent";
+                    imagePullPolicy = ImagePullPolicy.IFNOTPRESENT;
                     break;
                 case "never":
-                    imagePullPolicy = "Never";
+                    imagePullPolicy = ImagePullPolicy.IFNOTPRESENT;
                     break;
                 default:
                     throw new InvalidConfigurationException(imagePullPolicyEnvVar
@@ -184,7 +185,7 @@ public class ClusterOperatorConfig {
         return versions;
     }
 
-    public String getImagePullPolicy() {
+    public ImagePullPolicy getImagePullPolicy() {
         return imagePullPolicy;
     }
 

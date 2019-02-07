@@ -822,4 +822,15 @@ public class KafkaConnectS2IClusterTest {
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertEquals(new IntOrString(1), pdb.getSpec().getMaxUnavailable());
     }
+
+    @Test
+    public void testImagePullPolicy() {
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
+
+        DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, ImagePullPolicy.ALWAYS);
+        assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+
+        dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, ImagePullPolicy.IFNOTPRESENT);
+        assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
+    }
 }

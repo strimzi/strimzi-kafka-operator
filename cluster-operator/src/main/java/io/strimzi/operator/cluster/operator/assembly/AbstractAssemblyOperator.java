@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
+import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -68,7 +69,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final CertManager certManager;
     protected final NetworkPolicyOperator networkPolicyOperator;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
-    protected final String imagePullPolicy;
+    protected final ImagePullPolicy imagePullPolicy;
     private final String kind;
 
     /**
@@ -83,7 +84,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                        SecretOperator secretOperations,
                                        NetworkPolicyOperator networkPolicyOperator,
                                        PodDisruptionBudgetOperator podDisruptionBudgetOperator,
-                                       String imagePullPolicy) {
+                                       ImagePullPolicy imagePullPolicy) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import org.junit.Test;
@@ -144,26 +145,26 @@ public class ClusterOperatorConfigTest {
     public void testImagePullPolicyValidValues() {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Always");
-        assertEquals("Always", ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.ALWAYS, ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
 
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "IfNotPresent");
-        assertEquals("IfNotPresent", ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.IFNOTPRESENT, ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
 
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Never");
-        assertEquals("Never", ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.NEVER, ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
     }
 
     @Test
     public void testImagePullPolicyUpperLowerCase() {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "ALWAYS");
-        assertEquals("Always", ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.ALWAYS, ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
 
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "always");
-        assertEquals("Always", ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.ALWAYS, ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
 
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Always");
-        assertEquals("Always", ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
+        assertEquals(ImagePullPolicy.ALWAYS, ClusterOperatorConfig.fromMap(envVars).getImagePullPolicy());
     }
 
     @Test(expected = InvalidConfigurationException.class)

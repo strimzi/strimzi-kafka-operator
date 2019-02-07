@@ -231,7 +231,7 @@ public class TopicOperator extends AbstractModel {
         return result;
     }
 
-    public Deployment generateDeployment(boolean isOpenShift, String imagePullPolicy) {
+    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")
                 .build();
@@ -248,7 +248,7 @@ public class TopicOperator extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers(String imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>();
         Container container = new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_NAME)

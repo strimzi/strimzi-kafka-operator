@@ -619,7 +619,7 @@ public class KafkaCluster extends AbstractModel {
      * @param isOpenShift True iff this operator is operating within OpenShift.
      * @return The generate StatefulSet
      */
-    public StatefulSet generateStatefulSet(boolean isOpenShift, String imagePullPolicy) {
+    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
         return createStatefulSet(
                 singletonMap(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version()),
                 getVolumes(isOpenShift),
@@ -773,7 +773,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getInitContainers(String imagePullPolicy) {
+    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> initContainers = new ArrayList<>();
 
         if (rack != null || isExposedWithNodePort()) {
@@ -826,7 +826,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers(String imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>();
 
