@@ -13,23 +13,23 @@ data:
         labels:
           severity: warning
         annotations:
-          summary: 'Kakfa under replicated partitions'
+          summary: 'Kafka under replicated partitions'
           description: 'There are {{ $value }} under replicated partitions on {{ $labels.kubernetes_pod_name }}'
-      - alert: NoActiveController
-        expr: sum(kafka_controller_kafkacontroller_activecontrollercount) == 0
+      - alert: AbnormalControllerState
+        expr: sum(kafka_controller_kafkacontroller_activecontrollercount) != 1
         for: 10s
         labels:
           severity: warning
         annotations:
-          summary: 'Kakfa no active controller'
-          description: 'There is no active controller in the cluster'
+          summary: 'Kafka abnormal controller state'
+          description: 'There are {{ $value }} active controllers in the cluster'
       - alert: UnderMinIsrPartitionCount
         expr: kafka_server_replicamanager_underminisrpartitioncount > 0
         for: 10s
         labels:
           severity: warning
         annotations:
-          summary: 'Kakfa under min ISR partitions'
+          summary: 'Kafka under min ISR partitions'
           description: 'There are {{ $value }} partitions under the min ISR on {{ $labels.kubernetes_pod_name }}'
       - alert: OfflineLogDirectoryCount
         expr: kafka_log_logmanager_offlinelogdirectorycount > 0
@@ -37,7 +37,7 @@ data:
         labels:
           severity: warning
         annotations:
-          summary: 'Kakfa offline log directories'
+          summary: 'Kafka offline log directories'
           description: 'There are {{ $value }} offline log directoris on {{ $labels.kubernetes_pod_name }}'
     - name: zookeeper
       rules:
