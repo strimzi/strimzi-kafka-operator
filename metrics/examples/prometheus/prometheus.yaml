@@ -70,12 +70,17 @@ spec:
           name: prometheus-data
         - mountPath: /etc/prometheus
           name: prometheus-config
+        - mountPath: /etc/config/alerting-rules
+          name: alerting-rules
       volumes:
         - name: prometheus-data
           emptyDir: {}
         - name: prometheus-config
           configMap:
             name: prometheus-config
+        - name: alerting-rules
+          configMap:
+            name: alerting-rules
 
 ---
 apiVersion: v1
@@ -91,21 +96,19 @@ data:
     alerting:
       alertmanagers:
       - kubernetes_sd_configs:
-        - api_server: null
-          role: pod
-          namespaces:
-            names: []
-        scheme: http
-        timeout: 10s
+          - role: pod
         relabel_configs:
-        - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_app,
-            __meta_kubernetes_pod_label_component, __meta_kubernetes_pod_container_port_number]
-          separator: ;
-          regex: lightbend;prometheus;alertmanager;[0-9]+
-          replacement: $1
+        - source_labels: [__meta_kubernetes_pod_label_name]
+          regex: alertmanager
           action: keep
+        - source_labels: [__meta_kubernetes_namespace]
+          regex: myproject
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_container_port_number]
+          regex:
+          action: drop
     rule_files:
-    - /etc/config/rules/*.yaml
+    - /etc/config/alerting-rules/*.yml
     scrape_configs:
     - job_name: kubernetes-cadvisor
       honor_labels: true
