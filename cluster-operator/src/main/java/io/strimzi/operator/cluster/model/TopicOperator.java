@@ -259,7 +259,7 @@ public class TopicOperator extends AbstractModel {
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withResources(ModelUtils.resources(getResources()))
                 .withVolumeMounts(getVolumeMounts())
-                .withImagePullPolicy(imagePullPolicy)
+                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build();
 
         String tlsSidecarImage = TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
@@ -277,7 +277,7 @@ public class TopicOperator extends AbstractModel {
                         buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
                         createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
-                .withImagePullPolicy(imagePullPolicy)
+                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();
 
         containers.add(container);

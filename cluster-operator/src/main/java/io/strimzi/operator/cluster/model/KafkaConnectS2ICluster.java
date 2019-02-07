@@ -76,7 +76,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(ModelUtils.resources(getResources()))
-                .withImagePullPolicy(imagePullPolicy)
+                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, image))
                 .build();
 
         DeploymentTriggerPolicy configChangeTrigger = new DeploymentTriggerPolicyBuilder()
