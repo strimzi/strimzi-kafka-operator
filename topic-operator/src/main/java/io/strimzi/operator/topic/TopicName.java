@@ -54,12 +54,12 @@ class TopicName {
     public static final String SEP = "---";
 
     /**
-     * Return a valid map name for the given topic name. If the topic name is already valid as a resource name
+     * Return a valid resource name for the given topic name. If the topic name is already valid as a resource name
      * then it is used as the returned resource name, otherwise a "best effort" prefix is
      * constructed (with invalid characters removed or changed) and a disambiguating hash is appended to that
      * prefix and the concatenation of the prefix and hash is returned.
      */
-    public ResourceName asMapName() {
+    public ResourceName asKubeName() {
         ResourceName mname;
         if (ResourceName.isValidResourceName(this.name)) {
             mname = new ResourceName(this.name);

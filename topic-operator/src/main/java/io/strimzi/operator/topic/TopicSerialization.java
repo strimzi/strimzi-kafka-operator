@@ -128,7 +128,7 @@ public class TopicSerialization {
      * Create a resource to reflect the given Topic.
      */
     public static KafkaTopic toTopicResource(Topic topic, LabelPredicate resourcePredicate) {
-        ResourceName resourceName = topic.getOrAsMapName();
+        ResourceName resourceName = topic.getOrAsKubeName();
         ObjectMeta om = topic.getMetadata();
         if (om != null) {
             om.setName(resourceName.toString());
@@ -237,7 +237,7 @@ public class TopicSerialization {
         ObjectMapper mapper = objectMapper();
         ObjectNode root = mapper.createObjectNode();
         // TODO Do we store the k8s uid here?
-        root.put(JSON_KEY_MAP_NAME, topic.getOrAsMapName().toString());
+        root.put(JSON_KEY_MAP_NAME, topic.getOrAsKubeName().toString());
         root.put(JSON_KEY_TOPIC_NAME, topic.getTopicName().toString());
         root.put(JSON_KEY_PARTITIONS, topic.getNumPartitions());
         root.put(JSON_KEY_REPLICAS, topic.getNumReplicas());

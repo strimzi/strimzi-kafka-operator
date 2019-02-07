@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 public class TopicNameTest {
 
     private void checkMappedName(String name, String expect) {
-        assertEquals(expect, new TopicName(name).asMapName().toString());
+        assertEquals(expect, new TopicName(name).asKubeName().toString());
     }
 
     @Test

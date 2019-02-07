@@ -45,7 +45,7 @@ public class Topic {
         }
 
         public Builder(TopicName topicName, int numPartitions, short numReplicas, Map<String, String> config) {
-            this(topicName, topicName.asMapName(), numPartitions, numReplicas, config, null);
+            this(topicName, topicName.asKubeName(), numPartitions, numReplicas, config, null);
         }
 
         public Builder(String topicName, int numPartitions, short numReplicas, Map<String, String> config, ObjectMeta metadata) {
@@ -53,7 +53,7 @@ public class Topic {
         }
 
         public Builder(TopicName topicName, int numPartitions, short numReplicas, Map<String, String> config, ObjectMeta metadata) {
-            this(topicName, topicName.asMapName(), numPartitions, numReplicas, config, metadata);
+            this(topicName, topicName.asKubeName(), numPartitions, numReplicas, config, metadata);
         }
 
         public Builder(String topicName, int numPartitions, Map<String, String> config, ObjectMeta metadata) {
@@ -160,11 +160,11 @@ public class Topic {
         return resourceName;
     }
 
-    public ResourceName getOrAsMapName() {
+    public ResourceName getOrAsKubeName() {
         if (resourceName != null) {
             return resourceName;
         } else {
-            return topicName.asMapName();
+            return topicName.asKubeName();
         }
     }
 
