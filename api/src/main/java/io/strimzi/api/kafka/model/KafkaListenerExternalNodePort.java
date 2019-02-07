@@ -33,6 +33,7 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
     private KafkaListenerAuthentication auth;
     private boolean tls = true;
     private List<NetworkPolicyPeer> networkPolicyPeers;
+    private KafkaExternalServiceOverrides overrides;
 
     @Description("Must be `" + TYPE_NODEPORT + "`")
     @Override
@@ -74,5 +75,15 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
 
     public void setNetworkPolicyPeers(List<NetworkPolicyPeer> networkPolicyPeers) {
         this.networkPolicyPeers = networkPolicyPeers;
+    }
+
+    @Description("Overrides for external bootstrap and broker services and externally advertised addresses")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KafkaExternalServiceOverrides getOverrides() {
+        return overrides;
+    }
+
+    public void setOverrides(KafkaExternalServiceOverrides overrides) {
+        this.overrides = overrides;
     }
 }

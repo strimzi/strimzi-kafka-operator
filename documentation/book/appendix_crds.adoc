@@ -293,8 +293,57 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
+|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
 |tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
+|====
+
+[id='type-KafkaExternalServiceOverrides-{context}']
+### `KafkaExternalServiceOverrides` schema reference
+
+Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
+
+
+[options="header"]
+|====
+|Field             |Description
+|bootstrap  1.2+<.<|External bootstrap service configuration.
+|xref:type-KafkaExternalBootstrapService-{context}[`KafkaExternalBootstrapService`]
+|brokers    1.2+<.<|External broker services configuration.
+|xref:type-KafkaExternalBrokerService-{context}[`KafkaExternalBrokerService`] array
+|====
+
+[id='type-KafkaExternalBootstrapService-{context}']
+### `KafkaExternalBootstrapService` schema reference
+
+Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
+
+
+[options="header"]
+|====
+|Field            |Description
+|nodePort  1.2+<.<|Node port for the bootstrap service.
+|integer
+|====
+
+[id='type-KafkaExternalBrokerService-{context}']
+### `KafkaExternalBrokerService` schema reference
+
+Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
+
+
+[options="header"]
+|====
+|Field                  |Description
+|broker          1.2+<.<|Id of the kafka broker (broker identifier).
+|integer
+|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
+|string
+|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
+|integer
+|nodePort        1.2+<.<|Node port for the broker service.
+|integer
 |====
 
 [id='type-KafkaAuthorizationSimple-{context}']

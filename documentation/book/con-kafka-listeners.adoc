@@ -91,6 +91,37 @@ To disable it, set the `tls` field to `false`.
 
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
+It is possible to override the auto assigned node ports for bootstrap service and brokers, and advertised host and port for each broker.
+
+.An example where the external listener is configured with overrides for node ports and advertised addresses
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: nodeport
+    tls: true
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        nodePort: 32100
+      brokers:
+      - broker: 0
+        advertisedHost: example.host.1
+        advertisedPort: 12340
+        nodePort: 32000
+      - broker: 1
+        advertisedHost: example.host.2
+        advertisedPort: 12341
+        nodePort: 32001
+      - broker: 2
+        advertisedHost: example.host.3
+        advertisedPort: 12342
+        nodePort: 32002
+# ...
+----
+
 For more information on using node ports to access Kafka, see xref:proc-accessing-kafka-using-nodeports-{context}[].
 
 == Listener authentication

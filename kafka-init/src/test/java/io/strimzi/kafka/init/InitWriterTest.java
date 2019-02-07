@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -159,6 +161,35 @@ public class InitWriterTest {
         String address = writer.findAddress(addresses);
 
         assertNull(address);
+    }
+
+    @Test
+    public void testWriteExternalAdvertisedAddresses() throws IOException {
+        // create and configure (env vars) the path to the rack-id file
+        File kafkaFolder = tmpFolder.newFolder("opt", "kafka");
+        String addressFolder = kafkaFolder.getAbsolutePath() + "/external.address";
+        String advertisedHost = "0://www.test0.com:1000 1://www.test1.com:1001";
+        new File(addressFolder).mkdir();
+
+        Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
+        envVars.put(InitWriterConfig.INIT_FOLDER, addressFolder);
+        envVars.put(InitWriterConfig.EXTERNAL_ADVERTISED_ADDRESSES, advertisedHost);
+
+        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
+
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), Collections.EMPTY_MAP, addresses);
+
+        InitWriter writer = new InitWriter(client, config);
+        writer.writeExternalBrokerAddresses();
+
+        String host0 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.0.host")), "UTF-8");
+        assertEquals(host0, "www.test0.com");
+        String port0 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.0.port")), "UTF-8");
+        assertEquals(port0, "1000");
+        String host1 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.1.host")), "UTF-8");
+        assertEquals(host1, "www.test1.com");
+        String port1 = new String(Files.readAllBytes(Paths.get(addressFolder + File.separator + "external.address.1.port")), "UTF-8");
+        assertEquals(port1, "1001");
     }
 
     /**

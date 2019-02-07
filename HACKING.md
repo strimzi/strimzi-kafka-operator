@@ -184,8 +184,8 @@ Attach the TAR.GZ/ZIP archives, YAML files (for installation from URL) and the H
 9. Update the website
   * Add release documentation to `strimzi.github.io/docs/`.  Update references to docs in 
   `strimzi.github.io/documentation/index.md`.
-  * Update the Helm Chart repository file by copying `strimzi-kafka-operator/helm-charts/index.yaml` to 
-  `strimzi.github.io/charts/index.yaml`. 
+  * Update the Helm Chart repository file by copying `strimzi-kafka-operator/helm-charts/index.yaml` to
+  `strimzi.github.io/charts/index.yaml`.
 10. The maven artifacts (`api` module) will be automatically staged from TravisCI during the tag build. 
 It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
 

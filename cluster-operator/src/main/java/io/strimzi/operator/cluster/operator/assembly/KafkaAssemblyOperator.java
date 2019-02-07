@@ -1240,7 +1240,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         this.kafkaExternalDnsNames.put(podNumber, serviceAddress);
                                     }
                                 } else if (kafkaCluster.isExposedWithNodePort()) {
-                                    serviceAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
+                                    serviceAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts()
+                                        .get(0).getNodePort().toString();
+                                    kafkaCluster.getExternalNodePortServiceAddressOverride(podNumber)
+                                        .ifPresent(host -> this.kafkaExternalDnsNames.put(podNumber, host));
                                 }
 
                                 this.kafkaExternalAddresses.put(podNumber, serviceAddress);
