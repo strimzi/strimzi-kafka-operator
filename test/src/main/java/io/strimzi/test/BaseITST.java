@@ -88,11 +88,9 @@ public class BaseITST {
             deploymentNamespaces.add(namespace);
             KUBE_CLIENT.createNamespace(namespace);
             KUBE_CLIENT.waitForResourceCreation("Namespace", namespace);
-            LOGGER.info("Namespace {} created", namespace);
         }
         LOGGER.info("Using namespace {}", useNamespace);
         KUBE_CLIENT.namespace(useNamespace);
-        LOGGER.info("Created namespaces: {}", deploymentNamespaces);
     }
 
     /**
@@ -114,10 +112,8 @@ public class BaseITST {
             LOGGER.info("Deleting namespace: {}", namespace);
             KUBE_CLIENT.deleteNamespace(namespace);
             KUBE_CLIENT.waitForResourceDeletion("Namespace", namespace);
-            LOGGER.info("Namespace {} deleted", namespace);
         }
         deploymentNamespaces.clear();
-        LOGGER.info("Namespaces after deletion: {}", deploymentNamespaces);
         LOGGER.info("Using namespace {}", CLUSTER.defaultNamespace());
         KUBE_CLIENT.namespace(CLUSTER.defaultNamespace());
     }
@@ -133,7 +129,6 @@ public class BaseITST {
             deploymentResources.add(resource);
             KUBE_CLIENT.clientWithAdmin().create(resource);
         }
-        LOGGER.info("Custom resources: {}", deploymentResources);
     }
 
     /**
@@ -141,13 +136,11 @@ public class BaseITST {
      */
     protected void deleteCustomResources() {
         Collections.reverse(deploymentResources);
-        LOGGER.info("Custom resources for delete: {}", deploymentResources);
         for (String resource : deploymentResources) {
             LOGGER.info("Deleting resources {}", resource);
             KUBE_CLIENT.delete(resource);
         }
         deploymentResources.clear();
-        LOGGER.info("Custom resources after delete: {}", deploymentResources);
     }
 
     /**
