@@ -194,11 +194,29 @@ public abstract class Ca {
         }
     }
 
+    /**
+     * Returns the given {@code cert} and {@code key} values from the given {@code Secret} as a {@code CertAndKey},
+     * or null if the given {@code secret} is null.
+     * An exception is thrown if the given {@code secret} is non-null, but does not contain the given
+     * entries in its {@code data}.
+     */
     public static CertAndKey asCertAndKey(Secret secret, String key, String cert) {
         Base64.Decoder decoder = Base64.getDecoder();
-        return secret == null ? null : new CertAndKey(
-                decoder.decode(secret.getData().get(key)),
-                decoder.decode(secret.getData().get(cert)));
+        if (secret == null || secret.getData() == null) {
+            return null;
+        } else {
+            String keyData = secret.getData().get(key);
+            if (keyData == null) {
+                throw new RuntimeException("The Secret " + secret.getMetadata().getNamespace() + "/" + secret.getMetadata().getName() + " is missing the key " + key);
+            }
+            String certData = secret.getData().get(cert);
+            if (certData == null) {
+                throw new RuntimeException("The Secret " + secret.getMetadata().getNamespace() + "/" + secret.getMetadata().getName() + " is missing the key " + cert);
+            }
+            return new CertAndKey(
+                    decoder.decode(keyData),
+                    decoder.decode(certData));
+        }
     }
 
     private CertAndKey generateSignedCert(Subject subject,

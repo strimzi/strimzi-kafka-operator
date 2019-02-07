@@ -23,6 +23,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -115,7 +116,7 @@ public class PartialRollingUpdateTest {
                 .end()
                 .build();
 
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, bootstrapClient, true, 60_000L);
+        ResourceOperatorSupplier supplier = supplier(bootstrapClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 new MockCertManager(), supplier, VERSIONS);
 
@@ -144,6 +145,11 @@ public class PartialRollingUpdateTest {
         this.clientsCaKey = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get();
     }
 
+    ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
+        ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient);
+        return new ResourceOperatorSupplier(vertx, bootstrapClient, leaderFinder, true, 60_000L);
+    }
+
     private void startKube() {
         CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
 
@@ -156,7 +162,7 @@ public class PartialRollingUpdateTest {
                 .withInitialSecrets(set(clusterCaCert, clusterCaKey, clientsCaCert, clientsCaKey))
                 .build();
 
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, mockClient, true, 60_000L);
+        ResourceOperatorSupplier supplier = supplier(mockClient);
 
         this.kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 new MockCertManager(), supplier, VERSIONS);

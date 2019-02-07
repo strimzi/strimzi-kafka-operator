@@ -17,13 +17,13 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -102,6 +102,14 @@ public class ZookeeperCluster extends AbstractModel {
 
     public static String headlessServiceName(String cluster) {
         return cluster + ZookeeperCluster.HEADLESS_SERVICE_NAME_SUFFIX;
+    }
+
+    public static String podDnsName(String namespace, String cluster, int podId) {
+        return String.format("%s.%s.%s.svc.%s",
+                ZookeeperCluster.zookeeperPodName(cluster, podId),
+                ZookeeperCluster.headlessServiceName(cluster),
+                namespace,
+                ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
     }
 
     public static String zookeeperPodName(String cluster, int pod) {

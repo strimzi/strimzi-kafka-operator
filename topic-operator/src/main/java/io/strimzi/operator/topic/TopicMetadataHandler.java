@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;

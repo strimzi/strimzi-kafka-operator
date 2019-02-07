@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.ResourcesBuilder;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
@@ -35,6 +36,7 @@ import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -70,9 +72,9 @@ import static io.strimzi.api.kafka.model.Storage.deleteClaim;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
@@ -241,7 +243,8 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {
-        return new ResourceOperatorSupplier(vertx, mockClient, true, 2_000);
+        ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, mockClient);
+        return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder, true, 2_000);
     }
 
     private KafkaAssemblyOperator createCluster(TestContext context) {
@@ -308,7 +311,8 @@ public class KafkaAssemblyOperatorMockTest {
                 KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME),
                 KafkaCluster.brokersSecretName(CLUSTER_NAME),
                 ZookeeperCluster.nodesSecretName(CLUSTER_NAME),
-                TopicOperator.secretName(CLUSTER_NAME));
+                TopicOperator.secretName(CLUSTER_NAME),
+                ClusterOperator.secretName(CLUSTER_NAME));
     }
 
     private void updateClusterWithoutSecrets(TestContext context, String... secrets) {

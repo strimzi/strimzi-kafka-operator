@@ -7,6 +7,8 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
