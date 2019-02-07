@@ -70,17 +70,17 @@ spec:
           name: prometheus-data
         - mountPath: /etc/prometheus
           name: prometheus-config
-        - mountPath: /etc/config/rules
-          name: prometheus-rules
+        - mountPath: /etc/config/alerting-rules
+          name: alerting-rules
       volumes:
         - name: prometheus-data
           emptyDir: {}
         - name: prometheus-config
           configMap:
             name: prometheus-config
-        - name: prometheus-rules
+        - name: alerting-rules
           configMap:
-            name: prometheus-rules
+            name: alerting-rules
 
 ---
 apiVersion: v1
@@ -108,7 +108,7 @@ data:
           regex:
           action: drop
     rule_files:
-    - /etc/config/rules/*.yml
+    - /etc/config/alerting-rules/*.yml
     scrape_configs:
     - job_name: kubernetes-cadvisor
       honor_labels: true

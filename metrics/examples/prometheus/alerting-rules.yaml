@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prometheus-rules
+  name: alerting-rules
 data:
-  rules.yml: |
+  alerting-rules.yml: |
     groups:
     - name: kafka
       rules:
