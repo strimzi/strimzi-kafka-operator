@@ -372,7 +372,7 @@ public class KafkaConnectCluster extends AbstractModel {
         return volumeMountList;
     }
 
-    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift) {
+    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, String imagePullPolicy) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
                 .withRollingUpdate(new RollingUpdateDeploymentBuilder()
@@ -386,13 +386,13 @@ public class KafkaConnectCluster extends AbstractModel {
                 Collections.emptyMap(),
                 annotations,
                 getMergedAffinity(),
-                getInitContainers(),
-                getContainers(),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
                 getVolumes(isOpenShift));
     }
 
     @Override
-    protected List<Container> getContainers() {
+    protected List<Container> getContainers(String imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>();
 
@@ -405,6 +405,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(ModelUtils.resources(getResources()))
+                .withImagePullPolicy(imagePullPolicy)
                 .build();
 
         containers.add(container);

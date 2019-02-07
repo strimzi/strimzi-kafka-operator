@@ -66,7 +66,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      *
      * @return      Source ImageStream resource definition
      */
-    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift) {
+    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift, String imagePullPolicy) {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
@@ -76,6 +76,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(ModelUtils.resources(getResources()))
+                .withImagePullPolicy(imagePullPolicy)
                 .build();
 
         DeploymentTriggerPolicy configChangeTrigger = new DeploymentTriggerPolicyBuilder()

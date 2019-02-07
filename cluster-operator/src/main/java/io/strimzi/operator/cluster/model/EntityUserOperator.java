@@ -199,7 +199,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers() {
+    protected List<Container> getContainers(String imagePullPolicy) {
 
         return Collections.singletonList(new ContainerBuilder()
                 .withName(USER_OPERATOR_CONTAINER_NAME)
@@ -210,6 +210,7 @@ public class EntityUserOperator extends AbstractModel {
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withResources(ModelUtils.resources(getResources()))
                 .withVolumeMounts(getVolumeMounts())
+                .withImagePullPolicy(imagePullPolicy)
                 .build());
     }
 

@@ -66,6 +66,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
      * @param buildConfigOperations      For operating on BuildConfigs, may be null
      * @param secretOperations           For operating on Secrets
      */
+    @SuppressWarnings("checkstyle:parameternumber")
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                            CertManager certManager,
                                            CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2I> connectOperator,
@@ -77,8 +78,9 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                                            SecretOperator secretOperations,
                                            NetworkPolicyOperator networkPolicyOperator,
                                            PodDisruptionBudgetOperator podDisruptionBudgetOperator,
-                                           KafkaVersion.Lookup versions) {
-        super(vertx, isOpenShift, ResourceType.CONNECT_S2I, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator);
+                                           KafkaVersion.Lookup versions,
+                                           String imagePullPolicy) {
+        super(vertx, isOpenShift, ResourceType.CONNECT_S2I, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
@@ -112,7 +114,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
             return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                     .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
-                    .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations, isOpenShift)))
+                    .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations, isOpenShift, imagePullPolicy)))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))
                     .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))

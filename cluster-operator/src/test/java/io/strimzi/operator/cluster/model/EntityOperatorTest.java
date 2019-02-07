@@ -81,7 +81,7 @@ public class EntityOperatorTest {
     @Test
     public void testGenerateDeployment() {
 
-        Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP);
+        Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -137,7 +137,7 @@ public class EntityOperatorTest {
 
     @Test
     public void withAffinity() throws IOException {
-        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
@@ -174,7 +174,7 @@ public class EntityOperatorTest {
         EntityOperator entityOperator = EntityOperator.fromCrd(resource);
 
         // Check Deployment
-        Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP);
+        Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertTrue(dep.getMetadata().getLabels().entrySet().containsAll(depLabels.entrySet()));
         assertTrue(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()));
 
@@ -200,7 +200,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(resource);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
         assertNotNull(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle());
         assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
@@ -219,7 +219,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(resource);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertEquals(Long.valueOf(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
         assertNotNull(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle());
         assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
@@ -246,7 +246,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(resource);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
@@ -264,7 +264,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(resource);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertEquals(0, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
     }
 
@@ -285,7 +285,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(resource);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertNotNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
         assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
         assertEquals(Long.valueOf(456), dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
@@ -304,7 +304,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(resource);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP);
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
     }
 

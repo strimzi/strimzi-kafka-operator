@@ -532,14 +532,14 @@ public abstract class AbstractModel {
     /**
      * @return a list of init containers to add to the StatefulSet/Deployment
      */
-    protected List<Container> getInitContainers() {
+    protected List<Container> getInitContainers(String imagePullPolicy) {
         return null;
     }
 
     /**
      * @return a list of containers to add to the StatefulSet/Deployment
      */
-    protected abstract List<Container> getContainers();
+    protected abstract List<Container> getContainers(String imagePullPolicy);
 
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()

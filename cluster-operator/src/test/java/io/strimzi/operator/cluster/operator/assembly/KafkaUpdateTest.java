@@ -129,7 +129,7 @@ public class KafkaUpdateTest {
                                       Consumer<Integer> reconcileExceptions, Consumer<Integer> rollExceptions) {
         KafkaSetOperator kso = mock(KafkaSetOperator.class);
 
-        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false);
+        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false, null);
 
         List<StatefulSet> states = new ArrayList<>(2);
         when(kso.reconcile(anyString(), anyString(), any(StatefulSet.class))).thenAnswer(invocation -> {
@@ -151,7 +151,7 @@ public class KafkaUpdateTest {
                 new ResourceOperatorSupplier(null, null, null,
                         kso, null, null, null, null,
                         null, null, null, null, null, null),
-                lookup);
+                lookup, null);
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
         Async async = context.async();

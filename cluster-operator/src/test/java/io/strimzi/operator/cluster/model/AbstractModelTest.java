@@ -54,7 +54,7 @@ public class AbstractModelTest {
             }
 
             @Override
-            protected List<Container> getContainers() {
+            protected List<Container> getContainers(String imagePullPolicy) {
                 return emptyList();
             }
         };
@@ -149,7 +149,7 @@ public class AbstractModelTest {
             }
 
             @Override
-            protected List<Container> getContainers() {
+            protected List<Container> getContainers(String imagePullPolicy) {
                 return emptyList();
             }
         };
@@ -184,7 +184,7 @@ public class AbstractModelTest {
              * @return a list of containers to add to the StatefulSet/Deployment
              */
             @Override
-            protected List<Container> getContainers() {
+            protected List<Container> getContainers(String imagePullPolicy) {
                 return null;
             }
         };
@@ -208,7 +208,7 @@ public class AbstractModelTest {
             }
 
             @Override
-            protected List<Container> getContainers() {
+            protected List<Container> getContainers(String imagePullPolicy) {
                 return emptyList();
             }
         };

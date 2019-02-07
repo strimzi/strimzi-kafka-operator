@@ -209,7 +209,7 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers() {
+    protected List<Container> getContainers(String imagePullPolicy) {
 
         return Collections.singletonList(new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_CONTAINER_NAME)
@@ -220,6 +220,7 @@ public class EntityTopicOperator extends AbstractModel {
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withResources(ModelUtils.resources(getResources()))
                 .withVolumeMounts(getVolumeMounts())
+                .withImagePullPolicy(imagePullPolicy)
                 .build());
     }
 

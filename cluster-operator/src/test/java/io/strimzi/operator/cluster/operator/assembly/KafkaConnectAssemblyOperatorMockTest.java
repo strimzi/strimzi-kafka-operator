@@ -97,7 +97,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 connectOperator,
-                cmops, depops, svcops, secretops, policyops, pdbops, VERSIONS);
+                cmops, depops, svcops, secretops, policyops, pdbops, VERSIONS, null);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();

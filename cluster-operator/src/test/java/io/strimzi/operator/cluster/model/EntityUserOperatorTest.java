@@ -150,7 +150,7 @@ public class EntityUserOperatorTest {
 
     @Test
     public void testGetContainers() {
-        List<Container> containers = entityUserOperator.getContainers();
+        List<Container> containers = entityUserOperator.getContainers(null);
         assertEquals(1, containers.size());
 
         Container container = containers.get(0);

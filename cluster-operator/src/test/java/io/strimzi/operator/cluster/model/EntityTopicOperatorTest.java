@@ -155,7 +155,7 @@ public class EntityTopicOperatorTest {
 
     @Test
     public void testGetContainers() {
-        List<Container> containers = entityTopicOperator.getContainers();
+        List<Container> containers = entityTopicOperator.getContainers(null);
         assertEquals(1, containers.size());
 
         Container container = containers.get(0);

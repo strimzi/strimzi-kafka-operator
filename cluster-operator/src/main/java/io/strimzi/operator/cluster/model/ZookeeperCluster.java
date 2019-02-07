@@ -317,15 +317,15 @@ public class ZookeeperCluster extends AbstractModel {
         return createHeadlessService(getServicePortList(), annotations);
     }
 
-    public StatefulSet generateStatefulSet(boolean isOpenShift) {
+    public StatefulSet generateStatefulSet(boolean isOpenShift, String imagePullPolicy) {
 
         return createStatefulSet(
                 emptyMap(),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
-                getInitContainers(),
-                getContainers(),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
                 isOpenShift);
     }
 
@@ -360,7 +360,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers() {
+    protected List<Container> getContainers(String imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>();
 
@@ -394,7 +394,13 @@ public class ZookeeperCluster extends AbstractModel {
                                 createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP"),
                                 createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP")))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/opt/stunnel/stunnel_pre_stop.sh", String.valueOf(templateTerminationGracePeriodSeconds)).endExec().endPreStop().build())
+                .withImagePullPolicy(imagePullPolicy)
                 .build();
+
+        if (imagePullPolicy != null)    {
+            container.setImagePullPolicy(imagePullPolicy);
+            tlsSidecarContainer.setImagePullPolicy(imagePullPolicy);
+        }
 
         containers.add(container);
         containers.add(tlsSidecarContainer);

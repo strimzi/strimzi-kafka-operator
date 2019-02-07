@@ -68,6 +68,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final CertManager certManager;
     protected final NetworkPolicyOperator networkPolicyOperator;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+    protected final String imagePullPolicy;
     private final String kind;
 
     /**
@@ -81,7 +82,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
                                        SecretOperator secretOperations,
                                        NetworkPolicyOperator networkPolicyOperator,
-                                       PodDisruptionBudgetOperator podDisruptionBudgetOperator) {
+                                       PodDisruptionBudgetOperator podDisruptionBudgetOperator,
+                                       String imagePullPolicy) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
@@ -91,6 +93,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.secretOperations = secretOperations;
         this.networkPolicyOperator = networkPolicyOperator;
         this.podDisruptionBudgetOperator = podDisruptionBudgetOperator;
+        this.imagePullPolicy = imagePullPolicy;
     }
 
     /**

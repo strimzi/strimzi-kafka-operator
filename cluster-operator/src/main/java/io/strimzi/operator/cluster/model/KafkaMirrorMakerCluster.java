@@ -294,7 +294,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return volumeMountList;
     }
 
-    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift) {
+    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, String imagePullPolicy) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
                 .withRollingUpdate(new RollingUpdateDeploymentBuilder()
@@ -308,13 +308,13 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 Collections.emptyMap(),
                 annotations,
                 getMergedAffinity(),
-                getInitContainers(),
-                getContainers(),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
                 getVolumes(isOpenShift));
     }
 
     @Override
-    protected List<Container> getContainers() {
+    protected List<Container> getContainers(String imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>();
 
@@ -325,6 +325,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(ModelUtils.resources(getResources()))
+                .withImagePullPolicy(imagePullPolicy)
                 .build();
 
         containers.add(container);

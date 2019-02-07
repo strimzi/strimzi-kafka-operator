@@ -231,7 +231,7 @@ public class TopicOperator extends AbstractModel {
         return result;
     }
 
-    public Deployment generateDeployment(boolean isOpenShift) {
+    public Deployment generateDeployment(boolean isOpenShift, String imagePullPolicy) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")
                 .build();
@@ -241,14 +241,14 @@ public class TopicOperator extends AbstractModel {
                 Collections.emptyMap(),
                 Collections.emptyMap(),
                 getMergedAffinity(),
-                getInitContainers(),
-                getContainers(),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
                 getVolumes(isOpenShift)
         );
     }
 
     @Override
-    protected List<Container> getContainers() {
+    protected List<Container> getContainers(String imagePullPolicy) {
         List<Container> containers = new ArrayList<>();
         Container container = new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_NAME)
@@ -259,6 +259,7 @@ public class TopicOperator extends AbstractModel {
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
                 .withResources(ModelUtils.resources(getResources()))
                 .withVolumeMounts(getVolumeMounts())
+                .withImagePullPolicy(imagePullPolicy)
                 .build();
 
         String tlsSidecarImage = TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
@@ -276,6 +277,7 @@ public class TopicOperator extends AbstractModel {
                         buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
                         createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
+                .withImagePullPolicy(imagePullPolicy)
                 .build();
 
         containers.add(container);

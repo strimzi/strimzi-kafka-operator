@@ -461,7 +461,8 @@ public class KafkaAssemblyOperatorTest {
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
-                VERSIONS) {
+                VERSIONS,
+                null) {
             @Override
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
@@ -810,27 +811,27 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock StatefulSet get
         when(mockKsOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(
-                originalKafkaCluster.generateStatefulSet(openShift)
+                originalKafkaCluster.generateStatefulSet(openShift, null)
         );
         when(mockZsOps.get(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(
-                originalZookeeperCluster.generateStatefulSet(openShift)
+                originalZookeeperCluster.generateStatefulSet(openShift, null)
         );
         // Mock Deployment get
         if (originalTopicOperator != null) {
             when(mockDepOps.get(clusterNamespace, TopicOperator.topicOperatorName(clusterName))).thenReturn(
-                    originalTopicOperator.generateDeployment(true)
+                    originalTopicOperator.generateDeployment(true, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, TopicOperator.topicOperatorName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalTopicOperator.generateDeployment(true))
+                    Future.succeededFuture(originalTopicOperator.generateDeployment(true, null))
             );
         }
 
         if (originalEntityOperator != null) {
             when(mockDepOps.get(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP)
+                    originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP))
+                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP, null))
             );
         }
 
@@ -901,13 +902,14 @@ public class KafkaAssemblyOperatorTest {
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
-                VERSIONS) {
+                VERSIONS,
+                null) {
             @Override
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
                     @Override
                     public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
-                        return Future.succeededFuture(originalKafkaCluster.generateStatefulSet(openShift));
+                        return Future.succeededFuture(originalKafkaCluster.generateStatefulSet(openShift, null));
                     }
                 };
             }
@@ -925,13 +927,13 @@ public class KafkaAssemblyOperatorTest {
             // rolling restart
             Set<String> expectedRollingRestarts = set();
             if (KafkaSetOperator.needsRollingUpdate(
-                    new StatefulSetDiff(originalKafkaCluster.generateStatefulSet(openShift),
-                    updatedKafkaCluster.generateStatefulSet(openShift)))) {
+                    new StatefulSetDiff(originalKafkaCluster.generateStatefulSet(openShift, null),
+                    updatedKafkaCluster.generateStatefulSet(openShift, null)))) {
                 expectedRollingRestarts.add(originalKafkaCluster.getName());
             }
             if (ZookeeperSetOperator.needsRollingUpdate(
-                    new StatefulSetDiff(originalZookeeperCluster.generateStatefulSet(openShift),
-                            updatedZookeeperCluster.generateStatefulSet(openShift)))) {
+                    new StatefulSetDiff(originalZookeeperCluster.generateStatefulSet(openShift, null),
+                            updatedZookeeperCluster.generateStatefulSet(openShift, null)))) {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }
 
@@ -986,7 +988,7 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift))
+                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift, null))
         );
 
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
@@ -998,7 +1000,7 @@ public class KafkaAssemblyOperatorTest {
         Labels barLabels = Labels.forCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(bar, VERSIONS);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
-                asList(barCluster.generateStatefulSet(openShift))
+                asList(barCluster.generateStatefulSet(openShift, null))
         );
         when(mockSecretOps.list(eq(clusterCmNamespace), eq(barLabels))).thenAnswer(
             invocation -> new ArrayList<>(asList(
@@ -1017,7 +1019,8 @@ public class KafkaAssemblyOperatorTest {
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
-                VERSIONS) {
+                VERSIONS,
+                null) {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
@@ -1070,14 +1073,14 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq("*"), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift))
+                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift, null))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(bar, VERSIONS);
         when(mockKsOps.list(eq("*"), eq(barLabels))).thenReturn(
-                asList(barCluster.generateStatefulSet(openShift))
+                asList(barCluster.generateStatefulSet(openShift, null))
         );
         when(mockSecretOps.list(eq("*"), eq(barLabels))).thenAnswer(
             invocation -> new ArrayList<>(asList(
@@ -1093,7 +1096,8 @@ public class KafkaAssemblyOperatorTest {
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
-                VERSIONS) {
+                VERSIONS,
+                null) {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
