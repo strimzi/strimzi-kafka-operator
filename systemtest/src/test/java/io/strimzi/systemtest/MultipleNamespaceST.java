@@ -98,7 +98,6 @@ class MultipleNamespaceST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
-        setTestNamespaceInfo(CO_NAMESPACE, CO_NAMESPACE, TO_NAMESPACE);
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, TO_NAMESPACE));
         createTestClassResources();
 

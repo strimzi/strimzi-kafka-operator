@@ -51,7 +51,6 @@ class HelmChartST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
-        setTestNamespaceInfo(NAMESPACE);
         createNamespace(NAMESPACE);
         deployClusterOperatorViaHelmChart();
     }

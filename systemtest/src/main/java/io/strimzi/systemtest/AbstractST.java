@@ -108,7 +108,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
-    private static final String DEFAULT_NAMESPACE = KUBE_CLIENT.defaultNamespace();
     private static final long GET_BROKER_API_TIMEOUT = 60_000L;
     private static final long GET_BROKER_API_INTERVAL = 5_000L;
     static final long GLOBAL_TIMEOUT = 300000;
@@ -130,9 +129,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     public static final String OPERATOR_LOG_LEVEL = "INFO";
 
     public static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
-
-    private String baseClusterOperatorNamespace = DEFAULT_NAMESPACE;
-    private List<String> baseBindingsNamespaces = new ArrayList<>();
 
     Resources resources;
     static Resources testClassResources;
@@ -1206,25 +1202,11 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         helmClient().delete(HELM_RELEASE_NAME);
     }
 
-    /**
-     * Set information about CO and bindings namespaces for recovery in case of test failure.
-     * @param coNamespace cluster operator namespace
-     * @param bindingsNamespaces array of bindings namespaces, make sure, that first namespace from this array is namespace where CO is deployed
-     */
-    void setTestNamespaceInfo(String coNamespace, String... bindingsNamespaces) {
-        baseClusterOperatorNamespace = coNamespace;
-        baseBindingsNamespaces = Arrays.asList(bindingsNamespaces);
-    }
-
-    void setTestNamespaceInfo(String coNamespace) {
-        setTestNamespaceInfo(coNamespace, coNamespace);
-    }
-
     @AfterEach
     void recreateEnvironmentAfterFailure(ExtensionContext context) {
         if (context.getExecutionException().isPresent()) {
             LOGGER.info("Test execution contains exception, going to recreate test environment");
-            recreateTestEnv(baseClusterOperatorNamespace, baseBindingsNamespaces);
+            recreateTestEnv(clusterOperatorNamespace, deploymentNamespaces);
             LOGGER.info("Env recreated.");
         }
     }

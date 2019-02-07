@@ -212,7 +212,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
-        setTestNamespaceInfo(NAMESPACE);
         createNamespace(NAMESPACE);
         createCustomResources("../examples/templates/cluster-operator",
                 "../examples/templates/topic-operator",

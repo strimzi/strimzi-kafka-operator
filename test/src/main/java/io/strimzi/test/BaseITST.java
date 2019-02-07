@@ -37,9 +37,11 @@ public class BaseITST {
     public static final KubeClusterResource CLUSTER = new KubeClusterResource();
     protected static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient();
     public static final KubeClient<?> KUBE_CLIENT = CLUSTER.client();
+    private static final String DEFAULT_NAMESPACE = KUBE_CLIENT.defaultNamespace();
 
+    public String clusterOperatorNamespace = DEFAULT_NAMESPACE;
+    public List<String> deploymentNamespaces = new ArrayList<>();
     private List<String> deploymentResources = new ArrayList<>();
-    private List<String> deploymentNamespaces = new ArrayList<>();
     private Stack<String> clusterOperatorConfigs = new Stack<>();
 
     protected String testClass;
@@ -88,6 +90,7 @@ public class BaseITST {
             KUBE_CLIENT.createNamespace(namespace);
             KUBE_CLIENT.waitForResourceCreation("Namespace", namespace);
         }
+        clusterOperatorNamespace = useNamespace;
         LOGGER.info("Using namespace {}", useNamespace);
         KUBE_CLIENT.namespace(useNamespace);
     }
