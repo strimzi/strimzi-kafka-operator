@@ -39,3 +39,21 @@ data:
         annotations:
           summary: 'Kakfa offline log directories'
           description: 'There are {{ $value }} offline log directoris on {{ $labels.kubernetes_pod_name }}'
+    - name: zookeeper
+      rules:
+      - alert: AvgRequestLatency
+        expr: zookeeper_avgrequestlatency > 10
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Zookeeper average request latency'
+          description: 'The average request latency is {{ $value }} on {{ $labels.kubernetes_pod_name }}'
+      - alert: OutstandingRequests
+        expr: zookeeper_outstandingrequests > 10
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Zookeeper outstanding requests'
+          description: 'There are {{ $value }} outstanding requests on {{ $labels.kubernetes_pod_name }}'
