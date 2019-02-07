@@ -62,7 +62,7 @@ It also discovers an alert manager instance in the same namespace.
 If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
 
 The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules; download the resource file as follows:
 
@@ -83,7 +83,7 @@ The provided `prometheus.yaml` file, with all the Prometheus related resources, 
 If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
 
 The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules; download the resource file as follows:
 
