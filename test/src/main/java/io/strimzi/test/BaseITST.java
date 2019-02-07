@@ -82,7 +82,6 @@ public class BaseITST {
      * @param namespaces list of namespaces which will be created
      */
     protected void createNamespaces(String useNamespace, List<String> namespaces) {
-        LOGGER.info(namespaces);
         for (String namespace: namespaces) {
             LOGGER.info("Creating namespace: {}", namespace);
             deploymentNamespaces.add(namespace);
@@ -107,7 +106,6 @@ public class BaseITST {
      */
     protected void deleteNamespaces() {
         Collections.reverse(deploymentNamespaces);
-        LOGGER.info("Going to delete following namespaces: {}", deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting namespace: {}", namespace);
             KUBE_CLIENT.deleteNamespace(namespace);
