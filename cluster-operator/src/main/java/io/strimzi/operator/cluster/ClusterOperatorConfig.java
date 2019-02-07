@@ -112,7 +112,7 @@ public class ClusterOperatorConfig {
         ImagePullPolicy imagePullPolicy = null;
         String imagePullPolicyEnvVar = map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY);
         if (imagePullPolicyEnvVar != null) {
-            switch (imagePullPolicyEnvVar.toLowerCase(Locale.ENGLISH))  {
+            switch (imagePullPolicyEnvVar.trim().toLowerCase(Locale.ENGLISH))  {
                 case "always":
                     imagePullPolicy = ImagePullPolicy.ALWAYS;
                     break;
@@ -120,7 +120,7 @@ public class ClusterOperatorConfig {
                     imagePullPolicy = ImagePullPolicy.IFNOTPRESENT;
                     break;
                 case "never":
-                    imagePullPolicy = ImagePullPolicy.IFNOTPRESENT;
+                    imagePullPolicy = ImagePullPolicy.NEVER;
                     break;
                 default:
                     throw new InvalidConfigurationException(imagePullPolicyEnvVar
