@@ -50,6 +50,8 @@ The following resources are defined:
 * A `ConfigMap` to manage the configuration of Prometheus Server.
 * A `Service` to provide an easy to reference hostname for other services to connect to Prometheus server (such as Grafana).
 
+In order to enable alerting, the provided https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml[`alerting-rules.yaml`] YAML file describes a `ConfigMap` resource which defines some sample alerting rules on Kafka and Zookeeper metrics.
+
 ==== Deploying on {OpenShiftName}
 
 The provided `prometheus.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
@@ -58,10 +60,16 @@ If you are using a different namespace, download the resource file and update it
 [source,shell,subs=attributes+]
 curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
 
+The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules.
+
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml
+
 To deploy all these resources you can run the following.
 
 [source,shell,subs=attributes+]
 oc login -u system:admin
+oc apply -f alerting-rules.yaml
 oc apply -f prometheus.yaml
 
 ifdef::Kubernetes[]
@@ -73,9 +81,15 @@ If you are using a different namespace, download the resource file and update it
 [source,shell,subs=attributes+]
 curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .\*/namespace: _my-namespace_/' > prometheus.yaml
 
+The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules.
+
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml
+
 To deploy all these resources you can run the following.
 
 [source,shell,subs=attributes+]
+kubectl apply -f alerting-rules.yaml
 kubectl apply -f prometheus.yaml
 
 endif::Kubernetes[]
@@ -149,3 +163,39 @@ It includes a description, JMX mbean name, and in some cases a suggestion on wha
 cAdvisor is bundled along with the kubelet binary so that it is automatically available within Kubernetes clusters.
 This reference describes how to monitor cAdvisor metrics in various ways using Prometheus.
 ** https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md[cAdvisor Metrics] - A full list of cAdvisor metrics as exposed through Prometheus.
+
+=== Alerting
+
+Other than a server for scraping metrics, Prometheus provides an alert manager component for alerting.
+It is possible to declare alerting rules in order to notify the user about specific conditions in the metrics.
+Notifications can be delivered via email, on Slack channels and other built-in mechanisms.
+
+The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager.yaml[`alertmanager.yaml`] YAML file describes all the resources required for deploying and configuring the alert manager.
+
+The following resources are defined:
+
+* A `Deployment` to manage the actual alert manager pod.
+* A `ConfigMap` to manage the configuration of the alert manager.
+* A `Service` to provide an easy to reference hostname for other services to connect to alert manager (such as Prometheus).
+
+The provided configuration configures the alert manager to send notification to Slack channels.
+Before deploying the alert manager it is needed to update a couple of parameters.
+The `slack_api_url` needs to be updated with the actual value of the Slack API URL related to application for the Slack workspace.
+The `channel` field needs to be updated with the actual Slack channel on which sending the notification.
+
+==== Deploying on {OpenShiftName}
+
+To deploy the alert manager the following commands should be executed:
+
+[source,shell,subs=attributes+]
+oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager.yaml
+
+ifdef::Kubernetes[]
+==== Deploying on {KubernetesName}
+
+To deploy the alert manager the following commands should be executed:
+
+[source,shell,subs=attributes+]
+kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager.yaml
+
+endif::Kubernetes[]
