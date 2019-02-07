@@ -13,6 +13,7 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -462,6 +463,7 @@ public class ZookeeperLeaderFinderTest {
                 .withNewMetadata()
                     .withName(ZookeeperCluster.zookeeperPodName("my-cluster", 3))
                     .withNamespace("myproject")
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster")
                 .endMetadata()
             .build();
         assertEquals("my-cluster-zookeeper-3.my-cluster-zookeeper-nodes.myproject.svc.cluster.local",

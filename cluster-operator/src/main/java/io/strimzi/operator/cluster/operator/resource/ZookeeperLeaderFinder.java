@@ -12,6 +12,7 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.lang.Integer.parseInt;
 
 /**
  * Helper class for finding the leader of a ZK cluster
@@ -290,7 +293,15 @@ public class ZookeeperLeaderFinder {
 
     /** The hostname for connecting to zookeeper in the given pod. */
     protected String host(Pod pod) {
-        return ZookeeperCluster.podDnsName(pod.getMetadata().getNamespace(), pod.getMetadata().getName());
+        String cluster = Labels.cluster(pod);
+        String podName = pod.getMetadata().getName();
+        int index = podName.lastIndexOf('-');
+        if (index == -1 || index >= podName.length()) {
+            // This should be impossible if the pod name conforms to the names used for SS pods
+            throw new RuntimeException();
+        }
+        int podId = parseInt(podName.substring(index + 1));
+        return ZookeeperCluster.podDnsName(pod.getMetadata().getNamespace(), cluster, podId);
     }
 
     /** The port number for connecting to zookeeper in the given pod. */

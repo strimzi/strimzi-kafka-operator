@@ -17,13 +17,13 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -43,8 +43,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static io.strimzi.operator.cluster.model.ModelUtils.parseImageMap;
 import static java.util.Arrays.asList;
@@ -106,28 +104,12 @@ public class ZookeeperCluster extends AbstractModel {
         return cluster + ZookeeperCluster.HEADLESS_SERVICE_NAME_SUFFIX;
     }
 
-    private static final Pattern POD_NAME_PATTERN = Pattern.compile("^(.*)-zookeeper-([0-9]+)$");
-
-    private static String podDnsName(String namespace, String cluster, String podName) {
+    public static String podDnsName(String namespace, String cluster, int podId) {
         return String.format("%s.%s.%s.svc.%s",
-                podName,
+                ZookeeperCluster.zookeeperPodName(cluster, podId),
                 ZookeeperCluster.headlessServiceName(cluster),
                 namespace,
                 ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
-    }
-
-    public static String podDnsName(String namespace, String cluster, int podId) {
-        return podDnsName(namespace, cluster, ZookeeperCluster.zookeeperPodName(cluster, podId));
-    }
-
-    public static String podDnsName(String namespace, String podName) {
-        Matcher matcher = POD_NAME_PATTERN.matcher(podName);
-        if (matcher.matches()) {
-            String cluster = matcher.group(1);
-            return podDnsName(namespace, cluster, podName);
-        } else {
-            throw new RuntimeException("Pod name " + podName + " did not match expected pattern for Zookeeper pods");
-        }
     }
 
     public static String zookeeperPodName(String cluster, int pod) {
