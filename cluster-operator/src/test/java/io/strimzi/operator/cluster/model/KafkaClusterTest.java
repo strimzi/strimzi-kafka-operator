@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -66,6 +67,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -711,6 +713,68 @@ public class KafkaClusterTest {
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "false")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+    }
+
+    @Test
+    public void testGetExternalNodePortServiceAddressOverrideWithNullAdvertisedHost() {
+        KafkaExternalBrokerService kafkaExternalBrokerService = new KafkaExternalBrokerService();
+        kafkaExternalBrokerService.setBroker(0);
+        kafkaExternalBrokerService.setNodePort(32101);
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+            image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+            .editSpec()
+            .editKafka()
+            .withNewListeners()
+            .withNewKafkaListenerExternalNodePort()
+            .withTls(false)
+            .withNewOverrides()
+            .withNewBootstrap()
+            .withNodePort(32001)
+            .endBootstrap()
+            .withBrokers(kafkaExternalBrokerService)
+            .endOverrides()
+            .endKafkaListenerExternalNodePort()
+            .endListeners()
+            .endKafka()
+            .endSpec()
+            .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        Optional<String> advertisedHostOverride = kc.getExternalNodePortServiceAddressOverride(0);
+
+        assertFalse(advertisedHostOverride.isPresent());
+    }
+
+    @Test
+    public void testGetExternalNodePortServiceAddressOverrideWithNonNullAdvertisedHost() {
+        KafkaExternalBrokerService kafkaExternalBrokerService = new KafkaExternalBrokerService();
+        kafkaExternalBrokerService.setBroker(0);
+        kafkaExternalBrokerService.setNodePort(32101);
+        kafkaExternalBrokerService.setAdvertisedHost("advertised.host");
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+            image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+            .editSpec()
+            .editKafka()
+            .withNewListeners()
+            .withNewKafkaListenerExternalNodePort()
+            .withTls(false)
+            .withNewOverrides()
+            .withNewBootstrap()
+            .withNodePort(32001)
+            .endBootstrap()
+            .withBrokers(kafkaExternalBrokerService)
+            .endOverrides()
+            .endKafkaListenerExternalNodePort()
+            .endListeners()
+            .endKafka()
+            .endSpec()
+            .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        Optional<String> advertisedHostOverride = kc.getExternalNodePortServiceAddressOverride(0);
+
+        assertTrue(advertisedHostOverride.isPresent());
+        assertEquals("advertised.host", advertisedHostOverride.get());
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {

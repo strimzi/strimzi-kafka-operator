@@ -1158,13 +1158,14 @@ public class KafkaCluster extends AbstractModel {
      *
      * @return
      */
-    public Optional<String> getExternalNodePortServiceAddressOverride(String serviceName, int podNumber) {
+    public Optional<String> getExternalNodePortServiceAddressOverride(int podNumber) {
         if (isExposedWithNodePort()) {
             KafkaExternalServiceOverrides externalServiceOverrides =
                 ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
             if (externalServiceOverrides != null && externalServiceOverrides.getBrokers() != null) {
                 String advertisedHost = externalServiceOverrides.getBrokers().stream()
-                    .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber)
+                    .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber
+                        && brokerService.getAdvertisedHost() != null)
                     .map(KafkaExternalBrokerService::getAdvertisedHost)
                     .findAny()
                     .orElse(null);

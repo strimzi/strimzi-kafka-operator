@@ -27,7 +27,6 @@ public class StatefulSetDiff {
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"
         + "|/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
-        + "|/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/value"
         + "|/spec/template/spec/containers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
         + "|/spec/template/spec/containers/[0-9]+/imagePullPolicy"
         + "|/spec/template/spec/containers/[0-9]+/livenessProbe/failureThreshold"
