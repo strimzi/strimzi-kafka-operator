@@ -79,6 +79,7 @@ public class Resources {
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
+    public static final String STRIMZI_DEFAULT_LOG_LEVEL = "DEBUG";
 
     private final NamespacedKubernetesClient client;
 
@@ -632,7 +633,7 @@ public class Resources {
         for (EnvVar envVar : envVars) {
             switch (envVar.getName()) {
                 case "STRIMZI_LOG_LEVEL":
-                    envVar.setValue("DEBUG");
+                    envVar.setValue(System.getenv().getOrDefault("TEST_STRIMZI_LOG_LEVEL", STRIMZI_DEFAULT_LOG_LEVEL));
                     break;
                 case "STRIMZI_NAMESPACE":
                     envVar.setValue(namespace);
