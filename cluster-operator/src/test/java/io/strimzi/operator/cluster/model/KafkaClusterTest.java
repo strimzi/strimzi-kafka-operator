@@ -652,7 +652,7 @@ public class KafkaClusterTest {
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
-        StatefulSet ss = kc.generateStatefulSet(true);
+        StatefulSet ss = kc.generateStatefulSet(true, null);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
