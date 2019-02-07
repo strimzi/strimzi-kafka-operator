@@ -18,7 +18,7 @@ This procedure describes how to upgrade a {ProductName} Kafka cluster from one v
 
 . Consult the table below and determine whether the new Kafka version has a different log message format version than the previous version. 
 +
-include::snip-kafka-versions.adoc[leveloffset=+1]
+{blank}include::snip-kafka-versions.adoc[leveloffset=+1]
 +
 If the log message format versions are the same proceed to the next step. 
 Otherwise, ensure the `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the previous version.
@@ -42,6 +42,7 @@ NOTE: You must format the value of `log.message.format.version` as a string to p
 +
 If `log.message.format.version` is unset then set it and wait for the resulting rolling restart of the Kafka cluster to complete.
 +
+[start=2]
 . Change the `Kafka.spec.kafka.version` to specify the new version, but leave the `log.message.format.version` as the previous version.
 If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's `STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image` as well.
 +
