@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
@@ -55,20 +53,18 @@ public class OpenShiftTemplatesST extends AbstractST {
     public static final String NAMESPACE = "template-test";
 
     public static KubeClusterResource cluster = new KubeClusterResource();
-
     private Oc oc = (Oc) KUBE_CLIENT;
-    private KubernetesClient client = new DefaultKubernetesClient();
 
     private Kafka getKafkaWithName(String clusterName) {
-        return client.customResources(Crds.kafka(), Kafka.class, KafkaAssemblyList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return CLIENT.customResources(Crds.kafka(), Kafka.class, KafkaAssemblyList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     private KafkaConnect getKafkaConnectWithName(String clusterName) {
-        return client.customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return CLIENT.customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     private KafkaConnectS2I getKafkaConnectS2IWithName(String clusterName) {
-        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return CLIENT.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     @Test
@@ -201,7 +197,7 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "TOPIC_PARTITIONS", "10",
                 "TOPIC_REPLICAS", "2"));
 
-        KafkaTopic topic = client.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
+        KafkaTopic topic = CLIENT.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
         assertNotNull(topic);
         assertNotNull(topic.getSpec());
         assertNull(topic.getSpec().getTopicName());

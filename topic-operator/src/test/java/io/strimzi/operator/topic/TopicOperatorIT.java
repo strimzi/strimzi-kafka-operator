@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -135,7 +134,7 @@ public class TopicOperatorIT extends BaseITST {
         kafkaCluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
         kafkaCluster.startup();
 
-        kubeClient = new DefaultKubernetesClient().inNamespace(NAMESPACE);
+        kubeClient = CLIENT.inNamespace(NAMESPACE);
         Crds.registerCustomKinds();
         LOGGER.info("Using namespace {}", NAMESPACE);
         Map<String, String> m = new HashMap();
