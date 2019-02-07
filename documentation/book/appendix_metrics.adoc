@@ -52,6 +52,7 @@ The following resources are defined:
 
 Prometheus also provides an alerting system through the https://prometheus.io/docs/alerting/alertmanager/[alert manager] component.
 In order to enable alerting, the provided https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml[`alerting-rules.yaml`] YAML file describes a `ConfigMap` resource which defines some sample alerting rules on Kafka and Zookeeper metrics.
+When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the alert manager which then uses the configured notification methods to notify the user.
 
 More information about how to set up alerting rules https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[here].
 
@@ -171,7 +172,8 @@ This reference describes how to monitor cAdvisor metrics in various ways using P
 === Alerting
 
 Other than a server for scraping metrics, Prometheus provides an alerting system through the alert manager component.
-It is possible to declare alerting rules in order to be notified about specific conditions in the metrics.
+It is possible to declare alerting rules on the Prometheus server in order to be notified about specific conditions in the metrics.
+When an alert condition is evaluated as true, Prometheus sends alert data to the alert manager which then sends notifications out.
 Notifications can be sent via methods such as email, Slack, PagerDuty and HipChat
 
 The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager.yaml[`alertmanager.yaml`] YAML file describes all the resources required for deploying and configuring the alert manager.
