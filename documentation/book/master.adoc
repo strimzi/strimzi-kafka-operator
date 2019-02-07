@@ -28,6 +28,10 @@ ifdef::InstallationAppendix[]
 include::appendix_deploying_kubernetes_openshift_cluster.adoc[]
 endif::InstallationAppendix[]
 
+ifdef::MetricsAppendix[]
+include::appendix_metrics.adoc[]
+endif::MetricsAppendix[]
+
 [appendix]
 [id='api_reference-{context}']
 :parent-context: {context}
@@ -35,7 +39,3 @@ endif::InstallationAppendix[]
 ## Custom Resource API Reference
 include::appendix_crds.adoc[]
 :context: {parent-context}
-
-ifdef::MetricsAppendix[]
-include::appendix_metrics.adoc[]
-endif::MetricsAppendix[]
