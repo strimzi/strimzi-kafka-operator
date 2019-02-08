@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -35,6 +36,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -85,6 +87,7 @@ public class MaintenanceTimeWindowsTest {
                 .withInitialInstances(Collections.singleton(this.kafka))
                 .end()
                 .build();
+        ResourceUtils.mockHttpClientForWorkaroundRbac(mockClient);
 
         this.clusterCaSecret = new SecretBuilder()
                 .withNewMetadata()

@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.assembly;
+package io.strimzi.test.mockkube;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
@@ -38,13 +38,13 @@ import io.fabric8.kubernetes.api.model.apiextensions.DoneableCustomResourceDefin
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.fabric8.kubernetes.api.model.networking.DoneableNetworkPolicy;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
+import io.fabric8.kubernetes.api.model.networking.DoneableNetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.policy.DoneablePodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetList;
@@ -64,23 +64,15 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
-import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
-
 import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.OngoingStubbing;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -94,12 +86,11 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 public class MockKube {
 
@@ -241,30 +232,8 @@ public class MockKube {
         when(mockClient.policy()).thenReturn(policy);
         when(mockClient.policy().podDisruptionBudget()).thenReturn(mockPdb);
 
-        mockHttpClientForWorkaroundRbac(mockClient);
+        //mockHttpClientForWorkaroundRbac(mockClient);
         return mockClient;
-    }
-
-    /**
-     * @deprecated this can be removed when {@link WorkaroundRbacOperator} is removed.
-     */
-    @Deprecated
-    private void mockHttpClientForWorkaroundRbac(KubernetesClient mockClient) {
-        when(mockClient.isAdaptable(OkHttpClient.class)).thenReturn(true);
-        OkHttpClient mc = mock(OkHttpClient.class);
-        try {
-            doAnswer(i -> {
-                Call call = mock(Call.class);
-                Request req = i.getArgument(0);
-                Response resp = new Response.Builder().protocol(Protocol.HTTP_1_1).request(req).code(200).message("OK").build();
-                doReturn(resp).when(call).execute();
-                return call;
-            }).when(mc).newCall(any());
-            when(mockClient.adapt(OkHttpClient.class)).thenReturn(mc);
-            when(mockClient.getMasterUrl()).thenReturn(new URL("http://localhost"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> buildDeployments(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods) {

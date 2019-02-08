@@ -27,6 +27,7 @@ import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -115,6 +116,7 @@ public class PartialRollingUpdateTest {
                 .withInitialInstances(Collections.singleton(cluster))
                 .end()
                 .build();
+        ResourceUtils.mockHttpClientForWorkaroundRbac(bootstrapClient);
 
         ResourceOperatorSupplier supplier = supplier(bootstrapClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
@@ -161,6 +163,7 @@ public class PartialRollingUpdateTest {
                 .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
                 .withInitialSecrets(set(clusterCaCert, clusterCaKey, clientsCaCert, clientsCaKey))
                 .build();
+        ResourceUtils.mockHttpClientForWorkaroundRbac(mockClient);
 
         ResourceOperatorSupplier supplier = supplier(mockClient);
 

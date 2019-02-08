@@ -42,6 +42,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -230,6 +231,8 @@ public class KafkaAssemblyOperatorMockTest {
 
         mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
+        ResourceUtils.mockHttpClientForWorkaroundRbac(mockClient);
+
     }
 
     @After
