@@ -122,7 +122,7 @@ public class ModelUtilsTest {
         }
 
         @Override
-        protected List<Container> getContainers() {
+        protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
             return null;
         }
     }

@@ -22,13 +22,11 @@ public class StatefulSetDiff {
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
         "^(/spec/revisionHistoryLimit"
         + "|/spec/template/metadata/annotations"  // Actually it's only the statefulset-generation annotation we care about
-        + "|/spec/template/spec/initContainers/[0-9]+/imagePullPolicy"
         + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"
         + "|/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
         + "|/spec/template/spec/containers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
-        + "|/spec/template/spec/containers/[0-9]+/imagePullPolicy"
         + "|/spec/template/spec/containers/[0-9]+/livenessProbe/failureThreshold"
         + "|/spec/template/spec/containers/[0-9]+/livenessProbe/periodSeconds"
         + "|/spec/template/spec/containers/[0-9]+/livenessProbe/successThreshold"

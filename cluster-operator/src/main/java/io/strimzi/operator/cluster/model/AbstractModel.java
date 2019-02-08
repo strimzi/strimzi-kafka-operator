@@ -70,6 +70,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -532,14 +533,14 @@ public abstract class AbstractModel {
     /**
      * @return a list of init containers to add to the StatefulSet/Deployment
      */
-    protected List<Container> getInitContainers() {
+    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
         return null;
     }
 
     /**
      * @return a list of containers to add to the StatefulSet/Deployment
      */
-    protected abstract List<Container> getContainers();
+    protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
 
     protected VolumeMount createVolumeMount(String name, String path) {
         VolumeMount volumeMount = new VolumeMountBuilder()
@@ -1022,6 +1023,28 @@ public abstract class AbstractModel {
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels()).build())
                 .endSpec()
                 .build();
+    }
+
+    /**
+     * When ImagePullPolicy is not specified by the user, Kubernetes will automatically set it based on the image
+     *    :latest results in Always
+     *    anything else results in IfNotPresent
+     * This causes issues in diffing. So we emulate here the Kubernetes defaults and set the policy accoridngly already on our side.
+     *
+     * @param requestedImagePullPolicy  The imagePullPolicy requested by the user (is always preferred when set, ignored when null)
+     * @param image The image used for the container. From its tag we determine the default policy
+     * @return  The Image Pull Policy: Always, Never or IfNotPresent
+     */
+    protected String determineImagePullPolicy(ImagePullPolicy requestedImagePullPolicy, String image)  {
+        if (requestedImagePullPolicy != null)   {
+            return requestedImagePullPolicy.toString();
+        }
+
+        if (image.toLowerCase(Locale.ENGLISH).endsWith(":latest"))  {
+            return ImagePullPolicy.ALWAYS.toString();
+        } else {
+            return ImagePullPolicy.IFNOTPRESENT.toString();
+        }
     }
 
     String getAncillaryConfigMapKeyLogConfig() {

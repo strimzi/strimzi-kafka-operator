@@ -250,7 +250,7 @@ public class KafkaAssemblyOperatorMockTest {
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ResourceOperatorSupplier supplier = supplierWithMocks();
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
-                new MockCertManager(), supplier, VERSIONS);
+                new MockCertManager(), supplier, VERSIONS, null);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();

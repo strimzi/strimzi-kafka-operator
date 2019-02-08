@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.InvalidConfigurationException;
@@ -13,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,6 +36,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_KAFKA_CONNECT_IMAGES = "STRIMZI_KAFKA_CONNECT_IMAGES";
     public static final String STRIMZI_KAFKA_CONNECT_S2I_IMAGES = "STRIMZI_KAFKA_CONNECT_S2I_IMAGES";
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES";
+    public static final String STRIMZI_IMAGE_PULL_POLICY = "STRIMZI_IMAGE_PULL_POLICY";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
@@ -44,6 +47,7 @@ public class ClusterOperatorConfig {
     private final long operationTimeoutMs;
     private final boolean createClusterRoles;
     private final KafkaVersion.Lookup versions;
+    private final ImagePullPolicy imagePullPolicy;
 
     /**
      * Constructor
@@ -53,13 +57,15 @@ public class ClusterOperatorConfig {
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      * @param createClusterRoles true to create the cluster roles
      * @param versions The configured Kafka versions
+     * @param imagePullPolicy Image pull policy configured by the user
      */
-    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions) {
+    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
         this.createClusterRoles = createClusterRoles;
         this.versions = versions;
+        this.imagePullPolicy = imagePullPolicy;
     }
 
     /**
@@ -104,6 +110,28 @@ public class ClusterOperatorConfig {
             createClusterRoles = Boolean.parseBoolean(createClusterRolesEnvVar);
         }
 
+        ImagePullPolicy imagePullPolicy = null;
+        String imagePullPolicyEnvVar = map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY);
+        if (imagePullPolicyEnvVar != null) {
+            switch (imagePullPolicyEnvVar.trim().toLowerCase(Locale.ENGLISH))  {
+                case "always":
+                    imagePullPolicy = ImagePullPolicy.ALWAYS;
+                    break;
+                case "ifnotpresent":
+                    imagePullPolicy = ImagePullPolicy.IFNOTPRESENT;
+                    break;
+                case "never":
+                    imagePullPolicy = ImagePullPolicy.NEVER;
+                    break;
+                default:
+                    throw new InvalidConfigurationException(imagePullPolicyEnvVar
+                            + " is not a valid " + ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY + " value. " +
+                            ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY + " can have one of the following values: Always, IfNotPresent, Never.");
+            }
+
+            createClusterRoles = Boolean.parseBoolean(createClusterRolesEnvVar);
+        }
+
         KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
                 ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_IMAGES)),
                 ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_CONNECT_IMAGES)),
@@ -122,7 +150,7 @@ public class ClusterOperatorConfig {
             }
         }
 
-        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup);
+        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup, imagePullPolicy);
     }
 
 
@@ -158,6 +186,13 @@ public class ClusterOperatorConfig {
         return versions;
     }
 
+    /**
+     * @return  The user-configure image pull policy. Null if it was not configured.
+     */
+    public ImagePullPolicy getImagePullPolicy() {
+        return imagePullPolicy;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -166,6 +201,7 @@ public class ClusterOperatorConfig {
                 ",operationTimeoutMs=" + operationTimeoutMs +
                 ",createClusterRoles=" + createClusterRoles +
                 ",versions=" + versions +
+                ",imagePullPolicy=" + imagePullPolicy +
                 ")";
     }
 }

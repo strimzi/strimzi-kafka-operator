@@ -38,6 +38,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
+import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaUpgrade;
@@ -130,8 +131,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                  long operationTimeoutMs,
                                  CertManager certManager,
                                  ResourceOperatorSupplier supplier,
-                                 KafkaVersion.Lookup versions) {
-        super(vertx, isOpenShift, ResourceType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations, supplier.networkPolicyOperator, supplier.podDisruptionBudgetOperator);
+                                 KafkaVersion.Lookup versions,
+                                 ImagePullPolicy imagePullPolicy) {
+        super(vertx, isOpenShift, ResourceType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations, supplier.networkPolicyOperator, supplier.podDisruptionBudgetOperator, imagePullPolicy);
         this.operationTimeoutMs = operationTimeoutMs;
         this.serviceOperations = supplier.serviceOperations;
         this.routeOperations = supplier.routeOperations;
@@ -930,7 +932,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkStatefulSet() {
-            StatefulSet zkSs = zkCluster.generateStatefulSet(isOpenShift);
+            StatefulSet zkSs = zkCluster.generateStatefulSet(isOpenShift, imagePullPolicy);
             Annotations.annotations(zkSs.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSs));
         }
@@ -1415,7 +1417,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaStatefulSet() {
             kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
-            StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(isOpenShift);
+            StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(isOpenShift, imagePullPolicy);
             PodTemplateSpec template = kafkaSs.getSpec().getTemplate();
             Annotations.annotations(template).put(
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION,
@@ -1480,7 +1482,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     topicOperator.getLogging() instanceof ExternalLogging ?
                                             configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
                                             null);
-                            this.toDeployment = topicOperator.generateDeployment(isOpenShift);
+                            this.toDeployment = topicOperator.generateDeployment(isOpenShift, imagePullPolicy);
                             this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             Annotations.annotations(this.toDeployment.getSpec().getTemplate()).put(
                                     ANNO_STRIMZI_IO_LOGGING,
@@ -1578,7 +1580,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             annotations.put(ANNO_STRIMZI_IO_LOGGING, topicOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties") + userOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties"));
 
                             this.entityOperator = entityOperator;
-                            this.eoDeployment = entityOperator.generateDeployment(isOpenShift, annotations);
+                            this.eoDeployment = entityOperator.generateDeployment(isOpenShift, annotations, imagePullPolicy);
                             this.topicOperatorMetricsAndLogsConfigMap = topicOperatorLogAndMetricsConfigMap;
                             this.userOperatorMetricsAndLogsConfigMap = userOperatorLogAndMetricsConfigMap;
                         }

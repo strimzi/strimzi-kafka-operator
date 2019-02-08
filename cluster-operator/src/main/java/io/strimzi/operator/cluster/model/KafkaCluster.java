@@ -619,14 +619,14 @@ public class KafkaCluster extends AbstractModel {
      * @param isOpenShift True iff this operator is operating within OpenShift.
      * @return The generate StatefulSet
      */
-    public StatefulSet generateStatefulSet(boolean isOpenShift) {
+    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
         return createStatefulSet(
                 singletonMap(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version()),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
-                getInitContainers(),
-                getContainers(),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
                 isOpenShift);
     }
 
@@ -773,7 +773,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getInitContainers() {
+    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> initContainers = new ArrayList<>();
 
         if (rack != null || isExposedWithNodePort()) {
@@ -807,6 +807,7 @@ public class KafkaCluster extends AbstractModel {
                     .withResources(resources)
                     .withEnv(varList)
                     .withVolumeMounts(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
+                    .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
                     .build();
 
             initContainers.add(initContainer);
@@ -825,7 +826,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers() {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>();
 
@@ -838,6 +839,7 @@ public class KafkaCluster extends AbstractModel {
                 .withLivenessProbe(createTcpSocketProbe(REPLICATION_PORT, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createTcpSocketProbe(REPLICATION_PORT, readinessInitialDelay, readinessTimeout))
                 .withResources(ModelUtils.resources(getResources()))
+                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build();
 
         String tlsSidecarImage = KafkaClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;
@@ -856,6 +858,7 @@ public class KafkaCluster extends AbstractModel {
                 .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
                         createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/opt/stunnel/stunnel_pre_stop.sh", String.valueOf(templateTerminationGracePeriodSeconds)).endExec().endPreStop().build())
+                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();
 
         containers.add(container);

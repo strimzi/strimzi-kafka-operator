@@ -54,7 +54,7 @@ public class AbstractModelTest {
             }
 
             @Override
-            protected List<Container> getContainers() {
+            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
                 return emptyList();
             }
         };
@@ -149,7 +149,7 @@ public class AbstractModelTest {
             }
 
             @Override
-            protected List<Container> getContainers() {
+            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
                 return emptyList();
             }
         };
@@ -184,7 +184,7 @@ public class AbstractModelTest {
              * @return a list of containers to add to the StatefulSet/Deployment
              */
             @Override
-            protected List<Container> getContainers() {
+            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
                 return null;
             }
         };
@@ -208,7 +208,7 @@ public class AbstractModelTest {
             }
 
             @Override
-            protected List<Container> getContainers() {
+            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
                 return emptyList();
             }
         };
@@ -220,5 +220,26 @@ public class AbstractModelTest {
         assertEquals(kafka.getKind(), ref.getKind());
         assertEquals(kafka.getMetadata().getName(), ref.getName());
         assertEquals(kafka.getMetadata().getUid(), ref.getUid());
+    }
+
+    @Test
+    public void testDetermineImagePullPolicy()  {
+        AbstractModel am = new AbstractModel("my-namespace", "my-cluster", Labels.forCluster("my-cluster")) {
+            @Override
+            protected String getDefaultLogConfigFileName() {
+                return "";
+            }
+
+            @Override
+            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+                return emptyList();
+            }
+        };
+
+        Assert.assertEquals(ImagePullPolicy.ALWAYS.toString(), am.determineImagePullPolicy(ImagePullPolicy.ALWAYS, "docker.io/repo/image:tag"));
+        Assert.assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:tag"));
+        Assert.assertEquals(ImagePullPolicy.NEVER.toString(), am.determineImagePullPolicy(ImagePullPolicy.NEVER, "docker.io/repo/image:tag"));
+        Assert.assertEquals(ImagePullPolicy.ALWAYS.toString(), am.determineImagePullPolicy(null, "docker.io/repo/image:latest"));
+        Assert.assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), am.determineImagePullPolicy(null, "docker.io/repo/image:not-so-latest"));
     }
 }

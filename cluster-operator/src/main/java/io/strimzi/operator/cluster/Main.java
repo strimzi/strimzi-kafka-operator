@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
@@ -112,19 +113,23 @@ public class Main {
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift,
                 config.getOperationTimeoutMs(), certManager,
                 new ResourceOperatorSupplier(vertx, client, isOpenShift, config.getOperationTimeoutMs()),
-                config.versions());
-        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift, certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations, networkPolicyOperator,
-                podDisruptionBudgetOperator, config.versions());
+                config.versions(), config.getImagePullPolicy());
+        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift,
+                certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations,
+                networkPolicyOperator, podDisruptionBudgetOperator, config.versions(), config.getImagePullPolicy());
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
         if (isOpenShift) {
-            kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations, configMapOperations, secretOperations, certManager, config.versions());
+            kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations,
+                    configMapOperations, secretOperations, certManager, config.versions(), config.getImagePullPolicy());
         } else {
             maybeLogS2iOnKubeWarning(vertx, client);
         }
 
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
-                new KafkaMirrorMakerAssemblyOperator(vertx, isOpenShift, certManager, kmmo, secretOperations, configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations, podDisruptionBudgetOperator, config.versions());
+                new KafkaMirrorMakerAssemblyOperator(vertx, isOpenShift, certManager, kmmo, secretOperations,
+                        configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations,
+                        podDisruptionBudgetOperator, config.versions(), config.getImagePullPolicy());
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
@@ -164,7 +169,7 @@ public class Main {
         }
     }
 
-    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, boolean isOpenShift, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, KafkaVersion.Lookup versions) {
+    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, boolean isOpenShift, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
         ImageStreamOperator imagesStreamOperations;
         BuildConfigOperator buildConfigOperations;
         DeploymentConfigOperator deploymentConfigOperations;
@@ -183,7 +188,7 @@ public class Main {
                 certManager,
                 kafkaConnectS2iCrdOperator,
                  configMapOperations, deploymentConfigOperations,
-                serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, versions);
+                serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, versions, imagePullPolicy);
         return kafkaConnectS2IClusterOperations;
     }
 

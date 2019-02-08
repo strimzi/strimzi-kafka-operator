@@ -108,7 +108,7 @@ public class JbodStorageTest {
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(this.vertx, this.mockClient, false, 60_000L);
 
-        this.kao = new KafkaAssemblyOperator(this.vertx, false, 2_000, new MockCertManager(), ros, VERSIONS);
+        this.kao = new KafkaAssemblyOperator(this.vertx, false, 2_000, new MockCertManager(), ros, VERSIONS, null);
     }
 
     @Test

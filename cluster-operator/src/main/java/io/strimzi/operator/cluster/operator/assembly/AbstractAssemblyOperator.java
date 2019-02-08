@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
+import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -68,20 +69,27 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final CertManager certManager;
     protected final NetworkPolicyOperator networkPolicyOperator;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+    protected final ImagePullPolicy imagePullPolicy;
     private final String kind;
 
     /**
      * @param vertx The Vertx instance
      * @param isOpenShift True iff running on OpenShift
      * @param assemblyType Assembly type
+     * @param certManager Certificate manager
      * @param resourceOperator For operating on the desired resource
+     * @param secretOperations For operating secrets
+     * @param networkPolicyOperator For operating NEtworkPolicies
+     * @param podDisruptionBudgetOperator For operating PodDisruptionBudgets
+     * @param imagePullPolicy The user-configured image pull policy. Null if the user didn't configured it.
      */
     protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, ResourceType assemblyType,
                                        CertManager certManager,
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
                                        SecretOperator secretOperations,
                                        NetworkPolicyOperator networkPolicyOperator,
-                                       PodDisruptionBudgetOperator podDisruptionBudgetOperator) {
+                                       PodDisruptionBudgetOperator podDisruptionBudgetOperator,
+                                       ImagePullPolicy imagePullPolicy) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
@@ -91,6 +99,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.secretOperations = secretOperations;
         this.networkPolicyOperator = networkPolicyOperator;
         this.podDisruptionBudgetOperator = podDisruptionBudgetOperator;
+        this.imagePullPolicy = imagePullPolicy;
     }
 
     /**

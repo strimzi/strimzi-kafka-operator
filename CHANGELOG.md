@@ -3,6 +3,7 @@
 ## 0.11.0
 
 * Add support for JBOD storage for Kafka brokers
+* Allow users to configure the default ImagePullPolicy
 
 ## 0.10.0
 
