@@ -38,10 +38,6 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
-    <dependency>
-      <groupId>io.strimzi</groupId>
-      <artifactId>test</artifactId>
-    </dependency>
   </dependencies>
 
 </project>

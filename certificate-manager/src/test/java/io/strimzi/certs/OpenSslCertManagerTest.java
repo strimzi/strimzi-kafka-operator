@@ -4,7 +4,7 @@
  */
 package io.strimzi.certs;
 
-import io.strimzi.test.TestUtils;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -34,14 +34,13 @@ public class OpenSslCertManagerTest {
 
     @BeforeClass
     public static void before() throws CertificateException {
-        TestUtils.assumeLinux();
+        Assume.assumeTrue(System.getProperty("os.name").contains("nux"));
         certFactory = CertificateFactory.getInstance("X.509");
         ssl = new OpenSslCertManager();
     }
 
     @Test
     public void testGenerateSelfSignedCert() throws Exception {
-
         File key = File.createTempFile("key-", ".key");
         File cert = File.createTempFile("crt-", ".crt");
 
