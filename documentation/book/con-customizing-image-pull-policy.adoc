@@ -10,7 +10,7 @@ Image Pull Policy is configured using the environment variable `STRIMZI_IMAGE_PU
 The `STRIMZI_IMAGE_PULL_POLICY` environment variable can be set to three different values:
 
 `Always`::
-Container images are pulled from the registry every time the the pod is started or restarted.
+Container images are pulled from the registry every time the pod is started or restarted.
 
 `IfNotPresent`::
 Container images are pulled from the registry only when they were not pulled before.
