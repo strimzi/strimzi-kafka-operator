@@ -19,7 +19,7 @@ import lombok.EqualsAndHashCode;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class CertAndKeySecretSource extends CertSecretSource {
     private static final long serialVersionUID = 1L;
 

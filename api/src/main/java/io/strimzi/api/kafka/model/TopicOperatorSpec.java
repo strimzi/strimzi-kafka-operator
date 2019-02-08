@@ -25,7 +25,7 @@ import lombok.EqualsAndHashCode;
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
         "affinity", "resources", "topicMetadataMaxAttempts", "tlsSidecar", "logging"})
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class TopicOperatorSpec extends EntityTopicOperatorSpec {
 
     private static final long serialVersionUID = 1L;
