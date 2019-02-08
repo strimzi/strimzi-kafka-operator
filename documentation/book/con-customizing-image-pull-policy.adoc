@@ -19,7 +19,7 @@ Container images are pulled from the registry only when they were not pulled bef
 Container images are never pulled from the registry.
 
 The Image Pull Policy can be currently customized only for all Kafka, Kafka Connect and Kafka Mirror Maker clusters at once.
-Changing the policy will result in rolling update of all your Kafka, Kafka Connect and Kafka Mirror Maker clusters.
+Changing the policy will result in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.
 
 .Additional resources
 
