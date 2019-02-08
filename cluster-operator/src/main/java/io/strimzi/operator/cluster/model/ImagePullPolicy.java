@@ -4,6 +4,12 @@
  */
 package io.strimzi.operator.cluster.model;
 
+/**
+ * Enum for ImagePullPolicy types. Supports the 3 types supported in Kubernetes / OpenShift:
+ * - Always
+ * - Never
+ * - IfNotPresent
+ */
 public enum ImagePullPolicy {
     ALWAYS("Always"),
     IFNOTPRESENT("IfNotPresent"),

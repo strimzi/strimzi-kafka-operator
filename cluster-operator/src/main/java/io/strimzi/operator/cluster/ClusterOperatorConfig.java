@@ -57,6 +57,7 @@ public class ClusterOperatorConfig {
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      * @param createClusterRoles true to create the cluster roles
      * @param versions The configured Kafka versions
+     * @param imagePullPolicy Image pull policy configured by the user
      */
     public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
@@ -185,6 +186,9 @@ public class ClusterOperatorConfig {
         return versions;
     }
 
+    /**
+     * @return  The user-configure image pull policy. Null if it was not configured.
+     */
     public ImagePullPolicy getImagePullPolicy() {
         return imagePullPolicy;
     }

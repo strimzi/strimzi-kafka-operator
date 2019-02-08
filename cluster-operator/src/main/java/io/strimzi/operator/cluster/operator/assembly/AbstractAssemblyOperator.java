@@ -76,7 +76,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param vertx The Vertx instance
      * @param isOpenShift True iff running on OpenShift
      * @param assemblyType Assembly type
+     * @param certManager Certificate manager
      * @param resourceOperator For operating on the desired resource
+     * @param secretOperations For operating secrets
+     * @param networkPolicyOperator For operating NEtworkPolicies
+     * @param podDisruptionBudgetOperator For operating PodDisruptionBudgets
+     * @param imagePullPolicy The user-configured image pull policy. Null if the user didn't configured it.
      */
     protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, ResourceType assemblyType,
                                        CertManager certManager,
