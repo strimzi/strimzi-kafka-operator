@@ -551,6 +551,16 @@ public abstract class AbstractModel {
         return volumeMount;
     }
 
+    protected VolumeMount createVolumeMountWithSubPath(String name, String path, String subPath) {
+        VolumeMount volumeMount = new VolumeMountBuilder()
+                .withName(name)
+                .withMountPath(path)
+                .withSubPath(subPath)
+                .build();
+        log.trace("Created volume mount {}", volumeMount);
+        return volumeMount;
+    }
+
     protected ContainerPort createContainerPort(String name, int port, String protocol) {
         ContainerPort containerPort = new ContainerPortBuilder()
                 .withName(name)

@@ -22,7 +22,7 @@ import java.util.Map;
         generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
-@JsonPropertyOrder({"type", "size", "storageClass", "selector", "deleteClaim"})
+@JsonPropertyOrder({"type", "size", "storageClass", "selector", "deleteClaim", "subPath"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 public class PersistentClaimStorage extends SingleVolumeStorage {
@@ -33,6 +33,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
     private String storageClass;
     private Map<String, String> selector;
     private boolean deleteClaim;
+    private String subPath;
 
     private Integer id;
 
@@ -93,5 +94,15 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     public void setDeleteClaim(boolean deleteClaim) {
         this.deleteClaim = deleteClaim;
+    }
+
+    @Description("The subPath on the claimed volume to use")
+    @JsonProperty("subPath")
+    public String getSubPath() {
+        return subPath;
+    }
+
+    public void setSubPath(String subPath) {
+        this.subPath = subPath;
     }
 }

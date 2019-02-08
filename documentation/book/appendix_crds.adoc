@@ -126,6 +126,8 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |map
 |deleteClaim  1.2+<.<|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
 |boolean
+|subPath      1.2+<.<|The subPath on the claimed volume to use.
+|string
 |class        1.2+<.<|The storage class to use for dynamic volume allocation.
 |string
 |id           1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.

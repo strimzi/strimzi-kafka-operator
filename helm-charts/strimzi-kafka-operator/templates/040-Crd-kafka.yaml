@@ -47,6 +47,8 @@ spec:
                       type: object
                     size:
                       type: string
+                    subPath:
+                      type: string
                     type:
                       type: string
                       enum:
@@ -68,6 +70,8 @@ spec:
                           selector:
                             type: object
                           size:
+                            type: string
+                          subPath:
                             type: string
                           type:
                             type: string
@@ -840,6 +844,8 @@ spec:
                     selector:
                       type: object
                     size:
+                      type: string
+                    subPath:
                       type: string
                     type:
                       type: string

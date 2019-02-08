@@ -700,12 +700,18 @@ public class KafkaCluster extends AbstractModel {
             String name = ModelUtils.getVolumePrefix(id);
             String mountPath = this.mountPath + "/" + name;
 
+            final VolumeMount volumeMount;
             if (storage instanceof EphemeralStorage) {
                 dataVolumes.add(createEmptyDirVolume(name));
+                volumeMount = createVolumeMount(name, mountPath);
             } else if (storage instanceof PersistentClaimStorage) {
-                dataPvcs.add(createPersistentVolumeClaim(name, (PersistentClaimStorage) storage));
+                PersistentClaimStorage pcs = (PersistentClaimStorage) storage;
+                dataPvcs.add(createPersistentVolumeClaim(name, pcs));
+                volumeMount = createVolumeMountWithSubPath(name, mountPath, pcs.getSubPath());
+            } else {
+                volumeMount = createVolumeMount(name, mountPath);
             }
-            dataVolumeMountPaths.add(createVolumeMount(name, mountPath));
+            dataVolumeMountPaths.add(volumeMount);
         }
     }
 
