@@ -3,7 +3,7 @@
 // assembly-customizing-deployments.adoc
 
 [id='con-customizing-image-pull-policy-{context}']
-= Customizing Image Pull Policy
+= Customizing the image pull policy
 
 {ProductName} allows you to customize the Image Pull Policy for containers in all pods deployed by the Cluster Operator.
 Image Pull Policy is configured using the environment variable `STRIMZI_IMAGE_PULL_POLICY` in the Cluster Operator deployment.
