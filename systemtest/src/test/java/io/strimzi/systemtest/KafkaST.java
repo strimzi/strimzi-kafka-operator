@@ -98,6 +98,7 @@ class KafkaST extends AbstractST {
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
         oc.waitForStatefulSet(zookeeperClusterName(clusterName), 3);
         oc.waitForStatefulSet(kafkaClusterName(clusterName), 3);
+        oc.waitForDeployment(entityOperatorDeploymentName(clusterName), 1);
 
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
@@ -106,6 +107,7 @@ class KafkaST extends AbstractST {
         oc.deleteByName("Kafka", clusterName);
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
+        oc.waitForResourceDeletion("deployment", entityOperatorDeploymentName(clusterName));
 
         CLIENT.pods().list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
