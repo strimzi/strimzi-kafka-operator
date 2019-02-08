@@ -1,0 +1,16 @@
+[[make-tooling]]
+= Using make with documentation
+
+When you make changes to the documentation, it is a good practice to do a local test build to verify the book builds successfully and renders as you expect before you submit the merge request back to upstream master.
+
+Make is a useful tool for building your documentation and pushing it to a public website so that peer and quality reviewers can see your edits as the user would.
+
+== Make commands to build documentation
+
+`make clean`:: Delete all temporary files
+`make check`:: Execute the custom checks in `.travis/check_docs.sh`
+`make build`:: Build the docs using asciidoc, excluding the generated documentation
+`make buildall`:: Build the docs using asciidoc, including the generated documentation (requires link:https://maven.apache.org/[`mvn`]).
+`make publish`:: Build the docs via `make build` and publish them using `rsync`. The publish destination is configured via a `Makefile.publish` (not included in this PR; provided by each user so they can publish to their own location). The `Makefile.publish` needs to configure a single `PUBLISH_DEST` variable which is the remote directory (`<host>:<dir>`) to copy the generated docs to.
+
+See the output in your browser at file in your project directory at: `documentation/html/index.html`

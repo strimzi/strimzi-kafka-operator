@@ -1,12 +1,12 @@
 [[setting-up-git]]
-= Setting up Git
+= Setting up git
 
 Strimzi uses git to manage repositories.  This guide explains how to set up your system to connect to the proper git repositories.
 
 https://github.com/strimzi/strimzi-kafka-operator[`strimzi-kafka-operator`^] (GitHub):: A public GitHub repo that hosts all of the Strimzi code and documentation.
 
 [[install-git]]
-== Install Git
+== Install git
 
 If using Fedora, open your terminal and enter the proper installation command.
 
@@ -19,12 +19,12 @@ $ dnf install git (Fedora 22 and later)
 ----
 
 [discrete]
-=== Other Operating Systems
+=== Other operating systems
 
 * https://git-scm.com/downloads[Download Git^]
 
 [[configure-git]]
-== Configuring Git
+== Configuring git
 
 Once you have git installed you'll want to set up your git account.
 
@@ -49,7 +49,7 @@ $ git config --global push.default simple
 ----
 
 [[fork-upstream]]
-== Fork the Upstream (GitHub) Repository
+== Fork the upstream (GitHub) repository
 
 Fork the `strimzi-kafka-operator` upstream repository to create a copy under your own GitHub ID. This allows you to work on multiple features and push changes to branches in your own GitHub instance so that you do not have to worry about losing work. When you are ready, you can request the changes to be merged back into the upstream repository.
 
@@ -59,7 +59,7 @@ Fork the `strimzi-kafka-operator` upstream repository to create a copy under you
 . Select your user account for the location of the forked repository. This creates your own copy of the repository under your own GitHub ID.
 
 [[add-ssh-github]]
-== Add Your SSH Keys to GitHub
+== Add your SSH keys to GitHub
 
 If you choose to use the SSH address for your clones, you will need to add an SSH Key to GitHub first.
 
@@ -91,7 +91,7 @@ $ vi id_rsa.pub
 . Click *Add SSH Key*.
 
 [[clone-forked]]
-== Clone Your Forked Upstream Repository
+== Clone your forked upstream repository
 
 Clone your forked repository to bring your GitHub repository files to your local machine. Your forked repository is now the `origin` repository for your local files.
 
@@ -139,7 +139,7 @@ $ cd strimzi-kafka-operator/
 ----
 
 [[add-upstream]]
-== Add the Upstream as a Remote Repository
+== Add the upstream as a remote repository
 
 Once you have your fork checked out and cloned locally, add the downstream repository as a remote.
 
@@ -204,7 +204,7 @@ upstream	https://github.com/strimzi/strimzi-kafka-operator.git (push)
 ----
 
 [[url-update]]
-== Updating Repository URLs
+== Updating repository URLs
 
 If the upstream repository is moved, you can change the downstream URL by using the following command:
 

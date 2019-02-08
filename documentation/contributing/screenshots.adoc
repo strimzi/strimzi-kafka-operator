@@ -1,5 +1,5 @@
 [[screenshot_guidelines]]
-= Screenshot Guidelines
+= Screenshot guidelines
 
 [[screenshot-summary]]
 == Summary
@@ -11,7 +11,7 @@
 * Manipulate your screenshots to *condense important information* in them and limit empty GUI space and other inconsequential parts.
 
 [[screenshot-general]]
-== General Guidelines
+== General guidelines
 * Screen captures can be useful and successful when they achieve one or more of these objectives:
 ** Illustrate a user interface that is fairly complex or difficult to explain in text
 ** Help the user find a small element in a complex user interface
@@ -52,7 +52,7 @@ NOTE: For example: If you have a custom theme on your system, disable it and tak
 * Do not use rounded corners. If the screenshot contains rounded corners, then that is acceptable. But, the screenshot should remain squared.
 
 [[screenshot-specs]]
-== Tech Specs
+== Tech specifications
 * Image width should be at least *660 px* (internal tools will automatically resize the image to a max width of 660 px).
 * The preferred format is *PNG* or *JPG* .
 * The output resolution of images should be *110 dpi* to ensure good quality in the generated PDF.
@@ -75,7 +75,7 @@ NOTE: If you need to take a screenshot of the entire window, use a tool such as 
 * Also, a large number of screenshots can possibly slow download of docs for those on slow connections (rarer for most enterprises these days).
 
 [[screenshot-asciidoc]]
-== AsciiDoc Syntax
+== AsciiDoc syntax
 * Insert a block-level image, which uses a double colon (::). Good for screenshots, diagrams, etc.
 
 ** Example 1: Include an image title in title case (which automatically appends a Figure #).
@@ -92,7 +92,7 @@ This is an inline image. image:icon.png[Alt text] Cool!
 ----
 
 [[screenshot-questions]]
-== Additional Questions
+== Additional questions
 * When should I add a screenshot to my book?
 ** When  introducing a new part of the UI.
 ** When the UI is suboptimal and some elements are difficult to find, located in unusual places, hidden, or somehow less visible.
@@ -105,10 +105,10 @@ TIP: Add a placeholder for the screenshot early on in the development cycle. Thi
 ** The recommended graphical editor is GIMP.
 
 [[screenshot-extensions]]
-== Browser Extensions
+== Browser extensions
 
 [[screenshot-resizing]]
-=== Resizing Screenshots
+=== Resizing screenshots
 There are a couple simple browser extensions that can assist in resizing your browser to the appropriate dimensions.
 
 * Google Chrome extension: https://chrome.google.com/webstore/detail/window-resizer/kkelicaakdanhinjdeammmilcgefonfh?hl=en[_Window Resizer_^]
