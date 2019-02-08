@@ -13,7 +13,7 @@ This procedure describes how to install your own CA certificates and private key
 * A Kafka cluster is not yet deployed.
 * Your own X.509 certificates and keys in PEM format for the cluster CA or clients CA.
 +
-** If you want to use cluster or clients CA which is not a Root CA, you have to include the whole chain in the certificate file.
+** If you want to use a cluster or clients CA which is not a Root CA, you have to include the whole chain in the certificate file.
 The chain should be in the following order:
 +
 1. The cluster or clients CA
