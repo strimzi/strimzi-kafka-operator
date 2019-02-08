@@ -6,7 +6,7 @@
 = Customizing the image pull policy
 
 {ProductName} allows you to customize the Image Pull Policy for containers in all pods deployed by the Cluster Operator.
-Image Pull Policy is configured using the environment variable `STRIMZI_IMAGE_PULL_POLICY` in the Cluster Operator deployment.
+The image pull policy is configured using the environment variable `STRIMZI_IMAGE_PULL_POLICY` in the Cluster Operator deployment.
 The `STRIMZI_IMAGE_PULL_POLICY` environment variable can be set to three different values:
 
 `Always`::
