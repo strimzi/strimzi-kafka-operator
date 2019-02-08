@@ -352,7 +352,7 @@ public class TopicOperatorTest {
                 context.assertEquals("baz", ar2.result().getConfig().get("cleanup.policy"));
                 async.countDown();
             });
-            mockK8s.getFromName(resourceName, ar2 -> {
+            mockK8s.getFromName(resourceName.toString(), ar2 -> {
                 assertSucceeded(context, ar2);
                 context.assertEquals("baz", TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"));
                 async.countDown();
@@ -455,7 +455,7 @@ public class TopicOperatorTest {
                 context.assertEquals(kafkaTopic, readResult.result());
                 async.countDown();
             });
-            mockK8s.getFromName(topicName.asKubeName(), readResult -> {
+            mockK8s.getFromName(topicName.asKubeName().toString(), readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(kafkaTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
@@ -562,7 +562,7 @@ public class TopicOperatorTest {
                 context.assertEquals(mergedTopic, readResult.result());
                 async.countDown();
             });
-            mockK8s.getFromName(topicName.asKubeName(), readResult -> {
+            mockK8s.getFromName(topicName.asKubeName().toString(), readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(mergedTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
@@ -606,7 +606,7 @@ public class TopicOperatorTest {
                 context.assertEquals(kafkaTopic, readResult.result());
                 async.countDown();
             });
-            mockK8s.getFromName(topicName.asKubeName(), readResult -> {
+            mockK8s.getFromName(topicName.asKubeName().toString(), readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(kafkaTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
@@ -648,7 +648,7 @@ public class TopicOperatorTest {
                 context.assertEquals(resultTopic, readResult.result());
                 async.countDown();
             });
-            mockK8s.getFromName(topicName.asKubeName(), readResult -> {
+            mockK8s.getFromName(topicName.asKubeName().toString(), readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(resultTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
@@ -731,7 +731,7 @@ public class TopicOperatorTest {
                 context.assertEquals("baz", ar2.result().getConfig().get("cleanup.policy"));
                 async.countDown();
             });
-            mockK8s.getFromName(resourceName, ar2 -> {
+            mockK8s.getFromName(resourceName.toString(), ar2 -> {
                 assertSucceeded(context, ar2);
                 context.assertEquals("baz", TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"));
                 async.countDown();

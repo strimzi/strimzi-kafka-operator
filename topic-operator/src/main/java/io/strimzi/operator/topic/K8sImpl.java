@@ -92,15 +92,19 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public void getFromName(ResourceName resourceName, Handler<AsyncResult<KafkaTopic>> handler) {
+    public void getFromName(String resourceName, Handler<AsyncResult<KafkaTopic>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                future.complete(operation().inNamespace(namespace).withName(resourceName.toString()).get());
+                List<KafkaTopic> list = operation().inNamespace(namespace).list().getItems();
+                String res = resourceName;
+                if (list.size() > 0)
+                    res = list.stream().filter(a -> (a.getSpec().getTopicName() != null && a.getSpec().getTopicName().equals(resourceName)) || a.getMetadata().getName().equals(resourceName)).findFirst().get().getMetadata().getName();
+                LOGGER.debug("Searching for k8s topic {}", res);
+                future.complete(operation().inNamespace(namespace).withName(res).get());
             } catch (Exception e) {
                 future.fail(e);
             }
         }, handler);
-
     }
 
     /**

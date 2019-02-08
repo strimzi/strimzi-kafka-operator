@@ -721,4 +721,45 @@ public class TopicOperatorIT {
         assertEquals("lee", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("stan"));
         assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
     }
+
+    @Test
+    public void testKafkaTopicInvalidTopicName(TestContext context) throws Exception {
+        String topicName = "test-kafkatopic.BLA_A";
+        String validK8sTopicName = "test-kafkatopic-bla";
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), new ObjectMeta()).build();
+        KafkaTopic kTopic = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        kTopic.getSpec().setTopicName(topicName);
+        kTopic.getMetadata().setName(validK8sTopicName);
+        createKafkaTopicResource(context, kTopic);
+
+        assertEquals(validK8sTopicName, operation().inNamespace(NAMESPACE).withName(validK8sTopicName).get().getMetadata().getName());
+        assertEquals(topicName, operation().inNamespace(NAMESPACE).withName(validK8sTopicName).get().getSpec().getTopicName());
+        // check whether the topic with name equal to k8s resource spec.topicName exists
+        assertNotNull(adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get());
+    }
+
+    @Test
+    public void testK8sKafkaTopicInvalidTopicName(TestContext context) throws Exception {
+        String topicName = "test-kafkatopic.BLA_A";
+        String validK8sTopicName = "test-kafkatopic-bla";
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), new ObjectMeta()).build();
+        KafkaTopic kTopic = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        kTopic.getSpec().setTopicName(topicName);
+        kTopic.getMetadata().setName(validK8sTopicName);
+        createKafkaTopicResource(context, kTopic);
+
+        assertEquals(validK8sTopicName, operation().inNamespace(NAMESPACE).withName(validK8sTopicName).get().getMetadata().getName());
+        assertEquals(topicName, operation().inNamespace(NAMESPACE).withName(validK8sTopicName).get().getSpec().getTopicName());
+        // check whether the topic with name equal to k8s resource spec.topicName exists
+        assertNotNull(adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get());
+
+        Future<?> reconcileFuture = session.topicOperator.reconcileAllTopics("periodic");
+        reconcileFuture.setHandler(context.asyncAssertSuccess(e -> {
+            try {
+                context.assertNotEquals(0, adminClient.listTopics().names().get().size());
+            } catch (InterruptedException | ExecutionException e1) {
+                e1.printStackTrace();
+            }
+        }));
+    }
 }

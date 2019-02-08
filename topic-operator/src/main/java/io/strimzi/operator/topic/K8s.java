@@ -26,7 +26,7 @@ public interface K8s {
      * If a resource with the given name does not exist, the handler will be called with
      * a null {@link AsyncResult#result() result()}.
      */
-    void getFromName(ResourceName resourceName, Handler<AsyncResult<KafkaTopic>> handler);
+    void getFromName(String resourceName, Handler<AsyncResult<KafkaTopic>> handler);
 
     void createEvent(Event event, Handler<AsyncResult<Void>> handler);
 }
