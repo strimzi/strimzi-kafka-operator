@@ -51,7 +51,7 @@ The following resources are defined:
 * A `Service` to provide an easy to reference hostname for other services to connect to Prometheus server (such as Grafana).
 
 Prometheus also provides an alerting system through the link:https://prometheus.io/docs/alerting/alertmanager/[alert manager] component.
-In order to enable alerting, the provided https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml[`alerting-rules.yaml`] YAML file describes a `ConfigMap` resource which defines some sample alerting rules on Kafka and Zookeeper metrics.
+In order to enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml[`alerting-rules.yaml`] file describes a `ConfigMap` resource which defines sample alerting rules on Kafka and Zookeeper metrics.
 When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the alert manager which then uses the configured notification methods to notify the user.
 
 More information about how to set up alerting rules https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[here].
