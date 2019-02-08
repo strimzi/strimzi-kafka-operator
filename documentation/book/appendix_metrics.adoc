@@ -169,6 +169,18 @@ cAdvisor is bundled along with the kubelet binary so that it is automatically av
 This reference describes how to monitor cAdvisor metrics in various ways using Prometheus.
 ** https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md[cAdvisor Metrics] - A full list of cAdvisor metrics as exposed through Prometheus.
 
+=== Prometheus alerting
+
+In the monitoring space, one of the useful aspects is to be notified when some metrics conditions are verified.
+They allow a human operator to get notifications about problems in the monitored system.
+
+Prometheus allows to write so called "alerting rules" which describe such a conditions using https://prometheus.io/docs/prometheus/latest/querying/basics/[PromQL] expressions that are continuously evaluated.
+When an expression becomes true, the described condition is met and the Prometheus server fires an alert.
+
+Prometheus itself is not responsible for sending notifications to the users when an alert is fired.
+A different component, the Prometheus alert manager, is in charge to do so, sending emails, chat messages or using different notification methods.
+When an alert condition is verified, the alert is fired and the Prometheus server sends it to the alert manager which will send notifications.
+
 === Prometheus alert manager
 
 Other than a server for scraping metrics, Prometheus provides an alerting system through the alert manager component.
