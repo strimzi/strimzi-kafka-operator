@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 /**
  * Representation for ephemeral storage.
@@ -18,6 +19,7 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public class EphemeralStorage extends SingleVolumeStorage {
 
     private static final long serialVersionUID = 1L;

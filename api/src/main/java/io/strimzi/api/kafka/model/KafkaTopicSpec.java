@@ -13,6 +13,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import static java.util.Collections.emptyMap;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"partitions", "replicas", "config"})
+@EqualsAndHashCode
 public class KafkaTopicSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;

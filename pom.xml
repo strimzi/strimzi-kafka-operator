@@ -113,6 +113,7 @@
         <module>test</module>
         <module>crd-generator</module>
         <module>api</module>
+        <module>mockkube</module>
         <module>operator-common</module>
         <module>topic-operator</module>
         <module>cluster-operator</module>
@@ -127,6 +128,12 @@
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>test</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>mockkube</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -535,6 +542,7 @@
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-core</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>io.sundr:builder-annotations</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.projectlombok:lombok</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredDependency>org.junit.jupiter</ignoredDependency>

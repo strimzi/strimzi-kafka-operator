@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public class Resources implements Serializable {
 
     private static final long serialVersionUID = 1L;

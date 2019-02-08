@@ -13,6 +13,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import static io.strimzi.api.kafka.model.Quantities.parseMemory;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public class CpuMemory implements Serializable {
 
     private static final long serialVersionUID = 1L;

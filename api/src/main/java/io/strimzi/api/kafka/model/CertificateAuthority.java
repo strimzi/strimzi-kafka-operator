@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.CertificateExpirationPolicy;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "generateCertificateAuthority", "validityDays", "renewalDays" })
+@EqualsAndHashCode
 public class CertificateAuthority implements Serializable {
 
     private static final long serialVersionUID = 1L;

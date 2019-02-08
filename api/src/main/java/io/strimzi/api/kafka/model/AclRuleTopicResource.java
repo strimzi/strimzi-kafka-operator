@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
+import lombok.EqualsAndHashCode;
 
 /**
  * A representation of a topic resource for ACLs
@@ -20,6 +21,7 @@ import io.vertx.core.cli.annotations.DefaultValue;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "name", "patternType"})
+@EqualsAndHashCode
 public class AclRuleTopicResource extends AclRuleResource {
     private static final long serialVersionUID = 1L;
 

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 /**
  * A representation of a cluster resource for ACLs
@@ -19,6 +20,7 @@ import io.sundr.builder.annotations.Buildable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type"})
+@EqualsAndHashCode
 public class AclRuleClusterResource extends AclRuleResource {
     private static final long serialVersionUID = 1L;
 

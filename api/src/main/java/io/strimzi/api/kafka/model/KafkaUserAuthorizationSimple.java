@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
@@ -22,6 +23,7 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "acls"})
+@EqualsAndHashCode
 public class KafkaUserAuthorizationSimple extends KafkaUserAuthorization {
     private static final long serialVersionUID = 1L;
 

@@ -11,6 +11,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.util.Map;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public class Probe implements Serializable {
 
     private static final long serialVersionUID = 1L;

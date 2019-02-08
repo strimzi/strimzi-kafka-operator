@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import java.util.Map;
         @JsonSubTypes.Type(value = JbodStorage.class, name = Storage.TYPE_JBOD)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public abstract class Storage implements Serializable {
 
     private static final long serialVersionUID = 1L;

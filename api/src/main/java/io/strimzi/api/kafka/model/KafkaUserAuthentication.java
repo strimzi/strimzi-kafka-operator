@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import java.util.Map;
         @JsonSubTypes.Type(name = KafkaUserScramSha512ClientAuthentication.TYPE_SCRAM_SHA_512, value = KafkaUserScramSha512ClientAuthentication.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public abstract class KafkaUserAuthentication implements Serializable {
     private static final long serialVersionUID = 1L;
 

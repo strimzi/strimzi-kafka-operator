@@ -4,17 +4,17 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.crdgenerator.annotations.Description;
-
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents a password inside a Secret
@@ -25,6 +25,7 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public class PasswordSecretSource implements Serializable {
     private static final long serialVersionUID = 1L;
 
