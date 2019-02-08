@@ -83,4 +83,4 @@ no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the
 The `ImagePullPolicy` which will be applied to containers in all pods managed by {ProductName} Cluster Operator.
 The valid values are `Always`, `IfNotPresent`, and `Never`.
 If not specified, the {ProductPlatformName} defaults will be used.
-Changing the policy will result in rolling update of all your Kafka, Kafka Connect and Kafka Mirror Maker clusters.
+Changing the policy will result in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.
