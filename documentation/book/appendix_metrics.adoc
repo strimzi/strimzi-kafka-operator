@@ -169,7 +169,7 @@ cAdvisor is bundled along with the kubelet binary so that it is automatically av
 This reference describes how to monitor cAdvisor metrics in various ways using Prometheus.
 ** https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md[cAdvisor Metrics] - A full list of cAdvisor metrics as exposed through Prometheus.
 
-=== Alerting
+=== Prometheus alert manager
 
 Other than a server for scraping metrics, Prometheus provides an alerting system through the alert manager component.
 It is possible to declare alerting rules on the Prometheus server in order to be notified about specific conditions in the metrics.
@@ -206,3 +206,37 @@ To deploy the alert manager the following commands should be executed:
 kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager.yaml
 
 endif::Kubernetes[]
+
+==== Alerts examples
+
+The provided https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml[`alerting-rules.yaml`] YAML file provides the following sample alerting rules on Kafka and Zookeeper metrics.
+
+Kafka alerts are:
+
+* `UnderReplicatedPartitions`: the under replicated partitions metric gives the number of partitions for which the current broker is the leader replica but the follower replicas are not caught up.
+This metric provides insights about offline brokers which hosts the follower replicas.
+This alert is raised when this value is greater than zero, providing the information of the under replicated partitions for each broker.
+
+* `AbnormalControllerState`: the active controller metric indicate if the current broker is the controller for the cluster.
+It can just be 0 or 1. 
+During the life of a cluster, only one broker should be the controller and the cluster needs to have always an active controller.
+Having two or more brokers saying that they are controllers indicates a problem.
+This alert is raised when the sum of all the values for this metric on all broker is not equals to 1.
+It means that there is no active controller (the sum is 0) or more than one controller (the sum is greater than 1).
+
+* `UnderMinIsrPartitionCount`: the Kafka broker `min.insync.replicas` allows to specify the minimum number of replicas that have to acknowledge a write operation for successful in order to be in-sync.
+The under min ISR partition count metric definest the number of partitions that this broker leads for which in-sync replicas count is less than the min in-sync.
+This alert is raised when this value is greater than zero, providing the information of the under min ISR partition count for each broker.
+
+* `OfflineLogDirectoryCount`: the offline log directory count metric indicate the number of log directories which are offline (due to an hardware failure for example) so that the broker cannot store incoming messages anymore.
+This alert is raised when this value is greater than zero, providing the information of the number of offline log directories for each broker.
+
+Zookeeper alerts are:
+
+* `AvgRequestLatency`: the average request latency metric indicates the amount of time it takes for the server to respond to a client request.
+This alert is raised when this value is greate than 10 (ticks), providing the actual value of the average request latency for each server.
+
+* `OutstandingRequests`: the outstanding requests metric indicates the number of queued requests in the server.
+This value goes up when the server receives more requests than it can process.
+This alert is raised when this value is greate than 10 (ticks), providing the actual number of outstanding requests for each server.
+
