@@ -78,3 +78,9 @@ if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` i
 `STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional, default `strimzi/entity-operator-stunnel:latest`.
 The image name to use as the default when deploying the sidecar container which provides TLS support for the Entity Operator, if
 no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the xref:assembly-configuring-container-images-deployment-configuration-kafka[].
+
+`STRIMZI_IMAGE_PULL_POLICY`:: Optional.
+The `ImagePullPolicy` which will be applied to containers in all pods managed by {ProductName} Cluster Operator.
+The valid values are `Always`, `IfNotPresent`, and `Never`.
+If not specified, the {ProductPlatformName} defaults will be used.
+Changing the policy will result in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.

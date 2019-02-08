@@ -22,6 +22,8 @@ include::con-customizing-labels-and-annotations.adoc[leveloffset=+1]
 
 include::con-customizing-pods.adoc[leveloffset=+1]
 
+include::con-customizing-image-pull-policy.adoc[leveloffset=+1]
+
 include::con-customizing-pod-disruption-budgets.adoc[leveloffset=+1]
 
 include::proc-customizing-deployments.adoc[leveloffset=+1]
