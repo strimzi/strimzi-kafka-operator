@@ -55,6 +55,8 @@ public class TopicOperatorTest {
         MANDATORY_CONFIG.put(Config.ZOOKEEPER_CONNECT.key, "localhost:2181");
         MANDATORY_CONFIG.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, "localhost:9092");
         MANDATORY_CONFIG.put(Config.NAMESPACE.key, "default");
+        // Not mandatory, but makes the time test quicker
+        MANDATORY_CONFIG.put(Config.TOPIC_METADATA_MAX_ATTEMPTS.key, "3");
     }
 
     @Before
@@ -825,6 +827,7 @@ public class TopicOperatorTest {
         reconcileFuture.setHandler(context.asyncAssertFailure(e -> {
             context.assertEquals("Error listing existing topics during periodic reconciliation", e.getMessage());
             context.assertEquals(error, e.getCause());
+
         }));
     }
 
@@ -832,7 +835,8 @@ public class TopicOperatorTest {
     public void testReconcileAllTopics_getResourceFails(TestContext context) {
         RuntimeException error = new RuntimeException("some failure");
         mockKafka.setTopicsListResponse(Future.succeededFuture(singleton(topicName.toString())));
-        mockK8s.setGetFromNameResponse(resourceName, Future.failedFuture(error));
+        mockKafka.setDeleteTopicResponse(topicName, null);
+        mockTopicStore.setGetTopicResponse(topicName, Future.failedFuture(error));
 
         Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
 

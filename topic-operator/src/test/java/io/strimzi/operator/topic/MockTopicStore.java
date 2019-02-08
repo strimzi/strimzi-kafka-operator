@@ -16,14 +16,20 @@ import java.util.function.Function;
 public class MockTopicStore implements TopicStore {
 
     private Map<TopicName, Topic> topics = new HashMap<>();
-    private Function<TopicName, AsyncResult<Void>> createTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably nees a createTopicResponse configured.");
-    private Function<TopicName, AsyncResult<Void>> deleteTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably nees a deleteTopicResponse configured.");
-    private Function<TopicName, AsyncResult<Void>> updateTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably nees a updateTopicResponse configured.");
+    private Function<TopicName, AsyncResult<Void>> createTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably needs a createTopicResponse configured.");
+    private Function<TopicName, AsyncResult<Void>> deleteTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably needs a deleteTopicResponse configured.");
+    private Function<TopicName, AsyncResult<Void>> updateTopicResponse = t -> Future.failedFuture("Unexpected. Your test's MockTopicStore probably needs a updateTopicResponse configured.");
+    private Function<TopicName, AsyncResult<Topic>> getTopicResponse = t -> null;
 
     @Override
     public void read(TopicName name, Handler<AsyncResult<Topic>> handler) {
-        Topic result = topics.get(name);
-        handler.handle(Future.succeededFuture(result));
+        AsyncResult<Topic> result1 = getTopicResponse.apply(name);
+        if (result1 == null) {
+            Topic result = topics.get(name);
+            handler.handle(Future.succeededFuture(result));
+        } else {
+            handler.handle(result1);
+        }
     }
 
     @Override
@@ -120,7 +126,20 @@ public class MockTopicStore implements TopicStore {
         return this;
     }
 
+    public MockTopicStore setGetTopicResponse(TopicName topic, Future<Topic> f) {
+        Function<TopicName, AsyncResult<Topic>> old = this.getTopicResponse;
+        this.getTopicResponse = t -> {
+            if (t.equals(topic)) {
+                return f;
+            } else {
+                return old.apply(t);
+            }
+        };
+        return this;
+    }
+
     public void assertEmpty(TestContext context) {
         context.assertTrue(this.topics.isEmpty());
     }
+
 }

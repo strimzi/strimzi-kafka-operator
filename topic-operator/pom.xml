@@ -94,6 +94,10 @@
             <artifactId>mockito-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>mockkube</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-unit</artifactId>
         </dependency>

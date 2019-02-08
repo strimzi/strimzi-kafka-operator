@@ -19,9 +19,9 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -342,51 +342,6 @@ public class TopicOperator {
         this.inFlight = new InFlight<>(vertx);
         this.namespace = namespace;
         this.config = config;
-    }
-
-    Future<Void> reconcile(KafkaTopic topicResource, TopicName topicName) {
-        Future<Void> result = Future.future();
-        Handler<Future<Void>> action = new Reconciliation("reconcile") {
-            @Override
-            public void handle(Future<Void> fut) {
-
-                try {
-                    Topic k8sTopic = topicResource != null ? TopicSerialization.fromTopicResource(topicResource) : null;
-                    Future<Topic> topicResult = Future.future();
-                    Future<TopicMetadata> metadataResult = Future.future();
-                    kafka.topicMetadata(topicName, metadataResult.completer());
-                    topicStore.read(topicName, topicResult.completer());
-                    CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
-
-                        if (ar.succeeded()) {
-                            Topic privateTopic = ar.result().resultAt(0);
-                            TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
-                            Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
-                            reconcile(topicResource, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
-                                if (reconcileResult.succeeded()) {
-                                    LOGGER.info("Success reconciling KafkaTopic {}", logTopic(topicResource));
-                                    fut.complete();
-                                } else {
-                                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(topicResource), reconcileResult.cause());
-                                    fut.fail(reconcileResult.cause());
-                                }
-                            });
-                        } else {
-                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(topicResource), ar.cause());
-                            fut.fail(ar.cause());
-                        }
-                    });
-                } catch (InvalidTopicException e) {
-                    LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(topicResource), e.getMessage());
-                    fut.fail(e);
-                } catch (OperatorException e) {
-                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(topicResource), e);
-                    fut.fail(e);
-                }
-            }
-        };
-        inFlight.enqueue(topicName, action, result);
-        return result;
     }
 
     /**
@@ -960,67 +915,231 @@ public class TopicOperator {
         return resource != null ? resource.getMetadata().getNamespace() + "/" + resource.getMetadata().getName() : null;
     }
 
-    Future<?> reconcileAllTopics(String reconciliationType) {
-        Future topicsJoin = Future.future();
-        Future mapsJoin = Future.future();
-        LOGGER.info("Starting {} reconciliation", reconciliationType);
-        kafka.listTopics(topicsListResult -> {
-            if (topicsListResult.succeeded()) {
-                Set<String> kafkaTopics = topicsListResult.result();
-                LOGGER.debug("Reconciling kafka topics {}", kafkaTopics);
-                // First reconcile the topics in kafka
-                List<Future> topicFutures = new ArrayList<>();
-                for (String name : kafkaTopics) {
-                    LOGGER.debug("{} reconciliation of topic {}", reconciliationType, name);
-                    TopicName topicName = new TopicName(name);
-                    Future topicFuture = Future.future();
-                    topicFutures.add(topicFuture);
-                    k8s.getFromName(topicName.asKubeName(), topicResult -> {
-                        if (topicResult.succeeded()) {
-                            KafkaTopic kafkaTopic = topicResult.result();
-                            reconcile(kafkaTopic, topicName).setHandler(topicFuture);
-                        } else {
-                            LOGGER.error("Error {} getting KafkaTopic {} for topic {}",
-                                    reconciliationType,
-                                    topicName.asKubeName(), topicName, topicResult.cause());
-                            topicFuture.fail(new OperatorException("Error getting KafkaTopic " + topicName.asKubeName() + " during " + reconciliationType + " reconciliation", topicResult.cause()));
-                        }
-                    });
-                }
-                CompositeFuture.join(topicFutures).setHandler(topicsJoin);
-                LOGGER.debug("Reconciling KafkaTopics");
-                // Then those in k8s which aren't in kafka
-                k8s.listMaps(resourcesListResult -> {
-                    List<Future> resourceFutures = new ArrayList<>();
-                    if (resourcesListResult.succeeded()) {
-                        List<KafkaTopic> resources = resourcesListResult.result();
-                        Map<String, KafkaTopic> resourcesMap = resources.stream().collect(Collectors.toMap(
-                            resource -> resource.getMetadata().getName(),
-                            resource -> resource));
-                        resourcesMap.keySet().removeAll(kafkaTopics);
-                        LOGGER.debug("Reconciling KafkaTopics: {}", resourcesMap.keySet());
-                        for (KafkaTopic resource : resourcesMap.values()) {
-                            LOGGER.debug("{} reconciliation of KafkaTopic {}", reconciliationType, resource.getMetadata().getName());
 
-                            TopicName topicName = new TopicName(resource);
-                            resourceFutures.add(reconcile(resource, topicName));
+    static class ReconcileState {
+        private final Set<TopicName> succeeded;
+        private final Set<TopicName> undetermined;
+        private final List<Future> failed;
+        private List<KafkaTopic> ktList;
+
+        public ReconcileState(Set<TopicName> succeeded, Set<TopicName> undetermined, List<Future> failed) {
+            this.succeeded = succeeded;
+            this.undetermined = undetermined;
+            this.failed = failed;
+        }
+
+        public void addKafkaTopics(List<KafkaTopic> ktList) {
+            this.ktList = ktList;
+        }
+    }
+
+    Future<?> reconcileAllTopics(String reconciliationType) {
+        LOGGER.info("Starting {} reconciliation", reconciliationType);
+        Future<Set<String>> listFut = Future.future();
+        kafka.listTopics(listFut.completer());
+        return listFut.recover(ex -> Future.failedFuture(
+                new OperatorException("Error listing existing topics during " + reconciliationType + " reconciliation", ex)
+        )).compose(topicNamesFromKafka ->
+                // Reconcile the topic found in Kafka
+                reconcileFromKafka(reconciliationType, topicNamesFromKafka.stream().map(TopicName::new).collect(Collectors.toList()))
+
+        ).compose(reconcileState -> {
+            Future<List<KafkaTopic>> ktFut = Future.future();
+            // Find all the topics in kube
+            k8s.listMaps(ktFut.completer());
+            return ktFut.recover(ex -> Future.failedFuture(
+                    new OperatorException("Error listing existing KafkaTopics during " + reconciliationType + " reconciliation", ex)
+            )).map(ktList -> {
+                reconcileState.addKafkaTopics(ktList);
+                return reconcileState;
+            });
+        }).compose(reconcileState -> {
+            List<Future> futs = new ArrayList<>();
+            for (KafkaTopic kt : reconcileState.ktList) {
+                Topic topic = TopicSerialization.fromTopicResource(kt);
+                TopicName topicName = topic.getTopicName();
+                if (reconcileState.failed.contains(topicName)) {
+                    // we already failed to reconcile this topic in reconcileFromKafka(), /
+                    // don't bother trying again
+                    LOGGER.trace("Already failed to reconcile {}", topicName);
+                } else if (reconcileState.succeeded.contains(topicName)) {
+                    // we already succeeded in reconciling this topic in reconcileFromKafka()
+                    LOGGER.trace("Already successfully reconciled {}", topicName);
+                } else if (reconcileState.undetermined.contains(topicName)) {
+                    // The topic didn't exist in topicStore, but now we know which KT it corresponds to
+                    futs.add(reconcileWithKubeTopic(reconciliationType, kt, topic).compose(r -> {
+                        // if success then remove from undetermined add to success
+                        reconcileState.undetermined.remove(topicName);
+                        reconcileState.succeeded.add(topicName);
+                        return Future.succeededFuture(Boolean.TRUE);
+                    }));
+                } else {
+                    // Topic exists in kube, but not in Kafka
+                    futs.add(reconcileWithKubeTopic(reconciliationType, kt, topic).compose(r -> {
+                        // if success then add to success
+                        reconcileState.succeeded.add(topicName);
+                        return Future.succeededFuture(Boolean.TRUE);
+                    }));
+                }
+            }
+            return CompositeFuture.join(futs).compose(joined -> {
+                for (Future ts : reconcileState.failed) {
+                    futs.add(ts);
+                }
+                // anything left in undetermined doesn't exist in topic store not kube -> delete it in kafka
+                for (TopicName tn : reconcileState.undetermined) {
+                    Future f = Future.future();
+                    kafka.deleteTopic(tn, f.completer());
+                    futs.add(f);
+                }
+                return CompositeFuture.join(futs);
+            });
+        });
+    }
+
+
+    /**
+     * Reconcile all the topics in {@code foundFromKafka}, returning a ReconciliationState.
+     */
+    private Future<ReconcileState> reconcileFromKafka(String reconciliationType, List<TopicName> topicsFromKafka) {
+        List<Future<Boolean>> topicFutures = new ArrayList<>();
+        LOGGER.debug("Reconciling kafka topics {}", topicsFromKafka);
+        // First reconcile the topics in kafka
+        for (TopicName topicName : topicsFromKafka) {
+            LOGGER.debug("{} reconciliation of topic {}", reconciliationType, topicName);
+            // Now look up the topic in the private store to find out its KafkaTopic name
+            topicStore.read(topicName, tsr -> {
+                if (tsr.failed()) {
+                    topicFutures.add(Future.failedFuture(
+                            new OperatorException("Error getting KafkaTopic " + topicName + " during " + reconciliationType + " reconciliation", tsr.cause())));
+                } else if (tsr.result() == null) {
+                    topicFutures.add(Future.succeededFuture(Boolean.FALSE));
+                } else {
+                    topicFutures.add(reconcileWithPrivateTopic(reconciliationType, topicName, tsr.result()));
+                }
+            });
+        }
+        return CompositeFuture.any((List) topicFutures).map(composite -> {
+            Set<TopicName> succeeded = new HashSet<>();
+            Set<TopicName> undetermined = new HashSet<>();
+            List<Future> failed = new ArrayList<>();
+            for (int i = 0; i < composite.size(); i++) {
+                TopicName topicName = topicsFromKafka.get(i);
+                if (composite.succeeded(i)) {
+                    (composite.resultAt(i) ? succeeded : undetermined).add(topicName);
+                } else {
+                    failed.add(topicFutures.get(i));
+                }
+            }
+            return new ReconcileState(succeeded, undetermined, failed);
+        });
+    }
+
+    /**
+     * Reconcile the given topic which has the given {@code privateTopic} in the topic store.
+     */
+    private Future<Boolean> reconcileWithPrivateTopic(String reconciliationType, TopicName topicName, Topic privateTopic) {
+        Future<Boolean> topicFuture = Future.future();
+
+        ResourceName kubeName = privateTopic.getResourceName();
+        k8s.getFromName(kubeName, topicResult -> {
+            if (topicResult.succeeded()) {
+                KafkaTopic kafkaTopicResource = topicResult.result();
+                Future<Void> result = Future.future();
+                Handler<Future<Void>> action = new Reconciliation("reconcile") {
+                    @Override
+                    public void handle(Future<Void> fut) {
+                        try {
+                            Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
+                            kafka.topicMetadata(topicName, metadataResult -> {
+                                if (metadataResult.succeeded()) {
+                                    TopicMetadata kafkaTopicMeta = metadataResult.result();
+                                    Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
+                                    reconcile(kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic, reconcileResult -> {
+                                        if (reconcileResult.succeeded()) {
+                                            LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
+                                            fut.complete();
+                                        } else {
+                                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), reconcileResult.cause());
+                                            fut.fail(reconcileResult.cause());
+                                        }
+                                    });
+                                } else {
+                                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), metadataResult.cause());
+                                    fut.fail(metadataResult.cause());
+                                }
+                            });
+                        } catch (InvalidTopicException e) {
+                            LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(kafkaTopicResource), e.getMessage());
+                            fut.fail(e);
+                        } catch (OperatorException e) {
+                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), e);
+                            fut.fail(e);
                         }
-                        CompositeFuture.join(resourceFutures).setHandler(mapsJoin);
-                    } else {
-                        LOGGER.error("Unable to list KafkaTopics", resourcesListResult.cause());
-                        mapsJoin.fail(new OperatorException("Error listing existing KafkaTopics during " + reconciliationType + " reconciliation", resourcesListResult.cause()));
                     }
-                    // Finally those in private store which we've not dealt with so far...
-                    // TODO ^^
+                };
+                inFlight.enqueue(topicName, action, result);
+                result.setHandler(ar -> {
+                    if (ar.succeeded()) {
+                        topicFuture.complete(Boolean.TRUE);
+                    } else {
+                        topicFuture.fail(ar.cause());
+                    }
                 });
             } else {
-                LOGGER.error("Error performing {} reconciliation", reconciliationType, topicsListResult.cause());
-                OperatorException listException = new OperatorException("Error listing existing topics during " + reconciliationType + " reconciliation", topicsListResult.cause());
-                topicsJoin.fail(listException);
-                mapsJoin.fail(listException);
+                LOGGER.error("Error {} getting KafkaTopic {} for topic {}",
+                        reconciliationType,
+                        topicName.asKubeName(), topicName, topicResult.cause());
+                topicFuture.fail(new OperatorException("Error getting KafkaTopic " + topicName.asKubeName() + " during " + reconciliationType + " reconciliation", topicResult.cause()));
             }
         });
-        return CompositeFuture.join(topicsJoin, mapsJoin);
+        return topicFuture;
     }
+
+    private Future<Void> reconcileWithKubeTopic(String reconciliationType, KafkaTopic resource, Topic k8sTopic) {
+        LOGGER.debug("{} reconciliation of KafkaTopic {}", reconciliationType, resource.getMetadata().getName());
+        TopicName topicName = k8sTopic.getTopicName();
+        Future<Void> result = Future.future();
+        Handler<Future<Void>> action = new Reconciliation("reconcile") {
+            @Override
+            public void handle(Future<Void> fut) {
+                try {
+                    Future<Topic> topicResult = Future.future();
+                    Future<TopicMetadata> metadataResult = Future.future();
+                    kafka.topicMetadata(topicName, metadataResult.completer());
+                    topicStore.read(topicName, topicResult.completer());
+                    CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
+
+                        if (ar.succeeded()) {
+                            Topic privateTopic = ar.result().resultAt(0);
+                            TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
+                            Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
+                            reconcile(resource, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
+                                if (reconcileResult.succeeded()) {
+                                    LOGGER.info("Success reconciling KafkaTopic {}", logTopic(resource));
+                                    fut.complete();
+                                } else {
+                                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(resource), reconcileResult.cause());
+                                    fut.fail(reconcileResult.cause());
+                                }
+                            });
+                        } else {
+                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(resource), ar.cause());
+                            fut.fail(ar.cause());
+                        }
+                    });
+                } catch (InvalidTopicException e) {
+                    LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(resource), e.getMessage());
+                    fut.fail(e);
+                } catch (OperatorException e) {
+                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(resource), e);
+                    fut.fail(e);
+                }
+            }
+        };
+        inFlight.enqueue(topicName, action, result);
+        return result;
+    }
+
 }
 

@@ -33,14 +33,14 @@ public class Session extends AbstractVerticle {
     private final Config config;
     private final KubernetesClient kubeClient;
 
-    OperatorAssignedKafkaImpl kafka;
-    AdminClient adminClient;
-    K8sImpl k8s;
-    TopicOperator topicOperator;
-    Watch topicWatch;
-    ZkTopicsWatcher topicsWatcher;
-    TopicConfigsWatcher topicConfigsWatcher;
-    ZkTopicWatcher topicWatcher;
+    /*test*/ OperatorAssignedKafkaImpl kafka;
+    /*test*/ AdminClient adminClient;
+    /*test*/ K8sImpl k8s;
+    /*test*/ TopicOperator topicOperator;
+    /*test*/ Watch topicWatch;
+    /*test*/ ZkTopicsWatcher topicsWatcher;
+    /*test*/ TopicConfigsWatcher topicConfigsWatcher;
+    /*test*/ ZkTopicWatcher topicWatcher;
     /** The id of the periodic reconciliation timer. This is null during a periodic reconciliation. */
     private volatile Long timerId;
     private volatile boolean stopped = false;
@@ -157,7 +157,8 @@ public class Session extends AbstractVerticle {
 
         Thread resourceThread = new Thread(() -> {
             LOGGER.debug("Watching KafkaTopics matching {}", resourcePredicate);
-            Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(namespace).watch(new K8sTopicWatcher(topicOperator, resourcePredicate));
+            Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
+                    .inNamespace(namespace).watch(new K8sTopicWatcher(topicOperator, resourcePredicate));
             LOGGER.debug("Watching setup");
 
             // start the HTTP server for healthchecks

@@ -164,7 +164,7 @@ public class TopicOperatorIT {
         });
         async.await();
 
-        waitFor(context, () -> this.topicsWatcher.started(), timeout, "Topics watcher not started");
+        waitFor(context, () -> this.topicWatcher.started(), timeout, "Topic watcher not started");
         waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
         waitFor(context, () -> this.topicWatcher.started(), timeout, "Topic watcher not started");
 
