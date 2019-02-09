@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonMap;
+
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
@@ -13,7 +16,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -24,19 +26,17 @@ import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
-import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
@@ -50,17 +50,13 @@ import io.strimzi.api.kafka.model.KafkaListenerExternalRoute;
 import io.strimzi.api.kafka.model.KafkaListeners;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,10 +68,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonMap;
-
-public class KafkaCluster extends AbstractModel {
+public class KafkaCluster extends StatefulCluster {
 
     protected static final String INIT_NAME = "kafka-init";
     protected static final String INIT_VOLUME_NAME = "rack-volume";
@@ -170,13 +163,6 @@ public class KafkaCluster extends AbstractModel {
      * used as server certificates for Kafka brokers
      */
     private Map<String, CertAndKey> brokerCerts;
-
-    /**
-     * Lists with volumes, persistent volume claims and related volume mount paths for the storage
-     */
-    List<Volume> dataVolumes = new ArrayList<>();
-    List<PersistentVolumeClaim> dataPvcs = new ArrayList<>();
-    List<VolumeMount> dataVolumeMountPaths = new ArrayList<>();
 
     /**
      * Constructor
@@ -306,14 +292,7 @@ public class KafkaCluster extends AbstractModel {
             result.setMetricsEnabled(true);
             result.setMetricsConfig(metrics.entrySet());
         }
-        if (kafkaClusterSpec.getStorage() instanceof PersistentClaimStorage) {
-            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) kafkaClusterSpec.getStorage();
-            if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
-                throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
-            }
-        }
         result.setStorage(kafkaClusterSpec.getStorage());
-        result.setDataVolumesClaimsAndMountPaths(result.getStorage());
         result.setUserAffinity(kafkaClusterSpec.getAffinity());
         result.setResources(kafkaClusterSpec.getResources());
         result.setTolerations(kafkaClusterSpec.getTolerations());
@@ -671,50 +650,6 @@ public class KafkaCluster extends AbstractModel {
         return portList;
     }
 
-    /**
-     * Fill the with volumes, persistent volume claims and related volume mount paths for the storage
-     * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
-     *
-     * @param storage the Storage instance from which building volumes, persistent volume claims and
-     *                related volume mount paths
-     */
-    private void setDataVolumesClaimsAndMountPaths(Storage storage) {
-        if (storage != null) {
-            Integer id;
-            if (storage instanceof EphemeralStorage) {
-                id = ((EphemeralStorage) storage).getId();
-            } else if (storage instanceof PersistentClaimStorage) {
-                id = ((PersistentClaimStorage) storage).getId();
-            } else if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    if (volume.getId() == null)
-                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
-                    // it's called recursively for setting the information from the current volume
-                    setDataVolumesClaimsAndMountPaths(volume);
-                }
-                return;
-            } else {
-                throw new IllegalStateException("The declared storage is not supported");
-            }
-
-            String name = ModelUtils.getVolumePrefix(id);
-            String mountPath = this.mountPath + "/" + name;
-
-            final VolumeMount volumeMount;
-            if (storage instanceof EphemeralStorage) {
-                dataVolumes.add(createEmptyDirVolume(name));
-                volumeMount = createVolumeMount(name, mountPath);
-            } else if (storage instanceof PersistentClaimStorage) {
-                PersistentClaimStorage pcs = (PersistentClaimStorage) storage;
-                dataPvcs.add(createPersistentVolumeClaim(name, pcs));
-                volumeMount = createVolumeMountWithSubPath(name, mountPath, pcs.getSubPath());
-            } else {
-                volumeMount = createVolumeMount(name, mountPath);
-            }
-            dataVolumeMountPaths.add(volumeMount);
-        }
-    }
-
     private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
         volumeList.addAll(dataVolumes);
@@ -730,13 +665,7 @@ public class KafkaCluster extends AbstractModel {
         return volumeList;
     }
 
-    /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
-        List<PersistentVolumeClaim> pvcList = new ArrayList<>();
-        pvcList.addAll(dataPvcs);
-        return pvcList;
-    }
-
-    private List<VolumeMount> getVolumeMounts() {
+    /* test */ List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.addAll(dataVolumeMountPaths);
 

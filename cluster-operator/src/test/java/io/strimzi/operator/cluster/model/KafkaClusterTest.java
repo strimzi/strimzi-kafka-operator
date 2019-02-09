@@ -4,6 +4,17 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
+import static io.strimzi.test.TestUtils.set;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -19,6 +30,7 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
@@ -45,9 +57,6 @@ import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
-import org.junit.Rule;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.security.cert.CertificateParsingException;
@@ -61,17 +70,8 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
-import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
-import static io.strimzi.test.TestUtils.set;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Rule;
+import org.junit.Test;
 
 public class KafkaClusterTest {
 
@@ -343,10 +343,14 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(assembly, VERSIONS);
 
         List<PersistentVolumeClaim> pvcs = kc.getVolumeClaims();
-
-        for (int i = 0; i < replicas; i++) {
-            assertEquals(kc.VOLUME_NAME + "-" + KafkaCluster.kafkaPodName(cluster, i),
-                    pvcs.get(0).getMetadata().getName() + "-" + KafkaCluster.kafkaPodName(cluster, i));
+        List<VolumeMount> vms = kc.getVolumeMounts();
+        for (int i = 0; i < pvcs.size(); ++i) {
+            String name = pvcs.get(i).getMetadata().getName();
+            assertEquals(kc.VOLUME_NAME, name);
+            VolumeMount vm = vms.get(i);
+            assertEquals(name, vm.getName());
+            assertEquals("/var/lib/kafka/" + name, vm.getMountPath());
+            assertNull(vm.getSubPath());
         }
 
         assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
@@ -363,13 +367,15 @@ public class KafkaClusterTest {
         kc = KafkaCluster.fromCrd(assembly, VERSIONS);
 
         pvcs = kc.getVolumeClaims();
+        vms = kc.getVolumeMounts();
 
-        for (int i = 0; i < replicas; i++) {
-            int id = 0;
-            for (PersistentVolumeClaim pvc : pvcs) {
-                assertEquals(kc.VOLUME_NAME + "-" + id++ + "-" + KafkaCluster.kafkaPodName(cluster, i),
-                        pvc.getMetadata().getName() + "-" + KafkaCluster.kafkaPodName(cluster, i));
-            }
+        for (int i = 0; i < pvcs.size(); ++i) {
+            String name = pvcs.get(i).getMetadata().getName();
+            assertEquals(kc.VOLUME_NAME + "-" + i, name);
+            VolumeMount vm = vms.get(i);
+            assertEquals(name, vm.getName());
+            assertEquals("/var/lib/kafka/" + name, vm.getMountPath());
+            assertNull(vm.getSubPath());
         }
     }
 

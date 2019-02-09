@@ -42,4 +42,13 @@ public abstract class SingleVolumeStorage extends Storage {
     public void setId(Integer id) {
         this.id = id;
     }
+
+    /**
+     * Get a volume name suffixed with the id
+     * @param volumeName The volume name
+     * @return The volume name suffixed with the id.
+     */
+    public String suffixed(String volumeName) {
+        return volumeName + '-' + id;
+    }
 }

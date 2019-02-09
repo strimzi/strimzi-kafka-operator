@@ -4,6 +4,10 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.parseImageMap;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -11,7 +15,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -25,18 +28,15 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilde
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
-import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,11 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.ModelUtils.parseImageMap;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
-
-public class ZookeeperCluster extends AbstractModel {
+public class ZookeeperCluster extends StatefulCluster {
 
     protected static final int CLIENT_PORT = 2181;
     protected static final String CLIENT_PORT_NAME = "clients";
@@ -114,10 +110,6 @@ public class ZookeeperCluster extends AbstractModel {
 
     public static String zookeeperPodName(String cluster, int pod) {
         return KafkaResources.zookeeperPodName(cluster, pod);
-    }
-
-    public static String getPersistentVolumeClaimName(String clusterName, int podId) {
-        return VOLUME_NAME + "-" + clusterName + "-" + podId;
     }
 
     public static String nodesSecretName(String cluster) {
@@ -188,12 +180,6 @@ public class ZookeeperCluster extends AbstractModel {
         if (metrics != null) {
             zk.setMetricsEnabled(true);
             zk.setMetricsConfig(metrics.entrySet());
-        }
-        if (zookeeperClusterSpec.getStorage() instanceof PersistentClaimStorage) {
-            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) zookeeperClusterSpec.getStorage();
-            if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
-                throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
-            }
         }
         zk.setStorage(zookeeperClusterSpec.getStorage());
         zk.setConfiguration(new ZookeeperConfiguration(zookeeperClusterSpec.getConfig().entrySet()));
@@ -437,28 +423,17 @@ public class ZookeeperCluster extends AbstractModel {
 
     private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
-        if (storage instanceof EphemeralStorage) {
-            volumeList.add(createEmptyDirVolume(VOLUME_NAME));
-        }
+        volumeList.addAll(dataVolumes);
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(createSecretVolume(TLS_SIDECAR_NODES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
     }
 
-    /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
-        List<PersistentVolumeClaim> pvcList = new ArrayList<>();
-        if (storage instanceof PersistentClaimStorage) {
-            pvcList.add(createPersistentVolumeClaim(VOLUME_NAME, (PersistentClaimStorage) storage));
-        }
-        return pvcList;
-    }
-
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.add(createVolumeMount(VOLUME_NAME, mountPath));
+        volumeMountList.addAll(dataVolumeMountPaths);
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-
         return volumeMountList;
     }
 

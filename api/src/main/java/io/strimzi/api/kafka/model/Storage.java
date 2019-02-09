@@ -15,6 +15,7 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * Abstract baseclass for different representations of storage, discriminated by {@link #getType() type}.
@@ -62,6 +63,37 @@ public abstract class Storage implements Serializable {
     public static String storageClass(Storage storage) {
         return storage instanceof PersistentClaimStorage ?
                 ((PersistentClaimStorage) storage).getStorageClass() : null;
+    }
+
+    /**
+     * Check that attributes of this storage are valid.
+     * @return null, if valid; otherwise, the reason that this configuration is invalid
+     */
+    public String invalidityReason() {
+        return null;
+    }
+
+    /**
+     * Is this instance a persistent claim or does it contain a persistent claim?
+     */
+    public boolean containsPersistentStorage() {
+        return false;
+    }
+
+    /**
+     * Invoke consumer function for all PersistentClaimStorage
+     * @param consumer A consumer that is called with PersistentClaimStorage and name suffixed with id
+     * @param name The starting name
+     */
+    public void iteratePersistentClaimStorage(BiConsumer<PersistentClaimStorage, String> consumer, String name) {
+    }
+
+    /**
+     * Invoke consumer function for all EphemeralStorage
+     * @param consumer A consumer that is called with EphemeralStorage and name suffixed with id
+     * @param name The starting name
+     */
+    public void iterateEphemeralStorage(BiConsumer<EphemeralStorage, String> consumer, String name) {
     }
 }
 

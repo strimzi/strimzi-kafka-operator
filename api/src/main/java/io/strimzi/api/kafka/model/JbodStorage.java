@@ -7,8 +7,8 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
-
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * Representation for JBOD storage.
@@ -40,4 +40,42 @@ public class JbodStorage extends Storage {
     public void setVolumes(List<SingleVolumeStorage> volumes) {
         this.volumes = volumes;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String invalidityReason() {
+        for (SingleVolumeStorage volume : volumes) {
+            if (volume.getId() == null) {
+                return "Volumes under JBOD storage type have to have 'id' property";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean containsPersistentStorage() {
+        return volumes.stream().anyMatch(Storage::containsPersistentStorage);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void iteratePersistentClaimStorage(BiConsumer<PersistentClaimStorage, String> consumer, String name) {
+        volumes.forEach(svs -> svs.iteratePersistentClaimStorage(consumer, svs.suffixed(name)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void iterateEphemeralStorage(BiConsumer<EphemeralStorage, String> consumer, String name) {
+        volumes.forEach(svs -> svs.iterateEphemeralStorage(consumer, svs.suffixed(name)));
+    }
+
 }

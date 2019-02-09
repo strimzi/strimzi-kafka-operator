@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import static java.util.Arrays.asList;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -26,7 +28,6 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
-import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -45,9 +46,6 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
 import io.strimzi.api.kafka.model.CpuMemory;
@@ -58,13 +56,9 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
-import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -75,16 +69,14 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static java.util.Arrays.asList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public abstract class AbstractModel {
 
     protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
 
     protected static final String DEFAULT_JVM_XMS = "128M";
-
-    private static final Long DEFAULT_FS_GROUPID = 0L;
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";
     public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
@@ -131,9 +123,6 @@ public abstract class AbstractModel {
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected String ancillaryConfigName;
     protected String logConfigName;
-
-
-    protected Storage storage;
 
     protected AbstractConfiguration configuration;
 
@@ -438,14 +427,6 @@ public abstract class AbstractModel {
         return null;
     }
 
-    public Storage getStorage() {
-        return storage;
-    }
-
-    protected void setStorage(Storage storage) {
-        this.storage = storage;
-    }
-
     /**
      * Returns the Configuration object which is passed to the cluster as EnvVar
      *
@@ -742,64 +723,6 @@ public abstract class AbstractModel {
                 .build();
         log.trace("Created headless service {}", service);
         return service;
-    }
-
-    protected StatefulSet createStatefulSet(
-            Map<String, String> annotations,
-            List<Volume> volumes,
-            List<PersistentVolumeClaim> volumeClaims,
-            Affinity affinity,
-            List<Container> initContainers,
-            List<Container> containers,
-            boolean isOpenShift) {
-
-        PodSecurityContext securityContext = templateSecurityContext;
-
-        // if a persistent volume claim is requested and the running cluster is a Kubernetes one and we have no user configured PodSecurityContext
-        // we set the security context
-        if (ModelUtils.containsPersistentStorage(storage) && !isOpenShift && securityContext == null) {
-            securityContext = new PodSecurityContextBuilder()
-                    .withFsGroup(AbstractModel.DEFAULT_FS_GROUPID)
-                    .build();
-        }
-
-        StatefulSet statefulSet = new StatefulSetBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithName(templateStatefulSetLabels))
-                    .withNamespace(namespace)
-                    .withAnnotations(mergeAnnotations(annotations, templateStatefulSetAnnotations))
-                    .withOwnerReferences(createOwnerReference())
-                .endMetadata()
-                .withNewSpec()
-                    .withPodManagementPolicy("Parallel")
-                    .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels()).build())
-                    .withServiceName(headlessServiceName)
-                    .withReplicas(replicas)
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .withName(name)
-                            .withLabels(getLabelsWithName(templatePodLabels))
-                            .withAnnotations(mergeAnnotations(null, templatePodAnnotations))
-                        .endMetadata()
-                        .withNewSpec()
-                            .withServiceAccountName(getServiceAccountName())
-                            .withAffinity(affinity)
-                            .withInitContainers(initContainers)
-                            .withContainers(containers)
-                            .withVolumes(volumes)
-                            .withTolerations(getTolerations())
-                            .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                            .withImagePullSecrets(templateImagePullSecrets)
-                            .withSecurityContext(securityContext)
-                        .endSpec()
-                    .endTemplate()
-                    .withVolumeClaimTemplates(volumeClaims)
-                .endSpec()
-                .build();
-
-        return statefulSet;
     }
 
     protected Deployment createDeployment(

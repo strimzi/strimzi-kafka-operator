@@ -13,6 +13,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * Representation for persistent claim-based storage.
@@ -104,5 +105,30 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     public void setSubPath(String subPath) {
         this.subPath = subPath;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String invalidityReason() {
+        return size == null || size.isEmpty()
+                ? "The size is mandatory for a persistent-claim storage"
+                : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean containsPersistentStorage() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void iteratePersistentClaimStorage(BiConsumer<PersistentClaimStorage, String> consumer, String name) {
+        consumer.accept(this, name);
     }
 }

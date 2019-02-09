@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import java.util.function.BiConsumer;
 import lombok.EqualsAndHashCode;
 
 /**
@@ -43,5 +44,13 @@ public class EphemeralStorage extends SingleVolumeStorage {
     @Override
     public void setId(Integer id) {
         super.setId(id);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void iterateEphemeralStorage(BiConsumer<EphemeralStorage, String> consumer, String name) {
+        consumer.accept(this, name);
     }
 }
