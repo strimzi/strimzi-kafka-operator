@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "topicOperator", "userOperator", "affinity",
         "tolerations", "tlsSidecar"})
+@EqualsAndHashCode
 public class EntityOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;

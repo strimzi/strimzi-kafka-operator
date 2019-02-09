@@ -4,14 +4,15 @@
  */
 package io.strimzi.api.kafka.model;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 @Buildable(
         editableEnabled = false,
@@ -19,6 +20,7 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public class TlsClientAuthentication implements Serializable {
     private static final long serialVersionUID = 1L;
 

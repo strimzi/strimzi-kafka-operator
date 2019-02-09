@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 /**
  * Representation of a Strimzi-managed Topic Operator deployment.
@@ -24,6 +25,7 @@ import io.sundr.builder.annotations.Buildable;
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
         "affinity", "resources", "topicMetadataMaxAttempts", "tlsSidecar", "logging"})
+@EqualsAndHashCode(callSuper = true)
 public class TopicOperatorSpec extends EntityTopicOperatorSpec {
 
     private static final long serialVersionUID = 1L;

@@ -19,6 +19,7 @@ import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.Inline;
+import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +52,7 @@ import static java.util.Collections.singletonList;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@EqualsAndHashCode
 public class KafkaUser extends CustomResource {
     private static final long serialVersionUID = 1L;
 

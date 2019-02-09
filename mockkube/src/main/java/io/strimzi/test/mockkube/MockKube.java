@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.assembly;
+package io.strimzi.test.mockkube;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
@@ -38,13 +38,13 @@ import io.fabric8.kubernetes.api.model.apiextensions.DoneableCustomResourceDefin
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.fabric8.kubernetes.api.model.networking.DoneableNetworkPolicy;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
+import io.fabric8.kubernetes.api.model.networking.DoneableNetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.policy.DoneablePodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetList;
@@ -54,6 +54,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
+import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -64,23 +65,16 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
-import io.strimzi.operator.common.operator.resource.WorkaroundRbacOperator;
-
 import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.OngoingStubbing;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -93,11 +87,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -119,6 +113,7 @@ public class MockKube {
     private final Map<String, PodDisruptionBudget> pdbDb = db(emptySet(), PodDisruptionBudget.class, DoneablePodDisruptionBudget.class);
 
     private Map<String, List<String>> podsForDeployments = new HashMap<>();
+    private Map<String, CreateOrReplaceable> crdMixedOps = new HashMap<>();
 
     public MockKube withInitialCms(Set<ConfigMap> initialCms) {
         this.cmDb.putAll(db(initialCms, ConfigMap.class, DoneableConfigMap.class));
@@ -220,10 +215,17 @@ public class MockKube {
                 when(crdResource.get()).thenReturn(crd);
                 when(crds.withName(crd.getMetadata().getName())).thenReturn(crdResource);
                 when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class), any(Class.class))).thenAnswer(invocation -> {
+
                     CustomResourceDefinition crdArg = invocation.getArgument(0);
                     if (crd.getSpec().getGroup().equals(crdArg.getSpec().getGroup())
                             && crd.getSpec().getVersion().equals(crdArg.getSpec().getVersion())) {
-                        return buildCrd((MockedCrd) mockedCrd);
+                        String key = crdArg.getSpec().getGroup() + "##" + crdArg.getSpec().getVersion();
+                        CreateOrReplaceable crdMixedOp = crdMixedOps.get(key);
+                        if (crdMixedOp == null) {
+                            crdMixedOp = buildCrd((MockedCrd) mockedCrd);
+                            crdMixedOps.put(key, crdMixedOp);
+                        }
+                        return crdMixedOp;
                     } else {
                         throw new RuntimeException();
                     }
@@ -241,30 +243,7 @@ public class MockKube {
         when(mockClient.policy()).thenReturn(policy);
         when(mockClient.policy().podDisruptionBudget()).thenReturn(mockPdb);
 
-        mockHttpClientForWorkaroundRbac(mockClient);
         return mockClient;
-    }
-
-    /**
-     * @deprecated this can be removed when {@link WorkaroundRbacOperator} is removed.
-     */
-    @Deprecated
-    private void mockHttpClientForWorkaroundRbac(KubernetesClient mockClient) {
-        when(mockClient.isAdaptable(OkHttpClient.class)).thenReturn(true);
-        OkHttpClient mc = mock(OkHttpClient.class);
-        try {
-            doAnswer(i -> {
-                Call call = mock(Call.class);
-                Request req = i.getArgument(0);
-                Response resp = new Response.Builder().protocol(Protocol.HTTP_1_1).request(req).code(200).message("OK").build();
-                doReturn(resp).when(call).execute();
-                return call;
-            }).when(mc).newCall(any());
-            when(mockClient.adapt(OkHttpClient.class)).thenReturn(mc);
-            when(mockClient.getMasterUrl()).thenReturn(new URL("http://localhost"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> buildDeployments(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods) {
@@ -773,6 +752,34 @@ public class MockKube {
                 nameScopedMocks(resource, resourceName);
                 return resource;
             });
+            when(mixed.watch(any())).thenAnswer(i -> {
+                Watcher watcher = i.getArgument(0);
+                LOGGER.debug("Watcher {} installed on {}", watcher, mixed);
+                watchers.add(watcher);
+                return (Watch) () -> {
+                    watchers.remove(watcher);
+                    LOGGER.debug("Watcher {} removed from {}", watcher, mixed);
+                };
+            });
+            when(mixed.create(any())).thenAnswer(i -> {
+                CM resource = i.getArgument(0);
+                String resourceName = resource.getMetadata().getName();
+                return mockCreate(resourceName, resource);
+            });
+            when(mixed.delete(ArgumentMatchers.<CM[]>any())).thenAnswer(i -> {
+                CM resource = i.getArgument(0);
+                String resourceName = resource.getMetadata().getName();
+                return mockDelete(resourceName);
+            });
+            when(mixed.withLabel(any())).thenAnswer(i -> {
+                String label = i.getArgument(0);
+                return mockWithLabel(label);
+            });
+            when(mixed.withLabel(any(), any())).thenAnswer(i -> {
+                String label = i.getArgument(0);
+                String value = i.getArgument(1);
+                return mockWithLabels(singletonMap(label, value));
+            });
             return mixed;
         }
 
@@ -782,14 +789,8 @@ public class MockKube {
 
             when(mixed.list()).thenAnswer(i -> mockList(p -> true));
             when(mixed.withLabels(any())).thenAnswer(i -> {
-                MixedOperation<CM, CML, DCM, R> mixedWithLabels = mock(MixedOperation.class);
                 Map<String, String> labels = i.getArgument(0);
-                when(mixedWithLabels.list()).thenAnswer(i2 -> mockList(p -> {
-                    Map<String, String> m = new HashMap(p.getMetadata().getLabels());
-                    m.keySet().retainAll(labels.keySet());
-                    return labels.equals(m);
-                }));
-                return mixedWithLabels;
+                return mockWithLabels(labels);
             });
             when(mixed.withName(any())).thenAnswer(invocation -> {
                 String resourceName = invocation.getArgument(0);
@@ -798,6 +799,26 @@ public class MockKube {
                 return resource;
             });
             return mixed;
+        }
+
+        MixedOperation<CM, CML, DCM, R> mockWithLabels(Map<String, String> labels) {
+            return mockWithLabelsPredicate(p -> {
+                Map<String, String> m = new HashMap(p.getMetadata().getLabels());
+                m.keySet().retainAll(labels.keySet());
+                return labels.equals(m);
+            });
+        }
+
+        MixedOperation<CM, CML, DCM, R> mockWithLabel(String label) {
+            return mockWithLabelsPredicate(p -> p.getMetadata().getLabels().containsKey(label));
+        }
+
+        MixedOperation<CM, CML, DCM, R> mockWithLabelsPredicate(Predicate<CM> predicate) {
+            MixedOperation<CM, CML, DCM, R> mixedWithLabels = mock(MixedOperation.class);
+            when(mixedWithLabels.list()).thenAnswer(i2 -> {
+                return mockList(predicate);
+            });
+            return mixedWithLabels;
         }
 
         private KubernetesResourceList<CM> mockList(Predicate<? super CM> predicate) {
@@ -837,25 +858,33 @@ public class MockKube {
 
         protected void mockDelete(String resourceName, R resource) {
             when(resource.delete()).thenAnswer(i -> {
-                LOGGER.debug("delete {} {}", resourceType, resourceName);
-                CM removed = db.remove(resourceName);
-                if (removed != null) {
-                    fireWatchers(resourceName, removed, Watcher.Action.DELETED);
-                }
-                return removed != null;
+                return mockDelete(resourceName);
             });
         }
 
+        private Object mockDelete(String resourceName) {
+            LOGGER.debug("delete {} {}", resourceType, resourceName);
+            CM removed = db.remove(resourceName);
+            if (removed != null) {
+                fireWatchers(resourceName, removed, Watcher.Action.DELETED);
+            }
+            return removed != null;
+        }
+
         protected void fireWatchers(String resourceName, CM removed, Watcher.Action action) {
+            LOGGER.debug("Firing watchers on {}", resourceName);
             for (Watcher<CM> watcher : watchers) {
+                LOGGER.debug("Firing watcher {} with {}", watcher, action);
                 watcher.eventReceived(action, removed);
             }
             Collection<Watcher<CM>> watchers = nameScopedWatchers.get(resourceName);
             if (watchers != null) {
                 for (Watcher<CM> watcher : watchers) {
+                    LOGGER.debug("Firing watcher {} with {}", watcher, action);
                     watcher.eventReceived(action, removed);
                 }
             }
+            LOGGER.debug("Finished firing watchers on {}", resourceName);
         }
 
         protected void mockPatch(String resourceName, R resource) {
@@ -898,13 +927,17 @@ public class MockKube {
 
         protected void mockCreate(String resourceName, R resource) {
             when(resource.create(any())).thenAnswer(i -> {
-                checkNotExists(resourceName);
                 CM argument = (CM) i.getArguments()[0];
-                LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
-                db.put(resourceName, copyResource(argument));
-                fireWatchers(resourceName, argument, Watcher.Action.ADDED);
-                return argument;
+                return mockCreate(resourceName, argument);
             });
+        }
+
+        private CM mockCreate(String resourceName, CM argument) {
+            checkNotExists(resourceName);
+            LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
+            db.put(resourceName, copyResource(argument));
+            fireWatchers(resourceName, argument, Watcher.Action.ADDED);
+            return copyResource(argument);
         }
 
         protected OngoingStubbing<CM> mockGet(String resourceName, R resource) {

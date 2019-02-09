@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
+import lombok.EqualsAndHashCode;
 
 /**
  * A representation of a single ACL rule for SimpleAclAuthorizer
@@ -26,6 +27,7 @@ import io.vertx.core.cli.annotations.DefaultValue;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public class AclRule implements Serializable {
     private static final long serialVersionUID = 1L;
 

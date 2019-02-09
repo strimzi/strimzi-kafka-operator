@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Map;
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
         "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
+@EqualsAndHashCode
 public class EntityTopicOperatorSpec implements Serializable {
 
     private static final long serialVersionUID = 1L;
