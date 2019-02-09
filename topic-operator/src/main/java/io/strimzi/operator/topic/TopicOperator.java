@@ -474,7 +474,7 @@ public class TopicOperator {
             } else if (kafkaTopic == null) {
                 // it was deleted in kafka so delete in k8s and privateState
                 LOGGER.debug("topic deleted in kafkas => delete KafkaTopic from k8s and from topicStore");
-                enqueue(new DeleteResource(privateTopic.getOrAsMapName(), ar -> {
+                enqueue(new DeleteResource(privateTopic.getOrAsKubeName(), ar -> {
                     if (ar.succeeded()) {
                         enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
                     } else {
@@ -619,6 +619,9 @@ public class TopicOperator {
 
     }
 
+    /**
+     * Called when ZK watch notifies of change to topic's config
+     */
     void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         Handler<Future<Void>> action = new Reconciliation("onTopicConfigChanged") {
             @Override
@@ -636,6 +639,9 @@ public class TopicOperator {
         inFlight.enqueue(topicName, action, resultHandler);
     }
 
+    /**
+     * Called when ZK watch notifies of a change to the topic's partitions
+     */
     void onTopicPartitionsChanged(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         Handler<Future<Void>> action = new Reconciliation("onTopicPartitionsChanged") {
             @Override
@@ -681,6 +687,9 @@ public class TopicOperator {
         inFlight.enqueue(topicName, action, resultHandler);
     }
 
+    /**
+     * Called when one of the ZK watches notifies of a change to the topic
+     */
     private void reconcileOnTopicChange(TopicName topicName, Topic kafkaTopic, Handler<AsyncResult<Void>> resultHandler) {
         // TODO Here I need to lookup the name of the kafkatopic from the name of the topic.
         // I can either do that from the topicStore, or maintain an in-memory map
@@ -692,7 +701,7 @@ public class TopicOperator {
                 if (storeTopic != null) {
                     resourceName = storeTopic.getResourceName();
                 } else {
-                    resourceName = topicName.asMapName();
+                    resourceName = topicName.asKubeName();
                 }
                 k8s.getFromName(resourceName, kubeResult -> {
                     if (kubeResult.succeeded()) {
@@ -966,15 +975,15 @@ public class TopicOperator {
                     TopicName topicName = new TopicName(name);
                     Future topicFuture = Future.future();
                     topicFutures.add(topicFuture);
-                    k8s.getFromName(topicName.asMapName(), topicResult -> {
+                    k8s.getFromName(topicName.asKubeName(), topicResult -> {
                         if (topicResult.succeeded()) {
                             KafkaTopic kafkaTopic = topicResult.result();
                             reconcile(kafkaTopic, topicName).setHandler(topicFuture);
                         } else {
                             LOGGER.error("Error {} getting KafkaTopic {} for topic {}",
                                     reconciliationType,
-                                    topicName.asMapName(), topicName, topicResult.cause());
-                            topicFuture.fail(new OperatorException("Error getting KafkaTopic " + topicName.asMapName() + " during " + reconciliationType + " reconciliation", topicResult.cause()));
+                                    topicName.asKubeName(), topicName, topicResult.cause());
+                            topicFuture.fail(new OperatorException("Error getting KafkaTopic " + topicName.asKubeName() + " during " + reconciliationType + " reconciliation", topicResult.cause()));
                         }
                     });
                 }

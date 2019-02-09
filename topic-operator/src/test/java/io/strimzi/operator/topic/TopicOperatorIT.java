@@ -254,7 +254,7 @@ public class TopicOperatorIT {
     private String createTopic(TestContext context, String topicName) throws InterruptedException, ExecutionException {
         LOGGER.info("Creating topic {}", topicName);
         // Create a topic
-        String resourceName = new TopicName(topicName).asMapName().toString();
+        String resourceName = new TopicName(topicName).asKubeName().toString();
         CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(topicName, 1, (short) 1)));
         crt.all().get();
 

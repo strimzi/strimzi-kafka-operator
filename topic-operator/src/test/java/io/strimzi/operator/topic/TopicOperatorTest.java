@@ -40,7 +40,7 @@ public class TopicOperatorTest {
     private final LabelPredicate resourcePredicate = LabelPredicate.fromString("app=strimzi");
 
     private final TopicName topicName = new TopicName("my-topic");
-    private final ResourceName resourceName = topicName.asMapName();
+    private final ResourceName resourceName = topicName.asKubeName();
     private Vertx vertx = Vertx.vertx();
     private MockKafka mockKafka = new MockKafka();
     private MockTopicStore mockTopicStore = new MockTopicStore();
@@ -378,7 +378,7 @@ public class TopicOperatorTest {
         mockKafka.setCreateTopicResponse(topicName.toString(), null);
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
-        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockK8s.createResource(TopicSerialization.toTopicResource(kubeTopic, resourcePredicate), ar -> async0.countDown());
 
         Async async = context.async(1);
@@ -438,7 +438,7 @@ public class TopicOperatorTest {
 
         Async async0 = context.async();
         mockTopicStore.setCreateTopicResponse(topicName, null);
-        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
         mockKafka.createTopic(kafkaTopic, ar -> async0.complete());
         async0.await();
@@ -447,7 +447,7 @@ public class TopicOperatorTest {
         topicOperator.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
-            mockK8s.assertExists(context, topicName.asMapName());
+            mockK8s.assertExists(context, topicName.asKubeName());
             mockKafka.assertExists(context, topicName);
             mockK8s.assertNoEvents(context);
             mockTopicStore.read(topicName, readResult -> {
@@ -455,7 +455,7 @@ public class TopicOperatorTest {
                 context.assertEquals(kafkaTopic, readResult.result());
                 async.countDown();
             });
-            mockK8s.getFromName(topicName.asMapName(), readResult -> {
+            mockK8s.getFromName(topicName.asKubeName(), readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(kafkaTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
@@ -486,7 +486,7 @@ public class TopicOperatorTest {
         topicOperator.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertNotExists(context, topicName);
-            mockK8s.assertNotExists(context, topicName.asMapName());
+            mockK8s.assertNotExists(context, topicName.asKubeName());
             mockKafka.assertNotExists(context, topicName);
             mockK8s.assertNoEvents(context);
             async.complete();
@@ -506,7 +506,7 @@ public class TopicOperatorTest {
         Async async0 = context.async(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
-        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockK8s.createResource(TopicSerialization.toTopicResource(kubeTopic, resourcePredicate), ar -> async0.countDown());
         mockTopicStore.setCreateTopicResponse(topicName, null);
         async0.await();
@@ -515,7 +515,7 @@ public class TopicOperatorTest {
         topicOperator.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
-            mockK8s.assertExists(context, topicName.asMapName());
+            mockK8s.assertExists(context, topicName.asKubeName());
             mockK8s.assertNoEvents(context);
             mockKafka.assertExists(context, topicName);
             mockTopicStore.read(topicName, readResult -> {
@@ -545,9 +545,9 @@ public class TopicOperatorTest {
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
-        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockK8s.createResource(topic, ar -> async0.countDown());
-        mockK8s.setModifyResponse(topicName.asMapName(), null);
+        mockK8s.setModifyResponse(topicName.asKubeName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
         async0.await();
 
@@ -555,14 +555,14 @@ public class TopicOperatorTest {
         topicOperator.reconcile(topic, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
-            mockK8s.assertExists(context, topicName.asMapName());
+            mockK8s.assertExists(context, topicName.asKubeName());
             mockKafka.assertExists(context, topicName);
             mockTopicStore.read(topicName, readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(mergedTopic, readResult.result());
                 async.countDown();
             });
-            mockK8s.getFromName(topicName.asMapName(), readResult -> {
+            mockK8s.getFromName(topicName.asKubeName(), readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(mergedTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
@@ -586,9 +586,9 @@ public class TopicOperatorTest {
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
 
         KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
-        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockK8s.createResource(topic, ar -> async0.countDown());
-        mockK8s.setModifyResponse(topicName.asMapName(), null);
+        mockK8s.setModifyResponse(topicName.asKubeName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
         async0.await();
 
@@ -599,14 +599,14 @@ public class TopicOperatorTest {
                     e.getMessage().contains("KafkaTopic is incompatible with the topic metadata. " +
                             "The topic metadata will be treated as canonical."));
             mockTopicStore.assertExists(context, topicName);
-            mockK8s.assertExists(context, topicName.asMapName());
+            mockK8s.assertExists(context, topicName.asKubeName());
             mockKafka.assertExists(context, topicName);
             mockTopicStore.read(topicName, readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(kafkaTopic, readResult.result());
                 async.countDown();
             });
-            mockK8s.getFromName(topicName.asMapName(), readResult -> {
+            mockK8s.getFromName(topicName.asKubeName(), readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(kafkaTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
@@ -632,9 +632,9 @@ public class TopicOperatorTest {
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
-        mockK8s.setCreateResponse(topicName.asMapName(), null);
+        mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockK8s.createResource(resource, ar -> async0.countDown());
-        mockK8s.setModifyResponse(topicName.asMapName(), null);
+        mockK8s.setModifyResponse(topicName.asKubeName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
         mockTopicStore.create(privateTopic, ar -> async0.countDown());
         async0.await();
@@ -648,7 +648,7 @@ public class TopicOperatorTest {
                 context.assertEquals(resultTopic, readResult.result());
                 async.countDown();
             });
-            mockK8s.getFromName(topicName.asMapName(), readResult -> {
+            mockK8s.getFromName(topicName.asKubeName(), readResult -> {
                 assertSucceeded(context, readResult);
                 context.assertEquals(resultTopic, TopicSerialization.fromTopicResource(readResult.result()));
                 async.countDown();
