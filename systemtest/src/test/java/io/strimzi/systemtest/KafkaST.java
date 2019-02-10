@@ -105,6 +105,12 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
         oc.deleteByName("Kafka", clusterName);
+
+        // Delete all pods created by this test
+        CLIENT.pods().list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(clusterName))
+                .forEach(p -> CLIENT.pods().delete(p));
+
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
         oc.waitForResourceDeletion("deployment", entityOperatorDeploymentName(clusterName));
@@ -229,7 +235,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     void testCustomAndUpdatedValues() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
