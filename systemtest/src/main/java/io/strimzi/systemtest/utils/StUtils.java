@@ -56,7 +56,7 @@ public class StUtils {
 
     /** Returns a map of pod name to resource version for the pods currently in the given deployment */
     public static Map<String, String> depSnapshot(KubernetesClient client, String namespace, String name) {
-        Deployment deployment = client.extensions().deployments().inNamespace(namespace).withName(name).get();
+        Deployment deployment = client.apps().deployments().inNamespace(namespace).withName(name).get();
         LabelSelector selector = deployment.getSpec().getSelector();
         return podSnapshot(client, namespace, selector);
     }
