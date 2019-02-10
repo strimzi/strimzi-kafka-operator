@@ -40,6 +40,7 @@ public class BaseITST {
     private static final String DEFAULT_NAMESPACE = KUBE_CLIENT.defaultNamespace();
 
     public String clusterOperatorNamespace = DEFAULT_NAMESPACE;
+    public List<String> bindingsNamespaces = new ArrayList<>();
     public List<String> deploymentNamespaces = new ArrayList<>();
     private List<String> deploymentResources = new ArrayList<>();
     private Stack<String> clusterOperatorConfigs = new Stack<>();
@@ -84,6 +85,7 @@ public class BaseITST {
      * @param namespaces list of namespaces which will be created
      */
     protected void createNamespaces(String useNamespace, List<String> namespaces) {
+        bindingsNamespaces = namespaces;
         for (String namespace: namespaces) {
             LOGGER.info("Creating namespace: {}", namespace);
             deploymentNamespaces.add(namespace);
