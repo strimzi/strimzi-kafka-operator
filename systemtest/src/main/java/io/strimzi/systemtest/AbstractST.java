@@ -25,12 +25,15 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -217,6 +220,10 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {
         replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, resourceName, editor);
+    }
+
+    void replaceMirrorMakerResource(String resourceName, Consumer<KafkaMirrorMaker> editor) {
+        replaceCrdResource(KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, resourceName, editor);
     }
 
     String getBrokerApiVersions(String podName) {
@@ -1112,6 +1119,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
     void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        LOGGER.info(coNamespace);
+        LOGGER.info(bindingsNamespaces);
+
         testClassResources.deleteResources();
 
         deleteClusterOperatorInstallFiles();
@@ -1206,7 +1216,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     void recreateEnvironmentAfterFailure(ExtensionContext context) {
         if (context.getExecutionException().isPresent()) {
             LOGGER.info("Test execution contains exception, going to recreate test environment");
-            recreateTestEnv(clusterOperatorNamespace, deploymentNamespaces);
+            recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
             LOGGER.info("Env recreated.");
         }
     }
