@@ -32,10 +32,6 @@ spec:
     value.converter: org.apache.kafka.connect.json.JsonConverter
     key.converter.schemas.enable: true
     value.converter.schemas.enable: true
-    internal.key.converter: org.apache.kafka.connect.json.JsonConverter
-    internal.value.converter: org.apache.kafka.connect.json.JsonConverter
-    internal.key.converter.schemas.enable: false
-    internal.value.converter.schemas.enable: false
     config.storage.replication.factor: 3
     offset.storage.replication.factor: 3
     status.storage.replication.factor: 3

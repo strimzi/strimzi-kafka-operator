@@ -30,10 +30,6 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
         DEFAULTS.put("status.storage.topic", "connect-cluster-status");
         DEFAULTS.put("key.converter", "org.apache.kafka.connect.json.JsonConverter");
         DEFAULTS.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
-        DEFAULTS.put("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter");
-        DEFAULTS.put("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter");
-        DEFAULTS.put("internal.key.converter.schemas.enable", "false");
-        DEFAULTS.put("internal.value.converter.schemas.enable", "false");
     }
 
     /**
