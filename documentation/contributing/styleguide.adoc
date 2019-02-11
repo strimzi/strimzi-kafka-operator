@@ -1,13 +1,10 @@
 [[style-guide]]
-= Style Guidelines
-
-[[style-guidelines]]
-== Style Guidelines
+= Style guidelines
 
 [[general-styles]]
-=== General Styles
+== General styles
 
-.General Quick Reference
+.General quick reference
 [cols="33%,33%a,33%a",options="header"]
 |===
 |Item |Use |Not
@@ -31,7 +28,7 @@
 |Heartbeating |heartbeating |heart-beating
 |===
 
-.Additional General Guidelines
+.Additional general guidelines
 * Stick to one file per chapter unless the content is too long,
   excluding reusable topics.
 * Don't use contractions, ;).
@@ -47,7 +44,7 @@
   `[subs=+quotes]`.
 
 [[naming-files-style]]
-=== Naming files
+== Naming files
 
 .File Names Quick Reference
 [cols="33%,33%a,33%a",options="header"]
@@ -66,11 +63,11 @@
 Learn more about naming files in the xref:files-and-attributes[Files and Attributes] appendix.
 
 [[headings-titles]]
-=== Styling headings and titles
+== Styling headings and titles
 
-AMQ 7 uses sentence-case headings for modules, tables, and figures.
+Uses sentence-case headings for modules, tables, and figures.
 
-.Headings Quick Reference
+.Headings quick reference
 [cols="33%,33%a,33%a",options="header"]
 |===
 |Item |Use |Not
@@ -86,7 +83,7 @@ AMQ 7 uses sentence-case headings for modules, tables, and figures.
 |===
 
 [[ids]]
-=== Section IDs
+== Section IDs
 
 The format defined here is recommended because it is the most stable and versatile of anchor formats, and supports variables that enable topics to be reused and cross-referenced properly. Other anchor formats include `+++[[anchor-name]]+++` and `+++[#anchor-name]+++`, but these formats either do not support variables for content reuse or do not support certain character types, such as periods. These limitations cause errors at build time.
 
@@ -103,7 +100,7 @@ Learn more about reusing content in the link:https://redhat-documentation.github
 |===
 
 [[punctuation-guide]]
-=== Styling punctuation
+== Styling punctuation
 
 .General punctuation guidelines
 * Do not refer to an individual punctuation mark or special character by its symbol alone.
@@ -128,7 +125,7 @@ Learn more about reusing content in the link:https://redhat-documentation.github
 |===
 
 [[replaceables]]
-=== Styling replaceables
+== Styling replaceables
 
 Replaceable values in the text and code must be styled as monospace, italics, lowercase, arrow brackets, and hyphens.
 
@@ -146,7 +143,7 @@ TIP: If using a replaceable within a source block, you will need to add
 
 IMPORTANT: If you enter the source language, for example, 'shell', the italics will not render.
 
-=== Styling Links
+== Styling Links
 
 .Links Quick Reference
 [cols="33%,33%a,33%a",options="header"]
@@ -169,7 +166,7 @@ IMPORTANT: Links with attributes (including the subject and body segments on mai
 are a feature unique to Asciidoctor. When they are enabled, you must surround the link text
 in double quotes if it contains a comma.
 
-.Additional Link Guidelines
+.Additional link guidelines
 * Refer to the top-level sections of books as chapters, not sections
   or topics.
 * Do not split link paths across lines when wrapping text. This will cause issues with the doc builds.

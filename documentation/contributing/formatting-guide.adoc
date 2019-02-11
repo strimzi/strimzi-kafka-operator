@@ -1,5 +1,5 @@
 [[formatted-text-reference]]
-= AsciiDoc Format Reference
+= AsciiDoc format reference
 
 Tips for which AsciiDoc markup to use when formatting text.
 
@@ -35,5 +35,3 @@ Underline (`[.underline]#value#`)::
 |Item |Example
 |Default item in a multi-select|\`yes\|[.underline]\#no#\|maybe`
 |===
-
-//See additional sections below for xref:headings[heading], xref:tables[table title], and xref:images_and_screenshots[image title] syntax.
