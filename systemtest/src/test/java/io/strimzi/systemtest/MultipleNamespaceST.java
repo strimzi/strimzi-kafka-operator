@@ -139,6 +139,7 @@ class MultipleNamespaceST extends AbstractST {
 
     @AfterAll
     void teardownEnvironment() {
+        testClassResources.deleteResources();
         teardownEnvForOperator();
     }
 
