@@ -7,7 +7,7 @@ package io.strimzi.certs;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.test.TestUtils;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -29,7 +29,7 @@ public class SecretCertProviderTest {
 
     @BeforeClass
     public static void before() {
-        TestUtils.assumeLinux();
+        Assume.assumeTrue(System.getProperty("os.name").contains("nux"));
         ssl = new OpenSslCertManager();
         secretCertProvider = new SecretCertProvider();
         ownerReference = new OwnerReferenceBuilder()
