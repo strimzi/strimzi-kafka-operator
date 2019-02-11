@@ -55,14 +55,10 @@ class ConnectST extends AbstractST {
     public static final String KAFKA_CONNECT_BOOTSTRAP_SERVERS = KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME);
     private static final Map EXPECTED_CONFIG = loadProperties("group.id=connect-cluster\n" +
             "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "internal.key.converter.schemas.enable=false\n" +
             "value.converter=org.apache.kafka.connect.json.JsonConverter\n" +
             "config.storage.topic=connect-cluster-configs\n" +
             "status.storage.topic=connect-cluster-status\n" +
-            "offset.storage.topic=connect-cluster-offsets\n" +
-            "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
-            "internal.value.converter.schemas.enable=false\n" +
-            "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n");
+            "offset.storage.topic=connect-cluster-offsets\n");
 
     @Test
     @Tag(ACCEPTANCE)
