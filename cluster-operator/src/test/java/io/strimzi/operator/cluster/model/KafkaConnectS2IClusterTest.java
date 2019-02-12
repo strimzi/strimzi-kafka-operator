@@ -75,15 +75,11 @@ public class KafkaConnectS2IClusterTest {
     private final String bootstrapServers = "foo-kafka:9092";
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
-            .addPair("internal.key.converter", "org.apache.kafka.connect.json.JsonConverter")
             .addPair("config.storage.topic", "connect-cluster-configs")
             .addPair("group.id", "connect-cluster")
             .addPair("status.storage.topic", "connect-cluster-status")
-            .addPair("internal.value.converter.schemas.enable", "false")
-            .addPair("internal.value.converter", "org.apache.kafka.connect.json.JsonConverter")
             .addPair("offset.storage.topic", "connect-cluster-offsets")
             .addPair("value.converter", "org.apache.kafka.connect.json.JsonConverter")
-            .addPair("internal.key.converter.schemas.enable", "false")
             .addPair("key.converter", "org.apache.kafka.connect.json.JsonConverter");
     private final OrderedProperties expectedConfiguration = new OrderedProperties()
             .addMapPairs(defaultConfiguration.asMap())

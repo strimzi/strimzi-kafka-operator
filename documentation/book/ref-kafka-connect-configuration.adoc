@@ -39,10 +39,6 @@ Selected options have default values:
 * `status.storage.topic` with default value `connect-cluster-status`
 * `key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
 * `value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
-* `internal.key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
-* `internal.value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
-* `internal.key.converter.schemas.enable` with default value `false`
-* `internal.value.converter.schemas.enable` with default value `false`
 
 These options will be automatically configured in case they are not present in the `KafkaConnect.spec.config` or `KafkaConnectS2I.spec.config` properties.
 
@@ -64,10 +60,6 @@ spec:
     value.converter: org.apache.kafka.connect.json.JsonConverter
     key.converter.schemas.enable: true
     value.converter.schemas.enable: true
-    internal.key.converter: org.apache.kafka.connect.json.JsonConverter
-    internal.value.converter: org.apache.kafka.connect.json.JsonConverter
-    internal.key.converter.schemas.enable: false
-    internal.value.converter.schemas.enable: false
     config.storage.replication.factor: 3
     offset.storage.replication.factor: 3
     status.storage.replication.factor: 3
