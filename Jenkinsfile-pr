@@ -39,7 +39,7 @@ pipeline {
         }
         stage('Start Openshift') {
             steps {
-                timeout(time: 20, unit: 'MINUTES') {
+                timeout(time: 25, unit: 'MINUTES') {
                     script {
                         lib.setupEnvironment(env.OPENSHIFT_URL)
                     }

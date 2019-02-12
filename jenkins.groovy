@@ -16,15 +16,19 @@ def setupEnvironment(String openshift) {
     sh "sudo rm -rf /tmp/openshift/"
     sh "sudo rm -rf openshift.tar.gz"
 
-    status = sh(
-            script: "oc cluster up --base-dir $WORKSPACE/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true",
-            returnStatus: true
-    )
+    timeout(time: 10, unit: 'MINUTES') {
+        status = sh(
+                script: "oc cluster up --base-dir $WORKSPACE/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true",
+                returnStatus: true
+        )
+    }
 
-    if (status != 0) {
-        sleep(10)
-        sh "oc cluster down"
-        sh "oc cluster up --base-dir $WORKSPACE/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true"
+    timeout(time: 15, unit: 'MINUTES') {
+        if (status != 0) {
+            sleep(10)
+            sh "oc cluster down"
+            sh "oc cluster up --base-dir $WORKSPACE/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true"
+        }
     }
 
     sh "export KUBECONFIG=$WORKSPACE/origin/kube-apiserver/admin.kubeconfig"
