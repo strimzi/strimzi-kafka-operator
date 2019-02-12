@@ -3,37 +3,14 @@
  */
 def setupEnvironment(String openshift) {
     sh "rm -rf ~/.kube"
-    sh "sudo yum install -y zip"
-    clearImages()
-
-    def status = sh(
-            script: "oc cluster down",
-            returnStatus: true
-    )
-    if (status == 0) {
-        sh "for i in \$(mount | grep openshift | awk '{ print \$3}'); do sudo umount \"\$i\"; done && sudo rm -rf /var/lib/origin"
-        sh "sudo rm -rf /usr/bin/oc"
-    }
-
-    sh "for i in \$(mount | grep openshift | awk '{ print \$3}'); do sudo umount \"\$i\"; done && sudo rm -rf /var/lib/origin"
-    sh "sudo rm -rf /usr/bin/oc"
-
     sh "mkdir -p /tmp/openshift"
 
     status = sh(
-            script: "wget $openshift -O openshift.tar.gz",
-            returnStatus: true
+        script: "wget $openshift -O openshift.tar.gz",
+        returnStatus: true
     )
-
-    timeout(time: 10, unit: 'MINUTES') {
-        if (status != 0) {
-            status = sh(
-                    script: "wget $openshift -O openshift.tar.gz",
-                    returnStatus: true
-            )
-        }
-    }
     //////////////////////////////////////////////////
+
     sh "tar xzf openshift.tar.gz -C /tmp/openshift --strip-components 1"
     sh "sudo cp /tmp/openshift/oc /usr/bin/oc"
     sh "sudo rm -rf /tmp/openshift/"
@@ -57,20 +34,6 @@ def setupEnvironment(String openshift) {
 
     sh "oc label node localhost rack-key=zone"
     sh "oc apply -f https://gist.githubusercontent.com/scholzj/614065a081ad92669c32f45894510c8c/raw/96d1a6539a99f0dce2d5eb02a8f15e6eb109a9d6/strimzi-admin.yaml"
-
-    downloadHelmChart()
-}
-
-/**
- * Function for download HelmChart
- */
-def downloadHelmChart() {
-    def version="2.11.0"
-    sh "mkdir /tmp/helm"
-    sh "wget https://storage.googleapis.com/kubernetes-helm/helm-v$version-linux-amd64.tar.gz -O helm.tar.gz"
-    sh "tar xzf helm.tar.gz -C /tmp/helm --strip-components 1"
-    sh "sudo cp /tmp/helm/helm /usr/bin/helm"
-    sh "rm -rf helm.tar.gz && rm -rf /tmp/helm"
 }
 
 /**
@@ -88,7 +51,6 @@ def teardownEnvironment() {
 
     sh "for i in \$(mount | grep openshift | awk '{ print \$3}'); do sudo umount \"\$i\"; done && sudo rm -rf $WORKSPACE/origin"
     sh "sudo rm -rf $WORKSPACE/origin/"
-    clearImages()
 }
 
 def clearImages() {
@@ -102,7 +64,7 @@ def buildStrimzi() {
 }
 
 def runSystemTests() {
-    sh "mvn -f ${WORKSPACE}/systemtest/pom.xml -P systemtests verify -DjunitTags=acceptance,regression -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
+    sh "mvn -f ${WORKSPACE}/systemtest/pom.xml -P systemtests verify -DjunitTags=${JUNIT_TAGS} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
 }
 
 def postAction(String artifactDir) {
