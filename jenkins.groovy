@@ -18,8 +18,8 @@ def setupEnvironment(String openshift) {
 
     timeout(time: 10, unit: 'MINUTES') {
         status = sh(
-                script: "oc cluster up --base-dir $WORKSPACE/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true",
-                returnStatus: true
+            script: "oc cluster up --base-dir $WORKSPACE/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true",
+            returnStatus: true
         )
     }
 
