@@ -89,7 +89,7 @@ class KafkaST extends AbstractST {
     private static final long TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION = 450_000;
 
     @Test
-    @Tag(REGRESSION)
+    @Tag(FLAKY)
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate() {
         createCustomResources("../examples/templates/cluster-operator");
