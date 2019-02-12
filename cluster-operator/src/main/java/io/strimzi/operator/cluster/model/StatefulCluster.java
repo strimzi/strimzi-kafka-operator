@@ -20,6 +20,7 @@ import io.strimzi.operator.common.model.Labels;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Clusters with state.  Stateful implies long-term storage.
@@ -33,9 +34,9 @@ public abstract class StatefulCluster extends AbstractModel {
     /**
      * Lists with volumes, persistent volume claims and related volume mount paths for the storage
      */
-    List<Volume> dataVolumes = new ArrayList<>();
-    List<PersistentVolumeClaim> dataPvcs = new ArrayList<>();
-    List<VolumeMount> dataVolumeMountPaths = new ArrayList<>();
+    private List<Volume> dataVolumes = new ArrayList<>();
+    private List<PersistentVolumeClaim> dataPvcs = new ArrayList<>();
+    private List<VolumeMount> dataVolumeMountPaths = new ArrayList<>();
 
     public StatefulCluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
@@ -65,7 +66,7 @@ public abstract class StatefulCluster extends AbstractModel {
     private void setDataVolumesClaimsAndMountPaths(Storage storage) {
         storage.iteratePersistentClaimStorage((pcs, name) -> {
             dataPvcs.add(createPersistentVolumeClaim(name, pcs));
-            dataVolumeMountPaths.add(createVolumeMount(name, fullPath(name)));
+            dataVolumeMountPaths.add(createVolumeMountWithSubPath(name, fullPath(name), pcs.getSubPath()));
         }, AbstractModel.VOLUME_NAME);
 
         storage.iterateEphemeralStorage((es, name) -> {
@@ -78,10 +79,31 @@ public abstract class StatefulCluster extends AbstractModel {
         return mountPath + '/' + name;
     }
 
+
+    /* test */ List<Volume> getVolumes(boolean isOpenShift) {
+        List<Volume> volumeList = new ArrayList<>();
+        volumeList.addAll(dataVolumes);
+        return volumeList;
+    }
+
     /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
         pvcList.addAll(dataPvcs);
         return pvcList;
+    }
+
+    /* test */ List<VolumeMount> getVolumeMounts() {
+        List<VolumeMount> volumeMountList = new ArrayList<>();
+        volumeMountList.addAll(dataVolumeMountPaths);
+        return volumeMountList;
+    }
+
+    /**
+     * Get the mount paths for all of the data volumes
+     * @return A stream of mount paths
+     */
+    Stream<String> dataVolumesMounts() {
+        return dataVolumeMountPaths.stream().map(volumeMount -> volumeMount.getMountPath());
     }
 
     protected StatefulSet createStatefulSet(

@@ -650,9 +650,9 @@ public class KafkaCluster extends StatefulCluster {
         return portList;
     }
 
-    private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>();
-        volumeList.addAll(dataVolumes);
+    @Override
+    /* test */ List<Volume> getVolumes(boolean isOpenShift) {
+        List<Volume> volumeList = super.getVolumes(isOpenShift);
 
         if (rack != null || isExposedWithNodePort()) {
             volumeList.add(createEmptyDirVolume(INIT_VOLUME_NAME));
@@ -665,9 +665,9 @@ public class KafkaCluster extends StatefulCluster {
         return volumeList;
     }
 
+    @Override
     /* test */ List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.addAll(dataVolumeMountPaths);
+        List<VolumeMount> volumeMountList = super.getVolumeMounts();
 
         volumeMountList.add(createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
@@ -858,8 +858,7 @@ public class KafkaCluster extends StatefulCluster {
             }
         }
 
-        String logDirs = dataVolumeMountPaths.stream()
-                .map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(","));
+        String logDirs = dataVolumesMounts().collect(Collectors.joining(","));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_LOG_DIRS, logDirs));
 
         return varList;

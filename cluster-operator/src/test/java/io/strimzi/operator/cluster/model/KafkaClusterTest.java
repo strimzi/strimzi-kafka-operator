@@ -24,13 +24,11 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
@@ -40,13 +38,11 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExternalBrokerService;
 import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.RackBuilder;
@@ -271,7 +267,7 @@ public class KafkaClusterTest {
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
         assertEquals("foo=bar" + LINE_SEPARATOR, AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
         assertEquals(KafkaCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
-        assertEquals(kc.dataVolumeMountPaths.stream().map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(",")),
+        assertEquals(kc.dataVolumesMounts().collect(Collectors.joining(",")),
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_KAFKA_LOG_DIRS));
         assertEquals(KafkaCluster.BROKER_CERTS_VOLUME, containers.get(0).getVolumeMounts().get(2).getName());
         assertEquals(KafkaCluster.BROKER_CERTS_VOLUME_MOUNT, containers.get(0).getVolumeMounts().get(2).getMountPath());
@@ -327,55 +323,6 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < replicas; i++) {
             assertEquals(KafkaCluster.kafkaClusterName(cluster) + "-" + i, kc.getPodName(i));
-        }
-    }
-
-    @Test
-    public void testPvcNames() {
-        Kafka assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
-                .editSpec()
-                    .editKafka()
-                        .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(false).withSize("100Gi").build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(assembly, VERSIONS);
-
-        List<PersistentVolumeClaim> pvcs = kc.getVolumeClaims();
-        List<VolumeMount> vms = kc.getVolumeMounts();
-        for (int i = 0; i < pvcs.size(); ++i) {
-            String name = pvcs.get(i).getMetadata().getName();
-            assertEquals(kc.VOLUME_NAME, name);
-            VolumeMount vm = vms.get(i);
-            assertEquals(name, vm.getName());
-            assertEquals("/var/lib/kafka/" + name, vm.getMountPath());
-            assertNull(vm.getSubPath());
-        }
-
-        assembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
-                .editSpec()
-                    .editKafka()
-                        .withStorage(new JbodStorageBuilder().withVolumes(
-                            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize("100Gi").build(),
-                            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize("100Gi").build())
-                            .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        kc = KafkaCluster.fromCrd(assembly, VERSIONS);
-
-        pvcs = kc.getVolumeClaims();
-        vms = kc.getVolumeMounts();
-
-        for (int i = 0; i < pvcs.size(); ++i) {
-            String name = pvcs.get(i).getMetadata().getName();
-            assertEquals(kc.VOLUME_NAME + "-" + i, name);
-            VolumeMount vm = vms.get(i);
-            assertEquals(name, vm.getName());
-            assertEquals("/var/lib/kafka/" + name, vm.getMountPath());
-            assertNull(vm.getSubPath());
         }
     }
 

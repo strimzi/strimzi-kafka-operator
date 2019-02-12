@@ -421,18 +421,18 @@ public class ZookeeperCluster extends StatefulCluster {
         return portList;
     }
 
-    private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>();
-        volumeList.addAll(dataVolumes);
+    @Override
+    /* test */ List<Volume> getVolumes(boolean isOpenShift) {
+        List<Volume> volumeList = super.getVolumes(isOpenShift);
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
         volumeList.add(createSecretVolume(TLS_SIDECAR_NODES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(TLS_SIDECAR_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
     }
 
-    private List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>();
-        volumeMountList.addAll(dataVolumeMountPaths);
+    @Override
+        /* test */ List<VolumeMount> getVolumeMounts() {
+        List<VolumeMount> volumeMountList = super.getVolumeMounts();
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         return volumeMountList;
     }

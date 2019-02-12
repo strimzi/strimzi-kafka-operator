@@ -28,6 +28,7 @@ import java.util.function.BiConsumer;
 @EqualsAndHashCode
 public class PersistentClaimStorage extends SingleVolumeStorage {
 
+    static final String SIZE_REQUIRED_MESSAGE = "The size is mandatory for a persistent-claim storage";
     private static final long serialVersionUID = 1L;
 
     private String size;
@@ -111,9 +112,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
      * {@inheritDoc}
      */
     public String invalidityReason() {
-        return size == null || size.isEmpty()
-                ? "The size is mandatory for a persistent-claim storage"
-                : null;
+        return size == null || size.isEmpty() ? SIZE_REQUIRED_MESSAGE : null;
     }
 
     /**

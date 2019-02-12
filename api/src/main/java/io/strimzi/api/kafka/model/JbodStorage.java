@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -22,6 +23,7 @@ import java.util.function.BiConsumer;
 public class JbodStorage extends Storage {
 
     private static final long serialVersionUID = 1L;
+    static final String MISSING_ID = "Volumes under JBOD storage type have to have 'id' property";
 
     private List<SingleVolumeStorage> volumes;
 
@@ -47,8 +49,12 @@ public class JbodStorage extends Storage {
     @Override
     public String invalidityReason() {
         for (SingleVolumeStorage volume : volumes) {
+            String reason = volume.invalidityReason();
+            if (reason != null) {
+                return reason;
+            }
             if (volume.getId() == null) {
-                return "Volumes under JBOD storage type have to have 'id' property";
+                return MISSING_ID;
             }
         }
         return null;
