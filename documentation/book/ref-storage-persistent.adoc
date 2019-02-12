@@ -18,6 +18,10 @@ Defines the size of the persistent volume claim, for example, "1000Gi".
 `class` (optional)::
 The {ProductPlatformName} {K8SStorageClass} to use for dynamic volume provisioning.
 
+`subPath` (optional)::
+The subPath on the persistent volume to use.  Default is to use the root directory of the associated
+volume.
+
 `selector` (optional)::
 Allows selecting a specific persistent volume to use.
 It contains key:value pairs representing labels for selecting such a volume.
@@ -76,3 +80,19 @@ Persistent Volume Claim for the volume used for storing data for the Kafka broke
 
 `data-_cluster-name_-zookeeper-_idx_`::
 Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `_idx_`.
+
+.SubPath Use Cases
+
+A subPath is useful when multiple applications are sharing a Persistent Volume.  For example, a ZooKeeper
+Cluster and a Kafka Cluster are using the same host and  link:https://kubernetes.io/docs/concepts/storage/volumes/#local[local persistent volume].
+Each application will need to mount the volume with different subPath, which maps to different physical
+storage directories.  (This configuration may not be performant, depending upon the disk's
+link:https://en.wikipedia.org/wiki/IOPS[IOPs].  See link:https://kafka.apache.org/documentation/#diskandfs[Disks and Filesystem],
+link:https://docs.confluent.io/current/kafka/deployment.html#disks[Running Kafka in Production],
+link:https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_designing[Single Machine Requirements], and
+link:https://docs.confluent.io/current/zookeeper/deployment.html#disks[Running ZooKeeper in Production] for more details.)
+
+Even when the application has sole use of the physical volume, a subPath may be needed.  On ext4
+volumes, the 'lost+found' recovery directory in the root of the volume will be interpreted by Kafka
+as a corrupt topic, causing startup to fail with a ```'lost+found' is not in the form of topic-partition```
+KafkaException.
