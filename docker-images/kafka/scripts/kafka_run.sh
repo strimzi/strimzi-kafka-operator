@@ -5,7 +5,15 @@ export KAFKA_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
 echo "KAFKA_BROKER_ID=$KAFKA_BROKER_ID"
 
 # Kafka server data dirs
-echo "KAFKA_LOG_DIRS=$KAFKA_LOG_DIRS"
+export KAFKA_LOG_DIR_PATH="kafka-log${KAFKA_BROKER_ID}"
+
+for DIR in $(echo $KAFKA_LOG_DIRS | tr ',' ' ')  ; do
+  export KAFKA_LOG_DIRS_WITH_PATH="${KAFKA_LOG_DIRS_WITH_PATH},${DIR}/${KAFKA_LOG_DIR_PATH}"
+done
+
+export KAFKA_LOG_DIRS_WITH_PATH="${KAFKA_LOG_DIRS_WITH_PATH:1}"
+
+echo "KAFKA_LOG_DIRS=$KAFKA_LOG_DIRS_WITH_PATH"
 
 # Disable Kafka's GC logging (which logs to a file)...
 export GC_LOG_ENABLED="false"

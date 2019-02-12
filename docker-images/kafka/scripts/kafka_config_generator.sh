@@ -167,7 +167,7 @@ zookeeper.connect=localhost:2181
 zookeeper.connection.timeout.ms=6000
 
 # Logs
-log.dirs=${KAFKA_LOG_DIRS}
+log.dirs=${KAFKA_LOG_DIRS_WITH_PATH}
 
 # TLS / SSL
 ssl.keystore.password=${CERTS_STORE_PASSWORD}
