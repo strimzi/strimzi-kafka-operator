@@ -5,62 +5,39 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.test.extensions.StrimziExtension;
-import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.not;
 
 @ExtendWith(StrimziExtension.class)
-class MultipleNamespaceST extends AbstractST {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
-    static final String CO_NAMESPACE = "multiple-namespace-test";
-    static final String TO_NAMESPACE = "topic-operator-namespace";
-    private static final String TOPIC_NAME = "my-topic";
-    private static final String TOPIC_INSTALL_DIR = "../examples/topic/kafka-topic.yaml";
+@ClusterOperator
+class MultipleNamespaceST extends AbstractNamespaceST {
 
-    private static Resources secondNamespaceResources;
+    private static final Logger LOGGER = LogManager.getLogger(MultipleNamespaceST.class);
 
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */
     @Test
     @Tag(REGRESSION)
-    void testTopicOperatorWatchingOtherNamespace() throws InterruptedException {
-        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
-        assertThat(topics, not(hasItems(TOPIC_NAME)));
-
-        deployNewTopic(TO_NAMESPACE, TOPIC_NAME);
-        deleteNewTopic(TO_NAMESPACE, TOPIC_NAME);
+    void testTopicOperatorWatchingOtherNamespace() {
+        LOGGER.info("Deploying TO in different namespace than CO when CO watches multiple namespaces");
+        checkTOInDiffNamespaceThanCO();
     }
 
     /**
-     * Test the case when Kafka will be deployed in different namespace
+     * Test the case when Kafka will be deployed in different namespace than CO
      */
     @Test
     @Tag(REGRESSION)
-    void testKafkaInDifferentNsThanClusterOperator() throws InterruptedException {
-        String kafkaName = kafkaClusterName(CLUSTER_NAME + "-second");
-
-        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3).done();
-
-        LOGGER.info("Waiting for creation {} in namespace {}", kafkaName, TO_NAMESPACE);
-        KUBE_CLIENT.namespace(TO_NAMESPACE);
-        KUBE_CLIENT.waitForStatefulSet(kafkaName, 3);
+    void testKafkaInDifferentNsThanClusterOperator() {
+        LOGGER.info("Deploying Kafka in different namespace than CO when CO watches multiple namespaces");
+        checkKafkaInDiffNamespaceThanCO();
     }
 
     /**
@@ -68,84 +45,27 @@ class MultipleNamespaceST extends AbstractST {
      */
     @Test
     @Tag(REGRESSION)
-    void testDeployMirrorMakerAcrossMultipleNamespace() throws InterruptedException {
-        String kafkaName = CLUSTER_NAME + "-target";
-        String kafkaSourceName = kafkaClusterName(CLUSTER_NAME);
-        String kafkaTargetName = kafkaClusterName(kafkaName);
-
-        secondNamespaceResources.kafkaEphemeral(kafkaName, 3).done();
-        secondNamespaceResources.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
-
-        LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", TO_NAMESPACE);
-        KUBE_CLIENT.namespace(TO_NAMESPACE);
-        KUBE_CLIENT.waitForDeployment(CLUSTER_NAME + "-mirror-maker", 1);
-    }
-
-    @BeforeEach
-    void createSecondNamespaceResources() {
-        KUBE_CLIENT.namespace(TO_NAMESPACE);
-        secondNamespaceResources = new Resources(namespacedClient());
-        KUBE_CLIENT.namespace(CO_NAMESPACE);
-    }
-
-    @AfterEach
-    void deleteSecondNamespaceResources() throws Exception {
-        secondNamespaceResources.deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, TO_NAMESPACE);
-        KUBE_CLIENT.namespace(CO_NAMESPACE);
+    void testDeployMirrorMakerAcrossMultipleNamespace() {
+        LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches multiple namespaces");
+        checkMirrorMakerForKafkaInDifNamespaceThanCO();
     }
 
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
-        prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, TO_NAMESPACE));
-        createTestClassResources();
+        applyRoleBindings(CO_NAMESPACE, CO_NAMESPACE, SECOND_NAMESPACE);
 
-        applyRoleBindings(CO_NAMESPACE);
-        applyRoleBindings(CO_NAMESPACE, TO_NAMESPACE);
-        // 050-Deployment
-        testClassResources.clusterOperator(String.join(",", CO_NAMESPACE, TO_NAMESPACE)).done();
-        deployTestSpecificResources();
-    }
+        LOGGER.info("Deploying CO to watch multiple namespaces");
+        testClassResources.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
 
     private void deployTestSpecificResources() {
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
-                        .withWatchedNamespace(TO_NAMESPACE)
+                        .withWatchedNamespace(SECOND_NAMESPACE)
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec().done();
-    }
-
-    private void deployNewTopic(String namespace, String topic) {
-        LOGGER.info("Creating topic {} in namespace {}", topic, namespace);
-        KUBE_CLIENT.namespace(namespace);
-        KUBE_CLIENT.create(new File(TOPIC_INSTALL_DIR));
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 5000, 120000, () -> {
-            KUBE_CLIENT.namespace(CO_NAMESPACE);
-            List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
-            return topics2.contains(topic);
-        });
-    }
-
-    private void deleteNewTopic(String namespace, String topic) {
-        LOGGER.info("Deleting topic {} in namespace {}", topic, namespace);
-        KUBE_CLIENT.namespace(namespace);
-        KUBE_CLIENT.deleteByName("KafkaTopic", topic);
-        KUBE_CLIENT.namespace(CO_NAMESPACE);
-    }
-
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
-    }
-
-    @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        super.recreateTestEnv(coNamespace, bindingsNamespaces);
-        deployTestSpecificResources();
     }
 }

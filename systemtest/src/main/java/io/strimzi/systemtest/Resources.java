@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
@@ -738,6 +739,70 @@ public class Resources {
                 .editFirstSubject()
                     .withNamespace(namespace)
                 .endSubject();
+    }
+
+    List<KubernetesClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace) {
+        LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
+
+        List<KubernetesClusterRoleBinding> kCRBList = new ArrayList<>();
+
+        kCRBList.add(
+            new KubernetesClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName("strimzi-cluster-operator-namespaced")
+                .endMetadata()
+                .withNewRoleRef()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-cluster-operator-namespaced")
+                .endRoleRef()
+                .withSubjects(new KubernetesSubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                    .build()
+                )
+                .build()
+        );
+
+        kCRBList.add(
+            new KubernetesClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName("strimzi-entity-operator")
+                .endMetadata()
+                .withNewRoleRef()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-entity-operator")
+                .endRoleRef()
+                .withSubjects(new KubernetesSubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                    .build()
+                )
+                .build()
+        );
+
+        kCRBList.add(
+            new KubernetesClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName("strimzi-topic-operator")
+                .endMetadata()
+                .withNewRoleRef()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-topic-operator")
+                .endRoleRef()
+                .withSubjects(new KubernetesSubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                    .build()
+                )
+                .build()
+        );
+        return kCRBList;
     }
 
     DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String clientNamespace) {
