@@ -24,7 +24,7 @@ import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 @Namespace(MultipleNamespaceST.CO_NAMESPACE)
 @Namespace(value = MultipleNamespaceST.SECOND_NAMESPACE, use = false)
 @ClusterOperator
-public class AllNamespaceST extends AbstractNamespaceST {
+class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
 
