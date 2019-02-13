@@ -23,11 +23,10 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     static final String CO_NAMESPACE = "multiple-namespace-test";
     static final String SECOND_NAMESPACE = "second-multiply-namespace-test";
-    static final String TOPIC_NAME = "my-topic";
-    static final String TOPIC_INSTALL_DIR = "../examples/topic/kafka-topic.yaml";
+    private static final String TOPIC_NAME = "my-topic";
+    private static final String TOPIC_INSTALL_DIR = "../examples/topic/kafka-topic.yaml";
 
     private static Resources secondNamespaceResources;
-    static Resources classResources;
 
     void checkTOInDiffNamespaceThanCO() {
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
