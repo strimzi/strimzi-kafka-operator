@@ -4,6 +4,7 @@
 
 * Add support for JBOD storage for Kafka brokers
 * Allow users to configure the default ImagePullPolicy
+* Helm chart deploys CRDs before other resources via `crd-install` helm/hook.sh annotation
 
 ## 0.10.0
 
