@@ -22,7 +22,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"numStreams", "groupId", "bootstrapServers", "logging"})
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     private static final long serialVersionUID = 1L;
 

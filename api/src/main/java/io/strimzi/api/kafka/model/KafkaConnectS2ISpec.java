@@ -17,8 +17,9 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "logging", "metrics", "template"})
-@EqualsAndHashCode
+        "livenessProbe", "readinessProbe", "jvmOptions",
+        "affinity", "logging", "metrics", "template"})
+@EqualsAndHashCode(callSuper = true)
 public class KafkaConnectS2ISpec extends KafkaConnectSpec {
 
     private static final long serialVersionUID = 1L;

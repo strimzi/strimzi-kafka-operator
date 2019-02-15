@@ -29,9 +29,10 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "image",
-        "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "tolerations", "logging", "metrics", "template"})
-@EqualsAndHashCode
-public class KafkaConnectSpec implements UnknownPropertyPreserving, Serializable {
+        "livenessProbe", "readinessProbe", "jvmOptions",
+        "affinity", "tolerations", "logging", "metrics", "template"})
+@EqualsAndHashCode(doNotUseGetters = true)
+public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;
 
