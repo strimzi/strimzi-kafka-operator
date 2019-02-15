@@ -57,7 +57,7 @@ pipeline {
             steps {
                 script {
                     echo "stage execute"
-                    lib.runSystemTests(env.WORKSPACE, env.JUNIT_TAGS)
+                    lib.runSystemTests(env.WORKSPACE, params.JUNIT_TAGS)
                 }
             }
         }
