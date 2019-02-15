@@ -10,6 +10,7 @@ import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -19,14 +20,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.List;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(MultipleNamespaceST.CO_NAMESPACE)
-@Namespace(value = MultipleNamespaceST.SECOND_NAMESPACE, use = false)
+@Namespace(AllNamespaceST.CO_NAMESPACE)
+@Namespace(value = AllNamespaceST.SECOND_NAMESPACE, use = false)
+@Namespace(value = AllNamespaceST.THIRD_NAMESPACE, use = false)
 @ClusterOperator
 class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
+    static final String THIRD_NAMESPACE = "third-namespace-test";
+    private static Resources thirdNamespaceResources;
 
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
@@ -35,7 +42,14 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(REGRESSION)
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO in different namespace than CO when CO watches all namespaces");
-        checkTOInDiffNamespaceThanCO();
+
+        kubeClient.namespace(THIRD_NAMESPACE);
+
+        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        assertThat(topics, not(hasItems(TOPIC_NAME)));
+
+        deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, TOPIC_NAME);
+        deleteNewTopic(SECOND_NAMESPACE, TOPIC_NAME);
     }
 
     /**
@@ -43,17 +57,17 @@ class AllNamespaceST extends AbstractNamespaceST {
      */
     @Test
     @Tag(REGRESSION)
-    void testKafkaInDifferentNsThanClusterOperator() throws InterruptedException {
+    void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
         checkKafkaInDiffNamespaceThanCO();
     }
 
     /**
-     * Test the case when MirrorMaker will be deployed in different namespace across multiple namespaces
+     * Test the case when MirrorMaker will be deployed in different namespace than CO when CO watches all namespaces
      */
     @Test
     @Tag(REGRESSION)
-    void testDeployMirrorMakerAcrossMultipleNamespace() throws InterruptedException {
+    void testDeployMirrorMakerAcrossMultipleNamespace() {
         LOGGER.info("Deploying Kafka MirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO();
     }
@@ -71,7 +85,10 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Deploying CO to watch all namespaces");
         testClassResources.clusterOperator("*").done();
 
-        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
+        String previousNamespace = kubeClient.namespace(THIRD_NAMESPACE);
+        thirdNamespaceResources = new Resources(namespacedClient());
+
+        thirdNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -81,6 +98,13 @@ class AllNamespaceST extends AbstractNamespaceST {
             .endSpec()
             .done();
 
+        kubeClient.namespace(previousNamespace);
+
         testClass = testInfo.getTestClass().get().getSimpleName();
+    }
+
+    @AfterAll
+    static void deleteClassResources() {
+        thirdNamespaceResources.deleteResources();
     }
 }

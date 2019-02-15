@@ -12,7 +12,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.List;
+
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
 
 @ExtendWith(StrimziExtension.class)
 @ClusterOperator
@@ -27,7 +32,12 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @Tag(REGRESSION)
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO in different namespace than CO when CO watches multiple namespaces");
-        checkTOInDiffNamespaceThanCO();
+
+        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        assertThat(topics, not(hasItems(TOPIC_NAME)));
+
+        deployNewTopic(SECOND_NAMESPACE, CO_NAMESPACE, TOPIC_NAME);
+        deleteNewTopic(SECOND_NAMESPACE, TOPIC_NAME);
     }
 
     /**
