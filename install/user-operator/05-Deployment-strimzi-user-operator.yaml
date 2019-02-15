@@ -22,7 +22,9 @@ spec:
                   fieldPath: metadata.namespace
             - name: STRIMZI_LABELS
               value: "strimzi.io/cluster=my-cluster"
-            - name: STRIMZI_CA_NAME
+            - name: STRIMZI_CA_CERT_NAME
+              value: my-cluster-clients-ca-cert
+            - name: STRIMZI_CA_KEY_NAME
               value: my-cluster-clients-ca
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: "120000"
@@ -32,6 +34,12 @@ spec:
               value: "20000"
             - name: STRIMZI_LOG_LEVEL
               value: INFO
+            - name: STRIMZI_GC_LOG_ENABLED
+              value: "true"
+            - name: STRIMZI_CA_VALIDITY
+              value: "365"
+            - name: STRIMZI_CA_RENEWAL
+              value: "30"
           livenessProbe:
             httpGet:
               path: /healthy
