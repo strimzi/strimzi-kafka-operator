@@ -1,12 +1,12 @@
 /**
  * Function for setup the test cluster.
  */
-def setupEnvironment(String openshift) {
+def setupEnvironment(String workspace, String openshift) {
     sh "rm -rf ~/.kube"
     sh "mkdir -p /tmp/openshift"
 
     status = sh(
-        script: "wget $openshift -O openshift.tar.gz",
+        script: "wget ${openshift} -O openshift.tar.gz",
         returnStatus: true
     )
     //////////////////////////////////////////////////
@@ -18,7 +18,7 @@ def setupEnvironment(String openshift) {
 
     timeout(time: 10, unit: 'MINUTES') {
         status = sh(
-            script: "oc cluster up --base-dir $WORKSPACE/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true",
+            script: "oc cluster up --base-dir ${workspace}/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true",
             returnStatus: true
         )
     }
@@ -27,12 +27,12 @@ def setupEnvironment(String openshift) {
         if (status != 0) {
             sleep(10)
             sh "oc cluster down"
-            sh "oc cluster up --base-dir $WORKSPACE/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true"
+            sh "oc cluster up --base-dir ${workspace}/origin/ --enable=*,service-catalog,web-console --insecure-skip-tls-verify=true"
         }
     }
 
-    sh "export KUBECONFIG=$WORKSPACE/origin/kube-apiserver/admin.kubeconfig"
-    def KUBECONFIG="$WORKSPACE/origin/kube-apiserver/admin.kubeconfig"
+    sh "export KUBECONFIG=${workspace}/origin/kube-apiserver/admin.kubeconfig"
+    def KUBECONFIG="${workspace}/origin/kube-apiserver/admin.kubeconfig"
     sh "oc login -u system:admin"
     sh "oc --config ${KUBECONFIG} adm policy add-cluster-role-to-user cluster-admin developer"
 
@@ -43,7 +43,7 @@ def setupEnvironment(String openshift) {
 /**
  * Function for teardown the test cluster.
  */
-def teardownEnvironment() {
+def teardownEnvironment(String workspace) {
     def status = sh(
             script: "oc cluster down",
             returnStatus: true
@@ -53,8 +53,8 @@ def teardownEnvironment() {
         echo "OpenShift failed to stop"
     }
 
-    sh "for i in \$(mount | grep openshift | awk '{ print \$3}'); do sudo umount \"\$i\"; done && sudo rm -rf $WORKSPACE/origin"
-    sh "sudo rm -rf $WORKSPACE/origin/"
+    sh "for i in \$(mount | grep openshift | awk '{ print \$3}'); do sudo umount \"\$i\"; done && sudo rm -rf ${workspace}/origin"
+    sh "sudo rm -rf ${workspace}/origin/"
 }
 
 def clearImages() {
@@ -68,8 +68,9 @@ def buildStrimzi() {
     sh "make docker_tag"
 }
 
-def runSystemTests() {
-    sh "mvn -f ${WORKSPACE}/systemtest/pom.xml -P systemtests verify -DjunitTags=${JUNIT_TAGS} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
+def runSystemTests(String workspace, String tags) {
+    echo "inside run tests"
+    sh "mvn -f ${workspace}/systemtest/pom.xml -P systemtests verify -DjunitTags=${tags} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
 }
 
 def postAction(String artifactDir) {
@@ -92,8 +93,8 @@ def postAction(String artifactDir) {
     teardownEnvironment()
 }
 
-def sendMail(address, status) {
-    mail to:"${address}", subject:"Strimzi PR build of job ${JOB_NAME} has ${status}", body:"See ${BUILD_URL}"
+def sendMail(address, status, jobName, buildUrl) {
+    mail to:"${address}", subject:"Strimzi PR build of job ${jobName} has ${status}", body:"See ${buildUrl}"
 }
 
 return this
