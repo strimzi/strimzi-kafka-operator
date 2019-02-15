@@ -772,7 +772,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_fs_usage_bytes{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",container_name=\"kafka\"}) by (kubernetes_pod_name)",
+          "expr": "kubelet_volume_stats_available_bytes{namespace=\"$kubernetes_namespace\",persistentvolumeclaim=~\"data(-[0-9]+)?-$strimzi_cluster_name-kafka-[0-9]+\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -783,7 +783,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Used Disk Space",
+      "title": "Available Disk Space",
       "tooltip": {
         "shared": true,
         "sort": 0,

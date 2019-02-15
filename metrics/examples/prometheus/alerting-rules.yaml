@@ -7,6 +7,14 @@ data:
     groups:
     - name: kafka
       rules:
+      - alert: RunningOutOfSpace
+        expr: kubelet_volume_stats_available_bytes < 5368709120
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Kafka is running out of disk space'
+          description: 'There is only {{ $value }} bytes available at {{ $labels.kubernetes_pod_name }} PVC'
       - alert: UnderReplicatedPartitions
         expr: kafka_server_replicamanager_underreplicatedpartitions > 0
         for: 10s
@@ -57,3 +65,11 @@ data:
         annotations:
           summary: 'Zookeeper outstanding requests'
           description: 'There are {{ $value }} outstanding requests on {{ $labels.kubernetes_pod_name }}'
+      - alert: RunningOutOfSpace
+        expr: kubelet_volume_stats_available_bytes < 5368709120
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Zookeeper is running out of disk space'
+          description: 'There is only {{ $value }} bytes available at {{ $labels.kubernetes_pod_name }} PVC'
