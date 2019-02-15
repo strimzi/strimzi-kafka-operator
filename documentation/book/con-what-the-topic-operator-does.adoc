@@ -20,7 +20,7 @@ Specifically:
 And also, in the other direction:
 
 * if a topic is created within the Kafka cluster, the operator will create a `KafkaTopic` describing it
-* if a topic is deleted from the Kafka cluster, the operator will create the `KafkaTopic` describing it
+* if a topic is deleted from the Kafka cluster, the operator will delete the `KafkaTopic` describing it
 * if a topic in the Kafka cluster is changed, the operator will update the `KafkaTopic` describing it
 
 This allows you to declare a `KafkaTopic` as part of your application's deployment and the Topic Operator will take care of creating the topic for you.
