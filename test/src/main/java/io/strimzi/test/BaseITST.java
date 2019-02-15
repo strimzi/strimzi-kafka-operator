@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -39,8 +40,8 @@ public class BaseITST {
     public static final KubeClient<?> KUBE_CLIENT = CLUSTER.client();
     private static final String DEFAULT_NAMESPACE = KUBE_CLIENT.defaultNamespace();
 
-    public String clusterOperatorNamespace = DEFAULT_NAMESPACE;
-    public List<String> bindingsNamespaces = new ArrayList<>();
+    protected String clusterOperatorNamespace = DEFAULT_NAMESPACE;
+    protected List<String> bindingsNamespaces = new ArrayList<>();
     public List<String> deploymentNamespaces = new ArrayList<>();
     private List<String> deploymentResources = new ArrayList<>();
     private Stack<String> clusterOperatorConfigs = new Stack<>();
@@ -55,7 +56,7 @@ public class BaseITST {
     protected void applyClusterOperatorInstallFiles() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
         TimeMeasuringSystem.startOperation(Operation.CO_CREATION);
-        Map<File, String> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
+        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(CO_INSTALL_DIR).listFiles())).sorted().filter(file ->
                 !file.getName().matches(".*(Binding|Deployment)-.*")
         ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
@@ -200,11 +201,15 @@ public class BaseITST {
 
     @BeforeEach
     void setTestName(TestInfo testInfo) {
-        testName = testInfo.getTestMethod().get().getName();
+        if (testInfo.getTestMethod().isPresent()) {
+            testName = testInfo.getTestMethod().get().getName();
+        }
     }
 
     @BeforeAll
     void createTestClassResources(TestInfo testInfo) {
-        testClass = testInfo.getTestClass().get().getSimpleName();
+        if (testInfo.getTestClass().isPresent()) {
+            testClass = testInfo.getTestClass().get().getName();
+        }
     }
 }
