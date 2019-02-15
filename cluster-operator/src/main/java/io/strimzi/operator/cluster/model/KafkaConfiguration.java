@@ -22,9 +22,11 @@ public class KafkaConfiguration extends AbstractConfiguration {
     public static final String LOG_MESSAGE_FORMAT_VERSION = "log.message.format.version";
 
     private static final List<String> FORBIDDEN_OPTIONS;
+    private static final List<String> EXCEPTIONS;
 
     static {
         FORBIDDEN_OPTIONS = asList(KafkaClusterSpec.FORBIDDEN_PREFIXES.split(", "));
+        EXCEPTIONS = asList("zookeeper.connection.timeout.ms");
     }
 
     /**
@@ -45,7 +47,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_OPTIONS);
+        super(jsonOptions, FORBIDDEN_OPTIONS, EXCEPTIONS);
     }
 
     private KafkaConfiguration(String configuration, List<String> forbiddenOptions) {
