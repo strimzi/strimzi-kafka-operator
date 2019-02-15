@@ -4,7 +4,6 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    foo: bar
     version: 2.1.0
     replicas: 3
     listeners:
@@ -21,4 +20,3 @@ spec:
     replicas: 3
     storage:
       type: ephemeral
-  topicOperator: {}
