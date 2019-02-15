@@ -4,6 +4,9 @@
 
 * Add support for JBOD storage for Kafka brokers
 * Allow users to configure the default ImagePullPolicy
+* Add Prometheus alerting
+    * Resources for alert manager deployment and configuration
+    * Alerting rules with alert examples from Kafka and Zookeeper metrics
 
 ## 0.10.0
 
