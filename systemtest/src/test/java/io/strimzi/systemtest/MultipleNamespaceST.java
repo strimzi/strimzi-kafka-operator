@@ -31,7 +31,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(REGRESSION)
     void testTopicOperatorWatchingOtherNamespace() {
-        LOGGER.info("Deploying TO in different namespace than CO when CO watches multiple namespaces");
+        LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
 
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));

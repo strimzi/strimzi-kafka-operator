@@ -41,7 +41,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(REGRESSION)
     void testTopicOperatorWatchingOtherNamespace() {
-        LOGGER.info("Deploying TO in different namespace than CO when CO watches all namespaces");
+        LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
 
         kubeClient.namespace(THIRD_NAMESPACE);
 
@@ -72,6 +72,29 @@ class AllNamespaceST extends AbstractNamespaceST {
         checkMirrorMakerForKafkaInDifNamespaceThanCO();
     }
 
+    @Test
+    @Tag(REGRESSION)
+    void testDeployKafkaConnectInOtherNamespaceThanCO() {
+        // Deploy Kafka in other namespace than CO
+        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 3).done();
+        // Deploy Kafka Connect in other namespace than CO
+        secondNamespaceResources.kafkaConnect(CLUSTER_NAME, 1).done();
+        // Check that Kafka Connect was deployed
+        kubeClient.waitForDeployment(kafkaConnectName(CLUSTER_NAME), 1);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testUOWatchingOtherNamespace() {
+        LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
+        secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
+
+        String previousNamespace = kubeClient.namespace(SECOND_NAMESPACE);
+        kubeClient.waitForResourceCreation("KafkaUser", USER_NAME);
+
+        kubeClient.namespace(previousNamespace);
+    }
+
     @BeforeAll
     static void createClassResources(TestInfo testInfo) {
         // Apply role bindings in CO namespace
@@ -90,10 +113,19 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         thirdNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
+                .editKafka()
+                    .withNewListeners()
+                        .withNewTls()
+                        .endTls()
+                    .endListeners()
+                .endKafka()
                 .editEntityOperator()
                     .editTopicOperator()
                         .withWatchedNamespace(SECOND_NAMESPACE)
                     .endTopicOperator()
+                    .editUserOperator()
+                        .withWatchedNamespace(SECOND_NAMESPACE)
+                    .endUserOperator()
                 .endEntityOperator()
             .endSpec()
             .done();

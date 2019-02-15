@@ -20,9 +20,10 @@ public abstract class AbstractNamespaceST extends AbstractST {
     static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
     static final String TOPIC_NAME = "my-topic";
-    private static final String TOPIC_INSTALL_DIR = "../examples/topic/kafka-topic.yaml";
+    static final String USER_NAME = "my-user";
+    private static final String TOPIC_EXAMPLES_DIR = "../examples/topic/kafka-topic.yaml";
 
-    private static Resources secondNamespaceResources;
+    static Resources secondNamespaceResources;
 
     void checkKafkaInDiffNamespaceThanCO() {
         String kafkaName = kafkaClusterName(CLUSTER_NAME + "-second");
@@ -50,7 +51,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     void deployNewTopic(String topicNamespace, String clusterNamespace, String topic) {
         LOGGER.info("Creating topic {} in namespace {}", topic, topicNamespace);
         kubeClient.namespace(topicNamespace);
-        kubeClient.create(new File(TOPIC_INSTALL_DIR));
+        kubeClient.create(new File(TOPIC_EXAMPLES_DIR));
         TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 5000, 120000, () -> {
             kubeClient.namespace(clusterNamespace);
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
