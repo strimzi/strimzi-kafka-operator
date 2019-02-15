@@ -71,5 +71,33 @@ Should this message appear periodically even in situations when there should be 
 cluster, it might indicate that due to some error the lock was not properly released. In such cases it is recommended to
 restart the cluster operator.
 
+=== Hostname verification fails when connecting to NodePorts using TLS
 
+Off cluster access using NodePorts with enabled TLS encryption currently does not support TLS hostname verification.
+As a result, the clients which verify the hostname will fail to connect.
+For examle the Java client will fail with following exception:
 
+[source,java]
+Caused by: java.security.cert.CertificateException: No subject alternative names matching IP address 168.72.15.231 found
+    at sun.security.util.HostnameChecker.matchIP(HostnameChecker.java:168)
+    at sun.security.util.HostnameChecker.match(HostnameChecker.java:94)
+    at sun.security.ssl.X509TrustManagerImpl.checkIdentity(X509TrustManagerImpl.java:455)
+    at sun.security.ssl.X509TrustManagerImpl.checkIdentity(X509TrustManagerImpl.java:436)
+    at sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:252)
+    at sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:136)
+    at sun.security.ssl.ClientHandshaker.serverCertificate(ClientHandshaker.java:1501)
+    ... 17 more
+
+In odrer to connect, you have to disable the hostname verification.
+In the Java client you can do it using the configuration option `ssl.endpoint.identification.algorithm`.
+To disable hostname verification, set this option to empty string.
+
+When configuring the client using properties file, it can be done like this:
+
+[source,properties]
+ssl.endpoint.identification.algorithm=
+
+When configuring the client directly in Java, set it to empty string:
+
+[source,java]
+props.put("ssl.endpoint.identification.algorithm", "");
