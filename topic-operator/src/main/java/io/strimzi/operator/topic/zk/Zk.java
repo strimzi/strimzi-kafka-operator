@@ -7,6 +7,8 @@ package io.strimzi.operator.topic.zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.ACL;
 
@@ -17,8 +19,18 @@ import java.util.List;
  */
 public interface Zk {
 
-    public static Zk create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
-        return new ZkImpl(vertx, zkConnectionString, sessionTimeout, connectionTimeout);
+    public static void create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout,
+                              Handler<AsyncResult<Zk>> handler) {
+        vertx.executeBlocking(f -> {
+            try {
+                f.complete(new ZkImpl(vertx,
+                        new ZkClient(zkConnectionString, sessionTimeout, connectionTimeout,
+                                new BytesPushThroughSerializer())));
+            } catch (Throwable t) {
+                f.fail(t);
+            }
+        },
+                handler);
     }
 
     /**

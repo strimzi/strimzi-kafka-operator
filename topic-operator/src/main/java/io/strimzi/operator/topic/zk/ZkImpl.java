@@ -13,7 +13,6 @@ import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
-import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
@@ -41,9 +40,9 @@ public class ZkImpl implements Zk {
     private final ConcurrentHashMap<String, IZkDataListener> dataWatches = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, IZkChildListener> childWatches = new ConcurrentHashMap<>();
 
-    public ZkImpl(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
+    public ZkImpl(Vertx vertx, ZkClient zkClient) {
         this.vertx = vertx;
-        this.zookeeper = new ZkClient(zkConnectionString, sessionTimeout, connectionTimeout, new BytesPushThroughSerializer());
+        this.zookeeper = zkClient;
     }
 
 

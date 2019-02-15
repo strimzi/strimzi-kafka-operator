@@ -111,7 +111,7 @@ public class Session extends AbstractVerticle {
     }
 
     @Override
-    public void start() {
+    public void start(Future<Void> startupFuture) {
         LOGGER.info("Starting");
         Properties adminClientProps = new Properties();
         adminClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
@@ -136,54 +136,62 @@ public class Session extends AbstractVerticle {
         this.k8s = new K8sImpl(vertx, kubeClient, resourcePredicate, namespace);
         LOGGER.debug("Using k8s {}", k8s);
 
-        this.zk = Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT),
+        Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT),
                 this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
-                this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue());
-        LOGGER.debug("Using ZooKeeper {}", zk);
-
-        ZkTopicStore topicStore = new ZkTopicStore(zk);
-        LOGGER.debug("Using TopicStore {}", topicStore);
-
-        this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, resourcePredicate, namespace, config);
-        LOGGER.debug("Using Operator {}", topicOperator);
-
-        this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
-        LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
-        this.topicWatcher = new ZkTopicWatcher(topicOperator);
-        LOGGER.debug("Using TopicWatcher {}", topicWatcher);
-        this.topicsWatcher = new ZkTopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
-        LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
-        topicsWatcher.start(zk);
-
-        Thread resourceThread = new Thread(() -> {
-            LOGGER.debug("Watching KafkaTopics matching {}", resourcePredicate);
-            Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
-                    .inNamespace(namespace).watch(new K8sTopicWatcher(topicOperator, resourcePredicate));
-            LOGGER.debug("Watching setup");
-
-            // start the HTTP server for healthchecks
-            healthServer = this.startHealthServer();
-
-        }, "resource-watcher");
-        LOGGER.debug("Starting {}", resourceThread);
-        resourceThread.start();
-
-        final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
-        Handler<Long> periodic = new Handler<Long>() {
-            @Override
-            public void handle(Long oldTimerId) {
-                if (!stopped) {
-                    timerId = null;
-                    topicOperator.reconcileAllTopics("periodic").setHandler(result -> {
-                        if (!stopped) {
-                            timerId = vertx.setTimer(interval, this);
-                        }
-                    });
+                this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue(),
+            zkResult -> {
+                if (zkResult.failed()) {
+                    startupFuture.fail(zkResult.cause());
+                    return;
                 }
-            }
-        };
-        periodic.handle(null);
-        LOGGER.info("Started");
+                this.zk = zkResult.result();
+                LOGGER.debug("Using ZooKeeper {}", zk);
+
+                ZkTopicStore topicStore = new ZkTopicStore(zk);
+                LOGGER.debug("Using TopicStore {}", topicStore);
+
+                this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, resourcePredicate, namespace, config);
+                LOGGER.debug("Using Operator {}", topicOperator);
+
+                this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
+                LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
+                this.topicWatcher = new ZkTopicWatcher(topicOperator);
+                LOGGER.debug("Using TopicWatcher {}", topicWatcher);
+                this.topicsWatcher = new ZkTopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
+                LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
+                topicsWatcher.start(zk);
+
+                Thread resourceThread = new Thread(() -> {
+                    LOGGER.debug("Watching KafkaTopics matching {}", resourcePredicate);
+                    Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
+                            .inNamespace(namespace).watch(new K8sTopicWatcher(topicOperator, resourcePredicate));
+                    LOGGER.debug("Watching setup");
+
+                    // start the HTTP server for healthchecks
+                    healthServer = this.startHealthServer();
+
+                }, "resource-watcher");
+                LOGGER.debug("Starting {}", resourceThread);
+                resourceThread.start();
+
+                final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
+                Handler<Long> periodic = new Handler<Long>() {
+                    @Override
+                    public void handle(Long oldTimerId) {
+                        if (!stopped) {
+                            timerId = null;
+                            topicOperator.reconcileAllTopics("periodic").setHandler(result -> {
+                                if (!stopped) {
+                                    timerId = vertx.setTimer(interval, this);
+                                }
+                            });
+                        }
+                    }
+                };
+                periodic.handle(null);
+                startupFuture.complete();
+                LOGGER.info("Started");
+            });
     }
 
     /**

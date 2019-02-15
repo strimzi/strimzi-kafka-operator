@@ -11,6 +11,8 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -20,7 +22,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -37,10 +38,10 @@ public class ZkTopicStoreTest {
 
     @Before
     public void setup()
-            throws IOException, InterruptedException,
-            TimeoutException, ExecutionException {
+            throws IOException, InterruptedException {
         this.zkServer = new EmbeddedZooKeeper();
-        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
+        zk = new ZkImpl(vertx, new ZkClient(zkServer.getZkConnectString(), 60_000, 10_000,
+                new BytesPushThroughSerializer()));
         this.store = new ZkTopicStore(zk);
     }
 
