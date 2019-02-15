@@ -9,8 +9,6 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.zookeeper.CreateMode;
 import org.junit.After;
 import org.junit.Before;
@@ -36,8 +34,7 @@ public class ZkImplTest {
     public void setup()
             throws IOException, InterruptedException {
         this.zkServer = new EmbeddedZooKeeper();
-        zk = new ZkImpl(vertx, new ZkClient(zkServer.getZkConnectString(), 60_000, 10_000,
-                new BytesPushThroughSerializer()));
+        zk = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
     }
 
     @After
@@ -54,8 +51,7 @@ public class ZkImplTest {
     @Ignore
     @Test
     public void testReconnectOnBounce(TestContext context) throws IOException, InterruptedException {
-        ZkImpl zkImpl = new ZkImpl(vertx, new ZkClient(zkServer.getZkConnectString(), 60_000, 10_000,
-                new BytesPushThroughSerializer()));
+        Zk zkImpl = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
         zkServer.restart();
         Async async = context.async();
         zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {

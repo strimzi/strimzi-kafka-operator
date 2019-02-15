@@ -23,14 +23,18 @@ public interface Zk {
                               Handler<AsyncResult<Zk>> handler) {
         vertx.executeBlocking(f -> {
             try {
-                f.complete(new ZkImpl(vertx,
-                        new ZkClient(zkConnectionString, sessionTimeout, connectionTimeout,
-                                new BytesPushThroughSerializer())));
+                f.complete(createSync(vertx, zkConnectionString, sessionTimeout, connectionTimeout));
             } catch (Throwable t) {
                 f.fail(t);
             }
         },
                 handler);
+    }
+
+    public static Zk createSync(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
+        return new ZkImpl(vertx,
+                new ZkClient(zkConnectionString, sessionTimeout, connectionTimeout,
+                        new BytesPushThroughSerializer()));
     }
 
     /**

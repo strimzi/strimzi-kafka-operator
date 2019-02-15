@@ -4,15 +4,13 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.operator.topic.zk.ZkImpl;
+import io.strimzi.operator.topic.zk.Zk;
 import io.strimzi.test.EmbeddedZooKeeper;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -34,14 +32,13 @@ public class ZkTopicStoreTest {
     private Vertx vertx = Vertx.vertx();
 
     private ZkTopicStore store;
-    private ZkImpl zk;
+    private Zk zk;
 
     @Before
     public void setup()
             throws IOException, InterruptedException {
         this.zkServer = new EmbeddedZooKeeper();
-        zk = new ZkImpl(vertx, new ZkClient(zkServer.getZkConnectString(), 60_000, 10_000,
-                new BytesPushThroughSerializer()));
+        zk = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
         this.store = new ZkTopicStore(zk);
     }
 
