@@ -56,7 +56,7 @@ public class BaseITST {
     protected void applyClusterOperatorInstallFiles() {
         TimeMeasuringSystem.setTestName(testClass, testClass);
         TimeMeasuringSystem.startOperation(Operation.CO_CREATION);
-        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(CO_INSTALL_DIR).listFiles())).sorted().filter(file ->
+        Map<File, String> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
                 !file.getName().matches(".*(Binding|Deployment)-.*")
         ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
