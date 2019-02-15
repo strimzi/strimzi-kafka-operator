@@ -274,15 +274,5 @@ public class TopicOperatorMockTest {
 
         testCreatedInKube(context, kt);
     }
-    /*
-    @Test
-    public void testCreatedInKafka() {
 
-    }
-
-    @Test
-    public void testCreatedInKafkaWhenAKafkaTopicExists() {
-
-    }
-    */
 }
