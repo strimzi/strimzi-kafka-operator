@@ -1678,8 +1678,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
 
             if (pod == null)    {
-                log.debug("Rolling update of {}/{}: pod doesn't exist",
-                        ss.getMetadata().getNamespace(), ss.getMetadata().getName());
+                log.debug("Rolling update of {}/{}: pod doesn't exist; ss has {}={}",
+                        ss.getMetadata().getNamespace(), ss.getMetadata().getName(),
+                        StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, ssGeneration);
             } else {
                 log.debug("Rolling update of {}/{}: pod {} has {}={}; ss has {}={}",
                         ss.getMetadata().getNamespace(), ss.getMetadata().getName(), pod.getMetadata().getName(),
