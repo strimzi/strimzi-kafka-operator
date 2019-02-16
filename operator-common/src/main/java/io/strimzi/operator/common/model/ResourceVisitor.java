@@ -84,13 +84,10 @@ public class ResourceVisitor {
     private static void visit(List<String> path, Object resource, Visitor visitor) throws ReflectiveOperationException {
         Class<?> cls = resource.getClass();
         visitor.visitObject(path, resource);
-        Field[] fields = cls.getFields();
-        if (fields != null) {
-            for (Field field : fields) {
-                Object propertyValue = field.get(resource);
-                visitor.visitFieldProperty(path, resource, field, FIELD_PROPERTY, propertyValue);
-                visitProperty(path, field, FIELD_PROPERTY, propertyValue, visitor);
-            }
+        for (Field field : cls.getFields()) {
+            Object propertyValue = field.get(resource);
+            visitor.visitFieldProperty(path, resource, field, FIELD_PROPERTY, propertyValue);
+            visitProperty(path, field, FIELD_PROPERTY, propertyValue, visitor);
         }
         for (Method method : cls.getMethods()) {
             String name = method.getName();
@@ -154,11 +151,9 @@ public class ResourceVisitor {
                 path.remove(path.size() - 1);
             } else if (!isScalar(returnType)
                     && !Map.class.isAssignableFrom(returnType)) {
-                if (propertyValue != null) {
-                    path.add(propertyName);
-                    visit(path, propertyValue, visitor);
-                    path.remove(path.size() - 1);
-                }
+                path.add(propertyName);
+                visit(path, propertyValue, visitor);
+                path.remove(path.size() - 1);
             }
         }
     }
