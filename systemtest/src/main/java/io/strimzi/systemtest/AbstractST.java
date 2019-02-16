@@ -1119,9 +1119,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
     void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
-        LOGGER.info(coNamespace);
-        LOGGER.info(bindingsNamespaces);
-
         testClassResources.deleteResources();
 
         deleteClusterOperatorInstallFiles();
@@ -1195,7 +1192,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = KUBE_CLIENT.namespace("kube-system");
-        LOGGER.info(oldNamespace);
         InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
         String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
         KUBE_CLIENT.applyContent(helmServiceAccount);

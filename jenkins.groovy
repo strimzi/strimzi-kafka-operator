@@ -4,6 +4,7 @@
 def setupEnvironment(String workspace, String openshift) {
     sh "rm -rf ~/.kube"
     sh "mkdir -p /tmp/openshift"
+    clearImages()
 
     status = sh(
         script: "wget ${openshift} -O openshift.tar.gz",
@@ -73,7 +74,7 @@ def runSystemTests(String workspace, String tags) {
     sh "mvn -f ${workspace}/systemtest/pom.xml -P systemtests verify -DjunitTags=${tags} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
 }
 
-def postAction(String artifactDir) {
+def postAction(String artifactDir, String jobName, String buildUrl, String workspace) {
     def status = currentBuild.result
     //store test results from build and system tests
     junit testResults: '**/TEST-*.xml', allowEmptyResults: true
@@ -88,12 +89,12 @@ def postAction(String artifactDir) {
     }
     if (status == null) {
         currentBuild.result = 'SUCCESS'
-        sendMail(env.STRIMZI_MAILING_LIST, "succeeded ")
+        sendMail(env.STRIMZI_MAILING_LIST, "succeeded", jobName, buildUrl)
     }
-    teardownEnvironment()
+    teardownEnvironment(workspace)
 }
 
-def sendMail(address, status, jobName, buildUrl) {
+def sendMail(String address, String status, String jobName, String buildUrl) {
     mail to:"${address}", subject:"Strimzi PR build of job ${jobName} has ${status}", body:"See ${buildUrl}"
 }
 

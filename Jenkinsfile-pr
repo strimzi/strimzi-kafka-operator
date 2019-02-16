@@ -65,7 +65,7 @@ pipeline {
     post {
         always {
             script {
-                lib.postAction(env.ARTIFACTS_DIR)
+                lib.postAction(env.ARTIFACTS_DIR, env.JOB_NAME, env.BUILD_URL, env.WORKSPACE)
             }
         }
         failure {
