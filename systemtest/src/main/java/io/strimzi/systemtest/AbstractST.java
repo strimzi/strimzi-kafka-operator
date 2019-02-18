@@ -20,49 +20,53 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
-import io.strimzi.systemtest.timemeasuring.Operation;
-import io.strimzi.systemtest.timemeasuring.TimeMeasuringSystem;
+import io.strimzi.systemtest.interfaces.TestSeparator;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
+import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.TimeoutException;
-import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterException;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.ProcessResult;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Properties;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -71,22 +75,24 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
-import static io.strimzi.test.extensions.StrimziExtension.CO_INSTALL_DIR;
+import static io.strimzi.test.TestUtils.changeOrgAndTag;
+import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.TestUtils.writeFile;
+import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static java.util.Arrays.asList;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-
-public abstract class AbstractST {
+public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     static {
         Crds.registerCustomKinds();
@@ -97,9 +103,6 @@ public abstract class AbstractST {
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
-    protected static final String KAFKA_CONNECT_S2I_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_S2I_IMAGES";
-    protected static final String CONNECT_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE";
-    protected static final String S2I_IMAGE = "STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
@@ -108,7 +111,6 @@ public abstract class AbstractST {
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
-    private static final String DEFAULT_NAMESPACE = "myproject";
     private static final long GET_BROKER_API_TIMEOUT = 60_000L;
     private static final long GET_BROKER_API_INTERVAL = 5_000L;
     static final long GLOBAL_TIMEOUT = 300000;
@@ -116,19 +118,32 @@ public abstract class AbstractST {
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
     private static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
 
-    public static KubeClusterResource cluster = new KubeClusterResource();
-    protected static DefaultKubernetesClient client = new DefaultKubernetesClient();
-    static KubeClient<?> kubeClient = cluster.client();
+    public static final String CO_INSTALL_DIR = "../install/cluster-operator";
+    public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
+    public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
+    public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
+    public static final String STRIMZI_ORG = "strimzi";
+    public static final String STRIMZI_TAG = "latest";
+    public static final String IMAGE_PULL_POLICY = "Always";
+    public static final String REQUESTS_MEMORY = "512Mi";
+    public static final String REQUESTS_CPU = "200m";
+    public static final String LIMITS_MEMORY = "512Mi";
+    public static final String LIMITS_CPU = "1000m";
+    public static final String OPERATOR_LOG_LEVEL = "INFO";
+
+    public static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
 
     Resources resources;
     static Resources testClassResources;
     static String operationID;
-    static String testClass;
-    static String testName;
     Random rng = new Random();
 
     protected static NamespacedKubernetesClient namespacedClient() {
-        return client.inNamespace(kubeClient.namespace());
+        return CLIENT.inNamespace(KUBE_CLIENT.namespace());
+    }
+
+    protected HelmClient helmClient() {
+        return CLUSTER.helmClient();
     }
 
     static String kafkaClusterName(String clusterName) {
@@ -189,7 +204,7 @@ public abstract class AbstractST {
 
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
         void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
-        Resource<T, D> namedResource = Crds.operation(client, crdClass, listClass, doneableClass).inNamespace(kubeClient.namespace()).withName(resourceName);
+        Resource<T, D> namedResource = Crds.operation(CLIENT, crdClass, listClass, doneableClass).inNamespace(KUBE_CLIENT.namespace()).withName(resourceName);
         T resource = namedResource.get();
         editor.accept(resource);
         namedResource.replace(resource);
@@ -207,11 +222,15 @@ public abstract class AbstractST {
         replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class, resourceName, editor);
     }
 
+    void replaceMirrorMakerResource(String resourceName, Consumer<KafkaMirrorMaker> editor) {
+        replaceCrdResource(KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class, resourceName, editor);
+    }
+
     String getBrokerApiVersions(String podName) {
         AtomicReference<String> versions = new AtomicReference<>();
-        TestUtils.waitFor("kafka-broker-api-versions.sh success", GET_BROKER_API_INTERVAL, GET_BROKER_API_TIMEOUT, () -> {
+        waitFor("kafka-broker-api-versions.sh success", GET_BROKER_API_INTERVAL, GET_BROKER_API_TIMEOUT, () -> {
             try {
-                String output = kubeClient.execInPod(podName,
+                String output = KUBE_CLIENT.execInPod(podName,
                         "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
                 versions.set(output);
                 return true;
@@ -230,9 +249,9 @@ public abstract class AbstractST {
         for (int podIndex : podIndexes) {
             String zookeeperPod = zookeeperPodName(CLUSTER_NAME, podIndex);
             String zookeeperPort = String.valueOf(2181 * 10 + podIndex);
-            TestUtils.waitFor("mntr", pollMs, timeoutMs, () -> {
+            waitFor("mntr", pollMs, timeoutMs, () -> {
                 try {
-                    String output = kubeClient.execInPod(zookeeperPod,
+                    String output = KUBE_CLIENT.execInPod(zookeeperPod,
                         "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out();
 
                     if (pattern.matcher(output).find()) {
@@ -246,7 +265,7 @@ public abstract class AbstractST {
                 () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
                     pattern.pattern(),
                     System.lineSeparator(),
-                    indent(kubeClient.execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
+                    indent(KUBE_CLIENT.execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
             );
         }
     }
@@ -291,7 +310,7 @@ public abstract class AbstractST {
     }
 
     List<Event> getEvents(String resourceType, String resourceName) {
-        return client.events().inNamespace(kubeClient.namespace()).list().getItems().stream()
+        return CLIENT.events().inNamespace(KUBE_CLIENT.namespace()).list().getItems().stream()
                 .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
                 .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
                 .collect(Collectors.toList());
@@ -304,12 +323,12 @@ public abstract class AbstractST {
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
-        kubeClient.execInPod(podName, "/bin/bash", "-c", command);
+        KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c", command);
     }
 
     public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
         LOGGER.info("Consuming messages");
-        String output = kubeClient.execInPod(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
+        String output = KUBE_CLIENT.execInPod(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
                 "bin/kafka-verifiable-consumer.sh --broker-list " +
                         KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --group-id " + groupID + " & sleep "
                         + timeout + "; kill %1").out();
@@ -320,9 +339,9 @@ public abstract class AbstractST {
     }
 
     protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = client.pods().inNamespace(namespace).withName(podName).get();
+        Pod po = CLIENT.pods().inNamespace(namespace).withName(podName).get();
         assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-            client.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
+            CLIENT.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
         Container container = po.getSpec().getContainers().get(0);
         Map<String, Quantity> limits = container.getResources().getLimits();
         assertEquals(memoryLimit, limits.get("memory").getAmount());
@@ -358,7 +377,7 @@ public abstract class AbstractST {
 
     private List<List<String>> commandLines(String podName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        ProcessResult pr = kubeClient.execInPod(podName, "/bin/bash", "-c",
+        ProcessResult pr = KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
                 "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
         );
         for (String cmdLine : pr.out().split("\n")) {
@@ -369,21 +388,21 @@ public abstract class AbstractST {
 
     void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = kubeClient.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "ERROR", "Throwable");
+        String clusterOperatorLog = KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
     public List<String> listTopicsUsingPodCLI(String clusterName, int zkPodId) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return asList(kubeClient.execInPod(podName, "/bin/bash", "-c",
+        return Arrays.asList(KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --list --zookeeper localhost:" + port).out().split("\\s+"));
     }
 
     public String createTopicUsingPodCLI(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return kubeClient.execInPod(podName, "/bin/bash", "-c",
+        return KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --create " + " --topic " + topic +
                         " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
     }
@@ -391,27 +410,27 @@ public abstract class AbstractST {
     public String deleteTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return kubeClient.execInPod(podName, "/bin/bash", "-c",
+        return KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --delete --topic " + topic).out();
     }
 
     public List<String>  describeTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return asList(kubeClient.execInPod(podName, "/bin/bash", "-c",
+        return Arrays.asList(KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --describe --topic " + topic).out().split("\\s+"));
     }
 
     public String updateTopicPartitionsCountUsingPodCLI(String clusterName, int zkPodId, String topic, int partitions) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return kubeClient.execInPod(podName, "/bin/bash", "-c",
+        return KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --alter --topic " + topic + " --partitions " + partitions).out();
     }
 
     public Map<String, String> getImagesFromConfig() {
         Map<String, String> images = new HashMap<>();
-        for (Container c : client.extensions().deployments().inNamespace(kubeClient.namespace()).withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : CLIENT.extensions().deployments().inNamespace(KUBE_CLIENT.namespace()).withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }
@@ -420,17 +439,17 @@ public abstract class AbstractST {
     }
 
     public String getContainerImageNameFromPod(String podName) {
-        String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
+        String clusterOperatorJson = KUBE_CLIENT.getResourceAsJson("pod", podName);
         return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[*].image").toString().replaceAll("[\"\\[\\]\\\\]", "");
     }
 
     public String getContainerImageNameFromPod(String podName, String containerName) {
-        String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
+        String clusterOperatorJson = KUBE_CLIENT.getResourceAsJson("pod", podName);
         return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[?(@.name =='" + containerName + "')].image").toString().replaceAll("[\"\\[\\]\\\\]", "");
     }
 
     public String  getInitContainerImageName(String podName) {
-        String clusterOperatorJson = kubeClient.getResourceAsJson("pod", podName);
+        String clusterOperatorJson = KUBE_CLIENT.getResourceAsJson("pod", podName);
         return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
     }
 
@@ -439,8 +458,8 @@ public abstract class AbstractST {
         resources = new Resources(namespacedClient());
     }
 
-    protected static void createClusterOperatorResources() {
-        LOGGER.info("Creating cluster operator resources");
+    protected static void createTestClassResources() {
+        LOGGER.info("Creating test class resources");
         testClassResources = new Resources(namespacedClient());
     }
 
@@ -516,7 +535,7 @@ public abstract class AbstractST {
     }
 
     /**
-     * Waits for a job to complete successfully, {@link org.junit.Assert#fail()}ing
+     * Waits for a job to complete successfully, {@link org.junit.jupiter.api.Assertions#fail()}ing
      * if it completes with any failed pods.
      * @throws TimeoutException if the job doesn't complete quickly enough.
      */
@@ -554,7 +573,7 @@ public abstract class AbstractST {
                 LOGGER.info("Job not available: {}", t.getMessage());
             }
             try {
-                LOGGER.info("Pod: {}", indent(TestUtils.toYamlString(namespacedClient().pods().withName(jobPodName(job)).get())));
+                LOGGER.info("Pod: {}", indent(toYamlString(namespacedClient().pods().withName(jobPodName(job)).get())));
             } catch (Exception | AssertionError t) {
                 LOGGER.info("Pod not available: {}", t.getMessage());
             }
@@ -577,7 +596,7 @@ public abstract class AbstractST {
 
         String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
         if (password == null) {
-            LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), TestUtils.toYamlString(secret));
+            LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), toYamlString(secret));
             throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");
         }
         return "sasl.mechanism=SCRAM-SHA-512\n" +
@@ -674,7 +693,7 @@ public abstract class AbstractST {
 
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("send-records")
-                .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))
+                .withImage(changeOrgAndTag("strimzi/test-client:latest"))
                 .addNewEnv().withName("PRODUCER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                                 "--topic " + topic + " " +
@@ -788,7 +807,7 @@ public abstract class AbstractST {
         String connect = tlsListener ? bootstrapServer + "-kafka-bootstrap:9093" : bootstrapServer + "-kafka-bootstrap:9092";
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("read-messages")
-                .withImage(TestUtils.changeOrgAndTag("strimzi/test-client:latest"))
+                .withImage(changeOrgAndTag("strimzi/test-client:latest"))
                 .addNewEnv().withName("CONSUMER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                                 "--group-id " + name + "-" + "my-group" + " " +
@@ -848,7 +867,7 @@ public abstract class AbstractST {
      * Create a Job which which produce and then consume messages to a given topic.
      * The job will be deleted from the kubernetes cluster at the end of the test.
      * @param name The name of the {@code Job} and also the consumer group id.
-     *             The Job's pod will also use this in a {@code job=<name>} selector.
+     *             The Job's pod will also use this in a {@code job=&lt;name&gt;} selector.
      * @param topic The topic to send messages over
      * @param messagesCount The number of messages to send and receive.
      * @param kafkaUser The user to send and receive the messages as.
@@ -862,7 +881,7 @@ public abstract class AbstractST {
         String connect = tlsListener ? KafkaResources.tlsBootstrapAddress(CLUSTER_NAME) : KafkaResources.plainBootstrapAddress(CLUSTER_NAME);
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("ping")
-                .withImage(TestUtils.changeOrgAndTag(TestUtils.changeOrgAndTag("strimzi/test-client:latest-kafka-2.0.0")))
+                .withImage(changeOrgAndTag("strimzi/test-client:latest-kafka-2.0.0"))
                 .addNewEnv().withName("PRODUCER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                                 "--topic " + topic + " " +
@@ -986,9 +1005,6 @@ public abstract class AbstractST {
         return job;
     }
 
-
-    private static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
-
     void collectLogs() {
         // Get current date to create a unique folder
         String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
@@ -996,7 +1012,7 @@ public abstract class AbstractST {
                 TEST_LOG_DIR + testClass + "." + testName + "_" + currentDate
                 : TEST_LOG_DIR + currentDate;
 
-        LogCollector logCollector = new LogCollector(client.inNamespace(kubeClient.namespace()), new File(logDir));
+        LogCollector logCollector = new LogCollector(CLIENT.inNamespace(KUBE_CLIENT.namespace()), new File(logDir));
         logCollector.collectEvents();
         logCollector.collectConfigMaps();
         logCollector.collectLogsFromPods();
@@ -1044,9 +1060,9 @@ public abstract class AbstractST {
 
         private void collectEvents() {
             LOGGER.info("Collecting events in namespace {}", namespace);
-            String events = kubeClient.getEvents();
+            String events = KUBE_CLIENT.getEvents();
             // Write events to file
-            writeFile(eventsDir + "/" + "events-in-namespace" + kubeClient.namespace() + ".log", events);
+            writeFile(eventsDir + "/" + "events-in-namespace" + KUBE_CLIENT.namespace() + ".log", events);
         }
 
         private void collectConfigMaps() {
@@ -1071,108 +1087,133 @@ public abstract class AbstractST {
         LOGGER.info("Waiting when Pod {} will be deleted", podName);
 
         TestUtils.waitFor("statefulset " + podName, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> client.pods().inNamespace(namespace).withName(podName).get() == null);
+            () -> CLIENT.pods().inNamespace(namespace).withName(podName).get() == null);
     }
 
     /**
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
      * @param time timeout in miliseconds
-     * @param coNamespace namespace where cluster operator is deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
+     * @param namespace namespace where we expect no pods or only CO pod
      * @throws Exception exception
      */
-    void waitForDeletion(long time, String coNamespace, String... bindingsNamespaces) throws Exception {
+    void waitForDeletion(long time, String namespace) throws Exception {
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
-        long podCount = client.pods().inNamespace(coNamespace).list().getItems().stream().filter(
+        long podCount = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> pods = client.pods().inNamespace(coNamespace).list().getItems().stream().filter(
+            List<Pod> pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
                 p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             pods.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
-
-            recreateTestEnv(coNamespace, bindingsNamespaces);
             throw new Exception("There are some unexpected pods! Cleanup is not finished properly!" + nonTerminated);
         }
     }
 
     /**
-     * Wait till all pods in specific namespace are deleted and recreate testing environment in case of some pods cannot be deleted.
-     * @param time timeout in miliseconds
-     * @param coNamespace namespace where cluster operator is deployed to
-     * @throws Exception exception
-     */
-    void waitForDeletion(long time, String coNamespace) throws Exception {
-        waitForDeletion(time, coNamespace, coNamespace);
-    }
-
-    /**
      * Recreate namespace and CO after test failure
      * @param coNamespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to. Make sure, that first namespace from this array is namespace where CO is deployed
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to.
      */
-    void recreateTestEnv(String coNamespace, String... bindingsNamespaces) {
-        LOGGER.info("There are some unexpected pods! Cleanup is not finished properly! Wait till env will be recreated.");
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
         testClassResources.deleteResources();
-        kubeClient.namespace(DEFAULT_NAMESPACE);
-        kubeClient.deleteNamespace(coNamespace);
-        kubeClient.waitForResourceDeletion("Namespace", coNamespace);
-        kubeClient.createNamespace(coNamespace);
-        kubeClient.namespace(coNamespace);
 
-        Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().filter(file ->
-                !file.getName().matches(".*(Binding|Deployment)-.*")
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
-        // Here we record the state of the cluster
-        for (Map.Entry<File, String> entry : yamls.entrySet()) {
-            LOGGER.info("creating possibly modified version of {}", entry.getKey());
-            kubeClient.clientWithAdmin().applyContent(entry.getValue());
-        }
+        deleteClusterOperatorInstallFiles();
+        deleteNamespaces();
+
+        createNamespaces(coNamespace, bindingsNamespaces);
+        applyClusterOperatorInstallFiles();
 
         testClassResources = new Resources(namespacedClient());
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
         testClassResources.clusterOperator(coNamespace).done();
-        LOGGER.info("Env recreated.");
     }
 
     /**
-     * Method for apply Strimzi cluster operator specific Role and CLusterRole bindings for specific namespaces.
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
-     * @param clientNamespaces list of namespaces where Bindings should be deployed to
+     * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
      */
-    static void applyRoleBindings(String namespace, String... clientNamespaces) {
-        for (String clientNamespace : clientNamespaces) {
+    private static void applyRoleBindings(String namespace, List<String> bindingsNamespaces) {
+        for (String bindingsNamespace : bindingsNamespaces) {
             // 020-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 021-ClusterRoleBinding
-            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
             // 030-ClusterRoleBinding
-            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesClusterRoleBinding("../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace, bindingsNamespace);
             // 031-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
             // 032-RoleBinding
-            testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, clientNamespace);
+            testClassResources.kubernetesRoleBinding("../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
         }
     }
 
+    /**
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO will be deployed to
+     */
     static void applyRoleBindings(String namespace) {
-        applyRoleBindings(namespace, namespace);
+        applyRoleBindings(namespace, Collections.singletonList(namespace));
     }
 
-    @BeforeEach
-    void setTestName(TestInfo testInfo) {
-        testName = testInfo.getTestMethod().get().getName();
+    /**
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO will be deployed to
+     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
+     */
+    static void applyRoleBindings(String namespace, String... bindingsNamespaces) {
+        applyRoleBindings(namespace, Arrays.asList(bindingsNamespaces));
     }
 
-    @BeforeAll
-    static void createTestClassResources(TestInfo testInfo) {
-        createClusterOperatorResources();
-        testClass = testInfo.getTestClass().get().getSimpleName();
+    /**
+     * Deploy CO via helm chart. Using config file stored in test resources.
+     */
+    void deployClusterOperatorViaHelmChart() {
+        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", STRIMZI_ORG);
+        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", STRIMZI_TAG);
+
+        Map<String, String> values = Collections.unmodifiableMap(Stream.of(
+                entry("imageRepositoryOverride", dockerOrg),
+                entry("imageTagOverride", dockerTag),
+                entry("image.pullPolicy", IMAGE_PULL_POLICY),
+                entry("resources.requests.memory", REQUESTS_MEMORY),
+                entry("resources.requests.cpu", REQUESTS_CPU),
+                entry("resources.limits.memory", LIMITS_MEMORY),
+                entry("resources.limits.cpu", LIMITS_CPU),
+                entry("logLevel", OPERATOR_LOG_LEVEL))
+                .collect(TestUtils.entriesToMap()));
+
+        LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
+        Path pathToChart = new File(HELM_CHART).toPath();
+        String oldNamespace = KUBE_CLIENT.namespace("kube-system");
+        InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
+        String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
+        KUBE_CLIENT.applyContent(helmServiceAccount);
+        helmClient().init();
+        KUBE_CLIENT.namespace(oldNamespace);
+        helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
+    }
+
+    /**
+     * Delete CO deployed via helm chart.
+     */
+    void deleteClusterOperatorViaHelmChart() {
+        LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
+        helmClient().delete(HELM_RELEASE_NAME);
+    }
+
+    @AfterEach
+    void recreateEnvironmentAfterFailure(ExtensionContext context) {
+        if (context.getExecutionException().isPresent()) {
+            LOGGER.info("Test execution contains exception, going to recreate test environment");
+            recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
+            LOGGER.info("Env recreated.");
+        }
     }
 }

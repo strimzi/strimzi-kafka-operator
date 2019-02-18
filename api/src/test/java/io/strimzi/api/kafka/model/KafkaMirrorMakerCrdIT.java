@@ -4,10 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.test.annotations.Namespace;
-import io.strimzi.test.annotations.Resources;
-import io.strimzi.test.extensions.StrimziExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.jupiter.api.Test;
@@ -20,9 +18,6 @@ import static org.junit.Assert.assertTrue;
  * I.e. that such instance resources obtained from POJOs are valid according to the schema
  * validation done by K8S.
  */
-@ExtendWith(StrimziExtension.class)
-@Namespace(KafkaMirrorMakerCrdIT.NAMESPACE)
-@Resources(value = TestUtils.CRD_KAFKA_MIRROR_MAKER, asAdmin = true)
 public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     public static final String NAMESPACE = "kafkamirrormaker-crd-it";
@@ -79,8 +74,20 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaMirrorMakerWithTemplate() {
+    void testKafkaMirrorMakerWithTemplate() {
         createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-template.yaml");
+    }
+
+    @BeforeAll
+    void setupEnvironment() {
+        createNamespace(NAMESPACE);
+        createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        deleteCustomResources();
+        deleteNamespaces();
     }
 }
 

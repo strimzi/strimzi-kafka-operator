@@ -4,9 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
@@ -21,17 +18,20 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.annotations.Resources;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
-import org.junit.jupiter.api.BeforeEach;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.List;
 
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,34 +46,25 @@ import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
  */
 @ExtendWith(StrimziExtension.class)
 @OpenShiftOnly
-@Namespace(OpenShiftTemplatesST.NAMESPACE)
-@Resources(value = "../examples/templates/cluster-operator", asAdmin = true)
-@Resources(value = "../examples/templates/topic-operator", asAdmin = true)
-@Resources(value = TestUtils.CRD_KAFKA, asAdmin = true)
-@Resources(value = TestUtils.CRD_KAFKA_CONNECT, asAdmin = true)
-@Resources(value = TestUtils.CRD_KAFKA_CONNECT_S2I, asAdmin = true)
-@Resources(value = TestUtils.CRD_TOPIC, asAdmin = true)
-@Resources(value = "src/rbac/role-edit-kafka.yaml", asAdmin = true)
-public class OpenShiftTemplatesST {
+public class OpenShiftTemplatesST extends AbstractST {
+
+    private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
 
     public static final String NAMESPACE = "template-test";
 
     public static KubeClusterResource cluster = new KubeClusterResource();
-
-    private ObjectMapper mapper = new ObjectMapper();
-    private Oc oc = (Oc) cluster.client();
-    private KubernetesClient client = new DefaultKubernetesClient();
+    private Oc oc = (Oc) KUBE_CLIENT;
 
     private Kafka getKafkaWithName(String clusterName) {
-        return client.customResources(Crds.kafka(), Kafka.class, KafkaAssemblyList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return CLIENT.customResources(Crds.kafka(), Kafka.class, KafkaAssemblyList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     private KafkaConnect getKafkaConnectWithName(String clusterName) {
-        return client.customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return CLIENT.customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     private KafkaConnectS2I getKafkaConnectS2IWithName(String clusterName) {
-        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return CLIENT.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     @Test
@@ -206,7 +197,7 @@ public class OpenShiftTemplatesST {
                 "TOPIC_PARTITIONS", "10",
                 "TOPIC_REPLICAS", "2"));
 
-        KafkaTopic topic = client.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
+        KafkaTopic topic = CLIENT.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
         assertNotNull(topic);
         assertNotNull(topic.getSpec());
         assertNull(topic.getSpec().getTopicName());
@@ -214,8 +205,27 @@ public class OpenShiftTemplatesST {
         assertEquals(Integer.valueOf(2), topic.getSpec().getReplicas());
     }
 
-    @BeforeEach
-    void prepareTest() {
-        cluster.before();
+    @BeforeAll
+    void setupEnvironment() {
+        LOGGER.info("Creating resources before the test class");
+        createNamespace(NAMESPACE);
+        createCustomResources("../examples/templates/cluster-operator",
+                "../examples/templates/topic-operator",
+                TestUtils.CRD_KAFKA,
+                TestUtils.CRD_KAFKA_CONNECT,
+                TestUtils.CRD_KAFKA_CONNECT_S2I,
+                TestUtils.CRD_TOPIC,
+                "src/rbac/role-edit-kafka.yaml");
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        deleteCustomResources();
+        deleteNamespaces();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        LOGGER.info("Skip env recreation after failed tests!");
     }
 }

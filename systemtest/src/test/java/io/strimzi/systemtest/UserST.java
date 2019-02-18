@@ -5,11 +5,10 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,8 +23,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(UserST.NAMESPACE)
-@ClusterOperator
 class UserST extends AbstractST {
 
     public static final String NAMESPACE = "user-cluster-test";
@@ -52,16 +49,16 @@ class UserST extends AbstractST {
             .endSpec().build()).done();
 
         KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
-        kubeClient.waitForResourceCreation("secret", kafkaUser);
+        KUBE_CLIENT.waitForResourceCreation("secret", kafkaUser);
 
-        String kafkaUserSecret = kubeClient.getResourceAsJson("secret", kafkaUser);
+        String kafkaUserSecret = KUBE_CLIENT.getResourceAsJson("secret", kafkaUser);
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
 
-        String kafkaUserAsJson = kubeClient.getResourceAsJson("KafkaUser", kafkaUser);
+        String kafkaUserAsJson = KUBE_CLIENT.getResourceAsJson("KafkaUser", kafkaUser);
 
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
@@ -79,16 +76,16 @@ class UserST extends AbstractST {
                 .endKafkaUserScramSha512ClientAuthentication()
             .endSpec().done();
 
-        kafkaUserSecret = kubeClient.getResourceAsJson("secret", kafkaUser);
+        kafkaUserSecret = KUBE_CLIENT.getResourceAsJson("secret", kafkaUser);
         assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
-        kafkaUserAsJson = kubeClient.getResourceAsJson("KafkaUser", kafkaUser);
+        kafkaUserAsJson = KUBE_CLIENT.getResourceAsJson("KafkaUser", kafkaUser);
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
-        kubeClient.deleteByName("KafkaUser", kafkaUser);
-        kubeClient.waitForResourceDeletion("KafkaUser", kafkaUser);
+        KUBE_CLIENT.deleteByName("KafkaUser", kafkaUser);
+        KUBE_CLIENT.waitForResourceDeletion("KafkaUser", kafkaUser);
     }
 
     @BeforeEach
@@ -103,9 +100,19 @@ class UserST extends AbstractST {
     }
 
     @BeforeAll
-    static void createClusterOperator() {
+    void setupEnvironment() {
+        LOGGER.info("Creating resources before the test class");
+        prepareEnvForOperator(NAMESPACE);
+
+        createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        testClassResources.deleteResources();
+        teardownEnvForOperator();
     }
 }

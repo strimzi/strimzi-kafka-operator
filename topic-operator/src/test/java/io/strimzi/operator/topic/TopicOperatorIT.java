@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -22,9 +21,8 @@ import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.test.annotations.Namespace;
+import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -69,13 +67,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@Namespace(TopicOperatorIT.NAMESPACE)
 @RunWith(VertxUnitRunner.class)
-public class TopicOperatorIT {
+public class TopicOperatorIT extends BaseITST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
 
-    public static KubeClusterResource testCluster = new KubeClusterResource();
     private static String oldNamespace;
 
     private final LabelPredicate resourcePredicate = LabelPredicate.fromString(
@@ -107,10 +103,10 @@ public class TopicOperatorIT {
 
     @BeforeClass
     public static void setupKubeCluster() {
-        testCluster.client().clientWithAdmin()
+        CLUSTER.client().clientWithAdmin()
                 .createNamespace(NAMESPACE);
-        oldNamespace = testCluster.client().namespace(NAMESPACE);
-        testCluster.client().clientWithAdmin()
+        oldNamespace = CLUSTER.client().namespace(NAMESPACE);
+        CLUSTER.client().clientWithAdmin()
                 .create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .create(TestUtils.CRD_TOPIC)
                 .create("src/test/resources/TopicOperatorIT-rbac.yaml");
@@ -118,18 +114,18 @@ public class TopicOperatorIT {
 
     @AfterClass
     public static void teardownKubeCluster() {
-        testCluster.client().clientWithAdmin()
+        CLUSTER.client().clientWithAdmin()
                 .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
                 .delete(TestUtils.CRD_TOPIC)
                 .delete("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .deleteNamespace(NAMESPACE);
-        testCluster.client().clientWithAdmin().namespace(oldNamespace);
+        CLUSTER.client().clientWithAdmin().namespace(oldNamespace);
     }
 
     @Before
     public void setup(TestContext context) throws Exception {
         LOGGER.info("Setting up test");
-        testCluster.before();
+        CLUSTER.before();
         Runtime.getRuntime().addShutdownHook(kafkaHook);
         kafkaCluster = new KafkaCluster();
         kafkaCluster.addBrokers(1);
@@ -138,7 +134,7 @@ public class TopicOperatorIT {
         kafkaCluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
         kafkaCluster.startup();
 
-        kubeClient = new DefaultKubernetesClient().inNamespace(NAMESPACE);
+        kubeClient = CLIENT.inNamespace(NAMESPACE);
         Crds.registerCustomKinds();
         LOGGER.info("Using namespace {}", NAMESPACE);
         Map<String, String> m = new HashMap();

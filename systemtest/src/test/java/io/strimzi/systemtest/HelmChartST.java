@@ -4,22 +4,22 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.List;
+
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(HelmChartST.NAMESPACE)
-@ClusterOperator(useHelmChart = true)
 @Tag(REGRESSION)
 class HelmChartST extends AbstractST {
 
@@ -33,9 +33,8 @@ class HelmChartST extends AbstractST {
     void testDeployKafkaClusterViaHelmChart() {
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
-        LOGGER.info("Running testDeployKafkaClusterViaHelmChart {}", CLUSTER_NAME);
-        kubeClient.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 1);
-        kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
+        KUBE_CLIENT.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 3);
+        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
     }
 
     @BeforeEach
@@ -47,5 +46,25 @@ class HelmChartST extends AbstractST {
     void deleteTestResources() throws Exception {
         deleteResources();
         waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+    }
+
+    @BeforeAll
+    void setupEnvironment() {
+        LOGGER.info("Creating resources before the test class");
+        createNamespace(NAMESPACE);
+        deployClusterOperatorViaHelmChart();
+    }
+
+    @AfterAll
+    void teardownEnvironment() {
+        deleteClusterOperatorViaHelmChart();
+        deleteNamespaces();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        deleteClusterOperatorViaHelmChart();
+        deleteNamespaces();
+        createNamespace(NAMESPACE);
     }
 }
