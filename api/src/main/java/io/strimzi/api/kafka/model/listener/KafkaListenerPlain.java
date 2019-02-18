@@ -2,12 +2,11 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -21,7 +20,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * Configures the TLS listener of Kafka broker
+ * Configures the TCP listener of Kafka broker
  */
 @Buildable(
         editableEnabled = false,
@@ -29,22 +28,22 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class KafkaListenerTls implements Serializable {
+public class KafkaListenerPlain implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private KafkaListenerAuthentication auth;
     private Map<String, Object> additionalProperties;
+
+    private KafkaListenerAuthentication authentication;
     private List<NetworkPolicyPeer> networkPolicyPeers;
 
-    @Description("Authentication configuration for this listener.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("authentication")
-    public KafkaListenerAuthentication getAuth() {
-        return auth;
+    @Description("Authentication configuration for this listener. " +
+            "Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`.")
+    public KafkaListenerAuthentication getAuthentication() {
+        return authentication;
     }
 
-    public void setAuth(KafkaListenerAuthentication auth) {
-        this.auth = auth;
+    public void setAuthentication(KafkaListenerAuthentication authentication) {
+        this.authentication = authentication;
     }
 
     @Description("List of peers which should be able to connect to this listener. " +

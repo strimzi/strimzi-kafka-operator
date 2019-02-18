@@ -2,20 +2,21 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.listener;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.strimzi.crdgenerator.annotations.Description;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 
 import java.util.List;
 
 /**
- * Configures the external listener which exposes Kafka outside of OpenShift using Routes
+ * Configures the external listener which exposes Kafka outside of Kubernetes using LoadBalancers
  */
 @Buildable(
         editableEnabled = false,
@@ -24,18 +25,20 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "authentication"})
-public class KafkaListenerExternalRoute extends KafkaListenerExternal {
+public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_ROUTE = "route";
+    public static final String TYPE_LOADBALANCER = "loadbalancer";
 
     private KafkaListenerAuthentication auth;
+    private boolean tls = true;
     private List<NetworkPolicyPeer> networkPolicyPeers;
+    private LoadBalancerListenerOverride overrides;
 
-    @Description("Must be `" + TYPE_ROUTE + "`")
+    @Description("Must be `" + TYPE_LOADBALANCER + "`")
     @Override
     public String getType() {
-        return TYPE_ROUTE;
+        return TYPE_LOADBALANCER;
     }
 
     @Description("Authentication configuration for Kafka brokers")
@@ -47,6 +50,17 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
 
     public void setAuth(KafkaListenerAuthentication auth) {
         this.auth = auth;
+    }
+
+    @Description("Enables TLS encryption on the listener. " +
+            "By default set to `true` for enabled TLS encryption.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public boolean isTls() {
+        return tls;
+    }
+
+    public void setTls(boolean tls) {
+        this.tls = tls;
     }
 
     @Description("List of peers which should be able to connect to this listener. " +
@@ -61,5 +75,15 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
 
     public void setNetworkPolicyPeers(List<NetworkPolicyPeer> networkPolicyPeers) {
         this.networkPolicyPeers = networkPolicyPeers;
+    }
+
+    @Description("Overrides for external bootstrap and broker services and externally advertised addresses")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public LoadBalancerListenerOverride getOverrides() {
+        return overrides;
+    }
+
+    public void setOverrides(LoadBalancerListenerOverride overrides) {
+        this.overrides = overrides;
     }
 }

@@ -2,14 +2,15 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.listener;
+
+import io.strimzi.crdgenerator.annotations.Description;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
 /**
- * Configures a listener to use SASL SCRAM-SHA-512 for authentication.
+ * Configures a listener to use mutual TLS authentication.
  */
 @Buildable(
         editableEnabled = false,
@@ -17,15 +18,14 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class KafkaListenerAuthenticationScramSha512 extends KafkaListenerAuthentication {
-
+public class KafkaListenerAuthenticationTls extends KafkaListenerAuthentication {
     private static final long serialVersionUID = 1L;
 
-    public static final String SCRAM_SHA_512 = "scram-sha-512";
+    public static final String TYPE_TLS = "tls";
 
-    @Description("Must be `" + SCRAM_SHA_512 + "`")
+    @Description("Must be `" + TYPE_TLS + "`")
     @Override
     public String getType() {
-        return SCRAM_SHA_512;
+        return TYPE_TLS;
     }
 }

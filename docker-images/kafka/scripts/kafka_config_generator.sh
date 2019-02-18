@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+# Parameters:
+# $1: Broker ID
+function get_address_for_broker {
+  for ADDRESS in $KAFKA_EXTERNAL_ADDRESSES ; do
+    if [[ $ADDRESS == $1://* ]] ; then
+      echo ${ADDRESS#"$1://"}
+    fi
+  done
+}
+
 #####
 # PLAIN listener
 #####
@@ -70,9 +80,9 @@ if [ "$KAFKA_EXTERNAL_ENABLED" ]; then
   ADDRESSES=($KAFKA_EXTERNAL_ADDRESSES)
 
   if [ "$KAFKA_EXTERNAL_ENABLED" = "route" ]; then
-    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${ADDRESSES[$KAFKA_BROKER_ID]}:443"
+    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://$(get_address_for_broker $KAFKA_BROKER_ID)"
   elif [ "$KAFKA_EXTERNAL_ENABLED" = "loadbalancer" ]; then
-    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://${ADDRESSES[$KAFKA_BROKER_ID]}:9094"
+    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://$(get_address_for_broker $KAFKA_BROKER_ID)"
   elif [ "$KAFKA_EXTERNAL_ENABLED" = "nodeport" ]; then
     EXTERNAL_PORT=${ADDRESSES[$KAFKA_BROKER_ID]}
     if [ -e $KAFKA_HOME/init/external.address.$KAFKA_BROKER_ID.port ]; then

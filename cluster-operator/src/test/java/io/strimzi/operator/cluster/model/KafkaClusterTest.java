@@ -32,8 +32,9 @@ import io.strimzi.api.kafka.model.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaExternalBrokerService;
-import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -57,9 +58,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
@@ -68,7 +67,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -424,10 +422,10 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        SortedMap<Integer, String> addresses = new TreeMap<>();
-        addresses.put(0, "my-address-0");
-        addresses.put(1, "my-address-1");
-        addresses.put(2, "my-address-2");
+        Set<String> addresses = new HashSet<>();
+        addresses.add("my-address-0");
+        addresses.add("my-address-1");
+        addresses.add("my-address-2");
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
@@ -436,7 +434,7 @@ public class KafkaClusterTest {
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "route")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "true")));
-        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses))));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
 
         List<ContainerPort> ports = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
@@ -498,10 +496,10 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        SortedMap<Integer, String> addresses = new TreeMap<>();
-        addresses.put(0, "my-address-0");
-        addresses.put(1, "my-address-1");
-        addresses.put(2, "my-address-2");
+        Set<String> addresses = new HashSet<>();
+        addresses.add("my-address-0");
+        addresses.add("my-address-1");
+        addresses.add("my-address-2");
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
@@ -510,7 +508,7 @@ public class KafkaClusterTest {
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "loadbalancer")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "true")));
-        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses))));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
 
         List<ContainerPort> ports = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
@@ -551,10 +549,10 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        SortedMap<Integer, String> addresses = new TreeMap<>();
-        addresses.put(0, "my-address-0");
-        addresses.put(1, "my-address-1");
-        addresses.put(2, "my-address-2");
+        Set<String> addresses = new HashSet<>();
+        addresses.add("my-address-0");
+        addresses.add("my-address-1");
+        addresses.add("my-address-2");
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
@@ -563,7 +561,7 @@ public class KafkaClusterTest {
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "loadbalancer")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "false")));
-        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses))));
     }
 
     @Test
@@ -583,10 +581,10 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        SortedMap<Integer, String> addresses = new TreeMap<>();
-        addresses.put(0, "32123");
-        addresses.put(1, "32456");
-        addresses.put(2, "32789");
+        Set<String> addresses = new HashSet<>();
+        addresses.add("32123");
+        addresses.add("32456");
+        addresses.add("32789");
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
@@ -595,7 +593,7 @@ public class KafkaClusterTest {
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "true")));
-        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses))));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
 
         List<ContainerPort> ports = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
@@ -622,9 +620,9 @@ public class KafkaClusterTest {
 
     @Test
     public void testExternalNodePortOverrides() {
-        KafkaExternalBrokerService kafkaExternalBrokerService = new KafkaExternalBrokerService();
-        kafkaExternalBrokerService.setBroker(0);
-        kafkaExternalBrokerService.setNodePort(32101);
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride.setBroker(0);
+        nodePortListenerBrokerOverride.setNodePort(32101);
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
             image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
             .editSpec()
@@ -636,7 +634,7 @@ public class KafkaClusterTest {
                                 .withNewBootstrap()
                                     .withNodePort(32001)
                                 .endBootstrap()
-                                .withBrokers(kafkaExternalBrokerService)
+                                .withBrokers(nodePortListenerBrokerOverride)
                             .endOverrides()
                         .endKafkaListenerExternalNodePort()
                     .endListeners()
@@ -645,10 +643,10 @@ public class KafkaClusterTest {
             .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        SortedMap<Integer, String> addresses = new TreeMap<>();
-        addresses.put(0, "32101");
-        addresses.put(1, "32456");
-        addresses.put(2, "32789");
+        Set<String> addresses = new HashSet<>();
+        addresses.add("32123");
+        addresses.add("32456");
+        addresses.add("32789");
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
@@ -657,7 +655,7 @@ public class KafkaClusterTest {
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "false")));
-        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses))));
 
         List<ContainerPort> ports = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
         assertTrue(ports.contains(kc.createContainerPort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, "TCP")));
@@ -701,10 +699,10 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        SortedMap<Integer, String> addresses = new TreeMap<>();
-        addresses.put(0, "32123");
-        addresses.put(1, "32456");
-        addresses.put(2, "32789");
+        Set<String> addresses = new HashSet<>();
+        addresses.add("32123");
+        addresses.add("32456");
+        addresses.add("32789");
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
@@ -713,69 +711,71 @@ public class KafkaClusterTest {
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "false")));
-        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses.values()))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses))));
     }
 
     @Test
     public void testGetExternalNodePortServiceAddressOverrideWithNullAdvertisedHost() {
-        KafkaExternalBrokerService kafkaExternalBrokerService = new KafkaExternalBrokerService();
-        kafkaExternalBrokerService.setBroker(0);
-        kafkaExternalBrokerService.setNodePort(32101);
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride.setBroker(0);
+        nodePortListenerBrokerOverride.setNodePort(32101);
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
             image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
             .editSpec()
-            .editKafka()
-            .withNewListeners()
-            .withNewKafkaListenerExternalNodePort()
-            .withTls(false)
-            .withNewOverrides()
-            .withNewBootstrap()
-            .withNodePort(32001)
-            .endBootstrap()
-            .withBrokers(kafkaExternalBrokerService)
-            .endOverrides()
-            .endKafkaListenerExternalNodePort()
-            .endListeners()
-            .endKafka()
+                .editKafka()
+                    .withNewListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                            .withNewOverrides()
+                                .withNewBootstrap()
+                                    .withNodePort(32001)
+                                .endBootstrap()
+                                .withBrokers(nodePortListenerBrokerOverride)
+                            .endOverrides()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
             .endSpec()
             .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        Optional<String> advertisedHostOverride = kc.getExternalNodePortServiceAddressOverride(0);
+        assertEquals(new Integer(32101), kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort());
+        assertEquals(new Integer(32001), kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort());
 
-        assertFalse(advertisedHostOverride.isPresent());
+        assertEquals(new Integer(32001), ((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort());
     }
 
     @Test
     public void testGetExternalNodePortServiceAddressOverrideWithNonNullAdvertisedHost() {
-        KafkaExternalBrokerService kafkaExternalBrokerService = new KafkaExternalBrokerService();
-        kafkaExternalBrokerService.setBroker(0);
-        kafkaExternalBrokerService.setNodePort(32101);
-        kafkaExternalBrokerService.setAdvertisedHost("advertised.host");
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride.setBroker(0);
+        nodePortListenerBrokerOverride.setNodePort(32101);
+        nodePortListenerBrokerOverride.setAdvertisedHost("advertised.host");
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
             image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
             .editSpec()
-            .editKafka()
-            .withNewListeners()
-            .withNewKafkaListenerExternalNodePort()
-            .withTls(false)
-            .withNewOverrides()
-            .withNewBootstrap()
-            .withNodePort(32001)
-            .endBootstrap()
-            .withBrokers(kafkaExternalBrokerService)
-            .endOverrides()
-            .endKafkaListenerExternalNodePort()
-            .endListeners()
-            .endKafka()
+                .editKafka()
+                    .withNewListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                        .withTls(false)
+                        .withNewOverrides()
+                            .withNewBootstrap()
+                                .withNodePort(32001)
+                            .endBootstrap()
+                            .withBrokers(nodePortListenerBrokerOverride)
+                        .endOverrides()
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                .endKafka()
             .endSpec()
             .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        Optional<String> advertisedHostOverride = kc.getExternalNodePortServiceAddressOverride(0);
+        assertEquals(new Integer(32101), kc.generateExternalService(0).getSpec().getPorts().get(0).getNodePort());
+        assertEquals(new Integer(32001), kc.generateExternalBootstrapService().getSpec().getPorts().get(0).getNodePort());
 
-        assertTrue(advertisedHostOverride.isPresent());
-        assertEquals("advertised.host", advertisedHostOverride.get());
+        assertEquals(new Integer(32001), ((NodePortListenerBootstrapOverride) kc.getExternalListenerBootstrapOverride()).getNodePort());
+        assertEquals("advertised.host", kc.getExternalServiceAdvertisedHostOverride(0));
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
@@ -805,12 +805,12 @@ public class KafkaClusterTest {
 
     @Test
     public void testGenerateBrokerSecretExternal() throws CertificateParsingException {
-        Map<Integer, String> externalAddresses = new HashMap<>();
-        externalAddresses.put(0, "123.10.125.130");
-        externalAddresses.put(1, "123.10.125.131");
-        externalAddresses.put(2, "123.10.125.132");
+        Map<Integer, Set<String>> externalAddresses = new HashMap<>();
+        externalAddresses.put(0, Collections.singleton("123.10.125.130"));
+        externalAddresses.put(1, Collections.singleton("123.10.125.131"));
+        externalAddresses.put(2, Collections.singleton("123.10.125.132"));
 
-        Secret secret = generateBrokerSecret("123.10.125.140", externalAddresses);
+        Secret secret = generateBrokerSecret(Collections.singleton("123.10.125.140"), externalAddresses);
         assertEquals(set(
                 "foo-kafka-0.crt",  "foo-kafka-0.key",
                 "foo-kafka-1.crt", "foo-kafka-1.key",
@@ -829,7 +829,35 @@ public class KafkaClusterTest {
                 new HashSet<Object>(cert.getSubjectAlternativeNames()));
     }
 
-    private Secret generateBrokerSecret(String externalBootstrapAddress, Map<Integer, String> externalAddresses) {
+    @Test
+    public void testGenerateBrokerSecretExternalWithManyDNS() throws CertificateParsingException {
+        Map<Integer, Set<String>> externalAddresses = new HashMap<>();
+        externalAddresses.put(0, TestUtils.set("123.10.125.130", "my.hostname"));
+        externalAddresses.put(1, Collections.singleton("123.10.125.131"));
+        externalAddresses.put(2, Collections.singleton("123.10.125.132"));
+
+        Secret secret = generateBrokerSecret(TestUtils.set("123.10.125.140", "my.hostname2"), externalAddresses);
+        assertEquals(set(
+                "foo-kafka-0.crt",  "foo-kafka-0.key",
+                "foo-kafka-1.crt", "foo-kafka-1.key",
+                "foo-kafka-2.crt", "foo-kafka-2.key"),
+                secret.getData().keySet());
+        X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
+        assertEquals("CN=foo-kafka, O=io.strimzi", cert.getSubjectDN().getName());
+        assertEquals(set(
+                asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
+                asList(2, "foo-kafka-bootstrap"),
+                asList(2, "foo-kafka-bootstrap.test"),
+                asList(2, "foo-kafka-bootstrap.test.svc"),
+                asList(2, "foo-kafka-bootstrap.test.svc.cluster.local"),
+                asList(2, "my.hostname"),
+                asList(2, "my.hostname2"),
+                asList(7, "123.10.125.140"),
+                asList(7, "123.10.125.130")),
+                new HashSet<Object>(cert.getSubjectAlternativeNames()));
+    }
+
+    private Secret generateBrokerSecret(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
         ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), cluster, null, null);
         clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), null);
 

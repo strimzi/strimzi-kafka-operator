@@ -2,25 +2,20 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.listener;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import static java.util.Collections.emptyMap;
 
 /**
- * Configures the TCP listener of Kafka broker
+ * Configures the external listener which exposes Kafka outside of OpenShift using Routes
  */
 @Buildable(
         editableEnabled = false,
@@ -28,22 +23,31 @@ import static java.util.Collections.emptyMap;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class KafkaListenerPlain implements Serializable {
+@JsonPropertyOrder({"type", "authentication"})
+public class KafkaListenerExternalRoute extends KafkaListenerExternal {
     private static final long serialVersionUID = 1L;
 
-    private Map<String, Object> additionalProperties;
+    public static final String TYPE_ROUTE = "route";
 
-    private KafkaListenerAuthentication authentication;
+    private KafkaListenerAuthentication auth;
     private List<NetworkPolicyPeer> networkPolicyPeers;
+    private RouteListenerOverride overrides;
 
-    @Description("Authentication configuration for this listener. " +
-            "Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`.")
-    public KafkaListenerAuthentication getAuthentication() {
-        return authentication;
+    @Description("Must be `" + TYPE_ROUTE + "`")
+    @Override
+    public String getType() {
+        return TYPE_ROUTE;
     }
 
-    public void setAuthentication(KafkaListenerAuthentication authentication) {
-        this.authentication = authentication;
+    @Description("Authentication configuration for Kafka brokers")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("authentication")
+    public KafkaListenerAuthentication getAuth() {
+        return auth;
+    }
+
+    public void setAuth(KafkaListenerAuthentication auth) {
+        this.auth = auth;
     }
 
     @Description("List of peers which should be able to connect to this listener. " +
@@ -60,16 +64,13 @@ public class KafkaListenerPlain implements Serializable {
         this.networkPolicyPeers = networkPolicyPeers;
     }
 
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+    @Description("Overrides for external bootstrap and broker services and externally advertised addresses")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public RouteListenerOverride getOverrides() {
+        return overrides;
     }
 
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-        if (this.additionalProperties == null) {
-            this.additionalProperties = new HashMap<>();
-        }
-        this.additionalProperties.put(name, value);
+    public void setOverrides(RouteListenerOverride overrides) {
+        this.overrides = overrides;
     }
 }

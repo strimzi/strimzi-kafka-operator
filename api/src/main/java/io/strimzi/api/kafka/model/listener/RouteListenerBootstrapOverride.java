@@ -2,16 +2,15 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
-
-import java.io.Serializable;
+import lombok.EqualsAndHashCode;
 
 /**
- * Configures external bootstrap service
+ * Configures external bootstrap service for Route listeners
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
@@ -19,18 +18,20 @@ import java.io.Serializable;
     generateBuilderPackage = false,
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
-public class KafkaExternalBootstrapService implements Serializable {
+@EqualsAndHashCode(callSuper = true)
+public class RouteListenerBootstrapOverride extends ExternalListenerBootstrapOverride {
     private static final long serialVersionUID = 1L;
 
-    private Integer nodePort;
+    private String host;
 
-    @Description("Node port for the bootstrap service")
+    @Description("Host for the bootstrap route. " +
+            "This field will be used in the `spec.host` field of the OpenShift Route.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer getNodePort() {
-        return nodePort;
+    public String getHost() {
+        return host;
     }
 
-    public void setNodePort(Integer nodePort) {
-        this.nodePort = nodePort;
+    public void setHost(String host) {
+        this.host = host;
     }
 }
