@@ -3,20 +3,26 @@
 // assembly-storage.adoc
 
 [id='ref-jbod-storage-{context}']
-= JBOD storage
+= JBOD storage overview
 
-The JBOD storage allows you to provide more volumes to the Kafka brokers to store data.
-As well as providing more storage, using multiple disks can improve performance.
+You can configure {ProductName} to use Just a Bunch of Disks (JBOD), a data storage configuration in which multiple disks are combined to create a single logical disk, or volume. JBOD is one approach to providing increased data storage for Kafka brokers. It can also improve performance.
 
-To use JBOD storage, the `type` has to be set to `jbod`.
-A JBOD storage is described by one or more volumes and each of them can be an xref:ref-ephemeral-storage-{context}[Ephemeral] or a xref:ref-persistent-storage-{context}[Persistent] one.
-Each volume declaration follows the same rules and constraints as for Ephemeral and Persistent storage.
-For example, it is not possible to change the size for a Persistent storage when it is already provisioned.
-The JBOD storage provides a way for putting together more of them.
+A JBOD configuration is described by one or more volumes, each of which can be either xref:ref-ephemeral-storage-{context}[ephemeral] or xref:ref-persistent-storage-{context}[persistent]. The rules and constraints for JBOD volume declarations are the same as those for ephemeral and persistent storage. For example, you cannot change the size of a persistent storage volume after it has been provisioned.
 
-Using the `volumes` property, it is possible to declare the disks which make the JBOD storage.
+== JBOD configuration
 
-.Example fragment of JBOD storage configuration
+To use JBOD with {ProductName}, the storage `type` must be set to `jbod`. 
+
+[source,yaml]
+----
+# ...
+storage:
+  type: jbod
+# ...
+----
+
+The `volumes` property allows you to describe the disks that make up your JBOD storage array or configuration.
+
 [source,yaml]
 ----
 # ...
@@ -34,10 +40,13 @@ storage:
 # ...
 ----
 
-It is not possible to change the `id` property for a volume.
-It is not possible to add or remove volumes from a JBOD storage configuration.
+Do not change the `id` property of a JBOD volume.
 
-When Persistent storage is used for declaring volumes, the naming schema for the created Persistent Volume Claims is the following:
+NOTE: Adding and removing volumes from a JBOD configuration is not currently supported.
 
-`data-_id_-_cluster-name_-kafka-_idx_`::
-Persistent Volume Claim for the volume `_id_` used for storing data for the Kafka broker pod `_idx_`.
+== JBOD and Persistent Volume Claims
+
+When persistent storage is used to declare JBOD volumes, the naming scheme of the resulting Persistent Volume Claims is as follows:
+
+`data-_id_-cluster-name-kafka-_idx_`::
+Where `_id_` is the ID of the volume used for storing data for Kafka broker pod `_idx_`.
