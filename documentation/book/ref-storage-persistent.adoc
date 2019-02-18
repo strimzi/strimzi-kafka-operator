@@ -13,7 +13,7 @@ To use persistent storage, the `type` has to be set to `persistent-claim`.
 Persistent storage supports additional configuration options:
 
 `id` (optional)::
-Storage identification number. It is mandatory only for storage volumes defined in a JBOD storage declaration.
+Storage identification number. This option is mandatory for storage volumes defined in a JBOD storage declaration.
 Default is `0`.
 
 `size` (required)::
