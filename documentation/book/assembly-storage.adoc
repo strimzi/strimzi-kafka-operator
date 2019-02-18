@@ -10,7 +10,7 @@
 [id='assembly-storage-{context}']
 = Kafka and Zookeeper storage
 
-As stateful applications, Kafka and Zookeeper need to store data on disk. {ProductName} supports three different types of storage for this data: ephemeral, persistent, and JBOD storage.
+As stateful applications, Kafka and Zookeeper need to store data on disk. {ProductName} supports three different types of storage for this data: ephemeral, persistent, and JBOD (Just a Bunch of Disks) storage.
 
 NOTE: JBOD storage is only supported for Kafka, not for Zookeeper.
 
