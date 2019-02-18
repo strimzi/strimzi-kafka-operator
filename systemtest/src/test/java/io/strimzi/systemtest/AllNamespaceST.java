@@ -90,7 +90,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
         String previousNamespace = kubeClient.namespace(SECOND_NAMESPACE);
-        kubeClient.waitForResourceCreation("KafkaUser", USER_NAME);
+        // Check that UO created a secret for new user
+        kubeClient.waitForResourceCreation("Secret", USER_NAME);
 
         kubeClient.namespace(previousNamespace);
     }
