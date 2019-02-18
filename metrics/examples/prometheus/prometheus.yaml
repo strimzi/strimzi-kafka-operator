@@ -441,12 +441,16 @@ data:
     - job_name: kubernetes-nodes-kubelet
       scrape_interval: 10s
       scrape_timeout: 10s
-      scheme: https  # remove if you want to scrape metrics on insecure port
+      scheme: https
+      kubernetes_sd_configs:
+      - api_server: null
+        role: node
+        namespaces:
+          names: []
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
       tls_config:
         ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-      kubernetes_sd_configs:
-        - role: node
+        insecure_skip_verify: true
       relabel_configs:
         - action: labelmap
           regex: __meta_kubernetes_node_label_(.+)

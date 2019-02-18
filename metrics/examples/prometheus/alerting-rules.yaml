@@ -8,13 +8,13 @@ data:
     - name: kafka
       rules:
       - alert: RunningOutOfSpace
-        expr: kubelet_volume_stats_available_bytes < 5368709120
+        expr: kubelet_volume_stats_available_bytes{kubernetes_pod_name=~"([a-z]+-)+kafka-[0-9]+"} < 5368709120
         for: 10s
         labels:
           severity: warning
         annotations:
-          summary: 'Kafka is running out of disk space'
-          description: 'There is only {{ $value }} bytes available at {{ $labels.kubernetes_pod_name }} PVC'
+          summary: 'Kafka is running out of free disk space'
+          description: 'There are only {{ $value }} bytes available at {{ $labels.kubernetes_pod_name }} PVC'
       - alert: UnderReplicatedPartitions
         expr: kafka_server_replicamanager_underreplicatedpartitions > 0
         for: 10s
@@ -66,10 +66,10 @@ data:
           summary: 'Zookeeper outstanding requests'
           description: 'There are {{ $value }} outstanding requests on {{ $labels.kubernetes_pod_name }}'
       - alert: RunningOutOfSpace
-        expr: kubelet_volume_stats_available_bytes < 5368709120
+        expr: kubelet_volume_stats_available_bytes{kubernetes_pod_name=~"([a-z]+-)+zookeeper-[0-9]+"} < 5368709120
         for: 10s
         labels:
           severity: warning
         annotations:
-          summary: 'Zookeeper is running out of disk space'
-          description: 'There is only {{ $value }} bytes available at {{ $labels.kubernetes_pod_name }} PVC'
+          summary: 'Zookeeper is running out of free disk space'
+          description: 'There are only {{ $value }} bytes available at {{ $labels.kubernetes_pod_name }} PVC'
