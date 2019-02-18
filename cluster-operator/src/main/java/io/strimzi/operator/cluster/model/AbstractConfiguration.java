@@ -8,6 +8,7 @@ package io.strimzi.operator.cluster.model;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -70,6 +71,20 @@ public abstract class AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
      *                           these keys will be ignored.
+     * @param exceptions        Exceptions excluded from forbidden options checking
+     */
+    public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenOptions, List<String> exceptions) {
+        options.addIterablePairs(jsonOptions);
+        filterForbidden(forbiddenOptions, exceptions);
+    }
+
+    /**
+     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
+     * ConfigMap / CRD.
+     *
+     * @param jsonOptions     Json object with configuration options as key ad value pairs.
+     * @param forbiddenOptions   List with configuration keys which are not allowed. All keys which start with one of
+     *                           these keys will be ignored.
      * @param defaults          Properties object with default options
      */
     public AbstractConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenOptions, Map<String, String> defaults) {
@@ -84,9 +99,13 @@ public abstract class AbstractConfiguration {
      * @param forbiddenOptions  List with configuration keys which are not allowed. All keys which start with one of
      *                          these keys will be ignored.
      */
-    private void filterForbidden(List<String> forbiddenOptions)   {
+    private void filterForbidden(List<String> forbiddenOptions, List<String> exceptions)   {
         options.filter(k -> forbiddenOptions.stream().anyMatch(s -> {
             boolean forbidden = k.toLowerCase(Locale.ENGLISH).startsWith(s);
+            if (forbidden) {
+                if (exceptions.contains(k))
+                    forbidden = false;
+            }
             if (forbidden) {
                 log.warn("Configuration option \"{}\" is forbidden and will be ignored", k);
             } else {
@@ -94,6 +113,10 @@ public abstract class AbstractConfiguration {
             }
             return forbidden;
         }));
+    }
+
+    private void filterForbidden(List<String> forbiddenOptions)   {
+        this.filterForbidden(forbiddenOptions, Collections.emptyList());
     }
 
     public String getConfigOption(String configOption) {

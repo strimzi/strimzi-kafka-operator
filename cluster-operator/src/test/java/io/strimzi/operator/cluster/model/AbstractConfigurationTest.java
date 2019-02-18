@@ -16,6 +16,7 @@ import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class AbstractConfigurationTest {
@@ -217,6 +218,24 @@ public class AbstractConfigurationTest {
 
         AbstractConfiguration config = new TestConfiguration(configuration);
         assertEquals(expectedConfiguration, config.asOrderedProperties());
+    }
+
+    @Test
+    public void testKafkaZookeeperTimeout() {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put("valid", "validValue");
+        conf.put("zookeeper.connection.whatever", "invalid");
+        conf.put("security.invalid1", "invalid");
+        conf.put("zookeeper.connection.timeout.ms", "42"); // valid
+        conf.put("zookeeper.connection.timeout", "42"); // invalid
+
+        KafkaConfiguration kc = new KafkaConfiguration(conf.entrySet());
+
+        assertEquals("validValue", kc.asOrderedProperties().asMap().get("valid"));
+        assertNull(kc.asOrderedProperties().asMap().get("zookeeper.connection.whatever"));
+        assertNull(kc.asOrderedProperties().asMap().get("security.invalid1"));
+        assertEquals("42", kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout.ms"));
+        assertNull(kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout"));
     }
 }
 
