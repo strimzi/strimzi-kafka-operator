@@ -26,6 +26,8 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.Oc;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -194,7 +196,7 @@ class KafkaST extends AbstractST {
         Kafka kafka = resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         // Get pod name to check termination process
-        Optional<Pod> pod = client.pods().inNamespace(kubeClient.namespace()).list().getItems()
+        Optional<Pod> pod = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
                 .findFirst();
 
@@ -206,8 +208,8 @@ class KafkaST extends AbstractST {
         resources.kafka(kafka).done();
 
         // Wait when EO(UO + TO) will be removed
-        kubeClient.waitForResourceDeletion("deployment", entityOperatorDeploymentName(CLUSTER_NAME));
-        kubeClient.waitForResourceDeletion("pod", pod.get().getMetadata().getName());
+        KUBE_CLIENT.waitForResourceDeletion("deployment", entityOperatorDeploymentName(CLUSTER_NAME));
+        KUBE_CLIENT.waitForResourceDeletion("pod", pod.get().getMetadata().getName());
     }
 
     @Test
@@ -592,7 +594,7 @@ class KafkaST extends AbstractST {
         assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
-        Optional<Pod> pod = CLIENT.pods().inNamespace(kubeClient.namespace()).list().getItems()
+        Optional<Pod> pod = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
                 .findFirst();
         assertTrue(pod.isPresent(), "EO pod does not exist");
