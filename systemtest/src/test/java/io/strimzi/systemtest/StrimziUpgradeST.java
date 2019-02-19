@@ -46,7 +46,7 @@ public class StrimziUpgradeST extends AbstractST {
         });
     }
 
-    private void deleteInstallYamls(File root) {
+    private void deleteInstalledYamls(File root) {
         Arrays.stream(root.listFiles()).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 KUBE_CLIENT.deleteContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
@@ -145,7 +145,7 @@ public class StrimziUpgradeST extends AbstractST {
             }
             throw e;
         } finally {
-            deleteInstallYamls(new File("../install/cluster-operator"));
+            deleteInstalledYamls(new File("../install/cluster-operator"));
         }
 
     }
