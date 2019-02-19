@@ -10,7 +10,7 @@ jobs:
           key: strimzi-javabuild-{{ checksum "pom.xml" }}
       - run:
           name: Build code
-          command: mvn clean -DskipTests install
+          command: mvn clean -q -DskipTests install
       - save_cache:
           paths:
             - ~/.m2
