@@ -1,6 +1,8 @@
 version: 2
 jobs:
   javabuild:
+    environment:
+      - MAVEN_OPTS: "-Xmx2048m"
     docker:
       - image: scholzj/circleci-centos-java:latest
     working_directory: ~/project
@@ -10,7 +12,7 @@ jobs:
           key: strimzi-javabuild-{{ checksum "pom.xml" }}
       - run:
           name: Build code
-          command: mvn clean -q -DskipTests install
+          command: mvn clean -DskipTests install
       - save_cache:
           paths:
             - ~/.m2
