@@ -42,6 +42,7 @@ import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -480,6 +481,61 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void testExternalRoutesWithHostOverrides() {
+        RouteListenerBrokerOverride routeListenerBrokerOverride0 = new RouteListenerBrokerOverride();
+        routeListenerBrokerOverride0.setBroker(0);
+        routeListenerBrokerOverride0.setHost("my-host-0.cz");
+
+        RouteListenerBrokerOverride routeListenerBrokerOverride1 = new RouteListenerBrokerOverride();
+        routeListenerBrokerOverride1.setBroker(1);
+        routeListenerBrokerOverride1.setHost("my-host-1.cz");
+
+        RouteListenerBrokerOverride routeListenerBrokerOverride2 = new RouteListenerBrokerOverride();
+        routeListenerBrokerOverride2.setBroker(2);
+        routeListenerBrokerOverride2.setHost("my-host-2.cz");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                        .withNewKafkaListenerExternalRoute()
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                            .withNewOverrides()
+                                .withNewBootstrap()
+                                    .withHost("my-boostrap.cz")
+                                .endBootstrap()
+                                .withBrokers(routeListenerBrokerOverride0, routeListenerBrokerOverride1, routeListenerBrokerOverride2)
+                            .endOverrides()
+                        .endKafkaListenerExternalRoute()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        Set<String> addresses = new HashSet<>();
+        addresses.add("my-address-0");
+        addresses.add("my-address-1");
+        addresses.add("my-address-2");
+        kc.setExternalAddresses(addresses);
+
+        // Check bootstrap route
+        Route brt = kc.generateExternalBootstrapRoute();
+        assertEquals(KafkaCluster.serviceName(cluster), brt.getMetadata().getName());
+        assertEquals("my-boostrap.cz", brt.getSpec().getHost());
+
+        // Check per pod router
+        for (int i = 0; i < replicas; i++)  {
+            Route rt = kc.generateExternalRoute(i);
+            assertEquals(KafkaCluster.externalServiceName(cluster, i), rt.getMetadata().getName());
+            assertEquals("my-host-" + i + ".cz", rt.getSpec().getHost());
+        }
+    }
+
+    @Test
     public void testExternalLoadBalancers() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
@@ -832,11 +888,11 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateBrokerSecretExternalWithManyDNS() throws CertificateParsingException {
         Map<Integer, Set<String>> externalAddresses = new HashMap<>();
-        externalAddresses.put(0, TestUtils.set("123.10.125.130", "my.hostname"));
-        externalAddresses.put(1, Collections.singleton("123.10.125.131"));
-        externalAddresses.put(2, Collections.singleton("123.10.125.132"));
+        externalAddresses.put(0, TestUtils.set("123.10.125.130", "my-broker-0"));
+        externalAddresses.put(1, TestUtils.set("123.10.125.131", "my-broker-1"));
+        externalAddresses.put(2, TestUtils.set("123.10.125.132", "my-broker-2"));
 
-        Secret secret = generateBrokerSecret(TestUtils.set("123.10.125.140", "my.hostname2"), externalAddresses);
+        Secret secret = generateBrokerSecret(TestUtils.set("123.10.125.140", "my-bootstrap"), externalAddresses);
         assertEquals(set(
                 "foo-kafka-0.crt",  "foo-kafka-0.key",
                 "foo-kafka-1.crt", "foo-kafka-1.key",
@@ -850,8 +906,8 @@ public class KafkaClusterTest {
                 asList(2, "foo-kafka-bootstrap.test"),
                 asList(2, "foo-kafka-bootstrap.test.svc"),
                 asList(2, "foo-kafka-bootstrap.test.svc.cluster.local"),
-                asList(2, "my.hostname"),
-                asList(2, "my.hostname2"),
+                asList(2, "my-broker-0"),
+                asList(2, "my-bootstrap"),
                 asList(7, "123.10.125.140"),
                 asList(7, "123.10.125.130")),
                 new HashSet<Object>(cert.getSubjectAlternativeNames()));
@@ -1249,5 +1305,126 @@ public class KafkaClusterTest {
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getInitContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
+    }
+
+    @Test
+    public void testGetExternalServiceAdvertisedHostAndPortOverride() {
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride0 = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride0.setBroker(0);
+        nodePortListenerBrokerOverride0.setAdvertisedHost("my-host-0.cz");
+        nodePortListenerBrokerOverride0.setAdvertisedPort(10000);
+
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride1 = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride1.setBroker(1);
+        nodePortListenerBrokerOverride1.setAdvertisedHost("my-host-1.cz");
+        nodePortListenerBrokerOverride1.setAdvertisedPort(10001);
+
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride2 = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride2.setBroker(2);
+        nodePortListenerBrokerOverride2.setAdvertisedHost("my-host-2.cz");
+        nodePortListenerBrokerOverride2.setAdvertisedPort(10002);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withNewOverrides()
+                                    .withBrokers(nodePortListenerBrokerOverride0, nodePortListenerBrokerOverride1, nodePortListenerBrokerOverride2)
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertEquals(new Integer(10000), kc.getExternalServiceAdvertisedPortOverride(0));
+        assertEquals("my-host-0.cz", kc.getExternalServiceAdvertisedHostOverride(0));
+
+        assertEquals(new Integer(10001), kc.getExternalServiceAdvertisedPortOverride(1));
+        assertEquals("my-host-1.cz", kc.getExternalServiceAdvertisedHostOverride(1));
+
+        assertEquals(new Integer(10002), kc.getExternalServiceAdvertisedPortOverride(2));
+        assertEquals("my-host-2.cz", kc.getExternalServiceAdvertisedHostOverride(2));
+    }
+
+    @Test
+    public void testGetExternalServiceWithoutAdvertisedHostAndPortOverride() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewListeners()
+                .withNewKafkaListenerExternalNodePort()
+                .endKafkaListenerExternalNodePort()
+                .endListeners()
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertNull(kc.getExternalServiceAdvertisedPortOverride(0));
+        assertNull(kc.getExternalServiceAdvertisedHostOverride(0));
+
+        assertNull(kc.getExternalServiceAdvertisedPortOverride(1));
+        assertNull(kc.getExternalServiceAdvertisedHostOverride(1));
+
+        assertNull(kc.getExternalServiceAdvertisedPortOverride(2));
+        assertNull(kc.getExternalServiceAdvertisedHostOverride(2));
+    }
+
+    @Test
+    public void testGetExternalAdvertisedUrlWithOverrides() {
+        NodePortListenerBrokerOverride nodePortListenerBrokerOverride0 = new NodePortListenerBrokerOverride();
+        nodePortListenerBrokerOverride0.setBroker(0);
+        nodePortListenerBrokerOverride0.setAdvertisedHost("my-host-0.cz");
+        nodePortListenerBrokerOverride0.setAdvertisedPort(10000);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                                .withNewOverrides()
+                                    .withBrokers(nodePortListenerBrokerOverride0)
+                                .endOverrides()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertEquals("0://my-host-0.cz:10000", kc.getExternalAdvertisedUrl(0, "some-host.com", "12345"));
+        assertEquals("0://my-host-0.cz:10000", kc.getExternalAdvertisedUrl(0, "", "12345"));
+
+        assertEquals("1://some-host.com:12345", kc.getExternalAdvertisedUrl(1, "some-host.com", "12345"));
+        assertEquals("1://:12345", kc.getExternalAdvertisedUrl(1, "", "12345"));
+    }
+
+    @Test
+    public void testGetExternalAdvertisedUrlWithoutOverrides() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalNodePort()
+                            .endKafkaListenerExternalNodePort()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertEquals("0://some-host.com:12345", kc.getExternalAdvertisedUrl(0, "some-host.com", "12345"));
+        assertEquals("0://:12345", kc.getExternalAdvertisedUrl(0, "", "12345"));
     }
 }

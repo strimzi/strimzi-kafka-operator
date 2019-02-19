@@ -7,6 +7,7 @@
 * Add Prometheus alerting
     * Resources for alert manager deployment and configuration
     * Alerting rules with alert examples from Kafka and Zookeeper metrics
+* Enrich configuration options for off cluster access
 
 ## 0.10.0
 
