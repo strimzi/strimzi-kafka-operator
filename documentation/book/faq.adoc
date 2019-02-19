@@ -92,7 +92,7 @@ To connect, you must disable hostname verification.
 In the Java client, you can do this by setting the configuration option `ssl.endpoint.identification.algorithm` to an empty string.
 To disable hostname verification, set this option to empty string.
 
-When configuring the client using properties file, it can be done like this:
+When configuring the client using a properties file, you can do it this way:
 
 [source,properties]
 ssl.endpoint.identification.algorithm=
