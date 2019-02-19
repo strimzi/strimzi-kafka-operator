@@ -965,8 +965,8 @@ class KafkaST extends AbstractST {
 
         // wait when annotation will be removed
         waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-                () -> !CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME))
-                        .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
+            () -> !CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
         String coLog = KUBE_CLIENT.logs(coPodName);
@@ -987,8 +987,8 @@ class KafkaST extends AbstractST {
 
         // wait when annotation will be removed
         waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-                () -> !CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME))
-                        .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
+            () -> !CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
         coLog = KUBE_CLIENT.logs(coPodName);
