@@ -128,8 +128,6 @@ public class ClusterOperatorConfig {
                             + " is not a valid " + ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY + " value. " +
                             ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY + " can have one of the following values: Always, IfNotPresent, Never.");
             }
-
-            createClusterRoles = Boolean.parseBoolean(createClusterRolesEnvVar);
         }
 
         KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
