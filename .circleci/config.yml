@@ -1,0 +1,79 @@
+version: 2
+jobs:
+  javabuild:
+    docker:
+      - image: scholzj/circleci-centos-java:latest
+    working_directory: ~/project
+    steps:
+      - checkout
+      - restore_cache:
+          key: strimzi-javabuild-{{ checksum "pom.xml" }}
+      - run:
+          name: Build code
+          command: mvn clean -DskipTests install
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: strimzi-javabuild-{{ checksum "pom.xml" }}
+  javatest:
+    docker:
+      - image: scholzj/circleci-centos-java:latest
+    working_directory: ~/project
+    steps:
+      - checkout
+      - restore_cache:
+          key: strimzi-javatest-{{ checksum "pom.xml" }}
+      - run:
+          name: Build code
+          command: mvn -DskipITs install  
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: strimzi-javatest-{{ checksum "pom.xml" }}
+  findbugs:
+    docker:
+      - image: scholzj/circleci-centos-java:latest
+    working_directory: ~/project
+    steps:
+      - checkout
+      - restore_cache:
+          key: strimzi-findbugs-{{ checksum "pom.xml" }}
+      - run:
+          name: Run findbugs
+          command: make findbugs
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: strimzi-findbugs-{{ checksum "pom.xml" }}
+  docucheck:
+    docker:
+      - image: scholzj/circleci-centos-java:latest
+    working_directory: ~/project
+    steps:
+      - checkout
+      - restore_cache:
+          key: strimzi-docucheck-{{ checksum "pom.xml" }}
+      - run:
+          name: Run docu check
+          command: make docu_check
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: strimzi-docucheck-{{ checksum "pom.xml" }}
+workflows:
+  version: 2
+  build-workflow:
+    jobs:
+      - javabuild
+      - javatest:
+          requires: 
+            - javabuild
+      - javatest:
+          requires: 
+            - javabuild
+      - findbugs:
+          requires: 
+            - javabuild
+      - docucheck:
+          requires: 
+            - javabuild
