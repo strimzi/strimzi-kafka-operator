@@ -88,7 +88,7 @@ Caused by: java.security.cert.CertificateException: No subject alternative names
     at sun.security.ssl.ClientHandshaker.serverCertificate(ClientHandshaker.java:1501)
     ... 17 more
 
-In odrer to connect, you have to disable the hostname verification.
+To connect, you must disable hostname verification.
 In the Java client you can do it using the configuration option `ssl.endpoint.identification.algorithm`.
 To disable hostname verification, set this option to empty string.
 
