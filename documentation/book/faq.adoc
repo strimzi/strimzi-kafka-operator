@@ -75,7 +75,7 @@ restart the cluster operator.
 
 Currently, off-cluster access using NodePorts with TLS encryption enabled does not support TLS hostname verification.
 As a result, the clients that verify the hostname will fail to connect.
-For example the Java client will fail with following exception:
+For example, the Java client will fail with the following exception:
 
 [source,java]
 Caused by: java.security.cert.CertificateException: No subject alternative names matching IP address 168.72.15.231 found
