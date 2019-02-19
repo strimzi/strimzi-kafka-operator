@@ -28,7 +28,9 @@ jobs:
       - image: scholzj/circleci-centos-java:latest
     working_directory: ~/project
     steps:
-      - checkout
+      #- checkout
+      - attach_workspace:
+          at: /home/circleci
       - restore_cache:
           key: strimzi-javatest-{{ checksum "pom.xml" }}
       - run:
@@ -63,15 +65,21 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
-      - restore_cache:
-          key: strimzi-docucheck-{{ checksum "pom.xml" }}
       - run:
           name: Run docu check
           command: make docu_check
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: strimzi-docucheck-{{ checksum "pom.xml" }}
+      - run:
+          name: Build HTML docs
+          command: make docu_html
+      - run:
+          name: Build HTML docs without header
+          command: make docu_htmlnoheader
+      - store_artifacts:
+          path: /home/circleci/project/documentation/html
+          destination: docs-html
+      - store_artifacts:
+          path: /home/circleci/project/documentation/htmlnoheader
+          destination: docs-htmlnoheader
 workflows:
   version: 2
   build-workflow:
