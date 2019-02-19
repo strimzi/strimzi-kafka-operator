@@ -12,7 +12,7 @@ jobs:
           key: strimzi-javabuild-{{ checksum "pom.xml" }}
       - run:
           name: Build code
-          command: mvn clean -B -DskipTests install
+          command: mvn clean -B -DskipTests package
       - save_cache:
           paths:
             - ~/.m2
@@ -20,7 +20,7 @@ jobs:
       - persist_to_workspace:
           root: /home/circleci
           paths:
-            - project/*
+            - project
   javatest:
     environment:
       - MAVEN_OPTS: "-Xmx2048m"
@@ -33,7 +33,7 @@ jobs:
           key: strimzi-javatest-{{ checksum "pom.xml" }}
       - run:
           name: Build code
-          command: mvn -B -DskipITs install  
+          command: mvn -B -DskipITs verify  
       - save_cache:
           paths:
             - ~/.m2
