@@ -12,11 +12,15 @@ jobs:
           key: strimzi-javabuild-{{ checksum "pom.xml" }}
       - run:
           name: Build code
-          command: mvn clean -DskipTests install
+          command: mvn clean -B -DskipTests install
       - save_cache:
           paths:
             - ~/.m2
           key: strimzi-javabuild-{{ checksum "pom.xml" }}
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - project/*
   javatest:
     environment:
       - MAVEN_OPTS: "-Xmx2048m"
@@ -29,7 +33,7 @@ jobs:
           key: strimzi-javatest-{{ checksum "pom.xml" }}
       - run:
           name: Build code
-          command: mvn -DskipITs install  
+          command: mvn -B -DskipITs install  
       - save_cache:
           paths:
             - ~/.m2
@@ -37,11 +41,13 @@ jobs:
   findbugs:
     environment:
       - MAVEN_OPTS: "-Xmx2048m"
+      - MVN_ARGS:   "-B"
     docker:
       - image: scholzj/circleci-centos-java:latest
     working_directory: ~/project
     steps:
-      - checkout
+      - attach_workspace:
+          at: /home/circleci
       - restore_cache:
           key: strimzi-findbugs-{{ checksum "pom.xml" }}
       - run:
