@@ -48,8 +48,18 @@ public class StrimziUpgradeST extends AbstractST {
         });
     }
 
+    private void deleteInstallYamls(File root) {
+        Arrays.stream(root.listFiles()).sorted().forEach(f -> {
+            if (f.getName().matches(".*RoleBinding.*")) {
+                KUBE_CLIENT.deleteContent(TestUtils.changeRoleBindingSubject(f, NAMESPACE));
+            } else {
+                KUBE_CLIENT.delete(f);
+            }
+        });
+    }
+
     @Test
-    public void upgrade_0_8_2_to_HEAD() throws IOException {
+    void upgrade_0_8_2_to_HEAD() throws IOException {
         KUBE_CLIENT.namespace(NAMESPACE);
         File coDir = null;
         File kafkaEphemeralYaml = null;
@@ -118,11 +128,11 @@ public class StrimziUpgradeST extends AbstractST {
             StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods);
             LOGGER.info("Checking EO pod using new image");
             waitTillAllContainersUseImage(
-                    CLIENT.extensions().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
+                    CLIENT.apps().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
                     0,
                     "strimzi/topic-operator:latest");
             waitTillAllContainersUseImage(
-                    CLIENT.extensions().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
+                    CLIENT.apps().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
                     1,
                     "strimzi/user-operator:latest");
 
@@ -136,7 +146,10 @@ public class StrimziUpgradeST extends AbstractST {
                 KUBE_CLIENT.delete(coDir);
             }
             throw e;
+        } finally {
+            deleteInstallYamls(new File("../install/cluster-operator"));
         }
+
     }
 
     private void waitTillAllPodsUseImage(Map<String, String> matchLabels, String image) {
@@ -155,18 +168,8 @@ public class StrimziUpgradeST extends AbstractST {
         });
     }
 
-    @BeforeEach
-    void createTestResources() {
-        createResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-    }
-
     @BeforeAll
-    void createClusterOperator() {
+    void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
         createNamespace(NAMESPACE);
     }
