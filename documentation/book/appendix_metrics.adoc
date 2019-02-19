@@ -68,7 +68,7 @@ curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{Github
 The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules; download the resource file as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml > alerting-rules.yaml
 
 To deploy all these resources you can run the following.
 
@@ -89,7 +89,7 @@ curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{Github
 The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules; download the resource file as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml > alerting-rules.yaml
 
 To deploy all these resources you can run the following.
 
