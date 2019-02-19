@@ -54,7 +54,7 @@ jobs:
       - restore_cache:
           key: strimzi-docucheck-{{ checksum "pom.xml" }}
       - run:
-          name: Run docu check
+          name: Run docucheck
           command: make docu_check
       - save_cache:
           paths:
