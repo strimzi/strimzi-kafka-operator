@@ -37,7 +37,7 @@ class ConnectS2IST extends AbstractST {
     @OpenShiftOnly
     @Tag(FLAKY)
     void testDeployS2IWithMongoDBPlugin() throws IOException {
-        classResources().kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
+        testClassResources.kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
             .endMetadata()
