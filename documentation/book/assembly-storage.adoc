@@ -10,33 +10,30 @@
 [id='assembly-storage-{context}']
 = Kafka and Zookeeper storage
 
-Kafka brokers and Zookeeper are stateful applications.
-They need to store data on disks.
-{ProductName} allows you to configure the type of storage, which they want to use for Kafka and Zookeeper.
-Storage configuration is mandatory and has to be specified in every `Kafka` resource.
+As stateful applications, Kafka and Zookeeper need to store data on disk. {ProductName} supports three different types of storage for this data: ephemeral, persistent, and JBOD (Just a Bunch of Disks) storage.
 
-Storage can be configured using the `storage` property in following resources:
+NOTE: JBOD storage is only supported for Kafka, not for Zookeeper.
+
+When configuring a `Kafka` resource, you can specify the type of storage used by the Kafka broker and its corresponding Zookeeper node. You configure the storage type using the `storage` property in the following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
 
-{ProductName} supports two types of storage:
+The storage type is configured in the `type` field.
 
-* Ephemeral
-* Persistent
-
-The type of storage is specified in the `type` field.
-
-IMPORTANT: Once the Kafka cluster is deployed, the storage cannot be changed.
+WARNING: The storage type cannot be changed after a Kafka cluster is deployed.
 
 include::ref-storage-ephemeral.adoc[leveloffset=+1]
 
 include::ref-storage-persistent.adoc[leveloffset=+1]
 
+include::ref-storage-jbod.adoc[leveloffset=+1]
+
 .Additional resources
 
 * For more information about ephemeral storage, see xref:type-EphemeralStorage-reference[ephemeral storage schema reference].
 * For more information about persistent storage, see xref:type-PersistentClaimStorage-reference[persistent storage schema reference].
+* For more information about JBOD storage, see xref:type-JbodStorage-reference[JBOD schema reference].
 * For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
 
 :context: {parent-context}

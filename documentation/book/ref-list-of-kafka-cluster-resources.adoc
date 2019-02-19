@@ -38,4 +38,5 @@ The following resources will created by the Cluster Operator in the {ProductPlat
 `_cluster-name_-clients-ca-cert`:: Secret with the Clients CA public key. This key can be used to verify the identity of the Kafka brokers.
 `_cluster-name_-cluster-operator-certs`:: Secret with Cluster operators keys for communication with Kafka and Zookeeper.
 `data-_cluster-name_-kafka-_idx_`:: Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
+`data-_id_-_cluster-name_-kafka-_idx_`:: Persistent Volume Claim for the volume `_id_` used for storing data for the Kafka broker pod `_idx_`. This resource is only created if persistent storage is selected for JBOD volumes when provisioning persistent volumes to store data.
 `data-_cluster-name_-zookeeper-_idx_`:: Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `_idx_`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
