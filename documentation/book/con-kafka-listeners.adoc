@@ -55,6 +55,33 @@ endif::Kubernetes[]
 
 When exposing Kafka using {OpenShiftName} `Routes`, TLS encryption is always used.
 
+By default, the route hosts will be assigned by {OpenShiftName}.
+You can override the auto assigned route hosts by specifying the requested host in the `overrides` property.
+{ProductName} will not perform any validation that the requested hosts are available.
+You have to make sure that the hosts are free and can be used.
+
+.An example where the external listener is configured with overrides for {OpenShiftName} route hosts
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: routes
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        host: bootstrap.myrouter.com
+      brokers:
+      - broker: 0
+        host: broker-0.myrouter.com
+      - broker: 1
+        host: broker-1.myrouter.com
+      - broker: 2
+        host: broker-2.myrouter.com
+# ...
+----
+
 For more information on using `Routes` to access Kafka, see xref:proc-accessing-kafka-using-routes-{context}[].
 
 .Exposing Kafka using loadbalancers
@@ -91,9 +118,12 @@ To disable it, set the `tls` field to `false`.
 
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
-It is possible to override the auto assigned node ports for bootstrap service and brokers, and advertised host and port for each broker.
+By default, the port numbers used for the bootstrap and broker services will be assigned by {ProductPlatformName}.
+You can override the auto assigned node ports by specifying the requested port numbers in the `overrides` property.
+{ProductName} will not perform any validation that the requested ports are available.
+You have to make sure that the requested ports are free and can be used.
 
-.An example where the external listener is configured with overrides for node ports and advertised addresses
+.An example where the external listener is configured with overrides for node ports
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -108,21 +138,63 @@ listeners:
         nodePort: 32100
       brokers:
       - broker: 0
-        advertisedHost: example.host.1
-        advertisedPort: 12340
         nodePort: 32000
       - broker: 1
-        advertisedHost: example.host.2
-        advertisedPort: 12341
         nodePort: 32001
       - broker: 2
-        advertisedHost: example.host.3
-        advertisedPort: 12342
         nodePort: 32002
 # ...
 ----
 
 For more information on using node ports to access Kafka, see xref:proc-accessing-kafka-using-nodeports-{context}[].
+
+.Customising advertised addresses on external listeners
+
+By default, {ProductName} will try to automatically determine the hostnames and ports which the Kafka cluster should advertise to its clients.
+In some situations this might not be sufficient, because the infrastructure where you run {ProductName} might not provide the right hostname on port under which Kafka can be accessed.
+You can customize the advertised hostname and port in the `overrides` property of the external listener.
+{ProductName} will automatically configure the advertised address in the Kafka brokers and add it to the broker certificates, so that it can be used for TLS hostname verification.
+
+.An example where the external listener is configured with overrides for advertised addresses
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: routes
+    authentication:
+      type: tls
+    overrides:
+      brokers:
+      - broker: 0
+        advertisedHost: example.hostname.0
+        advertisedPort: 12340
+      - broker: 1
+        advertisedHost: example.hostname.1
+        advertisedPort: 12341
+      - broker: 2
+        advertisedHost: example.hostname.2
+        advertisedPort: 12342
+# ...
+----
+
+Additionally, you can specify the name of the bootstrap service.
+This name will be added to the broker certificates and can be used for TLS hostname verification.
+
+.An example where the external listener is configured with overrides for advertised addresses
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: routes
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        address: example.hostname
+# ...
+----
 
 == Listener authentication
 
