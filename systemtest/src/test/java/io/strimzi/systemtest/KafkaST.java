@@ -184,7 +184,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(FLAKY)
+    @Tag(REGRESSION)
     void testZookeeperScaleUpScaleDown() {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -225,7 +225,7 @@ class KafkaST extends AbstractST {
         waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
-        assertThat(getEvents("Pod", newZkPodNames.get(4)), hasAllOfReasons(Killing));
+        assertThat(getEvents("Pod", newZkPodNames.get(3)), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
