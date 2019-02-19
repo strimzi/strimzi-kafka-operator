@@ -74,7 +74,7 @@ restart the cluster operator.
 === Hostname verification fails when connecting to NodePorts using TLS
 
 Currently, off-cluster access using NodePorts with TLS encryption enabled does not support TLS hostname verification.
-As a result, the clients which verify the hostname will fail to connect.
+As a result, the clients that verify the hostname will fail to connect.
 For example the Java client will fail with following exception:
 
 [source,java]
