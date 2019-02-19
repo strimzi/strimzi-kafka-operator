@@ -947,6 +947,56 @@ class KafkaST extends AbstractST {
         checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
     }
 
+    @Test
+    @Tag(REGRESSION)
+    void testManualTriggeringRollingUpdate() {
+        String coPodName = KUBE_CLIENT.listResourcesByLabel("pod", "name=strimzi-cluster-operator").get(0);
+        resources().kafkaEphemeral(CLUSTER_NAME, 1).done();
+
+        // rolling update for kafka
+        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
+        // set annotation to trigger Kafka rolling update
+        CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).cascading(false).edit()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .endMetadata().done();
+
+        // check annotation to trigger rolling update
+        assertTrue(Boolean.parseBoolean(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
+
+        // wait when annotation will be removed
+        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+                () -> !CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME))
+                        .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
+
+        // check rolling update messages in CO log
+        String coLog = KUBE_CLIENT.logs(coPodName);
+        assertThat(coLog, containsString("Rolling Kafka pod " + kafkaClusterName(CLUSTER_NAME) + "-0" + " due to manual rolling update"));
+
+
+        // rolling update for zookeeper
+        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
+        // set annotation to trigger Zookeeper rolling update
+        CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).cascading(false).edit()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .endMetadata().done();
+
+        // check annotation to trigger rolling update
+        assertTrue(Boolean.parseBoolean(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
+
+        // wait when annotation will be removed
+        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+                () -> !CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME))
+                        .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
+
+        // check rolling update messages in CO log
+        coLog = KUBE_CLIENT.logs(coPodName);
+        assertThat(coLog, containsString("Rolling Zookeeper pod " + zookeeperClusterName(CLUSTER_NAME) + "-0" + " to manual rolling update"));
+    }
+
     void waitForZkRollUp() {
         LOGGER.info("Waiting for cluster stability");
         Map<String, String>[] zkPods = new Map[1];
@@ -984,61 +1034,6 @@ class KafkaST extends AbstractST {
             LOGGER.info("Pod {} is ready", name);
         }
         waitForZkRollUp();
-    }
-
-    @Test
-    @Tag(REGRESSION)
-    void testManualTriggeringRollingUpdate() {
-        String coPodName = kubeClient.listResourcesByLabel("pod", "name=strimzi-cluster-operator").get(0);
-        resources().kafkaEphemeral(CLUSTER_NAME, 1).done();
-
-        // rolling update for kafka
-        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
-        // set annotation to trigger Kafka rolling update
-        client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).cascading(false).edit()
-                .editMetadata()
-                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
-                .endMetadata().done();
-
-        // check annotation to trigger rolling update
-        assertTrue(Boolean.parseBoolean(client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME))
-                .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
-
-        // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-            () -> !client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME))
-                .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
-
-        // wait for pod deletion
-        podStream.forEach(
-                p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName())
-        );
-
-        // check rolling update messages in CO log
-        String coLog = kubeClient.logs(coPodName);
-        assertThat(coLog, containsString("Rolling Kafka pod " + kafkaClusterName(CLUSTER_NAME) + "-0" + " due to manual rolling update"));
-
-
-        // rolling update for zookeeper
-        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
-        // set annotation to trigger Zookeeper rolling update
-        client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).cascading(false).edit()
-                .editMetadata()
-                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
-                .endMetadata().done();
-
-        // check annotation to trigger rolling update
-        assertTrue(Boolean.parseBoolean(client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME))
-                .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
-
-        // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-            () -> !client.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME))
-                .get().getMetadata().getAnnotations().containsKey("strimzi.io/manual-rolling-update"));
-
-        // check rolling update messages in CO log
-        coLog = kubeClient.logs(coPodName);
-        assertThat(coLog, containsString("Rolling Zookeeper pod " + zookeeperClusterName(CLUSTER_NAME) + "-0" + " to manual rolling update"));
     }
 
     @BeforeEach
