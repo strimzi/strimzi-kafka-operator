@@ -10,7 +10,7 @@ java_install_root:
 	echo "Installing root pom ..."
 	mvn $(MVN_ARGS) install -f ../pom.xml -N
 
-java_install:
+java_install: java_install_root
 	echo "Installing JAR files ..."
 	mvn $(MVN_ARGS) install
 

@@ -1,6 +1,6 @@
 PROJECT_NAME=test
 
-docker_build: java_install_root java_install
+docker_build: java_install
 docker_push:
 docker_tag:
 all: docker_build docker_push
