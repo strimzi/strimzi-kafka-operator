@@ -243,7 +243,7 @@ This alert is raised when this value is greater than zero, providing the informa
 * `OfflineLogDirectoryCount`: the offline log directory count metric indicate the number of log directories which are offline (due to an hardware failure for example) so that the broker cannot store incoming messages anymore.
 This alert is raised when this value is greater than zero, providing the information of the number of offline log directories for each broker.
 
-* `RunningOutOfSpace`: the available volumes bytes metric gives the size of disk which can be used for writing Kafka's data.
+* `RunningOutOfSpace`: the running out of space metric indicates the remaining amount of disk space that can be used for writing Kafka's data.
 This alert is raised when this value is lower than 5GiB, providing the information of the disk running out of the space for each persistent volume claim.
 Note: Availability of this metric (and alert) is dependent on your {ProductPlatformName}.
 
