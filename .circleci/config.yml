@@ -160,17 +160,18 @@ workflows:
     jobs:
       - javabuild
       - docubuild
-      - javatests:
-          requires: 
-            - javabuild
       - findbugs:
           requires: 
             - javabuild
       - changedderived:
           requires: 
             - javabuild
+      - javatests:
+          requires: 
+            - javabuild
+            - findbugs
+            - changedderived
+            - docubuild
       - javaintegrationtests:
           requires:
             - javatests
-            - findbugs
-            - changedderived
