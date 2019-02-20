@@ -22,7 +22,7 @@ jobs:
           paths:
             - project
             - .m2
-  javatest:
+  javatests:
     environment:
       - MAVEN_OPTS: "-Xmx2048m"
     docker:
@@ -33,7 +33,7 @@ jobs:
           at: /home/circleci
       - run:
           name: Run unit tests
-          command: mvn -B -DskipITs verify  
+          command: mvn -B -DskipITs verify
   findbugs:
     environment:
       - MAVEN_OPTS: "-Xmx2048m"
@@ -78,6 +78,23 @@ jobs:
       - store_artifacts:
           path: /home/circleci/project/documentation/htmlnoheader
           destination: docs-htmlnoheader
+  javaintegrationtests:
+    environment:
+      - MAVEN_OPTS: "-Xmx2048m"
+    machine: true
+    working_directory: ~/project
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: Install yq
+          command: ./.travis/install_yq.sg
+      - run:
+          name: Install Kubernetes
+          command: ./.travis/setup-kubernetes.sg
+      - run:
+          name: Run unit tests
+          command: mvn -B -DskipUTs verify
 workflows:
   version: 2
   build-workflow:
@@ -87,7 +104,7 @@ workflows:
       - javatest:
           requires: 
             - javabuild
-      - javatest:
+      - javatests:
           requires: 
             - javabuild
       - findbugs:
@@ -96,3 +113,8 @@ workflows:
       - changedderived:
           requires: 
             - javabuild
+      - javaintegrationtests:
+          requires:
+            - javatests
+            - findbugs
+            - changedderived
