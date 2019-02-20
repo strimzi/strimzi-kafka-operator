@@ -244,7 +244,7 @@ This alert is raised when this value is greater than zero, providing the informa
 This alert is raised when this value is greater than zero, providing the information of the number of offline log directories for each broker.
 
 * `RunningOutOfSpace`: the running out of space metric indicates the remaining amount of disk space that can be used for writing Kafka's data.
-This alert is raised when this value is lower than 5GiB, providing the information of the disk running out of the space for each persistent volume claim.
+This alert is raised when this value is lower than 5GiB. It provides information on the disk that is running out of space for each persistent volume claim.
 Note: Availability of this metric (and alert) is dependent on your {ProductPlatformName}.
 
 Zookeeper alerts are:
