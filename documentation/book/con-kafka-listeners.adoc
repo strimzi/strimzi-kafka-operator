@@ -154,6 +154,7 @@ By default, {ProductName} will try to automatically determine the hostnames and 
 In some situations this might not be sufficient, because the infrastructure where you run {ProductName} might not provide the right hostname on port under which Kafka can be accessed.
 You can customize the advertised hostname and port in the `overrides` property of the external listener.
 {ProductName} will automatically configure the advertised address in the Kafka brokers and add it to the broker certificates, so that it can be used for TLS hostname verification.
+Overriding the advertised host and ports is available for all types of external listeners.
 
 .An example where the external listener is configured with overrides for advertised addresses
 [source,yaml,subs="attributes+"]
@@ -180,8 +181,9 @@ listeners:
 
 Additionally, you can specify the name of the bootstrap service.
 This name will be added to the broker certificates and can be used for TLS hostname verification.
+Adding the additional bootstrap address is available for all types of external listeners.
 
-.An example where the external listener is configured with overrides for advertised addresses
+.An example where the external listener is configured with additional bootstrap address
 [source,yaml,subs="attributes+"]
 ----
 # ...
