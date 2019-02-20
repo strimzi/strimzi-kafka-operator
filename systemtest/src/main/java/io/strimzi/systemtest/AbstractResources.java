@@ -10,6 +10,12 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -89,4 +95,13 @@ abstract class AbstractResources {
     MixedOperation<Deployment, DeploymentList, DoneableDeployment, Resource<Deployment, DoneableDeployment>> clusterOperator() {
         return customResourcesWithCascading(Deployment.class, DeploymentList.class, DoneableDeployment.class);
     }
+
+    MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> kubernetesClusterRoleBinding() {
+        return customResourcesWithCascading(KubernetesClusterRoleBinding.class, KubernetesClusterRoleBindingList.class, DoneableKubernetesClusterRoleBinding.class);
+    }
+
+    MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> kubernetesRoleBinding() {
+        return customResourcesWithCascading(KubernetesRoleBinding.class, KubernetesRoleBindingList.class, DoneableKubernetesRoleBinding.class);
+    }
+
 }

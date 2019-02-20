@@ -5,8 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.strimzi.test.annotations.ClusterOperator;
-import io.strimzi.test.annotations.Namespace;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
@@ -25,14 +24,10 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
 @ExtendWith(StrimziExtension.class)
-@Namespace(AllNamespaceST.CO_NAMESPACE)
-@Namespace(value = AllNamespaceST.SECOND_NAMESPACE, use = false)
-@Namespace(value = AllNamespaceST.THIRD_NAMESPACE, use = false)
-@ClusterOperator
 class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
-    static final String THIRD_NAMESPACE = "third-namespace-test";
+    private static final String THIRD_NAMESPACE = "third-namespace-test";
     private static Resources thirdNamespaceResources;
 
     /**
@@ -42,14 +37,13 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(REGRESSION)
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
-
-        kubeClient.namespace(THIRD_NAMESPACE);
-
+        String previousNamespce = KUBE_CLIENT.namespace(THIRD_NAMESPACE);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, TOPIC_NAME);
         deleteNewTopic(SECOND_NAMESPACE, TOPIC_NAME);
+        KUBE_CLIENT.namespace(previousNamespce);
     }
 
     /**
@@ -75,12 +69,14 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(REGRESSION)
     void testDeployKafkaConnectInOtherNamespaceThanCO() {
+        String previousNamespace = KUBE_CLIENT.namespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
         secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 3).done();
         // Deploy Kafka Connect in other namespace than CO
         secondNamespaceResources.kafkaConnect(CLUSTER_NAME, 1).done();
         // Check that Kafka Connect was deployed
-        kubeClient.waitForDeployment(kafkaConnectName(CLUSTER_NAME), 1);
+        KUBE_CLIENT.waitForDeployment(kafkaConnectName(CLUSTER_NAME), 1);
+        KUBE_CLIENT.namespace(previousNamespace);
     }
 
     @Test
@@ -89,29 +85,14 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
         secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        String previousNamespace = kubeClient.namespace(SECOND_NAMESPACE);
+        String previousNamespace = KUBE_CLIENT.namespace(SECOND_NAMESPACE);
         // Check that UO created a secret for new user
-        kubeClient.waitForResourceCreation("Secret", USER_NAME);
+        KUBE_CLIENT.waitForResourceCreation("Secret", USER_NAME);
 
-        kubeClient.namespace(previousNamespace);
+        KUBE_CLIENT.namespace(previousNamespace);
     }
 
-    @BeforeAll
-    static void createClassResources(TestInfo testInfo) {
-        // Apply role bindings in CO namespace
-        applyRoleBindings(CO_NAMESPACE);
-
-        // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-        List<KubernetesClusterRoleBinding> clusterRoleBindingList = testClassResources.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
-        clusterRoleBindingList.forEach(kubernetesClusterRoleBinding ->
-            testClassResources.kubernetesClusterRoleBinding(kubernetesClusterRoleBinding, CO_NAMESPACE));
-
-        LOGGER.info("Deploying CO to watch all namespaces");
-        testClassResources.clusterOperator("*").done();
-
-        String previousNamespace = kubeClient.namespace(THIRD_NAMESPACE);
-        thirdNamespaceResources = new Resources(namespacedClient());
-
+    private void deployTestSpecificResources() {
         thirdNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editKafka()
@@ -130,14 +111,43 @@ class AllNamespaceST extends AbstractNamespaceST {
                 .endEntityOperator()
             .endSpec()
             .done();
+    }
 
-        kubeClient.namespace(previousNamespace);
+    @BeforeAll
+    void setupEnvironment(TestInfo testInfo) {
+        LOGGER.info("Creating resources before the test class");
+        prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
+        createTestClassResources();
 
-        testClass = testInfo.getTestClass().get().getSimpleName();
+        // Apply role bindings in CO namespace
+        applyRoleBindings(CO_NAMESPACE);
+
+        // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
+        List<KubernetesClusterRoleBinding> clusterRoleBindingList = testClassResources.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
+        clusterRoleBindingList.forEach(kubernetesClusterRoleBinding ->
+                testClassResources.kubernetesClusterRoleBinding(kubernetesClusterRoleBinding, CO_NAMESPACE));
+
+        LOGGER.info("Deploying CO to watch all namespaces");
+        testClassResources.clusterOperator("*").done();
+
+        String previousNamespace = KUBE_CLIENT.namespace(THIRD_NAMESPACE);
+        thirdNamespaceResources = new Resources(namespacedClient());
+
+        deployTestSpecificResources();
+
+        KUBE_CLIENT.namespace(previousNamespace);
     }
 
     @AfterAll
-    static void deleteClassResources() {
+    void teardownEnvironment() {
         thirdNamespaceResources.deleteResources();
+        testClassResources.deleteResources();
+        teardownEnvForOperator();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployTestSpecificResources();
     }
 }

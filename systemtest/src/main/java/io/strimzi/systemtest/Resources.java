@@ -78,14 +78,6 @@ public class Resources extends AbstractResources {
         super(client);
     }
 
-    private MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> kubernetesClusterRoleBinding() {
-        return customResourcesWithCascading(KubernetesClusterRoleBinding.class, KubernetesClusterRoleBindingList.class, DoneableKubernetesClusterRoleBinding.class);
-    }
-
-    private MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> kubernetesRoleBinding() {
-        return customResourcesWithCascading(KubernetesRoleBinding.class, KubernetesRoleBindingList.class, DoneableKubernetesRoleBinding.class);
-    }
-
     private List<Runnable> resources = new ArrayList<>();
 
     private <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> x, T resource) {

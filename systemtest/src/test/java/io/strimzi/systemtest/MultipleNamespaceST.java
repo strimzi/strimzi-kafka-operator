@@ -7,11 +7,13 @@ package io.strimzi.systemtest;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
@@ -20,7 +22,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
 @ExtendWith(StrimziExtension.class)
-@ClusterOperator
 class MultipleNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleNamespaceST.class);
@@ -63,11 +64,19 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @BeforeAll
     void setupEnvironment() {
         LOGGER.info("Creating resources before the test class");
-        applyRoleBindings(CO_NAMESPACE, CO_NAMESPACE, SECOND_NAMESPACE);
+        prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE));
+        createTestClassResources();
+
+        applyRoleBindings(CO_NAMESPACE);
+        applyRoleBindings(CO_NAMESPACE, SECOND_NAMESPACE);
 
         LOGGER.info("Deploying CO to watch multiple namespaces");
         testClassResources.clusterOperator(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE)).done();
 
+        deployTestSpecificResources();
+    }
+
+    private void deployTestSpecificResources() {
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editEntityOperator()
@@ -75,9 +84,18 @@ class MultipleNamespaceST extends AbstractNamespaceST {
                         .withWatchedNamespace(SECOND_NAMESPACE)
                     .endTopicOperator()
                 .endEntityOperator()
-            .endSpec()
-            .done();
+            .endSpec().done();
+    }
 
-        testClass = testInfo.getTestClass().get().getSimpleName();
+    @AfterAll
+    void teardownEnvironment() {
+        testClassResources.deleteResources();
+        teardownEnvForOperator();
+    }
+
+    @Override
+    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
+        super.recreateTestEnv(coNamespace, bindingsNamespaces);
+        deployTestSpecificResources();
     }
 }
