@@ -41,7 +41,7 @@ pipeline {
             steps {
                 timeout(time: 25, unit: 'MINUTES') {
                     script {
-                        lib = evaluate readTrusted('./jenkins.groovy')
+                        lib = evaluate readFile('./jenkins.groovy')
                         lib.setupEnvironment(env.WORKSPACE, env.OPENSHIFT_URL)
                     }
                 }
