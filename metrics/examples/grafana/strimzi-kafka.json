@@ -776,7 +776,7 @@
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "{{kubernetes_pod_name}}",
+          "legendFormat": "{{persistentvolumeclaim}}",
           "refId": "A"
         }
       ],

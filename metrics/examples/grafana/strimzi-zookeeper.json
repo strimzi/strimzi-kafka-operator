@@ -690,7 +690,7 @@
           "expr": "kubelet_volume_stats_available_bytes{namespace=\"$kubernetes_namespace\",persistentvolumeclaim=~\"data(-[0-9]+)?-$strimzi_cluster_name-zookeeper-[0-9]+\"}",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "{{kubernetes_pod_name}}",
+          "legendFormat": "{{persistentvolumeclaim}}",
           "refId": "A"
         }
       ],
