@@ -257,5 +257,5 @@ This value goes up when the server receives more requests than it can process.
 This alert is raised when this value is greate than 10 (ticks), providing the actual number of outstanding requests for each server.
 
 * `RunningOutOfSpace`: the available volumes bytes metric gives the size of disk which can be used for writing Zookeeper's data.
-This alert is raised when this value is lower than 5GiB, providing the information of the disk running out of the space for each persistent volume claim.
+This alert is raised when this value is lower than 5GiB. It provides information on the disk that is running out of space for each persistent volume claim.
 Note: Availability of this metric (and alert) is dependent on your {ProductPlatformName}.
