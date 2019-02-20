@@ -130,7 +130,7 @@ public class ClusterCa extends Ca {
             podNum -> ZookeeperCluster.zookeeperPodName(cluster, podNum));
     }
 
-    public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) throws IOException {
+    public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, Set<String> externalBootstrapAddresses, Map<Integer, Set<String>> externalAddresses) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
         Function<Integer, Subject> subjectFn = i -> {
@@ -143,8 +143,8 @@ public class ClusterCa extends Ca {
             int nextDnsId = 6;
             int nextIpId = 1;
 
-            if (externalBootstrapAddress != null)   {
-                for (String dnsName : externalBootstrapAddress) {
+            if (externalBootstrapAddresses != null)   {
+                for (String dnsName : externalBootstrapAddresses) {
                     String sna = !ipv4Address.matcher(dnsName).matches() ?
                             String.format("DNS.%d", nextDnsId++) :
                             String.format("IP.%d", nextIpId++);

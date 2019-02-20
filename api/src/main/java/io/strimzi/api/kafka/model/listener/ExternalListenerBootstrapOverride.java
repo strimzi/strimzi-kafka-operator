@@ -32,7 +32,7 @@ public class ExternalListenerBootstrapOverride implements Serializable {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Additional address name for the bootstrap service. " +
-            "The address will be added to the list of subject alternative names of the TLS certifciates.")
+            "The address will be added to the list of subject alternative names of the TLS certificates.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getAddress() {
         return address;

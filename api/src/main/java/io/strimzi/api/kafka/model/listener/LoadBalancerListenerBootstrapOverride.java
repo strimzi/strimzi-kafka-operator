@@ -9,7 +9,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 /**
- * Configures external bootstrap service for Route listeners
+ * Configures external bootstrap service for LoadBalancer listeners
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(

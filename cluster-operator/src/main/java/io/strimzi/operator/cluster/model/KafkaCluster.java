@@ -1134,7 +1134,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Sets the Map with Kafka pod's external addresses
      *
-     * @param externalAddresses Map with external addresses
+     * @param externalAddresses Set with external addresses
      */
     public void setExternalAddresses(Set<String> externalAddresses) {
         this.externalAddresses = externalAddresses;
