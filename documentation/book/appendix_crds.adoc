@@ -2,7 +2,7 @@
 // To change this documentation you need to edit the Java sources.
 
 [id='type-Kafka-{context}']
-### `JJJJJJJJJJJJJJJJJJJJJJKafka` schema reference
+### `Kafka` schema reference
 
 
 [options="header"]
