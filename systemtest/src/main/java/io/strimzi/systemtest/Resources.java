@@ -650,8 +650,10 @@ public class Resources {
                     break;
                 case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
                     envVar.setValue("30000");
+                    break;
                 case "STRIMZI_OPERATION_TIMEOUT_MS":
                     envVar.setValue(operationTimeout);
+                    break;
                 default:
                     if (envVar.getName().contains("STRIMZI_DEFAULT")) {
                         envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));

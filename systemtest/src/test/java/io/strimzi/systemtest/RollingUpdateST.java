@@ -1,7 +1,11 @@
+/*
+ * Copyright 2018, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.systemtest;
 
+import com.sun.xml.internal.bind.v2.TODO;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.timemeasuring.Operation;
@@ -16,32 +20,28 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Map;
-
+import static org.hamcrest.MatcherAssert.assertThat;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
 public class RollingUpdateST extends AbstractST {
 
-    static final String NAMESPACE = "rolling-update-cluster-test";
-    static final String CLUSTER_NAME = "my-cluster";
-
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
+    static final String NAMESPACE = "rolling-update-cluster-test";
+    static final String CLUSTER_NAME = "my-cluster";
+    private static final int CO_OPERATION_TIMEOUT = 60000;
 
     @Test
-    void testRecoveryDuringRollingUpdate() {
+    void testRecoveryDuringZookeeperRollingUpdate() {
+        // @TODO add send-recv messages during this test
         operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
 
         String firstZkPodName = KafkaResources.zookeeperPodName(CLUSTER_NAME, 0);
-        String logPattern = "Exceeded timeout of .* while waiting for Pods resource " + firstZkPodName;
+        String logZkPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstZkPodName + "'";
 
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-
-//        String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-//        Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zkSsName);
 
         LOGGER.info("Update resources for pods");
 
@@ -57,25 +57,59 @@ public class RollingUpdateST extends AbstractST {
                 .endSpec()
                 .done();
 
-        TestUtils.waitFor("Wait till rolling update of pods start", 2000, 60000, () -> !CLIENT.pods().withName(firstZkPodName).isReady());
+        TestUtils.waitFor("Wait till rolling update of pods start", 2000, CO_OPERATION_TIMEOUT,
+            () -> !CLIENT.pods().withName(firstZkPodName).isReady());
 
-        TestUtils.waitFor("Wait till rolling update timeouted", 2000, 70000,
-                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logPattern).isEmpty());
+        TestUtils.waitFor("Wait till rolling update timeouted", 2000, CO_OPERATION_TIMEOUT + 20000,
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logZkPattern).isEmpty());
 
-//
-//        try {
-//            Thread.sleep(70000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//        String zkPodName = KafkaResources.zookeeperStatefulSetName("my-cluster") + "-1";
-//
-//        String zkPodResources = CLIENT.pods().withName(zkPodName).get().getMetadata().getResourceVersion();
-//
-//        assertEquals(zkPods.get(zkPodName), zkPodResources);
-//
+        assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
         TimeMeasuringSystem.stopOperation(operationID);
+    }
+
+    @Test
+    void testRecoveryDuringKafkaRollingUpdate() {
+        // @TODO add send-recv messages during this test
+        operationID = startTimeMeasuring(Operation.CLUSTER_RECOVERY);
+
+        String firstKafkaPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
+        String logKafkaPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstKafkaPodName + "'";
+
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        LOGGER.info("Update resources for pods");
+
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+                .editSpec()
+                .editKafka()
+                .withNewResources()
+                .withNewRequests()
+                .withMilliCpu("100000m")
+                .endRequests()
+                .endResources()
+                .endKafka()
+                .endSpec()
+                .done();
+
+        TestUtils.waitFor("Wait till rolling update of pods start", 2000, CO_OPERATION_TIMEOUT,
+                () -> !CLIENT.pods().withName(firstKafkaPodName).isReady());
+
+        TestUtils.waitFor("Wait till rolling update timeouted", 2000, CO_OPERATION_TIMEOUT + 20000,
+                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logKafkaPattern).isEmpty());
+
+        assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+
+        TimeMeasuringSystem.stopOperation(operationID);
+    }
+
+    void assertThatRollingUpdatedFinished(String rolledComponent, String stableComponent) {
+        assertThat(rolledComponent + " was not updated", CLIENT.pods().withName(rolledComponent + "-1").isReady());
+        assertThat(rolledComponent + " was not updated", CLIENT.pods().withName(rolledComponent + "-2").isReady());
+
+        assertThat(stableComponent + " was not updated", CLIENT.pods().withName(stableComponent + "-0").isReady());
+        assertThat(stableComponent + " was not updated", CLIENT.pods().withName(stableComponent + "-1").isReady());
+        assertThat(stableComponent + " was not updated", CLIENT.pods().withName(stableComponent + "-2").isReady());
     }
 
     @BeforeEach
@@ -97,7 +131,7 @@ public class RollingUpdateST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE, "60000").done();
+        testClassResources.clusterOperator(NAMESPACE, Integer.toString(CO_OPERATION_TIMEOUT)).done();
     }
 
     @AfterAll
