@@ -19,4 +19,4 @@ java_clean:
 	mvn clean
 
 findbugs:
-	mvn org.codehaus.mojo:findbugs-maven-plugin:check
+	mvn $(MVN_ARGS) org.codehaus.mojo:findbugs-maven-plugin:check

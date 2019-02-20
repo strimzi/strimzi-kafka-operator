@@ -29,7 +29,7 @@ if [ ! -e  documentation/book/appendix_crds.adoc ] ; then
   exit 1
 fi
 
-CHANGED_DERIVED=$(git diff --name-status -- install/ helm-charts/ documentation/book/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
+CHANGED_DERIVED=$(git diff --name-status -- install/ helm-charts/ olm/ documentation/book/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
 if [ -n "$CHANGED_DERIVED" ] ; then
   echo "ERROR: Uncommitted changes in derived resources:"
   echo "$CHANGED_DERIVED"
