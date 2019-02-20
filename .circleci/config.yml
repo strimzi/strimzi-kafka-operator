@@ -24,7 +24,7 @@ jobs:
             - .m2
   javatest:
     environment:
-      - MAVEN_OPTS: "-Xmx3072m"
+      - MAVEN_OPTS: "-Xmx2048m"
     docker:
       - image: scholzj/circleci-centos-java:latest
     working_directory: ~/project
