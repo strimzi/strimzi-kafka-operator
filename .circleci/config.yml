@@ -21,9 +21,10 @@ jobs:
           root: /home/circleci
           paths:
             - project
+            - .m2
   javatest:
     environment:
-      - MAVEN_OPTS: "-Xmx2048m"
+      - MAVEN_OPTS: "-Xmx1024m"
     docker:
       - image: scholzj/circleci-centos-java:latest
     working_directory: ~/project
@@ -31,15 +32,15 @@ jobs:
       #- checkout
       - attach_workspace:
           at: /home/circleci
-      - restore_cache:
-          key: strimzi-javatest-{{ checksum "pom.xml" }}
+      #- restore_cache:
+      #    key: strimzi-javatest-{{ checksum "pom.xml" }}
       - run:
           name: Build code
           command: mvn -B -DskipITs verify  
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: strimzi-javatest-{{ checksum "pom.xml" }}
+      #- save_cache:
+      #    paths:
+      #      - ~/.m2
+      #    key: strimzi-javatest-{{ checksum "pom.xml" }}
   findbugs:
     environment:
       - MAVEN_OPTS: "-Xmx2048m"
@@ -50,15 +51,15 @@ jobs:
     steps:
       - attach_workspace:
           at: /home/circleci
-      - restore_cache:
-          key: strimzi-findbugs-{{ checksum "pom.xml" }}
+      #- restore_cache:
+      #    key: strimzi-findbugs-{{ checksum "pom.xml" }}
       - run:
           name: Run findbugs
           command: make findbugs
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: strimzi-findbugs-{{ checksum "pom.xml" }}
+      #- save_cache:
+      #    paths:
+      #      - ~/.m2
+      #    key: strimzi-findbugs-{{ checksum "pom.xml" }}
   docucheck:
     docker:
       - image: scholzj/circleci-centos-java:latest
