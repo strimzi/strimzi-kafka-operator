@@ -453,7 +453,7 @@
                         <ENV_VAR_EXISTS_BOOLEAN>true</ENV_VAR_EXISTS_BOOLEAN>
                     </environmentVariables>
                     <trimStackTrace>false</trimStackTrace>
-                    <argLine>-Xmx512m</argLine>
+                    <argLine>-Xmx1g</argLine>
                 </configuration>
                 <dependencies>
                     <dependency>
