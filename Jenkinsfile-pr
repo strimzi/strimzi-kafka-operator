@@ -10,7 +10,8 @@ pipeline {
     }
     parameters {
         //execute all tests as default for each new Pull request
-        string(name: 'JUNIT_TAGS', defaultValue: 'acceptance,regression', description: 'maven parameter for executing specific tests')
+        string(name: 'JUNIT_TAGS', defaultValue: 'acceptance,regression', description: 'maven parameter for executing specific subset of tests with specific tag')
+        string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
     }
     options {
         timeout(time: 7, unit: 'HOURS')
@@ -37,6 +38,20 @@ pipeline {
                 checkout scm
             }
         }
+        stage('Parse parameters from comment') {
+            steps {
+                script {
+                    if (env.ghprbCommentBody.contains('tags=')) {
+                        params.JUNIT_TAGS = env.ghprbCommentBody.split('tags=')[1].split(/\s/)[0]
+                    }
+                    echo "JUNIT_TAGS: ${env.JUNIT_TAGS}"
+                    if (env.ghprbCommentBody.contains('testcase=')) {
+                        params.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
+                    }
+                    echo "TEST_CASE: ${env.TEST_CASE}"
+                }
+            }
+        }
         stage('Start Openshift') {
             steps {
                 timeout(time: 25, unit: 'MINUTES') {
@@ -58,7 +73,7 @@ pipeline {
             steps {
                 script {
                     echo "stage execute"
-                    lib.runSystemTests(env.WORKSPACE, params.JUNIT_TAGS)
+                    lib.runSystemTests(env.WORKSPACE, params.JUNIT_TAGS, params.TEST_CASE)
                 }
             }
         }
