@@ -47,6 +47,16 @@ jobs:
       - run:
           name: Run findbugs
           command: make findbugs
+  changedderived:
+    docker:
+      - image: scholzj/circleci-centos-java:latest
+    working_directory: ~/project
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: Check for changes in derived resources
+          command: ./.circleci/changed-derived.sh
   docubuild:
     docker:
       - image: scholzj/circleci-centos-java:latest
@@ -81,5 +91,8 @@ workflows:
           requires: 
             - javabuild
       - findbugs:
+          requires: 
+            - javabuild
+      - changedderived:
           requires: 
             - javabuild
