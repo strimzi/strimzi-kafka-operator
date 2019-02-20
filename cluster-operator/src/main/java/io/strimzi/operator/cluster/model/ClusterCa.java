@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -129,7 +130,7 @@ public class ClusterCa extends Ca {
             podNum -> ZookeeperCluster.zookeeperPodName(cluster, podNum));
     }
 
-    public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, String externalBootstrapAddress, Map<Integer, String> externalAddresses) throws IOException {
+    public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, Set<String> externalBootstrapAddresses, Map<Integer, Set<String>> externalAddresses) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
         Function<Integer, Subject> subjectFn = i -> {
@@ -141,20 +142,25 @@ public class ClusterCa extends Ca {
             sbjAltNames.put("DNS.5", KafkaCluster.podDnsName(namespace, cluster, i));
             int nextDnsId = 6;
             int nextIpId = 1;
-            if (externalBootstrapAddress != null)   {
-                String sna = !ipv4Address.matcher(externalBootstrapAddress).matches() ?
-                        String.format("DNS.%d", nextDnsId++) :
-                        String.format("IP.%d", nextIpId++);
 
-                sbjAltNames.put(sna, externalBootstrapAddress);
+            if (externalBootstrapAddresses != null)   {
+                for (String dnsName : externalBootstrapAddresses) {
+                    String sna = !ipv4Address.matcher(dnsName).matches() ?
+                            String.format("DNS.%d", nextDnsId++) :
+                            String.format("IP.%d", nextIpId++);
+
+                    sbjAltNames.put(sna, dnsName);
+                }
             }
 
             if (externalAddresses.get(i) != null)   {
-                String sna = !ipv4Address.matcher(externalAddresses.get(i)).matches() ?
-                        String.format("DNS.%d", nextDnsId) :
-                        String.format("IP.%d", nextIpId);
+                for (String dnsName : externalAddresses.get(i)) {
+                    String sna = !ipv4Address.matcher(dnsName).matches() ?
+                            String.format("DNS.%d", nextDnsId++) :
+                            String.format("IP.%d", nextIpId++);
 
-                sbjAltNames.put(sna, externalAddresses.get(i));
+                    sbjAltNames.put(sna, dnsName);
+                }
             }
 
             Subject subject = new Subject();

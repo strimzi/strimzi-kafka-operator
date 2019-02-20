@@ -249,6 +249,57 @@ It must have the value `route` for the type `KafkaListenerExternalRoute`.
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
+|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
+|====
+
+[id='type-RouteListenerOverride-{context}']
+### `RouteListenerOverride` schema reference
+
+Used in: xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`]
+
+
+[options="header"]
+|====
+|Field             |Description
+|bootstrap  1.2+<.<|External bootstrap service configuration.
+|xref:type-RouteListenerBootstrapOverride-{context}[`RouteListenerBootstrapOverride`]
+|brokers    1.2+<.<|External broker services configuration.
+|xref:type-RouteListenerBrokerOverride-{context}[`RouteListenerBrokerOverride`] array
+|====
+
+[id='type-RouteListenerBootstrapOverride-{context}']
+### `RouteListenerBootstrapOverride` schema reference
+
+Used in: xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
+
+
+[options="header"]
+|====
+|Field           |Description
+|address  1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|string
+|host     1.2+<.<|Host for the bootstrap route. This field will be used in the `spec.host` field of the OpenShift Route.
+|string
+|====
+
+[id='type-RouteListenerBrokerOverride-{context}']
+### `RouteListenerBrokerOverride` schema reference
+
+Used in: xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
+
+
+[options="header"]
+|====
+|Field                  |Description
+|broker          1.2+<.<|Id of the kafka broker (broker identifier).
+|integer
+|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
+|string
+|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
+|integer
+|host            1.2+<.<|Host for the broker route. This field will be used in the `spec.host` field of the OpenShift Route.
+|string
 |====
 
 [id='type-KafkaListenerExternalLoadBalancer-{context}']
@@ -270,8 +321,55 @@ It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBal
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
+|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
 |tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
+|====
+
+[id='type-LoadBalancerListenerOverride-{context}']
+### `LoadBalancerListenerOverride` schema reference
+
+Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`]
+
+
+[options="header"]
+|====
+|Field             |Description
+|bootstrap  1.2+<.<|External bootstrap service configuration.
+|xref:type-LoadBalancerListenerBootstrapOverride-{context}[`LoadBalancerListenerBootstrapOverride`]
+|brokers    1.2+<.<|External broker services configuration.
+|xref:type-LoadBalancerListenerBrokerOverride-{context}[`LoadBalancerListenerBrokerOverride`] array
+|====
+
+[id='type-LoadBalancerListenerBootstrapOverride-{context}']
+### `LoadBalancerListenerBootstrapOverride` schema reference
+
+Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
+
+
+[options="header"]
+|====
+|Field           |Description
+|address  1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|string
+|====
+
+[id='type-LoadBalancerListenerBrokerOverride-{context}']
+### `LoadBalancerListenerBrokerOverride` schema reference
+
+Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
+
+
+[options="header"]
+|====
+|Field                  |Description
+|broker          1.2+<.<|Id of the kafka broker (broker identifier).
+|integer
+|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
+|string
+|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
+|integer
 |====
 
 [id='type-KafkaListenerExternalNodePort-{context}']
@@ -294,13 +392,13 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
 |overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
-|xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
+|xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
 |tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
 |====
 
-[id='type-KafkaExternalServiceOverrides-{context}']
-### `KafkaExternalServiceOverrides` schema reference
+[id='type-NodePortListenerOverride-{context}']
+### `NodePortListenerOverride` schema reference
 
 Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
 
@@ -309,28 +407,30 @@ Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExterna
 |====
 |Field             |Description
 |bootstrap  1.2+<.<|External bootstrap service configuration.
-|xref:type-KafkaExternalBootstrapService-{context}[`KafkaExternalBootstrapService`]
+|xref:type-NodePortListenerBootstrapOverride-{context}[`NodePortListenerBootstrapOverride`]
 |brokers    1.2+<.<|External broker services configuration.
-|xref:type-KafkaExternalBrokerService-{context}[`KafkaExternalBrokerService`] array
+|xref:type-NodePortListenerBrokerOverride-{context}[`NodePortListenerBrokerOverride`] array
 |====
 
-[id='type-KafkaExternalBootstrapService-{context}']
-### `KafkaExternalBootstrapService` schema reference
+[id='type-NodePortListenerBootstrapOverride-{context}']
+### `NodePortListenerBootstrapOverride` schema reference
 
-Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
+Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
 
 
 [options="header"]
 |====
 |Field            |Description
+|address   1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|string
 |nodePort  1.2+<.<|Node port for the bootstrap service.
 |integer
 |====
 
-[id='type-KafkaExternalBrokerService-{context}']
-### `KafkaExternalBrokerService` schema reference
+[id='type-NodePortListenerBrokerOverride-{context}']
+### `NodePortListenerBrokerOverride` schema reference
 
-Used in: xref:type-KafkaExternalServiceOverrides-{context}[`KafkaExternalServiceOverrides`]
+Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
 
 
 [options="header"]

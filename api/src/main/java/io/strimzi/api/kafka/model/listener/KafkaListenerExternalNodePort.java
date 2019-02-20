@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
@@ -16,7 +16,7 @@ import io.sundr.builder.annotations.Buildable;
 import java.util.List;
 
 /**
- * Configures the external listener which exposes Kafka outside of Kubernetes using LoadBalancers
+ * Configures the external listener which exposes Kafka outside of Kubernetes using NodePorts
  */
 @Buildable(
         editableEnabled = false,
@@ -25,19 +25,20 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "authentication"})
-public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
+public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_LOADBALANCER = "loadbalancer";
+    public static final String TYPE_NODEPORT = "nodeport";
 
     private KafkaListenerAuthentication auth;
     private boolean tls = true;
     private List<NetworkPolicyPeer> networkPolicyPeers;
+    private NodePortListenerOverride overrides;
 
-    @Description("Must be `" + TYPE_LOADBALANCER + "`")
+    @Description("Must be `" + TYPE_NODEPORT + "`")
     @Override
     public String getType() {
-        return TYPE_LOADBALANCER;
+        return TYPE_NODEPORT;
     }
 
     @Description("Authentication configuration for Kafka brokers")
@@ -74,5 +75,15 @@ public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
 
     public void setNetworkPolicyPeers(List<NetworkPolicyPeer> networkPolicyPeers) {
         this.networkPolicyPeers = networkPolicyPeers;
+    }
+
+    @Description("Overrides for external bootstrap and broker services and externally advertised addresses")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public NodePortListenerOverride getOverrides() {
+        return overrides;
+    }
+
+    public void setOverrides(NodePortListenerOverride overrides) {
+        this.overrides = overrides;
     }
 }

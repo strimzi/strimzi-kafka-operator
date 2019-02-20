@@ -41,13 +41,16 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaExternalBrokerService;
-import io.strimzi.api.kafka.model.KafkaExternalServiceOverrides;
-import io.strimzi.api.kafka.model.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.KafkaListenerExternalLoadBalancer;
-import io.strimzi.api.kafka.model.KafkaListenerExternalNodePort;
-import io.strimzi.api.kafka.model.KafkaListenerExternalRoute;
-import io.strimzi.api.kafka.model.KafkaListeners;
+import io.strimzi.api.kafka.model.listener.ExternalListenerBootstrapOverride;
+import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerOverride;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRoute;
+import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
@@ -55,6 +58,8 @@ import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
+import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.RouteListenerOverride;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
@@ -65,11 +70,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -146,7 +150,7 @@ public class KafkaCluster extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private KafkaListeners listeners;
     private KafkaAuthorization authorization;
-    private SortedMap<Integer, String> externalAddresses = new TreeMap<>();
+    private Set<String> externalAddresses = new HashSet<>();
     private KafkaVersion kafkaVersion;
 
     // Templates
@@ -385,9 +389,13 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Manage certificates generation based on those already present in the Secrets
-     * @param clusterCa The certificates
+     *
+     * @param kafka     The Kafka custom resource
+     * @param clusterCa The CA for cluster certificates
+     * @param externalBootstrapDnsName  The set of DNS names for bootstrap service (should be appended to every broker certificate)
+     * @param externalDnsNames The list of DNS names for broker pods (should be appended only to specific certificates for given broker)
      */
-    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, String externalBootstrapDnsName, Map<Integer, String> externalDnsNames) {
+    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames) {
         log.debug("Generating certificates");
 
         try {
@@ -516,7 +524,7 @@ public class KafkaCluster extends AbstractModel {
                 if (externalNodePort.getOverrides() != null &&  externalNodePort.getOverrides().getBrokers() != null) {
                     nodePort = externalNodePort.getOverrides().getBrokers().stream()
                         .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod)
-                        .map(KafkaExternalBrokerService::getNodePort)
+                        .map(NodePortListenerBrokerOverride::getNodePort)
                         .findAny().orElse(null);
                 }
             }
@@ -564,6 +572,20 @@ public class KafkaCluster extends AbstractModel {
                     .endSpec()
                     .build();
 
+            KafkaListenerExternalRoute listener = (KafkaListenerExternalRoute) listeners.getExternal();
+            if (listener.getOverrides() != null && listener.getOverrides().getBrokers() != null)  {
+                String specHost = listener.getOverrides().getBrokers().stream()
+                        .filter(broker -> broker != null && broker.getBroker() == pod
+                                && broker.getHost() != null)
+                        .map(RouteListenerBrokerOverride::getHost)
+                        .findAny()
+                        .orElse(null);
+
+                if (specHost != null && !specHost.isEmpty()) {
+                    route.getSpec().setHost(specHost);
+                }
+            }
+
             return route;
         }
 
@@ -598,8 +620,12 @@ public class KafkaCluster extends AbstractModel {
                     .endSpec()
                     .build();
 
-            return route;
+            KafkaListenerExternalRoute listener = (KafkaListenerExternalRoute) listeners.getExternal();
+            if (listener.getOverrides() != null && listener.getOverrides().getBootstrap() != null && listener.getOverrides().getBootstrap().getHost() != null && !listener.getOverrides().getBootstrap().getHost().isEmpty())  {
+                route.getSpec().setHost(listener.getOverrides().getBootstrap().getHost());
+            }
 
+            return route;
         }
 
         return null;
@@ -793,12 +819,7 @@ public class KafkaCluster extends AbstractModel {
 
             if (isExposedWithNodePort()) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
-                KafkaListenerExternalNodePort externalNodePort = (KafkaListenerExternalNodePort) listeners.getExternal();
-                if (externalNodePort.getOverrides() != null && externalNodePort.getOverrides().getBrokers() != null
-                    && !externalNodePort.getOverrides().getBrokers().isEmpty()) {
-                    varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES,
-                        buildAdvertisedAddressesString(externalNodePort.getOverrides().getBrokers())));
-                }
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADVERTISED_ADDRESSES, String.join(" ", externalAddresses)));
             }
 
             Container initContainer = new ContainerBuilder()
@@ -814,15 +835,6 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return initContainers;
-    }
-
-    private String buildAdvertisedAddressesString(List<KafkaExternalBrokerService> brokers) {
-        return brokers.stream()
-                .filter(broker -> broker != null && broker.getBroker() != null)
-                .map(broker -> broker.getBroker().toString() + "://" +
-                        (broker.getAdvertisedHost() != null ? broker.getAdvertisedHost() : "") + ":" +
-                        (broker.getAdvertisedPort() != null ? broker.getAdvertisedPort() : ""))
-                .collect(Collectors.joining(" "));
     }
 
     @Override
@@ -904,7 +916,7 @@ public class KafkaCluster extends AbstractModel {
 
             if (listeners.getExternal() != null) {
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ENABLED, listeners.getExternal().getType()));
-                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses.values())));
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", externalAddresses)));
                 varList.add(buildEnvVar(ENV_VAR_KAFKA_EXTERNAL_TLS, Boolean.toString(isExposedWithTls())));
 
                 if (listeners.getExternal().getAuth() != null) {
@@ -1122,9 +1134,9 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Sets the Map with Kafka pod's external addresses
      *
-     * @param externalAddresses Map with external addresses
+     * @param externalAddresses Set with external addresses
      */
-    public void setExternalAddresses(SortedMap<Integer, String> externalAddresses) {
+    public void setExternalAddresses(Set<String> externalAddresses) {
         this.externalAddresses = externalAddresses;
     }
 
@@ -1165,27 +1177,132 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
+     * Returns the list broker overrides for external listeners
+     *
+     * @return
+     */
+    private List<ExternalListenerBrokerOverride> getExternalListenerBrokerOverride()  {
+        List<ExternalListenerBrokerOverride> brokerOverride = new ArrayList<>();
+
+        if (isExposedWithNodePort()) {
+            NodePortListenerOverride overrides = ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
+
+            if (overrides != null) {
+                brokerOverride.addAll(overrides.getBrokers());
+            }
+        } else if (isExposedWithLoadBalancer()) {
+            LoadBalancerListenerOverride overrides = ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getOverrides();
+
+            if (overrides != null) {
+                brokerOverride.addAll(overrides.getBrokers());
+            }
+        } else if (isExposedWithRoute()) {
+            RouteListenerOverride overrides = ((KafkaListenerExternalRoute) listeners.getExternal()).getOverrides();
+
+            if (overrides != null) {
+                brokerOverride.addAll(overrides.getBrokers());
+            }
+        }
+
+        return brokerOverride;
+    }
+
+    /**
+     * Returns the bootstrap override for external listeners
+     *
+     * @return
+     */
+    public ExternalListenerBootstrapOverride getExternalListenerBootstrapOverride()  {
+        ExternalListenerBootstrapOverride bootstrapOverride = null;
+
+        if (isExposedWithNodePort()) {
+            NodePortListenerOverride overrides = ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
+
+            if (overrides != null) {
+                bootstrapOverride = overrides.getBootstrap();
+            }
+        } else if (isExposedWithLoadBalancer()) {
+            LoadBalancerListenerOverride overrides = ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getOverrides();
+
+            if (overrides != null) {
+                bootstrapOverride = overrides.getBootstrap();
+            }
+        } else if (isExposedWithRoute()) {
+            RouteListenerOverride overrides = ((KafkaListenerExternalRoute) listeners.getExternal()).getOverrides();
+
+            if (overrides != null) {
+                bootstrapOverride = overrides.getBootstrap();
+            }
+        }
+
+        return bootstrapOverride;
+    }
+
+    /**
      * Returns advertised address of external nodeport service
      *
      * @return
      */
-    public Optional<String> getExternalNodePortServiceAddressOverride(int podNumber) {
-        if (isExposedWithNodePort()) {
-            KafkaExternalServiceOverrides externalServiceOverrides =
-                ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
-            if (externalServiceOverrides != null && externalServiceOverrides.getBrokers() != null) {
-                String advertisedHost = externalServiceOverrides.getBrokers().stream()
-                    .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber
-                        && brokerService.getAdvertisedHost() != null)
-                    .map(KafkaExternalBrokerService::getAdvertisedHost)
-                    .findAny()
-                    .orElse(null);
-                if (advertisedHost != null && !advertisedHost.isEmpty()) {
-                    return Optional.of(advertisedHost);
-                }
-            }
+    public String getExternalServiceAdvertisedHostOverride(int podNumber) {
+        String advertisedHost = null;
+        List<ExternalListenerBrokerOverride> brokerOverride = getExternalListenerBrokerOverride();
+
+        advertisedHost = brokerOverride.stream()
+            .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber
+                && brokerService.getAdvertisedHost() != null)
+            .map(ExternalListenerBrokerOverride::getAdvertisedHost)
+            .findAny()
+            .orElse(null);
+
+        if (advertisedHost != null && advertisedHost.isEmpty()) {
+            advertisedHost = null;
         }
-        return Optional.empty();
+
+        return advertisedHost;
+    }
+
+    /**
+     * Returns advertised address of external nodeport service
+     *
+     * @return
+     */
+    public Integer getExternalServiceAdvertisedPortOverride(int podNumber) {
+        Integer advertisedPort = null;
+        List<ExternalListenerBrokerOverride> brokerOverride = getExternalListenerBrokerOverride();
+
+        advertisedPort = brokerOverride.stream()
+                .filter(brokerService -> brokerService != null && brokerService.getBroker() == podNumber
+                        && brokerService.getAdvertisedPort() != null)
+                .map(ExternalListenerBrokerOverride::getAdvertisedPort)
+                .findAny()
+                .orElse(null);
+
+        if (advertisedPort != null && advertisedPort == 0) {
+            advertisedPort = null;
+        }
+
+        return advertisedPort;
+    }
+
+    /**
+     * Returns the advertised URL for given pod.
+     * It will take into account the overrides specified by the user.
+     * If some segment is not know - e.g. the hostname for the NodePort access, it should be left empty
+     *
+     * @param podNumber Pod index
+     * @param address   The advertised hostname
+     * @param port      The advertised port
+     * @return          The advertised URL in format podNumber://address:port (e.g. 1://my-broker-1:9094)
+     */
+    public String getExternalAdvertisedUrl(int podNumber, String address, String port)  {
+        String advertisedHost = getExternalServiceAdvertisedHostOverride(podNumber);
+        Integer advertisedPort = getExternalServiceAdvertisedPortOverride(podNumber);
+
+        String url = String.valueOf(podNumber)
+                + "://" + (advertisedHost != null ? advertisedHost : address)
+                + ":" + (advertisedPort != null ? advertisedPort : port);
+
+        return url;
     }
 
     /**

@@ -272,6 +272,8 @@ spec:
                             bootstrap:
                               type: object
                               properties:
+                                address:
+                                  type: string
                                 nodePort:
                                   type: integer
                             brokers:

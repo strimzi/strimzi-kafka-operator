@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -13,7 +13,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Configures overrides for external bootstrap and broker services and advertised addresses
+ * Configures overrides NodePort listeners
  */
 @JsonPropertyOrder({"bootstrap", "brokers"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -22,29 +22,29 @@ import java.util.List;
     generateBuilderPackage = false,
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
-public class KafkaExternalServiceOverrides implements Serializable {
+public class NodePortListenerOverride implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private KafkaExternalBootstrapService bootstrap;
-    private List<KafkaExternalBrokerService> brokers;
+    private NodePortListenerBootstrapOverride bootstrap;
+    private List<NodePortListenerBrokerOverride> brokers;
 
     @Description("External bootstrap service configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaExternalBootstrapService getBootstrap() {
+    public NodePortListenerBootstrapOverride getBootstrap() {
         return bootstrap;
     }
 
-    public void setBootstrap(KafkaExternalBootstrapService bootstrap) {
+    public void setBootstrap(NodePortListenerBootstrapOverride bootstrap) {
         this.bootstrap = bootstrap;
     }
 
     @Description("External broker services configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public List<KafkaExternalBrokerService> getBrokers() {
+    public List<NodePortListenerBrokerOverride> getBrokers() {
         return brokers;
     }
 
-    public void setBrokers(List<KafkaExternalBrokerService> brokers) {
+    public void setBrokers(List<NodePortListenerBrokerOverride> brokers) {
         this.brokers = brokers;
     }
 }

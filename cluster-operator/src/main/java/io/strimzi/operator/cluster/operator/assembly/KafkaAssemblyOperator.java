@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -19,6 +20,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.api.model.RouteIngress;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.DoneableKafka;
@@ -75,11 +77,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
+import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -101,6 +103,7 @@ import static io.strimzi.operator.cluster.model.TopicOperator.ANNO_STRIMZI_IO_LO
  *     <li>Optionally, a TopicOperator Deployment</li>
  * </ul>
  */
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaAssemblyList, DoneableKafka, Resource<Kafka, DoneableKafka>> {
     private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
 
@@ -256,9 +259,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Service kafkaHeadlessService;
         private ConfigMap kafkaMetricsAndLogsConfigMap;
         /* test */ ReconcileResult<StatefulSet> kafkaDiffs;
-        private String kafkaExternalBootstrapDnsName = null;
-        private SortedMap<Integer, String> kafkaExternalAddresses = new TreeMap<>();
-        private SortedMap<Integer, String> kafkaExternalDnsNames = new TreeMap<>();
+        private Set<String> kafkaExternalBootstrapDnsName = new HashSet<>();
+        private Set<String> kafkaExternalAddresses = new HashSet<>();
+        private Map<Integer, Set<String>> kafkaExternalDnsNames = new HashMap<>();
         private boolean kafkaAncillaryCmChange;
 
         /* test */ TopicOperator topicOperator;
@@ -1152,6 +1155,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.succeededFuture());
             }
 
+            if (kafkaCluster.getExternalListenerBootstrapOverride() != null && kafkaCluster.getExternalListenerBootstrapOverride().getAddress() != null)    {
+                log.trace("{}: Adding address {} from overrides to certificate DNS names", reconciliation, kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
+                this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
+            }
+
             Future blockingFuture = Future.future();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -1167,22 +1175,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     address.setHandler(res -> {
                         if (res.succeeded()) {
-                            String bootstrapAddress = null;
-
                             if (kafkaCluster.isExposedWithLoadBalancer()) {
+                                String bootstrapAddress = null;
+
                                 if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
                                     bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
                                 } else {
                                     bootstrapAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
                                 }
 
-                                this.kafkaExternalBootstrapDnsName = bootstrapAddress;
-                            } else if (kafkaCluster.isExposedWithNodePort()) {
-                                bootstrapAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts().get(0).getNodePort().toString();
-                            }
+                                if (log.isTraceEnabled()) {
+                                    log.trace("{}: Found address {} for Service {}", reconciliation, bootstrapAddress, serviceName);
+                                }
 
-                            if (log.isTraceEnabled()) {
-                                log.trace("{}: Found address {} for Service {}", reconciliation, bootstrapAddress, serviceName);
+                                this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
                             }
 
                             future.complete();
@@ -1219,6 +1225,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         Future routeFuture = Future.future();
 
                         Future<Void> address = null;
+                        Set<String> dnsNames = new HashSet<>();
+
+                        String dnsOverride = kafkaCluster.getExternalServiceAdvertisedHostOverride(i);
+                        if (dnsOverride != null)    {
+                            dnsNames.add(dnsOverride);
+                        }
 
                         if (kafkaCluster.isExposedWithNodePort()) {
                             address = serviceOperations.hasNodePort(namespace, serviceName, 1_000, operationTimeoutMs);
@@ -1230,29 +1242,43 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         address.setHandler(res -> {
                             if (res.succeeded()) {
-                                String serviceAddress = null;
                                 if (kafkaCluster.isExposedWithLoadBalancer()) {
+                                    // Get the advertised URL
+                                    String serviceAddress = null;
+
                                     if (serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
                                         serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getHostname();
                                     } else {
                                         serviceAddress = serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress().get(0).getIp();
                                     }
 
-                                    if (kafkaCluster.isExposedWithTls()) {
-                                        this.kafkaExternalDnsNames.put(podNumber, serviceAddress);
+                                    if (log.isTraceEnabled()) {
+                                        log.trace("{}: Found address {} for Service {}", reconciliation, serviceAddress, serviceName);
+                                    }
+
+                                    this.kafkaExternalAddresses.add(kafkaCluster.getExternalAdvertisedUrl(podNumber, serviceAddress, "9094"));
+
+                                    // Collect the DNS names for certificates
+                                    for (LoadBalancerIngress ingress : serviceOperations.get(namespace, serviceName).getStatus().getLoadBalancer().getIngress())    {
+                                        if (ingress.getHostname() != null) {
+                                            dnsNames.add(ingress.getHostname());
+                                        } else {
+                                            dnsNames.add(ingress.getIp());
+                                        }
                                     }
                                 } else if (kafkaCluster.isExposedWithNodePort()) {
-                                    serviceAddress = serviceOperations.get(namespace, serviceName).getSpec().getPorts()
+                                    // Get the advertised URL
+                                    String port = serviceOperations.get(namespace, serviceName).getSpec().getPorts()
                                         .get(0).getNodePort().toString();
-                                    kafkaCluster.getExternalNodePortServiceAddressOverride(podNumber)
-                                        .ifPresent(host -> this.kafkaExternalDnsNames.put(podNumber, host));
+
+                                    if (log.isTraceEnabled()) {
+                                        log.trace("{}: Found port {} for Service {}", reconciliation, port, serviceName);
+                                    }
+
+                                    this.kafkaExternalAddresses.add(kafkaCluster.getExternalAdvertisedUrl(podNumber, "", port));
                                 }
 
-                                this.kafkaExternalAddresses.put(podNumber, serviceAddress);
-
-                                if (log.isTraceEnabled()) {
-                                    log.trace("{}: Found address {} for Service {}", reconciliation, serviceAddress, serviceName);
-                                }
+                                this.kafkaExternalDnsNames.put(podNumber, dnsNames);
 
                                 routeFuture.complete();
                             } else {
@@ -1287,6 +1313,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withVoid(Future.succeededFuture());
             }
 
+            if (kafkaCluster.getExternalListenerBootstrapOverride() != null && kafkaCluster.getExternalListenerBootstrapOverride().getAddress() != null)    {
+                log.trace("{}: Adding address {} from overrides to certificate DNS names", reconciliation, kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
+                this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
+            }
+
             Future blockingFuture = Future.future();
 
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -1298,7 +1329,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     address.setHandler(res -> {
                         if (res.succeeded()) {
                             String bootstrapAddress = routeOperations.get(namespace, routeName).getStatus().getIngress().get(0).getHost();
-                            this.kafkaExternalBootstrapDnsName = bootstrapAddress;
+                            this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
 
                             if (log.isTraceEnabled()) {
                                 log.trace("{}: Found address {} for Route {}", reconciliation, bootstrapAddress, routeName);
@@ -1339,15 +1370,31 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         Future<Void> address = routeOperations.hasAddress(namespace, routeName, 1_000, operationTimeoutMs);
                         int podNumber = i;
 
+                        Set<String> dnsNames = new HashSet<>();
+
+                        String dnsOverride = kafkaCluster.getExternalServiceAdvertisedHostOverride(i);
+                        if (dnsOverride != null)    {
+                            dnsNames.add(dnsOverride);
+                        }
+
                         address.setHandler(res -> {
                             if (res.succeeded()) {
-                                String routeAddress = routeOperations.get(namespace, routeName).getStatus().getIngress().get(0).getHost();
-                                this.kafkaExternalAddresses.put(podNumber, routeAddress);
-                                this.kafkaExternalDnsNames.put(podNumber, routeAddress);
+                                Route route = routeOperations.get(namespace, routeName);
+
+                                // Get the advertised URL
+                                String routeAddress = route.getStatus().getIngress().get(0).getHost();
+                                this.kafkaExternalAddresses.add(kafkaCluster.getExternalAdvertisedUrl(podNumber, routeAddress, "443"));
 
                                 if (log.isTraceEnabled()) {
                                     log.trace("{}: Found address {} for Route {}", reconciliation, routeAddress, routeName);
                                 }
+
+                                // Collect the DNS names for certificates
+                                for (RouteIngress ingress : route.getStatus().getIngress()) {
+                                    dnsNames.add(ingress.getHost());
+                                }
+
+                                this.kafkaExternalDnsNames.put(podNumber, dnsNames);
 
                                 routeFuture.complete();
                             } else {
@@ -1382,13 +1429,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        if (kafkaCluster.isExposedWithNodePort()) {
-                            kafkaCluster.generateCertificates(kafkaAssembly,
-                                    clusterCa, null, Collections.EMPTY_MAP);
-                        } else {
-                            kafkaCluster.generateCertificates(kafkaAssembly,
-                                    clusterCa, kafkaExternalBootstrapDnsName, kafkaExternalDnsNames);
-                        }
+                        kafkaCluster.generateCertificates(kafkaAssembly,
+                                clusterCa, kafkaExternalBootstrapDnsName, kafkaExternalDnsNames);
                         future.complete(this);
                     } catch (Throwable e) {
                         future.fail(e);
@@ -1676,18 +1718,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean isPodUpToDate(StatefulSet ss, Pod pod) {
             final int ssGeneration = StatefulSetOperator.getSsGeneration(ss);
             final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
-
-            if (pod == null)    {
-                log.debug("Rolling update of {}/{}: pod doesn't exist; ss has {}={}",
-                        ss.getMetadata().getNamespace(), ss.getMetadata().getName(),
-                        StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, ssGeneration);
-            } else {
-                log.debug("Rolling update of {}/{}: pod {} has {}={}; ss has {}={}",
-                        ss.getMetadata().getNamespace(), ss.getMetadata().getName(), pod.getMetadata().getName(),
-                        StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, podGeneration,
-                        StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, ssGeneration);
-            }
-
+            log.debug("Rolling update of {}/{}: pod {} has {}={}; ss has {}={}",
+                    ss.getMetadata().getNamespace(), ss.getMetadata().getName(), pod.getMetadata().getName(),
+                    StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, podGeneration,
+                    StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, ssGeneration);
             return ssGeneration == podGeneration;
         }
 
