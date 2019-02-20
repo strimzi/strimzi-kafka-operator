@@ -42,11 +42,11 @@ pipeline {
             steps {
                 script {
                     if (env.ghprbCommentBody.contains('tags=')) {
-                        params.JUNIT_TAGS = env.ghprbCommentBody.split('tags=')[1].split(/\s/)[0]
+                        env.JUNIT_TAGS = env.ghprbCommentBody.split('tags=')[1].split(/\s/)[0]
                     }
                     echo "JUNIT_TAGS: ${env.JUNIT_TAGS}"
                     if (env.ghprbCommentBody.contains('testcase=')) {
-                        params.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
+                        env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
                     }
                     echo "TEST_CASE: ${env.TEST_CASE}"
                 }
@@ -73,7 +73,7 @@ pipeline {
             steps {
                 script {
                     echo "stage execute"
-                    lib.runSystemTests(env.WORKSPACE, params.JUNIT_TAGS, params.TEST_CASE)
+                    lib.runSystemTests(env.WORKSPACE, env.JUNIT_TAGS, env.TEST_CASE)
                 }
             }
         }
