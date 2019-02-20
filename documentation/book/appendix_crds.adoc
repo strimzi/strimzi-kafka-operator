@@ -277,7 +277,7 @@ Used in: xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
 [options="header"]
 |====
 |Field           |Description
-|address  1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certifciates.
+|address  1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
 |string
 |host     1.2+<.<|Host for the bootstrap route. This field will be used in the `spec.host` field of the OpenShift Route.
 |string
@@ -351,7 +351,7 @@ Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerO
 [options="header"]
 |====
 |Field           |Description
-|address  1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certifciates.
+|address  1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
 |string
 |====
 
@@ -421,7 +421,7 @@ Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`
 [options="header"]
 |====
 |Field            |Description
-|address   1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certifciates.
+|address   1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
 |string
 |nodePort  1.2+<.<|Node port for the bootstrap service.
 |integer
