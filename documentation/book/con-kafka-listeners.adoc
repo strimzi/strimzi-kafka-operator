@@ -118,7 +118,7 @@ To disable it, set the `tls` field to `false`.
 
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
-By default, the port numbers used for the bootstrap and broker services will be assigned by {ProductPlatformName}.
+By default, the port numbers used for the bootstrap and broker services are automatically assigned by {ProductPlatformName}.
 You can override the auto assigned node ports by specifying the requested port numbers in the `overrides` property.
 {ProductName} will not perform any validation that the requested ports are available.
 You have to make sure that the requested ports are free and can be used.
