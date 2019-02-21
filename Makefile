@@ -23,6 +23,10 @@ next_version:
 	echo $(shell echo $(NEXT_VERSION) | tr a-z A-Z) > release.version
 	mvn versions:set -DnewVersion=$(shell echo $(NEXT_VERSION) | tr a-z A-Z)
 	mvn versions:commit
+	# Update OLM
+	$(SED) -i 's/currentCSV: strimzi-cluster-operator.v.*\+/currentCSV: strimzi-cluster-operator.v$(RELEASE_VERSION)/g' ./olm/strimzi-kafka.package.yaml
+	$(SED) -i 's/name: strimzi-cluster-operator.v.*/name: strimzi-cluster-operator.v$(RELEASE_VERSION)/g' ./olm/strimzi-cluster-operator.clusterserviceversion.yaml
+	$(SED) -i 's/version: [0-9]\+\.[0-9]\+\.[0-9]\+[a-zA-Z0-9_-]*.*/version: $(RELEASE_VERSION)/g' ./olm/strimzi-cluster-operator.clusterserviceversion.yaml
 
 release_prepare:
 	echo $(shell echo $(RELEASE_VERSION) | tr a-z A-Z) > release.version
@@ -32,15 +36,28 @@ release_prepare:
 
 release_version:
 	# TODO: This would be replaced ideally once Helm Chart templating is used for cluster and topic operator examples
-	echo "Changing Docker image tags to :$(RELEASE_VERSION)"
+	echo "Changing Docker image tags in install to :$(RELEASE_VERSION)"
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_.-]\+/value: $(RELEASE_VERSION)/}' {} \;
-	# Zookeeper needs to have special handling, because it has strange tag bot no image map
+	# Zookeeper needs to have special handling, because it has strange tag but no image map
 	# The firs line below handles the Zoo tag
 	# The one below it handles all tags whcih are not Zookeeper
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/}' {} \;
-	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_(ZOOKEEPER)![a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
+	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_ZOOKEEPER_[a-zA-Z0-9_-]*IMAGE/b; /name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
 	$(FIND) ./install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
+	echo "Changing Docker image tags in olm to :$(RELEASE_VERSION)"
+	$(FIND) ./olm -name '*.yaml' -type f -exec $(SED) -i '/image: "\?strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./olm -name '*.yaml' -type f -exec $(SED) -i '/name: [a-zA-Z0-9_-]*IMAGE_TAG/{n;s/value: [a-zA-Z0-9_.-]\+/value: $(RELEASE_VERSION)/}' {} \;
+	# Zookeeper needs to have special handling, because it has strange tag but no image map
+	# The firs line below handles the Zoo tag
+	# The one below it handles all tags whcih are not Zookeeper
+	$(FIND) ./olm -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/}' {} \;
+	$(FIND) ./olm -name '*.yaml' -type f -exec $(SED) -i '/name: STRIMZI_DEFAULT_ZOOKEEPER_[a-zA-Z0-9_-]*IMAGE/b; /name: STRIMZI_DEFAULT_[a-zA-Z0-9_-]*IMAGE/{n;s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/}' {} \;
+	$(FIND) ./olm -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
+	$(SED) -i 's/currentCSV: strimzi-cluster-operator.v.*\+/currentCSV: strimzi-cluster-operator.v$(RELEASE_VERSION)/g' ./olm/strimzi-kafka.package.yaml
+	$(SED) -i 's/name: strimzi-cluster-operator.v.*/name: strimzi-cluster-operator.v$(RELEASE_VERSION)/g' ./olm/strimzi-cluster-operator.clusterserviceversion.yaml
+	$(SED) -i 's/version: [0-9]\+\.[0-9]\+\.[0-9]\+[a-zA-Z0-9_-]*.*/version: $(RELEASE_VERSION)/g' ./olm/strimzi-cluster-operator.clusterserviceversion.yaml
+	$(SED) -i 's/containerImage: docker.io\/strimzi\/cluster-operator:.*/containerImage: docker.io\/strimzi\/cluster-operator:$(RELEASE_VERSION)/g' ./olm/strimzi-cluster-operator.clusterserviceversion.yaml
 
 release_maven:
 	echo "Update pom versions to $(RELEASE_VERSION)"
