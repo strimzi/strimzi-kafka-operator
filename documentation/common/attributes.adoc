@@ -86,6 +86,7 @@
 // Section enablers
 :Kubernetes:
 :Helm:
+:StrimziUpgrades:
 :InstallationAppendix:
 :MetricsAppendix:
 :Downloading:
