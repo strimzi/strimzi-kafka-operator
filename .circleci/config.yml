@@ -33,7 +33,12 @@ jobs:
           at: /home/circleci
       - run:
           name: Run unit tests
-          command: mvn -B -DskipITs verify
+          command: mvn -B surefire:test
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - project
+            - .m2
   findbugs:
     environment:
       - MAVEN_OPTS: "-Xmx2048m"
@@ -86,6 +91,7 @@ jobs:
       MINIKUBE_WANTUPDATENOTIFICATION: false
       MINIKUBE_WANTREPORTERRORPROMPT: false
       MINIKUBE_HOME: /home/circleci
+      CHANGE_MINIKUBE_NONE_USER: true
     machine:
       image: circleci/classic:201808-01
     working_directory: ~/project
@@ -153,7 +159,7 @@ jobs:
       #    command: ./.travis/setup-kubernetes.sg
       - run:
           name: Run unit tests
-          command: mvn -B -DskipUTs verify
+          command: mvn -B failsafe:integration-test
 workflows:
   version: 2
   build-workflow:
