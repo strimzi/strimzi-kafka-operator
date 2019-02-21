@@ -55,7 +55,7 @@ endif::Kubernetes[]
 
 When exposing Kafka using {OpenShiftName} `Routes`, TLS encryption is always used.
 
-By default, the route hosts will be assigned by {OpenShiftName}.
+By default, the route hosts are automatically assigned by {OpenShiftName}.
 You can override the auto assigned route hosts by specifying the requested host in the `overrides` property.
 {ProductName} will not perform any validation that the requested hosts are available.
 You have to make sure that the hosts are free and can be used.
