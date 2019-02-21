@@ -47,8 +47,6 @@ jobs:
           when: always
       - store_test_results:
           path: ~/surefire
-      - store_artifacts:
-          path: ~/surefire 
   findbugs:
     environment:
       - MAVEN_OPTS: "-Xmx2048m"
@@ -158,8 +156,6 @@ jobs:
           when: always
       - store_test_results:
           path: ~/failsafe
-      - store_artifacts:
-          path: ~/failsafe 
 workflows:
   version: 2
   build-workflow:
