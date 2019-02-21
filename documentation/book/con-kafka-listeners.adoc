@@ -57,8 +57,7 @@ When exposing Kafka using {OpenShiftName} `Routes`, TLS encryption is always use
 
 By default, the route hosts are automatically assigned by {OpenShiftName}.
 However, you can override the assigned route hosts by specifying the requested hosts in the `overrides` property.
-{ProductName} will not perform any validation that the requested hosts are available.
-You have to make sure that the hosts are free and can be used.
+{ProductName} will not perform any validation that the requested hosts are available; you must ensure that they are free and can be used.
 
 .Example of an external listener of type `routes` configured with overrides for {OpenShiftName} route hosts
 [source,yaml,subs="attributes+"]
@@ -121,7 +120,6 @@ NOTE: TLS hostname verification is not currently supported when exposing Kafka c
 By default, the port numbers used for the bootstrap and broker services are automatically assigned by {ProductPlatformName}.
 However, you can override the assigned node ports by specifying the requested port numbers in the `overrides` property.
 {ProductName} does not perform any validation on the requested ports; you must ensure that they are free and available for use.
-You have to make sure that the requested ports are free and can be used.
 
 .Example of an external listener configured with overrides for node ports
 [source,yaml,subs="attributes+"]
