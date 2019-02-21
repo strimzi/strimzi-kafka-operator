@@ -13,7 +13,10 @@ When a newer version of {ProductName} is available, it may provide support for n
 Therefore, you will need to upgrade to the new version of {ProductName} before you can upgrade to a higher supported Kafka version.
 Upgrading the version of {ProductName} is done by upgrading the Cluster Operator deployment to the new version.
 
-include::proc-upgrading-the-cluster-operator.adoc[leveloffset=+1]
+ifdef::StrimziUpgrades[]
+include::proc-upgrading-the-cluster-operator-0-10-0-to-0-11-0.adoc[leveloffset=+1]
+include::proc-upgrading-the-cluster-operator-0-9-0-to-0-10-0.adoc[leveloffset=+1]
+endif::StrimziUpgrades[]
 
 include::assembly-upgrading-kafka-versions.adoc[leveloffset=+1]
 
