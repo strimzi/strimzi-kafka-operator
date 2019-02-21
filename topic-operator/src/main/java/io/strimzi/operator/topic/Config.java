@@ -109,7 +109,7 @@ public class Config {
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
     /** A comma-separated list of key=value pairs for selecting Resources that describe topics. */
-    public static final Value<LabelPredicate> LABELS = new Value<>(TC_RESOURCE_LABELS, LABEL_PREDICATE, "strimzi.io/kind=topic");
+    public static final Value<LabelPredicate> LABELS = new Value<>(TC_RESOURCE_LABELS, LABEL_PREDICATE, "strimzi.io/cluster=my-cluster");
 
     /** A comma-separated list of kafka bootstrap servers. */
     public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value<>(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true);

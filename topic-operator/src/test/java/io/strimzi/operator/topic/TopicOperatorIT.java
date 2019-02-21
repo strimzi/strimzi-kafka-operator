@@ -75,7 +75,7 @@ public class TopicOperatorIT extends BaseITST {
     private static String oldNamespace;
 
     private final LabelPredicate resourcePredicate = LabelPredicate.fromString(
-            "strimzi.io/kind=topic");
+            "strimzi.io/cluster=my-cluster");
 
     public static final String NAMESPACE = "topic-operator-it";
 
@@ -597,7 +597,7 @@ public class TopicOperatorIT extends BaseITST {
         operation().inNamespace(NAMESPACE).create(topicResource);
 
         waitForEvent(context, topicResource,
-                "Failure processing KafkaTopic watch event ADDED on resource two-resources-one-topic with labels {strimzi.io/kind=topic}: " +
+                "Failure processing KafkaTopic watch event ADDED on resource two-resources-one-topic with labels {strimzi.io/cluster=my-cluster}: " +
                         "Topic 'two-resources-one-topic' is already managed via KafkaTopic 'two-resources-one-topic-1' it cannot also be managed via the KafkaTopic 'two-resources-one-topic'",
                 TopicOperator.EventType.WARNING);
     }
