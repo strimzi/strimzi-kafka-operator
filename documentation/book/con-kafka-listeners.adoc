@@ -60,7 +60,7 @@ However, you can override the assigned route hosts by specifying the requested h
 {ProductName} will not perform any validation that the requested hosts are available.
 You have to make sure that the hosts are free and can be used.
 
-.An example where the external listener is configured with overrides for {OpenShiftName} route hosts
+.Example of an external listener of type `routes` configured with overrides for {OpenShiftName} route hosts
 [source,yaml,subs="attributes+"]
 ----
 # ...
