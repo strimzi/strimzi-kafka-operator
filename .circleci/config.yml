@@ -108,7 +108,7 @@ jobs:
       - run:
           name: start minikube
           command: |
-            sudo -E minikube start --vm-driver=none --cpus 2 --memory 2048 --kubernetes-version=${K8S_VERSION} &> $HOME/minikube.log 2>&1 < /dev/null
+            sudo -E minikube start --vm-driver=none --cpus 2 --memory 2048 --kubernetes-version=${K8S_VERSION}
       - run:
           name: wait for minikube
           command: |
