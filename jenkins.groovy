@@ -70,7 +70,6 @@ def buildStrimzi() {
 }
 
 def runSystemTests(String workspace, String tags, String testCases) {
-    echo "inside run tests"
     sh "mvn -f ${workspace}/systemtest/pom.xml -P systemtests verify -DjunitTags=${tags} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
 }
 
