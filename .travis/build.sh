@@ -54,8 +54,8 @@ make docker_push
 OLD_DOCKER_ORG=$DOCKER_ORG
 export DOCKER_ORG="localhost:5000/strimzici"
 
-echo "Running systemtests"
-./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}
+#echo "Running systemtests"
+#./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}
 
 # Revert modified DOCKER_REGISTRY and DOCKER_ORG after system tests
 export DOCKER_REGISTRY=$OLD_DOCKER_REGISTRY
