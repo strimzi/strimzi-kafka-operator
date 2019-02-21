@@ -71,9 +71,11 @@ After entering your passphrase you will see confirmation that your passphrase ha
 Identity added: /home/<username>/.ssh/id_rsa (/home/<username>/.ssh/id_rsa)
 ----
 
-== Access Another Writer’s Unmerged Commits
+[[access-another-writer-commits]]
+== Working on content in another writer's fork
 
-This is the process you can use if you need commits another writer has submitted in a merge request that is not yet merged.
+From time to time you'll want to work on content with another writer.
+This process explains how to access commits another writer has submitted in an open pull  request.
 
 . Check out a new topic branch from upstream/master as you normally do.
 +
@@ -104,11 +106,9 @@ First, rewinding head to replay your work on top of it...
 Fast-forwarded <new-topic-branch> to <user>/<merge-request-branch>
 ----
 
-=== Committing to another writer's branch
+. Using the editor of your choice, open the files that need to be updated.
 
-If you have made changes to the content in someone else's branch you'll want to be sure to commit them back to that same branch/PR.
-
-. While in your working branch, commit your changes
+. Once the files have been updated in your working branch, commit your changes
 +
 [source,options="nowrap",subs="+quotes"]
 ----
