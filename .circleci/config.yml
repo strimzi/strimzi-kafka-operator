@@ -39,9 +39,16 @@ jobs:
           paths:
             - project
             - .m2
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p ~/surefire/
+            find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/surefire/ \;
+          when: always
       - store_test_results:
-          path: ./*/target/surefire-reports/
-
+          path: ~/surefire
+      - store_artifacts:
+          path: ~/surefire 
   findbugs:
     environment:
       - MAVEN_OPTS: "-Xmx2048m"
@@ -143,8 +150,16 @@ jobs:
       - run:
           name: Run unit tests
           command: mvn -B failsafe:integration-test
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p ~/failsafe/
+            find . -type f -regex ".*/target/failsafe-reports/.*xml" -exec cp {} ~/failsafe/ \;
+          when: always
       - store_test_results:
-          path: ./*/target/failsafe-reports/
+          path: ~/failsafe
+      - store_artifacts:
+          path: ~/failsafe 
 workflows:
   version: 2
   build-workflow:
