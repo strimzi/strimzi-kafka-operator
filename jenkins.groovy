@@ -74,7 +74,7 @@ def runSystemTests(String workspace, String tags, String testCases) {
     sh "mvn -f ${workspace}/systemtest/pom.xml -P systemtests verify -DjunitTags=${tags} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
 }
 
-def postAction(String artifactDir, String jobName, String buildUrl, String workspace) {
+def postAction(String artifactDir, String pullRequestID, String buildUrl, String workspace) {
     def status = currentBuild.result
     //store test results from build and system tests
     junit testResults: '**/TEST-*.xml', allowEmptyResults: true
@@ -89,13 +89,13 @@ def postAction(String artifactDir, String jobName, String buildUrl, String works
     }
     if (status == null) {
         currentBuild.result = 'SUCCESS'
-        sendMail(env.STRIMZI_MAILING_LIST, "succeeded", jobName, buildUrl)
+        sendMail(env.STRIMZI_MAILING_LIST, "succeeded", pullRequestID, buildUrl)
     }
     teardownEnvironment(workspace)
 }
 
-def sendMail(String address, String status, String jobName, String buildUrl) {
-    mail to:"${address}", subject:"Strimzi PR build of job ${jobName} has ${status}", body:"See ${buildUrl}"
+def sendMail(String address, String status, String pullRequestID, String buildUrl) {
+    mail to:"${address}", subject:"Build of Strimzi PR ${pullRequestID} has ${status}", body:"See ${buildUrl}"
 }
 
 return this
