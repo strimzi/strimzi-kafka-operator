@@ -17,13 +17,13 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.test.timemeasuring.Operation;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
-import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.OpenShiftOnly;
+import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.Oc;
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -56,14 +57,15 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
-import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
+import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
@@ -84,9 +86,9 @@ class KafkaST extends AbstractST {
     private static final long POLL_INTERVAL_FOR_CREATION = 1_000;
     private static final long TIMEOUT_FOR_MIRROR_MAKER_CREATION = 120_000;
     private static final long TIMEOUT_FOR_TOPIC_CREATION = 60_000;
-    private static final long POLL_INTERVAL_SECRET_CREATION = 5_000;
-    private static final long TIMEOUT_FOR_SECRET_CREATION = 360_000;
     private static final long TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION = 450_000;
+    private static final long WAIT_FOR_ROLLING_UPDATE_INTERVAL = Duration.ofSeconds(5).toMillis();
+    private static final long WAIT_FOR_ROLLING_UPDATE_TIMEOUT = Duration.ofMinutes(5).toMillis();
 
     @Test
     @Tag(FLAKY)
@@ -941,6 +943,59 @@ class KafkaST extends AbstractST {
         Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-target", nameConsumerTarget, topicName, messagesCount, userTarget, true));
         // Check consumed messages in target cluster
         checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testManualTriggeringRollingUpdate() {
+        String coPodName = KUBE_CLIENT.listResourcesByLabel("pod", "name=strimzi-cluster-operator").get(0);
+        resources().kafkaEphemeral(CLUSTER_NAME, 1).done();
+
+        // rolling update for kafka
+        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
+        // set annotation to trigger Kafka rolling update
+        CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).cascading(false).edit()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .endMetadata().done();
+
+        // check annotation to trigger rolling update
+        assertTrue(Boolean.parseBoolean(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
+
+        // wait when annotation will be removed
+        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+            () -> getAnnotationsForSS(NAMESPACE, kafkaClusterName(CLUSTER_NAME)) == null
+                || !getAnnotationsForSS(NAMESPACE, kafkaClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
+
+        // check rolling update messages in CO log
+        String coLog = KUBE_CLIENT.logs(coPodName);
+        assertThat(coLog, containsString("Rolling Kafka pod " + kafkaClusterName(CLUSTER_NAME) + "-0" + " due to manual rolling update"));
+
+        // rolling update for zookeeper
+        operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
+        // set annotation to trigger Zookeeper rolling update
+        CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).cascading(false).edit()
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/manual-rolling-update", "true")
+                .endMetadata().done();
+
+        // check annotation to trigger rolling update
+        assertTrue(Boolean.parseBoolean(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME))
+                .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
+
+        // wait when annotation will be removed
+        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+            () -> getAnnotationsForSS(NAMESPACE, zookeeperClusterName(CLUSTER_NAME)) == null
+                || !getAnnotationsForSS(NAMESPACE, zookeeperClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
+
+        // check rolling update messages in CO log
+        coLog = KUBE_CLIENT.logs(coPodName);
+        assertThat(coLog, containsString("Rolling Zookeeper pod " + zookeeperClusterName(CLUSTER_NAME) + "-0" + " to manual rolling update"));
+    }
+
+    private Map<String, String> getAnnotationsForSS(String namespace, String ssName) {
+        return CLIENT.apps().statefulSets().inNamespace(namespace).withName(ssName).get().getMetadata().getAnnotations();
     }
 
     void waitForZkRollUp() {

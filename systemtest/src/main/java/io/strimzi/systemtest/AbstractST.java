@@ -118,7 +118,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
     private static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
 
-    public static final String CO_INSTALL_DIR = "../install/cluster-operator";
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
     public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
