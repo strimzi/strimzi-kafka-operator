@@ -338,10 +338,6 @@ public final class TestUtils {
         }
     }
 
-    public static void assumeLinux() {
-        assumeTrue(System.getProperty("os.name").contains("nux"));
-    }
-
     /** Map Streams utility methods */
     public static <K, V> Map.Entry<K, V> entry(K key, V value) {
         return new AbstractMap.SimpleEntry<>(key, value);
