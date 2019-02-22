@@ -40,7 +40,6 @@ pipeline {
         stage('Parse parameters from comment') {
             steps {
                 script {
-                    env.JUNIT_TAGS = param.JUNIT_TAGS
                     if (env.ghprbCommentBody.contains('tags=')) {
                         env.JUNIT_TAGS = env.ghprbCommentBody.split('tags=')[1].split(/\s/)[0]
                     }
