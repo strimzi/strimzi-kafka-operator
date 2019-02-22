@@ -80,13 +80,13 @@ pipeline {
     post {
         always {
             script {
-                lib.postAction(env.ARTIFACTS_DIR, env.ghprbPullId, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL, env.WORKSPACE, env.STRIMZI_MAILING_LIST)
+                lib.postAction(env.ARTIFACTS_DIR, env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL, env.WORKSPACE, env.STRIMZI_MAILING_LIST)
             }
         }
         failure {
             echo "Build failed"
             script {
-                lib.sendMail(env.STRIMZI_MAILING_LIST, "failed", env.ghprbPullId, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL)
+                lib.sendMail(env.STRIMZI_MAILING_LIST, "failed", env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL)
             }
         }
     }

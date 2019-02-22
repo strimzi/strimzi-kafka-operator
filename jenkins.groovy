@@ -73,7 +73,7 @@ def runSystemTests(String workspace, String tags, String testCases) {
     sh "mvn -f ${workspace}/systemtest/pom.xml -P systemtests verify -DjunitTags=${tags} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
 }
 
-def postAction(String artifactDir, String prID, String prTitle, String prUrl, String buildUrl, String workspace, String address) {
+def postAction(String artifactDir, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl, String workspace, String address) {
     def status = currentBuild.result
     //store test results from build and system tests
     junit testResults: '**/TEST-*.xml', allowEmptyResults: true
@@ -88,13 +88,13 @@ def postAction(String artifactDir, String prID, String prTitle, String prUrl, St
     }
     if (status == null) {
         currentBuild.result = 'SUCCESS'
-        sendMail(address, "succeeded", prID, prTitle, prUrl, buildUrl)
+        sendMail(address, "succeeded", prID, prAuthor, prTitle, prUrl, buildUrl)
     }
     teardownEnvironment(workspace)
 }
 
-def sendMail(String address, String status, String prID, String prTitle, String prUrl, String buildUrl) {
-    mail to:"${address}", subject:"Build of Strimzi PR#${prID} - '${prTitle}' has ${status}", body:"PR link: ${prUrl}\nBuild link: ${buildUrl}"
+def sendMail(String address, String status, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl) {
+    mail to:"${address}", subject:"Build of Strimzi PR#${prID} by  ${prAuthor} - '${prTitle}' has ${status}", body:"PR link: ${prUrl}\nBuild link: ${buildUrl}"
 }
 
 return this
