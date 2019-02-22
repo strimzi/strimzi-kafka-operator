@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import com.sun.xml.internal.bind.v2.TODO;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -93,10 +92,10 @@ public class RollingUpdateST extends AbstractST {
                 .done();
 
         TestUtils.waitFor("Wait till rolling update of pods start", 2000, CO_OPERATION_TIMEOUT,
-                () -> !CLIENT.pods().withName(firstKafkaPodName).isReady());
+            () -> !CLIENT.pods().withName(firstKafkaPodName).isReady());
 
         TestUtils.waitFor("Wait till rolling update timeouted", 2000, CO_OPERATION_TIMEOUT + 20000,
-                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logKafkaPattern).isEmpty());
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logKafkaPattern).isEmpty());
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
