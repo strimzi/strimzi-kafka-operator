@@ -60,7 +60,7 @@ class ConnectST extends AbstractST {
     private static Resources classResources;
 
     @Test
-    @Tag(ACCEPTANCE)
+    @Tag(REGRESSION)
     void testDeployUndeploy() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
@@ -75,7 +75,7 @@ class ConnectST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
+    @Tag(ACCEPTANCE)
     void testKafkaConnectWithFileSinkPlugin() {
         resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editMetadata()

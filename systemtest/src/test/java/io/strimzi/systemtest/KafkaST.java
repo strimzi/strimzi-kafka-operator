@@ -57,13 +57,12 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
-import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
-import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -124,7 +123,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
+    @Tag(REGRESSION)
     void testKafkaAndZookeeperScaleUpScaleDown() {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -237,7 +236,7 @@ class KafkaST extends AbstractST {
     }
 
     @Test
-    @Tag(FLAKY)
+    @Tag(REGRESSION)
     void testCustomAndUpdatedValues() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
@@ -292,7 +291,7 @@ class KafkaST extends AbstractST {
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = KUBE_CLIENT.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("default.replication.factor=1\noffsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1")));
+                    hasItem("default.replication.factor=1\noffsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
@@ -300,7 +299,7 @@ class KafkaST extends AbstractST {
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = KUBE_CLIENT.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
-                    hasItem("timeTick=2000\nautopurge.purgeInterval=1\nsyncLimit=2\ninitLimit=5\n")));
+                    hasItem("autopurge.purgeInterval=1\ntimeTick=2000\ninitLimit=5\nsyncLimit=2\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
@@ -333,7 +332,7 @@ class KafkaST extends AbstractST {
         for (int i = 0; i < expectedKafkaPods; i++) {
             String kafkaPodJson = KUBE_CLIENT.getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
             assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("transaction.state.log.replication.factor=2\ndefault.replication.factor=2\noffsets.topic.replication.factor=2\n")));
+                    hasItem("default.replication.factor=2\noffsets.topic.replication.factor=2\ntransaction.state.log.replication.factor=2\n")));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
             assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
         }
@@ -341,7 +340,7 @@ class KafkaST extends AbstractST {
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = KUBE_CLIENT.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
-                    hasItem("timeTick=2100\nautopurge.purgeInterval=1\nsyncLimit=3\ninitLimit=6\n")));
+                    hasItem("autopurge.purgeInterval=1\ntimeTick=2100\ninitLimit=6\nsyncLimit=3\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
         }
@@ -351,7 +350,7 @@ class KafkaST extends AbstractST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @Tag(ACCEPTANCE)
+    @Tag(REGRESSION)
     void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
         int messagesCount = 20;
