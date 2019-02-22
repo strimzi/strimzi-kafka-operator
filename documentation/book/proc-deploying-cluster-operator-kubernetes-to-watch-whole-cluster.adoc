@@ -6,7 +6,7 @@
 [id='deploying-cluster-operator-kubernetes-to-watch-whole-cluster-{context}']
 = Deploying the Cluster Operator to watch all namespaces
 
-You can configure the Cluster Operator to watch {OpenShiftName} resources across all {Namespaces} in your {ProductPlatformName} cluster. When running in this mode, the Cluster Operator automatically manages clusters in any new projects or namespaces that are created.
+You can configure the Cluster Operator to watch {ProductName} resources across all {Namespaces} in your {ProductPlatformName} cluster. When running in this mode, the Cluster Operator automatically manages clusters in any new projects or namespaces that are created.
 
 .Prerequisites
 

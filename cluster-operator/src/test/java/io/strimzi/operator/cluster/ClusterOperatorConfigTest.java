@@ -95,19 +95,19 @@ public class ClusterOperatorConfigTest {
         assertEquals(new HashSet<>(asList("foo", "bar", "baz")), config.getNamespaces());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testNoNamespace() {
-
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.remove(ClusterOperatorConfig.STRIMZI_NAMESPACE);
 
-        ClusterOperatorConfig.fromMap(envVars);
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+        assertEquals(new HashSet<>(asList("*")), config.getNamespaces());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testEmptyEnvVars() {
-
-        ClusterOperatorConfig.fromMap(Collections.emptyMap());
+        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(Collections.emptyMap());
+        assertEquals(new HashSet<>(asList("*")), config.getNamespaces());
     }
 
     @Test

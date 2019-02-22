@@ -7,8 +7,9 @@
 
 The Cluster Operator can be configured through the following supported environment variables:
 
-`STRIMZI_NAMESPACE`:: Required. A comma-separated list of namespaces that the operator should
-operate in. The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API^]
+`STRIMZI_NAMESPACE`:: A comma-separated list of {Namespaces} that the operator should operate in.
+When not set, set to empty string, or to `*` the cluster operator will operate in all {Namespaces}.
+The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[{KubernetesName} Downward API^]
 to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
 +
 [source,yaml,options="nowrap"]
