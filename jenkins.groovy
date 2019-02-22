@@ -94,7 +94,7 @@ def postAction(String artifactDir, String prID, String prAuthor, String prTitle,
 }
 
 def sendMail(String address, String status, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl) {
-    mail to:"${address}", subject:"Build of Strimzi PR#${prID} by  ${prAuthor} - '${prTitle}' has ${status}", body:"PR link: ${prUrl}\nBuild link: ${buildUrl}"
+    mail to:"${address}", subject:"Build of Strimzi PR#${prID} by ${prAuthor} - '${prTitle}' has ${status}", body:"PR link: ${prUrl}\nBuild link: ${buildUrl}"
 }
 
 return this
