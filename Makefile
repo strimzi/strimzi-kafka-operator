@@ -24,9 +24,9 @@ next_version:
 	mvn versions:set -DnewVersion=$(shell echo $(NEXT_VERSION) | tr a-z A-Z)
 	mvn versions:commit
 	# Update OLM
-	$(SED) -i 's/currentCSV: strimzi-cluster-operator.v.*\+/currentCSV: strimzi-cluster-operator.v$(RELEASE_VERSION)/g' ./olm/strimzi-kafka.package.yaml
-	$(SED) -i 's/name: strimzi-cluster-operator.v.*/name: strimzi-cluster-operator.v$(RELEASE_VERSION)/g' ./olm/strimzi-cluster-operator.clusterserviceversion.yaml
-	$(SED) -i 's/version: [0-9]\+\.[0-9]\+\.[0-9]\+[a-zA-Z0-9_-]*.*/version: $(RELEASE_VERSION)/g' ./olm/strimzi-cluster-operator.clusterserviceversion.yaml
+	$(SED) -i 's/currentCSV: strimzi-cluster-operator.v.*\+/currentCSV: strimzi-cluster-operator.v$(NEXT_VERSION)/g' ./olm/strimzi-kafka.package.yaml
+	$(SED) -i 's/name: strimzi-cluster-operator.v.*/name: strimzi-cluster-operator.v$(NEXT_VERSION)/g' ./olm/strimzi-cluster-operator.clusterserviceversion.yaml
+	$(SED) -i 's/version: [0-9]\+\.[0-9]\+\.[0-9]\+[a-zA-Z0-9_-]*.*/version: $(NEXT_VERSION)/g' ./olm/strimzi-cluster-operator.clusterserviceversion.yaml
 
 release_prepare:
 	echo $(shell echo $(RELEASE_VERSION) | tr a-z A-Z) > release.version
