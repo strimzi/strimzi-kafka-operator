@@ -79,7 +79,7 @@ public class ClusterOperatorConfig {
         String namespacesList = map.get(ClusterOperatorConfig.STRIMZI_NAMESPACE);
         Set<String> namespaces;
         if (namespacesList == null || namespacesList.isEmpty()) {
-            throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
+            namespaces = Collections.singleton(AbstractWatchableResourceOperator.ANY_NAMESPACE);
         } else {
             if (namespacesList.trim().equals(AbstractWatchableResourceOperator.ANY_NAMESPACE)) {
                 namespaces = Collections.singleton(AbstractWatchableResourceOperator.ANY_NAMESPACE);
