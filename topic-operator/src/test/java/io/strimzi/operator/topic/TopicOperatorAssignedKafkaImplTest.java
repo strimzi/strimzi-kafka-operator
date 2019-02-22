@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
