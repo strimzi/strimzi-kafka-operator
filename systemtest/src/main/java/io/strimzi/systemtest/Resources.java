@@ -622,7 +622,7 @@ public class Resources {
     }
 
     DoneableDeployment clusterOperator(String namespace) {
-        return clusterOperator(defaultCLusterOperator(namespace, "300000").build());
+        return clusterOperator(namespace, "300000");
     }
 
     DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
