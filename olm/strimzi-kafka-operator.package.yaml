@@ -1,4 +1,4 @@
-packageName: strimzi-kafka
+packageName: strimzi-kafka-operator
 channels:
-- name: alpha
+- name: final
   currentCSV: strimzi-cluster-operator.v0.11.0-rc2
