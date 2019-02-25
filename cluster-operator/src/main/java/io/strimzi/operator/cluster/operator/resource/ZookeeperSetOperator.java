@@ -5,9 +5,11 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -71,6 +73,12 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
      */
     @Override
     public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart) {
+        String cluster = ss.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        return maybeRollingUpdate(ss, podRestart, leaderFinder.secretOperator.get(ss.getMetadata().getNamespace(),
+                ClusterOperator.secretName(cluster)));
+    }
+
+    public Future<Void> maybeRollingUpdate(StatefulSet ss, Predicate<Pod> podRestart, Secret coKeySecret) {
         String namespace = ss.getMetadata().getNamespace();
         String name = ss.getMetadata().getName();
         final int replicas = ss.getSpec().getReplicas();
@@ -89,7 +97,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         if (zkRoll) {
             // Find the leader
             rollFuture = Future.future();
-            Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(cluster, namespace, pods);
+            Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(cluster, namespace, pods, coKeySecret);
             leaderFuture.compose(leader -> {
                 log.debug("Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));
                 Future<Void> fut = Future.succeededFuture();
