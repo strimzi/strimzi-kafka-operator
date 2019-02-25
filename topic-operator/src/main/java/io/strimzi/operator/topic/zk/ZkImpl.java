@@ -198,7 +198,8 @@ public class ZkImpl implements Zk {
     }
 
     @Override
-    public Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
+    public Future<Zk> watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
+        Future<Zk> result = Future.future();
         workerPool().executeBlocking(
             future -> {
                 try {
@@ -210,8 +211,15 @@ public class ZkImpl implements Zk {
                     future.fail(t);
                 }
             },
-            log("watchChildren"));
-        return this;
+            ar -> {
+                log("watchChildren").handle(ar);
+                if (ar.succeeded()) {
+                    result.complete(this);
+                } else {
+                    result.fail(ar.cause());
+                }
+            });
+        return result;
     }
 
     @Override

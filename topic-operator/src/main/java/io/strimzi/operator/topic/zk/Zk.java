@@ -5,6 +5,7 @@
 package io.strimzi.operator.topic.zk;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.I0Itec.zkclient.ZkClient;
@@ -73,7 +74,7 @@ public interface Zk {
      * for the given {@code path} current at that time with zookeeper so
      * that that {@code watcher} is called when the children of the given {@code path} change.
      */
-    Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher);
+    Future<Zk> watchChildren(String path, Handler<AsyncResult<List<String>>> watcher);
 
     /**
      * Remove the children watcher, if any, for the given {@code path}.

@@ -5,6 +5,7 @@
 package io.strimzi.operator.topic.zk;
 
 import io.strimzi.test.EmbeddedZooKeeper;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -85,16 +86,18 @@ public class ZkImplTest {
         // Now watch its children
         Async barFuture = context.async();
         zk.watchChildren("/foo", watchResult -> {
-            context.assertEquals(singletonList("bar"), watchResult.result());
-            zk.unwatchChildren("/foo");
-            zk.delete("/foo/bar", -1, deleteResult -> {
-                barFuture.countDown();
+            if (singletonList("bar").equals(watchResult.result())) {
+                zk.unwatchChildren("/foo");
+                zk.delete("/foo/bar", -1, deleteResult -> {
+                    barFuture.countDown();
+                });
+            }
+        }).<Void>compose(ignored -> {
+            zk.children("/foo", lsResult -> {
+                context.assertEquals(emptyList(), lsResult.result());
+                zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ig -> { });
             });
-
-        });
-        zk.children("/foo", lsResult -> {
-            context.assertEquals(emptyList(), lsResult.result());
-            zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ig -> { });
+            return Future.succeededFuture();
         });
         barFuture.await();
     }
