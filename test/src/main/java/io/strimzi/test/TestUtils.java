@@ -51,7 +51,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public final class TestUtils {
 
@@ -336,10 +335,6 @@ public final class TestUtils {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static void assumeLinux() {
-        assumeTrue(System.getProperty("os.name").contains("nux"));
     }
 
     /** Map Streams utility methods */
