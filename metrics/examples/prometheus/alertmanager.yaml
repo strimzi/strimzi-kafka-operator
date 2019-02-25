@@ -2,6 +2,8 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: alertmanager
+  labels:
+    app: strimzi
 spec:
   replicas: 1
   template:
@@ -35,6 +37,8 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: alertmanager-config
+  labels:
+    app: strimzi
 data:
   config.yml: |-
     global:
@@ -54,6 +58,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: alertmanager
+  labels:
+    app: strimzi
 spec:
   ports:
     - name: alertmanager
