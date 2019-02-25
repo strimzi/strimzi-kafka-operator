@@ -43,6 +43,7 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
         return TYPE_NODEPORT;
     }
 
+    @Override
     @Description("Authentication configuration for Kafka brokers")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("authentication")

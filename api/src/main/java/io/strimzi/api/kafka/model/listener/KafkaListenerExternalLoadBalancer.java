@@ -43,6 +43,7 @@ public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
         return TYPE_LOADBALANCER;
     }
 
+    @Override
     @Description("Authentication configuration for Kafka brokers")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("authentication")

@@ -41,6 +41,7 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
         return TYPE_ROUTE;
     }
 
+    @Override
     @Description("Authentication configuration for Kafka brokers")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("authentication")

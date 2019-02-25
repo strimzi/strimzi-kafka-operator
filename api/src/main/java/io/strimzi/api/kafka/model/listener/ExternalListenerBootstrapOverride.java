@@ -4,9 +4,8 @@
  */
 package io.strimzi.api.kafka.model.listener;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -25,7 +24,7 @@ import java.util.Map;
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @EqualsAndHashCode
-public class ExternalListenerBootstrapOverride implements Serializable {
+public class ExternalListenerBootstrapOverride implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private String address;
@@ -42,12 +41,12 @@ public class ExternalListenerBootstrapOverride implements Serializable {
         this.address = address;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
