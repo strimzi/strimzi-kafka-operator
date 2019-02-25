@@ -27,6 +27,18 @@ spec:
           mountPath: /var/lib/grafana
         - name: grafana-logs
           mountPath: /var/log/grafana
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 20
       volumes:
       - name: grafana-data
         emptyDir: {}
