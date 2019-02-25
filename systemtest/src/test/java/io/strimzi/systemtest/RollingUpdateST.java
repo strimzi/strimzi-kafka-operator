@@ -64,6 +64,18 @@ public class RollingUpdateST extends AbstractST {
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
+        LOGGER.info("Wait till another rolling update starts");
+        // Second part
+        String rollingUpdateOperation = TimeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
+
+        LOGGER.info(TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation));
+
+        TestUtils.waitFor("Wait till rolling update timeouted", 2000, 180000,
+                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logZkPattern).isEmpty());
+
+        assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+
+        TimeMeasuringSystem.stopOperation(rollingUpdateOperation);
         TimeMeasuringSystem.stopOperation(operationID);
     }
 
@@ -99,16 +111,26 @@ public class RollingUpdateST extends AbstractST {
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
+        LOGGER.info("Wait till another rolling update starts");
+        // Second part
+        String rollingUpdateOperation = TimeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
+
+        TestUtils.waitFor("Wait till rolling update timeouted", 2000, 180000,
+                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logKafkaPattern).isEmpty());
+
+        assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+
+        TimeMeasuringSystem.stopOperation(rollingUpdateOperation);
         TimeMeasuringSystem.stopOperation(operationID);
     }
 
     void assertThatRollingUpdatedFinished(String rolledComponent, String stableComponent) {
-        assertThat(rolledComponent + " was not updated", CLIENT.pods().withName(rolledComponent + "-1").isReady());
-        assertThat(rolledComponent + " was not updated", CLIENT.pods().withName(rolledComponent + "-2").isReady());
+        assertThat(rolledComponent + "-1 is not in ready state", CLIENT.pods().withName(rolledComponent + "-1").isReady());
+        assertThat(rolledComponent + "-2 is not in ready state", CLIENT.pods().withName(rolledComponent + "-2").isReady());
 
-        assertThat(stableComponent + " was not updated", CLIENT.pods().withName(stableComponent + "-0").isReady());
-        assertThat(stableComponent + " was not updated", CLIENT.pods().withName(stableComponent + "-1").isReady());
-        assertThat(stableComponent + " was not updated", CLIENT.pods().withName(stableComponent + "-2").isReady());
+        assertThat(stableComponent + "-0 is is not in ready state", CLIENT.pods().withName(stableComponent + "-0").isReady());
+        assertThat(stableComponent + "-1 is is not in ready state", CLIENT.pods().withName(stableComponent + "-1").isReady());
+        assertThat(stableComponent + "-2 is is not in ready state", CLIENT.pods().withName(stableComponent + "-2").isReady());
     }
 
     @BeforeEach
