@@ -5,6 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.strimzi.operator.topic.zk.Zk;
+import io.vertx.core.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -105,15 +106,18 @@ class ZkTopicsWatcher {
                 }
             }
 
-        }).children(TOPICS_ZNODE, childResult -> {
-            if (childResult.failed()) {
-                LOGGER.error("Error on znode {} children", TOPICS_ZNODE, childResult.cause());
-                return;
-            }
-            List<String> result = childResult.result();
-            LOGGER.debug("Setting initial children {}", result);
-            this.children = result;
-            this.state = 1;
+        }).<Void>compose(zk2 -> {
+            zk.children(TOPICS_ZNODE, childResult -> {
+                if (childResult.failed()) {
+                    LOGGER.error("Error on znode {} children", TOPICS_ZNODE, childResult.cause());
+                    return;
+                }
+                List<String> result = childResult.result();
+                LOGGER.debug("Setting initial children {}", result);
+                this.children = result;
+                this.state = 1;
+            });
+            return Future.succeededFuture();
         });
     }
 }

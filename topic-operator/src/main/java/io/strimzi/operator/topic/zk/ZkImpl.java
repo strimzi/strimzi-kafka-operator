@@ -13,7 +13,6 @@ import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
-import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
@@ -41,9 +40,9 @@ public class ZkImpl implements Zk {
     private final ConcurrentHashMap<String, IZkDataListener> dataWatches = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, IZkChildListener> childWatches = new ConcurrentHashMap<>();
 
-    public ZkImpl(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
+    public ZkImpl(Vertx vertx, ZkClient zkClient) {
         this.vertx = vertx;
-        this.zookeeper = new ZkClient(zkConnectionString, sessionTimeout, connectionTimeout, new BytesPushThroughSerializer());
+        this.zookeeper = zkClient;
     }
 
 
@@ -127,7 +126,8 @@ public class ZkImpl implements Zk {
     }
 
     @Override
-    public Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
+    public Future<Zk> watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
+        Future<Zk> result = Future.future();
         workerPool().executeBlocking(
             future -> {
                 try {
@@ -139,8 +139,15 @@ public class ZkImpl implements Zk {
                     future.fail(t);
                 }
             },
-            log("watchData"));
-        return this;
+            ar -> {
+                log("watchData").handle(ar);
+                if (ar.succeeded()) {
+                    result.complete(this);
+                } else {
+                    result.fail(ar.cause());
+                }
+            });
+        return result;
     }
 
     @Override
@@ -199,7 +206,8 @@ public class ZkImpl implements Zk {
     }
 
     @Override
-    public Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
+    public Future<Zk> watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
+        Future<Zk> result = Future.future();
         workerPool().executeBlocking(
             future -> {
                 try {
@@ -211,8 +219,15 @@ public class ZkImpl implements Zk {
                     future.fail(t);
                 }
             },
-            log("watchChildren"));
-        return this;
+            ar -> {
+                log("watchChildren").handle(ar);
+                if (ar.succeeded()) {
+                    result.complete(this);
+                } else {
+                    result.fail(ar.cause());
+                }
+            });
+        return result;
     }
 
     @Override
