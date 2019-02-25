@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,7 +83,10 @@ public abstract class ZkWatcher {
                 log.error("While getting or watching znode {}", path, dataResult.cause());
             }
         };
-        zk.watchData(path, handler).getData(path, handler);
+        zk.watchData(path, handler).compose(zk2 -> {
+            zk.getData(path, handler);
+            return Future.succeededFuture();
+        });
     }
 
     /**

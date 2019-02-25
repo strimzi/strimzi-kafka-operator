@@ -116,12 +116,15 @@ public class ZkImplTest {
         byte[] data2 = {2};
         zk.watchData("/foo", dataWatch -> {
             context.assertTrue(Arrays.equals(data2, dataWatch.result()));
-        }).getData("/foo", dataResult -> {
-            context.assertTrue(Arrays.equals(data1, dataResult.result()));
+        }).compose(zk2 -> {
+            zk.getData("/foo", dataResult -> {
+                context.assertTrue(Arrays.equals(data1, dataResult.result()));
 
-            zk.setData("/foo", data2, -1, setResult -> {
-                done.complete();
+                zk.setData("/foo", data2, -1, setResult -> {
+                    done.complete();
+                });
             });
+            return Future.succeededFuture();
         });
     }
 

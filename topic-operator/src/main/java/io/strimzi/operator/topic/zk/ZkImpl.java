@@ -126,7 +126,8 @@ public class ZkImpl implements Zk {
     }
 
     @Override
-    public Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
+    public Future<Zk> watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
+        Future<Zk> result = Future.future();
         workerPool().executeBlocking(
             future -> {
                 try {
@@ -138,8 +139,15 @@ public class ZkImpl implements Zk {
                     future.fail(t);
                 }
             },
-            log("watchData"));
-        return this;
+            ar -> {
+                log("watchData").handle(ar);
+                if (ar.succeeded()) {
+                    result.complete(this);
+                } else {
+                    result.fail(ar.cause());
+                }
+            });
+        return result;
     }
 
     @Override

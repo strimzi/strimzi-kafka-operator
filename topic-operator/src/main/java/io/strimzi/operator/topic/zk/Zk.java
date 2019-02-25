@@ -69,7 +69,8 @@ public interface Zk {
     Zk children(String path, Handler<AsyncResult<List<String>>> handler);
 
     /**
-     * Set given the children {@code watcher} on the given {@code path}.
+     * Asynchronously set given the children {@code watcher} on the given {@code path},
+     * returning a future which completes when the watcher is subscribed.
      * A subsequent call to {@link #children(String, Handler)} with the same path will register the child {@code watcher}
      * for the given {@code path} current at that time with zookeeper so
      * that that {@code watcher} is called when the children of the given {@code path} change.
@@ -88,12 +89,13 @@ public interface Zk {
     Zk getData(String path, Handler<AsyncResult<byte[]>> handler);
 
     /**
-     * Set given the data {@code watcher} on the given {@code path}.
+     * Asynchronously set given the data {@code watcher} on the given {@code path},
+     * returning a future which completes when the watcher is subscribed.
      * A subsequent call to {@link #getData(String, Handler)} with the same path will register the data {@code watcher}
      * for the given {@code path} current at that time with zookeeper so
      * that that {@code watcher} is called when the data of the given {@code path} changes.
      */
-    Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher);
+    Future<Zk> watchData(String path, Handler<AsyncResult<byte[]>> watcher);
 
     /**
      * Remove the data watcher, if any, for the given {@code path}.
