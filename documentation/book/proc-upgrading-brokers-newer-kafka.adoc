@@ -26,7 +26,7 @@ ifndef::StrimziUpgrades[]
 |=======================
 |Kafka version |Interbroker protocol version  |Log message format version | Zookeeper version
 |2.0.0         |2.0                           |2.0                        | 3.4.13
-|2.1.1         |???                           |???                        | ???
+|2.1.1         |2.1                           |2.1                        | 3.4.13
 |=======================
 endif::StrimziUpgrades[]
 +
