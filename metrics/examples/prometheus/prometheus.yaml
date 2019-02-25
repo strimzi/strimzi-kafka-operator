@@ -7,6 +7,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: prometheus-server
+  labels:
+    app: strimzi
 rules:
 - apiGroups: [""]
   resources:
@@ -29,12 +31,16 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: prometheus-server
+  labels:
+    app: strimzi
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: prometheus-server
+  labels:
+    app: strimzi
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -49,6 +55,8 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: prometheus
+  labels:
+    app: strimzi
 spec:
   replicas: 1
   template:
@@ -87,6 +95,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
+  labels:
+    app: strimzi
 data:
   prometheus.yml: |
     global:
@@ -465,6 +475,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prometheus
+  labels:
+    app: strimzi
 spec:
   ports:
   - name: prometheus
