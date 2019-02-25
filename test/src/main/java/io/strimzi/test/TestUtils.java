@@ -402,11 +402,16 @@ public final class TestUtils {
             ObjectNode containerNode = (ObjectNode) node.at("/spec/template/spec/containers").get(0);
             for (JsonNode envVar : containerNode.get("env")) {
                 String varName = envVar.get("name").textValue();
+                String varValue = envVar.get("value").textValue();
                 if (varName.matches("STRIMZI_NAMESPACE")) {
-                    // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
                     ((ObjectNode) envVar).remove("valueFrom");
                     ((ObjectNode) envVar).put("value", namespace);
                 }
+                // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
+                if (varName.contains("IMAGE")) {
+                    ((ObjectNode) envVar).put("value", changeOrgAndTag(varValue));
+                }
+
             }
             return mapper.writeValueAsString(node);
         } catch (IOException e) {
