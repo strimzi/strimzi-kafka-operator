@@ -5,6 +5,8 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: grafana
+  labels:
+    app: strimzi
 spec:
   replicas: 1
   template:
@@ -35,6 +37,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grafana
+  labels:
+    app: strimzi
 spec:
   ports:
   - name: grafana
