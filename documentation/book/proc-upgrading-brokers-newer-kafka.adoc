@@ -6,7 +6,7 @@
 
 = Upgrading brokers to a newer Kafka version
 
-This procedure describes how to upgrade a {ProductName} Kafka cluster from one version to a higher version; for example 2.0.0 to 2.1.0.
+This procedure describes how to upgrade a {ProductName} Kafka cluster from one version to a higher version; for example 2.0.0 to 2.1.1.
 
 .Prerequisites
 
@@ -16,9 +16,19 @@ This procedure describes how to upgrade a {ProductName} Kafka cluster from one v
 
 .Procedure
 
-. Consult the table below and determine whether the new Kafka version has a different log message format version than the previous version. 
+. Consult the table below and determine whether the new Kafka version has a different log message format version than the previous version.
 +
+ifdef::StrimziUpgrades[]
 {blank}include::snip-kafka-versions.adoc[leveloffset=+1]
+endif::StrimziUpgrades[]
+ifndef::StrimziUpgrades[]
+[options="header"]
+|=======================
+|Kafka version |Interbroker protocol version  |Log message format version | Zookeeper version
+|2.0.0         |2.0                           |2.0                        | 3.4.13
+|2.1.1         |???                           |???                        | ???
+|=======================
+endif::StrimziUpgrades[]
 +
 If the log message format versions are the same proceed to the next step. 
 Otherwise, ensure the `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the previous version.
@@ -46,7 +56,7 @@ If `log.message.format.version` is unset then set it and wait for the resulting 
 . Change the `Kafka.spec.kafka.version` to specify the new version, but leave the `log.message.format.version` as the previous version.
 If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's `STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image` as well.
 +
-For example, if upgrading from Kafka 2.0.0 to 2.1.0:
+For example, if upgrading from Kafka 2.0.0 to 2.1.1:
 +
 [source,yaml]
 ----
@@ -55,7 +65,7 @@ kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.1.0 <1>
+    version: 2.1.1 <1>
     config:
       log.message.format.version: "2.0" <2>
       # ...
@@ -90,7 +100,7 @@ WARNING: You cannot downgrade after completing this step. If, for whatever reaso
 
 . If the log message format versions, as identified in step 1, are the same proceed to the next step. 
 Otherwise change the `log.message.format.version` in `Kafka.spec.kafka.config` to the default version for the new version of Kafka now being used.
-For example, if upgrading to 2.1.0:
+For example, if upgrading to 2.1.1:
 +
 [source,yaml]
 ----
@@ -99,7 +109,7 @@ kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.1.0
+    version: 2.1.1
     config:
       log.message.format.version: "2.1"
       # ...
@@ -109,4 +119,4 @@ Wait for the Cluster Operator to update the cluster.
 
 .Additional resources
 
-* See xref:proc-downgrading-brokers-older-kafka-str[] for the procedure to downgrade a {ProductName} Kafka cluster from one version to a lower version, for example 2.0.1 to 2.0.0.
+* See xref:proc-downgrading-brokers-older-kafka-str[] for the procedure to downgrade a {ProductName} Kafka cluster from one version to a lower version, for example 2.1.1 to 2.0.0.
