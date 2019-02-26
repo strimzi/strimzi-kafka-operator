@@ -37,7 +37,7 @@ class ConnectS2IST extends AbstractST {
     @OpenShiftOnly
     @Tag(FLAKY)
     void testDeployS2IWithMongoDBPlugin() throws IOException {
-        resources().kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
+        testClassResources.kafkaConnectS2I(CONNECT_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect-s2i")
             .endMetadata()
@@ -45,15 +45,12 @@ class ConnectS2IST extends AbstractST {
 
         File dir = StUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.3.0/debezium-connector-mongodb-0.3.0-plugin.zip");
 
-        String connectS2IPodName = KUBE_CLIENT.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
-
         // Start a new image build using the plugins directory
         KUBE_CLIENT.exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath());
-        KUBE_CLIENT.waitForResourceDeletion("pod", connectS2IPodName);
 
         KUBE_CLIENT.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
 
-        connectS2IPodName = KUBE_CLIENT.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
+        String connectS2IPodName = KUBE_CLIENT.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
         String plugins = KUBE_CLIENT.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));
