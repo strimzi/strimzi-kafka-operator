@@ -23,8 +23,8 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaAssemblyList;
-import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafka;
@@ -210,11 +210,11 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
-        replaceCrdResource(Kafka.class, KafkaAssemblyList.class, DoneableKafka.class, resourceName, editor);
+        replaceCrdResource(Kafka.class, KafkaList.class, DoneableKafka.class, resourceName, editor);
     }
 
     void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnect> editor) {
-        replaceCrdResource(KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class, resourceName, editor);
+        replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class, resourceName, editor);
     }
 
     void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {

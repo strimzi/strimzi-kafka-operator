@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.Kafka;
@@ -97,7 +97,7 @@ public class JbodStorageTest {
 
         // setting up a mock Kubernetes client
         this.mockClient = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
+                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class, DoneableKafka.class)
                 .end()
                 .build();
 

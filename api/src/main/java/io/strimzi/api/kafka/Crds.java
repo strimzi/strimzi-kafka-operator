@@ -157,24 +157,24 @@ public class Crds {
         return crd(Kafka.class);
     }
 
-    public static MixedOperation<Kafka, KafkaAssemblyList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaOperation(KubernetesClient client) {
-        return client.customResources(kafka(), Kafka.class, KafkaAssemblyList.class, DoneableKafka.class);
+    public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaOperation(KubernetesClient client) {
+        return client.customResources(kafka(), Kafka.class, KafkaList.class, DoneableKafka.class);
     }
 
     public static CustomResourceDefinition kafkaConnect() {
         return crd(KafkaConnect.class);
     }
 
-    public static MixedOperation<KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnectOperation(KubernetesClient client) {
-        return client.customResources(kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class);
+    public static MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnectOperation(KubernetesClient client) {
+        return client.customResources(kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
     }
 
     public static CustomResourceDefinition kafkaConnectS2I() {
         return crd(KafkaConnectS2I.class);
     }
 
-    public static <D extends CustomResourceDoneable<T>, T extends CustomResource> MixedOperation<KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2iOperation(KubernetesClient client) {
-        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class);
+    public static <D extends CustomResourceDoneable<T>, T extends CustomResource> MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2iOperation(KubernetesClient client) {
+        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class);
     }
 
     public static CustomResourceDefinition topic() {
