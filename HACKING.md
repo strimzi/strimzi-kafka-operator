@@ -196,9 +196,8 @@ It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositor
 
 To execute an expected group of system tests need to add system property `junitTags` with following value:
 
-`-DjunitTags=integration` - to execute one test group
+`-DjunitTags=acceptance` - to execute one test group
 `-DjunitTags=acceptance,regression` - to execute many test groups
-`-DjunitTags=all` - to execute all test groups
 
 If `junitTags` system property isn't defined, all tests without an explicitly declared test group will be executed.
 
@@ -223,3 +222,7 @@ Ex)
 ### Log level
 
 To set the log level of Strimzi for system tests need to add system property `TEST_STRIMZI_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
+
+### Docker image names in ST
+
+To set specific prefix or suffix to the image name need to add system property `DOCKER_IMAGE_PREFIX` or `DOCKER_IMAGE_SUFFIX`

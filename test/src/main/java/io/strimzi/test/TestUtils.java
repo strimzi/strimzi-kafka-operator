@@ -73,6 +73,7 @@ public final class TestUtils {
 
     private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)-kafka-([0-9.]+)$");
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
+    private static final Pattern IMAGE_NAME_PATTERN = Pattern.compile("(?:.+/)?([^:]+)(?::.+)?");
 
     private TestUtils() {
         // All static methods
@@ -148,7 +149,18 @@ public final class TestUtils {
         return "";
     }
 
-    public static String changeOrgAndTag(String image, String newOrg, String newTag, String kafkaVersion) {
+    public static String changeOrgAndTag(String image, String newOrg, String newTag, String kafkaVersion, String imagePrefix, String imageSuffix) {
+        // Update image name with prefix and suffix if needed
+        if (imagePrefix != null || imageSuffix != null) {
+            Matcher imageNameMatcher = IMAGE_NAME_PATTERN.matcher(image);
+            if (imageNameMatcher.find()) {
+                String imageName = imageNameMatcher.group(1);
+                String processedImageName = ((imagePrefix == null) ? "" : imagePrefix)
+                        + imageName.replaceAll("-", "")
+                        + ((imageSuffix == null) ? "" : imageSuffix);
+                image = image.replaceAll(imageName, processedImageName);
+            }
+        }
         image = image.replaceFirst("^strimzi/", newOrg + "/");
         Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
         StringBuffer sb = new StringBuffer();
@@ -169,7 +181,9 @@ public final class TestUtils {
         String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", strimziOrg);
         String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", strimziTag);
         kafkaVersion = System.getenv().getOrDefault("KAFKA_VERSION", kafkaVersion);
-        return changeOrgAndTag(image, dockerOrg, dockerTag, kafkaVersion);
+        String imagePrefix = System.getenv().getOrDefault("DOCKER_IMAGE_PREFIX", null);
+        String imageSuffix = System.getenv().getOrDefault("DOCKER_IMAGE_SUFFIX", null);
+        return changeOrgAndTag(image, dockerOrg, dockerTag, kafkaVersion, imagePrefix, imageSuffix);
     }
 
     public static String changeOrgAndTagInImageMap(String imageMap) {
