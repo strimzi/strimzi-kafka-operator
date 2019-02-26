@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
@@ -24,6 +25,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
@@ -162,6 +164,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                 try {
                     // get CustomResource and related resources for the specific cluster
                     T cr = resourceOperator.get(namespace, assemblyName);
+                    validate(cr);
 
                     if (cr != null) {
                         log.info("{}: Assembly {} should be created or updated", reconciliation, assemblyName);
@@ -202,6 +205,21 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
             }
         });
     }
+
+    /**
+     * Validate the Custom Resource.
+     * This should log at the WARN level (rather than throwing) if the resource can safely be reconciled.
+     * @param resource The custom resource
+     * @throws InvalidResourceException if the resource cannot be safely reconciled.
+     */
+    protected void validate(T resource) {
+        if (resource != null) {
+            String context = kind + " resource " + resource.getMetadata().getName()
+                    + " in namespace " + resource.getMetadata().getNamespace();
+            ResourceVisitor.visit(resource, new ValidationVisitor(context, log));
+        }
+    }
+
 
     /**
      * Reconcile assembly resources in the given namespace having the given selector.
@@ -339,4 +357,5 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         }
         return onlyMetricsSettingChanged && diff.size() == 1;
     }
+
 }

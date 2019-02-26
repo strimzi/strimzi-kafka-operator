@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
+
 import java.util.Map;
 
 @Buildable(
@@ -20,6 +22,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"numStreams", "groupId", "bootstrapServers", "logging"})
+@EqualsAndHashCode(callSuper = true)
 public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     private static final long serialVersionUID = 1L;
 

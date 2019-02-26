@@ -4,10 +4,9 @@
  */
 package io.strimzi.api.kafka.model.listener;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -15,6 +14,8 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 /**
  * Configures external listener overrides for broker services and advertised addresses
@@ -27,7 +28,8 @@ import java.util.Map;
     builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @EqualsAndHashCode
-public class ExternalListenerBrokerOverride implements Serializable {
+public class ExternalListenerBrokerOverride implements Serializable, UnknownPropertyPreserving {
+
     private static final long serialVersionUID = 1L;
 
     private Integer broker;
@@ -65,13 +67,16 @@ public class ExternalListenerBrokerOverride implements Serializable {
         this.advertisedPort = advertisedPort;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>();
+        }
         this.additionalProperties.put(name, value);
     }
 }

@@ -10,6 +10,8 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Representation for options to be passed to a JVM.
@@ -21,11 +23,13 @@ import java.io.Serializable;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
-public class EntityOperatorJvmOptions implements Serializable {
+public class EntityOperatorJvmOptions implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private boolean gcLoggingEnabled = true;
+
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Specifies whether the Garbage Collection logging is enabled. The default is true.")
     public boolean isGcLoggingEnabled() {
@@ -34,6 +38,16 @@ public class EntityOperatorJvmOptions implements Serializable {
 
     public void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
+    }
+
+    @Override
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @Override
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }
 

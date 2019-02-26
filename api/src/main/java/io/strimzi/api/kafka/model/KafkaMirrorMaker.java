@@ -4,8 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -20,6 +18,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import io.sundr.builder.annotations.Inline;
+import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +52,8 @@ import static java.util.Collections.singletonList;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
-public class KafkaMirrorMaker extends CustomResource {
+@EqualsAndHashCode
+public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;
 
@@ -103,12 +103,12 @@ public class KafkaMirrorMaker extends CustomResource {
         this.spec = spec;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

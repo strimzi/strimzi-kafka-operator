@@ -9,6 +9,12 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static java.util.Collections.emptyMap;
+
+
 /**
  * Configures external bootstrap service for NodePort listeners
  */
@@ -23,6 +29,7 @@ public class NodePortListenerBootstrapOverride extends ExternalListenerBootstrap
     private static final long serialVersionUID = 1L;
 
     private Integer nodePort;
+    private Map<String, Object> additionalProperties;
 
     @Description("Node port for the bootstrap service")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -32,5 +39,18 @@ public class NodePortListenerBootstrapOverride extends ExternalListenerBootstrap
 
     public void setNodePort(Integer nodePort) {
         this.nodePort = nodePort;
+    }
+
+    @Override
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties != null ? this.additionalProperties : emptyMap();
+    }
+
+    @Override
+    public void setAdditionalProperty(String name, Object value) {
+        if (this.additionalProperties == null) {
+            this.additionalProperties = new HashMap<>();
+        }
+        this.additionalProperties.put(name, value);
     }
 }

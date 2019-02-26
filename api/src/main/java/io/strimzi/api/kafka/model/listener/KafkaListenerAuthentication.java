@@ -4,13 +4,13 @@
  */
 package io.strimzi.api.kafka.model.listener;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -32,7 +32,8 @@ import java.util.Map;
         generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
-public abstract class KafkaListenerAuthentication implements Serializable {
+@EqualsAndHashCode
+public abstract class KafkaListenerAuthentication implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private Map<String, Object> additionalProperties;
@@ -43,12 +44,12 @@ public abstract class KafkaListenerAuthentication implements Serializable {
             "`tls` type is supported only on TLS listeners.")
     public abstract String getType();
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

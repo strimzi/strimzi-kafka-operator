@@ -4,12 +4,12 @@
  */
 package io.strimzi.api.kafka.model.template;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -26,7 +26,8 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "deployment", "pod"})
-public class EntityOperatorTemplate implements Serializable {
+@EqualsAndHashCode
+public class EntityOperatorTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private ResourceTemplate deployment;
@@ -53,12 +54,12 @@ public class EntityOperatorTemplate implements Serializable {
         this.pod = pod;
     }
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }

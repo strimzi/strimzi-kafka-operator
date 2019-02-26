@@ -4,12 +4,11 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -25,7 +24,8 @@ import java.util.Map;
         @JsonSubTypes.Type(name = KafkaAuthorizationSimple.TYPE_SIMPLE, value = KafkaAuthorizationSimple.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public abstract class KafkaAuthorization implements Serializable {
+@EqualsAndHashCode
+public abstract class KafkaAuthorization implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private Map<String, Object> additionalProperties;
@@ -35,12 +35,12 @@ public abstract class KafkaAuthorization implements Serializable {
             "`simple` authorization type uses Kafka's `kafka.security.auth.SimpleAclAuthorizer` class for authorization.")
     public abstract String getType();
 
-    @JsonAnyGetter
+    @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
     }
 
-    @JsonAnySetter
+    @Override
     public void setAdditionalProperty(String name, Object value) {
         if (this.additionalProperties == null) {
             this.additionalProperties = new HashMap<>();

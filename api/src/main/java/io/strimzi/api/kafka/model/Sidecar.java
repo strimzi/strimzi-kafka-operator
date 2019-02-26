@@ -10,6 +10,8 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Representation of a sidecar container configuration
@@ -21,13 +23,15 @@ import java.io.Serializable;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class Sidecar implements Serializable {
+public class Sidecar implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private String image;
 
     private Resources resources;
+
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The docker image for the container")
     public String getImage() {
@@ -45,5 +49,15 @@ public class Sidecar implements Serializable {
 
     public void setResources(Resources resources) {
         this.resources = resources;
+    }
+
+    @Override
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @Override
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }
