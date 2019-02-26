@@ -83,9 +83,9 @@ spec:
       - name: connector1
         configMap:
           name: connector1-configuration
-    - name: connector1-certificates
-      secret:
-        secretName: connector1-certificates
+      - name: connector1-certificates
+        secret:
+          secretName: connector1-certificates
 ----
 
 The volumes will be mounted inside the Kafka Connect containers in the path `/opt/kafka/external-configuration/_<volume-name>_`.
