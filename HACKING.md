@@ -226,3 +226,5 @@ To set the log level of Strimzi for system tests need to add system property `TE
 ### Docker image names in ST
 
 To set specific prefix or suffix to the image name need to add system property `DOCKER_IMAGE_PREFIX` or `DOCKER_IMAGE_SUFFIX`
+For example, `image strimzi/cluster-operator:latest` will have following update:
+If add `DOCKER_IMAGE_PREFIX=custom-prefix-` and `DOCKER_IMAGE_SUFFIX-custom-suffix` as a result will be `strimzi/custom-prefix-cluster-operator-custom-suffix:latest`
