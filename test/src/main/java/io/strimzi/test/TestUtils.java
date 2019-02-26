@@ -152,15 +152,19 @@ public final class TestUtils {
     public static String changeOrgAndTag(String image, String newOrg, String newTag, String kafkaVersion, String imagePrefix, String imageSuffix) {
         // Update image name with prefix and suffix if needed
         if (imagePrefix != null || imageSuffix != null) {
-            Matcher imageNameMatcher = IMAGE_NAME_PATTERN.matcher(image);
-            if (imageNameMatcher.find()) {
-                String imageName = imageNameMatcher.group(1);
+            Matcher m = IMAGE_NAME_PATTERN.matcher(image);
+            StringBuffer sb = new StringBuffer();
+            if (m.find()) {
+                String imageName = m.group(1);
                 String processedImageName = ((imagePrefix == null) ? "" : imagePrefix)
                         + imageName.replaceAll("-", "")
                         + ((imageSuffix == null) ? "" : imageSuffix);
-                image = image.replaceAll(imageName, processedImageName);
+                m.appendReplacement(sb, m.group(0).replaceFirst(Pattern.quote(m.group(1)), processedImageName));
+                m.appendTail(sb);
+                image = sb.toString();
             }
         }
+        // Update image org and image tag
         image = image.replaceFirst("^strimzi/", newOrg + "/");
         Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
         StringBuffer sb = new StringBuffer();
