@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.12.0
+
+* Log at the warn level when a custom resource uses deprecated or unknown properties
+
 ## 0.11.0
 
 * Add support for JBOD storage for Kafka brokers
