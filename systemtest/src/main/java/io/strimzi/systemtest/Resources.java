@@ -43,6 +43,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.systemtest.utils.AvailabilityVerifier;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -54,6 +55,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+
+import static io.strimzi.systemtest.AbstractST.GLOBAL_POLL_INTERVAL;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class Resources extends AbstractResources {
@@ -162,7 +165,7 @@ public class Resources extends AbstractResources {
     }
 
     Job deleteLater(Job resource) {
-        return deleteLater(client().extensions().jobs(), resource);
+        return deleteLater(client().batch().jobs(), resource);
     }
 
     void deleteResources() {
@@ -189,9 +192,12 @@ public class Resources extends AbstractResources {
                             .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                             .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                             .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
+                            .addToConfig("default.replication.factor", 3)
                             .withNewListeners()
                                 .withNewPlain().endPlain()
                                 .withNewTls().endTls()
+                                .withNewKafkaListenerExternalRoute()
+                                .endKafkaListenerExternalRoute()
                             .endListeners()
                             .withNewReadinessProbe()
                                 .withInitialDelaySeconds(15)
@@ -204,6 +210,9 @@ public class Resources extends AbstractResources {
                             .withResources(new ResourceRequirementsBuilder()
                                 .addToRequests("memory", new Quantity("1G")).build())
                             .withMetrics(new HashMap<>())
+                            .withNewJvmOptions()
+                            .withGcLoggingEnabled(false)
+                            .endJvmOptions()
                         .endKafka()
                         .withNewZookeeper()
                             .withReplicas(3)
@@ -219,6 +228,9 @@ public class Resources extends AbstractResources {
                 .withTimeoutSeconds(5)
                 .endLivenessProbe()
                             .withNewEphemeralStorage().endEphemeralStorage()
+                            .withNewJvmOptions()
+                            .withGcLoggingEnabled(false)
+                            .endJvmOptions()
                         .endZookeeper()
                         .withNewEntityOperator()
                             .withNewTopicOperator().withImage(tOImage).endTopicOperator()

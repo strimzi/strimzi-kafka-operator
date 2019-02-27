@@ -384,17 +384,22 @@ class KafkaST extends AbstractST {
     @Tag(REGRESSION)
     void testSendMessagesPlainAnonymous() throws InterruptedException {
         String name = "send-messages-plain-anon";
-        int messagesCount = 20;
+        int messagesCount = 500;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         resources().topic(CLUSTER_NAME, topicName).done();
 
         // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, null, false));
+        Job sendJob = waitForJobSuccess(sendRecordsToClusterJob(CLUSTER_NAME, "send-messages-job", TOPIC_NAME, messagesCount, null, false));
+        Job receiveJob = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME, "receive-messages-job", TOPIC_NAME, messagesCount, null, false));
+
+
+//        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, null, false));
 
         // Now get the pod logs (which will be both producer and consumer logs)
-        checkPings(messagesCount, job);
+//        checkPings(messagesCount, job);
+        checkRecordsForConsumer(messagesCount, receiveJob);
     }
 
     /**
@@ -521,7 +526,7 @@ class KafkaST extends AbstractST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 1)
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .withResources(new ResourceRequirementsBuilder()
