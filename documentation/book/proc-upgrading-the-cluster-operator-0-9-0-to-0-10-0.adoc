@@ -1,6 +1,7 @@
 // This module is included in the following assemblies:
 //
 // assembly-upgrade.adoc
+// This module is only included in the upstream repository. In the downstream repository, the equivalent module to this one is named proc-upgrading-cluster-operator-1-0-0-to-1-1-0
 
 [id='proc-upgrading-the-cluster-operator-{context}']
 = Upgrading the Cluster Operator from 0.9.0 to 0.10.0
