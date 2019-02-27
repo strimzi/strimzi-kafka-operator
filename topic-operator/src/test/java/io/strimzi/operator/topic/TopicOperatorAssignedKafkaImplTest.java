@@ -111,7 +111,6 @@ public class TopicOperatorAssignedKafkaImplTest {
     @BeforeClass
     public static void setUp() throws Exception {
         Assume.assumeTrue(System.getProperty("os.name").contains("nux") || System.getProperty("os.name").contains("Mac OS X"));
-        Assume.assumeTrue(System.getenv("TRAVIS") == null);
     }
 
     @Test

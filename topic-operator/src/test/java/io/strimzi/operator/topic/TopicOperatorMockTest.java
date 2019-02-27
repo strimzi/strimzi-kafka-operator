@@ -23,6 +23,7 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +57,8 @@ public class TopicOperatorMockTest {
 
     @Before
     public void createMockKube(TestContext context) throws Exception {
+        Assume.assumeTrue("This test is flaky on Travis, for unknown reasons",
+                System.getenv("TRAVIS") == null);
         vertx = Vertx.vertx();
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.topic(),
