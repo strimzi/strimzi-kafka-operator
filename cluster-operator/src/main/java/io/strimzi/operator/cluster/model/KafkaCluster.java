@@ -1187,19 +1187,19 @@ public class KafkaCluster extends AbstractModel {
         if (isExposedWithNodePort()) {
             NodePortListenerOverride overrides = ((KafkaListenerExternalNodePort) listeners.getExternal()).getOverrides();
 
-            if (overrides != null) {
+            if (overrides != null && overrides.getBrokers() != null) {
                 brokerOverride.addAll(overrides.getBrokers());
             }
         } else if (isExposedWithLoadBalancer()) {
             LoadBalancerListenerOverride overrides = ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).getOverrides();
 
-            if (overrides != null) {
+            if (overrides != null && overrides.getBrokers() != null) {
                 brokerOverride.addAll(overrides.getBrokers());
             }
         } else if (isExposedWithRoute()) {
             RouteListenerOverride overrides = ((KafkaListenerExternalRoute) listeners.getExternal()).getOverrides();
 
-            if (overrides != null) {
+            if (overrides != null && overrides.getBrokers() != null) {
                 brokerOverride.addAll(overrides.getBrokers());
             }
         }
