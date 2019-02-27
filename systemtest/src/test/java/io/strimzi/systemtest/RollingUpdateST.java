@@ -24,7 +24,7 @@ import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
-public class RollingUpdateST extends AbstractST {
+class RollingUpdateST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
@@ -71,7 +71,7 @@ public class RollingUpdateST extends AbstractST {
         LOGGER.info(TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation));
 
         TestUtils.waitFor("Wait till rolling update timedout", 2000, 180000,
-                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logZkPattern).isEmpty());
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logZkPattern).isEmpty());
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
@@ -116,7 +116,7 @@ public class RollingUpdateST extends AbstractST {
         String rollingUpdateOperation = TimeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
 
         TestUtils.waitFor("Wait till rolling update timeouted", 2000, 180000,
-                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logKafkaPattern).isEmpty());
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logKafkaPattern).isEmpty());
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
