@@ -101,7 +101,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return
      */
     public Future<Void> hasIngressAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isIngressAddressReady(namespace, name));
+        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s to get ready", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isIngressAddressReady(namespace, name));
     }
 
     /**
@@ -133,7 +133,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return
      */
     public Future<Void> hasNodePort(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isNodePortReady(namespace, name));
+        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s to get ready", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isNodePortReady(namespace, name));
     }
 
     /**

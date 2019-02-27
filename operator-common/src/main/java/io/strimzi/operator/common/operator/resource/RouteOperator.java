@@ -42,7 +42,7 @@ public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Rou
      * @return
      */
     public Future<Void> hasAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isAddressReady(namespace, name));
+        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s to get ready", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isAddressReady(namespace, name));
     }
 
     /**

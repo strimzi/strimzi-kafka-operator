@@ -28,7 +28,7 @@ public class Util {
      */
     public static Future<Void> waitFor(Vertx vertx, String logContext, long pollIntervalMs, long timeoutMs, BooleanSupplier ready) {
         Future<Void> fut = Future.future();
-        LOGGER.debug("Waiting for {} to get ready", logContext);
+        LOGGER.debug("Waiting for {}", logContext);
         long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<Long>() {
             @Override

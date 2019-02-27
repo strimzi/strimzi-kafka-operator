@@ -42,7 +42,7 @@ public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
     }
 
     public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isReady(namespace, name));
+        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s to get ready", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isReady(namespace, name));
     }
 
     /**

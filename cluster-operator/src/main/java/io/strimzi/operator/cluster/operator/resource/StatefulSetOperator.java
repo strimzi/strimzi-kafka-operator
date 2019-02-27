@@ -31,7 +31,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiPredicate;
+import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
 /**
@@ -195,7 +195,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
         Future<Void> podReconcileFuture =
             podOperations.reconcile(namespace, podName, null).compose(ignore -> {
-                BiPredicate<String, String> predicate = (ignore1, ignore2) -> {
+                BooleanSupplier predicate = () -> {
                     // predicate - changed generation means pod has been updated
                     String newUid = getPodUid(podOperations.get(namespace, podName));
                     boolean done = !deleted.equals(newUid);
@@ -204,8 +204,8 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                     }
                     return done;
                 };
-                Future<Void> del = Util.waitFor(vertx, String.format("%s resource %s in namespace %s", resourceKind, name, namespace),
-                        pollingIntervalMs, timeoutMs, () -> predicate.test(namespace, name));
+                Future<Void> del = Util.waitFor(vertx, String.format("%s resource %s in namespace %s to get ready", resourceKind, name, namespace),
+                        pollingIntervalMs, timeoutMs, predicate);
                 return del;
             });
 
