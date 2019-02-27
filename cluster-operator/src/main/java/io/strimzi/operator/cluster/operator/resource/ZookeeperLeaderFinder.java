@@ -172,7 +172,7 @@ public class ZookeeperLeaderFinder {
                     } else {
                         log.debug("Ignoring error", leader.cause());
                         if (backOff.done()) {
-                            result.fail(leader.cause());
+                            result.complete(UNKNOWN_LEADER);
                         } else {
                             rescheduleOrComplete(tid);
                         }
@@ -288,7 +288,10 @@ public class ZookeeperLeaderFinder {
                 }
 
             });
-        return future;
+        return future.recover(error -> {
+            log.debug("ZK {}:{}: Error trying to determine whether leader ({}) => not leader", host, port, error);
+            return Future.succeededFuture(Boolean.FALSE);
+        });
     }
 
     /** The hostname for connecting to zookeeper in the given pod. */
