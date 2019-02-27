@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -100,7 +101,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return
      */
     public Future<Void> hasIngressAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isIngressAddressReady);
+        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isIngressAddressReady(namespace, name));
     }
 
     /**
@@ -132,7 +133,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return
      */
     public Future<Void> hasNodePort(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isNodePortReady);
+        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isNodePortReady(namespace, name));
     }
 
     /**

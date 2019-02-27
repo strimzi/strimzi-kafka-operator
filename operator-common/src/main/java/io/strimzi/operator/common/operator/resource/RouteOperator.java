@@ -10,6 +10,7 @@ import io.fabric8.openshift.api.model.DoneableRoute;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -41,7 +42,7 @@ public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Rou
      * @return
      */
     public Future<Void> hasAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isAddressReady);
+        return Util.waitFor(vertx, String.format("%s resource %s in namespace %s", resourceKind, name, namespace), pollIntervalMs, timeoutMs, () -> isAddressReady(namespace, name));
     }
 
     /**

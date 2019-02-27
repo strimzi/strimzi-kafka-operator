@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -30,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 /**
@@ -193,7 +195,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         log.debug("Rolling update of {}/{}: Waiting for pod {} to be deleted", namespace, name, podName);
         Future<Void> podReconcileFuture =
             podOperations.reconcile(namespace, podName, null).compose(ignore -> {
-                Future<Void> del = podOperations.waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                BiPredicate<String, String> predicate = (ignore1, ignore2) -> {
                     // predicate - changed generation means pod has been updated
                     String newUid = getPodUid(podOperations.get(namespace, podName));
                     boolean done = !deleted.equals(newUid);
@@ -201,7 +203,9 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                         log.debug("Rolling pod {} finished", podName);
                     }
                     return done;
-                });
+                };
+                Future<Void> del = Util.waitFor(vertx, String.format("%s resource %s in namespace %s", resourceKind, name, namespace),
+                        pollingIntervalMs, timeoutMs, () -> predicate.test(namespace, name));
                 return del;
             });
 

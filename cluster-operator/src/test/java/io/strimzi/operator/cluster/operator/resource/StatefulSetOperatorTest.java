@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractResourceOperatorTest;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -27,7 +28,7 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiPredicate;
+import java.util.function.BooleanSupplier;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -118,7 +119,7 @@ public class StatefulSetOperatorTest
         when(mockResource.get()).thenReturn(resource);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(Util.waitFor(any(Vertx.class), anyString(), anyLong(), anyLong(), any(BooleanSupplier.class))).thenReturn(Future.succeededFuture());
         when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
@@ -155,7 +156,7 @@ public class StatefulSetOperatorTest
         when(mockResource.get()).thenReturn(resource);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.failedFuture(new TimeoutException()));
+        when(Util.waitFor(any(Vertx.class), anyString(), anyLong(), anyLong(), any(BooleanSupplier.class))).thenReturn(Future.failedFuture(new TimeoutException()));
         when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         AtomicInteger call = new AtomicInteger();
@@ -201,7 +202,7 @@ public class StatefulSetOperatorTest
         when(mockResource.get()).thenReturn(resource);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(Util.waitFor(any(Vertx.class), anyString(), anyLong(), anyLong(), any(BooleanSupplier.class))).thenReturn(Future.succeededFuture());
         when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.failedFuture(new TimeoutException()));
         when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
@@ -240,7 +241,7 @@ public class StatefulSetOperatorTest
         when(mockResource.get()).thenReturn(resource);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(Util.waitFor(any(Vertx.class), anyString(), anyLong(), anyLong(), any(BooleanSupplier.class))).thenReturn(Future.succeededFuture());
         when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.failedFuture("reconcile failed"));
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
