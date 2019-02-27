@@ -21,6 +21,7 @@ When none of these properties are defined, the listener will be disabled.
 listeners:
   plain: {}
   tls: {}
+  external: {}
 # ...
 ----
 
