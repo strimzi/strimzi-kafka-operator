@@ -1661,14 +1661,32 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorUserOpRoleBinding() {
+            Future ownNamespaceFuture;
+            Future watchedNamespaceFuture;
+
+            // Create role binding for the watched namespace
             String watchedNamespace = entityOperator != null && entityOperator.getUserOperator() != null ?
                     entityOperator.getUserOperator().getWatchedNamespace() : null;
-            return withVoid(roleBindingOperator.reconcile(
-                    watchedNamespace != null && !watchedNamespace.isEmpty() ?
-                            watchedNamespace : namespace,
+
+            if (watchedNamespace != null && !watchedNamespace.isEmpty() && !namespace.equals(watchedNamespace))    {
+                watchedNamespaceFuture = roleBindingOperator.reconcile(
+                        watchedNamespace,
+                        EntityUserOperator.roleBindingName(name),
+                        eoDeployment != null && entityOperator.getUserOperator() != null ?
+                                entityOperator.getUserOperator().generateRoleBinding(namespace) : null);
+            } else {
+                watchedNamespaceFuture = Future.succeededFuture();
+            }
+
+            // Create role binding for the the UI runs in (it needs to access the CA etc.)
+            ownNamespaceFuture = roleBindingOperator.reconcile(
+                    namespace,
                     EntityUserOperator.roleBindingName(name),
                     eoDeployment != null && entityOperator.getUserOperator() != null ?
-                            entityOperator.getUserOperator().generateRoleBinding(namespace) : null));
+                            entityOperator.getUserOperator().generateRoleBinding(namespace) : null);
+
+
+            return withVoid(CompositeFuture.join(ownNamespaceFuture, watchedNamespaceFuture));
         }
 
         Future<ReconciliationState> entityOperatorTopicOpAncillaryCm() {
