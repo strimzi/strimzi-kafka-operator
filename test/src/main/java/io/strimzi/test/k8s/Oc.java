@@ -28,7 +28,7 @@ public class Oc extends BaseKubeClient<Oc> {
     @Override
     protected Context adminContext() {
         String previous = Exec.exec(Oc.OC, "whoami").out().trim();
-        String admin = "system:admin";
+        String admin = System.getenv().getOrDefault("REMOTE_ADMIN_USER", "developer");
         LOGGER.trace("Switching from login {} to {}", previous, admin);
         Exec.exec(Oc.OC, "login", "-u", admin);
         return new Context() {
