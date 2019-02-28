@@ -5,18 +5,20 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
-import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
+import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.OpenShiftOnly;
@@ -40,6 +42,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,12 +60,12 @@ import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -182,6 +185,29 @@ class KafkaST extends AbstractST {
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testEODeletion() {
+        // Deploy kafka cluster with EO
+        Kafka kafka = resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        // Get pod name to check termination process
+        Optional<Pod> pod = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
+                .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
+                .findFirst();
+
+        assertTrue(pod.isPresent(), "EO pod does not exist");
+
+        // Remove EO from Kafka DTO
+        kafka.getSpec().setEntityOperator(null);
+        // Replace Kafka configuration with removed EO
+        resources.kafka(kafka).done();
+
+        // Wait when EO(UO + TO) will be removed
+        KUBE_CLIENT.waitForResourceDeletion("deployment", entityOperatorDeploymentName(CLUSTER_NAME));
+        KUBE_CLIENT.waitForResourceDeletion("pod", pod.get().getMetadata().getName());
     }
 
     @Test
@@ -566,11 +592,12 @@ class KafkaST extends AbstractST {
         assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
                 "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
 
-        String podName = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
+        Optional<Pod> pod = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
-                .findFirst().get().getMetadata().getName();
+                .findFirst();
+        assertTrue(pod.isPresent(), "EO pod does not exist");
 
-        assertResources(KUBE_CLIENT.namespace(), podName,
+        assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(),
                 "500M", "300m", "500M", "300m");
     }
 
