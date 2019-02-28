@@ -116,7 +116,6 @@ public class PartialRollingUpdateTest {
                 .withInitialInstances(Collections.singleton(cluster))
                 .end()
                 .build();
-        ResourceUtils.mockHttpClientForWorkaroundRbac(bootstrapClient);
 
         ResourceOperatorSupplier supplier = supplier(bootstrapClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
@@ -163,7 +162,6 @@ public class PartialRollingUpdateTest {
                 .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
                 .withInitialSecrets(set(clusterCaCert, clusterCaKey, clientsCaCert, clientsCaKey))
                 .build();
-        ResourceUtils.mockHttpClientForWorkaroundRbac(mockClient);
 
         ResourceOperatorSupplier supplier = supplier(mockClient);
 

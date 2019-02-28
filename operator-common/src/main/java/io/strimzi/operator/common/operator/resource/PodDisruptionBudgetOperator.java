@@ -24,6 +24,7 @@ public class PodDisruptionBudgetOperator extends AbstractResourceOperator<Kubern
         return client.policy().podDisruptionBudget();
     }
 
+    @Override
     protected Future<ReconcileResult<PodDisruptionBudget>> internalPatch(String namespace, String name, PodDisruptionBudget current, PodDisruptionBudget desired, boolean cascading) {
         Future<ReconcileResult<PodDisruptionBudget>> fut = Future.future();
         internalDelete(namespace, name).setHandler(delRes -> {

@@ -16,12 +16,17 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -324,8 +329,29 @@ public class TopicOperator extends AbstractModel {
             .build();
     }
 
-    public RoleBindingOperator.RoleBinding generateRoleBinding(String namespace) {
-        return new RoleBindingOperator.RoleBinding(roleBindingName(cluster), TO_CLUSTER_ROLE_NAME, namespace, getServiceAccountName(), createOwnerReference());
+    public KubernetesRoleBinding generateRoleBinding(String namespace) {
+        KubernetesSubject ks = new KubernetesSubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(getServiceAccountName())
+                .withNamespace(namespace)
+                .build();
+
+        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+                .withName(TO_CLUSTER_ROLE_NAME)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("ClusterRole")
+                .build();
+
+        return new KubernetesRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName(roleBindingName(cluster))
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
+                    .withNamespace(namespace)
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .withSubjects(ks)
+            .build();
     }
 
     @Override

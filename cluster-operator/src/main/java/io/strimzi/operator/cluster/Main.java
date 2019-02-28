@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRole;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -237,11 +238,12 @@ public class Main {
             };
 
             for (Map.Entry<String, String> clusterRole : clusterRoles.entrySet()) {
-                log.info("Creating cluster role {}", clusterRole);
+                log.info("Creating cluster role {}", clusterRole.getKey());
 
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()), Charset.defaultCharset()))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
-                    Future fut = cro.reconcile(clusterRole.getKey(), new ClusterRoleOperator.ClusterRole(yaml));
+                    KubernetesClusterRole role = cro.convertYamlToClusterRole(yaml);
+                    Future fut = cro.reconcile(role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {
                     log.error("Failed to create Cluster Roles.", e);
