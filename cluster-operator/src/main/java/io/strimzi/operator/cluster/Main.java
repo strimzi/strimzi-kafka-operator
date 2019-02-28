@@ -109,20 +109,20 @@ public class Main {
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
         NetworkPolicyOperator networkPolicyOperator = new NetworkPolicyOperator(vertx, client);
         PodDisruptionBudgetOperator podDisruptionBudgetOperator = new PodDisruptionBudgetOperator(vertx, client);
+        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, isOpenShift, config.getOperationTimeoutMs());
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift,
-                config.getOperationTimeoutMs(), certManager,
-                new ResourceOperatorSupplier(vertx, client, isOpenShift, config.getOperationTimeoutMs()),
+                config.getOperationTimeoutMs(), certManager, resourceOperatorSupplier,
                 config.versions(), config.getImagePullPolicy());
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift,
                 certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations,
-                networkPolicyOperator, podDisruptionBudgetOperator, config.versions(), config.getImagePullPolicy());
+                networkPolicyOperator, podDisruptionBudgetOperator, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
         if (isOpenShift) {
             kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations,
-                    configMapOperations, secretOperations, certManager, config.versions(), config.getImagePullPolicy());
+                    configMapOperations, secretOperations, certManager, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
         } else {
             maybeLogS2iOnKubeWarning(vertx, client);
         }
@@ -130,7 +130,7 @@ public class Main {
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
                 new KafkaMirrorMakerAssemblyOperator(vertx, isOpenShift, certManager, kmmo, secretOperations,
                         configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations,
-                        podDisruptionBudgetOperator, config.versions(), config.getImagePullPolicy());
+                        podDisruptionBudgetOperator, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
@@ -170,7 +170,7 @@ public class Main {
         }
     }
 
-    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, boolean isOpenShift, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
+    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, boolean isOpenShift, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, ResourceOperatorSupplier resourceOperatorSupplier, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
         ImageStreamOperator imagesStreamOperations;
         BuildConfigOperator buildConfigOperations;
         DeploymentConfigOperator deploymentConfigOperations;
@@ -189,7 +189,7 @@ public class Main {
                 certManager,
                 kafkaConnectS2iCrdOperator,
                  configMapOperations, deploymentConfigOperations,
-                serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, versions, imagePullPolicy);
+                serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, resourceOperatorSupplier, versions, imagePullPolicy);
         return kafkaConnectS2IClusterOperations;
     }
 
@@ -240,7 +240,12 @@ public class Main {
             for (Map.Entry<String, String> clusterRole : clusterRoles.entrySet()) {
                 log.info("Creating cluster role {}", clusterRole.getKey());
 
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()), Charset.defaultCharset()))) {
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(
+                                Main.class.getResourceAsStream(
+                                        "/cluster-roles/"
+                                                + clusterRole.getValue()),
+                                Charset.defaultCharset()))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
                     KubernetesClusterRole role = cro.convertYamlToClusterRole(yaml);
                     Future fut = cro.reconcile(role.getMetadata().getName(), role);

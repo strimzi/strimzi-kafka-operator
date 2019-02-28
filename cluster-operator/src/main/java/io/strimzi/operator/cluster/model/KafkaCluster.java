@@ -19,8 +19,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -967,18 +965,6 @@ public class KafkaCluster extends AbstractModel {
     protected String getDefaultLogConfigFileName() {
         return "kafkaDefaultLoggingProperties";
     }
-
-    public ServiceAccount generateInitContainerServiceAccount() {
-        return new ServiceAccountBuilder()
-                .withNewMetadata()
-                    .withName(initContainerServiceAccountName(cluster))
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
-                    .withLabels(labels.toMap())
-                .endMetadata()
-            .build();
-    }
-
 
     /**
      * Get the name of the kafka service account given the name of the {@code kafkaResourceName}.

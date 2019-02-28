@@ -34,6 +34,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
@@ -1077,5 +1079,20 @@ public abstract class AbstractModel {
         }
 
         return merged;
+    }
+
+    public ServiceAccount generateServiceAccountInternal() {
+        return new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withName(getServiceAccountName())
+                    .withNamespace(namespace)
+                    .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
+                .endMetadata()
+            .build();
+    }
+
+    public ServiceAccount generateServiceAccount() {
+        return generateServiceAccountInternal();
     }
 }

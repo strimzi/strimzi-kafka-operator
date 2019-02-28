@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -317,16 +315,6 @@ public class TopicOperator extends AbstractModel {
     @Override
     protected String getServiceAccountName() {
         return topicOperatorServiceAccountName(cluster);
-    }
-
-    public ServiceAccount generateServiceAccount() {
-        return new ServiceAccountBuilder()
-                .withNewMetadata()
-                    .withName(getServiceAccountName())
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
-                .endMetadata()
-            .build();
     }
 
     public KubernetesRoleBinding generateRoleBinding(String namespace) {

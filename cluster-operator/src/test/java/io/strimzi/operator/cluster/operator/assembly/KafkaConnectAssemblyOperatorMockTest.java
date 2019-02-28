@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.KafkaConnectAssemblyList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
@@ -98,7 +99,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 connectOperator,
-                cmops, depops, svcops, secretops, policyops, pdbops, VERSIONS, null);
+                cmops, depops, svcops, secretops, policyops, pdbops, ResourceUtils.supplierWithMocks(true), VERSIONS, null);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();

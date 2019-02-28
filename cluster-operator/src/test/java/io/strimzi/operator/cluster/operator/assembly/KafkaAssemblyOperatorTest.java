@@ -6,19 +6,15 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceBuilder;
-import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
@@ -107,7 +103,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -338,7 +333,7 @@ public class KafkaAssemblyOperatorTest {
         EntityOperator entityOperator = EntityOperator.fromCrd(clusterCm);
 
         // create CM, Service, headless service, statefulset and so on
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
@@ -694,7 +689,7 @@ public class KafkaAssemblyOperatorTest {
         EntityOperator originalEntityOperator = EntityOperator.fromCrd(originalAssembly);
 
         // create CM, Service, headless service, statefulset and so on
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
@@ -949,7 +944,7 @@ public class KafkaAssemblyOperatorTest {
         Async async = context.async(2);
 
         // create CM, Service, headless service, statefulset
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
@@ -1042,7 +1037,7 @@ public class KafkaAssemblyOperatorTest {
         Async async = context.async(2);
 
         // create CM, Service, headless service, statefulset
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -1112,51 +1107,6 @@ public class KafkaAssemblyOperatorTest {
         async.await();
 
         context.assertEquals(new HashSet(asList("foo", "bar")), createdOrUpdated);
-    }
-
-    private ResourceOperatorSupplier supplierWithMocks() {
-        RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
-
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
-                mock(ServiceOperator.class), routeOps, mock(ZookeeperSetOperator.class),
-                mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
-                mock(PvcOperator.class), mock(DeploymentOperator.class),
-                mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
-                mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(CrdOperator.class));
-        when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleBindingOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
-
-        if (openShift) {
-            when(supplier.routeOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.hasAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
-                return new RouteBuilder()
-                        .withNewStatus()
-                        .addNewIngress()
-                        .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
-                        .endIngress()
-                        .endStatus()
-                        .build();
-            });
-        }
-
-        when(supplier.serviceOperations.hasIngressAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceOperations.hasNodePort(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i -> {
-            return new ServiceBuilder()
-                    .withNewStatus()
-                        .withNewLoadBalancer()
-                            .withIngress(new LoadBalancerIngressBuilder().withHostname(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com").build())
-                        .endLoadBalancer()
-                    .endStatus()
-                    .withNewSpec()
-                        .withPorts(new ServicePortBuilder().withNodePort(31245).build())
-                    .endSpec()
-                    .build();
-        });
-
-        return supplier;
     }
 
     @AfterClass

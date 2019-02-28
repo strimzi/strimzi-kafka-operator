@@ -479,4 +479,16 @@ public class ZookeeperCluster extends AbstractModel {
     protected String getDefaultLogConfigFileName() {
         return "zookeeperDefaultLoggingProperties";
     }
+
+    /**
+     * Get the name of the zookeeper service account given the name of the {@code zookeeperResourceName}.
+     */
+    public static String initContainerServiceAccountName(String zookeeperResourceName) {
+        return zookeeperClusterName(zookeeperResourceName);
+    }
+
+    @Override
+    protected String getServiceAccountName() {
+        return initContainerServiceAccountName(cluster);
+    }
 }

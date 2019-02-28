@@ -535,4 +535,16 @@ public class KafkaConnectCluster extends AbstractModel {
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
     }
+
+    @Override
+    protected String getServiceAccountName() {
+        return initContainerServiceAccountName(cluster);
+    }
+
+    /**
+     * Get the name of the connect service account given the name of the {@code connectResourceName}.
+     */
+    public static String initContainerServiceAccountName(String connectResourceName) {
+        return kafkaConnectClusterName(connectResourceName);
+    }
 }

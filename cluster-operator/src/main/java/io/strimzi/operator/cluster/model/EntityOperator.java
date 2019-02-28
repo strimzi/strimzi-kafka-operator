@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -262,19 +261,11 @@ public class EntityOperator extends AbstractModel {
         return entityOperatorServiceAccountName(cluster);
     }
 
+    @Override
     public ServiceAccount generateServiceAccount() {
-
         if (!isDeployed()) {
             return null;
         }
-
-        return new ServiceAccountBuilder()
-                .withNewMetadata()
-                    .withName(getServiceAccountName())
-                    .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
-                    .withLabels(labels.toMap())
-                .endMetadata()
-                .build();
+        return generateServiceAccountInternal();
     }
 }

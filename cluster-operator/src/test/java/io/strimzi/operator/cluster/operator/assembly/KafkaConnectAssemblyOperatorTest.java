@@ -14,6 +14,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -109,10 +110,11 @@ public class KafkaConnectAssemblyOperatorTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm, VERSIONS);
 
@@ -193,10 +195,11 @@ public class KafkaConnectAssemblyOperatorTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -293,10 +296,11 @@ public class KafkaConnectAssemblyOperatorTest {
             return Future.succeededFuture();
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -304,7 +308,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
             KafkaConnectCluster compareTo = KafkaConnectCluster.fromCrd(clusterCm, VERSIONS);
 
-            // Vertify service
+            // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(1, capturedServices.size());
             Service service = capturedServices.get(0);
@@ -382,10 +386,11 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -432,10 +437,11 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -484,10 +490,11 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -535,10 +542,11 @@ public class KafkaConnectAssemblyOperatorTest {
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
         Async async = context.async(2);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, VERSIONS, null) {
+                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null) {
 
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly) {
