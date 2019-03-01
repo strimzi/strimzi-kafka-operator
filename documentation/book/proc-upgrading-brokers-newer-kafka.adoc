@@ -18,12 +18,9 @@ This procedure describes how to upgrade a {ProductName} Kafka cluster from one v
 
 . Consult the table below and determine whether the new Kafka version has a different log message format version than the previous version.
 +
-//Upstream only
 ifdef::StrimziUpgrades[]
 {blank}include::snip-kafka-versions.adoc[leveloffset=+1]
 endif::StrimziUpgrades[]
-//end
-//downstream only
 ifndef::StrimziUpgrades[]
 [options="header"]
 |=======================
@@ -32,7 +29,6 @@ ifndef::StrimziUpgrades[]
 |2.1.1         |2.1                           |2.1                        | 3.4.13
 |=======================
 endif::StrimziUpgrades[]
-//end
 +
 If the log message format versions are the same proceed to the next step. 
 Otherwise, ensure the `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the previous version.

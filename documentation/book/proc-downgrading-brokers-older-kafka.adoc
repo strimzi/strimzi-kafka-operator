@@ -2,7 +2,6 @@
 //
 // assembly-upgrading-kafka-versions.adoc
 
-
 [id='proc-downgrading-brokers-older-kafka-{context}']
 
 = Downgrading brokers to an older Kafka version
@@ -83,5 +82,3 @@ oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade from
 ----
 
 . Downgrade each client application to use the previous version of the client libraries.
-
-.Additional resources

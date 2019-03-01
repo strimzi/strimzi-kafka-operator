@@ -5,17 +5,13 @@
 [id='proc-upgrading-the-cluster-operator-{context}']
 = Upgrading the Cluster Operator from {ProductVersionUpgradingFrom} to {ProductVersionUpgradingTo}
 
-//Upstream only
 ifdef::StrimziUpgrades[]
 This procedure will describe how to upgrade a Cluster Operator deployment from version 0.9.x to version {ProductVersionUpgradingTo}. 
 endif::StrimziUpgrades[]
-//end
 
-//Downstream only
 ifndef::StrimziUpgrades[]
 This procedure will describe how to upgrade a Cluster Operator deployment from version {ProductVersionUpgradingFrom} to version {ProductVersionUpgradingTo}. 
 endif::StrimziUpgrades[]
-//end
 
 The availability of Kafka clusters managed by the Cluster Operator is not affected by the upgrade operation.
 
