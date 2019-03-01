@@ -18,7 +18,9 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient, KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> {
+public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient,
+        KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
+        Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> {
 
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
@@ -28,7 +30,10 @@ public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourc
     }
 
     @Override
-    protected AbstractNonNamespacedResourceOperator<KubernetesClient, KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractNonNamespacedResourceOperator<KubernetesClient, KubernetesClusterRoleBinding,
+            KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
+            Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> createResourceOperations(
+                    Vertx vertx, KubernetesClient mockClient) {
         return new ClusterRoleBindingOperator(vertx, mockClient);
     }
 

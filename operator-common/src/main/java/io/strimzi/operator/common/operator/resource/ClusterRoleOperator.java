@@ -17,7 +17,9 @@ import io.vertx.core.Vertx;
 
 import java.io.IOException;
 
-public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient, KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole, Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> {
+public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
+        KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole, Resource<KubernetesClusterRole,
+        DoneableKubernetesClusterRole>> {
 
     /**
      * Constructor
@@ -30,12 +32,15 @@ public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<K
     }
 
     @Override
-    protected MixedOperation<KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole, Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> operation() {
+    protected MixedOperation<KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole,
+            Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> operation() {
         return client.rbac().kubernetesClusterRoles();
     }
 
     @Override
-    protected Future<ReconcileResult<KubernetesClusterRole>> internalPatch(String name, KubernetesClusterRole current, KubernetesClusterRole desired) {
+    protected Future<ReconcileResult<KubernetesClusterRole>> internalPatch(String name,
+                                                                           KubernetesClusterRole current,
+                                                                           KubernetesClusterRole desired) {
         return Future.succeededFuture(ReconcileResult.noop(current));
     }
 

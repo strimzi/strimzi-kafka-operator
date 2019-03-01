@@ -76,7 +76,8 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     public Future<ReconcileResult<T>> reconcile(String name, T desired) {
 
         if (desired != null && !name.equals(desired.getMetadata().getName())) {
-            return Future.failedFuture("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName());
+            return Future.failedFuture("Given name " + name + " incompatible with desired name "
+                    + desired.getMetadata().getName());
         }
 
         Future<ReconcileResult<T>> fut = Future.future();
@@ -136,7 +137,8 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         try {
             T result = operation().withName(name).cascading(cascading).patch(desired);
             log.debug("{} {} has been patched", resourceKind, name);
-            return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
+            return Future.succeededFuture(wasChanged(current, result) ?
+                    ReconcileResult.patched(result) : ReconcileResult.noop(result));
         } catch (Exception e) {
             log.error("Caught exception while patching {} {}", resourceKind, name, e);
             return Future.failedFuture(e);

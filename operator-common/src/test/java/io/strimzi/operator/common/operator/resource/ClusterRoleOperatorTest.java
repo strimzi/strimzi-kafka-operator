@@ -18,7 +18,9 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ClusterRoleOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient, KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole, Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> {
+public class ClusterRoleOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient,
+        KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole,
+        Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> {
 
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
@@ -28,7 +30,9 @@ public class ClusterRoleOperatorTest extends AbstractNonNamespacedResourceOperat
     }
 
     @Override
-    protected AbstractNonNamespacedResourceOperator<KubernetesClient, KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole, Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractNonNamespacedResourceOperator<KubernetesClient, KubernetesClusterRole, KubernetesClusterRoleList,
+            DoneableKubernetesClusterRole, Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> createResourceOperations(
+                    Vertx vertx, KubernetesClient mockClient) {
         return new ClusterRoleOperator(vertx, mockClient);
     }
 

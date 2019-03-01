@@ -14,7 +14,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 
-public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClient, KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> {
+public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClient, KubernetesRoleBinding,
+        KubernetesRoleBindingList, DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding,
+        DoneableKubernetesRoleBinding>> {
 
     /**
      * Constructor
@@ -26,12 +28,15 @@ public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClie
     }
 
     @Override
-    protected MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> operation() {
+    protected MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
+            Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> operation() {
         return client.rbac().kubernetesRoleBindings();
     }
 
     @Override
-    protected Future<ReconcileResult<KubernetesRoleBinding>> internalPatch(String namespace, String name, KubernetesRoleBinding current, KubernetesRoleBinding desired) {
+    protected Future<ReconcileResult<KubernetesRoleBinding>> internalPatch(String namespace, String name,
+                                                                           KubernetesRoleBinding current,
+                                                                           KubernetesRoleBinding desired) {
         return Future.succeededFuture(ReconcileResult.noop(current));
     }
 

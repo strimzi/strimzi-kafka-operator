@@ -69,10 +69,12 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     protected abstract void mocker(C mockClient, MixedOperation op);
 
     /** Create the subclass of ResourceOperation to be tested */
-    protected abstract AbstractNonNamespacedResourceOperator<C, T, L, D, R> createResourceOperations(Vertx vertx, C mockClient);
+    protected abstract AbstractNonNamespacedResourceOperator<C, T, L, D, R> createResourceOperations(
+            Vertx vertx, C mockClient);
 
     /** Create the subclass of ResourceOperation to be tested with mocked readiness checks*/
-    protected AbstractNonNamespacedResourceOperator<C, T, L, D, R> createResourceOperationsWithMockedReadiness(Vertx vertx, C mockClient)    {
+    protected AbstractNonNamespacedResourceOperator<C, T, L, D, R> createResourceOperationsWithMockedReadiness(
+            Vertx vertx, C mockClient)    {
         return createResourceOperations(vertx, mockClient);
     }
 
@@ -157,7 +159,8 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, D, R> op = createResourceOperationsWithMockedReadiness(
+                vertx, mockClient);
 
         Async async = context.async();
         op.createOrUpdate(resource).setHandler(ar -> {
