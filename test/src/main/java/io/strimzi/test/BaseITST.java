@@ -38,7 +38,7 @@ public class BaseITST {
     public static final KubeClusterResource CLUSTER = new KubeClusterResource();
     protected static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient(
             new ConfigBuilder()
-                    .withMasterUrl(System.getenv().getOrDefault("KUBERNETES_API_URL", "https://localhost:8443"))
+                    .withMasterUrl(System.getenv().getOrDefault("KUBERNETES_API_URL", "https://127.0.0.1:8443"))
                     .withOauthToken(System.getenv("KUBERNETES_API_TOKEN")).build());
 
     public static final KubeClient<?> KUBE_CLIENT = CLUSTER.client();

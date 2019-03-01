@@ -224,5 +224,17 @@ Ex)
 
 To set the log level of Strimzi for system tests need to add system property `TEST_STRIMZI_LOG_LEVEL` with one of the following values: `ERROR`, `WARNING`, `INFO`, `DEBUG`, `TRACE`.
 
+### Use remote cluster
+
+System tests can be run against remote cluster, which is reachable via public URL. For proper setting if this feature you have to se two environment variables:
+
+
+| Variable | Purpose | Default |
+| ------------ | ------------- | ------------- |
+| KUBERNETES_API_URL        | remote cluster URL | https://127.0.0.1:8443 |
+| KUBERNETES_API_TOKEN   | auth token of user with admin rights on remote cluster | oc whoami -t |
+
+Make sure that you did login or set context to remote cluster and have these variables set before run tests.
+
 ### Execute ST with custom Kafka version
 To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` with one of the following values: `2.0.0`, `2.0.1`, `2.1.0`
