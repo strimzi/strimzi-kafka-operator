@@ -13,7 +13,7 @@
 :linkattrs:
 :toclevels: 3
 
-// Name placeholders
+// Name and version placeholders
 :ProductLongName: Strimzi
 :ProductName: Strimzi
 :ContextProduct: strimzi
@@ -29,6 +29,13 @@
 :ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
 :Namespace: {OpenShiftName} project or {KubernetesName} namespace
 :Namespaces: {OpenShiftName} projects or {KubernetesName} namespaces
+
+// Kafka upgrade attributes
+:ProductVersionUpgradingFrom: 0.9.0
+:ProductVersionUpgradingTo: 0.10.0
+:KafkaVersionLower: 2.0.0
+:KafkaVersionHigher: 2.1.1
+:ExistingKafkaVersionUpgradingClusterOperator: 2.0.1
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
