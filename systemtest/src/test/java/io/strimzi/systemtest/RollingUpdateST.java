@@ -37,6 +37,8 @@ class RollingUpdateST extends AbstractST {
     static final String NAMESPACE = "rolling-update-cluster-test";
     static final String CLUSTER_NAME = "my-cluster";
     private static final int CO_OPERATION_TIMEOUT = 60000;
+    private static final int CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT + 20000;
+    private static final int CO_OPERATION_TIMEOUT_POLL = 2000;
     private static final String RECONCILIATION_PATTERN = "'Triggering periodic reconciliation for namespace " + NAMESPACE + "'";
 
     @Test
@@ -63,10 +65,10 @@ class RollingUpdateST extends AbstractST {
                 .endSpec()
                 .done();
 
-        TestUtils.waitFor("Wait till rolling update of pods start", 2000, CO_OPERATION_TIMEOUT,
+        TestUtils.waitFor("Wait till rolling update of pods start", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT,
             () -> !CLIENT.pods().withName(firstZkPodName).isReady());
 
-        TestUtils.waitFor("Wait till rolling update timedout", 2000, CO_OPERATION_TIMEOUT + 20000,
+        TestUtils.waitFor("Wait till rolling update timeout", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT_WAIT,
             () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logZkPattern).isEmpty());
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -74,7 +76,7 @@ class RollingUpdateST extends AbstractST {
         String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
 
         LOGGER.info("Wait till another rolling update starts");
-        TestUtils.waitFor("Wait till another rolling update starts", 2000, CO_OPERATION_TIMEOUT,
+        TestUtils.waitFor("Wait till another rolling update starts", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT,
             () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation), RECONCILIATION_PATTERN).isEmpty());
 
         TimeMeasuringSystem.stopOperation(reconciliation);
@@ -84,7 +86,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info(TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation));
 
-        TestUtils.waitFor("Wait till rolling update timedout", 2000, 180000,
+        TestUtils.waitFor("Wait till rolling update timeout", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT_WAIT,
             () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logZkPattern).isEmpty());
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
@@ -117,10 +119,10 @@ class RollingUpdateST extends AbstractST {
                 .endSpec()
                 .done();
 
-        TestUtils.waitFor("Wait till rolling update of pods start", 2000, CO_OPERATION_TIMEOUT,
+        TestUtils.waitFor("Wait till rolling update of pods start", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT,
             () -> !CLIENT.pods().withName(firstKafkaPodName).isReady());
 
-        TestUtils.waitFor("Wait till rolling update timeouted", 2000, CO_OPERATION_TIMEOUT + 20000,
+        TestUtils.waitFor("Wait till rolling update timeouted", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT_WAIT,
             () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logKafkaPattern).isEmpty());
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
@@ -128,7 +130,7 @@ class RollingUpdateST extends AbstractST {
         String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
 
         LOGGER.info("Wait till another rolling update starts");
-        TestUtils.waitFor("Wait till another rolling update starts", 2000, CO_OPERATION_TIMEOUT,
+        TestUtils.waitFor("Wait till another rolling update starts", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT,
             () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation), RECONCILIATION_PATTERN).isEmpty());
 
         TimeMeasuringSystem.stopOperation(reconciliation);
@@ -138,7 +140,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info(TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation));
 
-        TestUtils.waitFor("Wait till rolling update timedout", 2000, 180000,
+        TestUtils.waitFor("Wait till rolling update timedout", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT_WAIT,
             () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logKafkaPattern).isEmpty());
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
