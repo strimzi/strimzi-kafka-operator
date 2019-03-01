@@ -278,7 +278,6 @@ public class KafkaAssemblyOperatorMockTest {
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(ZookeeperCluster.nodesSecretName(CLUSTER_NAME)).get());
             context.assertNotNull(mockClient.secrets().inNamespace(NAMESPACE).withName(TopicOperator.secretName(CLUSTER_NAME)).get());
-            context.assertNotNull(mockClient.rbac());
             createAsync.complete();
         });
         createAsync.await();
