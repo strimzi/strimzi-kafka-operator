@@ -493,7 +493,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Does SS {} need to be upgraded?", ss.getMetadata().getName());
                     Future<?> result;
                     // Get the current version of the cluster
-                    KafkaVersion currentVersion = versions.version(Annotations.annotations(ss).get(ANNO_STRIMZI_IO_KAFKA_VERSION));
+                    // Strimzi 0.8.x and 0.9.0 didn't set the annotation, so if it's absent we know it must be 2.0.0
+                    KafkaVersion currentVersion = versions.version(Annotations.annotations(ss).getOrDefault(ANNO_STRIMZI_IO_KAFKA_VERSION, "2.0.0"));
                     log.debug("SS {} has current version {}", ss.getMetadata().getName(), currentVersion);
                     String fromVersionAnno = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_FROM_VERSION);
                     KafkaVersion fromVersion;
