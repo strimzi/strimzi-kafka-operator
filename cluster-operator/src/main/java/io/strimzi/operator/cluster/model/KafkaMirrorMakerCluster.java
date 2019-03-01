@@ -168,7 +168,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         String image = versions.kafkaMirrorMakerImage(kafkaMirrorMaker.getSpec().getImage(), kafkaMirrorMaker.getSpec().getVersion());
         if (image == null) {
-            throw new InvalidResourceException("Version " + kafkaMirrorMaker.getSpec().getVersion() + " is not supported");
+            throw new InvalidResourceException("Version " + kafkaMirrorMaker.getSpec().getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
         }
         kafkaMirrorMakerCluster.setImage(image);
 
