@@ -76,7 +76,7 @@ public class Resources {
     private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
     private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
     public static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
-    private static final String KAFKA_VERSION = System.getenv().getOrDefault("ST_KAFKA_VERSION", "2.1.0");
+    private static final String KAFKA_VERSION = System.getenv().getOrDefault("ST_KAFKA_VERSION", "2.1.1");
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
