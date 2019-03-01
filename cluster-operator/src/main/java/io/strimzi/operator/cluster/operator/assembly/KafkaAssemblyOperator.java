@@ -1760,11 +1760,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 isPodCaCertUpToDate &= isPodCaCertUpToDate(pod, ca);
             }
 
-            boolean isPodToRestart = !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertsChanged;
+            boolean isPodToRestart = !isPodUpToDate || isAncillaryCmChange;
+
             boolean isSatisfiedBy = true;
-            // it makes sense to check maintenance windows if pod restarting is needed
-            if (isPodToRestart) {
+            if (isCaCertsChanged || !isPodCaCertUpToDate) {
                 isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
+                if (isSatisfiedBy) {
+                    // ca cert has changed and the window is opened
+                    isPodToRestart = true;
+                }
             }
 
             if (log.isDebugEnabled()) {
@@ -1796,7 +1800,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     }
                 }
             }
-            return isSatisfiedBy && isPodToRestart;
+            return isPodToRestart;
         }
 
         private boolean isMaintenanceTimeWindowsSatisfied(Supplier<Date> dateSupplier) {
