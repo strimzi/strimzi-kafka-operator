@@ -162,13 +162,16 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         kafkaMirrorMakerCluster.setReplicas(kafkaMirrorMaker.getSpec() != null && kafkaMirrorMaker.getSpec().getReplicas() > 0 ? kafkaMirrorMaker.getSpec().getReplicas() : DEFAULT_REPLICAS);
 
-
         kafkaMirrorMakerCluster.setWhitelist(kafkaMirrorMaker.getSpec().getWhitelist());
         kafkaMirrorMakerCluster.setProducer(kafkaMirrorMaker.getSpec().getProducer());
         kafkaMirrorMakerCluster.setConsumer(kafkaMirrorMaker.getSpec().getConsumer());
-        kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(
-                kafkaMirrorMaker.getSpec().getImage(),
-                kafkaMirrorMaker.getSpec().getVersion()));
+
+        String image = versions.kafkaMirrorMakerImage(kafkaMirrorMaker.getSpec().getImage(), kafkaMirrorMaker.getSpec().getVersion());
+        if (image == null) {
+            throw new InvalidResourceException("Version " + kafkaMirrorMaker.getSpec().getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
+        }
+        kafkaMirrorMakerCluster.setImage(image);
+
         kafkaMirrorMakerCluster.setLogging(kafkaMirrorMaker.getSpec().getLogging());
         kafkaMirrorMakerCluster.setGcLoggingEnabled(kafkaMirrorMaker.getSpec().getJvmOptions() == null ? true : kafkaMirrorMaker.getSpec().getJvmOptions().isGcLoggingEnabled());
 

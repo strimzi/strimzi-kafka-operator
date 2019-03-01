@@ -174,7 +174,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                 log.debug("{}: Lock {} released", reconciliation, lockName);
                                 if (createResult.failed()) {
                                     if (createResult.cause() instanceof InvalidResourceException) {
-                                        log.error(createResult.cause().getMessage());
+                                        log.error("{}: createOrUpdate failed. {}", reconciliation, createResult.cause().getMessage());
                                     } else {
                                         log.error("{}: createOrUpdate failed", reconciliation, createResult.cause());
                                     }
