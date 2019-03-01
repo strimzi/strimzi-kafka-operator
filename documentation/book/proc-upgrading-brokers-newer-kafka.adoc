@@ -18,7 +18,7 @@ This procedure describes how to upgrade a {ProductName} Kafka cluster from one v
 
 . Consult the table below and determine whether the new Kafka version has a different log message format version than the previous version. 
 +
-{blank}include::snip-kafka-versions.adoc[leveloffset=+1]
+include::snip-kafka-versions.adoc[leveloffset=+1]
 +
 If the log message format versions are the same proceed to the next step. 
 Otherwise, ensure the `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the previous version.
