@@ -152,25 +152,21 @@ class RollingUpdateST extends AbstractST {
                 .filter(p -> p.getMetadata().getName().startsWith(rolledComponent))
                 .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
 
-        LOGGER.info(podStatuses);
-
         assertThat(rolledComponent + "is fine", podStatuses.contains("Pending"));
 
         Map<String, Long> statusCount = podStatuses.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        LOGGER.info("{} pods statutes: {}", rolledComponent, statusCount);
 
-        LOGGER.info(statusCount);
         assertThat("", statusCount.get("Pending"), is(1L));
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size() - 1)));
-
 
         podStatuses = CLIENT.pods().inNamespace(NAMESPACE).list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(stableComponent))
                 .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
 
-        LOGGER.info(podStatuses);
-
         statusCount = podStatuses.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        LOGGER.info(statusCount);
+        LOGGER.info("{} pods statutes: {}", stableComponent, statusCount);
+
         assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
     }
 
