@@ -75,7 +75,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Wait till another rolling update starts");
         TestUtils.waitFor("Wait till another rolling update starts", 2000, CO_OPERATION_TIMEOUT,
-                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation), RECONCILIATION_PATTERN).isEmpty());
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation), RECONCILIATION_PATTERN).isEmpty());
 
         TimeMeasuringSystem.stopOperation(reconciliation);
 
@@ -129,7 +129,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Wait till another rolling update starts");
         TestUtils.waitFor("Wait till another rolling update starts", 2000, CO_OPERATION_TIMEOUT,
-                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation), RECONCILIATION_PATTERN).isEmpty());
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation), RECONCILIATION_PATTERN).isEmpty());
 
         TimeMeasuringSystem.stopOperation(reconciliation);
 
@@ -139,7 +139,7 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info(TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation));
 
         TestUtils.waitFor("Wait till rolling update timedout", 2000, 180000,
-                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logKafkaPattern).isEmpty());
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logKafkaPattern).isEmpty());
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
