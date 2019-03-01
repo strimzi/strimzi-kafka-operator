@@ -5,8 +5,11 @@
 package io.strimzi.operator.topic.zk;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.ACL;
 
@@ -17,8 +20,22 @@ import java.util.List;
  */
 public interface Zk {
 
-    public static Zk create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
-        return new ZkImpl(vertx, zkConnectionString, sessionTimeout, connectionTimeout);
+    public static void create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout,
+                              Handler<AsyncResult<Zk>> handler) {
+        vertx.executeBlocking(f -> {
+            try {
+                f.complete(createSync(vertx, zkConnectionString, sessionTimeout, connectionTimeout));
+            } catch (Throwable t) {
+                f.fail(t);
+            }
+        },
+                handler);
+    }
+
+    public static Zk createSync(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
+        return new ZkImpl(vertx,
+                new ZkClient(zkConnectionString, sessionTimeout, connectionTimeout,
+                        new BytesPushThroughSerializer()));
     }
 
     /**
@@ -52,12 +69,13 @@ public interface Zk {
     Zk children(String path, Handler<AsyncResult<List<String>>> handler);
 
     /**
-     * Set given the children {@code watcher} on the given {@code path}.
+     * Asynchronously set given the children {@code watcher} on the given {@code path},
+     * returning a future which completes when the watcher is subscribed.
      * A subsequent call to {@link #children(String, Handler)} with the same path will register the child {@code watcher}
      * for the given {@code path} current at that time with zookeeper so
      * that that {@code watcher} is called when the children of the given {@code path} change.
      */
-    Zk watchChildren(String path, Handler<AsyncResult<List<String>>> watcher);
+    Future<Zk> watchChildren(String path, Handler<AsyncResult<List<String>>> watcher);
 
     /**
      * Remove the children watcher, if any, for the given {@code path}.
@@ -71,12 +89,13 @@ public interface Zk {
     Zk getData(String path, Handler<AsyncResult<byte[]>> handler);
 
     /**
-     * Set given the data {@code watcher} on the given {@code path}.
+     * Asynchronously set given the data {@code watcher} on the given {@code path},
+     * returning a future which completes when the watcher is subscribed.
      * A subsequent call to {@link #getData(String, Handler)} with the same path will register the data {@code watcher}
      * for the given {@code path} current at that time with zookeeper so
      * that that {@code watcher} is called when the data of the given {@code path} changes.
      */
-    Zk watchData(String path, Handler<AsyncResult<byte[]>> watcher);
+    Future<Zk> watchData(String path, Handler<AsyncResult<byte[]>> watcher);
 
     /**
      * Remove the data watcher, if any, for the given {@code path}.

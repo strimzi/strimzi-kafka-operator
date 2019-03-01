@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.listener;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 /**
  * Configures a listener to use SASL SCRAM-SHA-512 for authentication.
@@ -17,6 +18,7 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public class KafkaListenerAuthenticationScramSha512 extends KafkaListenerAuthentication {
 
     private static final long serialVersionUID = 1L;

@@ -123,6 +123,7 @@ public class ExamplesTest {
             }
         } else {
             if (isGetter(method)) {
+                method.setAccessible(true);
                 Object result = method.invoke(resource);
                 if (result != null
                     && !result.getClass().isPrimitive()

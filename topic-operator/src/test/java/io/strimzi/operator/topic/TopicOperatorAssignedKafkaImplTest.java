@@ -4,12 +4,12 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -110,7 +110,7 @@ public class TopicOperatorAssignedKafkaImplTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        TestUtils.assumeLinux();
+        Assume.assumeTrue(System.getProperty("os.name").contains("nux") || System.getProperty("os.name").contains("Mac OS X"));
     }
 
     @Test

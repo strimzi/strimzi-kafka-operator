@@ -5,6 +5,7 @@
 package io.strimzi.operator.topic.zk;
 
 import io.strimzi.test.EmbeddedZooKeeper;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -18,8 +19,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -30,15 +29,13 @@ public class ZkImplTest {
     private EmbeddedZooKeeper zkServer;
 
     private Vertx vertx = Vertx.vertx();
-    private ZkImpl zk;
+    private Zk zk;
 
     @Before
     public void setup()
-            throws IOException, InterruptedException,
-            TimeoutException, ExecutionException {
+            throws IOException, InterruptedException {
         this.zkServer = new EmbeddedZooKeeper();
-
-        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
+        zk = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
     }
 
     @After
@@ -55,7 +52,7 @@ public class ZkImplTest {
     @Ignore
     @Test
     public void testReconnectOnBounce(TestContext context) throws IOException, InterruptedException {
-        ZkImpl zkImpl = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
+        Zk zkImpl = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
         zkServer.restart();
         Async async = context.async();
         zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ar -> {
@@ -89,16 +86,18 @@ public class ZkImplTest {
         // Now watch its children
         Async barFuture = context.async();
         zk.watchChildren("/foo", watchResult -> {
-            context.assertEquals(singletonList("bar"), watchResult.result());
-            zk.unwatchChildren("/foo");
-            zk.delete("/foo/bar", -1, deleteResult -> {
-                barFuture.countDown();
+            if (singletonList("bar").equals(watchResult.result())) {
+                zk.unwatchChildren("/foo");
+                zk.delete("/foo/bar", -1, deleteResult -> {
+                    barFuture.countDown();
+                });
+            }
+        }).<Void>compose(ignored -> {
+            zk.children("/foo", lsResult -> {
+                context.assertEquals(emptyList(), lsResult.result());
+                zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ig -> { });
             });
-
-        });
-        zk.children("/foo", lsResult -> {
-            context.assertEquals(emptyList(), lsResult.result());
-            zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ig -> { });
+            return Future.succeededFuture();
         });
         barFuture.await();
     }
@@ -117,12 +116,15 @@ public class ZkImplTest {
         byte[] data2 = {2};
         zk.watchData("/foo", dataWatch -> {
             context.assertTrue(Arrays.equals(data2, dataWatch.result()));
-        }).getData("/foo", dataResult -> {
-            context.assertTrue(Arrays.equals(data1, dataResult.result()));
+        }).compose(zk2 -> {
+            zk.getData("/foo", dataResult -> {
+                context.assertTrue(Arrays.equals(data1, dataResult.result()));
 
-            zk.setData("/foo", data2, -1, setResult -> {
-                done.complete();
+                zk.setData("/foo", data2, -1, setResult -> {
+                    done.complete();
+                });
             });
+            return Future.succeededFuture();
         });
     }
 

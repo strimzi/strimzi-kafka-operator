@@ -8,6 +8,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sundr.builder.annotations.Buildable;
+import lombok.EqualsAndHashCode;
 
 /**
  * Configures a listener to use mutual TLS authentication.
@@ -18,6 +19,7 @@ import io.sundr.builder.annotations.Buildable;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@EqualsAndHashCode
 public class KafkaListenerAuthenticationTls extends KafkaListenerAuthentication {
     private static final long serialVersionUID = 1L;
 

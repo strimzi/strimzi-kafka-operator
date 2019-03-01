@@ -21,6 +21,8 @@ When none of these properties are defined, the listener will be disabled.
 listeners:
   plain: {}
   tls: {}
+  external:
+    type: loadbalancer
 # ...
 ----
 
@@ -65,7 +67,7 @@ However, you can override the assigned route hosts by specifying the requested h
 # ...
 listeners:
   external:
-    type: routes
+    type: route
     authentication:
       type: tls
     overrides:
@@ -160,7 +162,7 @@ Overriding the advertised host and ports is available for all types of external 
 # ...
 listeners:
   external:
-    type: routes
+    type: route
     authentication:
       type: tls
     overrides:
@@ -187,7 +189,7 @@ Adding the additional bootstrap address is available for all types of external l
 # ...
 listeners:
   external:
-    type: routes
+    type: route
     authentication:
       type: tls
     overrides:

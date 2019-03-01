@@ -19,7 +19,7 @@ This procedure describes how to upgrade a {ProductName} Kafka cluster from one v
 . Consult the table below and determine whether the new Kafka version has a different log message format version than the previous version.
 +
 ifdef::StrimziUpgrades[]
-{blank}include::snip-kafka-versions.adoc[leveloffset=+1]
+include::snip-kafka-versions.adoc[leveloffset=+1]
 endif::StrimziUpgrades[]
 ifndef::StrimziUpgrades[]
 [options="header"]

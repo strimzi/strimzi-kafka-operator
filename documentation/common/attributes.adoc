@@ -71,7 +71,7 @@
 
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 
-:CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html[cron expression^]
+:CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
 
 // Docker image names
 :DockerTag: {ProductVersion}

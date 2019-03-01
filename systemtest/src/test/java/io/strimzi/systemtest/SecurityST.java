@@ -174,7 +174,7 @@ class SecurityST extends AbstractST {
     @OpenShiftOnly
     @Tag(FLAKY)
     void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException {
-        createCluster();
+        createClusterWithExternalRoute();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("", 1_000, TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
@@ -246,7 +246,7 @@ class SecurityST extends AbstractST {
     @OpenShiftOnly
     @Tag(FLAKY)
     void testAutoReplaceCaKeysTriggeredByAnno() throws InterruptedException {
-        createCluster();
+        createClusterWithExternalRoute();
         String aliceUserName = "alice";
         resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
         waitFor("Alic's secret to exist", 1_000, 60_000,
@@ -353,7 +353,7 @@ class SecurityST extends AbstractST {
             });
     }
 
-    private void createCluster() {
+    private void createClusterWithExternalRoute() {
         LOGGER.info("Creating a cluster");
         resources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -379,6 +379,50 @@ class SecurityST extends AbstractST {
                 .done();
     }
 
+    private void createClusterWithExternalLoadbalancer() {
+        LOGGER.info("Creating a cluster");
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalLoadBalancer()
+                            .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                        .withConfig(singletonMap("default.replication.factor", 3))
+                        .withNewPersistentClaimStorage()
+                            .withSize("2Gi")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endKafka()
+                    .editZookeeper()
+                        .withReplicas(3)
+                        .withNewPersistentClaimStorage()
+                            .withSize("2Gi")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endZookeeper()
+                .endSpec()
+                .done();
+    }
+
+    @Test
+    @OpenShiftOnly
+    void testLoadbalancer() throws InterruptedException {
+        createClusterWithExternalLoadbalancer();
+        String userName = "alice";
+        resources().tlsUser(CLUSTER_NAME, userName).done();
+        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
+            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
+            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+
+        AvailabilityVerifier mp = waitForInitialAvailability(userName);
+
+        waitForAvailability(mp);
+
+        AvailabilityVerifier.Result result = mp.stop(TIMEOUT_FOR_SEND_RECEIVE_MSG);
+        LOGGER.info("Producer/consumer stats during cert renewal {}", result);
+    }
+
     @Test
     @OpenShiftOnly
     @Tag(REGRESSION)
@@ -390,7 +434,7 @@ class SecurityST extends AbstractST {
         String clientsCaCert = createSecret("clients-ca.crt", clientsCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
 
         // 2. Now create a cluster
-        createCluster();
+        createClusterWithExternalRoute();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
         // Check if user exists

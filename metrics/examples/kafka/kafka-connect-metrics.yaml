@@ -5,6 +5,7 @@ metadata:
   labels:
     app: my-connect-cluster
 spec:
+  version: 2.1.1
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9092
   metrics:

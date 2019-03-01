@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import io.strimzi.operator.topic.zk.ZkImpl;
+import io.strimzi.operator.topic.zk.Zk;
 import io.strimzi.test.EmbeddedZooKeeper;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -20,7 +20,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -33,14 +32,13 @@ public class ZkTopicStoreTest {
     private Vertx vertx = Vertx.vertx();
 
     private ZkTopicStore store;
-    private ZkImpl zk;
+    private Zk zk;
 
     @Before
     public void setup()
-            throws IOException, InterruptedException,
-            TimeoutException, ExecutionException {
+            throws IOException, InterruptedException {
         this.zkServer = new EmbeddedZooKeeper();
-        zk = new ZkImpl(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
+        zk = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
         this.store = new ZkTopicStore(zk);
     }
 
