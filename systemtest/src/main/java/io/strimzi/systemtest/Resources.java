@@ -290,8 +290,8 @@ public class Resources {
                             .withNewEphemeralStorage().endEphemeralStorage()
                         .endZookeeper()
                         .withNewEntityOperator()
-                            .withNewTopicOperator().withImage(TestUtils.changeOrgAndTag("strimzi/topic-operator:latest")).endTopicOperator()
-                            .withNewUserOperator().withImage(TestUtils.changeOrgAndTag("strimzi/user-operator:latest")).endUserOperator()
+                            .withNewTopicOperator().endTopicOperator()
+                            .withNewUserOperator().endUserOperator()
                         .endEntityOperator()
                     .endSpec();
     }
