@@ -19,7 +19,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
@@ -31,6 +37,7 @@ class RollingUpdateST extends AbstractST {
     static final String NAMESPACE = "rolling-update-cluster-test";
     static final String CLUSTER_NAME = "my-cluster";
     private static final int CO_OPERATION_TIMEOUT = 60000;
+    private static final String RECONCILIATION_PATTERN = "'Triggering periodic reconciliation for namespace " + NAMESPACE + "'";
 
     @Test
     void testRecoveryDuringZookeeperRollingUpdate() {
@@ -64,7 +71,14 @@ class RollingUpdateST extends AbstractST {
 
         assertThatRollingUpdatedFinished(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
 
+        String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
+
         LOGGER.info("Wait till another rolling update starts");
+        TestUtils.waitFor("Wait till another rolling update starts", 2000, CO_OPERATION_TIMEOUT,
+                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation), RECONCILIATION_PATTERN).isEmpty());
+
+        TimeMeasuringSystem.stopOperation(reconciliation);
+
         // Second part
         String rollingUpdateOperation = TimeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
 
@@ -111,12 +125,21 @@ class RollingUpdateST extends AbstractST {
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
+        String reconciliation = TimeMeasuringSystem.startOperation(Operation.NEXT_RECONCILIATION);
+
         LOGGER.info("Wait till another rolling update starts");
+        TestUtils.waitFor("Wait till another rolling update starts", 2000, CO_OPERATION_TIMEOUT,
+                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, reconciliation), RECONCILIATION_PATTERN).isEmpty());
+
+        TimeMeasuringSystem.stopOperation(reconciliation);
+
         // Second part
         String rollingUpdateOperation = TimeMeasuringSystem.startOperation(Operation.ROLLING_UPDATE);
 
-        TestUtils.waitFor("Wait till rolling update timeouted", 2000, 180000,
-            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logKafkaPattern).isEmpty());
+        LOGGER.info(TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation));
+
+        TestUtils.waitFor("Wait till rolling update timedout", 2000, 180000,
+                () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, rollingUpdateOperation), logKafkaPattern).isEmpty());
 
         assertThatRollingUpdatedFinished(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
 
@@ -125,12 +148,30 @@ class RollingUpdateST extends AbstractST {
     }
 
     void assertThatRollingUpdatedFinished(String rolledComponent, String stableComponent) {
-        assertThat(rolledComponent + "-1 is not in ready state", CLIENT.pods().withName(rolledComponent + "-1").isReady());
-        assertThat(rolledComponent + "-2 is not in ready state", CLIENT.pods().withName(rolledComponent + "-2").isReady());
+        List<String> podStatuses = CLIENT.pods().inNamespace(NAMESPACE).list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(rolledComponent))
+                .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
 
-        assertThat(stableComponent + "-0 is is not in ready state", CLIENT.pods().withName(stableComponent + "-0").isReady());
-        assertThat(stableComponent + "-1 is is not in ready state", CLIENT.pods().withName(stableComponent + "-1").isReady());
-        assertThat(stableComponent + "-2 is is not in ready state", CLIENT.pods().withName(stableComponent + "-2").isReady());
+        LOGGER.info(podStatuses);
+
+        assertThat(rolledComponent + "is fine", podStatuses.contains("Pending"));
+
+        Map<String, Long> statusCount = podStatuses.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        LOGGER.info(statusCount);
+        assertThat("", statusCount.get("Pending"), is(1L));
+        assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size() - 1)));
+
+
+        podStatuses = CLIENT.pods().inNamespace(NAMESPACE).list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(stableComponent))
+                .map(p -> p.getStatus().getPhase()).sorted().collect(Collectors.toList());
+
+        LOGGER.info(podStatuses);
+
+        statusCount = podStatuses.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        LOGGER.info(statusCount);
+        assertThat("", statusCount.get("Running"), is(Integer.toUnsignedLong(podStatuses.size())));
     }
 
     @BeforeEach

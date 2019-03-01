@@ -15,4 +15,5 @@ public enum Operation {
     CO_DELETION,
     MM_DEPLOYMENT,
     CLUSTER_RECOVERY,
+    NEXT_RECONCILIATION,
 }
