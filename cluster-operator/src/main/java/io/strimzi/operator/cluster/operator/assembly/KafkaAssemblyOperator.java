@@ -1619,8 +1619,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) userOperator.getLogging()).getName()) :
                                             null) : null;
 
+                            String configAnnotation = "";
+
+                            if (topicOperatorLogAndMetricsConfigMap != null)    {
+                                configAnnotation += topicOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties");
+                            }
+
+                            if (userOperatorLogAndMetricsConfigMap != null)    {
+                                configAnnotation += userOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties");
+                            }
+
                             Map<String, String> annotations = new HashMap();
-                            annotations.put(ANNO_STRIMZI_IO_LOGGING, topicOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties") + userOperatorLogAndMetricsConfigMap.getData().get("log4j2.properties"));
+                            annotations.put(ANNO_STRIMZI_IO_LOGGING, configAnnotation);
 
                             this.entityOperator = entityOperator;
                             this.eoDeployment = entityOperator.generateDeployment(isOpenShift, annotations, imagePullPolicy);
@@ -1705,7 +1715,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorDeployment(Supplier<Date> dateSupplier) {
-            if (this.entityOperator != null) {
+            if (this.entityOperator != null && eoDeployment != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
                 return future.compose(dep -> {
                     // getting the current cluster CA generation from the current deployment, if exists
