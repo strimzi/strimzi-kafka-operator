@@ -64,6 +64,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 public class Resources {
@@ -242,6 +243,9 @@ public class Resources {
     }
 
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
+        String tOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
+        String uOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
+
         return new KafkaBuilder()
                     .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
                     .withNewSpec()
@@ -290,8 +294,8 @@ public class Resources {
                             .withNewEphemeralStorage().endEphemeralStorage()
                         .endZookeeper()
                         .withNewEntityOperator()
-                            .withNewTopicOperator().endTopicOperator()
-                            .withNewUserOperator().endUserOperator()
+                            .withNewTopicOperator().withImage(tOImage).endTopicOperator()
+                            .withNewUserOperator().withImage(uOImage).endUserOperator()
                         .endEntityOperator()
                     .endSpec();
     }
@@ -742,5 +746,16 @@ public class Resources {
         client.inNamespace(clientNamespace).rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
         deleteLater(clusterRoleBinding);
         return new DoneableKubernetesClusterRoleBinding(clusterRoleBinding);
+    }
+
+    private String getImageValueFromCO(String name) {
+        Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
+
+        List<EnvVar> listEnvVar = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        Optional<EnvVar> envVar = listEnvVar.stream().filter(e -> e.getName().equals(name)).findFirst();
+        if (envVar.isPresent()) {
+            return envVar.get().getValue();
+        }
+        return "";
     }
 }
