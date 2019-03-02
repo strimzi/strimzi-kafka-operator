@@ -355,7 +355,7 @@ public class ZookeeperLeaderFinderTest {
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                 asList(getPod(0), getPod(1)))
                 .setHandler(result -> {
-                    context.assertTrue(result.failed());
+                    context.assertEquals(ZookeeperLeaderFinder.UNKNOWN_LEADER, result.result());
                     for (FakeZk zk : zks) {
                         context.assertEquals(0, zk.attempts.get(),
                                 "Unexpected number of attempts for node " + zk.id);

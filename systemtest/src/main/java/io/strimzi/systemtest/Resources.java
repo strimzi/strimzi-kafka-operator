@@ -622,10 +622,14 @@ public class Resources {
     }
 
     DoneableDeployment clusterOperator(String namespace) {
-        return clusterOperator(defaultClusterOperator(namespace).build());
+        return clusterOperator(namespace, "300000");
     }
 
-    DeploymentBuilder defaultClusterOperator(String namespace) {
+    DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
+        return clusterOperator(defaultCLusterOperator(namespace, operationTimeout).build());
+    }
+
+    DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
 
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
 
@@ -646,6 +650,10 @@ public class Resources {
                     break;
                 case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
                     envVar.setValue("30000");
+                    break;
+                case "STRIMZI_OPERATION_TIMEOUT_MS":
+                    envVar.setValue(operationTimeout);
+                    break;
                 default:
                     if (envVar.getName().contains("STRIMZI_DEFAULT")) {
                         envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));
