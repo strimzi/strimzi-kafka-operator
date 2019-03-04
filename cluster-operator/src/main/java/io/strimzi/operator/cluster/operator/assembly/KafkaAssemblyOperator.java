@@ -946,6 +946,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             ));
         }
 
+        /* test */
+        public void setZkAncillaryCmChange(boolean zkAncillaryCmChange) {
+            this.zkAncillaryCmChange = zkAncillaryCmChange;
+        }
+
         /**
          * Scale up is divided by scaling up Zookeeper cluster in steps.
          * Scaling up from N to M (N > 0 and M>N) replicas is done in M-N steps.
