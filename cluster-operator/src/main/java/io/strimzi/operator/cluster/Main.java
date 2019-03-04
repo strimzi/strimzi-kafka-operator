@@ -194,9 +194,9 @@ public class Main {
     }
 
     static Future<Boolean> isOnOpenShift(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
-        if (config.isForceOpenShift() != null)  {
-            log.debug("OpenShift has been set to {} through {}.", config.isForceOpenShift(), ClusterOperatorConfig.STRIMZI_FORCE_OPENSHIFT);
-            return Future.succeededFuture(config.isForceOpenShift());
+        if (config.isAssumeOpenShift() != null)  {
+            log.debug("OpenShift has been set to {} through {}.", config.isAssumeOpenShift(), ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT);
+            return Future.succeededFuture(config.isAssumeOpenShift());
         } else if (client.isAdaptable(OkHttpClient.class)) {
             OkHttpClient ok = client.adapt(OkHttpClient.class);
             Future<Boolean> fut = Future.future();

@@ -185,24 +185,24 @@ public class ClusterOperatorConfigTest {
         envVars = new HashMap<>(1);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
         config = ClusterOperatorConfig.fromMap(envVars);
-        assertNull(config.isForceOpenShift());
+        assertNull(config.isAssumeOpenShift());
 
         envVars = new HashMap<>(2);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
-        envVars.put(ClusterOperatorConfig.STRIMZI_FORCE_OPENSHIFT, "TRUE");
+        envVars.put(ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT, "TRUE");
         config = ClusterOperatorConfig.fromMap(envVars);
-        assertTrue(config.isForceOpenShift());
+        assertTrue(config.isAssumeOpenShift());
 
         envVars = new HashMap<>(2);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
-        envVars.put(ClusterOperatorConfig.STRIMZI_FORCE_OPENSHIFT, "FALSE");
+        envVars.put(ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT, "FALSE");
         config = ClusterOperatorConfig.fromMap(envVars);
-        assertFalse(config.isForceOpenShift());
+        assertFalse(config.isAssumeOpenShift());
 
         envVars = new HashMap<>(2);
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
-        envVars.put(ClusterOperatorConfig.STRIMZI_FORCE_OPENSHIFT, "something");
+        envVars.put(ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT, "something");
         config = ClusterOperatorConfig.fromMap(envVars);
-        assertFalse(config.isForceOpenShift());
+        assertFalse(config.isAssumeOpenShift());
     }
 }
