@@ -231,8 +231,6 @@ public class KafkaAssemblyOperatorMockTest {
 
         mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaAssemblyList.class, DoneableKafka.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
-        ResourceUtils.mockHttpClientForWorkaroundRbac(mockClient);
-
     }
 
     @After

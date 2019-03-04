@@ -273,6 +273,7 @@ public class EntityOperator extends AbstractModel {
                     .withName(getServiceAccountName())
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
+                    .withLabels(labels.toMap())
                 .endMetadata()
                 .build();
     }

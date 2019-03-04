@@ -48,6 +48,12 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.policy.DoneablePodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetList;
+import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -61,6 +67,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
+import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
@@ -111,6 +118,10 @@ public class MockKube {
     private final Map<String, NetworkPolicy> policyDb = db(emptySet(), NetworkPolicy.class, DoneableNetworkPolicy.class);
     private final Map<String, Route> routeDb = db(emptySet(), Route.class, DoneableRoute.class);
     private final Map<String, PodDisruptionBudget> pdbDb = db(emptySet(), PodDisruptionBudget.class, DoneablePodDisruptionBudget.class);
+    private final Map<String, KubernetesRoleBinding> pdbRb = db(emptySet(), KubernetesRoleBinding.class,
+            DoneableKubernetesRoleBinding.class);
+    private final Map<String, KubernetesClusterRoleBinding> pdbCrb = db(emptySet(), KubernetesClusterRoleBinding.class,
+            DoneableKubernetesClusterRoleBinding.class);
 
     private Map<String, List<String>> podsForDeployments = new HashMap<>();
     private Map<String, CreateOrReplaceable> crdMixedOps = new HashMap<>();
@@ -171,7 +182,8 @@ public class MockKube {
         }
     }
 
-    public <T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>> MockedCrd<T, L, D> withCustomResourceDefinition(CustomResourceDefinition crd, Class<T> instanceClass, Class<L> instanceListClass, Class<D> doneableInstanceClass) {
+    public <T extends CustomResource, L extends KubernetesResourceList<T>, D extends Doneable<T>> MockedCrd<T, L, D>
+            withCustomResourceDefinition(CustomResourceDefinition crd, Class<T> instanceClass, Class<L> instanceListClass, Class<D> doneableInstanceClass) {
         MockedCrd mockedCrd = new MockedCrd(crd, instanceClass, instanceListClass, doneableInstanceClass);
         this.mockedCrds.add(mockedCrd);
         return mockedCrd;
@@ -181,17 +193,27 @@ public class MockKube {
         KubernetesClient mockClient = mock(KubernetesClient.class);
         OpenShiftClient mockOpenShiftClient = mock(OpenShiftClient.class);
         MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> mockCms = buildConfigMaps();
-        MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs = buildPvcs();
+        MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim,
+                Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs = buildPvcs();
         MixedOperation<Endpoints, EndpointsList, DoneableEndpoints, Resource<Endpoints, DoneableEndpoints>> mockEndpoints = buildEndpoints();
         MixedOperation<Service, ServiceList, DoneableService, ServiceResource<Service, DoneableService>> mockSvc = buildServices();
         MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods = buildPods();
-        MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods, mockPvcs);
-        MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> mockDep = buildDeployments(mockPods);
+        MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet,
+                RollableScalableResource<StatefulSet, DoneableStatefulSet>> mockSs = buildStatefulSets(mockPods, mockPvcs);
+        MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment,
+                DoneableDeployment>> mockDep = buildDeployments(mockPods);
         MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> mockSecrets = buildSecrets();
-        MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> mockServiceAccounts = buildServiceAccount();
-        MixedOperation<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy, DoneableNetworkPolicy>> mockNetworkPolicy = buildNetworkPolicy();
+        MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount,
+                DoneableServiceAccount>> mockServiceAccounts = buildServiceAccount();
+        MixedOperation<NetworkPolicy, NetworkPolicyList, DoneableNetworkPolicy, Resource<NetworkPolicy,
+                DoneableNetworkPolicy>> mockNetworkPolicy = buildNetworkPolicy();
         MixedOperation<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> mockRoute = buildRoute();
-        MixedOperation<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> mockPdb = buildPdb();
+        MixedOperation<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget,
+                Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> mockPdb = buildPdb();
+        MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
+                Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> mockRb = buildRb();
+        MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
+                Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> mockCrb = buildCrb();
 
         when(mockClient.configMaps()).thenReturn(mockCms);
 
@@ -207,29 +229,30 @@ public class MockKube {
         when(mockClient.endpoints()).thenReturn(mockEndpoints);
         when(mockClient.persistentVolumeClaims()).thenReturn(mockPvcs);
         if (mockedCrds != null && !mockedCrds.isEmpty()) {
-            NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition, Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>>
+            NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition,
+                    Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>>
                     crds = mock(NonNamespaceOperation.class);
             for (MockedCrd<?, ?, ?> mockedCrd : this.mockedCrds) {
                 CustomResourceDefinition crd = mockedCrd.crd;
                 Resource crdResource = mock(Resource.class);
                 when(crdResource.get()).thenReturn(crd);
                 when(crds.withName(crd.getMetadata().getName())).thenReturn(crdResource);
-                when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class), any(Class.class))).thenAnswer(invocation -> {
-
-                    CustomResourceDefinition crdArg = invocation.getArgument(0);
-                    if (crd.getSpec().getGroup().equals(crdArg.getSpec().getGroup())
-                            && crd.getSpec().getVersion().equals(crdArg.getSpec().getVersion())) {
-                        String key = crdArg.getSpec().getGroup() + "##" + crdArg.getSpec().getVersion();
-                        CreateOrReplaceable crdMixedOp = crdMixedOps.get(key);
-                        if (crdMixedOp == null) {
-                            crdMixedOp = buildCrd((MockedCrd) mockedCrd);
-                            crdMixedOps.put(key, crdMixedOp);
-                        }
-                        return crdMixedOp;
-                    } else {
-                        throw new RuntimeException();
-                    }
-                });
+                when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class),
+                        any(Class.class))).thenAnswer(invocation -> {
+                            CustomResourceDefinition crdArg = invocation.getArgument(0);
+                            if (crd.getSpec().getGroup().equals(crdArg.getSpec().getGroup())
+                                    && crd.getSpec().getVersion().equals(crdArg.getSpec().getVersion())) {
+                                String key = crdArg.getSpec().getGroup() + "##" + crdArg.getSpec().getVersion();
+                                CreateOrReplaceable crdMixedOp = crdMixedOps.get(key);
+                                if (crdMixedOp == null) {
+                                    crdMixedOp = buildCrd((MockedCrd) mockedCrd);
+                                    crdMixedOps.put(key, crdMixedOp);
+                                }
+                                return crdMixedOp;
+                            } else {
+                                throw new RuntimeException();
+                            }
+                        });
             }
             when(mockClient.customResourceDefinitions()).thenReturn(crds);
         }
@@ -241,13 +264,19 @@ public class MockKube {
         when(mockOpenShiftClient.routes()).thenReturn(mockRoute);
         PolicyAPIGroupDSL policy = mock(PolicyAPIGroupDSL.class);
         when(mockClient.policy()).thenReturn(policy);
+        RbacAPIGroupDSL rbac = mock(RbacAPIGroupDSL.class);
+        when(mockClient.rbac()).thenReturn(rbac);
         when(mockClient.policy().podDisruptionBudget()).thenReturn(mockPdb);
+        when(mockClient.rbac().kubernetesRoleBindings()).thenReturn(mockRb);
+        when(mockClient.rbac().kubernetesClusterRoleBindings()).thenReturn(mockCrb);
 
         return mockClient;
     }
 
-    private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>> buildDeployments(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods) {
-        return new AbstractMockBuilder<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>(
+    private MixedOperation<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment, DoneableDeployment>>
+            buildDeployments(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods) {
+        return new AbstractMockBuilder<Deployment, DeploymentList, DoneableDeployment, ScalableResource<Deployment,
+                DoneableDeployment>>(
             Deployment.class, DeploymentList.class, DoneableDeployment.class, castClass(ScalableResource.class), depDb) {
             @Override
             protected void nameScopedMocks(ScalableResource<Deployment, DoneableDeployment> resource, String resourceName) {
@@ -315,127 +344,131 @@ public class MockKube {
 
     private MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>
         buildStatefulSets(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods,
-                      MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs) {
-        MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>> result = new AbstractMockBuilder<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet, DoneableStatefulSet>>(
+                      MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim,
+                              Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> mockPvcs) {
+        MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet, RollableScalableResource<StatefulSet,
+                DoneableStatefulSet>> result = new AbstractMockBuilder<StatefulSet, StatefulSetList, DoneableStatefulSet,
+                RollableScalableResource<StatefulSet, DoneableStatefulSet>>(
                 StatefulSet.class, StatefulSetList.class, DoneableStatefulSet.class, castClass(RollableScalableResource.class), ssDb) {
 
-            @Override
-            protected void nameScopedMocks(RollableScalableResource<StatefulSet, DoneableStatefulSet> resource, String resourceName) {
-                mockGet(resourceName, resource);
-                //mockCreate("endpoint", endpointDb, resourceName, resource);
-                mockCascading(resource);
-                mockPatch(resourceName, resource);
-                when(resource.delete()).thenAnswer(i -> {
-                    LOGGER.debug("delete {} {}", resourceType, resourceName);
-                    StatefulSet removed = ssDb.remove(resourceName);
-                    if (removed != null) {
-                        fireWatchers(resourceName, removed, Watcher.Action.DELETED);
-                        for (Map.Entry<String, Pod> pod : new HashMap<>(podDb).entrySet()) {
-                            if (pod.getKey().matches(resourceName + "-[0-9]+")) {
-                                mockPods.inNamespace(removed.getMetadata().getNamespace()).withName(pod.getKey()).delete();
-                            }
-                        }
-                    }
-                    return removed != null;
-                });
-                mockIsReady(resourceName, resource);
-                when(resource.create(any())).thenAnswer(cinvocation -> {
-                    checkNotExists(resourceName);
-                    StatefulSet argument = cinvocation.getArgument(0);
-                    LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
-                    StatefulSet value = copyResource(argument);
-                    value.setStatus(new StatefulSetStatus());
-                    ssDb.put(resourceName, value);
-                    for (int i = 0; i < argument.getSpec().getReplicas(); i++) {
-                        final int podNum = i;
-                        String podName = argument.getMetadata().getName() + "-" + podNum;
-                        LOGGER.debug("create Pod {} because it's in StatefulSet {}", podName, resourceName);
-                        Pod pod = new PodBuilder().withNewMetadataLike(argument.getSpec().getTemplate().getMetadata())
-                                .withUid(UUID.randomUUID().toString())
-                                .withNamespace(argument.getMetadata().getNamespace())
-                                .withName(podName)
-                                .endMetadata()
-                                .withNewSpecLike(argument.getSpec().getTemplate().getSpec()).endSpec()
-                                .build();
-                        //podDb.put(podName,
-                        //        pod);
-                        mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(podName).create(pod);
-                        addPodRestarter(mockPods, resourceName, podNum, podName);
-
-                        if (value.getSpec().getVolumeClaimTemplates().size() > 0) {
-
-                            for (PersistentVolumeClaim pvcTemplate: value.getSpec().getVolumeClaimTemplates()) {
-
-                                String pvcName = pvcTemplate.getMetadata().getName() + "-" + podName;
-                                if (mockPvcs.inNamespace(argument.getMetadata().getNamespace()).withName(pvcName).get() == null) {
-
-                                    LOGGER.debug("create Pvc {} because it's in VolumeClaimTemplate of StatefulSet {}", pvcName, resourceName);
-                                    PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
-                                            .withNewMetadata()
-                                                .withLabels(argument.getSpec().getSelector().getMatchLabels())
-                                                .withNamespace(argument.getMetadata().getNamespace())
-                                                .withName(pvcName)
-                                            .endMetadata()
-                                            .build();
-                                    mockPvcs.inNamespace(argument.getMetadata().getNamespace()).withName(pvcName).create(pvc);
+                    @Override
+                    protected void nameScopedMocks(RollableScalableResource<StatefulSet, DoneableStatefulSet> resource, String resourceName) {
+                        mockGet(resourceName, resource);
+                        //mockCreate("endpoint", endpointDb, resourceName, resource);
+                        mockCascading(resource);
+                        mockPatch(resourceName, resource);
+                        when(resource.delete()).thenAnswer(i -> {
+                            LOGGER.debug("delete {} {}", resourceType, resourceName);
+                            StatefulSet removed = ssDb.remove(resourceName);
+                            if (removed != null) {
+                                fireWatchers(resourceName, removed, Watcher.Action.DELETED);
+                                for (Map.Entry<String, Pod> pod : new HashMap<>(podDb).entrySet()) {
+                                    if (pod.getKey().matches(resourceName + "-[0-9]+")) {
+                                        mockPods.inNamespace(removed.getMetadata().getNamespace()).withName(pod.getKey()).delete();
+                                    }
                                 }
                             }
+                            return removed != null;
+                        });
+                        mockIsReady(resourceName, resource);
+                        when(resource.create(any())).thenAnswer(cinvocation -> {
+                            checkNotExists(resourceName);
+                            StatefulSet argument = cinvocation.getArgument(0);
+                            LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
+                            StatefulSet value = copyResource(argument);
+                            value.setStatus(new StatefulSetStatus());
+                            ssDb.put(resourceName, value);
+                            for (int i = 0; i < argument.getSpec().getReplicas(); i++) {
+                                final int podNum = i;
+                                String podName = argument.getMetadata().getName() + "-" + podNum;
+                                LOGGER.debug("create Pod {} because it's in StatefulSet {}", podName, resourceName);
+                                Pod pod = new PodBuilder().withNewMetadataLike(argument.getSpec().getTemplate().getMetadata())
+                                        .withUid(UUID.randomUUID().toString())
+                                        .withNamespace(argument.getMetadata().getNamespace())
+                                        .withName(podName)
+                                        .endMetadata()
+                                        .withNewSpecLike(argument.getSpec().getTemplate().getSpec()).endSpec()
+                                        .build();
+                                //podDb.put(podName,
+                                //        pod);
+                                mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(podName).create(pod);
+                                addPodRestarter(mockPods, resourceName, podNum, podName);
 
+                                if (value.getSpec().getVolumeClaimTemplates().size() > 0) {
+
+                                    for (PersistentVolumeClaim pvcTemplate: value.getSpec().getVolumeClaimTemplates()) {
+
+                                        String pvcName = pvcTemplate.getMetadata().getName() + "-" + podName;
+                                        if (mockPvcs.inNamespace(argument.getMetadata().getNamespace()).withName(pvcName).get() == null) {
+
+                                            LOGGER.debug("create Pvc {} because it's in VolumeClaimTemplate of StatefulSet {}", pvcName, resourceName);
+                                            PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
+                                                    .withNewMetadata()
+                                                        .withLabels(argument.getSpec().getSelector().getMatchLabels())
+                                                        .withNamespace(argument.getMetadata().getNamespace())
+                                                        .withName(pvcName)
+                                                    .endMetadata()
+                                                    .build();
+                                            mockPvcs.inNamespace(argument.getMetadata().getNamespace()).withName(pvcName).create(pvc);
+                                        }
+                                    }
+
+                                }
+                            }
+                            return argument;
+                        });
+                        EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
+                        when(resource.cascading(false)).thenReturn(c);
+                        when(c.patch(any())).thenAnswer(patchInvocation -> {
+                            StatefulSet argument = patchInvocation.getArgument(0);
+                            return doPatch(resourceName, argument);
+                        });
+                        when(resource.scale(anyInt(), anyBoolean())).thenAnswer(invocation -> {
+                            checkDoesExist(resourceName);
+                            StatefulSet ss = copyResource(ssDb.get(resourceName));
+                            int newScale = invocation.getArgument(0);
+                            ss.getSpec().setReplicas(newScale);
+                            return doPatch(resourceName, ss);
+                        });
+                        when(resource.scale(anyInt())).thenAnswer(invocation -> {
+                            checkDoesExist(resourceName);
+                            StatefulSet ss = copyResource(ssDb.get(resourceName));
+                            int newScale = invocation.getArgument(0);
+                            ss.getSpec().setReplicas(newScale);
+                            return doPatch(resourceName, ss);
+                        });
+                        when(resource.isReady()).thenAnswer(i -> {
+                            LOGGER.debug("{} {} is ready", resourceType, resourceName);
+                            return true;
+                        });
+                    }
+
+                    private StatefulSet doPatch(String resourceName, StatefulSet argument) {
+                        int oldScale = ssDb.get(resourceName).getSpec().getReplicas();
+                        int newScale = argument.getSpec().getReplicas();
+                        if (newScale > oldScale) {
+                            LOGGER.debug("scaling up {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
+                            Pod examplePod = mockPods.inNamespace(argument.getMetadata().getNamespace())
+                                    .withName(argument.getMetadata().getName() + "-0").get();
+                            for (int i = oldScale; i < newScale; i++) {
+                                String newPodName = argument.getMetadata().getName() + "-" + i;
+                                mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).create(
+                                        new PodBuilder(examplePod).editMetadata().withName(newPodName).endMetadata().build());
+                            }
+                            ssDb.put(resourceName, copyResource(argument));
+                        } else if (newScale < oldScale) {
+                            ssDb.put(resourceName, copyResource(argument));
+                            LOGGER.debug("scaling down {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
+                            for (int i = oldScale - 1; i >= newScale; i--) {
+                                String newPodName = argument.getMetadata().getName() + "-" + i;
+                                mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).delete();
+                            }
+                        } else {
+                            ssDb.put(resourceName, copyResource(argument));
                         }
+                        return argument;
                     }
-                    return argument;
-                });
-                EditReplacePatchDeletable<StatefulSet, StatefulSet, DoneableStatefulSet, Boolean> c = mock(EditReplacePatchDeletable.class);
-                when(resource.cascading(false)).thenReturn(c);
-                when(c.patch(any())).thenAnswer(patchInvocation -> {
-                    StatefulSet argument = patchInvocation.getArgument(0);
-                    return doPatch(resourceName, argument);
-                });
-                when(resource.scale(anyInt(), anyBoolean())).thenAnswer(invocation -> {
-                    checkDoesExist(resourceName);
-                    StatefulSet ss = copyResource(ssDb.get(resourceName));
-                    int newScale = invocation.getArgument(0);
-                    ss.getSpec().setReplicas(newScale);
-                    return doPatch(resourceName, ss);
-                });
-                when(resource.scale(anyInt())).thenAnswer(invocation -> {
-                    checkDoesExist(resourceName);
-                    StatefulSet ss = copyResource(ssDb.get(resourceName));
-                    int newScale = invocation.getArgument(0);
-                    ss.getSpec().setReplicas(newScale);
-                    return doPatch(resourceName, ss);
-                });
-                when(resource.isReady()).thenAnswer(i -> {
-                    LOGGER.debug("{} {} is ready", resourceType, resourceName);
-                    return true;
-                });
-            }
-
-            private StatefulSet doPatch(String resourceName, StatefulSet argument) {
-                int oldScale = ssDb.get(resourceName).getSpec().getReplicas();
-                int newScale = argument.getSpec().getReplicas();
-                if (newScale > oldScale) {
-                    LOGGER.debug("scaling up {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
-                    Pod examplePod = mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(argument.getMetadata().getName() + "-0").get();
-                    for (int i = oldScale; i < newScale; i++) {
-                        String newPodName = argument.getMetadata().getName() + "-" + i;
-                        mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).create(
-                                new PodBuilder(examplePod).editMetadata().withName(newPodName).endMetadata().build());
-                    }
-                    ssDb.put(resourceName, copyResource(argument));
-                } else if (newScale < oldScale) {
-                    ssDb.put(resourceName, copyResource(argument));
-                    LOGGER.debug("scaling down {} {} from {} to {}", resourceType, resourceName, oldScale, newScale);
-                    for (int i = oldScale - 1; i >= newScale; i--) {
-                        String newPodName = argument.getMetadata().getName() + "-" + i;
-                        mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(newPodName).delete();
-                    }
-                } else {
-                    ssDb.put(resourceName, copyResource(argument));
-                }
-                return argument;
-            }
-        }.build();
+                }.build();
 
         for (StatefulSet ss : this.ssDb.values()) {
             for (Pod initialPod : this.podDb.values()) {
@@ -454,7 +487,8 @@ public class MockKube {
         return result;
     }
 
-    private void addPodRestarter(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods, String resourceName, int podNum, String podName) {
+    private void addPodRestarter(MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> mockPods,
+                                 String resourceName, int podNum, String podName) {
         mockPods.inNamespace(any()).withName(podName).watch(new Watcher<Pod>() {
             public String toString() {
                 return MockKube.class.getSimpleName() + " SS pod restarter";
@@ -547,8 +581,10 @@ public class MockKube {
         }.build();
     }
 
-    private MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> buildPvcs() {
-        return new AbstractMockBuilder<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim, Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>>(
+    private MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim,
+            Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>> buildPvcs() {
+        return new AbstractMockBuilder<PersistentVolumeClaim, PersistentVolumeClaimList, DoneablePersistentVolumeClaim,
+                Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim>>(
                 PersistentVolumeClaim.class, PersistentVolumeClaimList.class, DoneablePersistentVolumeClaim.class, castClass(Resource.class), pvcDb) {
             @Override
             protected void nameScopedMocks(Resource<PersistentVolumeClaim, DoneablePersistentVolumeClaim> resource, String resourceName) {
@@ -591,7 +627,8 @@ public class MockKube {
         }.build();
     }
 
-    private MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>> buildServiceAccount() {
+    private MixedOperation<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>>
+        buildServiceAccount() {
         return new AbstractMockBuilder<ServiceAccount, ServiceAccountList, DoneableServiceAccount, Resource<ServiceAccount, DoneableServiceAccount>>(
                 ServiceAccount.class, ServiceAccountList.class, DoneableServiceAccount.class, castClass(Resource.class), serviceAccountDb) {
             @Override
@@ -633,8 +670,10 @@ public class MockKube {
         }.build();
     }
 
-    private MixedOperation<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> buildPdb() {
-        return new AbstractMockBuilder<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget, Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>>(
+    private MixedOperation<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget,
+            Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> buildPdb() {
+        return new AbstractMockBuilder<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget,
+                Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>>(
                 PodDisruptionBudget.class, PodDisruptionBudgetList.class, DoneablePodDisruptionBudget.class, castClass(Resource.class), pdbDb) {
             @Override
             protected void nameScopedMocks(Resource<PodDisruptionBudget, DoneablePodDisruptionBudget> resource, String resourceName) {
@@ -646,6 +685,40 @@ public class MockKube {
             }
         }.build();
     }
+
+    private MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
+            Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> buildRb() {
+        return new AbstractMockBuilder<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
+                Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>>(
+                KubernetesRoleBinding.class, KubernetesRoleBindingList.class, DoneableKubernetesRoleBinding.class, castClass(Resource.class), pdbRb) {
+            @Override
+            protected void nameScopedMocks(Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
+    }
+
+    private MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
+            Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> buildCrb() {
+        return new AbstractMockBuilder<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList,
+                DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>>(
+                KubernetesClusterRoleBinding.class, KubernetesClusterRoleBindingList.class, DoneableKubernetesClusterRoleBinding.class,
+                castClass(Resource.class), pdbCrb) {
+            @Override
+            protected void nameScopedMocks(Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding> resource, String resourceName) {
+                mockGet(resourceName, resource);
+                mockCreate(resourceName, resource);
+                mockCascading(resource);
+                mockPatch(resourceName, resource);
+                mockDelete(resourceName, resource);
+            }
+        }.build();
+    }
+
 
     private <T extends CustomResource,
             L extends KubernetesResource & KubernetesResourceList<T>,
@@ -705,7 +778,8 @@ public class MockKube {
         protected final Collection<Watcher<CM>> watchers = new ArrayList<>(2);
         protected final Map<String, Collection<Watcher<CM>>> nameScopedWatchers = new HashMap<>(1);
 
-        public AbstractMockBuilder(Class<CM> resourceTypeClass, Class<CML> listClass, Class<DCM> doneableClass, Class<R> resourceClass, Map<String, CM> db) {
+        public AbstractMockBuilder(Class<CM> resourceTypeClass, Class<CML> listClass, Class<DCM> doneableClass,
+                                   Class<R> resourceClass, Map<String, CM> db) {
             this.resourceTypeClass = resourceTypeClass;
             this.resourceType = resourceTypeClass.getSimpleName();
             this.doneableClass = doneableClass;

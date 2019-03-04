@@ -4,59 +4,53 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import java.io.IOException;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
-/**
- * This class is a temporary work-around for the fact that Fabric8 doesn't
- * yet support an API for manipulating Kubernetes ClusterRoles
- * @deprecated This can be removed once support for ClusterRoles and ClusterRoleBindings is in Fabric8.
- */
-@Deprecated
-public class ClusterRoleOperator extends WorkaroundRbacOperator<ClusterRoleOperator.ClusterRole> {
+import java.io.IOException;
+
+public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
+        KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole, Resource<KubernetesClusterRole,
+        DoneableKubernetesClusterRole>> {
+
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     */
 
     public ClusterRoleOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "rbac.authorization.k8s.io", "v1beta1", "clusterroles");
+        super(vertx, client, "ClusterRole");
     }
 
-    public static class ClusterRole {
-        private final String resource;
+    @Override
+    protected MixedOperation<KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole,
+            Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> operation() {
+        return client.rbac().kubernetesClusterRoles();
+    }
 
-        public ClusterRole(String yaml) {
-            this.resource = convertYamlToJson(yaml);
+    @Override
+    protected Future<ReconcileResult<KubernetesClusterRole>> internalPatch(String name,
+                                                                           KubernetesClusterRole current,
+                                                                           KubernetesClusterRole desired) {
+        return Future.succeededFuture(ReconcileResult.noop(current));
+    }
+
+    public static KubernetesClusterRole convertYamlToClusterRole(String yaml) {
+        try {
+            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+            KubernetesClusterRole cr = yamlReader.readValue(yaml, KubernetesClusterRole.class);
+            return cr;
+        } catch (IOException e)   {
+            throw new RuntimeException(e);
         }
-
-        private String convertYamlToJson(String yaml) {
-            try {
-                ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-                Object obj = yamlReader.readValue(yaml, Object.class);
-                ObjectMapper jsonWriter = new ObjectMapper();
-                return jsonWriter.writeValueAsString(obj);
-            } catch (IOException e)   {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public String toString() {
-            return resource;
-        }
     }
-
-    private String urlWithoutName() {
-        return baseUrl + "apis/" + group + "/" + apiVersion + "/" + plural;
-    }
-
-    private String urlWithName(String name) {
-        return urlWithoutName() + "/" + name;
-    }
-
-    public Future<Void> reconcile(String name, ClusterRole resource) {
-        return doReconcile(urlWithoutName(), urlWithName(name), resource);
-    }
-
 }
