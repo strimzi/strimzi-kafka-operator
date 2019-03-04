@@ -121,7 +121,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
             log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.deleted());
         } catch (Exception e) {
-            log.error("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
+            log.debug("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }
@@ -140,7 +140,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
             log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
             return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
         } catch (Exception e) {
-            log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            log.debug("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }
@@ -166,7 +166,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
             log.debug("{} {} in namespace {} has been created", resourceKind, name, namespace);
             return Future.succeededFuture(result);
         } catch (Exception e) {
-            log.error("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
+            log.debug("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }
