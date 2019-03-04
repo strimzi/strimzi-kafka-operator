@@ -18,6 +18,7 @@ This procedure describes how to upgrade a {ProductName} Kafka cluster from one v
 ifdef::StrimziUpgrades[]
 include::snip-kafka-versions.adoc[leveloffset=+1]
 endif::StrimziUpgrades[]
+
 ifndef::StrimziUpgrades[]
 [options="header"]
 |=======================
