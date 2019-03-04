@@ -1765,10 +1765,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             boolean isSatisfiedBy = true;
             if (isCaCertsChanged || !isPodCaCertUpToDate) {
                 isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
-                if (isSatisfiedBy) {
-                    // ca cert has changed and the window is opened
-                    isPodToRestart = true;
-                }
+                isPodToRestart |= isSatisfiedBy;
             }
 
             if (log.isDebugEnabled()) {
@@ -1791,12 +1788,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     reasons.add("Pod has old generation");
                 }
                 if (!reasons.isEmpty()) {
-                    if (isSatisfiedBy) {
+                    if (isPodToRestart) {
                         log.debug("{}: Rolling pod {} due to {}",
                                 reconciliation, pod.getMetadata().getName(), reasons);
                     } else {
-                        log.debug("{}: Potential pod {} rolling due to {} but maintenance time windows not satisfied",
-                                reconciliation, pod.getMetadata().getName(), reasons);
+                        if (!isSatisfiedBy) {
+                            log.debug("{}: Potential pod {} rolling due to {} but maintenance time windows not satisfied",
+                                    reconciliation, pod.getMetadata().getName(), reasons);
+                        }
                     }
                 }
             }
