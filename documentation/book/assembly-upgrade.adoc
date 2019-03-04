@@ -17,4 +17,6 @@ ifdef::StrimziUpgrades[]
 include::proc-upgrading-the-cluster-operator-0-10-0-to-0-11-0.adoc[leveloffset=+1]
 endif::StrimziUpgrades[]
 
+include::proc-upgrading-the-cluster-operator-0-9-0-to-0-10-0.adoc[leveloffset=+1]
+
 include::assembly-upgrading-kafka-versions.adoc[leveloffset=+1]
