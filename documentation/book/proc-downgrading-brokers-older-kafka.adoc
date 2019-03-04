@@ -21,12 +21,12 @@ spec:
   kafka:
     version: {KafkaVersionHigher}
     config:
-      log.message.format.version: "2.0"
+      log.message.format.version: "{LogMsgVersLower}"
       # ...
 ----
 
 This resource can be downgraded to Kafka version {KafkaVersionLower} because the `log.message.format.version` has not been changed.
-If the `log.message.format.version` were absent (so that the parameter took its default value for a 2.1.0 broker of 2.1), or was `"2.1"` then downgrade would not be possible.
+If the `log.message.format.version` were absent (so that the parameter took its default value for a 2.1.0 broker of {LogMsgVersHigher}), or was `"{LogMsgVersHigher}"` then downgrade would not be possible.
 
 .Prerequisites
 
@@ -51,7 +51,7 @@ spec:
   kafka:
     version: {KafkaVersionLower} <1>
     config:
-      log.message.format.version: "2.0" <2>
+      log.message.format.version: "{LogMsgVersLower}" <2>
       # ...
 ----
 <1> This is changed to the previous version

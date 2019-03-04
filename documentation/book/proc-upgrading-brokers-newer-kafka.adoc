@@ -6,7 +6,7 @@
 
 = Upgrading brokers to a newer Kafka version
 
-This procedure describes how to upgrade a {ProductName} Kafka cluster from one version of Kafka to a higher version; for example {KafkaVersionLower} to {KafkaVersionHigher}.
+This procedure describes how to upgrade a {ProductName} Kafka cluster from one version of Kafka to a higher version; for example, from {KafkaVersionLower} to {KafkaVersionHigher}.
 
 .Prerequisites
 
@@ -44,7 +44,7 @@ spec:
   kafka:
     version: {KafkaVersionLower}
     config:
-      log.message.format.version: "2.0"
+      log.message.format.version: "{LogMsgVersLower}"
       # ...
 ----
 +
@@ -67,7 +67,7 @@ spec:
   kafka:
     version: {KafkaVersionHigher} <1>
     config:
-      log.message.format.version: "2.0" <2>
+      log.message.format.version: "{LogMsgVersLower}" <2>
       # ...
 ----
 <1> This is changed to the new version
@@ -111,7 +111,7 @@ spec:
   kafka:
     version: {KafkaVersionHigher}
     config:
-      log.message.format.version: "2.1"
+      log.message.format.version: "{LogMsgVersHigher}"
       # ...
 ----
 +
