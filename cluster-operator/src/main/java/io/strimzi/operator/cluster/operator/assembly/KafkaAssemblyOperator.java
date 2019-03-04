@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteIngress;
@@ -929,7 +930,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy()));
+            Future future = Future.future();
+            networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(true)).setHandler(res -> {
+                if (res.succeeded())    {
+                    future.complete(res.result());
+                } else {
+                    if (res.cause() instanceof KubernetesClientException && res.cause().getMessage() != null && res.cause().getMessage().contains("Forbidden: may not specify more than 1 from type"))  {
+                        log.debug("Network policy creation failed - we will retry without namespace");
+                        networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(false)).setHandler(res2 -> {
+                            if (res2.succeeded())    {
+                                future.complete(res2.result());
+                            } else {
+                                future.fail(res2.cause());
+                            }
+                        });
+                    } else {
+                        future.fail(res.cause());
+                    }
+                }
+            });
+
+            return withVoid(future);
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {

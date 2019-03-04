@@ -120,7 +120,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
             log.debug("{} {} has been deleted", resourceKind, name);
             return Future.succeededFuture(ReconcileResult.deleted());
         } catch (Exception e) {
-            log.error("Caught exception while deleting {} {}", resourceKind, name, e);
+            log.debug("Caught exception while deleting {} {}", resourceKind, name, e);
             return Future.failedFuture(e);
         }
     }
@@ -140,7 +140,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
             return Future.succeededFuture(wasChanged(current, result) ?
                     ReconcileResult.patched(result) : ReconcileResult.noop(result));
         } catch (Exception e) {
-            log.error("Caught exception while patching {} {}", resourceKind, name, e);
+            log.debug("Caught exception while patching {} {}", resourceKind, name, e);
             return Future.failedFuture(e);
         }
     }
@@ -166,7 +166,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
             log.debug("{} {} has been created", resourceKind, name);
             return Future.succeededFuture(result);
         } catch (Exception e) {
-            log.error("Caught exception while creating {} {}", resourceKind, name, e);
+            log.debug("Caught exception while creating {} {}", resourceKind, name, e);
             return Future.failedFuture(e);
         }
     }

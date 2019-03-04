@@ -243,7 +243,7 @@ public class ZookeeperCluster extends AbstractModel {
         return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
     }
 
-    public NetworkPolicy generateNetworkPolicy() {
+    public NetworkPolicy generateNetworkPolicy(boolean coInAllNamespaces) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
         NetworkPolicyPort port1 = new NetworkPolicyPort();
@@ -282,8 +282,11 @@ public class ZookeeperCluster extends AbstractModel {
         expressions4.put(Labels.STRIMZI_KIND_LABEL, "cluster-operator");
         labelSelector4.setMatchLabels(expressions4);
         clusterOperatorPeer.setPodSelector(labelSelector4);
-        // This is a hack because we have no guarantee that the CO namespace has some particular labels
-        clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
+
+        if (coInAllNamespaces) {
+            // This is a hack because we have no guarantee that the CO namespace has some particular labels
+            clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
+        }
 
         NetworkPolicyIngressRule networkPolicyIngressRule = new NetworkPolicyIngressRuleBuilder()
                 .withPorts(port1, port2, port3)
