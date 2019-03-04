@@ -35,14 +35,14 @@ Otherwise, ensure the `Kafka.spec.kafka.config` has the `log.message.format.vers
 +
 For example, if upgrading from {KafkaVersionLower}:
 +
-[source,yaml]
+[source,yaml,subs=attributes+]
 ----
 apiVersion: v1alpha1
 kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.0.0
+    version: {KafkaVersionLower}
     config:
       log.message.format.version: "2.0"
       # ...
@@ -58,14 +58,14 @@ If the image to be used is different from the image for the given version of Kaf
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
 +
-[source,yaml]
+[source,yaml,subs=attributes+]
 ----
 apiVersion: v1alpha1
 kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.1.1 <1>
+    version: {KafkaVersionHigher} <1>
     config:
       log.message.format.version: "2.0" <2>
       # ...
@@ -102,14 +102,14 @@ WARNING: You cannot downgrade after completing this step. If, for whatever reaso
 Otherwise change the `log.message.format.version` in `Kafka.spec.kafka.config` to the default version for the new version of Kafka now being used.
 For example, if upgrading to {KafkaVersionHigher}:
 +
-[source,yaml]
+[source,yaml,subs=attributes+]
 ----
 apiVersion: v1alpha1
 kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.1.1
+    version: {KafkaVersionHigher}
     config:
       log.message.format.version: "2.1"
       # ...
