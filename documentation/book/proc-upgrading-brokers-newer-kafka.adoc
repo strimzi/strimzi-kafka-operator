@@ -27,8 +27,6 @@ ifndef::StrimziUpgrades[]
 |=======================
 endif::StrimziUpgrades[]
 
-
-
 .Procedure
 
 . If the log message format version of the previous Kafka version is the same as that of the new Kafka version, proceed to the next step. Otherwise, ensure that the `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the previous version.
