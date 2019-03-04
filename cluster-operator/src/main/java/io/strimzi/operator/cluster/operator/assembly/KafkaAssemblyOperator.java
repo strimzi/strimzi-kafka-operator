@@ -945,9 +945,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 isPodToRestart(zkDiffs.resource(), pod, zkAncillaryCmChange, dateSupplier, this.clusterCa)
             ));
         }
-        
+
         /* test */ void setZkAncillaryCmChange(boolean zkAncillaryCmChange) {
             this.zkAncillaryCmChange = zkAncillaryCmChange;
+        }
+
+        /* test */ void setKafkaAncillaryCmChange(boolean kafkaAncillaryCmChange) {
+            this.kafkaAncillaryCmChange = kafkaAncillaryCmChange;
         }
 
         /**
