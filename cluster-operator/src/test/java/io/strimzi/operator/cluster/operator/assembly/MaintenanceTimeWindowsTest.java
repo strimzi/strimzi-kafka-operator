@@ -627,12 +627,12 @@ public class MaintenanceTimeWindowsTest {
         Async async = context.async();
 
         doKafkaRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
-                () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
-                r -> {
-                    String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
-                    context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
-                    async.complete();
-                }, false, true);
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            }, false, true);
 
         async.await();
     }
@@ -643,12 +643,12 @@ public class MaintenanceTimeWindowsTest {
         Async async = context.async();
 
         doKafkaRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
-                () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
-                r -> {
-                    String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
-                    context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
-                    async.complete();
-                }, true, true);
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            }, true, true);
 
         async.await();
     }
@@ -659,12 +659,12 @@ public class MaintenanceTimeWindowsTest {
         Async async = context.async();
 
         doKafkaRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
-                () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
-                r -> {
-                    String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
-                    context.assertEquals("0", generation, "Pod had unexpected generation " + generation);
-                    async.complete();
-                }, true, false);
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 11, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
+                context.assertEquals("0", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            }, true, false);
 
         async.await();
     }
@@ -675,12 +675,12 @@ public class MaintenanceTimeWindowsTest {
         Async async = context.async();
 
         doKafkaRollingUpdate(Collections.singletonList("* * 8-10 * * ?"),
-                () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
-                r -> {
-                    String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
-                    context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
-                    async.complete();
-                }, true, false);
+            () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()),
+            r -> {
+                String generation = getClusterCaGenerationPod(KafkaCluster.kafkaPodName(NAME, 0));
+                context.assertEquals("1", generation, "Pod had unexpected generation " + generation);
+                async.complete();
+            }, true, false);
 
         async.await();
     }
