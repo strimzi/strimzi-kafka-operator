@@ -2,10 +2,10 @@ apiVersion: v1
 entries:
   strimzi-kafka-operator:
   - apiVersion: v1
-    appVersion: 0.11.0
-    created: 2019-02-25T14:55:34.242248+01:00
+    appVersion: 0.11.1
+    created: 2019-03-05T00:09:37.350407+01:00
     description: 'Strimzi: Kafka as a Service'
-    digest: 680b4cd985ef46008593f7ccad6cd2dcfd2194e6f24d4dcaebd19bf42cd0732c
+    digest: eb5d8fb9f8861a98c22ded2a7143597d49d2276ea55225af2564c365ad2f356d
     home: http://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
@@ -24,7 +24,32 @@ entries:
     sources:
     - https://github.com/strimzi/strimzi-kafka-operator
     urls:
-    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.0/strimzi-kafka-operator-helm-chart-0.11.0.tgz
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.1/strimzi-kafka-operator-helm-chart-0.11.1.tgz
+    version: 0.11.1
+  - apiVersion: v1
+    appVersion: 0.11.0
+    created: 2019-03-05T00:09:37.352282+01:00
+    description: 'Strimzi: Kafka as a Service'
+    digest: 8d429c9b44b2fffe14ff5f00e462934fbdaa83374d7b7221b186c4e24690ef8a
+    home: http://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: ppatierno
+    - name: scholzj
+    - name: tombentley
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.11.1/helm-charts/strimzi-kafka-operator-0.11.0.tgz
     version: 0.11.0
   - apiVersion: v1
     appVersion: 0.11.0-rc2
@@ -301,4 +326,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: 2019-02-25T14:55:34.234975+01:00
+generated: 2019-03-05T00:09:37.348643+01:00
