@@ -2,35 +2,31 @@
 //
 // assembly-upgrading-kafka-versions.adoc
 
-
 [id='proc-downgrading-brokers-older-kafka-{context}']
 
 = Downgrading brokers to an older Kafka version
 
-You can downgrade a {ProductName} Kafka cluster from one version to a lower version; for example, from 2.1.0 to 2.0.0.
+NOTE: The _previous version_ is the Kafka version that you are downgrading _to_ (such as {KafkaVersionLower}). The _new version_ is the version that you are downgrading _from_ (such as {KafkaVersionHigher}).
 
-In this procedure the term _previous version_ means the version being downgraded _to_ (such as 2.0.0), and the term _new version_ means the version being downgraded _from_ (such as 2.1.0).
-
-IMPORTANT: Downgrading is not possible if the version being downgraded _from_ has ever used a `log.message.format.version` that is not supported by the version being downgraded _to_ (including where the default value for `log.message.format.version` is used). 
+You can downgrade a {ProductName} Kafka cluster from one version to a lower version; for example, from {KafkaVersionHigher} to {KafkaVersionLower}. Downgrading is not possible if the new version has ever used a `log.message.format.version` that is not supported by the previous version (including where the default value for `log.message.format.version` is used). 
 
 For example:
 
-[source,yaml]
+[source,yaml,subs=attributes+]
 ----
 apiVersion: v1alpha1
 kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.1.0
+    version: {KafkaVersionHigher}
     config:
-      log.message.format.version: "2.0"
+      log.message.format.version: "{LogMsgVersLower}"
       # ...
 ----
 
-This resource can be downgraded to Kafka version 2.0.0 because the `log.message.format.version` has not been changed.
-If the `log.message.format.version` were absent (so that the parameter took its default value for a 2.1.0 broker of 2.1), or was `"2.1"` then downgrade would not be possible.
-
+This resource can be downgraded to Kafka version {KafkaVersionLower} because the `log.message.format.version` has not been changed.
+If the `log.message.format.version` were absent (so that the parameter took its default value for a 2.1.0 broker of {LogMsgVersHigher}), or was `"{LogMsgVersHigher}"` then downgrade would not be possible.
 
 .Prerequisites
 
@@ -41,30 +37,30 @@ If the `log.message.format.version` were absent (so that the parameter took its 
 
 .Procedure
 
-. Change the `Kafka.spec.kafka.version` to specify the version being downgraded _to_.
+. Change the `Kafka.spec.kafka.version` to specify the previous version.
 If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's `STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image` as well.
 +
-For example, if downgrading from Kafka 2.1.0 to 2.0.0:
+For example, if downgrading from Kafka {KafkaVersionHigher} to {KafkaVersionLower}:
 +
-[source,yaml]
+[source,yaml,subs=attributes+]
 ----
 apiVersion: v1alpha1
 kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.0.0 <1>
+    version: {KafkaVersionLower} <1>
     config:
-      log.message.format.version: "2.0" <2>
+      log.message.format.version: "{LogMsgVersLower}" <2>
       # ...
 ----
-<1> This is changed to the downgraded version
+<1> This is changed to the previous version
 <2> This is unchanged
 +
-NOTE: It is necessary to format the value of `log.message.format.version` as a string to prevent it being interpreted as a number.
+NOTE: It is necessary to format the value of `log.message.format.version` as a string to prevent it from being interpreted as a number.
 
 . Wait for the Cluster Operator to downgrade the cluster.
-If both the previous and new versions of Kafka have a different interbroker protocol version look in the Cluster Operator logs for an `INFO` level message  in the following format:
+If both the previous and new versions of Kafka have a different interbroker protocol version, check the Cluster Operator logs for an `INFO` level message  in the following format:
 +
 [source,subs="+quotes"]
 ----
@@ -86,5 +82,3 @@ oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version downgrade from
 ----
 
 . Downgrade each client application to use the previous version of the client libraries.
-
-.Additional resources
