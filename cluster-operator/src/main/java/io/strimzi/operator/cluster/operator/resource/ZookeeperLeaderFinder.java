@@ -8,13 +8,11 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -31,6 +29,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,7 +48,7 @@ public class ZookeeperLeaderFinder {
     public static final int UNKNOWN_LEADER = -1;
 
     private final Vertx vertx;
-    private final SecretOperator secretOperator;
+    final SecretOperator secretOperator;
     private final Supplier<BackOff> backOffSupplier;
 
     public ZookeeperLeaderFinder(Vertx vertx, SecretOperator secretOperator, Supplier<BackOff> backOffSupplier) {
@@ -78,20 +77,29 @@ public class ZookeeperLeaderFinder {
     }
 
     /**
-     * Validate the cluster CA certificate passed in the given Secret
-     * and return the PemTrustOptions for trusting it.
+     * Validate the cluster CA certificate(s) passed in the given Secret
+     * and return the PemTrustOptions for trusting them.
      */
     protected PemTrustOptions trustOptions(Secret clusterCaCertificateSecret) {
         Base64.Decoder decoder = Base64.getDecoder();
         CertificateFactory x509 = x509Factory();
-        byte[] certBytes = decoder.decode(clusterCaCertificateSecret.getData().get(Ca.CA_CRT));
-        try {
-            x509.generateCertificate(new ByteArrayInputStream(certBytes));
-        } catch (CertificateException e) {
-            throw corruptCertificate(clusterCaCertificateSecret, Ca.CA_CRT, e);
+        PemTrustOptions pto = new PemTrustOptions();
+        for (Map.Entry<String, String> entry : clusterCaCertificateSecret.getData().entrySet()) {
+            String entryName = entry.getKey();
+            if (entryName.endsWith(".crt")) {
+                log.info("Trusting certificate {} from Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
+                byte[] certBytes = decoder.decode(entry.getValue());
+                try {
+                    x509.generateCertificate(new ByteArrayInputStream(certBytes));
+                } catch (CertificateException e) {
+                    throw corruptCertificate(clusterCaCertificateSecret, entryName, e);
+                }
+                pto.addCertValue(Buffer.buffer(certBytes));
+            } else {
+                log.warn("Ignoring non-certificate {} in Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
+            }
         }
-        return new PemTrustOptions()
-                .addCertValue(Buffer.buffer(certBytes));
+        return pto;
     }
 
     private RuntimeException corruptCertificate(Secret secret, String certKey, CertificateException e) {
@@ -124,25 +132,18 @@ public class ZookeeperLeaderFinder {
      * An exponential backoff is used if no ZK node is leader on the attempt to find it.
      * If there is no leader after 3 attempts then the returned Future completes with {@link #UNKNOWN_LEADER}.
      */
-    Future<Integer> findZookeeperLeader(String cluster, String namespace, List<Pod> pods) {
+    Future<Integer> findZookeeperLeader(String cluster, String namespace, List<Pod> pods, Secret coKeySecret) {
         if (pods.size() <= 1) {
             return Future.succeededFuture(pods.size() - 1);
         }
-        String brokersSecretName = ClusterOperator.secretName(cluster);
-        Future<Secret> brokersSecretFuture = secretOperator.getAsync(namespace, brokersSecretName);
         String clusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(cluster);
         Future<Secret> clusterCaKeySecretFuture = secretOperator.getAsync(namespace, clusterCaSecretName);
-        return CompositeFuture.join(brokersSecretFuture, clusterCaKeySecretFuture).compose(c -> {
-            Secret brokersSecret = c.resultAt(0);
-            if (brokersSecret == null) {
-                return Future.failedFuture(missingSecretFuture(namespace, brokersSecretName));
-            }
-            Secret clusterCaCertificateSecret = c.resultAt(1);
+        return clusterCaKeySecretFuture.compose(clusterCaCertificateSecret -> {
             if (clusterCaCertificateSecret  == null) {
-                return Future.failedFuture(missingSecretFuture(namespace, brokersSecretName));
+                return Future.failedFuture(missingSecretFuture(namespace, clusterCaSecretName));
             }
             try {
-                NetClientOptions netClientOptions = clientOptions(brokersSecret, clusterCaCertificateSecret);
+                NetClientOptions netClientOptions = clientOptions(coKeySecret, clusterCaCertificateSecret);
                 return zookeeperLeader(cluster, namespace, pods, netClientOptions);
             } catch (Throwable e) {
                 return Future.failedFuture(e);

@@ -254,6 +254,7 @@ class SecurityST extends AbstractST {
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
         AvailabilityVerifier mp = waitForInitialAvailability(aliceUserName);
+        mp.stop(30_000);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
@@ -285,9 +286,6 @@ class SecurityST extends AbstractST {
         LOGGER.info("Wait for EO to rolling restart (1)...");
         eoPod = StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPod);
 
-        //mp.stop(30_000);
-        //mp = waitForInitialAvailability(aliceUserName);
-
         LOGGER.info("Wait for zk to rolling restart (2)...");
         zkPods = StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
         LOGGER.info("Wait for kafka to rolling restart (2)...");
@@ -305,9 +303,8 @@ class SecurityST extends AbstractST {
             assertNotEquals("CA key in " + secretName + " should have changed",
                     initialCaKeys.get(secretName), value);
         }
-        //mp.stop(30_000);
-        //mp = waitForInitialAvailability(aliceUserName);
-        waitForAvailability(mp);
+
+        mp = waitForInitialAvailability(aliceUserName);
 
         AvailabilityVerifier.Result result = mp.stop(30_000);
         LOGGER.info("Producer/consumer stats during cert renewal {}", result);

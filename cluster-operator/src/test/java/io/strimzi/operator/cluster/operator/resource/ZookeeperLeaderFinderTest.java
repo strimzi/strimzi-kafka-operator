@@ -182,12 +182,16 @@ public class ZookeeperLeaderFinderTest {
         }
     }
 
+    Secret coKeySecret() {
+        return new Secret();
+    }
+
     @Test
     public void test0Pods() {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
         assertEquals(Integer.valueOf(-1),
                 finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                        emptyList()).result());
+                        emptyList(), coKeySecret()).result());
     }
 
     BackOff backoff() {
@@ -199,40 +203,15 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
         assertEquals(Integer.valueOf(0),
                 finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                        asList(getPod(0))).result());
+                        asList(getPod(0)), coKeySecret()).result());
     }
 
     @Test
     public void testSecretsNotFound() {
         SecretOperator mock = mock(SecretOperator.class);
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, mock, this::backoff);
-        when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
-                .thenReturn(Future.succeededFuture(null));
-        when(mock.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER))))
-                .thenReturn(Future.succeededFuture(null));
-        assertEquals("Secret testns/testcluster-cluster-operator-certs does not exist",
-                finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                        asList(getPod(0), getPod(1))).cause().getMessage());
 
         Mockito.reset(mock);
-        when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
-                .thenReturn(Future.succeededFuture(new SecretBuilder().build()));
-        when(mock.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER))))
-                .thenReturn(Future.succeededFuture(null));
-        assertEquals("Secret testns/testcluster-cluster-operator-certs does not exist",
-                finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                        asList(getPod(0), getPod(1))).cause().getMessage());
-
-        Mockito.reset(mock);
-        when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
-                .thenReturn(Future.succeededFuture(
-                        new SecretBuilder()
-                                .withNewMetadata()
-                                    .withName(ClusterOperator.secretName(CLUSTER))
-                                    .withNamespace(NAMESPACE)
-                                .endMetadata()
-                                .withData(emptyMap())
-                        .build()));
         when(mock.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER))))
                 .thenReturn(Future.succeededFuture(
                         new SecretBuilder()
@@ -244,7 +223,13 @@ public class ZookeeperLeaderFinderTest {
                                 .build()));
         assertEquals("The Secret testns/testcluster-cluster-operator-certs is missing the key cluster-operator.key",
                 finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                        asList(getPod(0), getPod(1))).cause().getMessage());
+                        asList(getPod(0), getPod(1)), new SecretBuilder()
+                                .withNewMetadata()
+                                .withName(ClusterOperator.secretName(CLUSTER))
+                                .withNamespace(NAMESPACE)
+                                .endMetadata()
+                                .withData(emptyMap())
+                                .build()).cause().getMessage());
     }
 
     @Test
@@ -252,16 +237,6 @@ public class ZookeeperLeaderFinderTest {
         SecretOperator mock = mock(SecretOperator.class);
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, mock, this::backoff);
 
-        when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
-                .thenReturn(Future.succeededFuture(
-                        new SecretBuilder()
-                                .withNewMetadata()
-                                .withName(ClusterOperator.secretName(CLUSTER))
-                                .withNamespace(NAMESPACE)
-                                .endMetadata()
-                                .withData(map("cluster-operator.key", "notacert",
-                                        "cluster-operator.crt", "notacert"))
-                                .build()));
         when(mock.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER))))
                 .thenReturn(Future.succeededFuture(
                         new SecretBuilder()
@@ -272,7 +247,14 @@ public class ZookeeperLeaderFinderTest {
                                 .withData(map(Ca.CA_CRT, "notacert"))
                                 .build()));
         Throwable cause = finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                asList(getPod(0), getPod(1))).cause();
+                asList(getPod(0), getPod(1)), new SecretBuilder()
+                        .withNewMetadata()
+                        .withName(ClusterOperator.secretName(CLUSTER))
+                        .withNamespace(NAMESPACE)
+                        .endMetadata()
+                        .withData(map("cluster-operator.key", "notacert",
+                                "cluster-operator.crt", "notacert"))
+                        .build()).cause();
         assertTrue(cause instanceof RuntimeException);
         assertEquals("Bad/corrupt certificate found in data.cluster-operator\\.crt of Secret testcluster-cluster-operator-certs in namespace testns", cause.getMessage());
     }
@@ -307,7 +289,7 @@ public class ZookeeperLeaderFinderTest {
 
         Async a = context.async();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                    asList(getPod(0), getPod(1)))
+                    asList(getPod(0), getPod(1)), coKeySecret())
             .setHandler(ar -> {
                 if (ar.succeeded()) {
                     context.assertEquals(-1, ar.result());
@@ -353,7 +335,7 @@ public class ZookeeperLeaderFinderTest {
 
         Async a = context.async();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                asList(getPod(0), getPod(1)))
+                asList(getPod(0), getPod(1)), coKeySecret())
                 .setHandler(result -> {
                     context.assertTrue(result.failed());
                     for (FakeZk zk : zks) {
@@ -394,7 +376,7 @@ public class ZookeeperLeaderFinderTest {
 
         Async a = context.async();
         finder.findZookeeperLeader(CLUSTER, NAMESPACE,
-                asList(getPod(0), getPod(1)))
+                asList(getPod(0), getPod(1)), coKeySecret())
                 .setHandler(ar -> {
                     if (ar.succeeded()) {
                         context.assertEquals(leader, ar.result());
@@ -438,7 +420,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Async a = context.async();
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(getPod(0), getPod(1)))
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(getPod(0), getPod(1)), coKeySecret())
                 .setHandler(asyncResult -> {
                     if (asyncResult.failed()) {
                         asyncResult.cause().printStackTrace();
