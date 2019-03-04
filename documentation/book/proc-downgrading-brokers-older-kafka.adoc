@@ -12,14 +12,14 @@ You can downgrade a {ProductName} Kafka cluster from one version to a lower vers
 
 For example:
 
-[source,yaml]
+[source,yaml,subs=attributes+]
 ----
 apiVersion: v1alpha1
 kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.1.1
+    version: {KafkaVersionHigher}
     config:
       log.message.format.version: "2.0"
       # ...
@@ -42,14 +42,14 @@ If the image to be used is different from the image for the given version of Kaf
 +
 For example, if downgrading from Kafka {KafkaVersionHigher} to {KafkaVersionLower}:
 +
-[source,yaml]
+[source,yaml,subs=attributes+]
 ----
 apiVersion: v1alpha1
 kind: Kafka
 spec:
   # ...
   kafka:
-    version: 2.0.0 <1>
+    version: {KafkaVersionLower} <1>
     config:
       log.message.format.version: "2.0" <2>
       # ...
