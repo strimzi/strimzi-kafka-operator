@@ -407,6 +407,7 @@ spec:
             metadata:
               labels:
                 name: strimzi-cluster-operator
+                strimzi.io/kind: cluster-operator
             spec:
               serviceAccountName: strimzi-cluster-operator
               containers:

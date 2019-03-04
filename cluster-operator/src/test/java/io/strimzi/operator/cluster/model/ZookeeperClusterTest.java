@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -15,6 +16,9 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -503,5 +507,75 @@ public class ZookeeperClusterTest {
         sts = zc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT);
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
+    }
+
+    @Test
+    public void testNetworkPolicy() {
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap());
+        kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Network Policies
+        NetworkPolicy np = zc.generateNetworkPolicy(true);
+
+        LabelSelector podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        assertEquals(podSelector, np.getSpec().getPodSelector());
+
+        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress();
+        assertEquals(2, rules.size());
+
+        NetworkPolicyIngressRule metricsRule = rules.get(1);
+        assertEquals(1, metricsRule.getPorts().size());
+        assertEquals(new IntOrString(9404), metricsRule.getPorts().get(0).getPort());
+        assertEquals(0, metricsRule.getFrom().size());
+
+        NetworkPolicyIngressRule zooRule = rules.get(0);
+        assertEquals(3, zooRule.getPorts().size());
+        assertEquals(new IntOrString(2181), zooRule.getPorts().get(0).getPort());
+        assertEquals(new IntOrString(2888), zooRule.getPorts().get(1).getPort());
+        assertEquals(new IntOrString(3888), zooRule.getPorts().get(2).getPort());
+
+        assertEquals(4, zooRule.getFrom().size());
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(0));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(1));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(2));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(new LabelSelector()).build(), zooRule.getFrom().get(3));
+
+        // Check NetworkPolicy for older OCP versions
+        np = zc.generateNetworkPolicy(false);
+        rules = np.getSpec().getIngress();
+        zooRule = rules.get(0);
+
+        assertEquals(4, zooRule.getFrom().size());
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(0));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(1));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(zc.getCluster())));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(2));
+
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
+        assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(3));
     }
 }

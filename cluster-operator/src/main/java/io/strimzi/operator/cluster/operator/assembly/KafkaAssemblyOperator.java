@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteIngress;
@@ -928,7 +929,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy()));
+            Future future = networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(true)).recover(
+                cause -> {
+                    if (cause instanceof KubernetesClientException && cause.getMessage() != null && cause.getMessage().contains("Forbidden: may not specify more than 1 from type"))  {
+                        log.debug("Network policy creation failed - retrying without namespace");
+                        return networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(false));
+                    } else {
+                        return Future.failedFuture(cause);
+                    }
+                }
+            );
+
+            return withVoid(future);
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {
