@@ -37,10 +37,12 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_KAFKA_CONNECT_S2I_IMAGES = "STRIMZI_KAFKA_CONNECT_S2I_IMAGES";
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES";
     public static final String STRIMZI_IMAGE_PULL_POLICY = "STRIMZI_IMAGE_PULL_POLICY";
+    public static final String STRIMZI_ASSUME_OPENSHIFT = "STRIMZI_ASSUME_OPENSHIFT";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
     public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
+    public static final Boolean DEFAULT_STRIMZI_ASSUME_OPENSHIFT = null;
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
@@ -48,6 +50,7 @@ public class ClusterOperatorConfig {
     private final boolean createClusterRoles;
     private final KafkaVersion.Lookup versions;
     private final ImagePullPolicy imagePullPolicy;
+    private final Boolean assumeOpenShift;
 
     /**
      * Constructor
@@ -58,14 +61,16 @@ public class ClusterOperatorConfig {
      * @param createClusterRoles true to create the cluster roles
      * @param versions The configured Kafka versions
      * @param imagePullPolicy Image pull policy configured by the user
+     * @param assumeOpenShift Assumes whether we are on Kubernetes on OPenShift and skips autodetection
      */
-    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
+    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy, Boolean assumeOpenShift) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
         this.createClusterRoles = createClusterRoles;
         this.versions = versions;
         this.imagePullPolicy = imagePullPolicy;
+        this.assumeOpenShift = assumeOpenShift;
     }
 
     /**
@@ -148,7 +153,13 @@ public class ClusterOperatorConfig {
             }
         }
 
-        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup, imagePullPolicy);
+        Boolean assumeOpenShift = DEFAULT_STRIMZI_ASSUME_OPENSHIFT;
+        String assumeOpenShiftEnvVar = map.get(ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT);
+        if (assumeOpenShiftEnvVar != null) {
+            assumeOpenShift = Boolean.parseBoolean(assumeOpenShiftEnvVar);
+        }
+
+        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup, imagePullPolicy, assumeOpenShift);
     }
 
 
@@ -191,6 +202,13 @@ public class ClusterOperatorConfig {
         return imagePullPolicy;
     }
 
+    /**
+     * @return  Whether we should assume that we are on OPenShift without the autodetection
+     */
+    public Boolean isAssumeOpenShift() {
+        return assumeOpenShift;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -200,6 +218,7 @@ public class ClusterOperatorConfig {
                 ",createClusterRoles=" + createClusterRoles +
                 ",versions=" + versions +
                 ",imagePullPolicy=" + imagePullPolicy +
+                ",assumeOpenShift=" + assumeOpenShift +
                 ")";
     }
 }
