@@ -930,25 +930,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNetPolicy() {
-            Future future = Future.future();
-            networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(true)).setHandler(res -> {
-                if (res.succeeded())    {
-                    future.complete(res.result());
-                } else {
-                    if (res.cause() instanceof KubernetesClientException && res.cause().getMessage() != null && res.cause().getMessage().contains("Forbidden: may not specify more than 1 from type"))  {
+            Future future = networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(true)).recover(
+                cause -> {
+                    if (cause instanceof KubernetesClientException && cause.getMessage() != null && cause.getMessage().contains("Forbidden: may not specify more than 1 from type"))  {
                         log.debug("Network policy creation failed - we will retry without namespace");
-                        networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(false)).setHandler(res2 -> {
-                            if (res2.succeeded())    {
-                                future.complete(res2.result());
-                            } else {
-                                future.fail(res2.cause());
-                            }
-                        });
+                        return networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(false));
                     } else {
-                        future.fail(res.cause());
+                        return Future.failedFuture(cause);
                     }
                 }
-            });
+            );
 
             return withVoid(future);
         }
