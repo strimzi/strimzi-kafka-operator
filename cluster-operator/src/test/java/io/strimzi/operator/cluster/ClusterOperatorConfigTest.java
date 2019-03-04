@@ -19,6 +19,8 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class ClusterOperatorConfigTest {
 
@@ -47,7 +49,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testReconciliationInterval() {
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), null);
+        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), null, null);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(60_000, config.getReconciliationIntervalMs());
@@ -173,5 +175,34 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Sometimes");
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+    }
+
+    @Test
+    public void testForceOpenShift() {
+        ClusterOperatorConfig config;
+        Map<String, String> envVars;
+
+        envVars = new HashMap<>(1);
+        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
+        config = ClusterOperatorConfig.fromMap(envVars);
+        assertNull(config.isAssumeOpenShift());
+
+        envVars = new HashMap<>(2);
+        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
+        envVars.put(ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT, "TRUE");
+        config = ClusterOperatorConfig.fromMap(envVars);
+        assertTrue(config.isAssumeOpenShift());
+
+        envVars = new HashMap<>(2);
+        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
+        envVars.put(ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT, "FALSE");
+        config = ClusterOperatorConfig.fromMap(envVars);
+        assertFalse(config.isAssumeOpenShift());
+
+        envVars = new HashMap<>(2);
+        envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
+        envVars.put(ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT, "something");
+        config = ClusterOperatorConfig.fromMap(envVars);
+        assertFalse(config.isAssumeOpenShift());
     }
 }
