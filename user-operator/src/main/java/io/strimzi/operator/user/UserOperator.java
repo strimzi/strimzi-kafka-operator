@@ -78,7 +78,7 @@ public class UserOperator extends AbstractVerticle {
                 log.info("Started operator for {} kind", "KafkaUser");
                 watch = w;
 
-                log.info("Setting up periodical reconciliation for namespace {}", namespace);
+                log.info("Setting up periodic reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation for namespace {}...", namespace);
                     reconcileAll("timer");

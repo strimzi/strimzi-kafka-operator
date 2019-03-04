@@ -113,7 +113,7 @@ public class ClusterOperator extends AbstractVerticle {
                     log.info("Started operator for {} kind", "KafkaConnectS2I");
                     watchByKind.put("KafkaS2IConnect", w);
                 }
-                log.info("Setting up periodical reconciliation for namespace {}", namespace);
+                log.info("Setting up periodic reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation for namespace {}...", namespace);
                     reconcileAll("timer");
