@@ -948,6 +948,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             ));
         }
 
+        /* test */ void setZkAncillaryCmChange(boolean zkAncillaryCmChange) {
+            this.zkAncillaryCmChange = zkAncillaryCmChange;
+        }
+
+        /* test */ void setKafkaAncillaryCmChange(boolean kafkaAncillaryCmChange) {
+            this.kafkaAncillaryCmChange = kafkaAncillaryCmChange;
+        }
+
         /**
          * Scale up is divided by scaling up Zookeeper cluster in steps.
          * Scaling up from N to M (N > 0 and M>N) replicas is done in M-N steps.
@@ -1772,11 +1780,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 isPodCaCertUpToDate &= isPodCaCertUpToDate(pod, ca);
             }
 
-            boolean isPodToRestart = !isPodUpToDate || !isPodCaCertUpToDate || isAncillaryCmChange || isCaCertsChanged;
+            boolean isPodToRestart = !isPodUpToDate || isAncillaryCmChange;
+
             boolean isSatisfiedBy = true;
-            // it makes sense to check maintenance windows if pod restarting is needed
-            if (isPodToRestart) {
+            if (isCaCertsChanged || !isPodCaCertUpToDate) {
                 isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
+                isPodToRestart |= isSatisfiedBy;
             }
 
             if (log.isDebugEnabled()) {
@@ -1799,16 +1808,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     reasons.add("Pod has old generation");
                 }
                 if (!reasons.isEmpty()) {
-                    if (isSatisfiedBy) {
+                    if (isPodToRestart) {
                         log.debug("{}: Rolling pod {} due to {}",
                                 reconciliation, pod.getMetadata().getName(), reasons);
                     } else {
-                        log.debug("{}: Potential pod {} rolling due to {} but maintenance time windows not satisfied",
-                                reconciliation, pod.getMetadata().getName(), reasons);
+                        if (!isSatisfiedBy) {
+                            log.debug("{}: Potential pod {} rolling due to {} but maintenance time windows not satisfied",
+                                    reconciliation, pod.getMetadata().getName(), reasons);
+                        }
                     }
                 }
             }
-            return isSatisfiedBy && isPodToRestart;
+            return isPodToRestart;
         }
 
         private boolean isMaintenanceTimeWindowsSatisfied(Supplier<Date> dateSupplier) {
