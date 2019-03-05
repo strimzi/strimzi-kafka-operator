@@ -1081,7 +1081,7 @@ public abstract class AbstractModel {
         return merged;
     }
 
-    public ServiceAccount generateServiceAccountInternal() {
+    public ServiceAccount generateServiceAccount() {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
                     .withName(getServiceAccountName())
@@ -1090,9 +1090,5 @@ public abstract class AbstractModel {
                     .withLabels(labels.toMap())
                 .endMetadata()
             .build();
-    }
-
-    public ServiceAccount generateServiceAccount() {
-        return generateServiceAccountInternal();
     }
 }

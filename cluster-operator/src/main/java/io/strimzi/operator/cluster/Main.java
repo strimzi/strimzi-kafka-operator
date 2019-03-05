@@ -51,7 +51,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -241,11 +241,8 @@ public class Main {
                 log.info("Creating cluster role {}", clusterRole.getKey());
 
                 try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(
-                                Main.class.getResourceAsStream(
-                                        "/cluster-roles/"
-                                                + clusterRole.getValue()),
-                                Charset.defaultCharset()))) {
+                        new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()),
+                                StandardCharsets.UTF_8))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
                     KubernetesClusterRole role = cro.convertYamlToClusterRole(yaml);
                     Future fut = cro.reconcile(role.getMetadata().getName(), role);
@@ -254,6 +251,7 @@ public class Main {
                     log.error("Failed to create Cluster Roles.", e);
                     throw new RuntimeException(e);
                 }
+
             }
 
             Future returnFuture = Future.future();

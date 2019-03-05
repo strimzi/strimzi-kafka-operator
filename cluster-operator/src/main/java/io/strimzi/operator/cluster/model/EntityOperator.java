@@ -266,6 +266,6 @@ public class EntityOperator extends AbstractModel {
         if (!isDeployed()) {
             return null;
         }
-        return generateServiceAccountInternal();
+        return super.generateServiceAccount();
     }
 }
