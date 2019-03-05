@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
@@ -15,17 +16,21 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
-import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -50,6 +55,8 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     private final ServiceOperator serviceOperations;
     private final DeploymentOperator deploymentOperations;
     private final ConfigMapOperator configMapOperations;
+    private final ClusterRoleBindingOperator clusterRoleBindingOperations;
+    private final ServiceAccountOperator serviceAccountOperations;
     private final KafkaVersion.Lookup versions;
 
     /**
@@ -69,12 +76,15 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                                         SecretOperator secretOperations,
                                         NetworkPolicyOperator networkPolicyOperator,
                                         PodDisruptionBudgetOperator podDisruptionBudgetOperator,
+                                        ResourceOperatorSupplier supplier,
                                         KafkaVersion.Lookup versions,
                                         ImagePullPolicy imagePullPolicy) {
         super(vertx, isOpenShift, ResourceType.CONNECT, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
+        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
+        this.serviceAccountOperations = supplier.serviceAccountOperator;
         this.versions = versions;
     }
 
@@ -101,7 +111,8 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
-        return deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
+        return  connectServiceAccount(namespace, connect)
+                .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
@@ -117,5 +128,12 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     @Override
     protected List<HasMetadata> getResources(String namespace, Labels selector) {
         return Collections.EMPTY_LIST;
+    }
+
+
+    Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {
+        return serviceAccountOperations.reconcile(namespace,
+                KafkaConnectCluster.containerServiceAccountName(connect.getCluster()),
+                connect.generateServiceAccount());
     }
 }

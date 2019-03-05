@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
@@ -16,16 +17,20 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -51,6 +56,8 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
     private final DeploymentOperator deploymentOperations;
     private final ConfigMapOperator configMapOperations;
     private final ServiceOperator serviceOperations;
+    private final ClusterRoleBindingOperator clusterRoleBindingOperations;
+    private final ServiceAccountOperator serviceAccountOperations;
     private final KafkaVersion.Lookup versions;
 
     /**
@@ -70,12 +77,15 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                                             DeploymentOperator deploymentOperations,
                                             ServiceOperator serviceOperations,
                                             PodDisruptionBudgetOperator podDisruptionBudgetOperator,
+                                            ResourceOperatorSupplier supplier,
                                             KafkaVersion.Lookup versions,
                                             ImagePullPolicy imagePullPolicy) {
         super(vertx, isOpenShift, ResourceType.MIRRORMAKER, certManager, mirrorMakerOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
         this.deploymentOperations = deploymentOperations;
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
+        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
+        this.serviceAccountOperations = supplier.serviceAccountOperator;
         this.versions = versions;
     }
 
@@ -102,7 +112,8 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation, name, namespace);
-        return deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas())
+        return mirrorMakerServiceAccount(namespace, mirror)
+                .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, mirror.getServiceName(), mirror.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, mirror.getAncillaryConfigName(), logAndMetricsConfigMap))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
@@ -122,5 +133,11 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         result.addAll(resourceOperator.list(namespace, selector));
         
         return result;
+    }
+
+    Future<ReconcileResult<ServiceAccount>> mirrorMakerServiceAccount(String namespace, KafkaMirrorMakerCluster mirror) {
+        return serviceAccountOperations.reconcile(namespace,
+                KafkaMirrorMakerCluster.containerServiceAccountName(mirror.getCluster()),
+                mirror.generateServiceAccount());
     }
 }

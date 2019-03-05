@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
@@ -14,20 +15,25 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
+import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -55,6 +61,8 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
     private final ImageStreamOperator imagesStreamOperations;
     private final BuildConfigOperator buildConfigOperations;
     private final ConfigMapOperator configMapOperations;
+    private final ClusterRoleBindingOperator clusterRoleBindingOperations;
+    private final ServiceAccountOperator serviceAccountOperations;
     private final KafkaVersion.Lookup versions;
 
     /**
@@ -79,6 +87,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                                            SecretOperator secretOperations,
                                            NetworkPolicyOperator networkPolicyOperator,
                                            PodDisruptionBudgetOperator podDisruptionBudgetOperator,
+                                           ResourceOperatorSupplier supplier,
                                            KafkaVersion.Lookup versions,
                                            ImagePullPolicy imagePullPolicy) {
         super(vertx, isOpenShift, ResourceType.CONNECT_S2I, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
@@ -87,6 +96,8 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.imagesStreamOperations = imagesStreamOperations;
         this.buildConfigOperations = buildConfigOperations;
+        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
+        this.serviceAccountOperations = supplier.serviceAccountOperator;
         this.versions = versions;
     }
 
@@ -112,7 +123,8 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
             HashMap<String, String> annotations = new HashMap();
             annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
-            return deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
+            return connectServiceAccount(namespace, connect)
+                    .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                     .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
                     .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations, isOpenShift, imagePullPolicy)))
@@ -136,4 +148,9 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
         return Collections.EMPTY_LIST;
     }
 
+    Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {
+        return serviceAccountOperations.reconcile(namespace,
+                KafkaConnectCluster.containerServiceAccountName(connect.getCluster()),
+                connect.generateServiceAccount());
+    }
 }

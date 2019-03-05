@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -124,10 +125,11 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, supplier, VERSIONS, null);
 
         KafkaConnectS2ICluster connect = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
@@ -135,7 +137,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            // Vertify service
+            // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(1, capturedServices.size());
             Service service = capturedServices.get(0);
@@ -246,16 +248,17 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, supplier, VERSIONS, null);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
             context.assertTrue(createResult.succeeded());
 
-            // Vertify service
+            // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(1, capturedServices.size());
 
@@ -364,10 +367,11 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             return Future.succeededFuture();
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, supplier, VERSIONS, null);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -375,7 +379,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
             KafkaConnectS2ICluster compareTo = KafkaConnectS2ICluster.fromCrd(clusterCm, VERSIONS);
 
-            // Vertify service
+            // Verify service
             List<Service> capturedServices = serviceCaptor.getAllValues();
             context.assertEquals(1, capturedServices.size());
             Service service = capturedServices.get(0);
@@ -484,10 +488,11 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockPdbOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, supplier, VERSIONS, null);
 
 
         Async async = context.async();
@@ -542,10 +547,11 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockBcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, supplier, VERSIONS, null);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -602,10 +608,11 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockBcOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, VERSIONS, null);
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, supplier, VERSIONS, null);
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT_S2I, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -655,10 +662,11 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
         Async async = context.async(2);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, true,
                 new MockCertManager(),
                 mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, VERSIONS, null) {
+                mockCmOps, mockDcOps, mockServiceOps, mockIsOps, mockBcOps, mockSecretOps, networkPolicyOperator, mockPdbOps, supplier, VERSIONS, null) {
 
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2IAssembly) {

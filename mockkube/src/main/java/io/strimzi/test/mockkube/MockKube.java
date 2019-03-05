@@ -216,7 +216,6 @@ public class MockKube {
                 Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> mockCrb = buildCrb();
 
         when(mockClient.configMaps()).thenReturn(mockCms);
-
         when(mockClient.services()).thenReturn(mockSvc);
         AppsAPIGroupDSL api = mock(AppsAPIGroupDSL.class);
 
@@ -718,7 +717,6 @@ public class MockKube {
             }
         }.build();
     }
-
 
     private <T extends CustomResource,
             L extends KubernetesResource & KubernetesResourceList<T>,
