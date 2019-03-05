@@ -109,7 +109,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
-        return  connectInitServiceAccount(namespace, connect)
+        return  connectServiceAccount(namespace, connect)
                 .compose(i -> deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
@@ -129,9 +129,9 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
     }
 
 
-    Future connectInitServiceAccount(String namespace, KafkaConnectCluster connect) {
+    Future connectServiceAccount(String namespace, KafkaConnectCluster connect) {
         return serviceAccountOperations.reconcile(namespace,
-                KafkaConnectCluster.initContainerServiceAccountName(connect.getCluster()),
+                KafkaConnectCluster.containerServiceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());
     }
 }

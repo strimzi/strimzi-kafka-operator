@@ -110,7 +110,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
 
         log.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation, name, namespace);
-        return mirrorMakerInitServiceAccount(namespace, mirror)
+        return mirrorMakerServiceAccount(namespace, mirror)
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, mirror.getServiceName(), mirror.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, mirror.getAncillaryConfigName(), logAndMetricsConfigMap))
@@ -133,9 +133,9 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         return result;
     }
 
-    Future mirrorMakerInitServiceAccount(String namespace, KafkaMirrorMakerCluster mirror) {
+    Future mirrorMakerServiceAccount(String namespace, KafkaMirrorMakerCluster mirror) {
         return serviceAccountOperations.reconcile(namespace,
-                KafkaMirrorMakerCluster.initContainerServiceAccountName(mirror.getCluster()),
+                KafkaMirrorMakerCluster.containerServiceAccountName(mirror.getCluster()),
                 mirror.generateServiceAccount());
     }
 }

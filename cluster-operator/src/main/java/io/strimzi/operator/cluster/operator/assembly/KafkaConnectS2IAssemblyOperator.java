@@ -121,7 +121,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
             HashMap<String, String> annotations = new HashMap();
             annotations.put(ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(connect.ANCILLARY_CM_KEY_LOG_CONFIG));
 
-            return connectInitServiceAccount(namespace, connect)
+            return connectServiceAccount(namespace, connect)
                     .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                     .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
@@ -146,9 +146,9 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
         return Collections.EMPTY_LIST;
     }
 
-    Future connectInitServiceAccount(String namespace, KafkaConnectCluster connect) {
+    Future connectServiceAccount(String namespace, KafkaConnectCluster connect) {
         return serviceAccountOperations.reconcile(namespace,
-                KafkaConnectCluster.initContainerServiceAccountName(connect.getCluster()),
+                KafkaConnectCluster.containerServiceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());
     }
 }

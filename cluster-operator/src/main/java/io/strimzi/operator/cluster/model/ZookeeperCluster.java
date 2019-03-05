@@ -483,12 +483,12 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Get the name of the zookeeper service account given the name of the {@code zookeeperResourceName}.
      */
-    public static String initContainerServiceAccountName(String zookeeperResourceName) {
+    public static String containerServiceAccountName(String zookeeperResourceName) {
         return zookeeperClusterName(zookeeperResourceName);
     }
 
     @Override
     protected String getServiceAccountName() {
-        return initContainerServiceAccountName(cluster);
+        return containerServiceAccountName(cluster);
     }
 }

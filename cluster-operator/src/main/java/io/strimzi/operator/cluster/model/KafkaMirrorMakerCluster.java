@@ -457,13 +457,13 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return initContainerServiceAccountName(cluster);
+        return containerServiceAccountName(cluster);
     }
 
     /**
      * Get the name of the mirror maker service account given the name of the {@code mirrorMakerResourceName}.
      */
-    public static String initContainerServiceAccountName(String mirrorMakerResourceName) {
+    public static String containerServiceAccountName(String mirrorMakerResourceName) {
         return kafkaMirrorMakerClusterName(mirrorMakerResourceName);
     }
 }

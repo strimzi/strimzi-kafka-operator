@@ -167,7 +167,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
                 .compose(state -> state.getZookeeperDescription())
-                .compose(state -> state.zookeeperInitServiceAccount())
+                .compose(state -> state.zookeeperServiceAccount())
                 .compose(state -> state.zkScaleUpStep())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
@@ -883,9 +883,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return r.map(this);
         }
 
-        Future<ReconciliationState> zookeeperInitServiceAccount() {
+        Future<ReconciliationState> zookeeperServiceAccount() {
             return withVoid(serviceAccountOperator.reconcile(namespace,
-                    ZookeeperCluster.initContainerServiceAccountName(zkCluster.getCluster()),
+                    ZookeeperCluster.containerServiceAccountName(zkCluster.getCluster()),
                     zkCluster.generateServiceAccount()));
         }
 

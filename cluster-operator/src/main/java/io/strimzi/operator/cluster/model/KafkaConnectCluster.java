@@ -538,13 +538,13 @@ public class KafkaConnectCluster extends AbstractModel {
 
     @Override
     protected String getServiceAccountName() {
-        return initContainerServiceAccountName(cluster);
+        return containerServiceAccountName(cluster);
     }
 
     /**
      * Get the name of the connect service account given the name of the {@code connectResourceName}.
      */
-    public static String initContainerServiceAccountName(String connectResourceName) {
+    public static String containerServiceAccountName(String connectResourceName) {
         return kafkaConnectClusterName(connectResourceName);
     }
 }
