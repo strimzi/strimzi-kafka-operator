@@ -13,5 +13,7 @@ function run_test() {
         EXTRA_TEST_ARGS="${EXTRA_TEST_ARGS} -DjunitTags=${JUNIT_TAGS}"
     fi
 
-    mvn -B verify -pl systemtests -P${PROFILE} -Djava.net.preferIPv4Stack=true -DfailIfNoTests=false -Djansi.force=true -Dstyle.color=always ${EXTRA_TEST_ARGS}
+    echo "Extra args for tests: ${EXTRA_TEST_ARGS}"
+
+    mvn -B verify -pl systemtest -P${PROFILE} -Djava.net.preferIPv4Stack=true -DfailIfNoTests=false -Djansi.force=true -Dstyle.color=always ${EXTRA_TEST_ARGS}
 }

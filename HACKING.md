@@ -192,6 +192,15 @@ It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositor
 
 ## Running system tests
 
+### Cluster user token
+
+For execute system tests you have to export environment variable `KUBERNETES_API_TOKEN` which contains admin user token. There is several options how to get user's token based on kubernetes cluster:
+
+* Minikube - `kubectl describe secret $(kubectl get serviceaccount default -o jsonpath='{.secrets[0].name}') | grep -E '^token' | cut -f2 -d':' | tr -d " "`
+* Openshift/Minishift - `oc whoami -t`
+
+This is necessary for local cluster. For use remote cluster see [Use remote cluster](#use-remote-cluster)
+
 ### Test groups
 
 To execute an expected group of system tests need to add system property `junitTags` with following value:
@@ -217,7 +226,7 @@ Use the `test` build goal and provide a `-Dtest=TestClassName[#testMethodName]` 
 
 Ex)
 
-    mvn test -pl systemtest -Psystemtests -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -DjunitTags=acceptance,regression -Dtest=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
+    mvn test -pl systemtest -P systemtests -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -DjunitTags=acceptance,regression -Dtest=KafkaST#testKafkaAndZookeeperScaleUpScaleDown
 
 
 ### Log level
@@ -226,15 +235,15 @@ To set the log level of Strimzi for system tests need to add system property `TE
 
 ### Use remote cluster
 
-System tests can be run against remote cluster, which is reachable via public URL. For proper setting if this feature you have to se two environment variables:
+System tests can be run on remote cluster, which is reachable via public URL. For proper setting of this feature you have to se two environment variables:
 
 
 | Variable | Purpose | Default |
 | ------------ | ------------- | ------------- |
 | KUBERNETES_API_URL        | remote cluster URL | https://127.0.0.1:8443 |
-| KUBERNETES_API_TOKEN   | auth token of user with admin rights on remote cluster | oc whoami -t |
+| KUBERNETES_API_TOKEN   | auth token of user with admin rights on remote cluster | - |
 
-Make sure that you did login or set context to remote cluster and have these variables set before run tests.
+Make sure that you login to remote cluster `oc login -u developer -p developer https://remote-cluster-address:8443` and have these variables set before tests execution.
 
 ### Execute ST with custom Kafka version
 To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` with one of the following values: `2.0.0`, `2.0.1`, `2.1.0`
