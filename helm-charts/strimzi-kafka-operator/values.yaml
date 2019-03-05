@@ -16,8 +16,8 @@ operationTimeoutMs: 300000
 zookeeper:
   image:
     repository: strimzi
-    name: zookeeper
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 kafka:
   image:
     repository: strimzi
@@ -26,12 +26,12 @@ kafka:
 kafkaConnect:
   image:
     repository: strimzi
-    name: kafka-connect
+    name: kafka
     tagPrefix: latest
 kafkaConnects2i:
   image:
     repository: strimzi
-    name: kafka-connect-s2i
+    name: kafka
     tagPrefix: latest
 topicOperator:
   image:
@@ -66,7 +66,7 @@ tlsSidecarEntityOperator:
 kafkaMirrorMaker:
   image:
     repository: strimzi
-    name: kafka-mirror-maker
+    name: kafka
     tagPrefix: latest
 resources:
   limits:

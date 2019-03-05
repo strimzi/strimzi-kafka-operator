@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
@@ -138,7 +139,7 @@ public class ZookeeperCluster extends AbstractModel {
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
         this.ancillaryConfigName = zookeeperMetricAndLogConfigsName(cluster);
-        this.image = ZookeeperClusterSpec.DEFAULT_IMAGE;
+        this.image = null;
         this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
         this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
@@ -170,7 +171,8 @@ public class ZookeeperCluster extends AbstractModel {
             image = IMAGE_MAP.get(version);
         }
         if (image == null) {
-            image = ZookeeperClusterSpec.DEFAULT_IMAGE;
+            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+            image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
         }
         zk.setImage(image);
         if (zookeeperClusterSpec.getReadinessProbe() != null) {
@@ -379,6 +381,7 @@ public class ZookeeperCluster extends AbstractModel {
         Container container = new ContainerBuilder()
                 .withName(ZOOKEEPER_NAME)
                 .withImage(getImage())
+                .withCommand("/opt/kafka/zookeeper_run.sh")
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())

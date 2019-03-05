@@ -4,7 +4,7 @@ set -e
 java_images="java-base"
 # Note dependency order of the following images
 stunnel_images="stunnel-base zookeeper-stunnel kafka-stunnel entity-operator-stunnel"
-kafka_images="kafka-base kafka kafka-connect kafka-mirror-maker zookeeper test-client kafka-connect kafka-connect/s2i"
+kafka_images="kafka test-client"
 
 # Kafka versions
 function load_checksums {

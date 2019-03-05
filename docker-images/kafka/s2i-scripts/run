@@ -2,7 +2,7 @@
 set -e
 
 # S2I run script for extending the strimzi/kafka-connect image with additional Kafka Connect plugins
-# This script is reponsible for starting distributed Kafka Connect worker with custom plugins directory
+# This script is responsible for starting distributed Kafka Connect worker with custom plugins directory
 
 if [ "$1" = "-h" ]
 then
