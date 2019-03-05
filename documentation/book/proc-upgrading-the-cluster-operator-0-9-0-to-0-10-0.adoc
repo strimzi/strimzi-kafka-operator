@@ -36,14 +36,14 @@ ifdef::Kubernetes[]
 On {KubernetesName} use `kubectl get`:
 +
 ----
-kubectl get all -l app=strimzi > strimzi-backup.yaml
+kubectl get all -l app=strimzi -o yaml > strimzi-backup.yaml
 ----
 +
 endif::Kubernetes[]
 On {OpenShiftName} use `oc get`:
 +
 ----
-oc get all -l app=strimzi > strimzi-backup.yaml
+oc get all -l app=strimzi -o yaml > strimzi-backup.yaml
 ----
 
 . Update the Cluster Operator. 
