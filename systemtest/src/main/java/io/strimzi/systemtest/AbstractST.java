@@ -880,7 +880,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         String connect = tlsListener ? KafkaResources.tlsBootstrapAddress(CLUSTER_NAME) : KafkaResources.plainBootstrapAddress(CLUSTER_NAME);
         ContainerBuilder cb = new ContainerBuilder()
                 .withName("ping")
-                .withImage(changeOrgAndTag("strimzi/test-client:latest-kafka-2.0.0"))
+                .withImage(changeOrgAndTag("strimzi/test-client:latest"))
                 .addNewEnv().withName("PRODUCER_OPTS").withValue(
                         "--broker-list " + connect + " " +
                                 "--topic " + topic + " " +
