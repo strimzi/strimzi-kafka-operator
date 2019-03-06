@@ -3,6 +3,7 @@ kind: Kafka
 metadata:
   name: my-cluster
 spec:
+  kafka: {}
   zookeeper:
     affinity:
       nodeAffinity:

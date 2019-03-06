@@ -155,6 +155,7 @@ public class ZookeeperCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
@@ -172,7 +173,8 @@ public class ZookeeperCluster extends AbstractModel {
         }
         if (image == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-            image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
+            image = versions.kafkaImage(kafkaClusterSpec != null ? kafkaClusterSpec.getImage() : null,
+                    kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null);
         }
         zk.setImage(image);
         if (zookeeperClusterSpec.getReadinessProbe() != null) {
