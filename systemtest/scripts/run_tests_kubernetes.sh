@@ -5,7 +5,7 @@ source ${CURDIR}/test_func.sh
 TESTCASE=${1:-.*ST}
 JUNIT_TAGS=${2:-acceptance}
 TEST_PROFILE=${3:-systemtests}
-DEFAULT_KUBERNETES_NAMESPACE="myproject"
+DEFAULT_KUBERNETES_NAMESPACE="default"
 
 if [[ -n "$TESTCASE" ]]; then
     EXTRA_ARGS="-Dit.test=$TESTCASE"
