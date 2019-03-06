@@ -27,7 +27,7 @@ endif::Kubernetes[]
 On {OpenShiftName} use `oc get`:
 +
 ----
-oc get -l all app=strimzi -o yaml > strimzi-backup.yaml
+oc get all -l app=strimzi -o yaml > strimzi-backup.yaml
 ----
 
 . Update the Cluster Operator. 
