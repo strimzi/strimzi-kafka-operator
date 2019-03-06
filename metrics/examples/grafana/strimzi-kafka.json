@@ -386,7 +386,7 @@
         }
       ],
       "thresholds": "0,0",
-      "title": "Online Partitions Replicas",
+      "title": "Online Replicas",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
