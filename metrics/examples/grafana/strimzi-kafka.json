@@ -327,7 +327,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Partitions that are online",
+      "description": "Replicas that are online",
       "format": "none",
       "gauge": {
         "maxValue": 100,
