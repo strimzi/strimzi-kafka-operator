@@ -327,7 +327,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Partitions that are online",
+      "description": "Replicas that are online",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -386,7 +386,7 @@
         }
       ],
       "thresholds": "0,0",
-      "title": "Online Partitions",
+      "title": "Online Replicas",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
