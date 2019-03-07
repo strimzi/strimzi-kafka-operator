@@ -150,7 +150,8 @@ public class ResourceVisitor {
                 }
                 path.remove(path.size() - 1);
             } else if (!isScalar(returnType)
-                    && !Map.class.isAssignableFrom(returnType)) {
+                    && !Map.class.isAssignableFrom(returnType)
+                    && !returnType.isEnum()) {
                 path.add(propertyName);
                 visit(path, propertyValue, visitor);
                 path.remove(path.size() - 1);
