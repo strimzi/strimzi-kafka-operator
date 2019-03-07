@@ -68,6 +68,12 @@ public class KafkaSetOperator extends StatefulSetOperator {
 
         desiredKafka.setVolumeMounts(currentKafka.getVolumeMounts());
 
+        // the external listener changed from nodeport, we need to remove rack-volume
+        if (currentKafka.getEnv().stream().anyMatch(a -> a.getName().equals(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED) && a.getValue().equals("nodeport")) &&
+                desiredKafka.getEnv().stream().noneMatch(a -> a.getName().equals(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED) && a.getValue().equals("nodeport"))) {
+            desiredKafka.getVolumeMounts().remove(desiredKafka.getVolumeMounts().stream().filter(a -> a.getName().equals("rack-volume")).findFirst().get());
+        }
+
         StatefulSet updated = new StatefulSetBuilder(desired)
                 .editSpec()
                     .editTemplate()

@@ -324,7 +324,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      */
     protected StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
         desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
-        desired.getSpec().getTemplate().getSpec().setInitContainers(current.getSpec().getTemplate().getSpec().getInitContainers());
         desired.getSpec().getTemplate().getSpec().setSecurityContext(current.getSpec().getTemplate().getSpec().getSecurityContext());
 
         if (current.getSpec().getVolumeClaimTemplates().isEmpty()) {
