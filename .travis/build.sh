@@ -19,12 +19,6 @@ export DOCKER_ORG=${DOCKER_ORG:-strimzici}
 export DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 export DOCKER_TAG=$COMMIT
 
-API_URL=$(kubectl config view --minify | grep server | cut -f 2- -d ":" | tr -d " ")
-API_TOKEN=$(kubectl describe secret $(kubectl get serviceaccount default -o jsonpath='{.secrets[0].name}') | grep -E '^token' | cut -f2 -d':' | tr -d " ")
-
-export KUBERNETES_API_URL=${KUBERNETES_API_URL:-${API_URL}}
-export KUBERNETES_API_TOKEN=${KUBERNETES_API_TOKEN:-${API_TOKEN}}
-
 make docu_check
 if [ "${MAIN_BUILD}" = "TRUE" ] ; then
   make findbugs
@@ -61,7 +55,7 @@ OLD_DOCKER_ORG=$DOCKER_ORG
 export DOCKER_ORG="localhost:5000/strimzici"
 
 echo "Running systemtests"
-./systemtest/scripts/run_tests_kubernetes.sh ${SYSTEMTEST_ARGS}
+./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}
 
 # Revert modified DOCKER_REGISTRY and DOCKER_ORG after system tests
 export DOCKER_REGISTRY=$OLD_DOCKER_REGISTRY
