@@ -71,7 +71,7 @@ public class ResourceVisitor {
         ArrayList<String> path = new ArrayList<>();
         try {
             visit(path, resource, visitor);
-        } catch (RuntimeException | ReflectiveOperationException e) {
+        } catch (RuntimeException | ReflectiveOperationException | StackOverflowError e) {
             LOGGER.error("Error while visiting {}", path, e);
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
@@ -150,7 +150,8 @@ public class ResourceVisitor {
                 }
                 path.remove(path.size() - 1);
             } else if (!isScalar(returnType)
-                    && !Map.class.isAssignableFrom(returnType)) {
+                    && !Map.class.isAssignableFrom(returnType)
+                    && !returnType.isEnum()) {
                 path.add(propertyName);
                 visit(path, propertyValue, visitor);
                 path.remove(path.size() - 1);
