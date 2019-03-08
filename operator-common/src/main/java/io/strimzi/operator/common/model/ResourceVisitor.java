@@ -71,7 +71,7 @@ public class ResourceVisitor {
         ArrayList<String> path = new ArrayList<>();
         try {
             visit(path, resource, visitor);
-        } catch (RuntimeException | ReflectiveOperationException e) {
+        } catch (RuntimeException | ReflectiveOperationException | StackOverflowError e) {
             LOGGER.error("Error while visiting {}", path, e);
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
