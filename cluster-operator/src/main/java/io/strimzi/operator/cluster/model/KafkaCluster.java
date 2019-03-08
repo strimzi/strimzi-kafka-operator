@@ -855,6 +855,7 @@ public class KafkaCluster extends AbstractModel {
                 .withReadinessProbe(createTcpSocketProbe(REPLICATION_PORT, readinessInitialDelay, readinessTimeout))
                 .withResources(ModelUtils.resources(getResources()))
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
+                .withCommand("/opt/kafka/kafka_run.sh")
                 .build();
 
         String tlsSidecarImage = KafkaClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;

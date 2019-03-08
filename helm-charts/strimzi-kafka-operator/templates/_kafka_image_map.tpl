@@ -5,6 +5,8 @@
 
 {{/* Generate the kafka image map */}}
 {{- define "strimzi.kafka.image.map" }}
+            - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
+              value: {{ default .Values.zookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.zookeeper.image.tagPrefix .Values.imageTagOverride }}-kafka-2.1.1
             - name: STRIMZI_KAFKA_IMAGES
               value: |                 
                 2.0.0={{ default .Values.kafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafka.image.name }}:{{ default .Values.kafka.image.tagPrefix .Values.imageTagOverride }}-kafka-2.0.0

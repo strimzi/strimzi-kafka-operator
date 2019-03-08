@@ -324,6 +324,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
+                .withCommand("/opt/kafka/kafka_mirror_maker_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
                 .withVolumeMounts(getVolumeMounts())

@@ -1,4 +1,4 @@
-FROM strimzi/kafka-base:latest
+FROM strimzi/kafka:latest
 
 # copy scripts for starting Kafka
 COPY ./scripts/ $KAFKA_HOME
