@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
@@ -19,20 +19,19 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient,
-        KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
-        Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> {
+        ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
+        Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> {
 
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         RbacAPIGroupDSL mockRbac = mock(RbacAPIGroupDSL.class);
         when(mockClient.rbac()).thenReturn(mockRbac);
-        when(mockRbac.kubernetesClusterRoleBindings()).thenReturn(op);
+        when(mockRbac.clusterRoleBindings()).thenReturn(op);
     }
 
     @Override
-    protected AbstractNonNamespacedResourceOperator<KubernetesClient, KubernetesClusterRoleBinding,
-            KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
-            Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> createResourceOperations(
+    protected AbstractNonNamespacedResourceOperator<KubernetesClient, ClusterRoleBinding, ClusterRoleBindingList,
+            DoneableClusterRoleBinding, Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> createResourceOperations(
                     Vertx vertx, KubernetesClient mockClient) {
         return new ClusterRoleBindingOperator(vertx, mockClient);
     }
@@ -48,8 +47,8 @@ public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourc
     }
 
     @Override
-    protected KubernetesClusterRoleBinding resource() {
-        return new KubernetesClusterRoleBindingBuilder()
+    protected ClusterRoleBinding resource() {
+        return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withLabels(singletonMap("foo", "bar"))

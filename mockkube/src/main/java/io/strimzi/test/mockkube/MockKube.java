@@ -48,12 +48,12 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.policy.DoneablePodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetList;
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -126,10 +126,10 @@ public class MockKube {
     private final Map<String, NetworkPolicy> policyDb = db(emptySet(), NetworkPolicy.class, DoneableNetworkPolicy.class);
     private final Map<String, Route> routeDb = db(emptySet(), Route.class, DoneableRoute.class);
     private final Map<String, PodDisruptionBudget> pdbDb = db(emptySet(), PodDisruptionBudget.class, DoneablePodDisruptionBudget.class);
-    private final Map<String, KubernetesRoleBinding> pdbRb = db(emptySet(), KubernetesRoleBinding.class,
-            DoneableKubernetesRoleBinding.class);
-    private final Map<String, KubernetesClusterRoleBinding> pdbCrb = db(emptySet(), KubernetesClusterRoleBinding.class,
-            DoneableKubernetesClusterRoleBinding.class);
+    private final Map<String, RoleBinding> pdbRb = db(emptySet(), RoleBinding.class,
+            DoneableRoleBinding.class);
+    private final Map<String, ClusterRoleBinding> pdbCrb = db(emptySet(), ClusterRoleBinding.class,
+            DoneableClusterRoleBinding.class);
 
     private Map<String, List<String>> podsForDeployments = new HashMap<>();
     private Map<String, CreateOrReplaceable> crdMixedOps = new HashMap<>();
@@ -218,10 +218,10 @@ public class MockKube {
         MixedOperation<Route, RouteList, DoneableRoute, Resource<Route, DoneableRoute>> mockRoute = buildRoute();
         MixedOperation<PodDisruptionBudget, PodDisruptionBudgetList, DoneablePodDisruptionBudget,
                 Resource<PodDisruptionBudget, DoneablePodDisruptionBudget>> mockPdb = buildPdb();
-        MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
-                Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> mockRb = buildRb();
-        MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
-                Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> mockCrb = buildCrb();
+        MixedOperation<RoleBinding, RoleBindingList, DoneableRoleBinding,
+                Resource<RoleBinding, DoneableRoleBinding>> mockRb = buildRb();
+        MixedOperation<ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
+                Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> mockCrb = buildCrb();
 
         when(mockClient.configMaps()).thenReturn(mockCms);
         when(mockClient.services()).thenReturn(mockSvc);
@@ -725,13 +725,13 @@ public class MockKube {
         }.build();
     }
 
-    private MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
-            Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> buildRb() {
-        return new AbstractMockBuilder<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
-                Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>>(
-                KubernetesRoleBinding.class, KubernetesRoleBindingList.class, DoneableKubernetesRoleBinding.class, castClass(Resource.class), pdbRb) {
+    private MixedOperation<RoleBinding, RoleBindingList, DoneableRoleBinding,
+            Resource<RoleBinding, DoneableRoleBinding>> buildRb() {
+        return new AbstractMockBuilder<RoleBinding, RoleBindingList, DoneableRoleBinding,
+                Resource<RoleBinding, DoneableRoleBinding>>(
+                RoleBinding.class, RoleBindingList.class, DoneableRoleBinding.class, castClass(Resource.class), pdbRb) {
             @Override
-            protected void nameScopedMocks(Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding> resource, String resourceName) {
+            protected void nameScopedMocks(Resource<RoleBinding, DoneableRoleBinding> resource, String resourceName) {
                 mockGet(resourceName, resource);
                 mockCreate(resourceName, resource);
                 mockCascading(resource);
@@ -741,14 +741,14 @@ public class MockKube {
         }.build();
     }
 
-    private MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
-            Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> buildCrb() {
-        return new AbstractMockBuilder<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList,
-                DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>>(
-                KubernetesClusterRoleBinding.class, KubernetesClusterRoleBindingList.class, DoneableKubernetesClusterRoleBinding.class,
+    private MixedOperation<ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
+            Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> buildCrb() {
+        return new AbstractMockBuilder<ClusterRoleBinding, ClusterRoleBindingList,
+                DoneableClusterRoleBinding, Resource<ClusterRoleBinding, DoneableClusterRoleBinding>>(
+                ClusterRoleBinding.class, ClusterRoleBindingList.class, DoneableClusterRoleBinding.class,
                 castClass(Resource.class), pdbCrb) {
             @Override
-            protected void nameScopedMocks(Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding> resource, String resourceName) {
+            protected void nameScopedMocks(Resource<ClusterRoleBinding, DoneableClusterRoleBinding> resource, String resourceName) {
                 mockGet(resourceName, resource);
                 mockCreate(resourceName, resource);
                 mockCascading(resource);

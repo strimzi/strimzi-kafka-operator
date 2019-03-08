@@ -41,12 +41,12 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilde
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -1350,21 +1350,21 @@ public class KafkaCluster extends AbstractModel {
      * @param assemblyNamespace The namespace.
      * @return The cluster role binding.
      */
-    public KubernetesClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
+    public ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
         if (rack != null || isExposedWithNodePort()) {
-            KubernetesSubject ks = new KubernetesSubjectBuilder()
+            Subject ks = new SubjectBuilder()
                     .withKind("ServiceAccount")
                     .withName(initContainerServiceAccountName(cluster))
                     .withNamespace(assemblyNamespace)
                     .build();
 
-            KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+            RoleRef roleRef = new RoleRefBuilder()
                     .withName("strimzi-kafka-broker")
                     .withApiGroup("rbac.authorization.k8s.io")
                     .withKind("ClusterRole")
                     .build();
 
-            return new KubernetesClusterRoleBindingBuilder()
+            return new ClusterRoleBindingBuilder()
                     .withNewMetadata()
                         .withName(initContainerClusterRoleBindingName(namespace, cluster))
                         .withNamespace(assemblyNamespace)

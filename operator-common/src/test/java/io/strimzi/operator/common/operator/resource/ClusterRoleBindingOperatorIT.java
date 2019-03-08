@@ -4,14 +4,14 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRef;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
+import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.ext.unit.TestContext;
@@ -22,31 +22,31 @@ import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
 public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
-        KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
-        Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> {
+        ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
+        Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> {
 
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient,
-            KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding,
-            Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> operator() {
+            ClusterRoleBinding, ClusterRoleBindingList, DoneableClusterRoleBinding,
+            Resource<ClusterRoleBinding, DoneableClusterRoleBinding>> operator() {
         return new ClusterRoleBindingOperator(vertx, client);
     }
 
     @Override
-    protected KubernetesClusterRoleBinding getOriginal()  {
-        KubernetesSubject ks = new KubernetesSubjectBuilder()
+    protected ClusterRoleBinding getOriginal()  {
+        Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("my-service-account")
                 .withNamespace("my-namespace")
                 .build();
 
-        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+        RoleRef roleRef = new RoleRefBuilder()
                 .withName("my-cluster-role")
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
-        return new KubernetesClusterRoleBindingBuilder()
+        return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withLabels(singletonMap("state", "new"))
@@ -57,21 +57,21 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
     }
 
     @Override
-    protected KubernetesClusterRoleBinding getModified()  {
-        KubernetesSubject ks = new KubernetesSubjectBuilder()
+    protected ClusterRoleBinding getModified()  {
+        Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("my-service-account2")
                 .withNamespace("my-namespace2")
                 .build();
 
         // RoleRef cannot be changed
-        KubernetesRoleRef roleRef = new KubernetesRoleRefBuilder()
+        RoleRef roleRef = new RoleRefBuilder()
                 .withName("my-cluster-role")
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
-        return new KubernetesClusterRoleBindingBuilder()
+        return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withLabels(singletonMap("state", "modified"))
@@ -82,7 +82,7 @@ public class ClusterRoleBindingOperatorIT extends AbstractNonNamespacedResourceO
     }
 
     @Override
-    protected void assertResources(TestContext context, KubernetesClusterRoleBinding expected, KubernetesClusterRoleBinding actual)   {
+    protected void assertResources(TestContext context, ClusterRoleBinding expected, ClusterRoleBinding actual)   {
         context.assertEquals(expected.getMetadata().getName(), actual.getMetadata().getName());
         context.assertEquals(expected.getMetadata().getLabels(), actual.getMetadata().getLabels());
         context.assertEquals(expected.getSubjects().size(), actual.getSubjects().size());

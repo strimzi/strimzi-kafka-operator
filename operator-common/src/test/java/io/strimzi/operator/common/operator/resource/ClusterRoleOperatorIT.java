@@ -4,12 +4,12 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRole;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRole;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleList;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesPolicyRule;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesPolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleList;
+import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.ext.unit.TestContext;
@@ -20,25 +20,25 @@ import static java.util.Collections.singletonMap;
 
 @RunWith(VertxUnitRunner.class)
 public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
-        KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole,
-        Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> {
+        ClusterRole, ClusterRoleList, DoneableClusterRole,
+        Resource<ClusterRole, DoneableClusterRole>> {
 
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient,
-            KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole,
-            Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> operator() {
+            ClusterRole, ClusterRoleList, DoneableClusterRole,
+            Resource<ClusterRole, DoneableClusterRole>> operator() {
         return new ClusterRoleOperator(vertx, client);
     }
 
     @Override
-    protected KubernetesClusterRole getOriginal()  {
-        KubernetesPolicyRule rule = new KubernetesPolicyRuleBuilder()
+    protected ClusterRole getOriginal()  {
+        PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("nodes")
                 .withVerbs("get")
                 .build();
 
-        return new KubernetesClusterRoleBuilder()
+        return new ClusterRoleBuilder()
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
                     .withLabels(singletonMap("state", "new"))
@@ -48,14 +48,14 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
     }
 
     @Override
-    protected KubernetesClusterRole getModified()  {
-        KubernetesPolicyRule rule = new KubernetesPolicyRuleBuilder()
+    protected ClusterRole getModified()  {
+        PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("nodes")
                 .withVerbs("get", "list")
                 .build();
 
-        return new KubernetesClusterRoleBuilder()
+        return new ClusterRoleBuilder()
                 .withNewMetadata()
                 .withName(RESOURCE_NAME)
                 .withLabels(singletonMap("state", "modified"))
@@ -65,7 +65,7 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
     }
 
     @Override
-    protected void assertResources(TestContext context, KubernetesClusterRole expected, KubernetesClusterRole actual)   {
+    protected void assertResources(TestContext context, ClusterRole expected, ClusterRole actual)   {
         context.assertEquals(expected.getMetadata().getName(), actual.getMetadata().getName());
         context.assertEquals(expected.getMetadata().getLabels(), actual.getMetadata().getLabels());
         context.assertEquals(expected.getRules().size(), actual.getRules().size());
