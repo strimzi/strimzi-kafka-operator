@@ -50,12 +50,4 @@ COPY ./s2i-scripts $S2I_HOME
 
 WORKDIR $KAFKA_HOME
 
-# exposing Kafka ports and the one for JMX exporter
-#EXPOSE 9091 9092 9404
-
-
-
-
 USER 1001
-
-#CMD ["/opt/kafka/kafka_run.sh"]
