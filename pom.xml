@@ -113,6 +113,7 @@
     <modules>
         <module>kafka-agent</module>
         <module>test</module>
+        <module>test-client</module>
         <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
@@ -300,6 +301,11 @@
             <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-core</artifactId>
+                <version>${vertx.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-dependencies</artifactId>
                 <version>${vertx.version}</version>
             </dependency>
             <dependency>

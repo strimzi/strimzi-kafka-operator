@@ -5,9 +5,9 @@
 package io.strimzi.test.k8s;
 
 public class KubeClusterException extends RuntimeException {
-    public final ProcessResult result;
+    public final ExecResult result;
 
-    public KubeClusterException(ProcessResult result, String s) {
+    public KubeClusterException(ExecResult result, String s) {
         super(s);
         this.result = result;
     }
@@ -19,21 +19,21 @@ public class KubeClusterException extends RuntimeException {
 
     public static class NotFound extends KubeClusterException {
 
-        public NotFound(ProcessResult result, String s) {
+        public NotFound(ExecResult result, String s) {
             super(result, s);
         }
     }
 
     public static class AlreadyExists extends KubeClusterException {
 
-        public AlreadyExists(ProcessResult result, String s) {
+        public AlreadyExists(ExecResult result, String s) {
             super(result, s);
         }
     }
 
     public static class InvalidResource extends KubeClusterException {
 
-        public InvalidResource(ProcessResult result, String s) {
+        public InvalidResource(ExecResult result, String s) {
             super(result, s);
         }
     }

@@ -78,9 +78,9 @@ class SecurityST extends AbstractST {
                         "/bin/bash", "-c", commandForKafkaBootstrap).out();
         checkKafkaCertificates(outputForKafkaBootstrap);
 
-        String commandForZookeeperClient = "echo -n | openssl s_client -connect my-cluster-zookeeper-client:2181 -showcerts" +
+        String commandForZookeeperClient = "echo -n | openssl s_client -connect my-cluster-zookeeper-webClient:2181 -showcerts" +
                 " -CAfile /opt/kafka/cluster-ca-certs/ca.crt" +
-                " -verify_hostname my-cluster-zookeeper-client" +
+                " -verify_hostname my-cluster-zookeeper-webClient" +
                 " -cert /opt/kafka/broker-certs/my-cluster-kafka-0.crt" +
                 " -key /opt/kafka/broker-certs/my-cluster-kafka-0.key";
         String outputForZookeeperClient =
@@ -224,7 +224,7 @@ class SecurityST extends AbstractST {
 
         waitForClusterAvailability(userName);
 
-        // Finally check a new client (signed by new client key) can consume
+        // Finally check a new webClient (signed by new webClient key) can consume
         String bobUserName = "bob";
         resources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("", 1_000, 60_000, () -> {
@@ -300,7 +300,7 @@ class SecurityST extends AbstractST {
 
         waitForClusterAvailability(aliceUserName);
 
-        // Finally check a new client (signed by new client key) can consume
+        // Finally check a new webClient (signed by new webClient key) can consume
         String bobUserName = "bob";
         resources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("Bob's secret to exist", 1_000, 60_000,

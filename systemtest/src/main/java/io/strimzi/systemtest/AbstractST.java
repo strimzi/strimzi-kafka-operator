@@ -48,7 +48,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.TimeoutException;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterException;
-import io.strimzi.test.k8s.ProcessResult;
+import io.strimzi.test.k8s.ExecResult;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -125,6 +125,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     static final long GLOBAL_POLL_INTERVAL = 1000;
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
     private static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
+    public static final String KAFKA_CLIENTS = "kafka-clients";
 
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
     public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
@@ -190,7 +191,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     static String zookeeperServiceName(String clusterName) {
-        return zookeeperClusterName(clusterName) + "-client";
+        return zookeeperClusterName(clusterName) + "-webClient";
     }
 
     static String zookeeperHeadlessServiceName(String clusterName) {
@@ -388,7 +389,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     private List<List<String>> commandLines(String podName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        ProcessResult pr = KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        ExecResult pr = KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
                 "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
         );
         for (String cmdLine : pr.out().split("\n")) {

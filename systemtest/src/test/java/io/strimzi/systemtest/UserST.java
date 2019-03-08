@@ -5,6 +5,8 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.systemtest.kafkaclients.verifiable.VerifiableConsumer;
+import io.strimzi.systemtest.kafkaclients.verifiable.VerifiableProducer;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,6 +18,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -23,14 +28,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @ExtendWith(StrimziExtension.class)
-class UserST extends AbstractST {
+class UserST extends MessagingBaseST {
 
     public static final String NAMESPACE = "user-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
 
     @Test
     @Tag(REGRESSION)
-    void testUpdateUser() {
+    void testUpdateUser() throws InterruptedException, ExecutionException, TimeoutException {
         LOGGER.info("Running testUpdateUser in namespace {}", NAMESPACE);
         String kafkaUser = "test-user";
 
@@ -47,6 +52,8 @@ class UserST extends AbstractST {
                     .endKafkaAuthorizationSimple()
                 .endKafka()
             .endSpec().build()).done();
+
+//        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), 50);
 
         KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         KUBE_CLIENT.waitForResourceCreation("secret", kafkaUser);
@@ -88,9 +95,20 @@ class UserST extends AbstractST {
         KUBE_CLIENT.waitForResourceDeletion("KafkaUser", kafkaUser);
     }
 
+    @Test
+    @Tag(REGRESSION)
+    void testMessaging() throws InterruptedException, ExecutionException, TimeoutException {
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3).build()).done();
+
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), 5000, 60000, CLUSTER_NAME);
+    }
+
     @BeforeEach
-    void createTestResources() {
+    void createTestResources() throws Exception {
         createResources();
+        resources.createServiceResource(Resources.KAFKA_CLIENTS, 4242, NAMESPACE).done();
+        resources.createIngress(Resources.KAFKA_CLIENTS, 4242, "https://127.0.0.1:8443", NAMESPACE).done();
+        resources.deployKafkaClients(CLUSTER_NAME).done();
     }
 
     @AfterEach

@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * <p>A LogHasNoUnexpectedErrors is custom matcher to check log form kubernetes client
+ * <p>A LogHasNoUnexpectedErrors is custom matcher to check log form kubernetes webClient
  * doesn't have any unexpected errors. </p>
  */
 public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
