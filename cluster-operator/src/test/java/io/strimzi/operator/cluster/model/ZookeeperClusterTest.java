@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -28,7 +29,6 @@ import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
-import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -195,7 +195,7 @@ public class ZookeeperClusterTest {
         assertEquals(ZookeeperCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(1);
-        assertEquals(ZookeeperClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
+        assertEquals(image + "-zk", tlsSidecarContainer.getImage());
         assertEquals(new Integer(replicas), Integer.valueOf(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT)));
         assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL));
         assertEquals(ZookeeperCluster.CLUSTERING_PORT_NAME, tlsSidecarContainer.getPorts().get(0).getName());
@@ -377,9 +377,10 @@ public class ZookeeperClusterTest {
 
         StatefulSet ss = zc.generateStatefulSet(true, null);
         assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
-        assertNotNull(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle());
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("123"));
+        Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
+        assertNotNull(lifecycle);
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/zookeeper_stunnel_pre_stop.sh"));
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("123"));
     }
 
     @Test
@@ -391,9 +392,10 @@ public class ZookeeperClusterTest {
 
         StatefulSet ss = zc.generateStatefulSet(true, null);
         assertEquals(Long.valueOf(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
-        assertNotNull(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle());
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("30"));
+        Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
+        assertNotNull(lifecycle);
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/zookeeper_stunnel_pre_stop.sh"));
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("30"));
     }
 
     @Test

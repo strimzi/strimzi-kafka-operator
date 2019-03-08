@@ -393,7 +393,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build();
 
-        String tlsSidecarImage = ZookeeperClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;
+        String tlsSidecarImage = getImage();
         if (tlsSidecar != null && tlsSidecar.getImage() != null) {
             tlsSidecarImage = tlsSidecar.getImage();
         }
@@ -401,6 +401,7 @@ public class ZookeeperCluster extends AbstractModel {
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
+                .withCommand("/opt/stunnel/zookeeper_stunnel_run.sh")
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
@@ -411,7 +412,10 @@ public class ZookeeperCluster extends AbstractModel {
                 .withPorts(asList(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"),
                                 createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP"),
                                 createContainerPort(CLIENT_PORT_NAME, CLIENT_PORT, "TCP")))
-                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/opt/stunnel/stunnel_pre_stop.sh", String.valueOf(templateTerminationGracePeriodSeconds)).endExec().endPreStop().build())
+                .withLifecycle(new LifecycleBuilder().withNewPreStop()
+                        .withNewExec().withCommand("/opt/stunnel/zookeeper_stunnel_pre_stop.sh",
+                                String.valueOf(templateTerminationGracePeriodSeconds))
+                        .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();
 

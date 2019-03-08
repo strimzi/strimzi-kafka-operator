@@ -36,8 +36,6 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", "strimzi/entity-operator-stunnel:latest");
     public static final int DEFAULT_REPLICAS = 1;
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
 

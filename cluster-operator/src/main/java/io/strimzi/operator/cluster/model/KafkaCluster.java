@@ -858,7 +858,7 @@ public class KafkaCluster extends AbstractModel {
                 .withCommand("/opt/kafka/kafka_run.sh")
                 .build();
 
-        String tlsSidecarImage = KafkaClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;
+        String tlsSidecarImage = getImage();
         if (tlsSidecar != null && tlsSidecar.getImage() != null) {
             tlsSidecarImage = tlsSidecar.getImage();
         }
@@ -866,6 +866,7 @@ public class KafkaCluster extends AbstractModel {
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
+                .withCommand("/opt/stunnel/kafka_stunnel_run.sh")
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
@@ -873,7 +874,10 @@ public class KafkaCluster extends AbstractModel {
                         ModelUtils.tlsSidecarLogEnvVar(tlsSidecar)))
                 .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
                         createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
-                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/opt/stunnel/stunnel_pre_stop.sh", String.valueOf(templateTerminationGracePeriodSeconds)).endExec().endPreStop().build())
+                .withLifecycle(new LifecycleBuilder().withNewPreStop()
+                            .withNewExec().withCommand("/opt/stunnel/kafka_stunnel_pre_stop.sh",
+                                String.valueOf(templateTerminationGracePeriodSeconds))
+                        .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();
 

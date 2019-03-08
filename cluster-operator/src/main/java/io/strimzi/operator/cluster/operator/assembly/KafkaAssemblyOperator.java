@@ -1548,7 +1548,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        this.topicOperator = TopicOperator.fromCrd(kafkaAssembly);
+                        this.topicOperator = TopicOperator.fromCrd(kafkaAssembly, versions);
 
                         if (topicOperator != null) {
                             ConfigMap logAndMetricsConfigMap = topicOperator.generateMetricsAndLogConfigMap(
@@ -1633,7 +1633,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        EntityOperator entityOperator = EntityOperator.fromCrd(kafkaAssembly);
+                        EntityOperator entityOperator = EntityOperator.fromCrd(kafkaAssembly, versions);
 
                         if (entityOperator != null) {
                             EntityTopicOperator topicOperator = entityOperator.getTopicOperator();
