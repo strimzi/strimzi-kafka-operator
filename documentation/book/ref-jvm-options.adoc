@@ -108,7 +108,7 @@ NOTE: When neither of the two options (`-server` and `-XX`) is specified, the de
 
 == Garbage collector logging
 
-The `jvmOptions` section also allows to enable/disable the GC (Garbage Collector) logging.
+The `jvmOptions` section also allows you to enable and disable garbage collector (GC) logging.
 The GC logging is enabled by default.
 In order to disable it, the `gcLoggingEnabled` property has to be set as follow.
 
