@@ -105,3 +105,18 @@ The example configuration above will result in the following JVM options:
 ----
 
 NOTE: When neither of the two options (`-server` and `-XX`) is specified, the default Apache Kafka configuration of `KAFKA_JVM_PERFORMANCE_OPTS` will be used.
+
+== Garbage collector logging
+
+The `jvmOptions` section also allows you to enable and disable garbage collector (GC) logging.
+GC logging is enabled by default.
+To disable it, set the `gcLoggingEnabled` property as follows:
+
+.Example of disabling GC logging
+[source,yaml,subs=attributes+]
+----
+# ...
+jvmOptions:
+  gcLoggingEnabled: false
+# ...
+----
