@@ -75,7 +75,7 @@
         <fabric8.openshift-client.version>4.1.3</fabric8.openshift-client.version>
         <fabric8.kubernetes-model.version>4.1.3</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
-        <okhttp.version>3.9.1</okhttp.version>
+        <okhttp.version>3.12.0</okhttp.version>
         <vertx.version>3.7.1</vertx.version>
         <log4j.version>2.11.1</log4j.version>
         <junit.version>4.12</junit.version>
