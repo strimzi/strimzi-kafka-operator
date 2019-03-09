@@ -266,3 +266,13 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - endpointss
+  verbs:
+  - get
+  - create
+  - delete
+  - patch
+  - update
