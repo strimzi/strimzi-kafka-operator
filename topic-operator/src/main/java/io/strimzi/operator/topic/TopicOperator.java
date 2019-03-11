@@ -716,7 +716,7 @@ public class TopicOperator {
 
     /** Called when a resource is added in k8s */
     void onResourceAdded(KafkaTopic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(addedTopic) || addedTopic.getMetadata().getLabels() == null || addedTopic.getMetadata().getLabels().size() == 0) {
+        if (resourcePredicate.test(addedTopic) || hasSpecAndNoLabels(addedTopic)) {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromTopicResource(addedTopic);
@@ -736,6 +736,10 @@ public class TopicOperator {
         }
     }
 
+    private boolean hasSpecAndNoLabels(KafkaTopic topic) {
+        return topic.getSpec() != null && (topic.getMetadata().getLabels() == null || topic.getMetadata().getLabels().size() == 0);
+    }
+
     abstract class Reconciliation implements Handler<Future<Void>> {
         private final String name;
 
@@ -751,7 +755,7 @@ public class TopicOperator {
 
     /** Called when a resource is modified in k8s */
     void onResourceModified(KafkaTopic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(modifiedTopic) || modifiedTopic.getMetadata().getLabels() == null || modifiedTopic.getMetadata().getLabels().size() == 0) {
+        if (resourcePredicate.test(modifiedTopic) || hasSpecAndNoLabels(modifiedTopic)) {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromTopicResource(modifiedTopic);
@@ -795,7 +799,7 @@ public class TopicOperator {
 
     /** Called when a resource is deleted in k8s */
     void onResourceDeleted(KafkaTopic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(deletedTopic) || deletedTopic.getMetadata().getLabels() == null || deletedTopic.getMetadata().getLabels().size() == 0) {
+        if (resourcePredicate.test(deletedTopic) || hasSpecAndNoLabels(deletedTopic)) {
             Reconciliation action = new Reconciliation("onResourceDeleted") {
                 @Override
                 public void handle(Future<Void> fut) {
