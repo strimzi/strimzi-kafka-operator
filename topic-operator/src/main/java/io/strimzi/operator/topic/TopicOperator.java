@@ -716,7 +716,7 @@ public class TopicOperator {
 
     /** Called when a resource is added in k8s */
     void onResourceAdded(KafkaTopic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(addedTopic)) {
+        if (resourcePredicate.test(addedTopic) || addedTopic.getMetadata().getLabels() == null || addedTopic.getMetadata().getLabels().size() == 0) {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromTopicResource(addedTopic);
@@ -751,7 +751,7 @@ public class TopicOperator {
 
     /** Called when a resource is modified in k8s */
     void onResourceModified(KafkaTopic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(modifiedTopic)) {
+        if (resourcePredicate.test(modifiedTopic) || modifiedTopic.getMetadata().getLabels() == null || modifiedTopic.getMetadata().getLabels().size() == 0) {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromTopicResource(modifiedTopic);
@@ -795,7 +795,7 @@ public class TopicOperator {
 
     /** Called when a resource is deleted in k8s */
     void onResourceDeleted(KafkaTopic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(deletedTopic)) {
+        if (resourcePredicate.test(deletedTopic) || deletedTopic.getMetadata().getLabels() == null || deletedTopic.getMetadata().getLabels().size() == 0) {
             Reconciliation action = new Reconciliation("onResourceDeleted") {
                 @Override
                 public void handle(Future<Void> fut) {
