@@ -4,7 +4,7 @@ MAINTAINER Erik Jacobs <erikmjacobs@gmail.com>
 USER root
 EXPOSE 3000
 
-ENV GRAFANA_VERSION="5.2.4"
+ENV GRAFANA_VERSION="6.0.0"
 
 COPY root /
 RUN yum -y install https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-"$GRAFANA_VERSION"-1.x86_64.rpm \
