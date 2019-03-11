@@ -71,6 +71,7 @@ public final class TestUtils {
     public static final String CRD_KAFKA_MIRROR_MAKER = "../install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
 
     private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)-kafka-(?<version>[0-9.])");
+    private static final Pattern KAFKA_VERSION_PATTERN = Pattern.compile("-kafka-([0-9.]+)");
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
     private TestUtils() {
@@ -177,6 +178,23 @@ public final class TestUtils {
         }
         m.appendTail(sb);
         return sb.toString();
+    }
+
+    /**
+     * Method to change kafka version in expected docker image
+     * @param image - docker image where kafka version should be updated
+     * @param kafkaVersion - Kafka version to be set
+     * @return Updated docker image with expected Kafka version
+     */
+    public static String changeKafkaVersion(String image, String kafkaVersion) {
+        Matcher m = KAFKA_VERSION_PATTERN.matcher(image);
+        StringBuffer sb = new StringBuffer();
+        if (m.find()) {
+            m.appendReplacement(sb, "-kafka-" + kafkaVersion);
+            m.appendTail(sb);
+            image = sb.toString();
+        }
+        return image;
     }
 
     /**

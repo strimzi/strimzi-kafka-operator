@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.test.TestUtils.changeKafkaVersion;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
@@ -115,12 +116,12 @@ public class StrimziUpgradeST extends AbstractST {
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods);
             LOGGER.info("Checking ZK pods using new image");
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/kafka:latest-kafka-2.2.0");
+                    changeKafkaVersion("strimzi/kafka:latest-kafka-2.2.0", Resources.ST_KAFKA_VERSION));
             LOGGER.info("Waiting for Kafka SS roll");
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
             LOGGER.info("Checking Kafka pods using new image");
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/kafka:latest-kafka-2.2.0");
+                    changeKafkaVersion("strimzi/kafka:latest-kafka-2.2.0", Resources.ST_KAFKA_VERSION));
             LOGGER.info("Waiting for EO Dep roll");
             // Check the TO and UO also got upgraded
             StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods);
