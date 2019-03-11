@@ -59,7 +59,9 @@ public class PvcOperator extends AbstractResourceOperator<KubernetesClient, Pers
     }
 
     /**
-     * Reverts the changes to immutable fields in PVCs spec section
+     * Reverts the changes to immutable fields in PVCs spec section. The values for these fields in the current resource
+     * are often not set by us but by Kubernetes alone (e.g. volume ID, default storage class etc.). So our Model
+     * classes are nto aware of them and cannot set them properly. Therefore we are reverting these values here.
      *
      * @param current   Existing PVC
      * @param desired   Desired PVC
