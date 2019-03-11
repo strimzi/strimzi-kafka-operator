@@ -209,6 +209,7 @@ public class EntityUserOperator extends AbstractModel {
         return singletonList(new ContainerBuilder()
                 .withName(USER_OPERATOR_CONTAINER_NAME)
                 .withImage(getImage())
+                .withArgs("/opt/strimzi/bin/user-operator-run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))

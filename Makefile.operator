@@ -1,0 +1,34 @@
+OPERATOR_DIR=../docker-images/operator
+LIB_DIR=$(OPERATOR_DIR)/lib
+SCRIPTS_DIR=$(OPERATOR_DIR)/scripts
+RELEASE_VERSION=$(shell cat ../release.version)
+JAR=io.strimzi.$(PROJECT_NAME)-$(RELEASE_VERSION).jar
+
+docker_build: java_build
+
+all: docker_build docker_push
+clean: java_clean
+
+include ../Makefile.maven
+
+docker_build:
+	mkdir -p $(LIB_DIR)
+# Unsign any jars
+	find target/lib/ -name '*.jar' -exec zip -d '{}' 'META-INF/*.SF' 'META-INF/*.RSA' ';'
+	cp -r target/lib/* $(LIB_DIR)/
+	mv target/$(PROJECT_NAME)-$(RELEASE_VERSION).jar $(LIB_DIR)/$(JAR)
+# Copy all the scripts
+	cp -r scripts/* $(SCRIPTS_DIR)/
+# Excluding the .template.sh
+	rm $(SCRIPTS_DIR)/$(PROJECT_NAME)-run.template.sh
+# Expand TP_ env vars when copying the .template.sh script
+	TP_CLASSPATH=lib/$(JAR):$(shell cat target/classpath) TP_MAIN=$(MAIN) \
+	  envsubst '$$TP_CLASSPATH $$TP_MAIN' < scripts/$(PROJECT_NAME)-run.template.sh \
+	  > $(SCRIPTS_DIR)/$(PROJECT_NAME)-run.sh
+	chmod +x $(SCRIPTS_DIR)/$(PROJECT_NAME)-run.sh
+
+docker_tag:
+
+docker_push:
+
+.PHONY: build clean release

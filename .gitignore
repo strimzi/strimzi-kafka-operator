@@ -31,6 +31,8 @@ master.html
 
 helm-charts/strimzi-kafka-operator-*.*.*.tgz
 
+docker-images/operator/lib
+
 # Connect plugin (tests)
 systemtest/*.tar.gz
 systemtest/my-plugins/

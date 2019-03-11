@@ -21,6 +21,8 @@ spec:
         - name: strimzi-cluster-operator
           image: {{ default .Values.image.repository .Values.imageRepositoryOverride }}/{{ .Values.image.name }}:{{ default .Values.image.tag .Values.imageTagOverride }}
           imagePullPolicy: {{ .Values.image.imagePullPolicy | quote }}
+          args:
+            - /opt/strimzi/bin/cluster-operator-run.sh
           env:
             - name: STRIMZI_NAMESPACE
               {{- if .Values.watchNamespaces -}}

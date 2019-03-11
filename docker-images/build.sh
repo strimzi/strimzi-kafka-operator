@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-java_images="java-base"
+java_images="java-base operator"
 kafka_images="kafka test-client"
 
 # Kafka versions
