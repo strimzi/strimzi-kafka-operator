@@ -10,11 +10,6 @@ ENV JAVA_HOME /usr/lib/jvm/java
 # The user is in the group 0 to have access to the mounted volumes and storage
 RUN useradd -r -m -u 1001 -g 0 strimzi
 
-# Copy scripts for starting Java apps
-#COPY scripts/* /bin/
-
-#CMD ["java", "-version"]
-
 ARG strimzi_version=1.0-SNAPSHOT
 ENV STRIMZI_VERSION ${strimzi_version}
 ENV STRIMZI_HOME=/opt/strimzi
@@ -26,8 +21,3 @@ COPY scripts/ bin/
 COPY lib/ lib/
 
 USER 1001
-
-
-
-#CMD ./bin/topic_operator_run.sh ./lib/topic-operator-${STRIMZI_VERSION}.jar
-
