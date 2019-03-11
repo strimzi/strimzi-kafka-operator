@@ -38,7 +38,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
     enum LogWhiteList {
         CO_TIMEOUT_EXCEPTION("io.strimzi.operator.cluster.operator.resource.TimeoutException"),
         // "NO_ERROR" is necessary because DnsNameResolver prints debug information `QUERY(0), NoError(0), RD RA` after `recived` operation
-        NO_ERROR("NoError(0)"),
+        NO_ERROR("NoError\\(0\\)"),
         // This is necessary for OCP 3.10 or less because of having exception handling during the patching of NetworkPolicy
         CAUGHT_EXCEPTION_FOR_NETWORK_POLICY("Caught exception while patching NetworkPolicy"
                 + "(?s)(.*?)"
