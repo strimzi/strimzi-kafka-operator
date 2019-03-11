@@ -28,6 +28,12 @@ spec:
           value: "300000"
         - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
           value: strimzi/kafka:latest-kafka-2.1.1
+        - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
+          value: strimzi/kafka:latest-kafka-2.1.1
+        - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
+          value: strimzi/kafka:latest-kafka-2.1.1
+        - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
+          value: strimzi/kafka:latest-kafka-2.1.1
         - name: STRIMZI_KAFKA_IMAGES
           value: |
             2.0.0=strimzi/kafka:latest-kafka-2.0.0
@@ -58,12 +64,6 @@ spec:
           value: strimzi/user-operator:latest
         - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
           value: strimzi/kafka-init:latest
-        - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
-          value: strimzi/zookeeper-stunnel:latest
-        - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
-          value: strimzi/kafka-stunnel:latest
-        - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-          value: strimzi/entity-operator-stunnel:latest
         - name: STRIMZI_LOG_LEVEL
           value: INFO
         livenessProbe:
