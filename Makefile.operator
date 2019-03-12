@@ -1,6 +1,6 @@
 OPERATOR_DIR=../docker-images/operator
 LIB_DIR=$(OPERATOR_DIR)/lib
-SCRIPTS_DIR=$(OPERATOR_DIR)/scripts
+SCRIPTS_DIR=$(OPERATOR_DIR)/$(PROJECT_NAME)-scripts
 RELEASE_VERSION=$(shell cat ../release.version)
 JAR=io.strimzi.$(PROJECT_NAME)-$(RELEASE_VERSION).jar
 
@@ -13,11 +13,13 @@ include ../Makefile.maven
 
 docker_build:
 	mkdir -p $(LIB_DIR)
-# Unsign any jars
-	find target/lib/ -name '*.jar' -exec zip -d '{}' 'META-INF/*.SF' 'META-INF/*.RSA' ';'
+# Find dependent jars which are signed (contain META-INF/*.SF or META-INF/*RSA) and remove those from the jar
+	find . -name '*.jar' -exec sh -c 'unzip -l {} | grep -qE '"'"'META-INF/*.(SF|RSA)'"'" \; -print \
+	  | xargs -I % zip -d % 'META-INF/*.SF' 'META-INF/*.RSA'
 	cp -r target/lib/* $(LIB_DIR)/
 	mv target/$(PROJECT_NAME)-$(RELEASE_VERSION).jar $(LIB_DIR)/$(JAR)
 # Copy all the scripts
+	mkdir -p $(SCRIPTS_DIR)
 	cp -r scripts/* $(SCRIPTS_DIR)/
 # Excluding the .template.sh
 	rm $(SCRIPTS_DIR)/$(PROJECT_NAME)-run.template.sh

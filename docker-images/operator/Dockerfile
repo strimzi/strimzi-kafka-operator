@@ -17,6 +17,7 @@ RUN mkdir -p /opt/strimzi/bin
 WORKDIR /opt/strimzi
 
 COPY scripts/ bin/
+COPY *-scripts/* bin/
 
 COPY lib/ lib/
 

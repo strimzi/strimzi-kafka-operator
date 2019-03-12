@@ -2,7 +2,7 @@ PROJECT_NAME=operator
 
 clean:
 	rm -rf lib
-	rm scripts/*-run.sh || true
+	rm -r *-scripts/ || true
 
 include ../../Makefile.docker
 
