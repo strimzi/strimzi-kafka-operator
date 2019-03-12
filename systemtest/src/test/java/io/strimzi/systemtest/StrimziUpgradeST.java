@@ -7,8 +7,8 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.test.TestUtils.changeKafkaVersion;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
@@ -65,7 +64,7 @@ public class StrimziUpgradeST extends AbstractST {
         File kafkaTopicYaml = null;
         File kafkaUserYaml = null;
         // This is a default Kafka version in Strimzi release 0.10.0
-        String kafkaVersionIn0_10_0 = "2.1.0";
+        String kafkaVersionForOldStrimziVersion = "2.1.0";
         try {
             // Deploy a 0.10.0 cluster operator
             // https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.10.0/strimzi-0.10.0.zip
@@ -118,12 +117,12 @@ public class StrimziUpgradeST extends AbstractST {
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods);
             LOGGER.info("Checking ZK pods using new image");
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/kafka:latest-kafka-" + kafkaVersionIn0_10_0);
+                    "strimzi/kafka:latest-kafka-" + kafkaVersionForOldStrimziVersion);
             LOGGER.info("Waiting for Kafka SS roll");
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
             LOGGER.info("Checking Kafka pods using new image");
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/kafka:latest-kafka-" + kafkaVersionIn0_10_0);
+                    "strimzi/kafka:latest-kafka-" + kafkaVersionForOldStrimziVersion);
             LOGGER.info("Waiting for EO Dep roll");
             // Check the TO and UO also got upgraded
             StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods);
