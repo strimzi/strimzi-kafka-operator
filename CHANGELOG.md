@@ -3,6 +3,7 @@
 ## 0.12.0
 
 * Log at the warn level when a custom resource uses deprecated or unknown properties
+* Add support for unprivileged users to install the operator with Helm
 
 ## 0.11.0
 
