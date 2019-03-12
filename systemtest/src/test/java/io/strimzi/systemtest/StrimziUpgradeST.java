@@ -63,8 +63,6 @@ public class StrimziUpgradeST extends AbstractST {
         File kafkaEphemeralYaml = null;
         File kafkaTopicYaml = null;
         File kafkaUserYaml = null;
-        // This is a default Kafka version in Strimzi release 0.10.0
-        String kafkaVersionForOldStrimziVersion = "2.1.0";
         try {
             // Deploy a 0.10.0 cluster operator
             // https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.10.0/strimzi-0.10.0.zip
@@ -116,13 +114,15 @@ public class StrimziUpgradeST extends AbstractST {
             LOGGER.info("Waiting for ZK SS roll");
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods);
             LOGGER.info("Checking ZK pods using new image");
+            // This image has a default Kafka version 2.1.0 in Strimzi release 0.10.0
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/kafka:latest-kafka-" + kafkaVersionForOldStrimziVersion);
+                    "strimzi/kafka:latest-kafka-2.1.0");
             LOGGER.info("Waiting for Kafka SS roll");
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
             LOGGER.info("Checking Kafka pods using new image");
+            // This image has a default Kafka version 2.1.0 in Strimzi release 0.10.0
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/kafka:latest-kafka-" + kafkaVersionForOldStrimziVersion);
+                    "strimzi/kafka:latest-kafka-2.1.0");
             LOGGER.info("Waiting for EO Dep roll");
             // Check the TO and UO also got upgraded
             StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods);
