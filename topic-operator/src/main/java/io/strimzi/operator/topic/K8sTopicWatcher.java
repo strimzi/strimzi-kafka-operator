@@ -31,7 +31,7 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     public void eventReceived(Action action, KafkaTopic kafkaTopic) {
         ObjectMeta metadata = kafkaTopic.getMetadata();
         Map<String, String> labels = metadata.getLabels();
-        if (resourcePredicate.test(kafkaTopic) || kafkaTopic.getMetadata().getLabels() == null || kafkaTopic.getMetadata().getLabels().size() == 0) {
+        if (resourcePredicate.test(kafkaTopic)) {
             String name = metadata.getName();
             String kind = kafkaTopic.getKind();
             LOGGER.info(kind + " watch received event {} on resource {} with labels {}", action, name, labels);

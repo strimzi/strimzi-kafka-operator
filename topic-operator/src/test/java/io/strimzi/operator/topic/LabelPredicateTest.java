@@ -6,6 +6,8 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -116,5 +118,48 @@ public class LabelPredicateTest {
         h = new ConfigMapBuilder().editOrNewMetadata()
                 .endMetadata().build();
         assertFalse(p.test(h));
+    }
+
+    @Test
+    public void testEmptyLabels() {
+        Map<String, String> lbls = new HashMap<>();
+        LabelPredicate lp = LabelPredicate.fromString("");
+        KafkaTopic topic = new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withLabels(lbls)
+                .endMetadata()
+                .build();
+
+        // TO has not set labels, topic has no labels
+        assertTrue(lp.test(topic));
+
+        lbls.put("key", "value");
+        topic = new KafkaTopicBuilder()
+                .withNewMetadata()
+                .withLabels(lbls)
+                .endMetadata()
+                .build();
+
+        // TO has not set labels, topic has some label
+        assertTrue(lp.test(topic));
+
+        // TO has set label for topics
+        lp = LabelPredicate.fromString("label=value");
+        assertTrue(lp.labels().get("label").equals("value"));
+
+        // TO has label=value, topic has key=value
+        assertFalse(lp.test(topic));
+
+        lbls.remove("key");
+        lbls.put("label", "value");
+        topic = new KafkaTopicBuilder()
+                .withNewMetadata()
+                .withLabels(lbls)
+                .endMetadata()
+                .build();
+
+        // TO has label=value, topic has label=value
+        assertTrue(lp.test(topic));
+
     }
 }

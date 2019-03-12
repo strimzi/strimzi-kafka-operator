@@ -716,7 +716,7 @@ public class TopicOperator {
 
     /** Called when a resource is added in k8s */
     void onResourceAdded(KafkaTopic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(addedTopic) || hasSpecAndNoLabels(addedTopic)) {
+        if (resourcePredicate.test(addedTopic)) {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromTopicResource(addedTopic);
@@ -736,10 +736,6 @@ public class TopicOperator {
         }
     }
 
-    private boolean hasSpecAndNoLabels(KafkaTopic topic) {
-        return topic.getSpec() != null && (topic.getMetadata().getLabels() == null || topic.getMetadata().getLabels().size() == 0);
-    }
-
     abstract class Reconciliation implements Handler<Future<Void>> {
         private final String name;
 
@@ -755,7 +751,7 @@ public class TopicOperator {
 
     /** Called when a resource is modified in k8s */
     void onResourceModified(KafkaTopic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(modifiedTopic) || hasSpecAndNoLabels(modifiedTopic)) {
+        if (resourcePredicate.test(modifiedTopic)) {
             final Topic k8sTopic;
             try {
                 k8sTopic = TopicSerialization.fromTopicResource(modifiedTopic);
@@ -799,7 +795,7 @@ public class TopicOperator {
 
     /** Called when a resource is deleted in k8s */
     void onResourceDeleted(KafkaTopic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(deletedTopic) || hasSpecAndNoLabels(deletedTopic)) {
+        if (resourcePredicate.test(deletedTopic)) {
             Reconciliation action = new Reconciliation("onResourceDeleted") {
                 @Override
                 public void handle(Future<Void> fut) {

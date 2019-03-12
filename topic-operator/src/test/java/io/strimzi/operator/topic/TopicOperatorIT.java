@@ -142,6 +142,7 @@ public class TopicOperatorIT extends BaseITST {
         m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(Config.NAMESPACE.key, NAMESPACE);
+        m.put(Config.TC_RESOURCE_LABELS, "strimzi.io/kind=topic");
         session = new Session(kubeClient, new Config(m));
 
         Async async = context.async();

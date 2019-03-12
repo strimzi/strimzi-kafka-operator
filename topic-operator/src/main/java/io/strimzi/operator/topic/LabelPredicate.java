@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -103,6 +104,9 @@ public class LabelPredicate implements Predicate<HasMetadata> {
      * @return The label predicate
      */
     public static LabelPredicate fromString(String string) throws IllegalArgumentException {
+        if (string.equals("")) {
+            return new LabelPredicate(Collections.EMPTY_MAP);
+        }
         Matcher m = COMMA_SPLITTER.matcher(string);
         int lastEnd = 0;
         while (m.find()) {
@@ -136,6 +140,9 @@ public class LabelPredicate implements Predicate<HasMetadata> {
 
     @Override
     public boolean test(HasMetadata resource) {
+        if (labels == null || labels.size() == 0) {
+            return true;
+        }
         Map<String, String> mapLabels = resource.getMetadata().getLabels();
         if (mapLabels == null) {
             return false;
