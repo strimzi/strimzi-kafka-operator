@@ -58,27 +58,29 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     @Test
-    void upgrade_0_8_2_to_HEAD() throws IOException {
+    void upgrade_0_10_0_to_HEAD() throws IOException {
         KUBE_CLIENT.namespace(NAMESPACE);
         File coDir = null;
         File kafkaEphemeralYaml = null;
         File kafkaTopicYaml = null;
         File kafkaUserYaml = null;
+        // This is a default Kafka version in Strimzi release 0.10.0
+        String kafkaVersionIn0_10_0 = "2.1.0";
         try {
-            // Deploy a 0.8.2 cluster operator
-            // https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.8.2/strimzi-0.8.2.zip
-            String url = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.8.2/strimzi-0.8.2.zip";
+            // Deploy a 0.10.0 cluster operator
+            // https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.10.0/strimzi-0.10.0.zip
+            String url = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.10.0/strimzi-0.10.0.zip";
             File dir = StUtils.downloadAndUnzip(url);
 
-            coDir = new File(dir, "strimzi-0.8.2/install/cluster-operator/");
+            coDir = new File(dir, "strimzi-0.10.0/install/cluster-operator/");
             // Modify + apply installation files
             copyModifyApply(coDir);
 
             LOGGER.info("Waiting for CO deployment");
             KUBE_CLIENT.waitForDeployment("strimzi-cluster-operator", 1);
 
-            // Deploy a 0.8.2. Kafka cluster
-            kafkaEphemeralYaml = new File(dir, "strimzi-0.8.2/examples/kafka/kafka-ephemeral.yaml");
+            // Deploy a 0.10.0. Kafka cluster
+            kafkaEphemeralYaml = new File(dir, "strimzi-0.10.0/examples/kafka/kafka-ephemeral.yaml");
             KUBE_CLIENT.create(kafkaEphemeralYaml);
             // Wait for readiness
             LOGGER.info("Waiting for Zookeeper StatefulSet");
@@ -89,9 +91,9 @@ public class StrimziUpgradeST extends AbstractST {
             KUBE_CLIENT.waitForDeployment("my-cluster-entity-operator", 1);
 
             // And a topic and a user
-            kafkaTopicYaml = new File(dir, "strimzi-0.8.2/examples/topic/kafka-topic.yaml");
+            kafkaTopicYaml = new File(dir, "strimzi-0.10.0/examples/topic/kafka-topic.yaml");
             KUBE_CLIENT.create(kafkaTopicYaml);
-            kafkaUserYaml = new File(dir, "strimzi-0.8.2/examples/user/kafka-user.yaml");
+            kafkaUserYaml = new File(dir, "strimzi-0.10.0/examples/user/kafka-user.yaml");
             KUBE_CLIENT.create(kafkaUserYaml);
 
             String zkSsName = KafkaResources.zookeeperStatefulSetName("my-cluster");
@@ -116,12 +118,12 @@ public class StrimziUpgradeST extends AbstractST {
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods);
             LOGGER.info("Checking ZK pods using new image");
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
-                    changeKafkaVersion("strimzi/kafka:latest-kafka-2.2.0", Resources.ST_KAFKA_VERSION));
+                    "strimzi/kafka:latest-kafka-" + kafkaVersionIn0_10_0);
             LOGGER.info("Waiting for Kafka SS roll");
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
             LOGGER.info("Checking Kafka pods using new image");
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
-                    changeKafkaVersion("strimzi/kafka:latest-kafka-2.2.0", Resources.ST_KAFKA_VERSION));
+                    "strimzi/kafka:latest-kafka-" + kafkaVersionIn0_10_0);
             LOGGER.info("Waiting for EO Dep roll");
             // Check the TO and UO also got upgraded
             StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods);
@@ -135,6 +137,23 @@ public class StrimziUpgradeST extends AbstractST {
                     1,
                     "strimzi/user-operator:latest");
 
+            LOGGER.info("Updating snapshots before upgrading Kafka version");
+            zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zkSsName);
+            kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaSsName);
+
+            LOGGER.info("Upgrading Kafka version to {}", Resources.ST_KAFKA_VERSION);
+            replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion(Resources.ST_KAFKA_VERSION));
+
+            LOGGER.info("Waiting for ZK SS roll");
+            StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods);
+            LOGGER.info("Checking ZK pods using new Kafka version");
+            waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
+                    "strimzi/kafka:latest-kafka-" + Resources.ST_KAFKA_VERSION);
+            LOGGER.info("Waiting for Kafka SS roll");
+            StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
+            LOGGER.info("Checking Kafka pods using Kafka version");
+            waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
+                    "strimzi/kafka:latest-kafka-" + Resources.ST_KAFKA_VERSION);
 
             // Tidy up
         } catch (KubeClusterException e) {
