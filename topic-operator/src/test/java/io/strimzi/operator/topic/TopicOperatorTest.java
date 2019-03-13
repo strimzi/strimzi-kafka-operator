@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.fabric8.kubernetes.client.Watcher.Action.ADDED;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -98,13 +99,12 @@ public class TopicOperatorTest {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("non-topic").build()).build();
 
         Async async = context.async();
-        topicOperator.onResourceAdded(kafkaTopic, ar -> {
-            assertSucceeded(context, ar);
-            mockKafka.assertEmpty(context);
-            mockTopicStore.assertEmpty(context);
-            async.complete();
-
-        });
+        LabelPredicate lp = new LabelPredicate();
+        K8sTopicWatcher w = new K8sTopicWatcher(topicOperator, lp);
+        w.eventReceived(ADDED, kafkaTopic);
+        mockKafka.assertEmpty(context);
+        mockTopicStore.assertEmpty(context);
+        async.complete();
     }
 
     /** Test what happens when a non-topic KafkaTopic gets created in kubernetes */
