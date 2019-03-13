@@ -165,7 +165,6 @@ public class MsgCliApiClient {
         apiArgument.addAll(client.getArguments());
 
         JsonObject response = startClients(apiArgument, 1);
-        LOGGER.info(response.toString());
         JsonArray ids = response.getJsonArray("clients");
         String uuid = ids.getString(0);
 
@@ -173,7 +172,6 @@ public class MsgCliApiClient {
 
         response = getClientInfo(uuid);
         response.put("UUID", uuid);
-        LOGGER.info(response.toString());
         return response;
     }
 

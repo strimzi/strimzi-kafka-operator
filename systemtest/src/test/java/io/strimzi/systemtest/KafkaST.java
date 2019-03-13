@@ -22,6 +22,8 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.systemtest.kafkaclients.verifiable.VerifiableConsumer;
+import io.strimzi.systemtest.kafkaclients.verifiable.VerifiableProducer;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.OpenShiftOnly;
@@ -46,6 +48,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -82,7 +86,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @ExtendWith(StrimziExtension.class)
-class KafkaST extends AbstractST {
+class KafkaST extends MessagingBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
 
@@ -382,24 +386,16 @@ class KafkaST extends AbstractST {
      */
     @Test
     @Tag(REGRESSION)
-    void testSendMessagesPlainAnonymous() throws InterruptedException {
-        String name = "send-messages-plain-anon";
+    void testSendMessagesPlainAnonymous() throws InterruptedException, TimeoutException, ExecutionException {
         int messagesCount = 500;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         resources().topic(CLUSTER_NAME, topicName).done();
 
-        // Create ping job
-        Job sendJob = waitForJobSuccess(sendRecordsToClusterJob(CLUSTER_NAME, "send-messages-job", TOPIC_NAME, messagesCount, null, false));
-        Job receiveJob = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME, "receive-messages-job", TOPIC_NAME, messagesCount, null, false));
+        resources().deployKafkaClients(CLUSTER_NAME).done();
 
-
-//        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, null, false));
-
-        // Now get the pod logs (which will be both producer and consumer logs)
-//        checkPings(messagesCount, job);
-        checkRecordsForConsumer(messagesCount, receiveJob);
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, false, topicName);
     }
 
     /**
@@ -407,10 +403,10 @@ class KafkaST extends AbstractST {
      */
     @Test
     @Tag(CCI_FLAKY)
-    void testSendMessagesTlsAuthenticated() {
+    void testSendMessagesTlsAuthenticated() throws InterruptedException, ExecutionException, TimeoutException {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-auth";
-        int messagesCount = 20;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
@@ -432,11 +428,8 @@ class KafkaST extends AbstractST {
         KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, true));
-
-        // Now check the pod logs the messages were produced and consumed
-        checkPings(messagesCount, job);
+        resources().deployKafkaClients(user, true, CLUSTER_NAME).done();
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, true, topicName);
     }
 
     /**
@@ -444,10 +437,10 @@ class KafkaST extends AbstractST {
      */
     @Test
     @Tag(CCI_FLAKY)
-    void testSendMessagesPlainScramSha() {
+    void testSendMessagesPlainScramSha() throws InterruptedException, ExecutionException, TimeoutException {
         String kafkaUser = "my-user";
         String name = "send-messages-plain-scram-sha";
-        int messagesCount = 20;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerAuthenticationScramSha512 auth = new KafkaListenerAuthenticationScramSha512();
@@ -466,6 +459,7 @@ class KafkaST extends AbstractST {
         resources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
+
         String brokerPodLog = podLog(CLUSTER_NAME + "-kafka-0", "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUser) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
@@ -479,11 +473,8 @@ class KafkaST extends AbstractST {
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, false));
-
-        // Now check the pod logs the messages were produced and consumed
-        checkPings(messagesCount, job);
+        resources().deployKafkaClients(user, false, CLUSTER_NAME).done();
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, false, topicName);
     }
 
     /**
@@ -491,7 +482,7 @@ class KafkaST extends AbstractST {
      */
     @Test
     @Tag(CCI_FLAKY)
-    void testSendMessagesTlsScramSha() {
+    void testSendMessagesTlsScramSha() throws InterruptedException, ExecutionException, TimeoutException {
         String kafkaUser = "my-user";
         String name = "send-messages-tls-scram-sha";
         int messagesCount = 20;
@@ -513,11 +504,8 @@ class KafkaST extends AbstractST {
         KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, true));
-
-        // Now check the pod logs the messages were produced and consumed
-        checkPings(messagesCount, job);
+        resources().deployKafkaClients(user, false, CLUSTER_NAME).done();
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, true, topicName);
     }
 
     @Test
@@ -1152,8 +1140,10 @@ class KafkaST extends AbstractST {
     }
 
     @BeforeEach
-    void createTestResources() {
+    void createTestResources() throws Exception {
         createResources();
+        resources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
+        resources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, ENVIRONMENT.getKubernetesApiUrl(), NAMESPACE).done();
     }
 
     @AfterEach

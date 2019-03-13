@@ -100,6 +100,13 @@ public class Resources extends AbstractResources {
     public static final String STRIMZI_DEFAULT_LOG_LEVEL = "DEBUG";
     public static final String KAFKA_CLIENTS = "kafka-clients";
 
+    public static final String DEPLOYMENT = "Deployment";
+    public static final String SERVICE = "Service";
+    public static final String INGRESS = "Ingress";
+    public static final String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
+
+    protected static final Environment ENVIRONMENT = Environment.getInstance();
+
     Resources(NamespacedKubernetesClient client) {
         super(client);
     }
@@ -146,7 +153,7 @@ public class Resources extends AbstractResources {
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
                 break;
-            case "Deployment":
+            case DEPLOYMENT:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
@@ -154,11 +161,24 @@ public class Resources extends AbstractResources {
                     waitForDeletion((Deployment) resource);
                 });
                 break;
-            case "ClusterRoleBinding":
+            case CLUSTER_ROLE_BINDING:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                     client.rbac().kubernetesClusterRoleBindings().delete((KubernetesClusterRoleBinding) resource);
+                });
+            case SERVICE:
+                resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    x.delete(resource);
+                    client.services().delete((Service) resource);
+                });
+                break;
+            case INGRESS:
+                resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    x.delete(resource);
+                    client.extensions().ingresses().delete((Ingress) resource);
                 });
                 break;
             default :
@@ -867,7 +887,7 @@ public class Resources extends AbstractResources {
         return new DoneableService(service);
     }
 
-    private static Ingress getSystemtestsIngressResource(String appName, int port, String url) throws Exception {
+    private static Ingress getSystemtestIngressResource(String appName, int port, String url) throws Exception {
         IngressBackend backend = new IngressBackend();
         backend.setServiceName(appName);
         backend.setServicePort(new IntOrString(port));
@@ -882,7 +902,7 @@ public class Resources extends AbstractResources {
                 .endMetadata()
                 .withNewSpec()
                 .withRules(new IngressRuleBuilder()
-                        .withHost(appName + "." + new URL(url).getHost() + ".nip.io")
+                        .withHost(appName + "." +  (ENVIRONMENT.getKubernetesDomain().equals(".nip.io") ?  new URL(url).getHost() + ".nip.io" : ENVIRONMENT.getKubernetesDomain()))
                         .withNewHttp()
                         .withPaths(path)
                         .endHttp()
@@ -892,7 +912,7 @@ public class Resources extends AbstractResources {
     }
 
     DoneableIngress createIngress(String appName, int port, String url, String clientNamespace) throws Exception {
-        Ingress ingress = getSystemtestsIngressResource(appName, port, url);
+        Ingress ingress = getSystemtestIngressResource(appName, port, url);
         LOGGER.info("Creating ingress {} in namespace {}", ingress.getMetadata().getName(), clientNamespace);
         client.extensions().ingresses().inNamespace(clientNamespace).create(ingress);
         deleteLater(ingress);
@@ -953,12 +973,13 @@ public class Resources extends AbstractResources {
         }
 
         if (tlsUser) {
+            producerConfiguration +=
+                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                            "ssl.keystore.type=pkcs12\n";
             consumerConfiguration += "auto.offset.reset=earliest\n" +
                     "ssl.keystore.location=/tmp/keystore.p12\n" +
                     "ssl.keystore.type=pkcs12\n";
-        }
 
-        if (tlsUser) {
             containerBuilder.addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
                     .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv();
 

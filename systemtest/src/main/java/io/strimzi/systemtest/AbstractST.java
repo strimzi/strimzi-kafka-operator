@@ -124,7 +124,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     static final long GLOBAL_TIMEOUT = 300000;
     static final long GLOBAL_POLL_INTERVAL = 1000;
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
-    private static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
+    public static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
     public static final String KAFKA_CLIENTS = "kafka-clients";
 
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
@@ -145,6 +145,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     static Resources testClassResources;
     static String operationID;
     Random rng = new Random();
+
+    protected static final Environment ENVIRONMENT = Environment.getInstance();
 
     protected static NamespacedKubernetesClient namespacedClient() {
         return CLIENT.inNamespace(KUBE_CLIENT.namespace());
@@ -298,9 +300,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Get a Map of properties from an environment variable in json.
+     * Get a Map of properties from an ENVIRONMENT variable in json.
      * @param json The json from which to extract properties
-     * @param envVar The environment variable name
+     * @param envVar The ENVIRONMENT variable name
      * @return The properties which the variable contains
      */
     static Map<String, String> getPropertiesFromJson(String json, String envVar) {
@@ -310,7 +312,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     /**
      * Get a jsonPath which can be used to extract envariable variables from a spec
-     * @param envVar The environment variable name
+     * @param envVar The ENVIRONMENT variable name
      * @return The json path
      */
     static String globalVariableJsonPathBuilder(String envVar) {
@@ -1104,7 +1106,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
+     * Wait till all pods in specific namespace being deleted and recreate testing ENVIRONMENT in case of some pods cannot be deleted.
      * @param time timeout in miliseconds
      * @param namespace namespace where we expect no pods or only CO pod
      * @throws Exception exception
@@ -1273,7 +1275,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     @AfterEach
     void recreateEnvironmentAfterFailure(ExtensionContext context) {
         if (context.getExecutionException().isPresent()) {
-            LOGGER.info("Test execution contains exception, going to recreate test environment");
+            LOGGER.info("Test execution contains exception, going to recreate test ENVIRONMENT");
 //            recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
             LOGGER.info("Env recreated.");
         }

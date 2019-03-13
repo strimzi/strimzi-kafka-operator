@@ -106,8 +106,8 @@ class UserST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createResources();
-        resources.createServiceResource(Resources.KAFKA_CLIENTS, 4242, NAMESPACE).done();
-        resources.createIngress(Resources.KAFKA_CLIENTS, 4242, "https://127.0.0.1:8443", NAMESPACE).done();
+        resources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
+        resources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, ENVIRONMENT.getKubernetesApiUrl(), NAMESPACE).done();
         resources.deployKafkaClients(CLUSTER_NAME).done();
     }
 
