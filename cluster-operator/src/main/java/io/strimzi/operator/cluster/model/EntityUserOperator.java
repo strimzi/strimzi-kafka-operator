@@ -244,7 +244,7 @@ public class EntityUserOperator extends AbstractModel {
         return singletonList(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 
-    public KubernetesRoleBinding generateRoleBinding(String namespace) {
+    public KubernetesRoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
         KubernetesSubject ks = new KubernetesSubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
@@ -260,7 +260,7 @@ public class EntityUserOperator extends AbstractModel {
         KubernetesRoleBinding rb = new KubernetesRoleBindingBuilder()
                 .withNewMetadata()
                     .withName(roleBindingName(cluster))
-                    .withNamespace(namespace)
+                    .withNamespace(watchedNamespace)
                     .withOwnerReferences(createOwnerReference())
                     .withLabels(labels.toMap())
                 .endMetadata()
