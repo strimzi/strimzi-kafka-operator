@@ -716,24 +716,20 @@ public class TopicOperator {
 
     /** Called when a resource is added in k8s */
     void onResourceAdded(KafkaTopic addedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(addedTopic)) {
-            final Topic k8sTopic;
-            try {
-                k8sTopic = TopicSerialization.fromTopicResource(addedTopic);
-            } catch (InvalidTopicException e) {
-                resultHandler.handle(Future.failedFuture(e));
-                return;
-            }
-            Handler<Future<Void>> action = new Reconciliation("onResourceAdded") {
-                @Override
-                public void handle(Future<Void> fut) {
-                    TopicOperator.this.reconcileOnResourceChange(addedTopic, k8sTopic, false, fut);
-                }
-            };
-            inFlight.enqueue(new TopicName(addedTopic), action, resultHandler);
-        } else {
-            resultHandler.handle(Future.succeededFuture());
+        final Topic k8sTopic;
+        try {
+            k8sTopic = TopicSerialization.fromTopicResource(addedTopic);
+        } catch (InvalidTopicException e) {
+            resultHandler.handle(Future.failedFuture(e));
+            return;
         }
+        Handler<Future<Void>> action = new Reconciliation("onResourceAdded") {
+            @Override
+            public void handle(Future<Void> fut) {
+                TopicOperator.this.reconcileOnResourceChange(addedTopic, k8sTopic, false, fut);
+            }
+        };
+        inFlight.enqueue(new TopicName(addedTopic), action, resultHandler);
     }
 
     abstract class Reconciliation implements Handler<Future<Void>> {
@@ -751,24 +747,20 @@ public class TopicOperator {
 
     /** Called when a resource is modified in k8s */
     void onResourceModified(KafkaTopic modifiedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(modifiedTopic)) {
-            final Topic k8sTopic;
-            try {
-                k8sTopic = TopicSerialization.fromTopicResource(modifiedTopic);
-            } catch (InvalidTopicException e) {
-                resultHandler.handle(Future.failedFuture(e));
-                return;
-            }
-            Reconciliation action = new Reconciliation("onResourceModified") {
-                @Override
-                public void handle(Future<Void> fut) {
-                    TopicOperator.this.reconcileOnResourceChange(modifiedTopic, k8sTopic, true, fut);
-                }
-            };
-            inFlight.enqueue(new TopicName(modifiedTopic), action, resultHandler);
-        } else {
-            resultHandler.handle(Future.succeededFuture());
+        final Topic k8sTopic;
+        try {
+            k8sTopic = TopicSerialization.fromTopicResource(modifiedTopic);
+        } catch (InvalidTopicException e) {
+            resultHandler.handle(Future.failedFuture(e));
+            return;
         }
+        Reconciliation action = new Reconciliation("onResourceModified") {
+            @Override
+            public void handle(Future<Void> fut) {
+                TopicOperator.this.reconcileOnResourceChange(modifiedTopic, k8sTopic, true, fut);
+            }
+        };
+        inFlight.enqueue(new TopicName(modifiedTopic), action, resultHandler);
     }
 
     private void reconcileOnResourceChange(KafkaTopic topicResource, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
@@ -795,17 +787,13 @@ public class TopicOperator {
 
     /** Called when a resource is deleted in k8s */
     void onResourceDeleted(KafkaTopic deletedTopic, Handler<AsyncResult<Void>> resultHandler) {
-        if (resourcePredicate.test(deletedTopic)) {
-            Reconciliation action = new Reconciliation("onResourceDeleted") {
-                @Override
-                public void handle(Future<Void> fut) {
-                    TopicOperator.this.reconcileOnResourceChange(deletedTopic, null, false, fut);
-                }
-            };
-            inFlight.enqueue(new TopicName(deletedTopic), action, resultHandler);
-        } else {
-            resultHandler.handle(Future.succeededFuture());
-        }
+        Reconciliation action = new Reconciliation("onResourceDeleted") {
+            @Override
+            public void handle(Future<Void> fut) {
+                TopicOperator.this.reconcileOnResourceChange(deletedTopic, null, false, fut);
+            }
+        };
+        inFlight.enqueue(new TopicName(deletedTopic), action, resultHandler);
     }
 
     private class UpdateInTopicStore implements Handler<Void> {

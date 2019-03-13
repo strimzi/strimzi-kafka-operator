@@ -140,9 +140,6 @@ public class LabelPredicate implements Predicate<HasMetadata> {
 
     @Override
     public boolean test(HasMetadata resource) {
-        if (labels == null || labels.size() == 0) {
-            return true;
-        }
         Map<String, String> mapLabels = resource.getMetadata().getLabels();
         if (mapLabels == null) {
             return false;
