@@ -162,14 +162,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
         createReconciliationState(reconciliation, kafkaAssembly)
                 .reconcileCas()
-                // manual actions driven by the user come first
-                .compose(state -> state.zkManualPodCleaning())
-                .compose(state -> state.zkManualRollingUpdate())
-                .compose(state -> state.kafkaManualPodCleaning())
-                .compose(state -> state.kafkaManualRollingUpdate())
                 .compose(state -> state.clusterOperatorSecret())
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
+                .compose(state -> state.zkManualPodCleaning())
+                .compose(state -> state.zkManualRollingUpdate())
                 .compose(state -> state.getZookeeperDescription())
                 .compose(state -> state.zookeeperServiceAccount())
                 .compose(state -> state.zkScaleUpStep())
@@ -186,6 +183,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
                 .compose(state -> state.zkPersistentClaimDeletion())
+                .compose(state -> state.kafkaManualPodCleaning())
+                .compose(state -> state.kafkaManualRollingUpdate())
                 .compose(state -> state.kafkaUpgrade())
                 .compose(state -> state.getKafkaClusterDescription())
                 .compose(state -> state.kafkaInitServiceAccount())
