@@ -433,7 +433,7 @@ spec:
                 image: strimzi/operator:latest
                 imagePullPolicy: IfNotPresent
                 args:
-                - /opt/strimzi/bin/cluster-operator-run.sh
+                - /opt/strimzi/bin/cluster_operator_run.sh
                 env:
                 - name: STRIMZI_NAMESPACE
                   valueFrom:

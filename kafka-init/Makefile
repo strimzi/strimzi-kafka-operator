@@ -1,11 +1,14 @@
 PROJECT_NAME=kafka-init
-MAIN=io.strimzi.kafka.init.Main
 
 docker_build: java_build
+
+docker_tag:
+
+docker_push:
 
 all: docker_build docker_push
 clean: java_clean
 
-include ../Makefile.operator
+include ../Makefile.maven
 
 .PHONY: build clean release

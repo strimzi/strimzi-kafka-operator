@@ -1,10 +1,14 @@
 PROJECT_NAME=cluster-operator
-MAIN=io.strimzi.operator.cluster.Main
 
 docker_build: java_build
+
+docker_tag:
+
+docker_push:
+
 all: docker_build docker_push
 clean: java_clean
 
-include ../Makefile.operator
+include ../Makefile.maven
 
 .PHONY: build clean release

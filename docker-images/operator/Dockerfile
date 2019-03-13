@@ -16,9 +16,8 @@ ENV STRIMZI_HOME=/opt/strimzi
 RUN mkdir -p /opt/strimzi/bin
 WORKDIR /opt/strimzi
 
-COPY scripts/ bin/
-COPY *-scripts/* bin/
+COPY scripts/ tmp/bin/ bin/
 
-COPY lib/ lib/
+COPY tmp/lib/ lib/
 
 USER 1001
