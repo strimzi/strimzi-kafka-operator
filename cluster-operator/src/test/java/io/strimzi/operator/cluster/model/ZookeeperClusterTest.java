@@ -197,7 +197,7 @@ public class ZookeeperClusterTest {
         assertEquals(ZookeeperCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(1);
-        assertEquals(image + "-zk", tlsSidecarContainer.getImage());
+        assertEquals(image, tlsSidecarContainer.getImage());
         assertEquals(new Integer(replicas), Integer.valueOf(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT)));
         assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL));
         assertEquals(ZookeeperCluster.CLUSTERING_PORT_NAME, tlsSidecarContainer.getPorts().get(0).getName());
