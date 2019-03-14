@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -526,6 +527,7 @@ public class CrdGenerator {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         boolean yaml = false;
+        boolean globalResources = false;
         Map<String, String> labels = new LinkedHashMap<>();
         Map<String, Class<? extends CustomResource>> classes = new HashMap<>();
         for (int i = 0; i < args.length; i++) {
@@ -533,6 +535,8 @@ public class CrdGenerator {
             if (arg.startsWith("--")) {
                 if (arg.equals("--yaml")) {
                     yaml = true;
+                } else if (arg.equals("--global-resources")) {
+                    globalResources = true;
                 } else if (arg.equals("--label")) {
                     i++;
                     int index = args[i].indexOf(":");
@@ -558,7 +562,7 @@ public class CrdGenerator {
         }
 
         CrdGenerator generator = new CrdGenerator(yaml ?
-                new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true).configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false) :
+                new YAMLMapper().configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true).configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false).configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false) :
                 new ObjectMapper(), labels);
         for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {
             File file = new File(entry.getKey());
@@ -570,7 +574,15 @@ public class CrdGenerator {
                 generator.err(file.getParentFile() + " does not exist and could not be created");
             }
             try (Writer w = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
+                if (globalResources)    {
+                    w.write("{{- if .Values.createGlobalResources -}}\n");
+                }
+
                 generator.generate(entry.getValue(), w);
+
+                if (globalResources)    {
+                    w.write("\n{{- end -}}");
+                }
             }
         }
 

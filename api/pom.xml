@@ -144,6 +144,7 @@
                                 <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
                                 <argument>--yaml</argument>
+                                <argument>--global-resources</argument>
                                 <argument>--label</argument><argument>app:{{ template "strimzi.name" . }}</argument>
                                 <argument>--label</argument><argument>chart:{{ template "strimzi.chart" . }}</argument>
                                 <argument>--label</argument><argument>component:%plural%.%group%-crd</argument>
