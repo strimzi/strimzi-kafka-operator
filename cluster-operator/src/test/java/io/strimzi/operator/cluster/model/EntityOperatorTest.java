@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -45,8 +44,10 @@ import static org.junit.Assert.assertTrue;
 public class EntityOperatorTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef"),
-            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap(), emptyMap()) { };
+            "2.0.0 default 2.0 2.0 1234567890abcdef\n" +
+            "2.1.0         2.1 2.0 1234567890abcdef"),
+            map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
+                    "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
 
     static Map<String, String> volumeMounts(List<VolumeMount> mounts) {
         return mounts.stream().collect(Collectors.toMap(vm -> vm.getName(), vm -> vm.getMountPath()));
@@ -313,6 +314,73 @@ public class EntityOperatorTest {
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
+    }
+
+    /**
+     * Verify the lookup order is:<ul>
+     * <li>Kafka.spec.entityOperator.tlsSidecar.image</li>
+     * <li>Kafka.spec.kafka.image</li>
+     * <li>image for default version of Kafka</li></ul>
+     */
+    @Test
+    public void testStunnelImage() {
+        Kafka kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editEntityOperator()
+                        .editOrNewTlsSidecar()
+                            .withImage("foo1")
+                        .endTlsSidecar()
+                    .endEntityOperator()
+                    .editKafka()
+                        .withImage("foo2")
+                    .endKafka()
+                .endSpec()
+                .build();
+        assertEquals("foo1", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editEntityOperator()
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endEntityOperator()
+                    .editKafka()
+                        .withImage("foo2")
+                    .endKafka()
+                .endSpec()
+                .build();
+        assertEquals("foo2", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editEntityOperator()
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endEntityOperator()
+                    .editKafka()
+                        .withVersion("2.0.0")
+                        .withImage(null)
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("strimzi/kafka:latest-kafka-2.0.0", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editEntityOperator()
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endEntityOperator()
+                    .editKafka()
+                        .withVersion("2.1.0")
+                        .withImage(null)
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("strimzi/kafka:latest-kafka-2.0.0", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
     }
 
     @Test

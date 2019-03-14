@@ -205,7 +205,19 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setJvmOptions(zookeeperClusterSpec.getJvmOptions());
         zk.setUserAffinity(zookeeperClusterSpec.getAffinity());
         zk.setTolerations(zookeeperClusterSpec.getTolerations());
-        zk.setTlsSidecar(zookeeperClusterSpec.getTlsSidecar());
+        TlsSidecar tlsSidecar = zookeeperClusterSpec.getTlsSidecar();
+        if (tlsSidecar == null) {
+            tlsSidecar = new TlsSidecar();
+        }
+        if (tlsSidecar.getImage() == null) {
+            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version());
+            if (tlsSidecarImage == null) {
+                throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
+            }
+            tlsSidecar.setImage(tlsSidecarImage);
+        }
+        zk.setTlsSidecar(tlsSidecar);
 
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();

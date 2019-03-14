@@ -324,8 +324,18 @@ public class KafkaCluster extends AbstractModel {
         result.setUserAffinity(kafkaClusterSpec.getAffinity());
         result.setResources(kafkaClusterSpec.getResources());
         result.setTolerations(kafkaClusterSpec.getTolerations());
-
-        result.setTlsSidecar(kafkaClusterSpec.getTlsSidecar());
+        TlsSidecar tlsSidecar = kafkaClusterSpec.getTlsSidecar();
+        if (tlsSidecar == null) {
+            tlsSidecar = new TlsSidecar();
+        }
+        if (tlsSidecar.getImage() == null) {
+            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version());
+            if (tlsSidecarImage == null) {
+                throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
+            }
+            tlsSidecar.setImage(tlsSidecarImage);
+        }
+        result.setTlsSidecar(tlsSidecar);
 
         KafkaListeners listeners = kafkaClusterSpec.getListeners();
         result.setListeners(listeners);

@@ -159,7 +159,7 @@ public class EntityOperator extends AbstractModel {
             }
 
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
+            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version());
             if (tlsSidecarImage == null) {
                 throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
             }
