@@ -150,7 +150,7 @@ public class KafkaUpdateTest {
                 new MockCertManager(),
                 new ResourceOperatorSupplier(null, null, null,
                         kso, null, null, null, null,
-                        null, null, null, null, null, null, null),
+                        null, null, null, null, null, null),
                 lookup, null);
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
@@ -158,8 +158,8 @@ public class KafkaUpdateTest {
         Future<KafkaAssemblyOperator.ReconciliationState> future = op
                 .new ReconciliationState(reconciliation, updatedKafka) {
                     @Override
-                    public Future<Boolean> waitForQuiescence(String namespace, String statefulSetName) {
-                        return Future.succeededFuture(true);
+                    public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
+                        return Future.succeededFuture(kafkaSs);
                     }
                 }
                 .kafkaUpgrade();

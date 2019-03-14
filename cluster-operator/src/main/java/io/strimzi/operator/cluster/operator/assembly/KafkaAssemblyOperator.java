@@ -61,7 +61,6 @@ import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -126,7 +125,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final ServiceAccountOperator serviceAccountOperator;
     private final RoleBindingOperator roleBindingOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
-    private final PodOperator podOperator;
 
     private final KafkaVersion.Lookup versions;
 
@@ -152,7 +150,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.serviceAccountOperator = supplier.serviceAccountOperator;
         this.roleBindingOperator = supplier.roleBindingOperator;
         this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
-        this.podOperator = supplier.podOperator;
         this.versions = versions;
     }
 
@@ -469,87 +466,80 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
-         * If the SS exists, check that the cluster is stable and no pods need rolling update
+         * If the SS exists, complete any pending rolls
          *
-         * @return A Future which completes with the current quiescence state of the cluster, if it is stable or not
-         *         and pods don't need rolling update due to different generation
+         * @return A Future which completes with the current state of the SS, or with null if the SS never existed.
          */
-        public Future<Boolean> waitForQuiescence(String namespace, String statefulSetName) {
+        public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
             return kafkaSetOperations.getAsync(namespace, statefulSetName).compose(ss -> {
-                boolean quiescence = true;
                 if (ss != null) {
-                    String name = ss.getMetadata().getName();
-                    final int replicas = ss.getSpec().getReplicas();
-                    for (int i = 0; i < replicas; i++) {
-                        String podName = name + "-" + i;
-                        Pod pod = podOperator.get(namespace, podName);
-                        quiescence &= isPodUpToDate(ss, pod);
-                        if (!quiescence)
-                            break;
-                    }
+                    return kafkaSetOperations.maybeRollingUpdate(ss,
+                        pod -> {
+                            boolean notUpToDate = !isPodUpToDate(ss, pod);
+                            if (notUpToDate) {
+                                log.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
+                            }
+                            return notUpToDate;
+                        }).map(ignored -> ss);
+                } else {
+                    return Future.succeededFuture(ss);
                 }
-                return Future.succeededFuture(quiescence);
             });
         }
 
         Future<ReconciliationState> kafkaUpgrade() {
             // Wait until the SS is not being updated (it shouldn't be, but there's no harm in checking)
             String kafkaSsName = KafkaCluster.kafkaClusterName(name);
-            return waitForQuiescence(namespace, kafkaSsName).compose(quiescence -> {
-                if (!quiescence) {
-                    return Future.succeededFuture(this);
-                } else {
-                    return kafkaSetOperations.getAsync(namespace, kafkaSsName).compose(ss -> {
-                        if (ss == null) {
-                            return Future.succeededFuture(this);
-                        }
-                        log.debug("Does SS {} need to be upgraded?", ss.getMetadata().getName());
-                        Future<?> result;
-                        // Get the current version of the cluster
-                        // Strimzi 0.8.x and 0.9.0 didn't set the annotation, so if it's absent we know it must be 2.0.0
-                        KafkaVersion currentVersion = versions.version(Annotations.annotations(ss).getOrDefault(ANNO_STRIMZI_IO_KAFKA_VERSION, "2.0.0"));
-                        log.debug("SS {} has current version {}", ss.getMetadata().getName(), currentVersion);
-                        String fromVersionAnno = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_FROM_VERSION);
-                        KafkaVersion fromVersion;
-                        if (fromVersionAnno != null) { // We're mid-upgrade
-                            fromVersion = versions.version(fromVersionAnno);
-                        } else {
-                            fromVersion = currentVersion;
-                        }
-                        log.debug("SS {} is from version {}", ss.getMetadata().getName(), fromVersion);
-                        String toVersionAnno = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_TO_VERSION);
-                        KafkaVersion toVersion;
-                        if (toVersionAnno != null) { // We're mid-upgrade
-                            toVersion = versions.version(toVersionAnno);
-                        } else {
-                            toVersion = versions.version(kafkaAssembly.getSpec().getKafka().getVersion());
-                        }
-                        log.debug("SS {} is to version {}", ss.getMetadata().getName(), toVersion);
-                        KafkaUpgrade upgrade = new KafkaUpgrade(fromVersion, toVersion);
-                        log.debug("Kafka upgrade {}", upgrade);
-                        if (upgrade.isNoop()) {
-                            log.debug("Kafka.spec.kafka.version unchanged");
-                            result = Future.succeededFuture();
-                        } else {
-                            String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), toVersion.version());
-                            Future<StatefulSet> f = Future.succeededFuture(ss);
-                            if (upgrade.isUpgrade()) {
-                                if (currentVersion.equals(fromVersion)) {
-                                    f = f.compose(ignored -> kafkaUpgradePhase1(ss, upgrade, image));
-                                }
-                                result = f.compose(ss2 -> kafkaUpgradePhase2(ss2, upgrade));
-                            } else {
-                                if (currentVersion.equals(fromVersion)) {
-                                    f = f.compose(ignored -> kafkaDowngradePhase1(ss, upgrade));
-                                }
-                                result = f.compose(ignored -> kafkaDowngradePhase2(ss, upgrade, image));
+            return waitForQuiescence(namespace, kafkaSsName).compose(
+                ss -> {
+                    if (ss == null) {
+                        return Future.succeededFuture(this);
+                    }
+                    log.debug("Does SS {} need to be upgraded?", ss.getMetadata().getName());
+                    Future<?> result;
+                    // Get the current version of the cluster
+                    // Strimzi 0.8.x and 0.9.0 didn't set the annotation, so if it's absent we know it must be 2.0.0
+                    KafkaVersion currentVersion = versions.version(Annotations.annotations(ss).getOrDefault(ANNO_STRIMZI_IO_KAFKA_VERSION, "2.0.0"));
+                    log.debug("SS {} has current version {}", ss.getMetadata().getName(), currentVersion);
+                    String fromVersionAnno = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_FROM_VERSION);
+                    KafkaVersion fromVersion;
+                    if (fromVersionAnno != null) { // We're mid-upgrade
+                        fromVersion = versions.version(fromVersionAnno);
+                    } else {
+                        fromVersion = currentVersion;
+                    }
+                    log.debug("SS {} is from version {}", ss.getMetadata().getName(), fromVersion);
+                    String toVersionAnno = Annotations.annotations(ss).get(ANNO_STRIMZI_IO_TO_VERSION);
+                    KafkaVersion toVersion;
+                    if (toVersionAnno != null) { // We're mid-upgrade
+                        toVersion = versions.version(toVersionAnno);
+                    } else {
+                        toVersion = versions.version(kafkaAssembly.getSpec().getKafka().getVersion());
+                    }
+                    log.debug("SS {} is to version {}", ss.getMetadata().getName(), toVersion);
+                    KafkaUpgrade upgrade = new KafkaUpgrade(fromVersion, toVersion);
+                    log.debug("Kafka upgrade {}", upgrade);
+                    if (upgrade.isNoop()) {
+                        log.debug("Kafka.spec.kafka.version unchanged");
+                        result = Future.succeededFuture();
+                    } else {
+                        String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), toVersion.version());
+                        Future<StatefulSet> f = Future.succeededFuture(ss);
+                        if (upgrade.isUpgrade()) {
+                            if (currentVersion.equals(fromVersion)) {
+                                f = f.compose(ignored -> kafkaUpgradePhase1(ss, upgrade, image));
                             }
-
+                            result = f.compose(ss2 -> kafkaUpgradePhase2(ss2, upgrade));
+                        } else {
+                            if (currentVersion.equals(fromVersion)) {
+                                f = f.compose(ignored -> kafkaDowngradePhase1(ss, upgrade));
+                            }
+                            result = f.compose(ignored -> kafkaDowngradePhase2(ss, upgrade, image));
                         }
-                        return result.map(this);
-                    });
-                }
-            });
+
+                    }
+                    return result.map(this);
+                });
         }
 
         /**
