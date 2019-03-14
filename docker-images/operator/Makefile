@@ -3,29 +3,29 @@ PROJECT_NAME=operator
 clean:
 	rm -rf lib
 	rm -rf tmp
-	rm .*.mk
+	rm .*.tmp
 
-.topic-operator.mk: ../../topic-operator/target/*-dist.zip
+.topic-operator.tmp: ../../topic-operator/target/*-dist.zip
 	test -d tmp || mkdir tmp
 	unzip -qo ../../topic-operator/target/*-dist.zip -d tmp
-	touch .topic-operator.mk
+	touch .topic-operator.tmp
 
-.user-operator.mk: ../../user-operator/target/*-dist.zip
+.user-operator.tmp: ../../user-operator/target/*-dist.zip
 	test -d tmp || mkdir tmp
 	unzip -qo ../../user-operator/target/*-dist.zip -d tmp
-	touch .user-operator.mk
+	touch .user-operator.tmp
 
-.kafka-init.mk: ../../kafka-init/target/*-dist.zip
+.kafka-init.tmp: ../../kafka-init/target/*-dist.zip
 	test -d tmp || mkdir tmp
 	unzip -qo ../../kafka-init/target/*-dist.zip -d tmp
-	touch .kafka-init.mk
+	touch .kafka-init.tmp
 
-.cluster-operator.mk: ../../cluster-operator/target/*-dist.zip
+.cluster-operator.tmp: ../../cluster-operator/target/*-dist.zip
 	test -d tmp || mkdir tmp
 	unzip -qo ../../cluster-operator/target/*-dist.zip -d tmp
-	touch .cluster-operator.mk
+	touch .cluster-operator.tmp
 
-docker_build: .topic-operator.mk .user-operator.mk .kafka-init.mk .cluster-operator.mk
+docker_build: .topic-operator.tmp .user-operator.tmp .kafka-init.tmp .cluster-operator.tmp
 
 include ../../Makefile.docker
 
