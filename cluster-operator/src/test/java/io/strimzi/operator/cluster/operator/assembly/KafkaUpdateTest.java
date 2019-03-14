@@ -158,7 +158,7 @@ public class KafkaUpdateTest {
         Future<KafkaAssemblyOperator.ReconciliationState> future = op
                 .new ReconciliationState(reconciliation, updatedKafka) {
                     @Override
-                    public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
+                    public Future<StatefulSet> waitForQuiescence(StatefulSet ss) {
                         return Future.succeededFuture(kafkaSs);
                     }
                 }

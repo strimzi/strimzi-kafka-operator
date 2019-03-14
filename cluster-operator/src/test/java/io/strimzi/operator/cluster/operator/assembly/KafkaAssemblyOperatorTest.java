@@ -462,7 +462,7 @@ public class KafkaAssemblyOperatorTest {
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
                     @Override
-                    public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
+                    public Future<StatefulSet> waitForQuiescence(StatefulSet ss) {
                         return Future.succeededFuture(null);
                     }
                 };
@@ -903,7 +903,7 @@ public class KafkaAssemblyOperatorTest {
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
                     @Override
-                    public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
+                    public Future<StatefulSet> waitForQuiescence(StatefulSet ss) {
                         return Future.succeededFuture(originalKafkaCluster.generateStatefulSet(openShift, null));
                     }
                 };
