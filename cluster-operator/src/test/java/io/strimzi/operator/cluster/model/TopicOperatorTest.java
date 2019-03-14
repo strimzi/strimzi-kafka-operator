@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -226,6 +227,14 @@ public class TopicOperatorTest {
         dep = tc.generateDeployment(true, ImagePullPolicy.IFNOTPRESENT);
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
+    }
+
+    @Test
+    public void testRoleBinding()   {
+        KubernetesRoleBinding binding = tc.generateRoleBinding(namespace, tcWatchedNamespace);
+
+        assertEquals(namespace, binding.getSubjects().get(0).getNamespace());
+        assertEquals(tcWatchedNamespace, binding.getMetadata().getNamespace());
     }
 
     @AfterClass

@@ -317,7 +317,7 @@ public class TopicOperator extends AbstractModel {
         return topicOperatorServiceAccountName(cluster);
     }
 
-    public KubernetesRoleBinding generateRoleBinding(String namespace) {
+    public KubernetesRoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
         KubernetesSubject ks = new KubernetesSubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName(getServiceAccountName())
@@ -335,7 +335,7 @@ public class TopicOperator extends AbstractModel {
                     .withName(roleBindingName(cluster))
                     .withOwnerReferences(createOwnerReference())
                     .withLabels(labels.toMap())
-                    .withNamespace(namespace)
+                    .withNamespace(watchedNamespace)
                 .endMetadata()
                 .withRoleRef(roleRef)
                 .withSubjects(ks)
