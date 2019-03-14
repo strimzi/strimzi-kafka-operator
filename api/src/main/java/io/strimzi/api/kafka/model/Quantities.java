@@ -16,6 +16,7 @@ public class Quantities {
      * @return The equivalent number of bytes.
      */
     public static long parseMemory(String memory) {
+        boolean seenDot = false;
         boolean seenE = false;
         long factor = 1L;
         int end = memory.length();
@@ -23,6 +24,8 @@ public class Quantities {
             char ch = memory.charAt(i);
             if (ch == 'e') {
                 seenE = true;
+            } else if (ch == '.') {
+                seenDot = true;
             } else if (ch < '0' || '9' < ch) {
                 end = i;
                 factor = memoryFactor(memory.substring(i));
@@ -30,10 +33,11 @@ public class Quantities {
             }
         }
         long result;
-        if (seenE) {
-            result = (long) Double.parseDouble(memory);
+        String numberPart = memory.substring(0, end);
+        if (seenDot || seenE) {
+            result = (long) (Double.parseDouble(numberPart) * factor + 0.5);
         } else {
-            result = Long.parseLong(memory.substring(0, end)) * factor;
+            result = Long.parseLong(numberPart) * factor;
         }
         return result;
     }
@@ -78,29 +82,6 @@ public class Quantities {
     }
 
     public static String formatMemory(long bytes) {
-        if (bytes == 0) {
-            return "0";
-        }
-        long x;
-        int i;
-        x = bytes;
-        i = -1;
-        while ((x % 1000L) == 0L && i < 4) {
-            i++;
-            x = x / 1000L;
-        }
-        if (i >= 0) {
-            return x + new String[] {"K", "M", "G", "T", "E"}[i];
-        }
-        x = bytes;
-        i = -1;
-        while ((x % 1024L) == 0L && i < 4) {
-            i++;
-            x = x / 1024L;
-        }
-        if (i >= 0) {
-            return x + new String[]{"Ki", "Mi", "Gi", "Ti", "Ei"}[i];
-        }
         return Long.toString(bytes);
     }
 

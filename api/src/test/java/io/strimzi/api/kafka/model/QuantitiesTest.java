@@ -29,27 +29,49 @@ public class QuantitiesTest {
         assertEquals(0, parseMemory("0"));
         assertEquals(0, parseMemory("0K"));
         assertEquals(0, parseMemory("0e6"));
+        assertEquals(524288000L, parseMemory("500Mi"));
+        assertEquals(1181116006L, parseMemory("1.1Gi"));
+        assertEquals(1100000000L, parseMemory("1.1G"));
+        assertEquals(1100000L, parseMemory("1.1e3K"));
 
         try {
             parseMemory("-1K");
+            fail();
         } catch (IllegalArgumentException e) {
 
         }
 
         try {
             parseMemory("K");
+            fail();
         } catch (IllegalArgumentException e) {
 
         }
 
         try {
             parseMemory("1Kb");
+            fail();
         } catch (IllegalArgumentException e) {
 
         }
 
         try {
             parseMemory("foo");
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+
+        try {
+            parseMemory("1.1x");
+            fail();
+        } catch (IllegalArgumentException e) {
+
+        }
+
+        try {
+            parseMemory("1.1e-1");
+            fail();
         } catch (IllegalArgumentException e) {
 
         }
@@ -60,26 +82,30 @@ public class QuantitiesTest {
         assertEquals("0", formatMemory(0));
         assertEquals("1", formatMemory(1));
         assertEquals("1023", formatMemory(1023));
-        assertEquals("1Ki", formatMemory(1024));
-        assertEquals("1K", formatMemory(1000));
-        assertEquals("2Ki", formatMemory(2048));
-        assertEquals("2K", formatMemory(2000));
-        assertEquals("2Mi", formatMemory(2048 * 1024));
-        assertEquals("4096K", formatMemory(2048 * 2000));
-        assertEquals("4M", formatMemory(2000 * 2000));
-        assertEquals("1E", formatMemory(1_000_000_000_000_000L));
-        assertEquals("1000E", formatMemory(1_000_000_000_000_000_000L));
-        assertEquals("1Ei", formatMemory(parseMemory("1Ei")));
-        assertEquals("1024Ei", formatMemory(parseMemory("1024Ei")));
+        assertEquals("1024", formatMemory(1024));
+        assertEquals("1000", formatMemory(1000));
+        assertEquals("2048", formatMemory(2048));
+        assertEquals("2000", formatMemory(2000));
+        assertEquals("2097152", formatMemory(2048 * 1024));
+        assertEquals("4096000", formatMemory(2048 * 2000));
+        assertEquals("4000000", formatMemory(2000 * 2000));
+        assertEquals("1000000000000000", formatMemory(1_000_000_000_000_000L));
+        assertEquals("1000000000000000000", formatMemory(1_000_000_000_000_000_000L));
+        assertEquals("1125899906842624", formatMemory(parseMemory("1Ei")));
+        assertEquals("1152921504606846976", formatMemory(parseMemory("1024Ei")));
+        assertEquals("524288000", formatMemory(524288000L));
     }
 
     @Test
     public void testNormalizeMemory() {
-        assertEquals("1K", normalizeMemory("1K"));
-        assertEquals("1Ki", normalizeMemory("1Ki"));
-        assertEquals("1M", normalizeMemory("1M"));
-        assertEquals("1Mi", normalizeMemory("1Mi"));
+        assertEquals("1000", normalizeMemory("1K"));
+        assertEquals("1024", normalizeMemory("1Ki"));
+        assertEquals("1000000", normalizeMemory("1M"));
+        assertEquals("1048576", normalizeMemory("1Mi"));
         assertEquals("12345", normalizeMemory("12345"));
+        assertEquals("524288000", normalizeMemory("500Mi"));
+        assertEquals("1181116006", normalizeMemory("1.1Gi"));
+        assertEquals("1288490189", normalizeMemory("1.2Gi"));
     }
 
     @Test
