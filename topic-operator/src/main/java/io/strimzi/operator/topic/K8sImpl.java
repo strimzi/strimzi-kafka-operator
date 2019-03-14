@@ -25,17 +25,17 @@ public class K8sImpl implements K8s {
 
     private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
 
-    private final LabelPredicate resourcePredicate;
+    private final Labels labels;
     private final String namespace;
 
     private KubernetesClient client;
 
     private Vertx vertx;
 
-    public K8sImpl(Vertx vertx, KubernetesClient client, LabelPredicate resourcePredicate, String namespace) {
+    public K8sImpl(Vertx vertx, KubernetesClient client, Labels labels, String namespace) {
         this.vertx = vertx;
         this.client = client;
-        this.resourcePredicate = resourcePredicate;
+        this.labels = labels;
         this.namespace = namespace;
     }
 
@@ -84,7 +84,7 @@ public class K8sImpl implements K8s {
     public void listMaps(Handler<AsyncResult<List<KafkaTopic>>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                future.complete(operation().inNamespace(namespace).withLabels(resourcePredicate.labels()).list().getItems());
+                future.complete(operation().inNamespace(namespace).withLabels(labels.labels()).list().getItems());
             } catch (Exception e) {
                 future.fail(e);
             }

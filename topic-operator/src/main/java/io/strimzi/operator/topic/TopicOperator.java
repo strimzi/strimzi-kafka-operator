@@ -36,7 +36,7 @@ public class TopicOperator {
     private final Kafka kafka;
     private final K8s k8s;
     private final Vertx vertx;
-    private final LabelPredicate resourcePredicate;
+    private final Labels labels;
     private final String namespace;
     private TopicStore topicStore;
     private final InFlight<TopicName> inFlight;
@@ -85,7 +85,7 @@ public class TopicOperator {
             }
             evtb.withType(eventType.name)
                     .withMessage(message)
-                    .withNewMetadata().withLabels(resourcePredicate.labels()).withGenerateName("topic-operator").withNamespace(namespace).endMetadata()
+                    .withNewMetadata().withLabels(labels.labels()).withGenerateName("topic-operator").withNamespace(namespace).endMetadata()
                     .withNewSource()
                     .withComponent(TopicOperator.class.getName())
                     .endSource();
@@ -118,7 +118,7 @@ public class TopicOperator {
 
         @Override
         public void handle(Void v) throws OperatorException {
-            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, resourcePredicate);
+            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, labels);
             k8s.createResource(kafkaTopic, handler);
         }
 
@@ -163,7 +163,7 @@ public class TopicOperator {
 
         @Override
         public void handle(Void v) {
-            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, resourcePredicate);
+            KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, labels);
             k8s.updateResource(kafkaTopic, handler);
         }
 
@@ -331,13 +331,13 @@ public class TopicOperator {
     public TopicOperator(Vertx vertx, Kafka kafka,
                          K8s k8s,
                          TopicStore topicStore,
-                         LabelPredicate resourcePredicate,
+                         Labels labels,
                          String namespace,
                          Config config) {
         this.kafka = kafka;
         this.k8s = k8s;
         this.vertx = vertx;
-        this.resourcePredicate = resourcePredicate;
+        this.labels = labels;
         this.topicStore = topicStore;
         this.inFlight = new InFlight<>(vertx);
         this.namespace = namespace;
