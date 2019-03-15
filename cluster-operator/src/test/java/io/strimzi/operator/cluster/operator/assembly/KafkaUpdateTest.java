@@ -131,6 +131,8 @@ public class KafkaUpdateTest {
 
         StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false, null);
 
+        when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaSs));
+
         List<StatefulSet> states = new ArrayList<>(2);
         when(kso.reconcile(anyString(), anyString(), any(StatefulSet.class))).thenAnswer(invocation -> {
             reconcileExceptions.accept(states.size());
