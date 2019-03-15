@@ -44,5 +44,5 @@ oc apply -f _your-file_
 
 .Additional resources
 
-* For more information about the schema of the resources object, see xref:type-Resources-reference[].
+* For more information about the schema of the resources object, see xref:type-ResourceRequirements-reference[].
 //* For more information about the resource requirements of the Topic Operator, see xref:topic-operator-resource-requirements-str[].
