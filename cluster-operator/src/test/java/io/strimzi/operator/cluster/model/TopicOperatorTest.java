@@ -30,16 +30,23 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class TopicOperatorTest {
+
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef"),
+            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"),
+            emptyMap(), emptyMap(), emptyMap()) { };
 
     private final String namespace = "test";
     private final String cluster = "foo";
@@ -86,7 +93,7 @@ public class TopicOperatorTest {
             .build();
 
     private final Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig, kafkaStorage, zkStorage, topicOperator, kafkaLogJson, zooLogJson);
-    private final TopicOperator tc = TopicOperator.fromCrd(resource);
+    private final TopicOperator tc = TopicOperator.fromCrd(resource, VERSIONS);
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
@@ -107,7 +114,7 @@ public class TopicOperatorTest {
     public void testFromConfigMapNoConfig() {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, null, kafkaLogJson, zooLogJson);
-        TopicOperator tc = TopicOperator.fromCrd(resource);
+        TopicOperator tc = TopicOperator.fromCrd(resource, VERSIONS);
         assertNull(tc);
     }
 
@@ -116,7 +123,7 @@ public class TopicOperatorTest {
         Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, new TopicOperatorSpec(), kafkaLogJson, zooLogJson);
-        TopicOperator tc = TopicOperator.fromCrd(resource);
+        TopicOperator tc = TopicOperator.fromCrd(resource, VERSIONS);
         Assert.assertEquals(TopicOperatorSpec.DEFAULT_IMAGE, tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());
         assertEquals(TopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, tc.getReconciliationIntervalMs());
@@ -184,7 +191,7 @@ public class TopicOperatorTest {
         assertLoggingConfig(dep);
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(1);
-        assertEquals(TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
+        assertEquals(image, tlsSidecarContainer.getImage());
         assertEquals(TopicOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(tlsSidecarContainer).get(TopicOperator.ENV_VAR_ZOOKEEPER_CONNECT));
         assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL));
         assertEquals(TopicOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, tlsSidecarContainer.getVolumeMounts().get(0).getName());
@@ -201,7 +208,7 @@ public class TopicOperatorTest {
     }
 
     @Rule
-    public ResourceTester<Kafka, TopicOperator> helper = new ResourceTester<>(Kafka.class, TopicOperator::fromCrd);
+    public ResourceTester<Kafka, TopicOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, TopicOperator::fromCrd);
 
     @Test
     public void withAffinity() throws IOException {

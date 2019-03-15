@@ -30,8 +30,6 @@ public class TopicOperatorSpec extends EntityTopicOperatorSpec {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_TLS_SIDECAR_IMAGE = EntityOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
-
     private Affinity affinity;
     private TlsSidecar tlsSidecar;
 

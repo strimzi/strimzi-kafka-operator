@@ -6,7 +6,7 @@ export ZOOKEEPER_ID=$(hostname | awk -F'-' '{print $NF+1}')
 
 # Generate and print the config file
 echo "Starting Stunnel with configuration:"
-./stunnel_config_generator.sh | tee /tmp/stunnel.conf
+${STUNNEL_HOME}/zookeeper_stunnel_config_generator.sh | tee /tmp/stunnel.conf
 echo ""
 
 # starting Stunnel with final configuration

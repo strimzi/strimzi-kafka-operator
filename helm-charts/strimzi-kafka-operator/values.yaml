@@ -51,18 +51,18 @@ kafkaInit:
 tlsSidecarZookeeper:
   image:
     repository: strimzi
-    name: zookeeper-stunnel
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 tlsSidecarKafka:
   image:
     repository: strimzi
-    name: kafka-stunnel
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 tlsSidecarEntityOperator:
   image:
     repository: strimzi
-    name: entity-operator-stunnel
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 kafkaMirrorMaker:
   image:
     repository: strimzi

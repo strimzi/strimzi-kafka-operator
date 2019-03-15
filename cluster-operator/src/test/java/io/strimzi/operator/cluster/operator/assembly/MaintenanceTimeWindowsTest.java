@@ -506,7 +506,7 @@ public class MaintenanceTimeWindowsTest {
 
         this.init(maintenanceTimeWindows);
 
-        EntityOperator eo = EntityOperator.fromCrd(this.kafka);
+        EntityOperator eo = EntityOperator.fromCrd(this.kafka, VERSIONS);
         Deployment eoDep = eo.generateDeployment(false, Collections.EMPTY_MAP, null);
         eoDep.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0");
         this.mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(EntityOperator.entityOperatorName(NAME)).create(eoDep);
@@ -537,7 +537,7 @@ public class MaintenanceTimeWindowsTest {
 
         this.initWithTopicOperator(maintenanceTimeWindows);
 
-        TopicOperator to = TopicOperator.fromCrd(this.kafka);
+        TopicOperator to = TopicOperator.fromCrd(this.kafka, VERSIONS);
         Deployment toDep = to.generateDeployment(false, null);
         toDep.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0");
         this.mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(TopicOperator.topicOperatorName(NAME)).create(toDep);
