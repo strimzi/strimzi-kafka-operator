@@ -11,7 +11,7 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=docker-images helm-charts mockkube test crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init install examples metrics
+SUBDIRS=mockkube test crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init docker-images helm-charts install examples metrics
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)

@@ -838,6 +838,7 @@ public class KafkaCluster extends AbstractModel {
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
                     .withImage(initImage)
+                    .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
                     .withResources(resources)
                     .withEnv(varList)
                     .withVolumeMounts(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))

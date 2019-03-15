@@ -265,6 +265,7 @@ public class TopicOperator extends AbstractModel {
         Container container = new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_NAME)
                 .withImage(getImage())
+                .withArgs("/opt/strimzi/bin/topic-operator-run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))

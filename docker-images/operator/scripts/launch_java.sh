@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -x
-JAR=$1
 shift
 
-. /bin/dynamic_resources.sh
+. ${STRIMZI_HOME}/bin/dynamic_resources.sh
 
 # expand gc options based upon java version
 function get_gc_opts {
@@ -34,4 +33,4 @@ JAVA_OPTS="${JAVA_OPTS} -Dvertx.cacheDirBase=/tmp -Djava.security.egd=file:/dev/
 # Enable GC logging for memory tracking
 JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 
-exec java $JAVA_OPTS -jar $JAR $@
+exec java $JAVA_OPTS -classpath $JAVA_CLASSPATH $JAVA_MAIN $@
