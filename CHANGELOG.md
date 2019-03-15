@@ -3,6 +3,7 @@
 ## 0.12.0
 
 * Log at the warn level when a custom resource uses deprecated or unknown properties
+* Reduce the number of images needed to run Strimzi to just two: `kafka` and `operator`.
 
 ## 0.11.0
 
