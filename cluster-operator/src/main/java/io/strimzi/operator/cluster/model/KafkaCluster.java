@@ -324,8 +324,18 @@ public class KafkaCluster extends AbstractModel {
         result.setUserAffinity(kafkaClusterSpec.getAffinity());
         result.setResources(kafkaClusterSpec.getResources());
         result.setTolerations(kafkaClusterSpec.getTolerations());
-
-        result.setTlsSidecar(kafkaClusterSpec.getTlsSidecar());
+        TlsSidecar tlsSidecar = kafkaClusterSpec.getTlsSidecar();
+        if (tlsSidecar == null) {
+            tlsSidecar = new TlsSidecar();
+        }
+        if (tlsSidecar.getImage() == null) {
+            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version());
+            if (tlsSidecarImage == null) {
+                throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
+            }
+            tlsSidecar.setImage(tlsSidecarImage);
+        }
+        result.setTlsSidecar(tlsSidecar);
 
         KafkaListeners listeners = kafkaClusterSpec.getListeners();
         result.setListeners(listeners);
@@ -828,6 +838,7 @@ public class KafkaCluster extends AbstractModel {
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
                     .withImage(initImage)
+                    .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
                     .withResources(resources)
                     .withEnv(varList)
                     .withVolumeMounts(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
@@ -858,7 +869,7 @@ public class KafkaCluster extends AbstractModel {
                 .withCommand("/opt/kafka/kafka_run.sh")
                 .build();
 
-        String tlsSidecarImage = KafkaClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE;
+        String tlsSidecarImage = getImage();
         if (tlsSidecar != null && tlsSidecar.getImage() != null) {
             tlsSidecarImage = tlsSidecar.getImage();
         }
@@ -866,6 +877,7 @@ public class KafkaCluster extends AbstractModel {
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
+                .withCommand("/opt/stunnel/kafka_stunnel_run.sh")
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
@@ -873,7 +885,10 @@ public class KafkaCluster extends AbstractModel {
                         ModelUtils.tlsSidecarLogEnvVar(tlsSidecar)))
                 .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),
                         createVolumeMount(CLUSTER_CA_CERTS_VOLUME, TLS_SIDECAR_CLUSTER_CA_CERTS_VOLUME_MOUNT))
-                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/opt/stunnel/stunnel_pre_stop.sh", String.valueOf(templateTerminationGracePeriodSeconds)).endExec().endPreStop().build())
+                .withLifecycle(new LifecycleBuilder().withNewPreStop()
+                            .withNewExec().withCommand("/opt/stunnel/kafka_stunnel_pre_stop.sh",
+                                String.valueOf(templateTerminationGracePeriodSeconds))
+                        .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();
 

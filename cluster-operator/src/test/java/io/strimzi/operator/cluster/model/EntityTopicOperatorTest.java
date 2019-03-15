@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
@@ -176,4 +177,11 @@ public class EntityTopicOperatorTest {
                 EntityOperatorTest.volumeMounts(container.getVolumeMounts()));
     }
 
+    @Test
+    public void testRoleBinding()   {
+        KubernetesRoleBinding binding = entityTopicOperator.generateRoleBinding(namespace, toWatchedNamespace);
+
+        assertEquals(namespace, binding.getSubjects().get(0).getNamespace());
+        assertEquals(toWatchedNamespace, binding.getMetadata().getNamespace());
+    }
 }

@@ -28,18 +28,26 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class EntityOperatorTest {
+
+    private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
+            "2.0.0 default 2.0 2.0 1234567890abcdef\n" +
+            "2.1.0         2.1 2.0 1234567890abcdef"),
+            map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
+                    "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
 
     static Map<String, String> volumeMounts(List<VolumeMount> mounts) {
         return mounts.stream().collect(Collectors.toMap(vm -> vm.getName(), vm -> vm.getMountPath()));
@@ -76,7 +84,7 @@ public class EntityOperatorTest {
                     .endSpec()
                     .build();
 
-    private final EntityOperator entityOperator = EntityOperator.fromCrd(resource);
+    private final EntityOperator entityOperator = EntityOperator.fromCrd(resource, VERSIONS);
 
     @Test
     public void testGenerateDeployment() {
@@ -97,7 +105,7 @@ public class EntityOperatorTest {
         assertEquals(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME, containers.get(1).getName());
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(2);
-        assertEquals(EntityOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
+        assertEquals(image, tlsSidecarContainer.getImage());
         assertEquals(EntityOperator.defaultZookeeperConnect(cluster), AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT));
         assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL));
         assertEquals(map(
@@ -126,14 +134,14 @@ public class EntityOperatorTest {
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
                         .build();
-        EntityOperator entityOperator = EntityOperator.fromCrd(resource);
+        EntityOperator entityOperator = EntityOperator.fromCrd(resource, VERSIONS);
 
         assertNull(entityOperator.getTopicOperator());
         assertNull(entityOperator.getUserOperator());
     }
 
     @Rule
-    public ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, EntityOperator::fromCrd);
+    public ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd);
 
     @Test
     public void withAffinity() throws IOException {
@@ -171,7 +179,7 @@ public class EntityOperatorTest {
                             .endEntityOperator()
                         .endSpec()
                         .build();
-        EntityOperator entityOperator = EntityOperator.fromCrd(resource);
+        EntityOperator entityOperator = EntityOperator.fromCrd(resource, VERSIONS);
 
         // Check Deployment
         Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null);
@@ -198,12 +206,12 @@ public class EntityOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityOperator eo = EntityOperator.fromCrd(resource);
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertEquals(Long.valueOf(123), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
         assertNotNull(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle());
-        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"));
         assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("123"));
     }
 
@@ -217,12 +225,12 @@ public class EntityOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityOperator eo = EntityOperator.fromCrd(resource);
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertEquals(Long.valueOf(30), dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
         assertNotNull(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle());
-        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"));
         assertTrue(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("30"));
     }
 
@@ -244,7 +252,7 @@ public class EntityOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityOperator eo = EntityOperator.fromCrd(resource);
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
@@ -262,7 +270,7 @@ public class EntityOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityOperator eo = EntityOperator.fromCrd(resource);
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertEquals(0, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
@@ -283,7 +291,7 @@ public class EntityOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityOperator eo = EntityOperator.fromCrd(resource);
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertNotNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
@@ -302,10 +310,77 @@ public class EntityOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityOperator eo = EntityOperator.fromCrd(resource);
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null);
         assertNull(dep.getSpec().getTemplate().getSpec().getSecurityContext());
+    }
+
+    /**
+     * Verify the lookup order is:<ul>
+     * <li>Kafka.spec.entityOperator.tlsSidecar.image</li>
+     * <li>Kafka.spec.kafka.image</li>
+     * <li>image for default version of Kafka</li></ul>
+     */
+    @Test
+    public void testStunnelImage() {
+        Kafka kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editEntityOperator()
+                        .editOrNewTlsSidecar()
+                            .withImage("foo1")
+                        .endTlsSidecar()
+                    .endEntityOperator()
+                    .editKafka()
+                        .withImage("foo2")
+                    .endKafka()
+                .endSpec()
+                .build();
+        assertEquals("foo1", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editEntityOperator()
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endEntityOperator()
+                    .editKafka()
+                        .withImage("foo2")
+                    .endKafka()
+                .endSpec()
+                .build();
+        assertEquals("foo2", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editEntityOperator()
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endEntityOperator()
+                    .editKafka()
+                        .withVersion("2.0.0")
+                        .withImage(null)
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("strimzi/kafka:latest-kafka-2.0.0", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editEntityOperator()
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endEntityOperator()
+                    .editKafka()
+                        .withVersion("2.1.0")
+                        .withImage(null)
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("strimzi/kafka:latest-kafka-2.0.0", EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage());
     }
 
     @Test
@@ -318,7 +393,7 @@ public class EntityOperatorTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
-        EntityOperator eo = EntityOperator.fromCrd(resource);
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
 
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, ImagePullPolicy.ALWAYS);
         assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());

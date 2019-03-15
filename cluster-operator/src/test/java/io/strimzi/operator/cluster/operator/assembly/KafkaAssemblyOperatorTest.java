@@ -329,8 +329,8 @@ public class KafkaAssemblyOperatorTest {
                 ModelUtils.findSecretWithName(secrets, AbstractModel.clusterCaKeySecretName(clusterCm.getMetadata().getName())));
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm, VERSIONS);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(clusterCm, VERSIONS);
-        TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm);
-        EntityOperator entityOperator = EntityOperator.fromCrd(clusterCm);
+        TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm, VERSIONS);
+        EntityOperator entityOperator = EntityOperator.fromCrd(clusterCm, VERSIONS);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -685,8 +685,8 @@ public class KafkaAssemblyOperatorTest {
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(updatedAssembly, VERSIONS);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(originalAssembly, VERSIONS);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(updatedAssembly, VERSIONS);
-        TopicOperator originalTopicOperator = TopicOperator.fromCrd(originalAssembly);
-        EntityOperator originalEntityOperator = EntityOperator.fromCrd(originalAssembly);
+        TopicOperator originalTopicOperator = TopicOperator.fromCrd(originalAssembly, VERSIONS);
+        EntityOperator originalEntityOperator = EntityOperator.fromCrd(originalAssembly, VERSIONS);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -28,7 +29,6 @@ import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
-import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -57,9 +58,10 @@ import static org.junit.Assert.assertTrue;
 public class ZookeeperClusterTest {
 
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
-            "2.0.0 default 2.0 2.0 1234567890abcdef"),
-            singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"),
-            emptyMap(), emptyMap(), emptyMap()) { };
+            "2.0.0 default 2.0 2.0 1234567890abcdef\n" +
+                    "2.1.0         2.1 2.0 1234567890abcdef"),
+            map("2.0.0", "strimzi/kafka:latest-kafka-2.0.0",
+                    "2.1.0", "strimzi/kafka:latest-kafka-2.1.0"), emptyMap(), emptyMap(), emptyMap()) { };
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -195,7 +197,7 @@ public class ZookeeperClusterTest {
         assertEquals(ZookeeperCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(1);
-        assertEquals(ZookeeperClusterSpec.DEFAULT_TLS_SIDECAR_IMAGE, tlsSidecarContainer.getImage());
+        assertEquals(image, tlsSidecarContainer.getImage());
         assertEquals(new Integer(replicas), Integer.valueOf(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_NODE_COUNT)));
         assertEquals(TlsSidecarLogLevel.NOTICE.toValue(), AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL));
         assertEquals(ZookeeperCluster.CLUSTERING_PORT_NAME, tlsSidecarContainer.getPorts().get(0).getName());
@@ -377,9 +379,10 @@ public class ZookeeperClusterTest {
 
         StatefulSet ss = zc.generateStatefulSet(true, null);
         assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
-        assertNotNull(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle());
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("123"));
+        Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
+        assertNotNull(lifecycle);
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/zookeeper_stunnel_pre_stop.sh"));
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("123"));
     }
 
     @Test
@@ -391,9 +394,10 @@ public class ZookeeperClusterTest {
 
         StatefulSet ss = zc.generateStatefulSet(true, null);
         assertEquals(Long.valueOf(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
-        assertNotNull(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle());
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/stunnel_pre_stop.sh"));
-        assertTrue(ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle().getPreStop().getExec().getCommand().contains("30"));
+        Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
+        assertNotNull(lifecycle);
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("/opt/stunnel/zookeeper_stunnel_pre_stop.sh"));
+        assertTrue(lifecycle.getPreStop().getExec().getCommand().contains("30"));
     }
 
     @Test
@@ -430,6 +434,79 @@ public class ZookeeperClusterTest {
 
         StatefulSet ss = zc.generateStatefulSet(true, null);
         assertEquals(0, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+    }
+
+    /**
+     * Verify the lookup order is:<ul>
+     * <li>Kafka.spec.zookeeper.tlsSidecar.image</li>
+     * <li>Kafka.spec.kafka.image</li>
+     * <li>image for default version of Kafka</li></ul>
+     */
+    @Test
+    public void testStunnelImage() {
+        Kafka resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCmJson, configurationJson, emptyMap());
+
+        Kafka kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editZookeeper()
+                        .editOrNewTlsSidecar()
+                            .withImage("foo1")
+                        .endTlsSidecar()
+                    .endZookeeper()
+                    .editKafka()
+                        .withImage("foo2")
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("foo1", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editZookeeper()
+                        .withImage("bar")
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endZookeeper()
+                    .editKafka()
+                        .withImage("foo2")
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("foo2", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editZookeeper()
+                        .withImage("bar")
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endZookeeper()
+                    .editKafka()
+                        .withVersion("2.0.0")
+                        .withImage(null)
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("strimzi/kafka:latest-kafka-2.0.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
+
+        kafka = new KafkaBuilder(resource)
+                .editSpec()
+                    .editZookeeper()
+                        .withImage("bar")
+                        .editOrNewTlsSidecar()
+                            .withImage(null)
+                        .endTlsSidecar()
+                    .endZookeeper()
+                    .editKafka()
+                        .withVersion("2.1.0")
+                        .withImage(null)
+                    .endKafka()
+                .endSpec()
+            .build();
+        assertEquals("strimzi/kafka:latest-kafka-2.0.0", ZookeeperCluster.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(1).getImage());
     }
 
     @Test

@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
@@ -225,5 +226,13 @@ public class EntityUserOperatorTest {
         List<EnvVar> envvar = f.getEnvVars();
         assertEquals(validity, Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY)).findFirst().get().getValue()));
         assertEquals(renewal, Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL)).findFirst().get().getValue()));
+    }
+
+    @Test
+    public void testRoleBinding()   {
+        KubernetesRoleBinding binding = entityUserOperator.generateRoleBinding(namespace, uoWatchedNamespace);
+
+        assertEquals(namespace, binding.getSubjects().get(0).getNamespace());
+        assertEquals(uoWatchedNamespace, binding.getMetadata().getNamespace());
     }
 }
