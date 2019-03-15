@@ -7,7 +7,9 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -22,8 +24,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.Resources;
-import io.strimzi.api.kafka.model.ResourcesBuilder;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -67,8 +67,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
-import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 import static io.strimzi.api.kafka.model.Storage.deleteClaim;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -96,7 +94,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     private final int kafkaReplicas;
     private final Storage kafkaStorage;
-    private final Resources resources;
+    private final ResourceRequirements resources;
     private KubernetesClient mockClient;
 
     public static class Params {
@@ -105,12 +103,12 @@ public class KafkaAssemblyOperatorMockTest {
 
         private final int kafkaReplicas;
         private final Storage kafkaStorage;
-        private Resources resources;
+        private ResourceRequirements resources;
 
         public Params(int zkReplicas,
                       SingleVolumeStorage zkStorage, int kafkaReplicas,
                       Storage kafkaStorage,
-                      Resources resources) {
+                      ResourceRequirements resources) {
             this.kafkaReplicas = kafkaReplicas;
             this.kafkaStorage = kafkaStorage;
             this.zkReplicas = zkReplicas;
@@ -156,16 +154,12 @@ public class KafkaAssemblyOperatorMockTest {
                     .withDeleteClaim(false)
                     .build()
         };
-        Resources[] resources = {
-            new ResourcesBuilder()
-            .withNewLimits()
-                .withMilliCpu("5000")
-                .withMemory("5000")
-            .endLimits()
-            .withNewRequests()
-                .withMilliCpu("5000")
-                .withMemory("5000")
-            .endRequests()
+        ResourceRequirements[] resources = {
+            new ResourceRequirementsBuilder()
+                .addToLimits("cpu", new Quantity("5000m"))
+                .addToLimits("memory", new Quantity("5000m"))
+                .addToRequests("cpu", new Quantity("5000"))
+                .addToRequests("memory", new Quantity("5000m"))
             .build()
         };
         List<KafkaAssemblyOperatorMockTest.Params> result = new ArrayList();
@@ -174,7 +168,7 @@ public class KafkaAssemblyOperatorMockTest {
             for (SingleVolumeStorage zkStorage : zkStorageConfigs) {
                 for (int kafkaReplica : replicas) {
                     for (Storage kafkaStorage : kafkaStorageConfigs) {
-                        for (Resources resource : resources) {
+                        for (ResourceRequirements resource : resources) {
                             result.add(new KafkaAssemblyOperatorMockTest.Params(
                                     zkReplica, zkStorage,
                                     kafkaReplica, kafkaStorage, resource));
@@ -521,16 +515,12 @@ public class KafkaAssemblyOperatorMockTest {
         context.assertNotNull(statefulSet);
         ResourceRequirements requirements = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources();
         if (resources != null && resources.getRequests() != null) {
-            context.assertEquals(normalizeCpu(resources.getRequests().getMilliCpu()), requirements.getRequests().get("cpu").getAmount());
-        }
-        if (resources != null && resources.getRequests() != null) {
-            context.assertEquals(normalizeMemory(resources.getRequests().getMemory()), requirements.getRequests().get("memory").getAmount());
+            context.assertEquals(resources.getRequests().get("cpu").getAmount(), requirements.getRequests().get("cpu").getAmount());
+            context.assertEquals(resources.getRequests().get("memory").getAmount(), requirements.getRequests().get("memory").getAmount());
         }
         if (resources != null && resources.getLimits() != null) {
-            context.assertEquals(normalizeCpu(resources.getLimits().getMilliCpu()), requirements.getLimits().get("cpu").getAmount());
-        }
-        if (resources != null && resources.getLimits() != null) {
-            context.assertEquals(normalizeMemory(resources.getLimits().getMemory()), requirements.getLimits().get("memory").getAmount());
+            context.assertEquals(resources.getLimits().get("cpu").getAmount(), requirements.getLimits().get("cpu").getAmount());
+            context.assertEquals(resources.getLimits().get("memory").getAmount(), requirements.getLimits().get("memory").getAmount());
         }
     }
 

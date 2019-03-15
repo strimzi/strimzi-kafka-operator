@@ -401,7 +401,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(ModelUtils.createExecProbe(Collections.singletonList(livenessPath), livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(ModelUtils.createExecProbe(Collections.singletonList(readinessPath), readinessInitialDelay, readinessTimeout))
-                .withResources(ModelUtils.resources(getResources()))
+                .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build();
 
@@ -416,7 +416,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .withCommand("/opt/stunnel/zookeeper_stunnel_run.sh")
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
                         buildEnvVar(ENV_VAR_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas))))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_NODES_VOLUME_NAME, TLS_SIDECAR_NODES_VOLUME_MOUNT),

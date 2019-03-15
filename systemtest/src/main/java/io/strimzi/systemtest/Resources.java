@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
@@ -67,6 +69,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class Resources {
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
@@ -268,20 +271,14 @@ public class Resources {
                                 .withInitialDelaySeconds(15)
                                 .withTimeoutSeconds(5)
                             .endLivenessProbe()
-                            .withNewResources()
-                                .withNewRequests()
-                                    .withMemory("1G")
-                                .endRequests()
-                            .endResources()
+                            .withResources(new ResourceRequirementsBuilder()
+                                .addToRequests("memory", new Quantity("1G")).build())
                             .withMetrics(new HashMap<>())
                         .endKafka()
                         .withNewZookeeper()
                             .withReplicas(3)
-                            .withNewResources()
-                                .withNewRequests()
-                                    .withMemory("1G")
-                                .endRequests()
-                            .endResources()
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("memory", new Quantity("1G")).build())
                             .withMetrics(new HashMap<>())
                             .withNewReadinessProbe()
                 .withInitialDelaySeconds(15)
@@ -332,11 +329,8 @@ public class Resources {
                 .withVersion(KAFKA_VERSION)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(name))
                 .withReplicas(kafkaConnectReplicas)
-                .withNewResources()
-                    .withNewRequests()
-                        .withMemory("1G")
-                    .endRequests()
-                .endResources()
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("memory", new Quantity("1G")).build())
                 .withMetrics(new HashMap<>())
             .endSpec();
     }
@@ -419,11 +413,8 @@ public class Resources {
                 .withNewProducer()
                     .withBootstrapServers(tlsListener ? targetBootstrapServer + "-kafka-bootstrap:9093" : targetBootstrapServer + "-kafka-bootstrap:9092")
                 .endProducer()
-                .withNewResources()
-                    .withNewRequests()
-                        .withMemory("1G")
-                    .endRequests()
-                .endResources()
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("memory", new Quantity("1G")).build())
                 .withMetrics(new HashMap<>())
             .withReplicas(mirrorMakerReplicas)
             .withWhitelist(".*")

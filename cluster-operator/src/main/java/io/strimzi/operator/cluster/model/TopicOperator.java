@@ -269,7 +269,7 @@ public class TopicOperator extends AbstractModel {
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
-                .withResources(ModelUtils.resources(getResources()))
+                .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build();
@@ -279,7 +279,7 @@ public class TopicOperator extends AbstractModel {
                 .withImage(tlsSidecarImage)
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
                         buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),

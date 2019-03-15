@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
@@ -52,14 +53,12 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
-import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -146,7 +145,7 @@ public abstract class AbstractModel {
     protected String logAndMetricsConfigVolumeName;
 
     private JvmOptions jvmOptions;
-    private Resources resources;
+    private ResourceRequirements resources;
     private Affinity userAffinity;
     private List<Toleration> tolerations;
 
@@ -878,11 +877,11 @@ public abstract class AbstractModel {
                 (u, v) -> v));
     }
 
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
@@ -908,12 +907,11 @@ public abstract class AbstractModel {
             // Honour explicit max heap
             kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
         } else {
-            Resources resources = getResources();
-            CpuMemory cpuMemory = resources == null ? null : resources.getLimits();
-
+            ResourceRequirements resources = getResources();
+            Map<String, Quantity> cpuMemory = resources == null ? null : resources.getLimits();
             // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
             // too much memory on the kubelet.
-            if (cpuMemory != null && cpuMemory.getMemory() != null) {
+            if (cpuMemory != null && cpuMemory.get("memory") != null) {
                 envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
                 if (dynamicHeapMaxBytes > 0) {
                     envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));

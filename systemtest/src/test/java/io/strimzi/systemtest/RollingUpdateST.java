@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -56,11 +58,9 @@ class RollingUpdateST extends AbstractST {
         resources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                 .editZookeeper()
-                .withNewResources()
-                .withNewRequests()
-                .withMilliCpu("100000m")
-                .endRequests()
-                .endResources()
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("cpu", new Quantity("100000m"))
+                        .build())
                 .endZookeeper()
                 .endSpec()
                 .done();
@@ -110,11 +110,9 @@ class RollingUpdateST extends AbstractST {
         resources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                 .editKafka()
-                .withNewResources()
-                .withNewRequests()
-                .withMilliCpu("100000m")
-                .endRequests()
-                .endResources()
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToRequests("cpu", new Quantity("100000m"))
+                        .build())
                 .endKafka()
                 .endSpec()
                 .done();

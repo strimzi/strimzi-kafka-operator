@@ -587,22 +587,8 @@ spec:
                   properties:
                     limits:
                       type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     requests:
                       type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 metrics:
                   type: object
                 logging:
@@ -658,22 +644,8 @@ spec:
                       properties:
                         limits:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 template:
                   type: object
                   properties:
@@ -1111,22 +1083,8 @@ spec:
                   properties:
                     limits:
                       type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     requests:
                       type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 metrics:
                   type: object
                 logging:
@@ -1182,22 +1140,8 @@ spec:
                       properties:
                         limits:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 template:
                   type: object
                   properties:
@@ -1528,22 +1472,8 @@ spec:
                   properties:
                     limits:
                       type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     requests:
                       type: object
-                      properties:
-                        cpu:
-                          type: string
-                          pattern: '[0-9]+m?$'
-                        memory:
-                          type: string
-                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 topicMetadataMaxAttempts:
                   type: integer
                   minimum: 0
@@ -1586,22 +1516,8 @@ spec:
                       properties:
                         limits:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 logging:
                   type: object
                   properties:
@@ -1642,22 +1558,8 @@ spec:
                       properties:
                         limits:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     topicMetadataMaxAttempts:
                       type: integer
                       minimum: 0
@@ -1698,22 +1600,8 @@ spec:
                       properties:
                         limits:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     logging:
                       type: object
                       properties:
@@ -1995,22 +1883,8 @@ spec:
                       properties:
                         limits:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
-                          properties:
-                            cpu:
-                              type: string
-                              pattern: '[0-9]+m?$'
-                            memory:
-                              type: string
-                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 template:
                   type: object
                   properties:

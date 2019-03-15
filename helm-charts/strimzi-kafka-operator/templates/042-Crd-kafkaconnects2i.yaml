@@ -504,22 +504,8 @@ spec:
               properties:
                 limits:
                   type: object
-                  properties:
-                    cpu:
-                      type: string
-                      pattern: '[0-9]+m?$'
-                    memory:
-                      type: string
-                      pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 requests:
                   type: object
-                  properties:
-                    cpu:
-                      type: string
-                      pattern: '[0-9]+m?$'
-                    memory:
-                      type: string
-                      pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
             tls:
               type: object
               properties:
