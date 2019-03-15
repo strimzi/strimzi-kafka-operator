@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-overview.adoc
+// assembly-deployment-configuration-kafka.adoc
 
 [id='considerations-for-data-storage-{context}']
 
@@ -12,7 +12,7 @@ An efficient data storage infrastructure is essential to the optimal performance
 
 Choose local storage (local persistent volumes) when possible. If local storage is not available, you can use a Storage Area Network (SAN) accessed by a protocol such as Fibre Channel or iSCSI.
 
-== Apache Kafka and Zookeeper storage
+== Apache Kafka and Zookeeper storage support
 Use separate disks for Apache Kafka and Zookeeper.
 
 Three types of data storage are supported:
