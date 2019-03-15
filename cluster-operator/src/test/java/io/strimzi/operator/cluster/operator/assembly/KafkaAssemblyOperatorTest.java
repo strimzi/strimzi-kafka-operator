@@ -366,6 +366,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockKsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockPolicyOps.reconcile(anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(anyString(), anyString(), pdbCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         Map<String, PersistentVolumeClaim> zkPvcs = createPvcs(clusterCmNamespace, zookeeperCluster.getStorage(), zookeeperCluster.getReplicas(),
@@ -868,6 +869,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
 
         when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet scaleUp
         ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);
