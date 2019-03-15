@@ -1,10 +1,6 @@
 // Module included in the following assemblies:
 //
-<<<<<<< HEAD
-// assembly-deployment-configuration-kafka.adoc
-=======
 // assembly-overview.adoc
->>>>>>> 696f8616d1bdb19e14bbafbd43e96de781742bee
 
 [id='considerations-for-data-storage-{context}']
 
@@ -12,19 +8,11 @@
 
 An efficient data storage infrastructure is essential to the optimal performance of {ProductName}.
 
-<<<<<<< HEAD
-{ProductName} requires block storage and works well with cloud-based block storage solutions, such as Amazon Elastic Block Store (EBS). The use of file storage is not recommended.
-
-Choose local storage (local persistent volumes) when possible. If local storage is not available, you can use a Storage Area Network (SAN) accessed by a protocol such as Fibre Channel or iSCSI.
-
-== Apache Kafka and Zookeeper storage support
-=======
 {ProductName} requires block storage and is designed to work optimally with cloud-based block storage solutions, including Amazon Elastic Block Store (EBS). The use of file storage is not recommended.
 
 Choose local storage (local persistent volumes) when possible. If local storage is not available, you can use a Storage Area Network (SAN) accessed by a protocol such as Fibre Channel or iSCSI.
 
 == Apache Kafka and Zookeeper storage
->>>>>>> 696f8616d1bdb19e14bbafbd43e96de781742bee
 Use separate disks for Apache Kafka and Zookeeper.
 
 Three types of data storage are supported:
