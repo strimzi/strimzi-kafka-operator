@@ -17,8 +17,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.TestContext;
-import org.junit.Test;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -75,11 +73,5 @@ public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<Kubern
     protected AbstractResourceOperator<KubernetesClient, KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding,
             Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new RoleBindingOperator(vertx, mockClient);
-    }
-
-    @Test
-    @Override
-    public void createWhenExistsIsAPatch(TestContext context) {
-        // pass
     }
 }

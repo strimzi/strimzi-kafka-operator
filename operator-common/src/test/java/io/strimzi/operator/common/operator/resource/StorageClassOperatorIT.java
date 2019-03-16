@@ -20,11 +20,12 @@ import static java.util.Collections.singletonMap;
 public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
         StorageClass, StorageClassList, DoneableStorageClass, Resource<StorageClass, DoneableStorageClass>> {
 
-
+    @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, StorageClass, StorageClassList, DoneableStorageClass, Resource<StorageClass, DoneableStorageClass>> operator() {
         return new StorageClassOperator(vertx, client);
     }
 
+    @Override
     protected StorageClass getOriginal()  {
         return new StorageClassBuilder()
                 .withNewMetadata()
@@ -38,6 +39,7 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
                 .build();
     }
 
+    @Override
     protected StorageClass getModified()  {
         return new StorageClassBuilder()
                 .withNewMetadata()
@@ -51,6 +53,7 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
                 .build();
     }
 
+    @Override
     protected void assertResources(TestContext context, StorageClass expected, StorageClass actual)   {
         context.assertEquals(expected.getMetadata().getName(), actual.getMetadata().getName());
         context.assertEquals(expected.getMetadata().getLabels(), actual.getMetadata().getLabels());

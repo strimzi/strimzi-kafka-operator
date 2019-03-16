@@ -20,15 +20,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(VertxUnitRunner.class)
-public abstract class AbstractNonNamespacedResourceOperatorIT<C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
+public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
     public static final String RESOURCE_NAME = "my-resource";
     protected static Vertx vertx;
     protected static KubernetesClient client;
+    protected static String namespace;
 
     @BeforeClass
     public static void before() {
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
+        namespace = client.getNamespace();
     }
 
     @AfterClass
@@ -36,7 +38,7 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         vertx.close();
     }
 
-    abstract AbstractNonNamespacedResourceOperator operator();
+    abstract AbstractResourceOperator operator();
     abstract T getOriginal();
     abstract T getModified();
     abstract void assertResources(TestContext context, T expected, T actual);
@@ -44,16 +46,16 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
     @Test
     public void testFullCycle(TestContext context)    {
         Async async = context.async();
-        AbstractNonNamespacedResourceOperator op = operator();
+        AbstractResourceOperator op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();
 
-        Future<ReconcileResult<T>> createFuture = op.reconcile(RESOURCE_NAME, newResource);
+        Future<ReconcileResult<T>> createFuture = op.reconcile(namespace, RESOURCE_NAME, newResource);
 
         createFuture.setHandler(create -> {
             if (create.succeeded()) {
-                T created = (T) op.get(RESOURCE_NAME);
+                T created = (T) op.get(namespace, RESOURCE_NAME);
 
                 if (created == null)    {
                     context.fail("Failed to get created Resource");
@@ -61,10 +63,10 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
                 } else  {
                     assertResources(context, newResource, created);
 
-                    Future<ReconcileResult<T>> modifyFuture = op.reconcile(RESOURCE_NAME, modResource);
+                    Future<ReconcileResult<T>> modifyFuture = op.reconcile(namespace, RESOURCE_NAME, modResource);
                     modifyFuture.setHandler(modify -> {
                         if (modify.succeeded()) {
-                            T modified = (T) op.get(RESOURCE_NAME);
+                            T modified = (T) op.get(namespace, RESOURCE_NAME);
 
                             if (modified == null)    {
                                 context.fail("Failed to get modified Resource");
@@ -72,10 +74,10 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
                             } else {
                                 assertResources(context, modResource, modified);
 
-                                Future<ReconcileResult<T>> deleteFuture = op.reconcile(RESOURCE_NAME, null);
+                                Future<ReconcileResult<T>> deleteFuture = op.reconcile(namespace, RESOURCE_NAME, null);
                                 deleteFuture.setHandler(delete -> {
                                     if (delete.succeeded()) {
-                                        T deleted = (T) op.get(RESOURCE_NAME);
+                                        T deleted = (T) op.get(namespace, RESOURCE_NAME);
 
                                         if (deleted == null)    {
                                             async.complete();
