@@ -41,7 +41,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
             if (ns == null) {
                 client.namespaces().create(new NamespaceBuilder()
                         .withNewMetadata()
-                        .withName(namespace)
+                        .withName(defaultNamespace)
                         .endMetadata()
                         .build());
             }
