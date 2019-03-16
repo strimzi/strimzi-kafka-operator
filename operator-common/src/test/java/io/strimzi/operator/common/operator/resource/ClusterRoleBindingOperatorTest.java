@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
+import io.vertx.ext.unit.TestContext;
+import org.junit.Test;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
@@ -55,5 +57,11 @@ public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourc
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
             .build();
+    }
+
+    @Test
+    @Override
+    public void createWhenExistsIsAPatch(TestContext context) {
+        // pass
     }
 }
