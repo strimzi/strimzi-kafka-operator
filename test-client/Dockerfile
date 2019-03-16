@@ -5,8 +5,8 @@ ENV STRIMZI_VERSION ${strimzi_version}
 ENV JAVA_OPTS "-DLOG_LEVEL=info"
 
 # copy scripts for starting Kafka
-COPY ./scripts/ $KAFKA_HOME
-COPY ./scripts/dynamic_resources.sh /bin/dynamic_resources.sh
+COPY scripts $KAFKA_HOME
+COPY scripts/dynamic_resources.sh /bin/dynamic_resources.sh
 
 ADD target/test-client-${STRIMZI_VERSION}.jar /test-client.jar
 

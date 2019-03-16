@@ -2,7 +2,7 @@
 set -e
 
 java_images="operator"
-kafka_images="kafka test-client"
+kafka_images="kafka"
 
 # Kafka versions
 function load_checksums {
