@@ -97,9 +97,6 @@ public class Exec {
      *
      * @param command arguments for command
      * @return execution results
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws ExecutionException
      */
     public static ExecResult exec(String... command) {
         return exec(Arrays.asList(command));
@@ -110,9 +107,6 @@ public class Exec {
      *
      * @param command arguments for command
      * @return execution results
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws ExecutionException
      */
     public static ExecResult exec(List<String> command) {
         return exec(null, command, 0, false);
@@ -123,9 +117,6 @@ public class Exec {
      *
      * @param command arguments for command
      * @return execution results
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws ExecutionException
      */
     public static ExecResult exec(String input, List<String> command) {
         return exec(input, command, 0, false);

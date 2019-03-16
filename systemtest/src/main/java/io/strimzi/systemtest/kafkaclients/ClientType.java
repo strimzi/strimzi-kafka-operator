@@ -9,9 +9,9 @@ public enum ClientType {
     CLI_KAFKA_VERIFIABLE_CONSUMER;
 
     /**
-     * Get bind webClient type to webClient executable
+     * Get bind kafka client type to kafka client executable
      *
-     * @param client webClient type
+     * @param client kafka client type
      * @return webClient executable
      */
     public static String getCommand(ClientType client) {

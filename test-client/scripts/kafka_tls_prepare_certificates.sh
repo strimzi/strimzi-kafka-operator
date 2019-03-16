@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+USER=$1
+TRUSTSTORE_LOCATION=$(eval "echo \$$(echo TRUSTSTORE_LOCATION_${USER})")
+CA_LOCATION=$(eval "echo \$$(echo CA_LOCATION_${USER})")
+KEYSTORE_LOCATION=$(eval "echo \$$(echo KEYSTORE_LOCATION_${USER})")
+USER_LOCATION=$(eval "echo \$$(echo USER_LOCATION_${USER})")
+KAFKA_USER=$(eval "echo \$$(echo KAFKA_USER_${USER})")
+
 set -x
 
 # Parameters:

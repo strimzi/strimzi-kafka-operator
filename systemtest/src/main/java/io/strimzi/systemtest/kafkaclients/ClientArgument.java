@@ -58,7 +58,10 @@ public enum ClientArgument {
     THROUGHPUT("--throughput"),
     MESSAGE_CREATE_TIME("--message-create-time"),
     VALUE_PREFIX("--value-prefix"),
-    REPEATING_KEYS("--repeating-keys");
+    REPEATING_KEYS("--repeating-keys"),
+
+    // Special argument for verifiable consumer in case of tls is needed
+    USER("USER");
 
     private String command;
 
@@ -73,5 +76,9 @@ public enum ClientArgument {
      */
     public String command() {
         return command;
+    }
+
+    public String setConfiguration(String config) {
+        return config;
     }
 }

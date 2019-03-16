@@ -63,7 +63,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
-import io.strimzi.systemtest.utils.AvailabilityVerifier;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -167,6 +166,7 @@ public class Resources extends AbstractResources {
                     x.delete(resource);
                     client.rbac().kubernetesClusterRoleBindings().delete((KubernetesClusterRoleBinding) resource);
                 });
+                break;
             case SERVICE:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
@@ -245,10 +245,18 @@ public class Resources extends AbstractResources {
     }
 
     DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
-        return kafka(defaultKafka(name, kafkaReplicas).build());
+        return kafkaEphemeral(name, kafkaReplicas, 3);
+    }
+
+    DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
+        return kafka(defaultKafka(name, kafkaReplicas, zookeeperReplicas).build());
     }
 
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
+        return defaultKafka(name, kafkaReplicas, 3);
+    }
+
+    public KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
         String tOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
         String uOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
 
@@ -262,7 +270,7 @@ public class Resources extends AbstractResources {
                             .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                             .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                             .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
-                            .addToConfig("default.replication.factor", 3)
+                            .addToConfig("default.replication.factor", Math.min(kafkaReplicas, 3))
                             .withNewListeners()
                                 .withNewPlain().endPlain()
                                 .withNewTls().endTls()
@@ -285,9 +293,9 @@ public class Resources extends AbstractResources {
                             .endJvmOptions()
                         .endKafka()
                         .withNewZookeeper()
-                            .withReplicas(3)
-                .withResources(new ResourceRequirementsBuilder()
-                        .addToRequests("memory", new Quantity("1G")).build())
+                            .withReplicas(zookeeperReplicas)
+                            .withResources(new ResourceRequirementsBuilder()
+                                .addToRequests("memory", new Quantity("1G")).build())
                             .withMetrics(new HashMap<>())
                             .withNewReadinessProbe()
                 .withInitialDelaySeconds(15)
@@ -600,6 +608,7 @@ public class Resources extends AbstractResources {
     DoneableKafkaUser tlsUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
+                        .withClusterName(clusterName)
                         .withName(name)
                         .withNamespace(client().getNamespace())
                         .addToLabels("strimzi.io/cluster", clusterName)
@@ -614,6 +623,7 @@ public class Resources extends AbstractResources {
     DoneableKafkaUser scramShaUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
+                        .withClusterName(clusterName)
                         .withName(name)
                         .withNamespace(client().getNamespace())
                         .addToLabels("strimzi.io/cluster", clusterName)
@@ -833,14 +843,14 @@ public class Resources extends AbstractResources {
     }
 
     DoneableDeployment deployKafkaClients(String clusterName) {
-        return deployKafkaClients(null, false, clusterName);
+        return deployKafkaClients(false, clusterName, null);
     }
 
     DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName) {
-        return deployKafkaClients(null, tlsListener, clusterName);
+        return deployKafkaClients(tlsListener, clusterName, null);
     }
 
-    DoneableDeployment deployKafkaClients(KafkaUser kafkaUser, boolean tlsListener, String clusterName) {
+    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
                 .withName(KAFKA_CLIENTS)
@@ -854,7 +864,7 @@ public class Resources extends AbstractResources {
                     .withNewMetadata()
                         .addToLabels("app", KAFKA_CLIENTS)
                     .endMetadata()
-                    .withSpec(createClientSpec(kafkaUser, tlsListener, clusterName))
+                    .withSpec(createClientSpec(tlsListener, kafkaUsers))
                 .endTemplate()
             .endSpec()
             .build();
@@ -919,11 +929,7 @@ public class Resources extends AbstractResources {
         return new DoneableIngress(ingress);
     }
 
-    private PodSpec createClientSpec(KafkaUser kafkaUser, boolean tlsListener, String clusterName) {
-        String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
-        boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
-        boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
-
+    private PodSpec createClientSpec(boolean tlsListener, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
                 .withName(KAFKA_CLIENTS)
@@ -940,96 +946,114 @@ public class Resources extends AbstractResources {
                 .endLivenessProbe()
                 .withImagePullPolicy("IfNotPresent");
 
+        if (kafkaUsers == null) {
+            String producerConfiguration = "acks=all\n";
+            String consumerConfiguration = "auto.offset.reset=earliest\n";
 
-        String producerConfiguration = "acks=all\n";
-        String consumerConfiguration = "auto.offset.reset=earliest\n";
+            containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
+            containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
 
-        if (tlsListener) {
-            if (scramShaUser) {
-                producerConfiguration += "security.protocol=SASL_SSL\n";
-                producerConfiguration += saslConfigs(kafkaUser);
-                consumerConfiguration += "security.protocol=SASL_SSL\n";
-                consumerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                producerConfiguration += "security.protocol=SSL\n";
-                consumerConfiguration += "security.protocol=SSL\n";
-            }
-            producerConfiguration +=
-                    "ssl.truststore.location=/tmp/truststore.p12\n" +
-                            "ssl.truststore.type=pkcs12\n";
-            consumerConfiguration += "auto.offset.reset=earliest\n" +
-                    "ssl.truststore.location=/tmp/truststore.p12\n" +
-                    "ssl.truststore.type=pkcs12\n";
         } else {
-            if (scramShaUser) {
-                producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                producerConfiguration += saslConfigs(kafkaUser);
-                consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                consumerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                producerConfiguration += "security.protocol=PLAINTEXT\n";
-                consumerConfiguration += "security.protocol=PLAINTEXT\n";
-            }
-        }
+            for (KafkaUser kafkaUser : kafkaUsers) {
+                String kafkaUserName = kafkaUser.getMetadata().getName();
+                boolean tlsUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
+                boolean scramShaUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
 
-        if (tlsUser) {
-            producerConfiguration +=
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
+                String producerConfiguration = "acks=all\n";
+                String consumerConfiguration = "auto.offset.reset=earliest\n";
+                containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
+                containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
+
+                String envVariablesSuffix = String.format("_%s", kafkaUserName.replace("-", "_"));
+                containerBuilder.addNewEnv().withName("KAFKA_USER" + envVariablesSuffix).withValue(kafkaUserName).endEnv();
+
+                if (tlsListener) {
+                    if (scramShaUser) {
+                        producerConfiguration += "security.protocol=SASL_SSL\n";
+                        producerConfiguration += saslConfigs(kafkaUser);
+                        consumerConfiguration += "security.protocol=SASL_SSL\n";
+                        consumerConfiguration += saslConfigs(kafkaUser);
+                    } else {
+                        producerConfiguration += "security.protocol=SSL\n";
+                        consumerConfiguration += "security.protocol=SSL\n";
+                    }
+                    producerConfiguration +=
+                            "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                                    "ssl.truststore.type=pkcs12\n";
+                    consumerConfiguration += "auto.offset.reset=earliest\n" +
+                            "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                            "ssl.truststore.type=pkcs12\n";
+                } else {
+                    if (scramShaUser) {
+                        producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                        producerConfiguration += saslConfigs(kafkaUser);
+                        consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                        consumerConfiguration += saslConfigs(kafkaUser);
+                    } else {
+                        producerConfiguration += "security.protocol=PLAINTEXT\n";
+                        consumerConfiguration += "security.protocol=PLAINTEXT\n";
+                    }
+                }
+
+                if (tlsUser) {
+                    producerConfiguration +=
+                            "ssl.keystore.location=/tmp/" + kafkaUserName + "-keystore.p12\n" +
+                                    "ssl.keystore.type=pkcs12\n";
+                    consumerConfiguration += "auto.offset.reset=earliest\n" +
+                            "ssl.keystore.location=/tmp/" + kafkaUserName + "-keystore.p12\n" +
                             "ssl.keystore.type=pkcs12\n";
-            consumerConfiguration += "auto.offset.reset=earliest\n" +
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
-                    "ssl.keystore.type=pkcs12\n";
 
-            containerBuilder.addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
-                    .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv();
+                    containerBuilder.addNewEnv().withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
+                            .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv();
 
-            String userSecretVolumeName = "tls-cert";
-            String userSecretMountPoint = "/opt/kafka/user-secret";
-            containerBuilder.addNewVolumeMount()
-                    .withName(userSecretVolumeName)
-                    .withMountPath(userSecretMountPoint)
-                    .endVolumeMount()
-                    .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv();
-            podSpecBuilder
-                    .addNewVolume()
-                    .withName(userSecretVolumeName)
-                    .withNewSecret()
-                    .withSecretName(kafkaUserName)
-                    .endSecret()
-                    .endVolume();
-        }
+                    String userSecretVolumeName = "tls-cert-" + kafkaUserName;
+                    String userSecretMountPoint = "/opt/kafka/user-secret-" + kafkaUserName;
 
-        if (kafkaUserName != null) {
-            containerBuilder.addNewEnv().withName("KAFKA_USER").withValue(kafkaUserName).endEnv();
-        }
+                    containerBuilder.addNewVolumeMount()
+                            .withName(userSecretVolumeName)
+                            .withMountPath(userSecretMountPoint)
+                            .endVolumeMount()
+                            .addNewEnv().withName("USER_LOCATION" + envVariablesSuffix).withValue(userSecretMountPoint).endEnv();
 
-        if (tlsListener) {
-            String clusterCaSecretName = clusterCaCertSecretName(clusterName);
-            String clusterCaSecretVolumeName = "ca-cert";
-            String caSecretMountPoint = "/opt/kafka/cluster-ca";
-            containerBuilder.addNewVolumeMount()
-                    .withName(clusterCaSecretVolumeName)
-                    .withMountPath(caSecretMountPoint)
-                    .endVolumeMount()
-                    .addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
-                    .addNewEnv().withName("CONSUMER_TLS").withValue("TRUE").endEnv()
-                    .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
-                    .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv();
-            if (tlsUser) {
-                containerBuilder.addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
+                    podSpecBuilder.addNewVolume()
+                            .withName(userSecretVolumeName)
+                            .withNewSecret()
+                            .withSecretName(kafkaUserName)
+                            .endSecret()
+                            .endVolume();
+                }
+
+                if (tlsListener) {
+                    String clusterName = kafkaUser.getMetadata().getLabels().get("strimzi.io/cluster");
+                    String clusterCaSecretName = clusterCaCertSecretName(clusterName);
+                    String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;
+                    String caSecretMountPoint = "/opt/kafka/cluster-ca-" + kafkaUserName;
+
+                    containerBuilder.addNewVolumeMount()
+                            .withName(clusterCaSecretVolumeName)
+                            .withMountPath(caSecretMountPoint)
+                            .endVolumeMount()
+                            .addNewEnv().withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
+                            .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
+                            .addNewEnv().withName("CA_LOCATION" + envVariablesSuffix).withValue(caSecretMountPoint).endEnv()
+                            .addNewEnv().withName("TRUSTSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/"  + kafkaUserName + "-truststore.p12").endEnv();
+
+                    if (tlsUser) {
+                        containerBuilder.addNewEnv().withName("KEYSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/" + kafkaUserName + "-keystore.p12").endEnv();
+                    }
+
+                    podSpecBuilder.addNewVolume()
+                            .withName(clusterCaSecretVolumeName)
+                            .withNewSecret()
+                            .withSecretName(clusterCaSecretName)
+                            .endSecret()
+                            .endVolume();
+                }
+
+                containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION" + envVariablesSuffix).withValue(producerConfiguration).endEnv();
+                containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION"  + envVariablesSuffix).withValue(consumerConfiguration).endEnv();
             }
-            podSpecBuilder
-                    .addNewVolume()
-                    .withName(clusterCaSecretVolumeName)
-                    .withNewSecret()
-                    .withSecretName(clusterCaSecretName)
-                    .endSecret()
-                    .endVolume();
         }
-
-        containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
-        containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
-
         return podSpecBuilder.withContainers(containerBuilder.build()).build();
     }
 
@@ -1050,5 +1074,17 @@ public class Resources extends AbstractResources {
                 "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
                 "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
                 "password=\"" + password + "\";\n";
+    }
+
+
+    private String getImageValueFromCO(String name) {
+        Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);
+
+        List<EnvVar> listEnvVar = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        Optional<EnvVar> envVar = listEnvVar.stream().filter(e -> e.getName().equals(name)).findFirst();
+        if (envVar.isPresent()) {
+            return envVar.get().getValue();
+        }
+        return "";
     }
 }

@@ -8,6 +8,9 @@ import io.strimzi.systemtest.kafkaclients.AbstractClient;
 import io.strimzi.systemtest.kafkaclients.ClientArgument;
 import io.strimzi.systemtest.kafkaclients.ClientType;
 
+/**
+ * Class represent API for verifiable-consumer
+ */
 public class VerifiableConsumer extends AbstractClient {
     public VerifiableConsumer() {
         super(ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER);
@@ -25,5 +28,6 @@ public class VerifiableConsumer extends AbstractClient {
         allowedArgs.add(ClientArgument.RESET_POLICY);
         allowedArgs.add(ClientArgument.ASSIGMENT_STRATEGY);
         allowedArgs.add(ClientArgument.CONSUMER_CONFIG);
+        allowedArgs.add(ClientArgument.USER);
     }
 }

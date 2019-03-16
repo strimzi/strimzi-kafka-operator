@@ -61,7 +61,6 @@ public class ClientArgumentMap {
         ArrayList<String> target = mappings.get(key);
 
         if (target == null) {
-
             target = new ArrayList<>();
             mappings.put(key, target);
         }

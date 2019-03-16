@@ -16,11 +16,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * HTTP listener which can handle vert.x client messages and run proper commands on client pod
+ */
 public class HttpClientsListener extends AbstractVerticle {
     private HttpServer httpServer = null;
     private static final Logger LOGGER = LogManager.getLogger(HttpClientsListener.class);
@@ -93,7 +97,7 @@ public class HttpClientsListener extends AbstractVerticle {
         request.bodyHandler(handler -> {
             JsonObject json = handler.toJsonObject();
             LOGGER.info("Incoming POST request: {}", json);
-            Exec executor = new Exec();
+            Exec executor = new Exec(Paths.get("/opt/logs/"));
             UUID uuid = UUID.randomUUID();
 
             JsonArray command = json.getJsonArray("command");
@@ -104,6 +108,7 @@ public class HttpClientsListener extends AbstractVerticle {
                 try {
                     CompletableFuture.runAsync(() -> {
                         try {
+                            LOGGER.info("Execute command: {}", command);
                             executor.execute(null, command.getList(), 0);
                         } catch (IOException | InterruptedException | ExecutionException e) {
                             e.printStackTrace();

@@ -387,7 +387,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testSendMessagesPlainAnonymous() throws InterruptedException, TimeoutException, ExecutionException {
-        int messagesCount = 500;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -395,17 +395,16 @@ class KafkaST extends MessagingBaseST {
 
         resources().deployKafkaClients(CLUSTER_NAME).done();
 
-        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, false, topicName);
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, false, topicName, null);
     }
 
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @Tag(CCI_FLAKY)
+    @Tag(REGRESSION)
     void testSendMessagesTlsAuthenticated() throws InterruptedException, ExecutionException, TimeoutException {
         String kafkaUser = "my-user";
-        String name = "send-messages-tls-auth";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -428,18 +427,17 @@ class KafkaST extends MessagingBaseST {
         KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        resources().deployKafkaClients(user, true, CLUSTER_NAME).done();
-        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, true, topicName);
+        resources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, true, topicName, user);
     }
 
     /**
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
-    @Tag(CCI_FLAKY)
+    @Tag(REGRESSION)
     void testSendMessagesPlainScramSha() throws InterruptedException, ExecutionException, TimeoutException {
         String kafkaUser = "my-user";
-        String name = "send-messages-plain-scram-sha";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -473,18 +471,17 @@ class KafkaST extends MessagingBaseST {
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        resources().deployKafkaClients(user, false, CLUSTER_NAME).done();
-        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, false, topicName);
+        resources().deployKafkaClients(false, CLUSTER_NAME, user).done();
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, false, topicName, user);
     }
 
     /**
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    @Tag(CCI_FLAKY)
+    @Tag(REGRESSION)
     void testSendMessagesTlsScramSha() throws InterruptedException, ExecutionException, TimeoutException {
         String kafkaUser = "my-user";
-        String name = "send-messages-tls-scram-sha";
         int messagesCount = 20;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -504,8 +501,8 @@ class KafkaST extends MessagingBaseST {
         KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        resources().deployKafkaClients(user, false, CLUSTER_NAME).done();
-        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, true, topicName);
+        resources().deployKafkaClients(false, CLUSTER_NAME, user).done();
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, true, topicName, user);
     }
 
     @Test
@@ -762,22 +759,26 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     @Tag(CCI_FLAKY)
-    void testMirrorMaker() {
+    void testMirrorMaker() throws InterruptedException, ExecutionException, TimeoutException {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String nameProducerSource = "send-messages-producer-source";
-        String nameConsumerSource = "send-messages-consumer-source";
-        String nameConsumerTarget = "send-messages-consumer-target";
         String kafkaSourceName = CLUSTER_NAME + "-source";
         String kafkaTargetName = CLUSTER_NAME + "-target";
-        int messagesCount = 20;
+        int messagesCount = 200;
 
         // Deploy source kafka
-        resources().kafkaEphemeral(kafkaSourceName, 3).done();
+        resources().kafkaEphemeral(kafkaSourceName, 1, 1).done();
         // Deploy target kafka
-        resources().kafkaEphemeral(kafkaTargetName, 3).done();
+        resources().kafkaEphemeral(kafkaTargetName, 1, 1).done();
         // Deploy Topic
         resources().topic(kafkaSourceName, topicSourceName).done();
+
+        resources().deployKafkaClients(CLUSTER_NAME).done();
+
+        // Check brokers availability
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, kafkaSourceName);
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, kafkaTargetName);
+
         // Deploy Mirror Maker
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
@@ -787,14 +788,12 @@ class KafkaST extends MessagingBaseST {
             !KUBE_CLIENT.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        // Create job to send 20 records using Kafka producer for source cluster
-        waitForJobSuccess(sendRecordsToClusterJob(kafkaSourceName, nameProducerSource, topicSourceName, messagesCount, null, false));
-        // Create job to read 20 records using Kafka producer for source cluster
-        waitForJobSuccess(readMessagesFromClusterJob(kafkaSourceName, nameConsumerSource, topicSourceName, messagesCount, null, false));
-        // Create job to read 20 records using Kafka consumer for target cluster
-        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(kafkaTargetName, nameConsumerTarget, topicSourceName, messagesCount, null, false));
-        // Check consumed messages in target cluster
-        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+        int sent = sendMessages(new VerifiableProducer(), messagesCount, 20000, kafkaSourceName, false, topicSourceName, null);
+        int receivedSource = receiveMessages(new VerifiableConsumer(), messagesCount, 60000, kafkaSourceName, false, topicSourceName, null);
+        int receivedTarget = receiveMessages(new VerifiableConsumer(), messagesCount, 60000, kafkaTargetName, false, topicSourceName, null);
+
+        assertSentAndReceivedMessages(sent, receivedSource);
+        assertSentAndReceivedMessages(sent, receivedTarget);
     }
 
     /**
@@ -802,23 +801,21 @@ class KafkaST extends MessagingBaseST {
      */
     @Test
     @Tag(CCI_FLAKY)
-    void testMirrorMakerTlsAuthenticated() {
+    void testMirrorMakerTlsAuthenticated() throws InterruptedException, ExecutionException, TimeoutException {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String nameProducerSource = "send-messages-producer-source";
-        String nameConsumerSource = "send-messages-consumer-source";
-        String nameConsumerTarget = "send-messages-consumer-target";
-        String kafkaUser = "my-user";
-        String kafkaSourceName = CLUSTER_NAME + "-source";
-        String kafkaTargetName = CLUSTER_NAME + "-target";
-        int messagesCount = 20;
+        String kafkaSourceUserName = "my-user-source";
+        String kafkaUserTargetName = "my-user-target";
+        String kafkaClusterSourceName = CLUSTER_NAME + "-source";
+        String kafkaClusterTargetName = CLUSTER_NAME + "-target";
+        int messagesCount = 200;
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
         KafkaListenerTls listenerTls = new KafkaListenerTls();
         listenerTls.setAuth(auth);
 
         // Deploy source kafka with tls listener and mutual tls auth
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-source", 3)
+        resources().kafka(resources().defaultKafka(kafkaClusterSourceName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -830,7 +827,7 @@ class KafkaST extends MessagingBaseST {
                 .endSpec().build()).done();
 
         // Deploy target kafka with tls listener and mutual tls auth
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-target", 3)
+        resources().kafka(resources().defaultKafka(kafkaClusterTargetName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -842,24 +839,33 @@ class KafkaST extends MessagingBaseST {
                 .endSpec().build()).done();
 
         // Deploy topic
-        resources().topic(kafkaSourceName, topicSourceName).done();
+        resources().topic(kafkaClusterSourceName, topicSourceName).done();
 
         // Create Kafka user
-        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
-        waitTillSecretExists(kafkaUser);
+        KafkaUser userSource = resources().tlsUser(kafkaClusterSourceName, kafkaSourceUserName).done();
+        waitTillSecretExists(kafkaSourceUserName);
+
+        KafkaUser userTarget = resources().tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
+        waitTillSecretExists(kafkaUserTargetName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
         certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaSourceName));
+        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaClusterSourceName));
 
         // Initialize CertSecretSource with certificate and secret names for producer
         CertSecretSource certSecretTarget = new CertSecretSource();
         certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
+        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaClusterTargetName));
+
+        resources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
+
+        // Check brokers availability
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
-        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
+        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group", 1, true)
                 .editSpec()
                 .editConsumer()
                     .withNewTls()
@@ -880,14 +886,12 @@ class KafkaST extends MessagingBaseST {
             !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        // Create job to send 20 records using Kafka producer for source cluster
-        waitForJobSuccess(sendRecordsToClusterJob(kafkaSourceName, nameProducerSource, topicSourceName, messagesCount, user, true));
-        // Create job to read 20 records using Kafka producer for source cluster
-        waitForJobSuccess(readMessagesFromClusterJob(kafkaSourceName, nameConsumerSource, topicSourceName, messagesCount, user, true));
-        // Create job to read 20 records using Kafka consumer for target cluster
-        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(kafkaTargetName, nameConsumerTarget, topicSourceName, messagesCount, user, true));
-        // Check consumed messages in target cluster
-        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+        int sent = sendMessages(new VerifiableProducer(), messagesCount, 20000, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedSource = receiveMessages(new VerifiableConsumer(), messagesCount, 180000, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedTarget = receiveMessages(new VerifiableConsumer(), messagesCount, 180000, kafkaClusterTargetName, true, topicSourceName, userTarget);
+
+        assertSentAndReceivedMessages(sent, receivedSource);
+        assertSentAndReceivedMessages(sent, receivedTarget);
     }
 
     /**
@@ -895,21 +899,17 @@ class KafkaST extends MessagingBaseST {
      */
     @Test
     @Tag(CCI_FLAKY)
-    void testMirrorMakerTlsScramSha() {
+    void testMirrorMakerTlsScramSha() throws InterruptedException, ExecutionException, TimeoutException {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
-        String nameProducerSource = "send-messages-producer-source";
-        String nameConsumerSource = "read-messages-consumer-source";
-        String nameConsumerTarget = "read-messages-consumer-target";
         String kafkaSourceName = CLUSTER_NAME + "-source";
         String kafkaTargetName = CLUSTER_NAME + "-target";
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-        int messagesCount = 20;
-
+        int messagesCount = 200;
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        resources().kafka(resources().defaultKafka(kafkaSourceName, 3)
+        resources().kafka(resources().defaultKafka(kafkaSourceName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -919,7 +919,7 @@ class KafkaST extends MessagingBaseST {
                 .endSpec().build()).done();
 
         // Deploy target kafka with tls listener and SCRAM-SHA authentication
-        resources().kafka(resources().defaultKafka(kafkaTargetName, 3)
+        resources().kafka(resources().defaultKafka(kafkaTargetName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -927,9 +927,6 @@ class KafkaST extends MessagingBaseST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-
-        // Deploy topic
-        resources().topic(kafkaSourceName, topicName).done();
 
         // Create Kafka user for source cluster
         KafkaUser userSource = resources().scramShaUser(kafkaSourceName, kafkaUserSource).done();
@@ -959,6 +956,13 @@ class KafkaST extends MessagingBaseST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
 
+        // Deploy client
+        resources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
+
+        // Check brokers availability
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, kafkaSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, kafkaTargetName, true, "my-topic-test-2", userTarget);
+
         // Deploy Mirror Maker with TLS and ScramSha512
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
                 .editSpec()
@@ -982,20 +986,21 @@ class KafkaST extends MessagingBaseST {
                 .endProducer()
                 .endSpec().done();
 
+        // Deploy topic
+        resources().topic(kafkaSourceName, topicName).done();
+
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
         waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
             !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        // Create job to send 20 records using Kafka producer for source cluster
-        waitForJobSuccess(sendRecordsToClusterJob(CLUSTER_NAME + "-source", nameProducerSource, topicName, messagesCount, userSource, true));
-        // Create job to read 20 records using Kafka consumer for source cluster
-        waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-source", nameConsumerSource, topicName, messagesCount, userSource, true));
-        // Create job to read 20 records using Kafka consumer for target cluster
-        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-target", nameConsumerTarget, topicName, messagesCount, userTarget, true));
-        // Check consumed messages in target cluster
-        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+        int sent = sendMessages(new VerifiableProducer(), messagesCount, 20000, kafkaSourceName, true, topicName, userSource);
+        int receivedSource = receiveMessages(new VerifiableConsumer(), messagesCount, 180000, kafkaSourceName, true, topicName, userSource);
+        int receivedTarget = receiveMessages(new VerifiableConsumer(), messagesCount, 180000, kafkaTargetName, true, topicName, userTarget);
+
+        assertSentAndReceivedMessages(sent, receivedSource);
+        assertSentAndReceivedMessages(sent, receivedTarget);
     }
 
     @Test

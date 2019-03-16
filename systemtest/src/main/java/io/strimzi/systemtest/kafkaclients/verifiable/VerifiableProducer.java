@@ -8,6 +8,9 @@ import io.strimzi.systemtest.kafkaclients.AbstractClient;
 import io.strimzi.systemtest.kafkaclients.ClientArgument;
 import io.strimzi.systemtest.kafkaclients.ClientType;
 
+/**
+ * Class represent API for verifiable-producer
+ */
 public class VerifiableProducer extends AbstractClient {
     public VerifiableProducer() {
         super(ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER);
@@ -24,5 +27,6 @@ public class VerifiableProducer extends AbstractClient {
         allowedArgs.add(ClientArgument.MESSAGE_CREATE_TIME);
         allowedArgs.add(ClientArgument.VALUE_PREFIX);
         allowedArgs.add(ClientArgument.REPEATING_KEYS);
+        allowedArgs.add(ClientArgument.USER);
     }
 }

@@ -22,7 +22,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.Future;
 
 /**
- * Class represent abstract webClient which keeps common features of webClient
+ * Class represent abstract kafka client which keeps common features of kafka clients
  */
 public abstract class AbstractClient {
     private static final Logger LOGGER = LogManager.getLogger(AbstractClient.class);
@@ -39,9 +39,9 @@ public abstract class AbstractClient {
     private String executable;
 
     /**
-     * Constructor of abstract webClient
+     * Constructor of abstract kafka client
      *
-     * @param clientType type of webClient
+     * @param clientType type of kafka client
      */
     public AbstractClient(ClientType clientType) {
         this.clientType = clientType;
@@ -50,9 +50,9 @@ public abstract class AbstractClient {
     }
 
     /**
-     * Constructor of abstract webClient
+     * Constructor of abstract kafka client
      *
-     * @param clientType type of webClient
+     * @param clientType type of kafka client
      * @param logPath    path where logs will be stored
      */
     public AbstractClient(ClientType clientType, Path logPath) {
@@ -72,16 +72,16 @@ public abstract class AbstractClient {
     }
 
     /**
-     * Return type of webClient
+     * Return type of kafka client
      *
-     * @return type of webClient
+     * @return type of kafka client
      */
     public ClientType getClientType() {
         return clientType;
     }
 
     /**
-     * Get all webClient arguments
+     * Get all kafka client arguments
      *
      * @return
      */
@@ -110,18 +110,24 @@ public abstract class AbstractClient {
     }
 
     /**
-     * Set arguments of webClient
+     * Set arguments of kafka client
      *
      * @param args string array of arguments
      */
     public void setArguments(ClientArgumentMap args) {
         arguments.clear();
+        String test;
         for (ClientArgument arg : args.getArguments()) {
             if (validateArgument(arg)) {
                 for (String value : args.getValues(arg)) {
-                    arguments.add(arg.command());
-                    if (!value.isEmpty()) {
-                        arguments.add(value);
+                    if (arg.equals(ClientArgument.USER)) {
+                        test = String.format("%s=%s", arg.command(), value);
+                        arguments.add(test);
+                    } else {
+                        arguments.add(arg.command());
+                        if (!value.isEmpty()) {
+                            arguments.add(value);
+                        }
                     }
                 }
             } else {
@@ -133,7 +139,7 @@ public abstract class AbstractClient {
     }
 
     /**
-     * Validates that webClient support this arg
+     * Validates that kafka client support this arg
      *
      * @param arg argument to validate
      * @return true if argument is supported
@@ -190,16 +196,16 @@ public abstract class AbstractClient {
     }
 
     /**
-     * Run webClient async
+     * Run kafka client async
      *
-     * @return future of exit status of webClient
+     * @return future of exit status of kafka client
      */
     public Future<Boolean> runAsync() {
         return runAsync(true);
     }
 
     /**
-     * Run webClient in sync mode
+     * Run kafka client in sync mode
      *
      * @return exit status of webClient
      */
@@ -208,10 +214,10 @@ public abstract class AbstractClient {
     }
 
     /**
-     * Run webClient async
+     * Run kafka client async
      *
      * @param logToOutput enable logging of stdOut and stdErr on output
-     * @return future of exit status of webClient
+     * @return future of exit status of kafka client
      */
     public Future<Boolean> runAsync(boolean logToOutput) {
         return CompletableFuture.supplyAsync(() -> {
@@ -224,38 +230,38 @@ public abstract class AbstractClient {
     }
 
     /**
-     * Run webClient async
+     * Run kafka client async
      *
      * @param logToOutput           enable logging of stdOut and stdErr on output
      * @param timeoutInMilliseconds timeout to kill process
-     * @return future of exit status of webClient
+     * @return future of exit status of kafka client
      */
     public boolean run(int timeoutInMilliseconds, boolean logToOutput) {
         return runClient(timeoutInMilliseconds, logToOutput);
     }
 
     /**
-     * Run webClient in sync mode
+     * Run kafka client in sync mode
      *
      * @param logToOutput enable logging of stdOut and stdErr on output
-     * @return exit status of webClient
+     * @return exit status of kafka client
      */
     public boolean run(boolean logToOutput) {
         return runClient(DEFAULT_SYNC_TIMEOUT, logToOutput);
     }
 
     /**
-     * Run webClient in sync mode with timeout
+     * Run kafka client in sync mode with timeout
      *
      * @param timeout kill timeout in ms
-     * @return exit status of webClient
+     * @return exit status of kafka client
      */
     public boolean run(int timeout) {
         return runClient(timeout, true);
     }
 
     /**
-     * Method for stop webClient
+     * Method for stop kafka client
      */
     public void stop() {
         try {
