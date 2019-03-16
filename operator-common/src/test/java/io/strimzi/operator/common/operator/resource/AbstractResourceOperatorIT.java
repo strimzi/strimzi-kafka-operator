@@ -6,6 +6,8 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.Namespace;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -21,16 +23,31 @@ import org.junit.runner.RunWith;
 
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
-    public static final String RESOURCE_NAME = "my-resource";
+    public static final String RESOURCE_NAME = "my-test-resource";
     protected static Vertx vertx;
     protected static KubernetesClient client;
     protected static String namespace;
+    protected static String defaultNamespace = "my-test-namespace";
 
     @BeforeClass
     public static void before() {
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
+
         namespace = client.getNamespace();
+        if (namespace == null) {
+            Namespace ns = client.namespaces().withName(defaultNamespace).get();
+
+            if (ns == null) {
+                client.namespaces().create(new NamespaceBuilder()
+                        .withNewMetadata()
+                        .withName(namespace)
+                        .endMetadata()
+                        .build());
+            }
+
+            namespace = defaultNamespace;
+        }
     }
 
     @AfterClass
