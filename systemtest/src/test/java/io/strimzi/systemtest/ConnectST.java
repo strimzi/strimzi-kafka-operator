@@ -59,8 +59,6 @@ class ConnectST extends AbstractST {
             "status.storage.topic=connect-cluster-status\n" +
             "offset.storage.topic=connect-cluster-offsets\n");
 
-    private static Resources classResources;
-
     @Test
     @Tag(REGRESSION)
     void testDeployUndeploy() {

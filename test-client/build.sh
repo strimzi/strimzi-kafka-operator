@@ -27,7 +27,8 @@ function build {
         BUILD_TAG="build-kafka-${kafka_version}" \
 
         if [[ $targets == *"docker_build"* ]]; then
-            docker build $DOCKER_BUILD_ARGS --build-arg strimzi_version=$RELEASE_VERSION -t strimzi/$PROJECT_NAME:latest $DOCKERFILE_DIR
+            mvn $MVN_ARGS install
+            docker build -q $DOCKER_BUILD_ARGS --build-arg strimzi_version=$RELEASE_VERSION -t strimzi/$PROJECT_NAME:latest $DOCKERFILE_DIR
             docker tag strimzi/$PROJECT_NAME:latest strimzi/$PROJECT_NAME:$BUILD_TAG
         fi
 

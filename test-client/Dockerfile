@@ -1,4 +1,4 @@
-FROM strimzi/kafka-base:latest
+FROM strimzi/kafka:latest
 
 ARG strimzi_version=1.0-SNAPSHOT
 ENV STRIMZI_VERSION ${strimzi_version}
@@ -9,8 +9,6 @@ COPY scripts $KAFKA_HOME
 COPY scripts/dynamic_resources.sh /bin/dynamic_resources.sh
 
 ADD target/test-client-${STRIMZI_VERSION}.jar /test-client.jar
-
-RUN chmod 777 /test-client.jar
 
 USER 1001
 
