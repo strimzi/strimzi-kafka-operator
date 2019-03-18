@@ -21,6 +21,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/**
+ * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
+ * Real Kubernetes cluster has often some quirks such as some fields being immutable, some fields in the spec section
+ * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
+ * test them against real clusters.
+ */
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
     public static final String RESOURCE_NAME = "my-test-resource";
