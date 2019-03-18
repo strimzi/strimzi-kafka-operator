@@ -29,7 +29,7 @@ public class Environment {
     public static final int INGRESS_DEFAULT_PORT = 4242;
 
     private final String strimziOrg = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
-    private final String strimziTag = System.getenv().getOrDefault(STRIMZI_TAG_DEFAULT, STRIMZI_TAG_ENV);
+    private final String strimziTag = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
     private final String testLogDir = System.getenv().getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
     private final String stKafkVersion = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     private final String strimziLogLeve = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
@@ -39,7 +39,7 @@ public class Environment {
     private Environment() {
         String debugFormat = "{}:{}";
         LOGGER.info(debugFormat, STRIMZI_ORG_ENV, strimziOrg);
-        LOGGER.info(debugFormat, STRIMZI_TAG_DEFAULT, strimziTag);
+        LOGGER.info(debugFormat, STRIMZI_TAG_ENV, strimziTag);
         LOGGER.info(debugFormat, TEST_LOG_DIR_ENV, testLogDir);
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, stKafkVersion);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, strimziLogLeve);
