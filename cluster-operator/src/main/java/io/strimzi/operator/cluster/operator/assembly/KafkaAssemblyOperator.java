@@ -183,9 +183,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
                 .compose(state -> state.zkPersistentClaimDeletion())
-                .compose(state -> state.kafkaUpgrade())
                 .compose(state -> state.kafkaManualPodCleaning())
                 .compose(state -> state.kafkaManualRollingUpdate())
+                .compose(state -> state.kafkaUpgrade())
                 .compose(state -> state.getKafkaClusterDescription())
                 .compose(state -> state.kafkaInitServiceAccount())
                 .compose(state -> state.kafkaInitClusterRoleBinding())
@@ -470,33 +470,29 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return A Future which completes with the current state of the SS, or with null if the SS never existed.
          */
-        public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
-            return kafkaSetOperations.getAsync(namespace, statefulSetName).compose(ss -> {
-                if (ss != null) {
-                    return kafkaSetOperations.maybeRollingUpdate(ss,
-                        pod -> {
-                            boolean notUpToDate = !isPodUpToDate(ss, pod);
-                            if (notUpToDate) {
-                                log.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
-                            }
-                            return notUpToDate;
-                        }).map(ignored -> ss);
-                } else {
-                    return Future.succeededFuture(ss);
-                }
-            });
+        public Future<Void> waitForQuiescence(StatefulSet ss) {
+            if (ss != null) {
+                return kafkaSetOperations.maybeRollingUpdate(ss,
+                    pod -> {
+                        boolean notUpToDate = !isPodUpToDate(ss, pod);
+                        if (notUpToDate) {
+                            log.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
+                        }
+                        return notUpToDate;
+                    });
+            } else {
+                return Future.succeededFuture();
+            }
         }
 
         Future<ReconciliationState> kafkaUpgrade() {
-            // Wait until the SS is not being updated (it shouldn't be, but there's no harm in checking)
             String kafkaSsName = KafkaCluster.kafkaClusterName(name);
-            return waitForQuiescence(namespace, kafkaSsName).compose(
+            return kafkaSetOperations.getAsync(namespace, kafkaSsName).compose(
                 ss -> {
                     if (ss == null) {
                         return Future.succeededFuture(this);
                     }
                     log.debug("Does SS {} need to be upgraded?", ss.getMetadata().getName());
-                    Future<?> result;
                     // Get the current version of the cluster
                     // Strimzi 0.8.x and 0.9.0 didn't set the annotation, so if it's absent we know it must be 2.0.0
                     KafkaVersion currentVersion = versions.version(Annotations.annotations(ss).getOrDefault(ANNO_STRIMZI_IO_KAFKA_VERSION, "2.0.0"));
@@ -521,24 +517,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     log.debug("Kafka upgrade {}", upgrade);
                     if (upgrade.isNoop()) {
                         log.debug("Kafka.spec.kafka.version unchanged");
-                        result = Future.succeededFuture();
+                        return Future.succeededFuture(this);
                     } else {
-                        String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), toVersion.version());
-                        Future<StatefulSet> f = Future.succeededFuture(ss);
-                        if (upgrade.isUpgrade()) {
-                            if (currentVersion.equals(fromVersion)) {
-                                f = f.compose(ignored -> kafkaUpgradePhase1(ss, upgrade, image));
+                        // Wait until the SS is not being updated (it shouldn't be, but there's no harm in checking)
+                        return waitForQuiescence(ss).compose(v -> {
+                            String image = versions.kafkaImage(kafkaAssembly.getSpec().getKafka().getImage(), toVersion.version());
+                            Future<StatefulSet> f = Future.succeededFuture(ss);
+                            Future<?> result;
+                            if (upgrade.isUpgrade()) {
+                                if (currentVersion.equals(fromVersion)) {
+                                    f = f.compose(ignored -> kafkaUpgradePhase1(ss, upgrade, image));
+                                }
+                                result = f.compose(ss2 -> kafkaUpgradePhase2(ss2, upgrade));
+                            } else {
+                                if (currentVersion.equals(fromVersion)) {
+                                    f = f.compose(ignored -> kafkaDowngradePhase1(ss, upgrade));
+                                }
+                                result = f.compose(ignored -> kafkaDowngradePhase2(ss, upgrade, image));
                             }
-                            result = f.compose(ss2 -> kafkaUpgradePhase2(ss2, upgrade));
-                        } else {
-                            if (currentVersion.equals(fromVersion)) {
-                                f = f.compose(ignored -> kafkaDowngradePhase1(ss, upgrade));
-                            }
-                            result = f.compose(ignored -> kafkaDowngradePhase2(ss, upgrade, image));
-                        }
-
+                            return result.map(this);
+                        });
                     }
-                    return result.map(this);
                 });
         }
 
