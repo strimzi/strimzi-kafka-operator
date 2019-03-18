@@ -470,7 +470,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return A Future which completes with the current state of the SS, or with null if the SS never existed.
          */
-        public Future<StatefulSet> waitForQuiescence(StatefulSet ss) {
+        public Future<Void> waitForQuiescence(StatefulSet ss) {
             if (ss != null) {
                 return kafkaSetOperations.maybeRollingUpdate(ss,
                     pod -> {
@@ -479,9 +479,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             log.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
                         }
                         return notUpToDate;
-                    }).map(ignored -> ss);
+                    });
             } else {
-                return Future.succeededFuture(ss);
+                return Future.succeededFuture();
             }
         }
 
