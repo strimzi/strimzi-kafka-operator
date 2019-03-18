@@ -34,7 +34,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     private static final long serialVersionUID = 1L;
 
     public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator:latest");
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/operator:latest");
     public static final int DEFAULT_REPLICAS = 1;
     public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
