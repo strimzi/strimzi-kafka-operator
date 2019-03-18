@@ -4,9 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.KubeClusterException;
