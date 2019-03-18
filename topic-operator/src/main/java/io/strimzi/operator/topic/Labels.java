@@ -102,7 +102,7 @@ public class Labels {
      * @return The label predicate
      */
     public static Labels fromString(String string) throws IllegalArgumentException {
-        if (string.equals("")) {
+        if (string == null || string.equals("")) {
             return new Labels(Collections.EMPTY_MAP);
         }
         Matcher m = COMMA_SPLITTER.matcher(string);
