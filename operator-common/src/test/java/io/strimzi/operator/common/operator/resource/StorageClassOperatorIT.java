@@ -41,6 +41,7 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
 
     @Override
     protected StorageClass getModified()  {
+        // Most of the fields seem to be immutable, we patch only labels
         return new StorageClassBuilder()
                 .withNewMetadata()
                     .withName(RESOURCE_NAME)
@@ -49,7 +50,7 @@ public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperato
                 .withReclaimPolicy("Delete")
                 .withProvisioner("kubernetes.io/aws-ebs")
                 .withParameters(singletonMap("type", "gp2"))
-                .withVolumeBindingMode("WaitForFirstConsumer")
+                .withVolumeBindingMode("Immediate")
                 .build();
     }
 
