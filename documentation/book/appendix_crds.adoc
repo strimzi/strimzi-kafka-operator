@@ -77,7 +77,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |jvmOptions           1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |resources            1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
@@ -510,8 +510,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-Kaf
 |boolean
 |====
 
-[id='type-Resources-{context}']
-### `Resources` schema reference
+[id='type-ResourceRequirements-{context}']
+### `ResourceRequirements` schema reference
 
 Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
@@ -519,25 +519,10 @@ Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`],
 [options="header"]
 |====
 |Field            |Description
-|limits    1.2+<.<|Resource limits applied at runtime.
-|xref:type-CpuMemory-{context}[`CpuMemory`]
-|requests  1.2+<.<|Resource requests applied during pod scheduling.
-|xref:type-CpuMemory-{context}[`CpuMemory`]
-|====
-
-[id='type-CpuMemory-{context}']
-### `CpuMemory` schema reference
-
-Used in: xref:type-Resources-{context}[`Resources`]
-
-
-[options="header"]
-|====
-|Field          |Description
-|cpu     1.2+<.<|CPU.
-|string
-|memory  1.2+<.<|Memory.
-|string
+|limits    1.2+<.<|
+|map
+|requests  1.2+<.<|
+|map
 |====
 
 [id='type-InlineLogging-{context}']
@@ -592,7 +577,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type
 |readinessProbe  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
 |resources       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |====
 
 [id='type-KafkaClusterTemplate-{context}']
@@ -722,7 +707,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |jvmOptions      1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |resources       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |logging         1.2+<.<|Logging configuration for Zookeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
@@ -776,7 +761,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |resources                       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
 |tlsSidecar                      1.2+<.<|TLS sidecar configuration.
@@ -845,7 +830,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
 |integer
 |resources                       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
@@ -872,7 +857,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
 |integer
 |resources                       1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |jvmOptions                      1.2+<.<|JVM Options for pods.
@@ -967,7 +952,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |externalConfiguration  1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |resources              1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |tls                    1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
 |version                1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
@@ -1210,7 +1195,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |insecureSourceRepository  1.2+<.<|When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
 |boolean
 |resources                 1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |tls                       1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
 |tolerations               1.2+<.<|Pod's tolerations.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#tolerations-v1-core[core/v1 tolerations].
@@ -1446,7 +1431,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |producer     1.2+<.<|Configuration of target cluster.
 |xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 |resources    1.2+<.<|Resource constraints (limits and requests).
-|xref:type-Resources-{context}[`Resources`]
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |affinity     1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity].
 
 

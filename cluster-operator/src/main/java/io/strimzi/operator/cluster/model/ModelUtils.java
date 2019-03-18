@@ -9,17 +9,12 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.CertificateAuthority;
-import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -40,9 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-import static io.strimzi.api.kafka.model.Quantities.normalizeCpu;
-import static io.strimzi.api.kafka.model.Quantities.normalizeMemory;
 
 public class ModelUtils {
     private ModelUtils() {}
@@ -164,36 +156,6 @@ public class ModelUtils {
             tlsSidecarLivenessTimeout = tlsSidecar.getLivenessProbe().getTimeoutSeconds();
         }
         return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessInitialDelay, tlsSidecarLivenessTimeout);
-    }
-
-    static ResourceRequirements resources(Resources resources) {
-        if (resources != null) {
-            ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
-            CpuMemory limits = resources.getLimits();
-            if (limits != null
-                    && limits.milliCpuAsInt() > 0) {
-                builder.addToLimits("cpu", new Quantity(normalizeCpu(limits.getMilliCpu())));
-            }
-            if (limits != null
-                    && limits.memoryAsLong() > 0) {
-                builder.addToLimits("memory", new Quantity(normalizeMemory(limits.getMemory())));
-            }
-            CpuMemory requests = resources.getRequests();
-            if (requests != null
-                    && requests.milliCpuAsInt() > 0) {
-                builder.addToRequests("cpu", new Quantity(normalizeCpu(requests.getMilliCpu())));
-            }
-            if (requests != null
-                    && requests.memoryAsLong() > 0) {
-                builder.addToRequests("memory", new Quantity(normalizeMemory(requests.getMemory())));
-            }
-            return builder.build();
-        }
-        return null;
-    }
-
-    static ResourceRequirements tlsSidecarResources(TlsSidecar tlsSidecar) {
-        return resources(tlsSidecar != null ? tlsSidecar.getResources() : null);
     }
 
     public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";

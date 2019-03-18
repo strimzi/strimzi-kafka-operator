@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
@@ -66,7 +67,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
     private TlsSidecar tlsSidecar;
     private int replicas;
     private String image;
-    private Resources resources;
+    private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
@@ -172,11 +173,11 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 

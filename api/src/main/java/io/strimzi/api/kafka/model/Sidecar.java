@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -29,7 +30,7 @@ public class Sidecar implements UnknownPropertyPreserving, Serializable {
 
     private String image;
 
-    private Resources resources;
+    private ResourceRequirements resources;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -43,11 +44,11 @@ public class Sidecar implements UnknownPropertyPreserving, Serializable {
     }
 
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 

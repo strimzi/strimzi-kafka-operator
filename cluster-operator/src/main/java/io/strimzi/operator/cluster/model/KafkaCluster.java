@@ -864,7 +864,7 @@ public class KafkaCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(createTcpSocketProbe(REPLICATION_PORT, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createTcpSocketProbe(REPLICATION_PORT, readinessInitialDelay, readinessTimeout))
-                .withResources(ModelUtils.resources(getResources()))
+                .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withCommand("/opt/kafka/kafka_run.sh")
                 .build();
@@ -880,7 +880,7 @@ public class KafkaCluster extends AbstractModel {
                 .withCommand("/opt/stunnel/kafka_stunnel_run.sh")
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(asList(buildEnvVar(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, zookeeperConnect),
                         ModelUtils.tlsSidecarLogEnvVar(tlsSidecar)))
                 .withVolumeMounts(createVolumeMount(BROKER_CERTS_VOLUME, TLS_SIDECAR_KAFKA_CERTS_VOLUME_MOUNT),

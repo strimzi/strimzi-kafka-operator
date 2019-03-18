@@ -217,7 +217,7 @@ public class EntityOperator extends AbstractModel {
                 .withCommand("/opt/stunnel/entity_operator_stunnel_run.sh")
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
                         buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),

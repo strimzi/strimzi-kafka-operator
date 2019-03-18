@@ -48,4 +48,4 @@ On {OpenShiftName} this can be done using `oc apply`:
 oc apply -f _your-file_
 
 .Additional resources
-* For more information about the schema, see xref:type-Resources-reference[`Resources` schema reference].
+* For more information about the schema, see xref:type-ResourceRequirements-reference[`Resources` schema reference].
