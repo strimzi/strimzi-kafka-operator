@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 public class ClusterRoleBindingOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
@@ -32,12 +31,5 @@ public class ClusterRoleBindingOperator extends AbstractNonNamespacedResourceOpe
             DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding,
             DoneableKubernetesClusterRoleBinding>> operation() {
         return client.rbac().kubernetesClusterRoleBindings();
-    }
-
-    @Override
-    protected Future<ReconcileResult<KubernetesClusterRoleBinding>> internalPatch(String name,
-                                                                                  KubernetesClusterRoleBinding current,
-                                                                                  KubernetesClusterRoleBinding desired) {
-        return Future.succeededFuture(ReconcileResult.noop(current));
     }
 }

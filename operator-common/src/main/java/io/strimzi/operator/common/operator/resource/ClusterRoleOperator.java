@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 import java.io.IOException;
@@ -35,13 +34,6 @@ public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<K
     protected MixedOperation<KubernetesClusterRole, KubernetesClusterRoleList, DoneableKubernetesClusterRole,
             Resource<KubernetesClusterRole, DoneableKubernetesClusterRole>> operation() {
         return client.rbac().kubernetesClusterRoles();
-    }
-
-    @Override
-    protected Future<ReconcileResult<KubernetesClusterRole>> internalPatch(String name,
-                                                                           KubernetesClusterRole current,
-                                                                           KubernetesClusterRole desired) {
-        return Future.succeededFuture(ReconcileResult.noop(current));
     }
 
     public static KubernetesClusterRole convertYamlToClusterRole(String yaml) {
