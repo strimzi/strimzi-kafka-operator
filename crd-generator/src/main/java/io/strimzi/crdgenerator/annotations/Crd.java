@@ -77,8 +77,67 @@ public @interface Crd {
 
         /**
          * The version of custom resources that this is the definition for.
+         * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
+         * @see #versions()
          */
-        String version();
-    }
+        String version() default "";
 
+        /**
+         * The version of custom resources that this is the definition for.
+         * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
+         */
+        Version[] versions() default {};
+
+        /**
+         * The version of custom resources that this is the definition for.
+         * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
+         */
+        @interface Version {
+            String name();
+            boolean served();
+            boolean storage();
+        }
+
+        /**
+         * Additional printer columns.
+         * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcecolumndefinition-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
+         */
+        AdditionalPrinterColumn[] additionalPrinterColumns() default {};
+
+        /**
+         * Additional printer columns.
+         * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcecolumndefinition-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
+         */
+        @interface AdditionalPrinterColumn {
+            /** JSON path into the CR for the value to show */
+            String jsonPath();
+            /** The description of the column */
+            String description();
+            /**
+             * One of:
+             * int32
+             * int64
+             * float
+             * double
+             * byte
+             * date
+             * date-time
+             * password
+             */
+            String format() default "";
+            /** The name of the column */
+            String name();
+            /** 0 to show in standard view, greater than zero to show only in wide view */
+            int priority() default 0;
+            /**
+             * One of:
+             * integer,
+             * number,
+             * string,
+             * boolean,
+             * date
+             */
+            String type();
+        }
+    }
 }

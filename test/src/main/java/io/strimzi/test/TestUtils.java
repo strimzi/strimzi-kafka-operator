@@ -60,7 +60,8 @@ public final class TestUtils {
 
     public static final String CRD_TOPIC = "../install/cluster-operator/043-Crd-kafkatopic.yaml";
 
-    public static final String CRD_KAFKA = "../install/cluster-operator/040-Crd-kafka.yaml";
+    public static final String CRD_KAFKA = "../install/cluster-operator/040-Crd-kafka-v1alpha1.yaml";
+    //public static final String CRD_KAFKA = "../install/cluster-operator/040-Crd-kafka-v1alpha1.yaml";
 
     public static final String CRD_KAFKA_CONNECT = "../install/cluster-operator/041-Crd-kafkaconnect.yaml";
 

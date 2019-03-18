@@ -4,6 +4,13 @@ metadata:
   name: "examples.crdgenerator.strimzi.io"
 spec:
   group: "crdgenerator.strimzi.io"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: true
+  - name: "v1beta1"
+    served: true
+    storage: false
   version: "v1alpha1"
   scope: "Namespaced"
   names:
@@ -11,6 +18,12 @@ spec:
     listKind: "ExampleList"
     singular: "example"
     plural: "examples"
+  additionalPrinterColumns:
+  - name: "Foo"
+    description: "The foo"
+    JSONPath: "..."
+    type: "integer"
+    priority: 0
   validation:
     openAPIV3Schema:
       properties:

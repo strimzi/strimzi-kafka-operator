@@ -4,7 +4,9 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.test.TestUtils;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
@@ -27,6 +29,11 @@ public class KafkaCrdIT extends AbstractCrdIT {
     @Test
     void testKafka() {
         createDelete(Kafka.class, "Kafka.yaml");
+    }
+
+    @Test
+    void testKafkaV1Beta1() {
+        createDelete(Kafka.class, "KafkaV1Beta1.yaml");
     }
 
     @Test
@@ -122,12 +129,18 @@ public class KafkaCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         createNamespace(NAMESPACE);
-        createCustomResources(TestUtils.CRD_KAFKA);
+        KubernetesClient c = new DefaultKubernetesClient();
+        //Crds.kafka()
+        c.customResourceDefinitions().create(Crds.kafka());
+        //createCustomResources(TestUtils.CRD_KAFKA);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        deleteCustomResources();
+        //deleteCustomResources();
+        KubernetesClient c = new DefaultKubernetesClient();
+        //Crds.kafka()
+        c.customResourceDefinitions().delete(Crds.kafka());
         deleteNamespaces();
     }
 }

@@ -3,16 +3,13 @@ kind: CustomResourceDefinition
 metadata:
   name: kafkas.kafka.strimzi.io
   labels:
-    app: strimzi
+    app: '{{ template "strimzi.name" . }}'
+    chart: '{{ template "strimzi.chart" . }}'
+    component: kafkas.kafka.strimzi.io-crd
+    release: '{{ .Release.Name }}'
+    heritage: '{{ .Release.Service }}'
 spec:
   group: kafka.strimzi.io
-  versions:
-  - name: v1beta1
-    served: true
-    storage: true
-  - name: v1alpha1
-    served: true
-    storage: false
   version: v1beta1
   scope: Namespaced
   names:
@@ -22,17 +19,6 @@ spec:
     plural: kafkas
     shortNames:
     - k
-  additionalPrinterColumns:
-  - name: Kafka scale
-    description: The number of Kafka replicas in the cluster
-    JSONPath: .spec.kafka.replicas
-    type: integer
-    priority: 0
-  - name: ZK scale
-    description: The number of Zookeeper replicas in the cluster
-    JSONPath: .spec.zookeeper.replicas
-    type: integer
-    priority: 0
   validation:
     openAPIV3Schema:
       properties:
@@ -601,8 +587,22 @@ spec:
                   properties:
                     limits:
                       type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     requests:
                       type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 metrics:
                   type: object
                 logging:
@@ -658,8 +658,22 @@ spec:
                       properties:
                         limits:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 template:
                   type: object
                   properties:
@@ -1097,8 +1111,22 @@ spec:
                   properties:
                     limits:
                       type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     requests:
                       type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 metrics:
                   type: object
                 logging:
@@ -1154,8 +1182,22 @@ spec:
                       properties:
                         limits:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 template:
                   type: object
                   properties:
@@ -1486,8 +1528,22 @@ spec:
                   properties:
                     limits:
                       type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     requests:
                       type: object
+                      properties:
+                        cpu:
+                          type: string
+                          pattern: '[0-9]+m?$'
+                        memory:
+                          type: string
+                          pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 topicMetadataMaxAttempts:
                   type: integer
                   minimum: 0
@@ -1530,8 +1586,22 @@ spec:
                       properties:
                         limits:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 logging:
                   type: object
                   properties:
@@ -1572,8 +1642,22 @@ spec:
                       properties:
                         limits:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     topicMetadataMaxAttempts:
                       type: integer
                       minimum: 0
@@ -1614,8 +1698,22 @@ spec:
                       properties:
                         limits:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                     logging:
                       type: object
                       properties:
@@ -1897,8 +1995,22 @@ spec:
                       properties:
                         limits:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                         requests:
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '[0-9]+m?$'
+                            memory:
+                              type: string
+                              pattern: '[0-9]+([kKmMgGtTpPeE]i?)?$'
                 template:
                   type: object
                   properties:

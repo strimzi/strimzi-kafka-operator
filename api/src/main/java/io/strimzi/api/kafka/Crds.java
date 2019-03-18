@@ -17,9 +17,9 @@ import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
-import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -27,9 +27,15 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Collections.emptyList;
+/*import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
+import io.strimzi.api.kafka.model.DoneableKafkaUser;
+import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;*/
 
 /**
  * "Static" information about the CRDs defined in this package
@@ -54,84 +60,59 @@ public class Crds {
      * Register custom resource kinds with {@link KubernetesDeserializer} so Fabric8 knows how to deserialize them.
      */
     public static void registerCustomKinds() {
-        for (Class<? extends CustomResource> c : CRDS) {
-            KubernetesDeserializer.registerCustomKind(apiVersion(c), kind(c), c);
+        for (Class<? extends CustomResource> crdClass : CRDS) {
+            for (String version : apiVersion(crdClass)) {
+                KubernetesDeserializer.registerCustomKind(version, kind(crdClass), crdClass);
+            }
         }
     }
 
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls) {
         String scope;
-        String kind;
         String crdApiVersion;
         String plural;
-        String listKind;
-        String singular;
-        String version;
         String group;
-        List<String> shortNames = emptyList();
+        String version = null;
         if (cls.equals(Kafka.class)) {
             scope = Kafka.SCOPE;
-            kind = Kafka.RESOURCE_KIND;
             crdApiVersion = Kafka.CRD_API_VERSION;
             plural = Kafka.RESOURCE_PLURAL;
-            singular = Kafka.RESOURCE_SINGULAR;
-            listKind = Kafka.RESOURCE_LIST_KIND;
             group = Kafka.RESOURCE_GROUP;
-            version = Kafka.VERSION;
-            shortNames = Kafka.RESOURCE_SHORTNAMES;
+            version = Kafka.VERSIONS[0];
         } else if (cls.equals(KafkaConnect.class)) {
             scope = KafkaConnect.SCOPE;
-            kind = KafkaConnect.RESOURCE_KIND;
             crdApiVersion = KafkaConnect.CRD_API_VERSION;
             plural = KafkaConnect.RESOURCE_PLURAL;
-            singular = KafkaConnect.RESOURCE_SINGULAR;
-            listKind = KafkaConnect.RESOURCE_LIST_KIND;
             group = KafkaConnect.RESOURCE_GROUP;
             version = KafkaConnect.VERSION;
-            shortNames = KafkaConnect.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaConnectS2I.class)) {
             scope = KafkaConnectS2I.SCOPE;
-            kind = KafkaConnectS2I.RESOURCE_KIND;
             crdApiVersion = KafkaConnectS2I.CRD_API_VERSION;
             plural = KafkaConnectS2I.RESOURCE_PLURAL;
-            singular = KafkaConnectS2I.RESOURCE_SINGULAR;
-            listKind = KafkaConnectS2I.RESOURCE_LIST_KIND;
             group = KafkaConnectS2I.RESOURCE_GROUP;
             version = KafkaConnectS2I.VERSION;
-            shortNames = KafkaConnectS2I.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaTopic.class)) {
             scope = KafkaTopic.SCOPE;
-            kind = KafkaTopic.RESOURCE_KIND;
             crdApiVersion = KafkaTopic.CRD_API_VERSION;
             plural = KafkaTopic.RESOURCE_PLURAL;
-            singular = KafkaTopic.RESOURCE_SINGULAR;
-            listKind = KafkaTopic.RESOURCE_LIST_KIND;
             group = KafkaTopic.RESOURCE_GROUP;
             version = KafkaTopic.VERSION;
-            shortNames = KafkaTopic.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaUser.class)) {
             scope = KafkaUser.SCOPE;
-            kind = KafkaUser.RESOURCE_KIND;
             crdApiVersion = KafkaUser.CRD_API_VERSION;
             plural = KafkaUser.RESOURCE_PLURAL;
-            singular = KafkaUser.RESOURCE_SINGULAR;
-            listKind = KafkaUser.RESOURCE_LIST_KIND;
             group = KafkaUser.RESOURCE_GROUP;
             version = KafkaUser.VERSION;
-            shortNames = KafkaUser.RESOURCE_SHORTNAMES;
         } else if (cls.equals(KafkaMirrorMaker.class)) {
             scope = KafkaMirrorMaker.SCOPE;
-            kind = KafkaMirrorMaker.RESOURCE_KIND;
             crdApiVersion = KafkaMirrorMaker.CRD_API_VERSION;
             plural = KafkaMirrorMaker.RESOURCE_PLURAL;
-            singular = KafkaMirrorMaker.RESOURCE_SINGULAR;
-            listKind = KafkaMirrorMaker.RESOURCE_LIST_KIND;
             group = KafkaMirrorMaker.RESOURCE_GROUP;
             version = KafkaMirrorMaker.VERSION;
-            shortNames = KafkaMirrorMaker.RESOURCE_SHORTNAMES;
         } else {
             throw new RuntimeException();
         }
+
         return new CustomResourceDefinitionBuilder()
                 .withApiVersion(crdApiVersion)
                 .withKind(CRD_KIND)
@@ -143,11 +124,7 @@ public class Crds {
                     .withGroup(group)
                     .withVersion(version)
                     .withNewNames()
-                        .withKind(kind)
-                        .withListKind(listKind)
                         .withPlural(plural)
-                        .withSingular(singular)
-                        .withShortNames(shortNames)
                     .endNames()
                 .endSpec()
                 .build();
@@ -203,9 +180,9 @@ public class Crds {
 
     public static <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>>
             operation(KubernetesClient client,
-                Class<T> cls,
-                Class<L> listCls,
-                Class<D> doneableCls) {
+                      Class<T> cls,
+                      Class<L> listCls,
+                      Class<D> doneableCls) {
         return client.customResources(crd(cls), cls, listCls, doneableCls);
     }
 
@@ -217,9 +194,19 @@ public class Crds {
         }
     }
 
-    public static <T extends CustomResource> String apiVersion(Class<T> cls) {
+    public static <T extends CustomResource> List<String> apiVersion(Class<T> cls) {
         try {
-            return cls.getField("RESOURCE_GROUP").get(null) + "/" + cls.getField("VERSION").get(null);
+            String[] versions;
+            try {
+                versions = new String[]{(String) cls.getField("VERSION").get(null)};
+            } catch (NoSuchFieldException e) {
+                versions = (String[]) cls.getField("VERSIONS").get(null);
+            }
+            List<String> result = new ArrayList<>();
+            for (String v : versions) {
+                result.add(cls.getField("RESOURCE_GROUP").get(null) + "/" + v);
+            }
+            return result;
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }

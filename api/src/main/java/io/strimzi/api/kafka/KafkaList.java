@@ -13,3 +13,4 @@ import io.strimzi.api.kafka.model.Kafka;
 public class KafkaList extends CustomResourceList<Kafka> {
     private static final long serialVersionUID = 1L;
 }
+

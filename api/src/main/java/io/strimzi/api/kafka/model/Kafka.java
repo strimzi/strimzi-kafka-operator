@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -27,12 +26,7 @@ import java.util.Map;
 
 import static java.util.Collections.singletonList;
 
-/**
- * A description of a Kafka assembly, as exposed by the Strimzi Kafka CRD.
- */
-@JsonDeserialize(
-        using = JsonDeserializer.None.class
-)
+@JsonDeserialize
 @Crd(
         apiVersion = Kafka.CRD_API_VERSION,
         spec = @Crd.Spec(
@@ -43,7 +37,25 @@ import static java.util.Collections.singletonList;
                 ),
                 group = Kafka.RESOURCE_GROUP,
                 scope = Kafka.SCOPE,
-                version = Kafka.VERSION
+                version = Kafka.V1BETA1,
+                versions = {
+                        @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = true),
+                        @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
+                },
+                additionalPrinterColumns = {
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Kafka scale",
+                                description = "The number of Kafka replicas in the cluster",
+                                jsonPath = ".spec.kafka.replicas",
+                                type = "integer"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "ZK scale",
+                                description = "The number of Zookeeper replicas in the cluster",
+                                jsonPath = ".spec.zookeeper.replicas",
+                                type = "integer"
+                        )
+                }
         )
 )
 @Buildable(
@@ -59,10 +71,12 @@ import static java.util.Collections.singletonList;
 @EqualsAndHashCode
 public class Kafka extends CustomResource implements UnknownPropertyPreserving {
 
+    public static final String V1BETA1 = "v1beta1";
+    public static final String V1ALPHA1 = "v1alpha1";
+    public static final String[] VERSIONS = new String[]{V1BETA1, V1ALPHA1};
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
-    public static final String VERSION = "v1alpha1";
     public static final String RESOURCE_KIND = "Kafka";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";

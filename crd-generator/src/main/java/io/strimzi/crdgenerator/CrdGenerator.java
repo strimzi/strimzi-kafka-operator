@@ -219,9 +219,37 @@ public class CrdGenerator {
     private ObjectNode buildSpec(Crd.Spec crd, Class<? extends CustomResource> crdClass) {
         ObjectNode result = nf.objectNode();
         result.put("group", crd.group());
-        result.put("version", crd.version());
+        if (crd.versions().length != 0) {
+            ArrayNode versions = nf.arrayNode();
+            for (Crd.Spec.Version version : crd.versions()) {
+                ObjectNode versionNode = versions.addObject();
+                versionNode.put("name", version.name());
+                versionNode.put("served", version.served());
+                versionNode.put("storage", version.storage());
+            }
+            result.set("versions", versions);
+        }
+
+        if (!crd.version().isEmpty()) {
+            result.put("version", crd.version());
+        }
         result.put("scope", crd.scope());
         result.set("names", buildNames(crd.names()));
+        if (crd.additionalPrinterColumns().length != 0) {
+            ArrayNode cols = nf.arrayNode();
+            for (Crd.Spec.AdditionalPrinterColumn col : crd.additionalPrinterColumns()) {
+                ObjectNode colNode = cols.addObject();
+                colNode.put("name", col.name());
+                colNode.put("description", col.description());
+                colNode.put("JSONPath", col.jsonPath());
+                colNode.put("type", col.type());
+                colNode.put("priority", col.priority());
+                if (!col.format().isEmpty()) {
+                    colNode.put("format", col.format());
+                }
+            }
+            result.set("additionalPrinterColumns", cols);
+        }
         result.set("validation", buildValidation(crdClass));
         return result;
     }

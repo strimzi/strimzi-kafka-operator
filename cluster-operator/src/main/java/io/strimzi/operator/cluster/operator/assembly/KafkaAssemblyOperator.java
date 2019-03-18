@@ -138,7 +138,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                  ResourceOperatorSupplier supplier,
                                  KafkaVersion.Lookup versions,
                                  ImagePullPolicy imagePullPolicy) {
-        super(vertx, isOpenShift, ResourceType.KAFKA, certManager, supplier.kafkaOperator, supplier.secretOperations, supplier.networkPolicyOperator, supplier.podDisruptionBudgetOperator, imagePullPolicy);
+        super(vertx, isOpenShift, ResourceType.KAFKA, certManager,
+                supplier.kafkaOperator, supplier.secretOperations, supplier.networkPolicyOperator,
+                supplier.podDisruptionBudgetOperator, imagePullPolicy);
         this.operationTimeoutMs = operationTimeoutMs;
         this.serviceOperations = supplier.serviceOperations;
         this.routeOperations = supplier.routeOperations;
