@@ -35,7 +35,8 @@ function build {
             docker tag strimzi/$PROJECT_NAME:$BUILD_TAG $DOCKER_REGISTRY/$DOCKER_ORG/$PROJECT_NAME:$DOCKER_TAG
         fi
 
-        if [[ $targets == *"docker_tag"* ]]; then
+        if [[ $targets == *"docker_push"* ]]; then
+            docker tag strimzi/$PROJECT_NAME:$BUILD_TAG $DOCKER_REGISTRY/$DOCKER_ORG/$PROJECT_NAME:$DOCKER_TAG
             docker push $DOCKER_REGISTRY/$DOCKER_ORG/$PROJECT_NAME:$DOCKER_TAG
         fi
     done
