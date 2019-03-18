@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -274,8 +275,8 @@ public class Exec {
         if (logPath != null) {
             try {
                 Files.createDirectories(logPath);
-                Files.write(Paths.get(logPath.toString(), "stdOutput.log"), stdOut.getBytes());
-                Files.write(Paths.get(logPath.toString(), "stdError.log"), stdErr.getBytes());
+                Files.write(Paths.get(logPath.toString(), "stdOutput.log"), stdOut.getBytes(Charset.defaultCharset()));
+                Files.write(Paths.get(logPath.toString(), "stdError.log"), stdErr.getBytes(Charset.defaultCharset()));
             } catch (Exception ex) {
                 LOGGER.warn("Cannot save output of execution: " + ex.getMessage());
             }
@@ -328,7 +329,7 @@ public class Exec {
          */
         public Future<String> read() {
             return CompletableFuture.supplyAsync(() -> {
-                Scanner scanner = new Scanner(is);
+                Scanner scanner = new Scanner(is, StandardCharsets.UTF_8.name());
                 try {
                     while (scanner.hasNextLine()) {
                         data.append(scanner.nextLine());

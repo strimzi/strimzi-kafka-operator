@@ -16,5 +16,9 @@
   <Match>
     <Class name="~io\.fabric8\.kubernetes\.api\.model\.(Doneable).+(\$.*)?" />
   </Match>
+  <Match>
+    <Bug pattern="DM_DEFAULT_ENCODING"/>
+    <Class name="~io\.strimzi\.test\.k8s\.Exec.*" />
+  </Match>
 
 </FindBugsFilter>
