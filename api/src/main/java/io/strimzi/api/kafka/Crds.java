@@ -27,8 +27,10 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.singletonList;
 
 /*import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
@@ -78,7 +80,7 @@ public class Crds {
             crdApiVersion = Kafka.CRD_API_VERSION;
             plural = Kafka.RESOURCE_PLURAL;
             group = Kafka.RESOURCE_GROUP;
-            version = Kafka.VERSIONS[0];
+            version = Kafka.VERSIONS.get(0);
         } else if (cls.equals(KafkaConnect.class)) {
             scope = KafkaConnect.SCOPE;
             crdApiVersion = KafkaConnect.CRD_API_VERSION;
@@ -196,17 +198,16 @@ public class Crds {
 
     public static <T extends CustomResource> List<String> apiVersion(Class<T> cls) {
         try {
-            String[] versions;
+            String group = (String) cls.getField("RESOURCE_GROUP").get(null);
+
+            List<String> versions;
             try {
-                versions = new String[]{(String) cls.getField("VERSION").get(null)};
+                versions = singletonList(group + "/" + (String) cls.getField("VERSION").get(null));
             } catch (NoSuchFieldException e) {
-                versions = (String[]) cls.getField("VERSIONS").get(null);
+                versions = ((List<String>) cls.getField("VERSIONS").get(null)).stream().map(v ->
+                        group + "/" + v).collect(Collectors.toList());
             }
-            List<String> result = new ArrayList<>();
-            for (String v : versions) {
-                result.add(cls.getField("RESOURCE_GROUP").get(null) + "/" + v);
-            }
-            return result;
+            return versions;
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
