@@ -64,6 +64,11 @@ spec:
     matchLabels:
       role: alert-rules
       app: strimzi
+  alerting:
+    alertmanagers:
+    - namespace: myproject
+      name: alertmanager
+      port: alertmanager
   additionalScrapeConfigs:
     name: additional-scrape-configs
     key: prometheus-additional.yaml
@@ -71,15 +76,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: prometheus
+  name: alertmanager
   labels:
     app: strimzi
 spec:
   ports:
-    - name: prometheus
-      port: 9090
-      targetPort: 9090
+    - name: alertmanager
+      port: 9093
+      targetPort: 9093
       protocol: TCP
   selector:
-    prometheus: prometheus
+    name: alertmanager
   type: ClusterIP
