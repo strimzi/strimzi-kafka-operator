@@ -4,12 +4,9 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.KubeClusterException;
-import org.junit.Assume;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
