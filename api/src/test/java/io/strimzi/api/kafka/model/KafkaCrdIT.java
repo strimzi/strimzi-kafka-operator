@@ -4,9 +4,12 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.KubeClusterException;
+import org.junit.Assume;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -25,8 +28,12 @@ public class KafkaCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkacrd-it";
 
     @Test
-    void testKafka() {
-        createDelete(Kafka.class, "Kafka.yaml");
+    void testKafkaV1alpha1() {
+        VersionInfo version = new DefaultKubernetesClient().getVersion();
+        String minor = version.getMinor();
+        Assume.assumeTrue("1".equals(version.getMajor())
+                && Integer.parseInt(minor.substring(0, minor.indexOf('+'))) >= 11);
+        createDelete(Kafka.class, "KafkaV1alpha1.yaml");
     }
 
     @Test

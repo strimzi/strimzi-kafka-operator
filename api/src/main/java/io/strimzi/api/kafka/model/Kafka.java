@@ -39,7 +39,7 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = Kafka.RESOURCE_GROUP,
                 scope = Kafka.SCOPE,
-                version = Kafka.V1ALPHA1,
+                version = Kafka.V1BETA1,
                 versions = {
                         @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = true),
                         @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
