@@ -23,8 +23,12 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "topiccrd-it";
 
     @Test
-    void testKafkaTopic() {
-        createDelete(KafkaTopic.class, "KafkaTopic.yaml");
+    void testKafkaTopicV1alpha1() {
+        createDelete(KafkaTopic.class, "KafkaTopicV1alpha1.yaml");
+    }
+    @Test
+    void testKafkaTopicV1beta1() {
+        createDelete(KafkaTopic.class, "KafkaTopicV1beta1.yaml");
     }
 
     @Test

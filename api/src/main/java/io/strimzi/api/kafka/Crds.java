@@ -98,13 +98,13 @@ public class Crds {
             crdApiVersion = KafkaTopic.CRD_API_VERSION;
             plural = KafkaTopic.RESOURCE_PLURAL;
             group = KafkaTopic.RESOURCE_GROUP;
-            version = KafkaTopic.VERSION;
+            version = Kafka.VERSIONS.get(0);
         } else if (cls.equals(KafkaUser.class)) {
             scope = KafkaUser.SCOPE;
             crdApiVersion = KafkaUser.CRD_API_VERSION;
             plural = KafkaUser.RESOURCE_PLURAL;
             group = KafkaUser.RESOURCE_GROUP;
-            version = KafkaUser.VERSION;
+            version = Kafka.VERSIONS.get(0);
         } else if (cls.equals(KafkaMirrorMaker.class)) {
             scope = KafkaMirrorMaker.SCOPE;
             crdApiVersion = KafkaMirrorMaker.CRD_API_VERSION;
