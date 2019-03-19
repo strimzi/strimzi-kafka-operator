@@ -23,8 +23,14 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkamirrormaker-crd-it";
 
     @Test
-    void testKafkaMirrorMaker() {
-        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker.yaml");
+    void testKafkaMirrorMakerV1alpha1() {
+        assumeKube1_11Plus();
+        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMakerV1alpha1.yaml");
+    }
+
+    @Test
+    void testKafkaMirrorMakerV1beta1() {
+        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMakerV1beta1.yaml");
     }
 
     @Test

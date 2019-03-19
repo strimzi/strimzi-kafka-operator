@@ -10,7 +10,14 @@ metadata:
     heritage: '{{ .Release.Service }}'
 spec:
   group: kafka.strimzi.io
-  version: v1alpha1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false
+  version: v1beta1
   scope: Namespaced
   names:
     kind: KafkaMirrorMaker
@@ -19,6 +26,12 @@ spec:
     plural: kafkamirrormakers
     shortNames:
     - kmm
+  additionalPrinterColumns:
+  - name: Replicas
+    description: The number of Kafka Mirror Maker replicas
+    JSONPath: .spec.replicas
+    type: integer
+    priority: 0
   validation:
     openAPIV3Schema:
       properties:

@@ -29,10 +29,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaV1alpha1() {
-        VersionInfo version = new DefaultKubernetesClient().getVersion();
-        String minor = version.getMinor();
-        Assume.assumeTrue("1".equals(version.getMajor())
-                && Integer.parseInt(minor.substring(0, minor.indexOf('+'))) >= 11);
+        assumeKube1_11Plus();
         createDelete(Kafka.class, "KafkaV1alpha1.yaml");
     }
 

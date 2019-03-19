@@ -1,22 +1,34 @@
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: kafka.strimzi.io/v1alpha1
 kind: KafkaConnect
 metadata:
   name: test-kafka-connect
 spec:
-  replicas: 1
+  image: foo
+  replicas: 6
   bootstrapServers: kafka:9092
+  config:
+    name: bar
+  tolerations:
+    - key: "key1"
+      operator: "Equal"
+      value: "value1"
+      effect: "NoSchedule"
+    - key: "key2"
+      operator: "Equal"
+      value: "value2"
+      effect: "NoSchedule"
   externalConfiguration:
     env:
     - name: SOME_VARIABLE
       valueFrom:
         secretKeyRef:
-          name: myaccesskey
+          name: mysecret
           key: access-key
     - name: SOME_OTHER_VARIABLE
       valueFrom:
         configMapKeyRef:
-          name: myconfig
-          key: some-property
+          name: mysecret
+          key: secret-access-key
     volumes:
     - name: secret-volume
       secret:
@@ -24,7 +36,7 @@ spec:
     - name: foo
       secret:
         secretName: mysecret
-# Uncomment after kubernetes/kubernetes#68466 is fixed
+    # Uncomment after kubernetes/kubernetes#68466 is fixed
 #        items:
 #        - key: username
 #          path: my-group/my-username

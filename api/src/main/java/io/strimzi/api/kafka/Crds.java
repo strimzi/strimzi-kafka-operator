@@ -86,13 +86,13 @@ public class Crds {
             crdApiVersion = KafkaConnect.CRD_API_VERSION;
             plural = KafkaConnect.RESOURCE_PLURAL;
             group = KafkaConnect.RESOURCE_GROUP;
-            version = KafkaConnect.VERSION;
+            version = KafkaConnect.VERSIONS.get(0);
         } else if (cls.equals(KafkaConnectS2I.class)) {
             scope = KafkaConnectS2I.SCOPE;
             crdApiVersion = KafkaConnectS2I.CRD_API_VERSION;
             plural = KafkaConnectS2I.RESOURCE_PLURAL;
             group = KafkaConnectS2I.RESOURCE_GROUP;
-            version = KafkaConnectS2I.VERSION;
+            version = KafkaConnectS2I.VERSIONS.get(0);
         } else if (cls.equals(KafkaTopic.class)) {
             scope = KafkaTopic.SCOPE;
             crdApiVersion = KafkaTopic.CRD_API_VERSION;
@@ -110,7 +110,7 @@ public class Crds {
             crdApiVersion = KafkaMirrorMaker.CRD_API_VERSION;
             plural = KafkaMirrorMaker.RESOURCE_PLURAL;
             group = KafkaMirrorMaker.RESOURCE_GROUP;
-            version = KafkaMirrorMaker.VERSION;
+            version = KafkaMirrorMaker.VERSIONS.get(0);
         } else {
             throw new RuntimeException();
         }
