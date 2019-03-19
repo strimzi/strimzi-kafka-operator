@@ -112,12 +112,31 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
     }
 
     /**
-     * Deletes the resource with the given namespace and name
-     * and completes the given future accordingly
+     * Deletes the resource with the given namespace and name and completes the given future accordingly.
+     * This method will do a cascading delete.
+     *
+     * @param namespace Namespace of the resource which should be deleted
+     * @param name Name of the resource which should be deleted
+     *
+     * @return Future with result of the reconciliation
      */
     protected Future<ReconcileResult<T>> internalDelete(String namespace, String name) {
+        return internalDelete(namespace, name, true);
+    }
+
+    /**
+     * Deletes the resource with the given namespace and name and completes the given future accordingly
+     *
+     * @param namespace Namespace of the resource which should be deleted
+     * @param name Name of the resource which should be deleted
+     * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
+     *
+     * @return Future with result of the reconciliation
+     */
+
+    protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
         try {
-            operation().inNamespace(namespace).withName(name).delete();
+            operation().inNamespace(namespace).withName(name).cascading(cascading).delete();
             log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.deleted());
         } catch (Exception e) {
@@ -145,7 +164,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
         }
     }
 
-    private boolean wasChanged(T oldVersion, T newVersion) {
+    protected boolean wasChanged(T oldVersion, T newVersion) {
         if (oldVersion != null
                 && oldVersion.getMetadata() != null
                 && newVersion != null

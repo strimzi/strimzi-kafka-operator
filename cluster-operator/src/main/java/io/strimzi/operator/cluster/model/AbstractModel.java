@@ -55,6 +55,7 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
@@ -69,6 +70,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -98,6 +100,7 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
+    public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "/storage";
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";
     private static final Pattern LOGGER_PATTERN = Pattern.compile("\\$\\{(.*)\\}, ([A-Z]+)");
@@ -240,7 +243,7 @@ public abstract class AbstractModel {
     }
 
 
-    protected Map<String, String> getSelectorLabels() {
+    public Map<String, String> getSelectorLabels() {
         return labels.withName(name).strimziLabels().toMap();
     }
 
@@ -444,6 +447,25 @@ public abstract class AbstractModel {
     }
 
     protected void setStorage(Storage storage) {
+        if (storage instanceof PersistentClaimStorage) {
+            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) storage;
+
+            if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
+                throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+            }
+        } else if (storage instanceof JbodStorage)  {
+            JbodStorage jbodStorage = (JbodStorage) storage;
+
+            for (Storage jbodVolume : jbodStorage.getVolumes()) {
+                if (jbodVolume instanceof PersistentClaimStorage) {
+                    PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) jbodVolume;
+                    if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
+                        throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+                    }
+                }
+            }
+        }
+
         this.storage = storage;
     }
 
@@ -582,15 +604,16 @@ public abstract class AbstractModel {
         return servicePort;
     }
 
-    protected PersistentVolumeClaim createPersistentVolumeClaim(String name, PersistentClaimStorage storage) {
+    protected PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", new Quantity(storage.getSize(), null));
+
         LabelSelector selector = null;
         if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
             selector = new LabelSelector(null, storage.getSelector());
         }
 
-        PersistentVolumeClaimBuilder pvcb = new PersistentVolumeClaimBuilder()
+        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                     .withName(name)
                 .endMetadata()
@@ -601,9 +624,43 @@ public abstract class AbstractModel {
                     .endResources()
                     .withStorageClassName(storage.getStorageClass())
                     .withSelector(selector)
-                .endSpec();
+                .endSpec()
+                .build();
 
-        return pvcb.build();
+        return pvc;
+    }
+
+    protected PersistentVolumeClaim createPersistentVolumeClaim(String name, PersistentClaimStorage storage) {
+        Map<String, Quantity> requests = new HashMap<>();
+        requests.put("storage", new Quantity(storage.getSize(), null));
+
+        LabelSelector selector = null;
+        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
+            selector = new LabelSelector(null, storage.getSelector());
+        }
+
+        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withNamespace(namespace)
+                    .withLabels(getLabelsWithName(templateStatefulSetLabels))
+                    .withAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())))
+                .endMetadata()
+                .withNewSpec()
+                    .withAccessModes("ReadWriteOnce")
+                    .withNewResources()
+                        .withRequests(requests)
+                    .endResources()
+                    .withStorageClassName(storage.getStorageClass())
+                    .withSelector(selector)
+                .endSpec()
+                .build();
+
+        if (storage.isDeleteClaim())    {
+            pvc.getMetadata().setOwnerReferences(Collections.singletonList(createOwnerReference()));
+        }
+
+        return pvc;
     }
 
     protected Volume createEmptyDirVolume(String name) {

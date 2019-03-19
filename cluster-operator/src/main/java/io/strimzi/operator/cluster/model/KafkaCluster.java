@@ -80,10 +80,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonMap;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaCluster extends AbstractModel {
-
     protected static final String INIT_NAME = "kafka-init";
     protected static final String INIT_VOLUME_NAME = "rack-volume";
     protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
@@ -277,25 +276,36 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+        return fromCrd(kafkaAssembly, versions, null);
+    }
+
+    public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
         KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
                 kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
+
         result.setOwnerReference(kafkaAssembly);
+
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+
         result.setReplicas(kafkaClusterSpec.getReplicas());
+
         String image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
         if (image == null) {
             throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
         }
         result.setImage(image);
+
         if (kafkaClusterSpec.getReadinessProbe() != null) {
             result.setReadinessInitialDelay(kafkaClusterSpec.getReadinessProbe().getInitialDelaySeconds());
             result.setReadinessTimeout(kafkaClusterSpec.getReadinessProbe().getTimeoutSeconds());
         }
+
         if (kafkaClusterSpec.getLivenessProbe() != null) {
             result.setLivenessInitialDelay(kafkaClusterSpec.getLivenessProbe().getInitialDelaySeconds());
             result.setLivenessTimeout(kafkaClusterSpec.getLivenessProbe().getTimeoutSeconds());
         }
+
         result.setRack(kafkaClusterSpec.getRack());
 
         String initImage = kafkaClusterSpec.getBrokerRackInitImage();
@@ -303,27 +313,44 @@ public class KafkaCluster extends AbstractModel {
             initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
         }
         result.setInitImage(initImage);
+
         Logging logging = kafkaClusterSpec.getLogging();
         result.setLogging(logging == null ? new InlineLogging() : logging);
+
         result.setGcLoggingEnabled(kafkaClusterSpec.getJvmOptions() == null ? true : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled());
+
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
+
         result.setConfiguration(new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet()));
+
         Map<String, Object> metrics = kafkaClusterSpec.getMetrics();
         if (metrics != null) {
             result.setMetricsEnabled(true);
             result.setMetricsConfig(metrics.entrySet());
         }
-        if (kafkaClusterSpec.getStorage() instanceof PersistentClaimStorage) {
-            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) kafkaClusterSpec.getStorage();
-            if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
-                throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+
+        if (oldStorage != null) {
+            Storage newStorage = kafkaClusterSpec.getStorage();
+            StorageDiff diff = new StorageDiff(oldStorage, newStorage);
+
+            if (!diff.isEmpty()) {
+                log.warn("Changing Kafka storage is not possible. The changes will be ignored.");
+                result.setStorage(oldStorage);
+            } else {
+                result.setStorage(newStorage);
             }
+        } else {
+            result.setStorage(kafkaClusterSpec.getStorage());
         }
-        result.setStorage(kafkaClusterSpec.getStorage());
+
         result.setDataVolumesClaimsAndMountPaths(result.getStorage());
+
         result.setUserAffinity(kafkaClusterSpec.getAffinity());
+
         result.setResources(kafkaClusterSpec.getResources());
+
         result.setTolerations(kafkaClusterSpec.getTolerations());
+
         TlsSidecar tlsSidecar = kafkaClusterSpec.getTlsSidecar();
         if (tlsSidecar == null) {
             tlsSidecar = new TlsSidecar();
@@ -659,8 +686,12 @@ public class KafkaCluster extends AbstractModel {
      * @return The generate StatefulSet
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
+        HashMap<String, String> annotations = new HashMap<>(2);
+        annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
+        annotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+
         return createStatefulSet(
-                singletonMap(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version()),
+                annotations,
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
@@ -742,10 +773,41 @@ public class KafkaCluster extends AbstractModel {
             if (storage instanceof EphemeralStorage) {
                 dataVolumes.add(createEmptyDirVolume(name));
             } else if (storage instanceof PersistentClaimStorage) {
-                dataPvcs.add(createPersistentVolumeClaim(name, (PersistentClaimStorage) storage));
+                dataPvcs.add(createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
             }
             dataVolumeMountPaths.add(createVolumeMount(name, mountPath));
         }
+    }
+
+    /**
+     * Fill the with volumes, persistent volume claims and related volume mount paths for the storage
+     * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
+     *
+     * @param storage the Storage instance from which building volumes, persistent volume claims and
+     *                related volume mount paths
+     */
+    public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
+        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof PersistentClaimStorage) {
+                Integer id = ((PersistentClaimStorage) storage).getId();
+                String pvcName = ModelUtils.getVolumePrefix(id) + "-" + name;
+
+                for (int i = 0; i < replicas; i++)  {
+                    pvcs.add(createPersistentVolumeClaim(pvcName + "-" + i, (PersistentClaimStorage) storage));
+                }
+            } else if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    pvcs.addAll(generatePersistentVolumeClaims(volume));
+                }
+            }
+        }
+
+        return pvcs;
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {

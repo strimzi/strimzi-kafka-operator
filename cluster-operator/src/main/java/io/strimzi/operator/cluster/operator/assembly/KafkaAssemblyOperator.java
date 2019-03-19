@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
@@ -27,10 +26,7 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -58,9 +54,11 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
+import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -76,7 +74,6 @@ import org.quartz.CronExpression;
 
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -88,6 +85,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_FROM_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_TO_VERSION;
@@ -125,6 +123,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final ServiceAccountOperator serviceAccountOperator;
     private final RoleBindingOperator roleBindingOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
+    private final PodOperator podOperations;
 
     private final KafkaVersion.Lookup versions;
 
@@ -152,6 +151,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.serviceAccountOperator = supplier.serviceAccountOperator;
         this.roleBindingOperator = supplier.roleBindingOperator;
         this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
+        this.podOperations = supplier.podOperations;
         this.versions = versions;
     }
 
@@ -167,10 +167,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.clusterOperatorSecret())
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
+                .compose(state -> state.getZookeeperDescription())
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkManualRollingUpdate())
-                .compose(state -> state.getZookeeperDescription())
                 .compose(state -> state.zookeeperServiceAccount())
+                .compose(state -> state.zkPvcs())
                 .compose(state -> state.zkScaleUpStep())
                 .compose(state -> state.zkScaleDown())
                 .compose(state -> state.zkService())
@@ -185,10 +186,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
                 .compose(state -> state.zkPersistentClaimDeletion())
+                .compose(state -> state.getKafkaClusterDescription())
                 .compose(state -> state.kafkaManualPodCleaning())
                 .compose(state -> state.kafkaManualRollingUpdate())
                 .compose(state -> state.kafkaUpgrade())
-                .compose(state -> state.getKafkaClusterDescription())
+                .compose(state -> state.kafkaPvcs())
                 .compose(state -> state.kafkaInitServiceAccount())
                 .compose(state -> state.kafkaInitClusterRoleBinding())
                 .compose(state -> state.kafkaScaleDown())
@@ -849,7 +851,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                 future -> {
                     try {
-                        this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions);
+                        StatefulSet sts = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
+                        Storage oldStorage = getOldStorage(sts);
+
+                        this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions, oldStorage);
 
                         ConfigMap logAndMetricsConfigMap = zkCluster.generateMetricsAndLogConfigMap(zkCluster.getLogging() instanceof ExternalLogging ?
                                 configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) zkCluster.getLogging()).getName()) :
@@ -1024,23 +1029,47 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkManualPodCleaning() {
-            String reason = "manual pod cleaning";
-            Future<StatefulSet> futss = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            if (futss != null) {
-                return futss.compose(ss -> {
-                    if (ss != null) {
-                        log.debug("{}: Cleaning Pods for StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                        return zkSetOperations.maybeDeletePodAndPvc(ss);
+            String stsName = ZookeeperCluster.zookeeperClusterName(name);
+            StatefulSet sts = zkSetOperations.get(namespace, stsName);
+
+            if (sts != null) {
+                log.debug("{}: Considering manual cleaning of Zookeeper Pods for StatefulSet {}", reconciliation, sts.getMetadata().getName());
+
+                for (int i = 0; i < sts.getSpec().getReplicas(); i++) {
+                    String podName = stsName + "-" + i;
+                    Pod pod = podOperations.get(namespace, podName);
+
+                    if (pod != null) {
+                        if (Annotations.booleanAnnotation(pod, AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC,
+                                false, AbstractScalableResourceOperator.ANNO_OP_STRIMZI_IO_DELETE_POD_AND_PVC)) {
+                            log.debug("{}: Pod and PVCs for {} should be deleted based on annotation", reconciliation, podName);
+
+                            List<PersistentVolumeClaim> deletePvcs = pvcOperations.list(namespace, Labels.fromMap(zkCluster.getSelectorLabels()))
+                                    .stream()
+                                    .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
+                                    .collect(Collectors.toList());
+
+                            List<PersistentVolumeClaim> createPvcs = zkCluster.generatePersistentVolumeClaims()
+                                    .stream()
+                                    .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
+                                    .collect(Collectors.toList());
+
+                            // The return here is intentional. We do not want to roll multiple pods at the same time
+                            // even if they are marked with the annotation
+                            return withVoid(cleanPodAndPvc(podName, sts, deletePvcs, createPvcs));
+                        }
                     }
-                    return Future.succeededFuture();
-                }).map(i -> this);
+                }
             }
+
             return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> zkPersistentClaimDeletion() {
-            return persistentClaimDeletion(zkCluster.getStorage(), zkCluster.getReplicas(),
-                (storage, i) -> AbstractModel.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperClusterName(reconciliation.name()) + "-" + i);
+            List<String> maybeDeletePvcs = pvcOperations.list(namespace, Labels.fromMap(zkCluster.getSelectorLabels())).stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
+            List<String> desiredPvcs = zkCluster.generatePersistentVolumeClaims().stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
+
+            return persistentClaimDeletion(maybeDeletePvcs, desiredPvcs);
         }
 
         private Future<ReconciliationState> getKafkaClusterDescription() {
@@ -1049,7 +1078,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions);
+                        StatefulSet sts = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
+                        Storage oldStorage = getOldStorage(sts);
+
+                        this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage);
 
                         ConfigMap logAndMetricsConfigMap = kafkaCluster.generateMetricsAndLogConfigMap(
                                 kafkaCluster.getLogging() instanceof ExternalLogging ?
@@ -1489,6 +1521,28 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(podDisruptionBudgetOperator.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generatePodDisruptionBudget()));
         }
 
+        Future<ReconciliationState> zkPvcs() {
+            List<PersistentVolumeClaim> pvcs = zkCluster.generatePersistentVolumeClaims();
+            List<Future> futures = new ArrayList<>(pvcs.size());
+
+            for (PersistentVolumeClaim pvc : pvcs)  {
+                futures.add(pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc));
+            }
+
+            return withVoid(CompositeFuture.all(futures));
+        }
+
+        Future<ReconciliationState> kafkaPvcs() {
+            List<PersistentVolumeClaim> pvcs = kafkaCluster.generatePersistentVolumeClaims(kafkaCluster.getStorage());
+            List<Future> futures = new ArrayList<>(pvcs.size());
+
+            for (PersistentVolumeClaim pvc : pvcs)  {
+                futures.add(pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc));
+            }
+
+            return withVoid(CompositeFuture.all(futures));
+        }
+
         Future<ReconciliationState> kafkaStatefulSet() {
             kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
             StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(isOpenShift, imagePullPolicy);
@@ -1521,26 +1575,117 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaManualPodCleaning() {
-            String reason = "manual pod cleaning";
-            Future<StatefulSet> futss = kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
-            if (futss != null) {
-                return futss.compose(ss -> {
-                    if (ss != null) {
-                        log.debug("{}: Cleaning Pods for StatefulSet {} to {}", reconciliation, ss.getMetadata().getName(), reason);
-                        return kafkaSetOperations.maybeDeletePodAndPvc(ss);
+            String stsName = KafkaCluster.kafkaClusterName(name);
+            StatefulSet sts = kafkaSetOperations.get(namespace, stsName);
+
+            if (sts != null) {
+                log.debug("{}: Considering manual cleaning of Kafka Pods for StatefulSet {}", reconciliation, sts.getMetadata().getName());
+
+                for (int i = 0; i < sts.getSpec().getReplicas(); i++) {
+                    String podName = stsName + "-" + i;
+                    Pod pod = podOperations.get(namespace, podName);
+
+                    if (pod != null) {
+                        if (Annotations.booleanAnnotation(pod, AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC,
+                                false, AbstractScalableResourceOperator.ANNO_OP_STRIMZI_IO_DELETE_POD_AND_PVC)) {
+                            log.debug("{}: Pod and PVCs for {} should be deleted based on annotation", reconciliation, podName);
+
+                            List<PersistentVolumeClaim> deletePvcs = pvcOperations.list(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels()))
+                                    .stream()
+                                    .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
+                                    .collect(Collectors.toList());
+
+                            // The storage can change when the JBOD volumes are added / removed etc.
+                            // At this point, the STS has not been updated yet. So we use the old storage configuration to get the old PVCs.
+                            // This is needed because the restarted pod will be created from old statefulset with old storage configuration.
+                            List<PersistentVolumeClaim> createPvcs = kafkaCluster.generatePersistentVolumeClaims(getOldStorage(sts))
+                                    .stream()
+                                    .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
+                                    .collect(Collectors.toList());
+
+                            // The return here is intentional. We do not want to roll multiple pods at the same time
+                            // even if they are marked with the annotation
+                            return withVoid(cleanPodAndPvc(podName, sts, deletePvcs, createPvcs));
+                        }
                     }
-                    return Future.succeededFuture();
-                }).map(i -> this);
+                }
             }
+
             return Future.succeededFuture(this);
         }
 
+        Future<Void> cleanPodAndPvc(String podName, StatefulSet sts, List<PersistentVolumeClaim> deletePvcs, List<PersistentVolumeClaim> createPvcs) {
+            long pollingIntervalMs = 1_000;
+            long timeoutMs = operationTimeoutMs;
+
+            List<Future> deleteResults = new ArrayList<>(deletePvcs.size());
+
+            for (PersistentVolumeClaim pvc : deletePvcs)    {
+                String pvcName = pvc.getMetadata().getName();
+                log.debug("{}: Deleting PVC {} for Pod {} based on annotation", reconciliation, pvcName, podName);
+                deleteResults.add(pvcOperations.reconcile(namespace, pvcName, null));
+            }
+
+            Future fut = CompositeFuture
+                    .join(deleteResults)
+                    .compose(ignored -> podOperations.reconcile(namespace, podName, null))
+                    .compose(ignored -> {
+                        List<Future> waitForDeletionResults = new ArrayList<>(deletePvcs.size());
+
+                        for (PersistentVolumeClaim pvc : deletePvcs)    {
+                            String pvcName = pvc.getMetadata().getName();
+                            String uid = pvc.getMetadata().getUid();
+
+                            log.debug("{}: Checking if PVC {} for Pod {} has been deleted or recreated", reconciliation, pvcName, podName);
+
+                            Future<Void> waitForDeletion = pvcOperations.waitFor(namespace, pvcName, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                                PersistentVolumeClaim deletion = pvcOperations.get(namespace, pvcName);
+                                log.trace("Checking if {} {} in namespace {} has been deleted or recreated", pvc.getKind(), pvcName, namespace);
+                                return deletion == null || (deletion.getMetadata() != null && !uid.equals(deletion.getMetadata().getUid()));
+                            });
+
+                            waitForDeletionResults.add(waitForDeletion);
+                        }
+
+                        return CompositeFuture.join(waitForDeletionResults);
+                    })
+                    .compose(ignored -> {
+                        List<Future> createResults = new ArrayList<>(createPvcs.size());
+
+                        for (PersistentVolumeClaim pvc : createPvcs)    {
+                            log.debug("{}: Reconciling PVC {} for Pod {} after it was deleted and maybe recreated by the pod", reconciliation, pvc.getMetadata().getName(), podName);
+                            createResults.add(pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc));
+                        }
+
+                        return CompositeFuture.join(createResults);
+                    })
+                    .compose(ignored -> podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs));
+
+            return fut;
+        }
+
         Future<ReconciliationState> kafkaPersistentClaimDeletion() {
-            return persistentClaimDeletion(kafkaCluster.getStorage(), kafkaCluster.getReplicas(),
-                (storage, i) -> {
-                    String name = ModelUtils.getVolumePrefix(storage.getId());
-                    return name + "-" + KafkaCluster.kafkaClusterName(reconciliation.name()) + "-" + i;
-                });
+            List<String> maybeDeletePvcs = pvcOperations.list(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels())).stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
+            List<String> desiredPvcs = kafkaCluster.generatePersistentVolumeClaims(kafkaCluster.getStorage()).stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
+
+            return persistentClaimDeletion(maybeDeletePvcs, desiredPvcs);
+        }
+
+        Future<ReconciliationState> persistentClaimDeletion(List<String> maybeDeletePvcs, List<String> desiredPvcs) {
+            List<Future> futures = new ArrayList<>();
+
+            maybeDeletePvcs.removeAll(desiredPvcs);
+
+            for (String pvcName : maybeDeletePvcs)  {
+                log.debug("{}: Considering PVC {} for deletion", reconciliation, pvcName);
+
+                if (Annotations.booleanAnnotation(pvcOperations.get(namespace, pvcName), AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM, false)) {
+                    log.debug("{}: Deleting PVC {}", reconciliation, pvcName);
+                    futures.add(pvcOperations.reconcile(namespace, pvcName, null));
+                }
+            }
+
+            return withVoid(CompositeFuture.all(futures));
         }
 
         private final Future<ReconciliationState> getTopicOperatorDescription() {
@@ -1906,16 +2051,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
         }
 
-        private PersistentVolumeClaim annotateDeleteClaim(String namespace, String pvcName, boolean isDeleteClaim) {
-            PersistentVolumeClaim pvc = pvcOperations.get(namespace, pvcName);
-            // this is called during a reconcile even when user is trying to change from ephemeral to persistent which
-            // is not allowed, so the PVC doesn't exist
-            if (pvc != null) {
-                Annotations.annotations(pvc).put(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM, String.valueOf(isDeleteClaim));
-            }
-            return pvc;
-        }
-
         Future<ReconciliationState> clusterOperatorSecret() {
             oldCoSecret = clusterCa.clusterOperatorSecret();
 
@@ -1936,90 +2071,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     secret));
         }
 
-        private Future<ReconciliationState> persistentClaimDeletion(Storage storage, int replicas, BiFunction<PersistentClaimStorage, Integer, String> pvcName) {
-            if (storage instanceof PersistentClaimStorage) {
-                for (int i = 0; i < replicas; i++) {
-                    PersistentVolumeClaim pvc = annotateDeleteClaim(reconciliation.namespace(),
-                            pvcName.apply((PersistentClaimStorage) storage, i),
-                            ((PersistentClaimStorage) storage).isDeleteClaim());
-                    if (pvc != null) {
-                        pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc);
-                    }
-                }
-            } else if (storage instanceof JbodStorage) {
-                JbodStorage jbodStorage = (JbodStorage) storage;
-                for (int i = 0; i < replicas; i++) {
-                    for (SingleVolumeStorage volume : jbodStorage.getVolumes()) {
-                        if (volume instanceof PersistentClaimStorage) {
-                            PersistentVolumeClaim pvc = annotateDeleteClaim(reconciliation.namespace(),
-                                    pvcName.apply((PersistentClaimStorage) volume, i),
-                                    ((PersistentClaimStorage) volume).isDeleteClaim());
-                            if (pvc != null) {
-                                pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc);
-                            }
-                        }
-                    }
+        private Storage getOldStorage(StatefulSet sts)  {
+            Storage storage = null;
+
+            if (sts != null)    {
+                String jsonStorage = Annotations.stringAnnotation(sts, ANNO_STRIMZI_IO_STORAGE, null);
+
+                if (jsonStorage != null)    {
+                    storage = ModelUtils.decodeStorageFromJson(jsonStorage);
                 }
             }
-            return Future.succeededFuture(this);
+
+            return storage;
         }
-    }
-
-    private final Future<CompositeFuture> deleteKafka(Reconciliation reconciliation) {
-        String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
-        String kafkaSsName = KafkaCluster.kafkaClusterName(name);
-
-        Labels pvcSelector = Labels.forCluster(name).withKind(Kafka.RESOURCE_KIND).withName(kafkaSsName);
-        return deletePersistentVolumeClaim(namespace, pvcSelector);
-    }
-
-    private final Future<CompositeFuture> deleteZk(Reconciliation reconciliation) {
-        String namespace = reconciliation.namespace();
-        String name = reconciliation.name();
-        String zkSsName = ZookeeperCluster.zookeeperClusterName(name);
-
-        Labels pvcSelector = Labels.forCluster(name).withKind(Kafka.RESOURCE_KIND).withName(zkSsName);
-        return deletePersistentVolumeClaim(namespace, pvcSelector);
-    }
-
-    @Override
-    protected Future<Void> delete(Reconciliation reconciliation) {
-        return deleteKafka(reconciliation)
-                .compose(i -> deleteZk(reconciliation))
-                .map((Void) null);
-    }
-
-    @Override
-    protected List<HasMetadata> getResources(String namespace, Labels selector) {
-        // TODO: Search for PVCs!
-        return Collections.EMPTY_LIST;
     }
 
     private Date dateSupplier() {
         return new Date();
-    }
-
-    /**
-     * Delete Persistent Volume Claims in the specified {@code namespace} and having the
-     * labels described by {@code pvcSelector} if the related {@link AbstractModel#ANNO_STRIMZI_IO_DELETE_CLAIM}
-     * annotation is
-     *
-     * @param namespace namespace where the Persistent Volume Claims to delete are
-     * @param pvcSelector labels to select the Persistent Volume Claims to delete
-     * @return
-     */
-    private Future<CompositeFuture> deletePersistentVolumeClaim(String namespace, Labels pvcSelector) {
-        List<PersistentVolumeClaim> pvcs = pvcOperations.list(namespace, pvcSelector);
-        List<Future> result = new ArrayList<>();
-
-        for (PersistentVolumeClaim pvc: pvcs) {
-            if (Annotations.booleanAnnotation(pvc, AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM,
-                    false, AbstractModel.ANNO_CO_STRIMZI_IO_DELETE_CLAIM)) {
-                log.debug("Delete selected PVCs with labels", pvcSelector);
-                result.add(pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), null));
-            }
-        }
-        return CompositeFuture.join(result);
     }
 }

@@ -152,7 +152,7 @@ public class KafkaUpdateTest {
                 new MockCertManager(),
                 new ResourceOperatorSupplier(null, null, null,
                         kso, null, null, null, null,
-                        null, null, null, null, null, null),
+                        null, null, null, null, null, null, null),
                 lookup, null);
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 

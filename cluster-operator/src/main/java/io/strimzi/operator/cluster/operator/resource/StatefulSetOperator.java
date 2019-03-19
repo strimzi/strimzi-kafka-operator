@@ -5,18 +5,14 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -85,59 +81,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             String podName = name + "-" + i;
             f = f.compose(ignored -> maybeRestartPod(ss, podName, podRestart));
         }
-        return f;
-    }
-
-    public Future<Void> maybeDeletePodAndPvc(StatefulSet ss) {
-        String namespace = ss.getMetadata().getNamespace();
-        String name = ss.getMetadata().getName();
-        final int replicas = ss.getSpec().getReplicas();
-        log.debug("Considering manual deletion and restart of pods for {}/{}", namespace, name);
-        Future<Void> f = Future.succeededFuture();
-        for (int i = 0; i < replicas; i++) {
-            String podName = name + "-" + i;
-            Pod pod = podOperations.get(namespace, podName);
-
-            if (pod != null) {
-                if (Annotations.booleanAnnotation(pod, ANNO_STRIMZI_IO_DELETE_POD_AND_PVC,
-                        false, ANNO_OP_STRIMZI_IO_DELETE_POD_AND_PVC)) {
-
-                    f = f.compose(ignored -> {
-                        Map<String, String> ssLabels = ss.getMetadata().getLabels();
-                        // get all the PVCs created for a SS from the claim template
-                        Labels pvcSelector =
-                                Labels.forCluster(ssLabels.get(Labels.STRIMZI_CLUSTER_LABEL))
-                                        .withKind(ssLabels.get(Labels.STRIMZI_KIND_LABEL))
-                                        .withName(name);
-                        List<PersistentVolumeClaim> pvcs = pvcOperations.list(namespace, pvcSelector);
-                        List<Future> result = new ArrayList<>();
-                        for (PersistentVolumeClaim pvc: pvcs) {
-                            String pvcName = pvc.getMetadata().getName();
-                            // filtering on the right PVC related to the pod to delete
-                            if (pvcName.endsWith(podName)) {
-                                result.add(deletePvc(ss, pvcName));
-                            }
-                        }
-                        return CompositeFuture.join(result);
-                    }).compose(ignored -> maybeRestartPod(ss, podName, p -> true));
-
-                }
-            }
-        }
-        return f;
-    }
-
-    public Future<Void> deletePvc(StatefulSet ss, String pvcName) {
-        String namespace = ss.getMetadata().getNamespace();
-        Future<Void> f = Future.future();
-        Future<ReconcileResult<PersistentVolumeClaim>> r = pvcOperations.reconcile(namespace, pvcName, null);
-        r.setHandler(h -> {
-            if (h.succeeded()) {
-                f.complete();
-            } else {
-                f.fail(h.cause());
-            }
-        });
         return f;
     }
 
@@ -245,7 +188,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         setGeneration(desired, nextGeneration);
     }
 
-    protected abstract boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired);
+    protected abstract boolean shouldIncrementGeneration(StatefulSetDiff diff);
 
     public static int getSsGeneration(StatefulSet resource) {
         if (resource == null) {
@@ -298,7 +241,9 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      */
     @Override
     protected Future<ReconcileResult<StatefulSet>> internalPatch(String namespace, String name, StatefulSet current, StatefulSet desired) {
-        if (shouldIncrementGeneration(current, desired)) {
+        StatefulSetDiff diff = new StatefulSetDiff(current, desired);
+
+        if (shouldIncrementGeneration(diff)) {
             incrementGeneration(current, desired);
         } else {
             setGeneration(desired, getSsGeneration(current));
@@ -311,44 +256,59 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         } else {
             log.debug("Patching {} {}/{}", resourceKind, namespace, name);
         }
-        return super.internalPatch(namespace, name, current, desired, false);
+
+        if (diff.changesVolumeClaimTemplates()) {
+            // When volume claim templates change, we need to delete the STS and re-create it
+            return internalReplace(namespace, name, current, desired, false);
+        } else {
+            return super.internalPatch(namespace, name, current, desired, false);
+        }
+
     }
 
     /**
-     * Reverts the changes done storage configuration of running cluster. Such changes are not allowed.
+     * Sometimes, patching the resource is not enough. For exaple when the persistent volume claim templates are modified.
+     * In such case we need to delete the STS with cascading=false and recreate it.
+     * A rolling update shoud done finished after the STS is recreated.
      *
+     * @param namespace Namespace of the resource which should be deleted
+     * @param name Name of the resource which should be deleted
      * @param current Current StatefulSet
-     * @param desired New StatefulSet
+     * @param desired Desired StatefulSet
+     * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
      *
-     * @return Updated StatefulSetDiff after the storage patching
+     * @return Future with result of the reconciliation
      */
-    protected StatefulSetDiff revertStorageChanges(StatefulSet current, StatefulSet desired) {
-        desired.getSpec().setVolumeClaimTemplates(current.getSpec().getVolumeClaimTemplates());
-        desired.getSpec().getTemplate().getSpec().setSecurityContext(current.getSpec().getTemplate().getSpec().getSecurityContext());
+    protected Future<ReconcileResult<StatefulSet>> internalReplace(String namespace, String name, StatefulSet current, StatefulSet desired, boolean cascading) {
+        try {
+            Future<ReconcileResult<StatefulSet>> fut = Future.future();
 
-        if (current.getSpec().getVolumeClaimTemplates().isEmpty()) {
-            // We are on ephemeral storage and changing to persistent
-            List<Volume> volumes = current.getSpec().getTemplate().getSpec().getVolumes();
-            for (int i = 0; i < volumes.size(); i++) {
-                Volume vol = volumes.get(i);
-                if (vol.getName().startsWith(AbstractModel.VOLUME_NAME) && vol.getEmptyDir() != null) {
-                    desired.getSpec().getTemplate().getSpec().getVolumes().add(0, volumes.get(i));
-                    break;
+            long pollingIntervalMs = 1_000;
+            long timeoutMs = operationTimeoutMs;
+
+            operation().inNamespace(namespace).withName(name).cascading(cascading).delete();
+
+            Future<Void> deletedFut = waitFor(namespace, name, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                StatefulSet sts = get(namespace, name);
+                log.trace("Checking if {} {} in namespace {} has been deleted", resourceKind, name, namespace);
+                return sts == null;
+            });
+
+            deletedFut.setHandler(res -> {
+                if (res.succeeded())    {
+                    StatefulSet result = operation().inNamespace(namespace).withName(name).create(desired);
+                    log.debug("{} {} in namespace {} has been replaced", resourceKind, name, namespace);
+                    fut.complete(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
+                } else {
+                    fut.fail(res.cause());
                 }
-            }
-        } else {
-            // We are on persistent storage and changing to ephemeral
-            List<Volume> volumes = desired.getSpec().getTemplate().getSpec().getVolumes();
-            for (int i = 0; i < volumes.size(); i++) {
-                Volume vol = volumes.get(i);
-                if (vol.getName().startsWith(AbstractModel.VOLUME_NAME) && vol.getEmptyDir() != null) {
-                    volumes.remove(i);
-                    break;
-                }
-            }
+            });
+
+            return fut;
+        } catch (Exception e) {
+            log.debug("Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
+            return Future.failedFuture(e);
         }
-
-        return new StatefulSetDiff(current, desired);
     }
 
     private static String getPodUid(Pod resource) {

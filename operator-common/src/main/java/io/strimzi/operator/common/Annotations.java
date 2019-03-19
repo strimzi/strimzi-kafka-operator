@@ -49,6 +49,12 @@ public class Annotations {
         return str != null ? parseInt(str) : defaultValue;
     }
 
+    public static String stringAnnotation(HasMetadata resource, String annotation, String defaultValue, String... deprecatedAnnotations) {
+        ObjectMeta metadata = resource.getMetadata();
+        String str = annotation(annotation, null, metadata, deprecatedAnnotations);
+        return str != null ? str : defaultValue;
+    }
+
     public static int intAnnotation(PodTemplateSpec podSpec, String annotation, int defaultValue, String... deprecatedAnnotations) {
         ObjectMeta metadata = podSpec.getMetadata();
         String str = annotation(annotation, null, metadata, deprecatedAnnotations);

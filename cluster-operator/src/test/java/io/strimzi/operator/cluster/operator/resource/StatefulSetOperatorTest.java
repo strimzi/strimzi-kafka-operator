@@ -79,7 +79,7 @@ public class StatefulSetOperatorTest
     protected StatefulSetOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new StatefulSetOperator(vertx, mockClient, 60_000L) {
             @Override
-            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
                 return true;
             }
         };
@@ -94,7 +94,7 @@ public class StatefulSetOperatorTest
             }
 
             @Override
-            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
                 return true;
             }
 
@@ -140,7 +140,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
                 return true;
             }
         };
@@ -184,7 +184,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
                 return true;
             }
         };
@@ -223,7 +223,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
                 return true;
             }
         };
@@ -262,7 +262,7 @@ public class StatefulSetOperatorTest
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
                 return true;
             }
         };

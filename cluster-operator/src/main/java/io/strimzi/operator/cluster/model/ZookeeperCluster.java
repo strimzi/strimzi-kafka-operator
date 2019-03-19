@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
@@ -47,7 +48,6 @@ import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.ModelUtils.parseImageMap;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
 
 public class ZookeeperCluster extends AbstractModel {
 
@@ -155,18 +155,25 @@ public class ZookeeperCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+        return fromCrd(kafkaAssembly, versions, null);
+    }
+
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
         zk.setOwnerReference(kafkaAssembly);
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
+
         int replicas = zookeeperClusterSpec.getReplicas();
         if (replicas <= 0) {
             replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
         zk.setReplicas(replicas);
+
         String version = versions.defaultVersion().version();
+
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
             image = IMAGE_MAP.get(version);
@@ -177,6 +184,7 @@ public class ZookeeperCluster extends AbstractModel {
                     kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null);
         }
         zk.setImage(image);
+
         if (zookeeperClusterSpec.getReadinessProbe() != null) {
             zk.setReadinessInitialDelay(zookeeperClusterSpec.getReadinessProbe().getInitialDelaySeconds());
             zk.setReadinessTimeout(zookeeperClusterSpec.getReadinessProbe().getTimeoutSeconds());
@@ -185,26 +193,41 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setLivenessInitialDelay(zookeeperClusterSpec.getLivenessProbe().getInitialDelaySeconds());
             zk.setLivenessTimeout(zookeeperClusterSpec.getLivenessProbe().getTimeoutSeconds());
         }
+
         Logging logging = zookeeperClusterSpec.getLogging();
         zk.setLogging(logging == null ? new InlineLogging() : logging);
         zk.setGcLoggingEnabled(zookeeperClusterSpec.getJvmOptions() == null ? true : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled());
+
         Map<String, Object> metrics = zookeeperClusterSpec.getMetrics();
         if (metrics != null) {
             zk.setMetricsEnabled(true);
             zk.setMetricsConfig(metrics.entrySet());
         }
-        if (zookeeperClusterSpec.getStorage() instanceof PersistentClaimStorage) {
-            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) zookeeperClusterSpec.getStorage();
-            if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
-                throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+
+        if (oldStorage != null) {
+            Storage newStorage = zookeeperClusterSpec.getStorage();
+            StorageDiff diff = new StorageDiff(oldStorage, newStorage);
+
+            if (!diff.isEmpty()) {
+                log.warn("Changing Zookeeper storage is not possible. The changes will be ignored.");
+                zk.setStorage(oldStorage);
+            } else {
+                zk.setStorage(newStorage);
             }
+        } else {
+            zk.setStorage(zookeeperClusterSpec.getStorage());
         }
-        zk.setStorage(zookeeperClusterSpec.getStorage());
+
         zk.setConfiguration(new ZookeeperConfiguration(zookeeperClusterSpec.getConfig().entrySet()));
+
         zk.setResources(zookeeperClusterSpec.getResources());
+
         zk.setJvmOptions(zookeeperClusterSpec.getJvmOptions());
+
         zk.setUserAffinity(zookeeperClusterSpec.getAffinity());
+
         zk.setTolerations(zookeeperClusterSpec.getTolerations());
+
         TlsSidecar tlsSidecar = zookeeperClusterSpec.getTlsSidecar();
         if (tlsSidecar == null) {
             tlsSidecar = new TlsSidecar();
@@ -348,7 +371,7 @@ public class ZookeeperCluster extends AbstractModel {
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
 
         return createStatefulSet(
-                emptyMap(),
+                Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
                 getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
@@ -482,7 +505,17 @@ public class ZookeeperCluster extends AbstractModel {
     /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
         if (storage instanceof PersistentClaimStorage) {
-            pvcList.add(createPersistentVolumeClaim(VOLUME_NAME, (PersistentClaimStorage) storage));
+            pvcList.add(createPersistentVolumeClaimTemplate(VOLUME_NAME, (PersistentClaimStorage) storage));
+        }
+        return pvcList;
+    }
+
+    public List<PersistentVolumeClaim> generatePersistentVolumeClaims() {
+        List<PersistentVolumeClaim> pvcList = new ArrayList<>();
+        if (storage instanceof PersistentClaimStorage) {
+            for (int i = 0; i < replicas; i++) {
+                pvcList.add(createPersistentVolumeClaim("data-" + name + "-" + i, (PersistentClaimStorage) storage));
+            }
         }
         return pvcList;
     }
