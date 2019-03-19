@@ -523,7 +523,7 @@ public class KafkaCluster extends AbstractModel {
                 KafkaListenerExternalNodePort externalNodePort = (KafkaListenerExternalNodePort) listeners.getExternal();
                 if (externalNodePort.getOverrides() != null &&  externalNodePort.getOverrides().getBrokers() != null) {
                     nodePort = externalNodePort.getOverrides().getBrokers().stream()
-                        .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod)
+                        .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getNodePort() != null)
                         .map(NodePortListenerBrokerOverride::getNodePort)
                         .findAny().orElse(null);
                 }
