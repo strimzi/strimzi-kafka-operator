@@ -20,18 +20,16 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
 
     private TopicOperator topicOperator;
-    private final LabelPredicate resourcePredicate;
 
-    public K8sTopicWatcher(TopicOperator topicOperator, LabelPredicate resourcePredicate) {
+    public K8sTopicWatcher(TopicOperator topicOperator) {
         this.topicOperator = topicOperator;
-        this.resourcePredicate = resourcePredicate;
     }
 
     @Override
     public void eventReceived(Action action, KafkaTopic kafkaTopic) {
         ObjectMeta metadata = kafkaTopic.getMetadata();
         Map<String, String> labels = metadata.getLabels();
-        if (resourcePredicate.test(kafkaTopic)) {
+        if (kafkaTopic.getSpec() != null) {
             String name = metadata.getName();
             String kind = kafkaTopic.getKind();
             LOGGER.info(kind + " watch received event {} on resource {} with labels {}", action, name, labels);

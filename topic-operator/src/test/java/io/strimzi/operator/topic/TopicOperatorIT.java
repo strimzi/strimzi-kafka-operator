@@ -74,7 +74,7 @@ public class TopicOperatorIT extends BaseITST {
 
     private static String oldNamespace;
 
-    private final LabelPredicate resourcePredicate = LabelPredicate.fromString(
+    private final Labels labels = Labels.fromString(
             "strimzi.io/kind=topic");
 
     public static final String NAMESPACE = "topic-operator-it";
@@ -142,6 +142,7 @@ public class TopicOperatorIT extends BaseITST {
         m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(Config.NAMESPACE.key, NAMESPACE);
+        m.put(Config.TC_RESOURCE_LABELS, "strimzi.io/kind=topic");
         session = new Session(kubeClient, new Config(m));
 
         Async async = context.async();
@@ -166,7 +167,7 @@ public class TopicOperatorIT extends BaseITST {
 
         // We can't delete events, so record the events which exist at the start of the test
         // and then waitForEvents() can ignore those
-        preExistingEvents = kubeClient.events().inNamespace(NAMESPACE).withLabels(resourcePredicate.labels()).list().
+        preExistingEvents = kubeClient.events().inNamespace(NAMESPACE).withLabels(labels.labels()).list().
                 getItems().stream().
                 map(evt -> evt.getMetadata().getUid()).
                 collect(Collectors.toSet());
@@ -243,7 +244,7 @@ public class TopicOperatorIT extends BaseITST {
 
     private KafkaTopic createKafkaTopicResource(TestContext context, String topicName) {
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
         return createKafkaTopicResource(context, topicResource);
     }
 
@@ -399,7 +400,7 @@ public class TopicOperatorIT extends BaseITST {
 
     private void waitForEvent(TestContext context, KafkaTopic kafkaTopic, String expectedMessage, TopicOperator.EventType expectedType) {
         waitFor(context, () -> {
-            List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(resourcePredicate.labels()).list().getItems();
+            List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(labels.labels()).list().getItems();
             List<Event> filtered = items.stream().
                     filter(evt -> !preExistingEvents.contains(evt.getMetadata().getUid())
                     && "KafkaTopic".equals(evt.getInvolvedObject().getKind())
@@ -474,7 +475,7 @@ public class TopicOperatorIT extends BaseITST {
     public void testKafkaTopicAddedWithHighReplicas(TestContext context) {
         String topicName = "test-resource-created-with-higher-partition";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, labels);
         kafkaTopic.getSpec().setReplicas(42);
 
         // Create a Topic Resource
@@ -489,7 +490,7 @@ public class TopicOperatorIT extends BaseITST {
     public void testKafkaTopicAddedWithBadData(TestContext context) {
         String topicName = "test-resource-created-with-bad-data";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, labels);
         kafkaTopic.getSpec().setPartitions(-1);
 
         // Create a Topic Resource
@@ -589,7 +590,7 @@ public class TopicOperatorIT extends BaseITST {
     public void testCreateTwoResourcesManagingOneTopic(TestContext context) {
         String topicName = "two-resources-one-topic";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
         KafkaTopic topicResource2 = new KafkaTopicBuilder(topicResource).withMetadata(new ObjectMetaBuilder(topicResource.getMetadata()).withName(topicName + "-1").build()).build();
         // create one
         createKafkaTopicResource(context, topicResource2);
@@ -611,7 +612,7 @@ public class TopicOperatorIT extends BaseITST {
         String topicName = "test-reconcile";
 
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
         String resourceName = topicResource.getMetadata().getName();
 
         operation().inNamespace(NAMESPACE).create(topicResource);
@@ -685,7 +686,7 @@ public class TopicOperatorIT extends BaseITST {
 
         // create topic and test OR, labels, annotations
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), metadata).build();
-        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, resourcePredicate);
+        KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
         createKafkaTopicResource(context, topicResource);
         assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().size());
         assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
@@ -697,8 +698,8 @@ public class TopicOperatorIT extends BaseITST {
         // edit kafka topic
         topicName = "test-kafka-topic-with-owner-ref-2";
         Topic topic2 = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), metadata).build();
-        KafkaTopic topicResource2 = TopicSerialization.toTopicResource(topic2, resourcePredicate);
-        topicResource = TopicSerialization.toTopicResource(topic2, resourcePredicate);
+        KafkaTopic topicResource2 = TopicSerialization.toTopicResource(topic2, labels);
+        topicResource = TopicSerialization.toTopicResource(topic2, labels);
         topicResource.getMetadata().getAnnotations().put("han", "solo");
         createKafkaTopicResource(context, topicResource2);
         assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
@@ -710,7 +711,7 @@ public class TopicOperatorIT extends BaseITST {
         topicName = "test-kafka-topic-with-owner-ref-3";
         Topic topic3 = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), metadata).build();
         topic3.getMetadata().getLabels().put("stan", "lee");
-        topicResource = TopicSerialization.toTopicResource(topic3, resourcePredicate);
+        topicResource = TopicSerialization.toTopicResource(topic3, labels);
         createKafkaTopicResource(context, topicResource);
         assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
         assertEquals(3, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());

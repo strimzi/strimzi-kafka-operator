@@ -50,7 +50,7 @@ public class K8sImplTest {
             return ktl;
         });
 
-        K8sImpl k8s = new K8sImpl(vertx, mockClient, new LabelPredicate("foo", "bar"), "default");
+        K8sImpl k8s = new K8sImpl(vertx, mockClient, new Labels("foo", "bar"), "default");
 
         k8s.listMaps(ar -> {
             if (ar.failed()) {

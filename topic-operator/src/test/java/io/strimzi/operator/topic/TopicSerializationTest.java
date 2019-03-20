@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
 
 public class TopicSerializationTest {
 
-    private final LabelPredicate resourcePredicate = new LabelPredicate(
+    private final Labels labels = new Labels(
             "app", "strimzi");
 
     @Test
@@ -48,7 +48,7 @@ public class TopicSerializationTest {
         metadata.setAnnotations(new HashMap<>());
         builder.withMetadata(metadata);
         Topic wroteTopic = builder.build();
-        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, resourcePredicate);
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(wroteTopic, labels);
 
         assertEquals(wroteTopic.getTopicName().toString(), kafkaTopic.getMetadata().getName());
         assertEquals(1, kafkaTopic.getMetadata().getLabels().size());

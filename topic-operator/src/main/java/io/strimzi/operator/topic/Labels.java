@@ -4,18 +4,17 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A predicate on the labels of some object held in K8s.
+ * A labels of some object held in K8s.
  */
-public class LabelPredicate implements Predicate<HasMetadata> {
+public class Labels {
 
     private static final Pattern VALUE_PATTERN = Pattern.compile("([a-z0-9A-Z]([a-z0-9A-Z_.-]*[a-z0-9A-Z])?)?");
     private static final Pattern KEY_PATTERN = Pattern.compile("([a-z0-9.-]*/)?([a-z0-9A-Z](?:[a-z0-9A-Z_.-]*[a-z0-9A-Z])?)");
@@ -24,7 +23,7 @@ public class LabelPredicate implements Predicate<HasMetadata> {
 
     private final Map<String, String> labels;
 
-    public LabelPredicate(String... labels) {
+    public Labels(String... labels) {
         if (labels.length % 2 != 0) {
             throw new IllegalArgumentException();
         }
@@ -35,7 +34,7 @@ public class LabelPredicate implements Predicate<HasMetadata> {
         checkLabels(this.labels);
     }
 
-    private LabelPredicate(Map<String, String> labels) {
+    private Labels(Map<String, String> labels) {
         this.labels = labels;
     }
 
@@ -102,7 +101,10 @@ public class LabelPredicate implements Predicate<HasMetadata> {
      * @param string The string to parse.
      * @return The label predicate
      */
-    public static LabelPredicate fromString(String string) throws IllegalArgumentException {
+    public static Labels fromString(String string) throws IllegalArgumentException {
+        if (string == null || string.equals("")) {
+            return new Labels(Collections.EMPTY_MAP);
+        }
         Matcher m = COMMA_SPLITTER.matcher(string);
         int lastEnd = 0;
         while (m.find()) {
@@ -127,7 +129,7 @@ public class LabelPredicate implements Predicate<HasMetadata> {
             map.put(keyValue[0], keyValue[1]);
         }
         checkLabels(map);
-        return new LabelPredicate(map);
+        return new Labels(map);
     }
 
     public Map<String, String> labels() {
@@ -135,22 +137,6 @@ public class LabelPredicate implements Predicate<HasMetadata> {
     }
 
     @Override
-    public boolean test(HasMetadata resource) {
-        Map<String, String> mapLabels = resource.getMetadata().getLabels();
-        if (mapLabels == null) {
-            return false;
-        } else {
-            for (Map.Entry<String, String> entry : labels.entrySet()) {
-                final String label = entry.getKey();
-                final String value = entry.getValue();
-                if (!value.equals(mapLabels.get(label))) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-
     public String toString() {
         StringBuilder sb = new StringBuilder();
         boolean f = false;

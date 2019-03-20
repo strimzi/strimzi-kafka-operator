@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.fabric8.kubernetes.client.Watcher.Action.ADDED;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -37,7 +38,7 @@ import static java.util.Collections.singletonMap;
 @RunWith(VertxUnitRunner.class)
 public class TopicOperatorTest {
 
-    private final LabelPredicate resourcePredicate = LabelPredicate.fromString("app=strimzi");
+    private final Labels labels = Labels.fromString("app=strimzi");
 
     private final TopicName topicName = new TopicName("my-topic");
     private final ResourceName resourceName = topicName.asKubeName();
@@ -65,7 +66,7 @@ public class TopicOperatorTest {
         mockTopicStore = new MockTopicStore();
         mockK8s = new MockK8s();
         config = new Config(new HashMap<>(MANDATORY_CONFIG));
-        topicOperator = new TopicOperator(vertx, mockKafka, mockK8s, mockTopicStore, resourcePredicate, "default-namespace", config);
+        topicOperator = new TopicOperator(vertx, mockKafka, mockK8s, mockTopicStore, labels, "default-namespace", config);
         metadata.setName(topicName.toString());
         Map<String, String> lbls = new HashMap<>();
         lbls.put("app", "strimzi");
@@ -98,20 +99,18 @@ public class TopicOperatorTest {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("non-topic").build()).build();
 
         Async async = context.async();
-        topicOperator.onResourceAdded(kafkaTopic, ar -> {
-            assertSucceeded(context, ar);
-            mockKafka.assertEmpty(context);
-            mockTopicStore.assertEmpty(context);
-            async.complete();
-
-        });
+        K8sTopicWatcher w = new K8sTopicWatcher(topicOperator);
+        w.eventReceived(ADDED, kafkaTopic);
+        mockKafka.assertEmpty(context);
+        mockTopicStore.assertEmpty(context);
+        async.complete();
     }
 
     /** Test what happens when a non-topic KafkaTopic gets created in kubernetes */
     @Test
     public void testOnKafkaTopicAdded_invalidResource(TestContext context) {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName("invalid").withLabels(resourcePredicate.labels()).build())
+                .withMetadata(new ObjectMetaBuilder().withName("invalid").withLabels(labels.labels()).build())
                 .withNewSpec()
                     .withReplicas(1)
                     .withPartitions(1)
@@ -330,7 +329,7 @@ public class TopicOperatorTest {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
         Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "baz")).build();
         Topic privateTopic = kubeTopic;
-        KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
+        KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> { });
@@ -381,7 +380,7 @@ public class TopicOperatorTest {
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
-        mockK8s.createResource(TopicSerialization.toTopicResource(kubeTopic, resourcePredicate), ar -> async0.countDown());
+        mockK8s.createResource(TopicSerialization.toTopicResource(kubeTopic, labels), ar -> async0.countDown());
 
         Async async = context.async(1);
         topicOperator.reconcile(null, kubeTopic, kafkaTopic, privateTopic, reconcileResult -> {
@@ -410,7 +409,7 @@ public class TopicOperatorTest {
 
         Async async0 = context.async(2);
         mockK8s.setCreateResponse(resourceName, null)
-                .createResource(TopicSerialization.toTopicResource(kubeTopic, resourcePredicate), ar -> async0.countDown());
+                .createResource(TopicSerialization.toTopicResource(kubeTopic, labels), ar -> async0.countDown());
         mockK8s.setDeleteResponse(resourceName, null);
         mockTopicStore.setCreateTopicResponse(topicName, null)
                 .create(privateTopic, ar -> async0.countDown());
@@ -509,7 +508,7 @@ public class TopicOperatorTest {
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
-        mockK8s.createResource(TopicSerialization.toTopicResource(kubeTopic, resourcePredicate), ar -> async0.countDown());
+        mockK8s.createResource(TopicSerialization.toTopicResource(kubeTopic, labels), ar -> async0.countDown());
         mockTopicStore.setCreateTopicResponse(topicName, null);
         async0.await();
 
@@ -546,7 +545,7 @@ public class TopicOperatorTest {
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
-        KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
+        KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, labels);
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockK8s.createResource(topic, ar -> async0.countDown());
         mockK8s.setModifyResponse(topicName.asKubeName(), null);
@@ -587,7 +586,7 @@ public class TopicOperatorTest {
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
 
-        KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
+        KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, labels);
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockK8s.createResource(topic, ar -> async0.countDown());
         mockK8s.setModifyResponse(topicName.asKubeName(), null);
@@ -633,7 +632,7 @@ public class TopicOperatorTest {
         mockKafka.createTopic(kafkaTopic, ar -> async0.countDown());
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
-        KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
+        KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockK8s.createResource(resource, ar -> async0.countDown());
         mockK8s.setModifyResponse(topicName.asKubeName(), null);
@@ -683,7 +682,7 @@ public class TopicOperatorTest {
                 .create(privateTopic, ar -> { });
         mockTopicStore.setDeleteTopicResponse(topicName, storeException);
 
-        KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
+        KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
 
         Async async = context.async();
         topicOperator.onResourceDeleted(resource, ar -> {
@@ -711,7 +710,7 @@ public class TopicOperatorTest {
         Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), null).build();
         Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), null).build();
         Topic privateTopic = kafkaTopic;
-        KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, resourcePredicate);
+        KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(kafkaTopic, ar -> { });
@@ -769,7 +768,7 @@ public class TopicOperatorTest {
         Topic privateTopic = kubeTopic;
 
         mockK8s.setCreateResponse(resourceName, null)
-                .createResource(TopicSerialization.toTopicResource(kubeTopic, resourcePredicate), ar -> { });
+                .createResource(TopicSerialization.toTopicResource(kubeTopic, labels), ar -> { });
         mockK8s.setDeleteResponse(resourceName, k8sException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)

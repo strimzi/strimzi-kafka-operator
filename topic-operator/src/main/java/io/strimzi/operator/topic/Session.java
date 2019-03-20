@@ -129,11 +129,11 @@ public class Session extends AbstractVerticle {
         LOGGER.debug("Using AdminClient {}", adminClient);
         this.kafka = new OperatorAssignedKafkaImpl(adminClient, vertx, config);
         LOGGER.debug("Using Kafka {}", kafka);
-        LabelPredicate resourcePredicate = config.get(Config.LABELS);
+        Labels labels = config.get(Config.LABELS);
 
         String namespace = config.get(Config.NAMESPACE);
         LOGGER.debug("Using namespace {}", namespace);
-        this.k8s = new K8sImpl(vertx, kubeClient, resourcePredicate, namespace);
+        this.k8s = new K8sImpl(vertx, kubeClient, labels, namespace);
         LOGGER.debug("Using k8s {}", k8s);
 
         Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT),
@@ -150,7 +150,7 @@ public class Session extends AbstractVerticle {
                 ZkTopicStore topicStore = new ZkTopicStore(zk);
                 LOGGER.debug("Using TopicStore {}", topicStore);
 
-                this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, resourcePredicate, namespace, config);
+                this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config);
                 LOGGER.debug("Using Operator {}", topicOperator);
 
                 this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
@@ -162,9 +162,9 @@ public class Session extends AbstractVerticle {
                 topicsWatcher.start(zk);
 
                 Thread resourceThread = new Thread(() -> {
-                    LOGGER.debug("Watching KafkaTopics matching {}", resourcePredicate);
+                    LOGGER.debug("Watching KafkaTopics matching {}", labels);
                     Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
-                            .inNamespace(namespace).watch(new K8sTopicWatcher(topicOperator, resourcePredicate));
+                            .inNamespace(namespace).withLabels(labels.labels()).watch(new K8sTopicWatcher(topicOperator));
                     LOGGER.debug("Watching setup");
 
                     // start the HTTP server for healthchecks
