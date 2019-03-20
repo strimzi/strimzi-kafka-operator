@@ -37,21 +37,30 @@ endif::Kubernetes[]
 
 === Prometheus
 
-The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml[`prometheus.yaml`] YAML file describes all the resources required by Prometheus in order to effectively monitor a Strimzi Kafka & ZooKeeper cluster.
-These resources lack important production configuration to run a healthy and highly available Prometheus server.
-They should only be used to demonstrate this Grafana dashboard example.
+In Strimzi we use CoreOS Prometheus Operator which can be deployed by applying these https://github.com/coreos/prometheus-operator/tree/master/example/rbac/prometheus-operator[`Prometheus Operator YAML files`] from CoreOS repository.
+This operator allows us to run healthy and highly available Prometheus server what is one of the requirements for the production.
+
+If you use another namespace than in the repository files do you can download and edit single file by using a command.
+
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus-operator-deployment.yaml
+
+Strimzi repository contains configuration files for Prometheus server and by applying them a resources are created.
+These resources are managed by Prometheus Operator.
 
 The following resources are defined:
 
 * A `ClusterRole` that grants permissions to read Prometheus health endpoints of the Kubernetes system, including cAdvisor and kubelet for container metrics.  The Prometheus server configuration uses the Kubernetes service discovery feature in order to discover the pods in the cluster from which it gets metrics.  In order to have this feature working, it is necessary for the service account used for running the Prometheus service pod to have access to the API server to get the pod list.
 * A `ServiceAccount` for the Prometheus pods to run under.
 * A `ClusterRoleBinding` which binds the aforementioned `ClusterRole` to the `ServiceAccount`.
-* A `Deployment` to manage the actual Prometheus server pod.
-* A `ConfigMap` to manage the configuration of Prometheus Server.
-* A `Service` to provide an easy to reference hostname for other services to connect to Prometheus server (such as Grafana).
+* A `Deployment` to manage the Prometheus Operator pod.
+* A `ServiceMonitor` to manage configuration of Prometheus pod.
+* A `Secret` to manage additional Prometheus settings.
+* A `PrometheusRule` to manage alert rules for Prometheus pod.
+* A `Prometheus` to manage Prometheus pod configuration.
 
 Prometheus also provides an alerting system through the link:https://prometheus.io/docs/alerting/alertmanager/[alert manager] component.
-In order to enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml[`alerting-rules.yaml`] file describes a `ConfigMap` resource which defines sample alerting rules on Kafka and Zookeeper metrics.
+In order to enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/04-prometheus-rules.yaml[`prometheus-rules.yaml`] file describes a `PrometheusRule` resource which defines sample alerting rules on Kafka and Zookeeper metrics.
 When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the alert manager which then uses the configured notification methods to notify the user.
 
 More information about how to set up alerting rules https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[here].
@@ -63,38 +72,72 @@ It also discovers an alert manager instance in the same namespace.
 If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
 
-The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules; download the resource file as follows:
+To define Prometheus jobs which are actually scraping the metrics data you need to apply `ServiceMonitor` resource which is located in provided file `strimzi-service-monitor.yaml`.
+Download it by a command.
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml > alerting-rules.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/strimzi-service-monitor.yaml
+
+The Prometheus Operator currently supports only jobs with `endpoints` role for discovering services.
+To use another roles we need to use `additionalScrapeConfigs` in the `prometheus.yaml` configuration.
+This takes name of the `Secret` and the name of property in given `Secret` where is stored additional configuration.
+To create this `Secret` resource we can use a commands.
+
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/additional-properties/prometheus-additional.yaml
+oc create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
+
+The provided `prometheus-rules.yaml` file creates a `PrometheusRule` with sample alerting rules. Download and update the resource file as follows.
+
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus-rules.yaml
 
 To deploy all these resources you can run the following.
 
 [source,shell,subs=attributes+]
 oc login -u system:admin
-oc apply -f alerting-rules.yaml
+oc apply -f strimzi-service-monitor.yaml
+oc apply -f prometheus-rules.yaml
 oc apply -f prometheus.yaml
 
 ifdef::Kubernetes[]
 ==== Deploying on {KubernetesName}
 
 The provided `prometheus.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
+It also discovers an alert manager instance in the same namespace.
 If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
 
-The provided `alerting-rules.yaml` file creates a `ConfigMap` with sample alerting rules; download the resource file as follows:
+To define Prometheus jobs which are actually scraping the metrics data you need to apply `ServiceMonitor` resource which is located in provided file `strimzi-service-monitor.yaml`.
+Download it by a command.
 
 [source,shell,subs=attributes+]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml > alerting-rules.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/strimzi-service-monitor.yaml
+
+The Prometheus Operator currently supports only jobs with `endpoints` role for discovering services.
+To use another roles we need to use `additionalScrapeConfigs` in the `prometheus.yaml` configuration.
+This takes name of the `Secret` and the name of property in given `Secret` where is stored additional configuration.
+To create this `Secret` resource we can use a commands.
+
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/additional-properties/prometheus-additional.yaml
+kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
+
+The provided `prometheus-rules.yaml` file creates a `PrometheusRule` with sample alerting rules. Download and update the resource file as follows.
+
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus-rules.yaml
 
 To deploy all these resources you can run the following.
 
 [source,shell,subs=attributes+]
-kubectl apply -f alerting-rules.yaml
+kubectl login -u system:admin
+kubectl apply -f strimzi-service-monitor.yaml
+kubectl apply -f prometheus-rules.yaml
 kubectl apply -f prometheus.yaml
 
 endif::Kubernetes[]
@@ -188,12 +231,13 @@ It is possible to declare alerting rules on the Prometheus server in order to be
 When an alert condition is evaluated as true, Prometheus sends alert data to the alert manager which then sends notifications out.
 Notifications can be sent via methods such as email, Slack, PagerDuty and HipChat
 
-The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager.yaml[`alertmanager.yaml`] YAML file describes all the resources required for deploying and configuring the alert manager.
+The provided Prometheus https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml[`alert-manager.yaml`] YAML file describes the resources required for deploying and configuring the alert manager.
+The file https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml[`alertmanager.yaml`] YAML file describes the hook for sending a notifications.
 
 The following resources are defined:
 
-* A `Deployment` to manage the actual alert manager pod.
-* A `ConfigMap` to manage the configuration of the alert manager.
+* A `Alertmanager` to manage the actual alert manager pod.
+* A `Secret` to manage the configuration of the alert manager.
 * A `Service` to provide an easy to reference hostname for other services to connect to alert manager (such as Prometheus).
 
 The provided sample configuration configures the alert manager to send notification to a Slack channel.
@@ -204,24 +248,44 @@ Before deploying the alert manager it is needed to update the following paramete
 
 ==== Deploying on {OpenShiftName}
 
+Download `alert-manager.yaml` by a command.
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml
+
+To configure Alert Manager hook for sending alerts we need to create a `Secret` resource with configuration.
+Download the `alertmanager.yaml` file and create a `Secret` from it.
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
+oc create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
+
 To deploy the alert manager the following commands should be executed:
 
 [source,shell,subs=attributes+]
-oc apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager.yaml
+oc apply -f alert-manager.yaml
 
 ifdef::Kubernetes[]
 ==== Deploying on {KubernetesName}
 
+Download `alert-manager.yaml` by a command.
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml
+
+To configure Alert Manager hook for sending alerts we need to create a `Secret` resource with configuration.
+Download the `alertmanager.yaml` file and create a `Secret` from it.
+[source,shell,subs=attributes+]
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
+kubectl create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
+
 To deploy the alert manager the following commands should be executed:
 
 [source,shell,subs=attributes+]
-kubectl apply -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager.yaml
+kubectl apply -f alert-manager.yaml
 
 endif::Kubernetes[]
 
 ==== Alerts examples
 
-The provided https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alerting-rules.yaml[`alerting-rules.yaml`] YAML file provides the following sample alerting rules on Kafka and Zookeeper metrics.
+The provided https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`] YAML file provides the following sample alerting rules on Kafka and Zookeeper metrics.
 
 Kafka alerts are:
 
