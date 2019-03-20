@@ -111,6 +111,7 @@
 
     <modules>
         <module>test</module>
+        <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
         <module>mockkube</module>
@@ -125,6 +126,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>crd-annotations</artifactId>
+                <version>${project.version}</version>
+                <scope>compile</scope>
+            </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>test</artifactId>
