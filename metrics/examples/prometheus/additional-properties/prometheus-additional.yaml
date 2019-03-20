@@ -1,5 +1,5 @@
 # To update additional settings create a Secret custom resource by using a command below
-# oc create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml --dry-run -oyaml > ../install/03-additional-scrape-configs.yaml
+# oc create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
 - job_name: "kubernetes-cadvisor"
   honor_labels: true
   scrape_interval: 10s
