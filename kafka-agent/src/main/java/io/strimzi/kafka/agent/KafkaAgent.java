@@ -52,12 +52,14 @@ public class KafkaAgent {
                 LOGGER.trace("Metric added {}", metricName);
                 if ("kafka.server".equals(metricName.getGroup())) {
                     if ("KafkaServer".equals(metricName.getType())
-                            && "BrokerState".equals(metricName.getName())) {
+                            && "BrokerState".equals(metricName.getName())
+                            && metric instanceof Gauge) {
                         LOGGER.debug("Metric {} added ", metricName);
                         brokerStateName = metricName;
                         brokerState = (Gauge) metric;
                     } else if ("SessionExpireListener".equals(metricName.getType())
-                            && "SessionState".equals(metricName.getName())) {
+                            && "SessionState".equals(metricName.getName())
+                            && metric instanceof Gauge) {
                         sessionStateName = metricName;
                         sessionState = (Gauge) metric;
                     }
