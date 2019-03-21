@@ -22,7 +22,7 @@ spec:
       log.message.format.version: "2.1"
     storage:
       type: persistent-claim
-      size: 1Gi
+      size: 100Gi
       deleteClaim: false
     metrics:
       # Inspired by config from Kafka 2.0.0 example rules:
@@ -131,7 +131,7 @@ spec:
       timeoutSeconds: 5
     storage:
       type: persistent-claim
-      size: 1Gi
+      size: 100Gi
       deleteClaim: false
     metrics:
       # Inspired by Zookeeper rules
