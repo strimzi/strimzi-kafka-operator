@@ -10,7 +10,7 @@ To install {ProductName}, download the release artefacts from {ReleaseDownload}.
 endif::Downloading[]
 
 ifndef::Downloading[]
-To install {ProductName}, download and extract the `install_and_examples.zip` file from the {ZipDownload}.
+To install {ProductName}, download and extract the `amq-streams-1.1.0-ocp-install-examples.zip` file from the {ZipDownload}.
 endif::Downloading[]
 
 The folder contains several YAML files to help you deploy the components of {ProductName} to {ProductPlatformName}, perform common operations, and configure your Kafka cluster. The YAML files are referenced throughout this documentation.
