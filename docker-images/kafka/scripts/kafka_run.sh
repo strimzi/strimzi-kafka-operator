@@ -22,7 +22,7 @@ if [ -z "$KAFKA_LOG4J_OPTS" ]; then
   export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
 fi
 
-export KAFKA_OPTS="-javaagent:${KAFKA_HOME}/libs/kafka-agent-${STRIMZI_VERSION}.jar=/tmp/kafka-ready"
+export KAFKA_OPTS="-javaagent:${KAFKA_HOME}/libs/kafka-agent-${STRIMZI_VERSION}.jar=/tmp/kafka-ready:/tmp/zk-connected"
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then

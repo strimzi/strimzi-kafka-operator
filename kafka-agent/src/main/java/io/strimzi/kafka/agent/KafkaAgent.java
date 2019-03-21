@@ -27,60 +27,142 @@ public class KafkaAgent {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
 
-    public static void premain(String agentArgs) {
+    private final File sessionConnectedFile;
+    private File brokerReadyFile;
+    private MetricName brokerStateName;
+    private Gauge brokerState;
+    private MetricName sessionStateName;
+    private Gauge sessionState;
+    private Thread pollerThread;
 
-        File filename = new File(agentArgs != null && !agentArgs.isEmpty() ? agentArgs : "/tmp/kafka-ready");
-        if (filename.exists()) {
-            LOGGER.error(KafkaAgent.class.getName() + ": File already exists: " + filename);
-        } else {
-            MetricsRegistry metricsRegistry = Metrics.defaultRegistry();
-            metricsRegistry.addListener(new MetricsRegistryListener() {
-                @Override
-                public void onMetricRemoved(MetricName metricName) {
-                }
-
-                @Override
-                public void onMetricAdded(MetricName metricName, Metric metric) {
-                    LOGGER.trace("Metric added {}", metricName);
-                    if ("kafka.server".equals(metricName.getGroup())
-                            && "KafkaServer".equals(metricName.getType())
-                            && "BrokerState".equals(metricName.getName())) {
-                        LOGGER.debug("Metric {} added ", metricName);
-                        new Thread(poller(metricName, (Gauge) metric, filename),
-                                "KubernetesReadinessPoller").start();
-                    }
-                }
-            });
-        }
+    public KafkaAgent(File brokerReadyFile, File sessionConnectedFile) {
+        this.brokerReadyFile = brokerReadyFile;
+        this.sessionConnectedFile = sessionConnectedFile;
     }
 
-    private static Runnable poller(MetricName metricName, Gauge metric, File filename) {
-        return () -> {
-            int i = 0;
-            while (true) {
-                Integer running = Integer.valueOf(3);
-                Object value = metric.value();
-                if (running.equals(value)) {
-                    try {
-                        LOGGER.info("Running as server according to {} => ready", metricName);
-                        new FileOutputStream(filename).close();
-                        break;
-                    } catch (IOException e) {
-                        LOGGER.error("Could not write readiness file {}", filename, e);
-                        break;
+    private void run() {
+        MetricsRegistry metricsRegistry = Metrics.defaultRegistry();
+        metricsRegistry.addListener(new MetricsRegistryListener() {
+            @Override
+            public void onMetricRemoved(MetricName metricName) {
+            }
+
+            @Override
+            public void onMetricAdded(MetricName metricName, Metric metric) {
+                LOGGER.trace("Metric added {}", metricName);
+                if ("kafka.server".equals(metricName.getGroup())) {
+                    if ("KafkaServer".equals(metricName.getType())
+                            && "BrokerState".equals(metricName.getName())) {
+                        LOGGER.debug("Metric {} added ", metricName);
+                        brokerStateName = metricName;
+                        brokerState = (Gauge) metric;
+                    } else if ("SessionExpireListener".equals(metricName.getType())
+                            && "SessionState".equals(metricName.getName())) {
+                        sessionStateName = metricName;
+                        sessionState = (Gauge) metric;
                     }
-                } else if (i++ % 60 == 0) {
-                    LOGGER.debug("Metric {} = {}", metricName, value);
                 }
-                try {
-                    Thread.sleep(1000L);
-                } catch (InterruptedException e) {
-                    // In theory this should never normally happen
-                    LOGGER.warn("Unexepctedly interrupted");
-                    break;
+                if (brokerState != null
+                        && sessionState != null
+                        && pollerThread == null) {
+                    LOGGER.info("Starting poller");
+                    pollerThread = new Thread(poller(),
+                            "KafkaAgentPoller");
+                    pollerThread.start();
                 }
             }
-            LOGGER.debug("Exiting thread");
+        });
+    }
+
+    private Runnable poller() {
+        return new Runnable() {
+            int i = 0;
+
+            @Override
+            public void run() {
+                while (true) {
+                    handleSessionState();
+
+                    if (handleBrokerState()) {
+                        break;
+                    }
+
+                    try {
+                        Thread.sleep(1000L);
+                    } catch (InterruptedException e) {
+                        // In theory this should never normally happen
+                        LOGGER.warn("Unexpectedly interrupted");
+                        break;
+                    }
+                }
+                LOGGER.debug("Exiting thread");
+            }
+
+            boolean handleBrokerState() {
+                LOGGER.trace("Polling {}", brokerStateName);
+                boolean ready = false;
+                Integer running = Integer.valueOf(3);
+                Object value = brokerState.value();
+                if (running.equals(value)) {
+                    try {
+                        LOGGER.info("Running as server according to {} => ready", brokerStateName);
+                        touch(brokerReadyFile);
+                    } catch (IOException e) {
+                        LOGGER.error("Could not write readiness file {}", brokerReadyFile, e);
+                    }
+                    ready = true;
+
+                } else if (i++ % 60 == 0) {
+                    LOGGER.debug("Metric {} = {}", brokerStateName, value);
+                }
+                return ready;
+            }
+
+            void handleSessionState() {
+                LOGGER.trace("Polling {}", sessionStateName);
+                String sessionStateStr = String.valueOf(sessionState.value());
+                if ("CONNECTED".equals(sessionStateStr)) {
+                    if (!sessionConnectedFile.exists()) {
+                        try {
+                            touch(sessionConnectedFile);
+                        } catch (IOException e) {
+                            LOGGER.error("Could not write session connected file {}", sessionConnectedFile, e);
+                        }
+                    }
+                } else if (i++ % 60 == 0) {
+                    if (!sessionConnectedFile.delete()) {
+                        LOGGER.error("Could not delete session connected file {}", sessionConnectedFile);
+                    }
+                    LOGGER.debug("Metric {} = {}", sessionStateName, sessionStateStr);
+                }
+            }
         };
+    }
+
+    private void touch(File file) throws IOException {
+        new FileOutputStream(file).close();
+    }
+
+    /**
+     * Agent entry point
+     */
+    public static void premain(String agentArgs) {
+        int index = agentArgs.indexOf(':');
+        if (index == -1) {
+            LOGGER.error("Unable to parse arguments {}", agentArgs);
+            System.exit(1);
+        } else {
+            File brokerReadyFile = new File(agentArgs.substring(0, index));
+            File sessionConnectedFile = new File(agentArgs.substring(index + 1));
+            if (brokerReadyFile.exists()) {
+                LOGGER.error("Broker readiness file already exists: {}", brokerReadyFile);
+                System.exit(1);
+            } else if (sessionConnectedFile.exists()) {
+                LOGGER.error("Session connected file already exists: {}", sessionConnectedFile);
+                System.exit(1);
+            } else {
+                new KafkaAgent(brokerReadyFile, sessionConnectedFile).run();
+            }
+        }
     }
 }
