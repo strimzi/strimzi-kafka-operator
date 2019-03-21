@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -66,6 +67,9 @@ public class KafkaSpec implements UnknownPropertyPreserving, Serializable {
     }
 
     @Deprecated
+    @DeprecatedProperty(
+            movedToPath = "spec.entityOerator.topicOperator"
+    )
     @Description("Configuration of the Topic Operator")
     public TopicOperatorSpec getTopicOperator() {
         return topicOperator;
