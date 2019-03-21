@@ -3,6 +3,7 @@ FROM centos:7
 ARG JAVA_VERSION
 ARG KAFKA_SHA512
 ARG KAFKA_VERSION
+ARG strimzi_version
 
 RUN yum -y install java-${JAVA_VERSION}-openjdk-headless gettext nmap-ncat openssl && yum clean all -y
 
@@ -15,6 +16,7 @@ RUN useradd -r -m -u 1001 -g 0 kafka
 
 # Set Scala and Kafka version
 ENV KAFKA_VERSION=${KAFKA_VERSION}
+ENV STRIMZI_VERSION=${strimzi_version}
 ENV SCALA_VERSION=2.12
 ENV JMX_EXPORTER_VERSION=0.1.0
 
@@ -37,6 +39,8 @@ RUN curl -O https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA
     && mkdir $KAFKA_HOME \
     && tar xvfz kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C $KAFKA_HOME --strip-components=1 \
     && rm -f kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz*
+
+COPY ./tmp/kafka-agent-${strimzi_version}.jar ${KAFKA_HOME}/libs/
 
 RUN yum -y install stunnel net-tools && yum clean all -y
 
