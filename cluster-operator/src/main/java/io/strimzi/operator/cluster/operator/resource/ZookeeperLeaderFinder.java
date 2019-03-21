@@ -152,7 +152,7 @@ public class ZookeeperLeaderFinder {
 
     }
 
-    private RuntimeException missingSecretFuture(String namespace, String secretName) {
+    static RuntimeException missingSecretFuture(String namespace, String secretName) {
         return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
     }
 

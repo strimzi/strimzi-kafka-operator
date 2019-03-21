@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -38,7 +37,6 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -148,7 +146,7 @@ public class KafkaCluster extends AbstractModel {
     protected static final int CLIENT_PORT = 9092;
     protected static final String CLIENT_PORT_NAME = "clients";
 
-    protected static final int REPLICATION_PORT = 9091;
+    public static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "replication";
 
     protected static final int CLIENT_TLS_PORT = 9093;
@@ -277,8 +275,12 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String podDnsName(String namespace, String cluster, int podId) {
+        return podDnsName(namespace, cluster, KafkaCluster.kafkaPodName(cluster, podId));
+    }
+
+    public static String podDnsName(String namespace, String cluster, String podName) {
         return String.format("%s.%s.%s.svc.%s",
-                KafkaCluster.kafkaPodName(cluster, podId),
+                podName,
                 KafkaCluster.headlessServiceName(cluster),
                 namespace,
                 ModelUtils.KUBERNETES_SERVICE_DNS_DOMAIN);
@@ -1677,36 +1679,29 @@ public class KafkaCluster extends AbstractModel {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
 
         // Restrict access to 9091 / replication port
-        NetworkPolicyPort replicationPort = new NetworkPolicyPort();
-        replicationPort.setPort(new IntOrString(REPLICATION_PORT));
-
-        NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector = new LabelSelector();
-        Map<String, String> expressions = new HashMap<>();
-        expressions.put(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster));
-        labelSelector.setMatchLabels(expressions);
-        kafkaClusterPeer.setPodSelector(labelSelector);
-
-        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector2 = new LabelSelector();
-        Map<String, String> expressions2 = new HashMap<>();
-        expressions2.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
-        labelSelector2.setMatchLabels(expressions2);
-        entityOperatorPeer.setPodSelector(labelSelector2);
-
-        NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector3 = new LabelSelector();
-        Map<String, String> expressions3 = new HashMap<>();
-        expressions3.put(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster));
-        labelSelector3.setMatchLabels(expressions3);
-        kafkaExporterPeer.setPodSelector(labelSelector3);
-
-        NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(replicationPort)
-                .withFrom(kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer)
-                .build();
-
-        rules.add(replicationRule);
+        rules.add(new NetworkPolicyIngressRuleBuilder()
+                .addNewPort().withNewPort(REPLICATION_PORT).endPort()
+                .addNewFrom()
+                    .withNewPodSelector() // cluster operator
+                        .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
+                    .endPodSelector()
+                .endFrom()
+                .addNewFrom()
+                    .withNewPodSelector() // kafka cluster
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                    .endPodSelector()
+                .endFrom()
+                .addNewFrom()
+                    .withNewPodSelector() // entity operator
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
+                    .endPodSelector()
+                .endFrom()
+                .addNewFrom()
+                    .withNewPodSelector() // cluster operator
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
+                    .endPodSelector()
+                .endFrom()
+                .build());
 
         // Free access to 9092, 9093 and 9094 ports
         if (listeners != null) {
@@ -1767,7 +1762,9 @@ public class KafkaCluster extends AbstractModel {
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                    .withPodSelector(labelSelector)
+                    .withNewPodSelector()
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                    .endPodSelector()
                     .withIngress(rules)
                 .endSpec()
                 .build();
