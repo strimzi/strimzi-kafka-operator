@@ -124,8 +124,20 @@ public class PlatformFeaturesAvailabilityTest {
                 "}";
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenshift, response);
-        assertFalse(pfa.isNetworkPolicyAvailable());
+        assertFalse(pfa.isNetworkPolicyPodSelectorAndNameSpaceInSinglePeerAvailable());
         PlatformFeaturesAvailability pfa2 = new PlatformFeaturesAvailability(isOpenshift, response2);
-        assertTrue(pfa2.isNetworkPolicyAvailable());
+        assertTrue(pfa2.isNetworkPolicyPodSelectorAndNameSpaceInSinglePeerAvailable());
+    }
+
+    @Test
+    public void versionWithSomeChars() {
+        boolean isOpenshift = true;
+
+        String response = "{\n" +
+                "  \"major\": \"1\",\n" +
+                "  \"minor\": \"12+\"\n" +
+                "}";
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenshift, response);
+        assertEquals(12, pfa.getMinorVersion());
     }
 }

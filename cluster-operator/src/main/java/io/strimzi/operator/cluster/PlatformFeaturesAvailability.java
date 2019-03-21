@@ -14,7 +14,7 @@ public class PlatformFeaturesAvailability {
     static final String MAJORVERSION = "major";
     static final String MINORVERSION = "minor";
     static final String ISOPENSHIFT = "isOpenshift";
-    static final String NETWORKPOLICIES = "networkPolicies";
+    static final String NETWORKPOLICIES_NS_AND_PODSEL = "networkPoliciesNSandPodSel";
 
     static final String KUBERNETES1_8 = "1.8";
     static final String KUBERNETES1_9 = "1.9";
@@ -29,12 +29,12 @@ public class PlatformFeaturesAvailability {
         Properties versionResponseProperties = Json.decodeValue(versionResponse, Properties.class);
 
         // we need to get versions first
-        properties.put(MAJORVERSION, versionResponseProperties.get(MAJORVERSION));
-        properties.put(MINORVERSION, versionResponseProperties.get(MINORVERSION));
+        properties.put(MAJORVERSION, versionResponseProperties.get(MAJORVERSION).toString().replaceAll("\\D", ""));
+        properties.put(MINORVERSION, versionResponseProperties.get(MINORVERSION).toString().replaceAll("\\D", ""));
         properties.put(ISOPENSHIFT, Boolean.toString(isOpenshift));
 
         // then we can compare
-        properties.put(NETWORKPOLICIES, Boolean.toString(this.isEqualOrNewerVersionThan(KUBERNETES1_11)));
+        properties.put(NETWORKPOLICIES_NS_AND_PODSEL, Boolean.toString(this.isEqualOrNewerVersionThan(KUBERNETES1_11)));
     }
 
     public boolean isOpenshift() {
@@ -49,8 +49,8 @@ public class PlatformFeaturesAvailability {
         return Integer.parseInt(this.properties.getProperty(MAJORVERSION));
     }
 
-    public boolean isNetworkPolicyAvailable() {
-        return Boolean.parseBoolean(this.properties.getProperty(NETWORKPOLICIES));
+    public boolean isNetworkPolicyPodSelectorAndNameSpaceInSinglePeerAvailable() {
+        return Boolean.parseBoolean(this.properties.getProperty(NETWORKPOLICIES_NS_AND_PODSEL));
     }
 
     public boolean isEqualOrNewerVersionThan(String version) {

@@ -77,7 +77,7 @@ public class Main {
 
         maybeCreateClusterRoles(vertx, config, client).setHandler(crs -> {
             if (crs.succeeded())    {
-                isOnOpenShift(vertx, client, config).setHandler(os -> {
+                getPlatformFeaturesAvailability(vertx, client, config).setHandler(os -> {
                     if (os.succeeded()) {
                         run(vertx, client, os.result(), config).setHandler(ar -> {
                             if (ar.failed()) {
@@ -193,7 +193,7 @@ public class Main {
         return kafkaConnectS2IClusterOperations;
     }
 
-    static Future<PlatformFeaturesAvailability> isOnOpenShift(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
+    static Future<PlatformFeaturesAvailability> getPlatformFeaturesAvailability(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
         if (client.isAdaptable(OkHttpClient.class)) {
             OkHttpClient ok = client.adapt(OkHttpClient.class);
             Future<PlatformFeaturesAvailability> fut = Future.future();
