@@ -45,6 +45,10 @@ import static org.mockito.Mockito.when;
 @RunWith(VertxUnitRunner.class)
 public class ClusterOperatorTest {
 
+    private final String k8sVersionString = "{\n" +
+            "  \"major\": \"1\",\n" +
+            "  \"minor\": \"9\"}";
+
     private Vertx vertx;
 
     @Before
@@ -144,7 +148,7 @@ public class ClusterOperatorTest {
         Map<String, String> env = new HashMap<>();
         env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
-        Main.run(vertx, client, openShift, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, k8sVersionString), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();
         });
@@ -222,7 +226,7 @@ public class ClusterOperatorTest {
         Map<String, String> env = new HashMap<>();
         env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
-        Main.run(vertx, client, openShift, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, k8sVersionString), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();
         });

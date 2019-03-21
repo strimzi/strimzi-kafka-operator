@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -67,6 +68,10 @@ public class MaintenanceTimeWindowsTest {
             singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"),
             emptyMap(), emptyMap(), emptyMap()) { };
 
+    private final String k8sVersionString = "{\n" +
+            "  \"major\": \"1\",\n" +
+            "  \"minor\": \"9\"}";
+
     private Vertx vertx;
     private Kafka kafka;
     private KubernetesClient mockClient;
@@ -106,11 +111,12 @@ public class MaintenanceTimeWindowsTest {
 
         this.vertx = Vertx.vertx();
 
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, k8sVersionString);
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
-                new ResourceOperatorSupplier(this.vertx, this.mockClient, false, 60_000L);
+                new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
 
-        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(this.vertx, false, 2_000, null, ros, VERSIONS, null);
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(this.vertx, pfa, 2_000, null, ros, VERSIONS, null);
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 

@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -62,13 +63,13 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
     /**
      * @param vertx                      The Vertx instance
-     * @param isOpenShift                Whether we're running with OpenShift
+     * @param pfa                        Platform features availability properties
      * @param mirrorMakerOperator        For operating on MirrorMakers
      * @param networkPolicyOperator      For operating on NetworkPolicies
      * @param configMapOperations        For operating on ConfigMaps
      * @param secretOperations           For operating on Secrets
      */
-    public KafkaMirrorMakerAssemblyOperator(Vertx vertx, boolean isOpenShift,
+    public KafkaMirrorMakerAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                             CertManager certManager,
                                             CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> mirrorMakerOperator,
                                             SecretOperator secretOperations,
@@ -80,7 +81,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                                             ResourceOperatorSupplier supplier,
                                             KafkaVersion.Lookup versions,
                                             ImagePullPolicy imagePullPolicy) {
-        super(vertx, isOpenShift, ResourceType.MIRRORMAKER, certManager, mirrorMakerOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
+        super(vertx, pfa, ResourceType.MIRRORMAKER, certManager, mirrorMakerOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
         this.deploymentOperations = deploymentOperations;
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
@@ -117,7 +118,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(scale -> serviceOperations.reconcile(namespace, mirror.getServiceName(), mirror.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, mirror.getAncillaryConfigName(), logAndMetricsConfigMap))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
-                .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations, isOpenShift, imagePullPolicy)))
+                .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirror.getName(), mirror.getReplicas()).map((Void) null));
     }
 

@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -71,6 +72,10 @@ public class KafkaUpdateTest {
             singletonMap("2.0.0", "kafka-connect"),
             singletonMap("2.0.0", "kafka-connect-s2i"),
             singletonMap("2.0.0", "kafka-mirror-maker-s2i")) { };
+
+    private final String k8sVersionString = "{\n" +
+            "  \"major\": \"1\",\n" +
+            "  \"minor\": \"9\"}";
 
     public static EnvVar findEnv(List<EnvVar> env, String envVar) {
         EnvVar value = null;
@@ -148,7 +153,7 @@ public class KafkaUpdateTest {
             return Future.succeededFuture();
         });
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, false, 1L,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, k8sVersionString), 1L,
                 new MockCertManager(),
                 new ResourceOperatorSupplier(null, null, null,
                         kso, null, null, null, null,

@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -57,6 +58,10 @@ public class PartialRollingUpdateTest {
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
             singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"),
             emptyMap(), emptyMap(), emptyMap()) { };
+
+    private final String k8sVersionString = "{\n" +
+            "  \"major\": \"1\",\n" +
+            "  \"minor\": \"9\"}";
 
     private Vertx vertx;
     private Kafka cluster;
@@ -118,7 +123,7 @@ public class PartialRollingUpdateTest {
                 .build();
 
         ResourceOperatorSupplier supplier = supplier(bootstrapClient);
-        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
+        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString), 2_000,
                 new MockCertManager(), supplier, VERSIONS, null);
 
         LOGGER.info("bootstrap reconciliation");
@@ -148,7 +153,7 @@ public class PartialRollingUpdateTest {
 
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient);
-        return new ResourceOperatorSupplier(vertx, bootstrapClient, leaderFinder, true, 60_000L);
+        return new ResourceOperatorSupplier(vertx, bootstrapClient, leaderFinder, new PlatformFeaturesAvailability(true, k8sVersionString), 60_000L);
     }
 
     private void startKube() {
@@ -165,7 +170,7 @@ public class PartialRollingUpdateTest {
 
         ResourceOperatorSupplier supplier = supplier(mockClient);
 
-        this.kco = new KafkaAssemblyOperator(vertx, true, 2_000,
+        this.kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString), 2_000,
                 new MockCertManager(), supplier, VERSIONS, null);
         LOGGER.info("Started test KafkaAssemblyOperator");
     }

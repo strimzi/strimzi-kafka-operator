@@ -79,7 +79,7 @@ public class Main {
             if (crs.succeeded())    {
                 isOnOpenShift(vertx, client, config).setHandler(os -> {
                     if (os.succeeded()) {
-                        run(vertx, client, os.result().booleanValue(), config).setHandler(ar -> {
+                        run(vertx, client, os.result(), config).setHandler(ar -> {
                             if (ar.failed()) {
                                 log.error("Unable to start operator for 1 or more namespace", ar.cause());
                                 System.exit(1);
@@ -97,7 +97,7 @@ public class Main {
         });
     }
 
-    static CompositeFuture run(Vertx vertx, KubernetesClient client, boolean isOpenShift, ClusterOperatorConfig config) {
+    static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
         printEnvInfo();
         ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
         ConfigMapOperator configMapOperations = new ConfigMapOperator(vertx, client);
@@ -109,26 +109,26 @@ public class Main {
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
         NetworkPolicyOperator networkPolicyOperator = new NetworkPolicyOperator(vertx, client);
         PodDisruptionBudgetOperator podDisruptionBudgetOperator = new PodDisruptionBudgetOperator(vertx, client);
-        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, isOpenShift, config.getOperationTimeoutMs());
+        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.getOperationTimeoutMs());
 
         OpenSslCertManager certManager = new OpenSslCertManager();
-        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, isOpenShift,
+        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa,
                 config.getOperationTimeoutMs(), certManager, resourceOperatorSupplier,
                 config.versions(), config.getImagePullPolicy());
-        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, isOpenShift,
+        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
                 certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations,
                 networkPolicyOperator, podDisruptionBudgetOperator, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
-        if (isOpenShift) {
-            kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, isOpenShift, serviceOperations,
+        if (pfa.isOpenshift()) {
+            kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, pfa, serviceOperations,
                     configMapOperations, secretOperations, certManager, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
         } else {
             maybeLogS2iOnKubeWarning(vertx, client);
         }
 
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
-                new KafkaMirrorMakerAssemblyOperator(vertx, isOpenShift, certManager, kmmo, secretOperations,
+                new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, kmmo, secretOperations,
                         configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations,
                         podDisruptionBudgetOperator, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
 
@@ -170,7 +170,7 @@ public class Main {
         }
     }
 
-    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, boolean isOpenShift, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, ResourceOperatorSupplier resourceOperatorSupplier, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
+    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, ResourceOperatorSupplier resourceOperatorSupplier, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
         ImageStreamOperator imagesStreamOperations;
         BuildConfigOperator buildConfigOperations;
         DeploymentConfigOperator deploymentConfigOperations;
@@ -185,7 +185,7 @@ public class Main {
         kafkaConnectS2iCrdOperator = new CrdOperator<>(vertx, osClient, KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class);
         networkPolicyOperator = new NetworkPolicyOperator(vertx, client);
         podDisruptionBudgetOperator = new PodDisruptionBudgetOperator(vertx, client);
-        kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, isOpenShift,
+        kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 certManager,
                 kafkaConnectS2iCrdOperator,
                  configMapOperations, deploymentConfigOperations,
@@ -193,31 +193,43 @@ public class Main {
         return kafkaConnectS2IClusterOperations;
     }
 
-    static Future<Boolean> isOnOpenShift(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
-        if (config.isAssumeOpenShift() != null)  {
-            log.debug("OpenShift has been set to {} through {}.", config.isAssumeOpenShift(), ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT);
-            return Future.succeededFuture(config.isAssumeOpenShift());
-        } else if (client.isAdaptable(OkHttpClient.class)) {
+    static Future<PlatformFeaturesAvailability> isOnOpenShift(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
+        if (client.isAdaptable(OkHttpClient.class)) {
             OkHttpClient ok = client.adapt(OkHttpClient.class);
-            Future<Boolean> fut = Future.future();
+            Future<PlatformFeaturesAvailability> fut = Future.future();
 
             vertx.executeBlocking(request -> {
-                try (Response resp = ok.newCall(new Request.Builder().get().url(client.getMasterUrl().toString() + "apis/route.openshift.io/v1").build()).execute()) {
-                    if (resp.code() >= 200 && resp.code() < 300) {
-                        log.debug("{} returned {}. We are on OpenShift.", resp.request().url(), resp.code());
-                        // We should be on OpenShift based on the /apis/route.openshift.io/v1 result. We can now safely try isAdaptable() to be 100% sure.
-                        Boolean isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-                        request.complete(isOpenShift);
+                try {
+                    Boolean isOpenShift;
+                    if (config.isAssumeOpenShift() != null)  {
+                        log.debug("OpenShift has been set to {} through {}.", config.isAssumeOpenShift(), ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT);
+                        isOpenShift = config.isAssumeOpenShift();
                     } else {
-                        log.debug("{} returned {}. We are not on OpenShift.", resp.request().url(), resp.code());
-                        request.complete(Boolean.FALSE);
+                        Response resp = ok.newCall(new Request.Builder().get().url(client.getMasterUrl().toString() + "apis/route.openshift.io/v1").build()).execute();
+                        if (resp.code() >= 200 && resp.code() < 300) {
+                            log.debug("{} returned {}. We are on OpenShift.", resp.request().url(), resp.code());
+                            // We should be on OpenShift based on the /apis/route.openshift.io/v1 result. We can now safely try isAdaptable() to be 100% sure.
+                            isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
+                        } else {
+                            log.debug("{} returned {}. We are not on OpenShift.", resp.request().url(), resp.code());
+                            isOpenShift = false;
+                        }
                     }
+                    Response resp2 = ok.newCall(new Request.Builder().get().url(client.getMasterUrl().toString() + "version").build()).execute();
+                    String versionJsonString = null;
+                    if (resp2.code() >= 200 && resp2.code() < 300) {
+                        versionJsonString = resp2.body().string();
+                    }
+                    PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenShift, versionJsonString);
+                    request.complete(pfa);
                 } catch (IOException e) {
                     log.error("OpenShift detection failed", e);
                     request.fail(e);
+                } catch (IllegalArgumentException e) {
+                    log.error("Kubernetes version detection failed", e);
+                    request.fail(e);
                 }
             }, fut.completer());
-
             return fut;
         } else {
             log.error("Cannot adapt KubernetesClient to OkHttpClient");

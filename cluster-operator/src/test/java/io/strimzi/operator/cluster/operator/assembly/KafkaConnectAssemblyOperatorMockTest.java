@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -52,6 +53,10 @@ public class KafkaConnectAssemblyOperatorMockTest {
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
             emptyMap(), singletonMap("2.0.0", "strimzi/kafka-connect:latest-kafka-2.0.0"), emptyMap(), emptyMap()) { };
+
+    private final String k8sVersionString = "{\n" +
+            "  \"major\": \"1\",\n" +
+            "  \"minor\": \"9\"}";
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-connect-cluster";
@@ -96,7 +101,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         SecretOperator secretops = new SecretOperator(vertx, mockClient);
         NetworkPolicyOperator policyops = new NetworkPolicyOperator(vertx, mockClient);
         PodDisruptionBudgetOperator pdbops = new PodDisruptionBudgetOperator(vertx, mockClient);
-        KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, true,
+        KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString),
                 new MockCertManager(),
                 connectOperator,
                 cmops, depops, svcops, secretops, policyops, pdbops, ResourceUtils.supplierWithMocks(true), VERSIONS, null);

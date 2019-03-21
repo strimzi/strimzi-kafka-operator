@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -41,16 +42,16 @@ public class ResourceOperatorSupplier {
     public final NetworkPolicyOperator networkPolicyOperator;
     public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, boolean isOpenShift, long operationTimeoutMs) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client, new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
             // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
             () -> new BackOff(5_000, 2, 4)),
-                    isOpenShift, operationTimeoutMs);
+                    pfa, operationTimeoutMs);
     }
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf, boolean isOpenShift, long operationTimeoutMs) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
-                isOpenShift ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                pfa.isOpenshift() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs),
                 new KafkaSetOperator(vertx, client, operationTimeoutMs),
                 new ConfigMapOperator(vertx, client),
