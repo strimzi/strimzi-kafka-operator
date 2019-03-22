@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
@@ -215,18 +216,10 @@ public class Main {
                             isOpenShift = false;
                         }
                     }
-                    Response resp2 = ok.newCall(new Request.Builder().get().url(client.getMasterUrl().toString() + "version").build()).execute();
-                    String versionJsonString = null;
-                    if (resp2.code() >= 200 && resp2.code() < 300) {
-                        versionJsonString = resp2.body().string();
-                    }
-                    PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenShift, versionJsonString);
+                    PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenShift, new KubernetesVersion(client.getVersion().getMajor(), client.getVersion().getMinor()));
                     request.complete(pfa);
                 } catch (IOException e) {
                     log.error("OpenShift detection failed", e);
-                    request.fail(e);
-                } catch (IllegalArgumentException e) {
-                    log.error("Kubernetes version detection failed", e);
                     request.fail(e);
                 }
             }, fut.completer());

@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -79,10 +80,6 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     private final String whitelist = ".*";
     private final String image = "my-image:latest";
 
-    private final String k8sVersionString = "{\n" +
-            "  \"major\": \"1\",\n" +
-            "  \"minor\": \"9\"}";
-
     @BeforeClass
     public static void before() {
         vertx = Vertx.vertx();
@@ -133,7 +130,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
-                new PlatformFeaturesAvailability(true, k8sVersionString),
+                new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockMirrorOps,
                 mockSecretOps,
@@ -239,7 +236,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
-                new PlatformFeaturesAvailability(true, k8sVersionString),
+                new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockMirrorOps,
                 mockSecretOps,
@@ -360,7 +357,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
-                new PlatformFeaturesAvailability(true, k8sVersionString),
+                new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockMirrorOps,
                 mockSecretOps,
@@ -472,7 +469,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
-                new PlatformFeaturesAvailability(true, k8sVersionString),
+                new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockMirrorOps,
                 mockSecretOps,
@@ -544,7 +541,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
-                new PlatformFeaturesAvailability(true, k8sVersionString),
+                new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockMirrorOps,
                 mockSecretOps,
@@ -618,7 +615,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
-                new PlatformFeaturesAvailability(true, k8sVersionString),
+                new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockMirrorOps,
                 mockSecretOps,
@@ -694,7 +691,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
-                new PlatformFeaturesAvailability(true, k8sVersionString),
+                new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockMirrorOps,
                 mockSecretOps,

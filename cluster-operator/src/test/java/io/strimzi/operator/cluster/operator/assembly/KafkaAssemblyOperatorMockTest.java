@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -89,10 +90,6 @@ public class KafkaAssemblyOperatorMockTest {
     private static final KafkaVersion.Lookup VERSIONS = new KafkaVersion.Lookup(new StringReader(
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
             singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap(), emptyMap()) { };
-
-    private final String k8sVersionString = "{\n" +
-            "  \"major\": \"1\",\n" +
-            "  \"minor\": \"9\"}";
 
     private final int zkReplicas;
     private final SingleVolumeStorage zkStorage;
@@ -244,12 +241,12 @@ public class KafkaAssemblyOperatorMockTest {
 
     private ResourceOperatorSupplier supplierWithMocks() {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, mockClient);
-        return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder, new PlatformFeaturesAvailability(true, k8sVersionString), 2_000);
+        return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 2_000);
     }
 
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ResourceOperatorSupplier supplier = supplierWithMocks();
-        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString), 2_000,
+        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 2_000,
                 new MockCertManager(), supplier, VERSIONS, null);
 
         LOGGER.info("Reconciling initially -> create");

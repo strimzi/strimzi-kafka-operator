@@ -5,139 +5,60 @@
 package io.strimzi.operator.cluster;
 
 
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class PlatformFeaturesAvailabilityTest {
 
     @Test
-    public void basicTest() {
-        boolean isOpenshift = true;
-        String response = "{\n" +
-                "  \"major\": \"1\",\n" +
-                "  \"minor\": \"9\",\n" +
-                "  \"gitVersion\": \"v1.9.1+a0ce1bc657\",\n" +
-                "  \"gitCommit\": \"a0ce1bc\",\n" +
-                "  \"gitTreeState\": \"clean\",\n" +
-                "  \"buildDate\": \"2018-06-24T01:54:00Z\",\n" +
-                "  \"goVersion\": \"go1.9\",\n" +
-                "  \"compiler\": \"gc\",\n" +
-                "  \"platform\": \"linux/amd64\"\n" +
-                "}";
+    public void versionTest() {
 
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenshift, response);
-        assertTrue(pfa.isOpenshift());
-        assertEquals(9, pfa.getMinorVersion());
-        assertEquals(1, pfa.getMajorVersion());
+        KubernetesVersion kv1p9 = new KubernetesVersion("1", "5");
+        assertTrue(kv1p9.compareTo(KubernetesVersion.V1_8) < 0);
+        assertTrue(kv1p9.compareTo(KubernetesVersion.V1_9) < 0);
+        assertTrue(kv1p9.compareTo(KubernetesVersion.V1_10) < 0);
+        assertTrue(kv1p9.compareTo(KubernetesVersion.V1_11) < 0);
+
+        assertTrue(KubernetesVersion.V1_8.compareTo(KubernetesVersion.V1_8) == 0);
+        assertTrue(KubernetesVersion.V1_8.compareTo(KubernetesVersion.V1_9) < 0);
+        assertTrue(KubernetesVersion.V1_8.compareTo(KubernetesVersion.V1_10) < 0);
+        assertTrue(KubernetesVersion.V1_8.compareTo(KubernetesVersion.V1_11) < 0);
+
+
+        assertTrue(KubernetesVersion.V1_12.compareTo(KubernetesVersion.V1_8) > 0);
+        assertTrue(KubernetesVersion.V1_12.compareTo(KubernetesVersion.V1_9) > 0);
+        assertTrue(KubernetesVersion.V1_12.compareTo(KubernetesVersion.V1_10) > 0);
+        assertTrue(KubernetesVersion.V1_12.compareTo(KubernetesVersion.V1_11) > 0);
+        assertTrue(KubernetesVersion.V1_12.compareTo(KubernetesVersion.V1_12) == 0);
+
+        KubernetesVersion kv2p9 = new KubernetesVersion("2", "9");
+        assertTrue(kv2p9.compareTo(KubernetesVersion.V1_8) > 0);
+        assertTrue(kv2p9.compareTo(KubernetesVersion.V1_9) > 0);
+        assertTrue(kv2p9.compareTo(KubernetesVersion.V1_10) > 0);
+        assertTrue(kv2p9.compareTo(KubernetesVersion.V1_11) > 0);
     }
 
     @Test
-    public void newerVersionTest() {
-        boolean isOpenshift = true;
-        String response = "{\n" +
-                "  \"major\": \"1\",\n" +
-                "  \"minor\": \"9\",\n" +
-                "  \"gitVersion\": \"v1.9.1+a0ce1bc657\",\n" +
-                "  \"gitCommit\": \"a0ce1bc\",\n" +
-                "  \"gitTreeState\": \"clean\",\n" +
-                "  \"buildDate\": \"2018-06-24T01:54:00Z\",\n" +
-                "  \"goVersion\": \"go1.9\",\n" +
-                "  \"compiler\": \"gc\",\n" +
-                "  \"platform\": \"linux/amd64\"\n" +
-                "}";
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenshift, response);
-
-        assertTrue(pfa.isEqualOrNewerVersionThan(0, 8));
-        assertTrue(pfa.isEqualOrNewerVersionThan(0, 9));
-        assertTrue(pfa.isEqualOrNewerVersionThan(0, 10));
-
-        assertTrue(pfa.isEqualOrNewerVersionThan(1, 8));
-        assertTrue(pfa.isEqualOrNewerVersionThan(1, 9));
-        assertFalse(pfa.isEqualOrNewerVersionThan(1, 10));
-
-        assertFalse(pfa.isEqualOrNewerVersionThan(2, 8));
-        assertFalse(pfa.isEqualOrNewerVersionThan(2, 9));
-        assertFalse(pfa.isEqualOrNewerVersionThan(2, 10));
-
-
-        assertTrue(pfa.isEqualOrNewerVersionThan("0.8"));
-        assertTrue(pfa.isEqualOrNewerVersionThan("0.9"));
-        assertTrue(pfa.isEqualOrNewerVersionThan("0.10"));
-
-        assertTrue(pfa.isEqualOrNewerVersionThan("1.8"));
-        assertTrue(pfa.isEqualOrNewerVersionThan("1.9"));
-        assertFalse(pfa.isEqualOrNewerVersionThan("1.10"));
-
-        assertFalse(pfa.isEqualOrNewerVersionThan("2.8"));
-        assertFalse(pfa.isEqualOrNewerVersionThan("2.9"));
-        assertFalse(pfa.isEqualOrNewerVersionThan("2.10"));
-
-
-        try {
-            assertFalse(pfa.isEqualOrNewerVersionThan("2"));
-        } catch (Exception e) {
-            if (e instanceof IllegalArgumentException) {
-            } else {
-                fail();
-            }
-        }
-
-        try {
-            assertFalse(pfa.isEqualOrNewerVersionThan("f.10"));
-        } catch (Exception e) {
-            if (e instanceof NumberFormatException) {
-            } else {
-                fail();
-            }
-        }
+    public void versionWithCharTest() {
+        KubernetesVersion kv1p9 = new KubernetesVersion("1", "9+");
+        assertEquals(9, kv1p9.getMinor());
     }
 
     @Test
-    public void networkPolicyTest() {
-        boolean isOpenshift = true;
-        String response = "{\n" +
-                "  \"major\": \"1\",\n" +
-                "  \"minor\": \"9\",\n" +
-                "  \"gitVersion\": \"v1.9.1+a0ce1bc657\",\n" +
-                "  \"gitCommit\": \"a0ce1bc\",\n" +
-                "  \"gitTreeState\": \"clean\",\n" +
-                "  \"buildDate\": \"2018-06-24T01:54:00Z\",\n" +
-                "  \"goVersion\": \"go1.9\",\n" +
-                "  \"compiler\": \"gc\",\n" +
-                "  \"platform\": \"linux/amd64\"\n" +
-                "}";
-
-        String response2 = "{\n" +
-                "  \"major\": \"1\",\n" +
-                "  \"minor\": \"11\",\n" +
-                "  \"gitVersion\": \"v1.11.1+deadbeef\",\n" +
-                "  \"gitCommit\": \"deadbeef\",\n" +
-                "  \"gitTreeState\": \"clean\",\n" +
-                "  \"buildDate\": \"2019-06-24T01:54:00Z\",\n" + // manually edited
-                "  \"goVersion\": \"go1.9\",\n" +
-                "  \"compiler\": \"gc\",\n" +
-                "  \"platform\": \"linux/amd64\"\n" +
-                "}";
-
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenshift, response);
+    public void networkPoliciesWithFancyCombinationTest() {
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_8);
         assertFalse(pfa.isNetworkPolicyPodSelectorAndNameSpaceInSinglePeerAvailable());
-        PlatformFeaturesAvailability pfa2 = new PlatformFeaturesAvailability(isOpenshift, response2);
-        assertTrue(pfa2.isNetworkPolicyPodSelectorAndNameSpaceInSinglePeerAvailable());
+        pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_11);
+        assertTrue(pfa.isNetworkPolicyPodSelectorAndNameSpaceInSinglePeerAvailable());
     }
 
     @Test
-    public void versionWithSomeChars() {
-        boolean isOpenshift = true;
-
-        String response = "{\n" +
-                "  \"major\": \"1\",\n" +
-                "  \"minor\": \"12+\"\n" +
-                "}";
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenshift, response);
-        assertEquals(12, pfa.getMinorVersion());
+    public void versionsEqualTest() {
+        KubernetesVersion kv1p9 = new KubernetesVersion("1", "9+");
+        assertEquals(kv1p9, KubernetesVersion.V1_9);
     }
 }

@@ -17,6 +17,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -77,10 +78,6 @@ public class KafkaConnectS2IAssemblyOperatorTest {
     private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties("kafkaConnectDefaultLoggingProperties")
             .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
 
-    private final String k8sVersionString = "{\n" +
-            "  \"major\": \"1\",\n" +
-            "  \"minor\": \"9\"}";
-
     @BeforeClass
     public static void before() {
         vertx = Vertx.vertx();
@@ -131,7 +128,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockConnectOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, k8sVersionString);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(),
                 mockConnectOps,
@@ -255,7 +252,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, k8sVersionString);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(),
                 mockConnectOps,
@@ -375,7 +372,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, k8sVersionString);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(),
                 mockConnectOps,
@@ -497,7 +494,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, k8sVersionString);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(),
                 mockConnectOps,
@@ -557,7 +554,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, k8sVersionString);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(),
                 mockConnectOps,
@@ -619,7 +616,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, k8sVersionString);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(),
                 mockConnectOps,
@@ -674,7 +671,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         Async async = context.async(2);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, k8sVersionString);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9);
         KafkaConnectS2IAssemblyOperator ops = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
                 new MockCertManager(),
                 mockConnectOps,

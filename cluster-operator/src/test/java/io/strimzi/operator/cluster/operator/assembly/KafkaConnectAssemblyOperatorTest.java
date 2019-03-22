@@ -15,6 +15,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -73,10 +74,6 @@ public class KafkaConnectAssemblyOperatorTest {
     private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties("kafkaConnectDefaultLoggingProperties")
             .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding kubernetes/openshift resource.");
 
-    private final String k8sVersionString = "{\n" +
-            "  \"major\": \"1\",\n" +
-            "  \"minor\": \"9\"}";
-
     @BeforeClass
     public static void before() {
         vertx = Vertx.vertx();
@@ -116,7 +113,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString),
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockConnectOps,
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
@@ -201,7 +198,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString),
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockConnectOps,
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
@@ -302,7 +299,7 @@ public class KafkaConnectAssemblyOperatorTest {
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString),
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockConnectOps,
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
@@ -392,7 +389,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString),
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockConnectOps,
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
@@ -443,7 +440,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString),
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockConnectOps,
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
@@ -496,7 +493,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString),
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockConnectOps,
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
@@ -548,7 +545,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         Async async = context.async(2);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, k8sVersionString),
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 mockConnectOps,
                 mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null) {

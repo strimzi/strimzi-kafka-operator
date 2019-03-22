@@ -21,6 +21,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -54,10 +55,6 @@ public class JbodStorageTest {
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
             singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"),
             emptyMap(), emptyMap(), emptyMap()) { };
-
-    private final String k8sVersionString = "{\n" +
-            "  \"major\": \"1\",\n" +
-            "  \"minor\": \"9\"}";
 
     private Vertx vertx;
     private Kafka kafka;
@@ -110,7 +107,7 @@ public class JbodStorageTest {
 
         this.vertx = Vertx.vertx();
 
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, k8sVersionString);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9);
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
