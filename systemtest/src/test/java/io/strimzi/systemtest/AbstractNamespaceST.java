@@ -28,11 +28,11 @@ public abstract class AbstractNamespaceST extends AbstractST {
     void checkKafkaInDiffNamespaceThanCO() {
         String kafkaName = kafkaClusterName(CLUSTER_NAME + "-second");
 
-        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 1).done();
+        secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", kafkaName, SECOND_NAMESPACE);
         KUBE_CLIENT.namespace(SECOND_NAMESPACE);
-        KUBE_CLIENT.waitForStatefulSet(kafkaName, 1);
+        KUBE_CLIENT.waitForStatefulSet(kafkaName, 3);
     }
 
     void checkMirrorMakerForKafkaInDifNamespaceThanCO() {
@@ -40,7 +40,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         String kafkaSourceName = kafkaClusterName(CLUSTER_NAME);
         String kafkaTargetName = kafkaClusterName(kafkaName);
 
-        secondNamespaceResources.kafkaEphemeral(kafkaName, 1).done();
+        secondNamespaceResources.kafkaEphemeral(kafkaName, 3).done();
         secondNamespaceResources.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
