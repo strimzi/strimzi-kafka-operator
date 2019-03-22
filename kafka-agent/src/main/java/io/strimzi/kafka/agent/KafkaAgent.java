@@ -33,7 +33,6 @@ public class KafkaAgent {
     private Gauge brokerState;
     private MetricName sessionStateName;
     private Gauge sessionState;
-    private Thread pollerThread;
 
     public KafkaAgent(File brokerReadyFile, File sessionConnectedFile) {
         this.brokerReadyFile = brokerReadyFile;
@@ -48,7 +47,7 @@ public class KafkaAgent {
             }
 
             @Override
-            public void onMetricAdded(MetricName metricName, Metric metric) {
+            public synchronized void onMetricAdded(MetricName metricName, Metric metric) {
                 LOGGER.trace("Metric added {}", metricName);
                 if ("kafka.server".equals(metricName.getGroup())) {
                     if ("KafkaServer".equals(metricName.getType())
@@ -65,11 +64,12 @@ public class KafkaAgent {
                     }
                 }
                 if (brokerState != null
-                        && sessionState != null
-                        && pollerThread == null) {
+                        && sessionState != null) {
+                    metricsRegistry.removeListener(this);
                     LOGGER.info("Starting poller");
-                    pollerThread = new Thread(poller(),
+                    Thread pollerThread = new Thread(poller(),
                             "KafkaAgentPoller");
+                    pollerThread.setDaemon(true);
                     pollerThread.start();
                 }
             }
