@@ -32,13 +32,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
 
-/*import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
-import io.strimzi.api.kafka.model.DoneableKafkaUser;
-import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;*/
-
 /**
  * "Static" information about the CRDs defined in this package
  */
@@ -63,7 +56,7 @@ public class Crds {
      */
     public static void registerCustomKinds() {
         for (Class<? extends CustomResource> crdClass : CRDS) {
-            for (String version : apiVersion(crdClass)) {
+            for (String version : apiVersions(crdClass)) {
                 KubernetesDeserializer.registerCustomKind(version, kind(crdClass), crdClass);
             }
         }
@@ -196,7 +189,7 @@ public class Crds {
         }
     }
 
-    public static <T extends CustomResource> List<String> apiVersion(Class<T> cls) {
+    public static <T extends CustomResource> List<String> apiVersions(Class<T> cls) {
         try {
             String group = (String) cls.getField("RESOURCE_GROUP").get(null);
 

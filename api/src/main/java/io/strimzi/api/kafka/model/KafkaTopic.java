@@ -56,7 +56,7 @@ import static java.util.Collections.unmodifiableList;
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Partitions",
                                 description = "The number of partitions in the topic",
-                                jsonPath = ".spec.replicas",
+                                jsonPath = ".spec.partitions",
                                 type = "integer"
                         ),
                         @Crd.Spec.AdditionalPrinterColumn(
