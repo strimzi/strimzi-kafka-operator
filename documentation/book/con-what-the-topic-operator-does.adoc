@@ -11,17 +11,17 @@ image::topic_operator.png[Topic Operator]
 
 The role of the Topic Operator is to keep a set of `KafkaTopic` {ProductPlatformName} resources describing Kafka topics in-sync with corresponding Kafka topics.
 
-Specifically:
+Specifically, if a `KafkaTopic` is:
 
-* if a `KafkaTopic` is created, the operator will create the topic it describes
-* if a `KafkaTopic` is deleted, the operator will delete the topic it describes
-* if a `KafkaTopic` is changed, the operator will update the topic it describes
+* Created, the operator will create the topic it describes
+* Deleted, the operator will delete the topic it describes
+* Changed, the operator will update the topic it describes
 
-And also, in the other direction:
+And also, in the other direction, if a topic is:
 
-* if a topic is created within the Kafka cluster, the operator will create a `KafkaTopic` describing it
-* if a topic is deleted from the Kafka cluster, the operator will delete the `KafkaTopic` describing it
-* if a topic in the Kafka cluster is changed, the operator will update the `KafkaTopic` describing it
+* Created within the Kafka cluster, the operator will create a `KafkaTopic` describing it
+* Deleted from the Kafka cluster, the operator will delete the `KafkaTopic` describing it
+* Changed in the Kafka cluster, the operator will update the `KafkaTopic` describing it
 
 This allows you to declare a `KafkaTopic` as part of your application's deployment and the Topic Operator will take care of creating the topic for you.
 Your application just needs to deal with producing or consuming from the necessary topics.
