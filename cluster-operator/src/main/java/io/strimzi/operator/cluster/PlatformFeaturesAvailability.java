@@ -6,7 +6,9 @@ package io.strimzi.operator.cluster;
 
 import io.strimzi.operator.cluster.operator.KubernetesVersion;
 
-
+/**
+ * Gives a info about certain features availability regarding to kubernetes version
+ */
 public class PlatformFeaturesAvailability {
 
     private boolean isOpenshift;
@@ -21,15 +23,11 @@ public class PlatformFeaturesAvailability {
         return this.isOpenshift;
     }
 
-    public int getMinorVersion() {
-        return kubernetesVersion.getMinor();
-    }
-
-    public int getMajorVersion() {
-        return kubernetesVersion.getMajor();
-    }
-
-    public boolean isNetworkPolicyPodSelectorAndNameSpaceInSinglePeerAvailable() {
+    public boolean isNamespaceAndPodSelectorNetworkPolicySupported() {
         return this.kubernetesVersion.compareTo(KubernetesVersion.V1_11) >= 0;
+    }
+
+    public KubernetesVersion getKubernetesVersion() {
+        return this.kubernetesVersion;
     }
 }

@@ -91,6 +91,8 @@ public class KafkaAssemblyOperatorMockTest {
             "2.0.0 default 2.0 2.0 1234567890abcdef"),
             singletonMap("2.0.0", "strimzi/kafka:latest-kafka-2.0.0"), emptyMap(), emptyMap(), emptyMap()) { };
 
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
+
     private final int zkReplicas;
     private final SingleVolumeStorage zkStorage;
 
@@ -241,12 +243,12 @@ public class KafkaAssemblyOperatorMockTest {
 
     private ResourceOperatorSupplier supplierWithMocks() {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, mockClient);
-        return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 2_000);
+        return new ResourceOperatorSupplier(vertx, mockClient, leaderFinder, new PlatformFeaturesAvailability(true, kubernetesVersion), 2_000);
     }
 
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ResourceOperatorSupplier supplier = supplierWithMocks();
-        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 2_000,
+        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion), 2_000,
                 new MockCertManager(), supplier, VERSIONS, null);
 
         LOGGER.info("Reconciling initially -> create");

@@ -17,7 +17,7 @@ public class PlatformFeaturesAvailabilityTest {
     @Test
     public void versionTest() {
 
-        KubernetesVersion kv1p9 = new KubernetesVersion("1", "5");
+        KubernetesVersion kv1p9 = new KubernetesVersion(1, 5);
         assertTrue(kv1p9.compareTo(KubernetesVersion.V1_8) < 0);
         assertTrue(kv1p9.compareTo(KubernetesVersion.V1_9) < 0);
         assertTrue(kv1p9.compareTo(KubernetesVersion.V1_10) < 0);
@@ -35,7 +35,7 @@ public class PlatformFeaturesAvailabilityTest {
         assertTrue(KubernetesVersion.V1_12.compareTo(KubernetesVersion.V1_11) > 0);
         assertTrue(KubernetesVersion.V1_12.compareTo(KubernetesVersion.V1_12) == 0);
 
-        KubernetesVersion kv2p9 = new KubernetesVersion("2", "9");
+        KubernetesVersion kv2p9 = new KubernetesVersion(2, 9);
         assertTrue(kv2p9.compareTo(KubernetesVersion.V1_8) > 0);
         assertTrue(kv2p9.compareTo(KubernetesVersion.V1_9) > 0);
         assertTrue(kv2p9.compareTo(KubernetesVersion.V1_10) > 0);
@@ -43,22 +43,16 @@ public class PlatformFeaturesAvailabilityTest {
     }
 
     @Test
-    public void versionWithCharTest() {
-        KubernetesVersion kv1p9 = new KubernetesVersion("1", "9+");
-        assertEquals(9, kv1p9.getMinor());
-    }
-
-    @Test
     public void networkPoliciesWithFancyCombinationTest() {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_8);
-        assertFalse(pfa.isNetworkPolicyPodSelectorAndNameSpaceInSinglePeerAvailable());
+        assertFalse(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
         pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_11);
-        assertTrue(pfa.isNetworkPolicyPodSelectorAndNameSpaceInSinglePeerAvailable());
+        assertTrue(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
     }
 
     @Test
     public void versionsEqualTest() {
-        KubernetesVersion kv1p9 = new KubernetesVersion("1", "9+");
+        KubernetesVersion kv1p9 = new KubernetesVersion(1, 9);
         assertEquals(kv1p9, KubernetesVersion.V1_9);
     }
 }

@@ -216,7 +216,9 @@ public class Main {
                             isOpenShift = false;
                         }
                     }
-                    PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenShift, new KubernetesVersion(client.getVersion().getMajor(), client.getVersion().getMinor()));
+                    PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenShift,
+                            new KubernetesVersion(Integer.parseInt(client.getVersion().getMajor().replaceAll("\\D", "")),
+                                    Integer.parseInt(client.getVersion().getMinor().replaceAll("\\D", ""))));
                     request.complete(pfa);
                 } catch (IOException e) {
                     log.error("OpenShift detection failed", e);
