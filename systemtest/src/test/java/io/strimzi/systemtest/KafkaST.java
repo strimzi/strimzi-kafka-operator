@@ -1010,6 +1010,60 @@ class KafkaST extends AbstractST {
         return CLIENT.apps().statefulSets().inNamespace(namespace).withName(ssName).get().getMetadata().getAnnotations();
     }
 
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBOD() {
+        int diskCountPerReplica = 2;
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, diskCountPerReplica, diskSizeGi, true).done();
+        // kafka cluster already deployed
+
+        ArrayList pvcs = new ArrayList();
+        for (int i = 0; i < kafkaReplicas * diskCountPerReplica; i++) {
+            LOGGER.info("Getting list of all PVCs in namespace");
+            String volumeName = CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getName();
+            pvcs.add(volumeName);
+
+            LOGGER.info("Checking labels for volume:" + volumeName);
+            CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getLabels()
+                    .containsValue("strimzi.io/cluster=".concat(CLUSTER_NAME));
+            CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getLabels()
+                    .containsValue("strimzi.io/kind=Kafka");
+            CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getLabels()
+                    .containsValue("strimzi.io/name=".concat(CLUSTER_NAME).concat("-kafka"));
+            CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getSpec().getResources().
+                    getRequests().get("storage").getAmount().contains(diskSizeGi + "Gi");
+        }
+
+        LOGGER.info("Checking PVC names included in JBOD array");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                pvcs.contains("data-" + j + "-my-cluster-kafka-" + i);
+            }
+        }
+
+        LOGGER.info("Checking PVC on Kafka pods");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            ArrayList dataSourcesOnPod = new ArrayList();
+            ArrayList pvcsOnPod = new ArrayList();
+
+            LOGGER.info("Getting list of mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.add(CLIENT.inNamespace(NAMESPACE).pods().
+                        withName(CLUSTER_NAME.concat("-kafka-" + i)).get().getSpec().getVolumes().get(j).getName());
+                pvcsOnPod.add(CLIENT.inNamespace(NAMESPACE).pods().withName(CLUSTER_NAME.concat("-kafka-" + i)).get()
+                        .getSpec().getVolumes().get(j).getPersistentVolumeClaim().getClaimName());
+            }
+
+            LOGGER.info("Verifying mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.contains("data-" + j);
+                pvcsOnPod.contains("data-" + j + "-my-cluster-kafka-" + i);
+            }
+        }
+    }
+
     void waitForZkRollUp() {
         LOGGER.info("Waiting for cluster stability");
         Map<String, String>[] zkPods = new Map[1];
