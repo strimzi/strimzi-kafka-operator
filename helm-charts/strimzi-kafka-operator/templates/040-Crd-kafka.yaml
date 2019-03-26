@@ -2119,5 +2119,4 @@ spec:
           required:
           - kafka
           - zookeeper
-
 {{- end -}}

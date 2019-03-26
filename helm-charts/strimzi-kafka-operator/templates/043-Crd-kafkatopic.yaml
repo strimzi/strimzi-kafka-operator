@@ -6,7 +6,7 @@ metadata:
   labels:
     app: '{{ template "strimzi.name" . }}'
     chart: '{{ template "strimzi.chart" . }}'
-    component: kafkatopics.kafka.strimzi.io-crd
+    component: kafkas.kafka.strimzi.io-crd
     release: '{{ .Release.Name }}'
     heritage: '{{ .Release.Service }}'
 spec:
@@ -40,5 +40,4 @@ spec:
           required:
           - partitions
           - replicas
-
 {{- end -}}
