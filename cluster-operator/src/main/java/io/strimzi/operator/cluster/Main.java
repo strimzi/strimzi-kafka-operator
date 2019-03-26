@@ -216,9 +216,12 @@ public class Main {
                             isOpenShift = false;
                         }
                     }
+                    /* test */ String major = client.getVersion().getMajor().equals("") ? "1" : client.getVersion().getMajor();
+                    /* test */ String minor = client.getVersion().getMinor().equals("") ? "9" : client.getVersion().getMinor();
+
                     PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenShift,
-                            new KubernetesVersion(Integer.parseInt(client.getVersion().getMajor().split("\\D")[0]),
-                                    Integer.parseInt(client.getVersion().getMinor().split("\\D")[0])));
+                            new KubernetesVersion(Integer.parseInt(major.split("\\D")[0]),
+                                    Integer.parseInt(minor.split("\\D")[0])));
                     request.complete(pfa);
                 } catch (IOException e) {
                     log.error("OpenShift detection failed", e);

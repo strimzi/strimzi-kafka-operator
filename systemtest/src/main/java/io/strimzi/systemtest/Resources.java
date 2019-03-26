@@ -115,6 +115,7 @@ public class Resources extends AbstractResources {
                     x.delete(resource);
                     client.rbac().kubernetesClusterRoleBindings().delete((KubernetesClusterRoleBinding) resource);
                 });
+                break;
             default :
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
