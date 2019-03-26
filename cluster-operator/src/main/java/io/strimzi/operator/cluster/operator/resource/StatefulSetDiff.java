@@ -4,16 +4,18 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
-import static java.lang.Integer.parseInt;
-
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
-import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 public class StatefulSetDiff {
 
@@ -22,7 +24,6 @@ public class StatefulSetDiff {
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
         "^(/spec/revisionHistoryLimit"
         + "|/spec/template/metadata/annotations/strimzi.io~1generation"
-        + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"
         + "|/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
@@ -33,7 +34,6 @@ public class StatefulSetDiff {
         + "|/spec/template/spec/containers/[0-9]+/readinessProbe/failureThreshold"
         + "|/spec/template/spec/containers/[0-9]+/readinessProbe/periodSeconds"
         + "|/spec/template/spec/containers/[0-9]+/readinessProbe/successThreshold"
-        + "|/spec/template/spec/containers/[0-9]+/resources"
         + "|/spec/template/spec/containers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/containers/[0-9]+/terminationMessagePolicy"
         + "|/spec/template/spec/dnsPolicy"
@@ -49,6 +49,8 @@ public class StatefulSetDiff {
         + "|/spec/template/spec/serviceAccount"
         + "|/status)$");
 
+    private static final Pattern RESOURCE_PATH = Pattern.compile("^/spec/template/spec/(?:initContainers|containers)/[0-9]+/resources/(?:limits|requests)/(memory|cpu)$");
+
     private static boolean equalsOrPrefix(String path, String pathValue) {
         return pathValue.equals(path)
                 || pathValue.startsWith(path + "/");
@@ -61,7 +63,9 @@ public class StatefulSetDiff {
     private final boolean changesSpecReplicas;
 
     public StatefulSetDiff(StatefulSet current, StatefulSet desired) {
-        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(desired));
+        JsonNode source = patchMapper().valueToTree(current);
+        JsonNode target = patchMapper().valueToTree(desired);
+        JsonNode diff = JsonDiff.asJson(source, target);
         int num = 0;
         boolean changesVolumeClaimTemplate = false;
         boolean changesSpecTemplate = false;
@@ -74,11 +78,22 @@ public class StatefulSetDiff {
                 log.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
                 continue;
             }
+            Matcher resourceMatchers = RESOURCE_PATH.matcher(pathValue);
+            if (resourceMatchers.matches()) {
+                if ("replace".equals(d.path("op").asText())) {
+                    boolean same = compareMemoryAndCpuResources(source, target, pathValue, resourceMatchers);
+                    if (same) {
+                        ObjectMeta md = current.getMetadata();
+                        log.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
+                        continue;
+                    }
+                }
+            }
             if (log.isDebugEnabled()) {
                 ObjectMeta md = current.getMetadata();
                 log.debug("StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
-                log.debug("Current StatefulSet path {} has value {}", pathValue, getFromPath(current, pathValue));
-                log.debug("Desired StatefulSet path {} has value {}", pathValue, getFromPath(desired, pathValue));
+                log.debug("Current StatefulSet path {} has value {}", pathValue, lookupPath(source, pathValue));
+                log.debug("Desired StatefulSet path {} has value {}", pathValue, lookupPath(target, pathValue));
             }
 
             num++;
@@ -96,25 +111,41 @@ public class StatefulSetDiff {
         this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
     }
 
-    private JsonNode getFromPath(StatefulSet current, String pathValue) {
-        JsonNode node1 = patchMapper().valueToTree(current);
-        for (String field : pathValue.replaceFirst("^/", "").split("/")) {
-            JsonNode node2 = node1.get(field);
-            if (node2 == null) {
+    JsonNode lookupPath(JsonNode source, String path) {
+        JsonNode s = source;
+        for (String component : path.substring(1).split("/")) {
+            if (s.isArray()) {
                 try {
-                    int index = parseInt(field);
-                    node2 = node1.get(index);
+                    s = s.path(Integer.parseInt(component));
                 } catch (NumberFormatException e) {
+                    return MissingNode.getInstance();
                 }
-            }
-            if (node2 == null) {
-                node1 = null;
-                break;
             } else {
-                node1 = node2;
+                s = s.path(component);
             }
         }
-        return node1;
+        return s;
+    }
+
+    boolean compareMemoryAndCpuResources(JsonNode source, JsonNode target, String pathValue, Matcher resourceMatchers) {
+        JsonNode s = lookupPath(source, pathValue);
+        JsonNode t = lookupPath(target, pathValue);
+        String group = resourceMatchers.group(1);
+        if (!s.isMissingNode()
+            && !t.isMissingNode()) {
+            if ("cpu".equals(group)) {
+                // Ignore single millicpu differences as they could be due to rounding error
+                if (Math.abs(Quantities.parseCpuAsMilliCpus(s.asText()) - Quantities.parseCpuAsMilliCpus(t.asText())) < 1) {
+                    return true;
+                }
+            } else {
+                // Ignore single byte differences as they could be due to rounding error
+                if (Math.abs(Quantities.parseMemory(s.asText()) - Quantities.parseMemory(t.asText())) < 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public boolean isEmpty() {
