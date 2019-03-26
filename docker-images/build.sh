@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-java_images="java-base"
-# Note dependency order of the following images
-stunnel_images="stunnel-base zookeeper-stunnel kafka-stunnel entity-operator-stunnel"
+java_images="operator"
 kafka_images="kafka test-client"
 
 # Kafka versions
@@ -31,9 +29,6 @@ function build {
     local java_version=${JAVA_VERSION:-1.8.0}
 
     # Images not depending on Kafka version
-    for image in $stunnel_images; do
-        DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS $(alternate_base $image)" make -C "$image" "$targets"
-    done
     for image in $java_images; do
         DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} $(alternate_base $image)" make -C "$image" "$targets"
     done

@@ -21,6 +21,8 @@ spec:
         - name: strimzi-cluster-operator
           image: {{ default .Values.image.repository .Values.imageRepositoryOverride }}/{{ .Values.image.name }}:{{ default .Values.image.tag .Values.imageTagOverride }}
           imagePullPolicy: {{ .Values.image.imagePullPolicy | quote }}
+          args:
+            - /opt/strimzi/bin/cluster_operator_run.sh
           env:
             - name: STRIMZI_NAMESPACE
               {{- if .Values.watchNamespaces -}}
@@ -43,12 +45,6 @@ spec:
               value: "{{ default .Values.userOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.userOperator.image.name }}:{{ default .Values.userOperator.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
               value: "{{ default .Values.kafkaInit.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaInit.image.name }}:{{ default .Values.kafkaInit.image.tag .Values.imageTagOverride }}"
-            - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
-              value: "{{ default .Values.tlsSidecarZookeeper.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarZookeeper.image.name }}:{{ default .Values.tlsSidecarZookeeper.image.tag .Values.imageTagOverride }}"
-            - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
-              value: "{{ default .Values.tlsSidecarKafka.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarKafka.image.name }}:{{ default .Values.tlsSidecarKafka.image.tag .Values.imageTagOverride }}"
-            - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-              value: "{{ default .Values.tlsSidecarEntityOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.tlsSidecarEntityOperator.image.tag .Values.imageTagOverride }}"
             - name: STRIMZI_LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
           livenessProbe:

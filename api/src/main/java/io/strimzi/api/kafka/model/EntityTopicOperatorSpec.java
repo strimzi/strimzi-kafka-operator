@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -33,7 +34,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     private static final long serialVersionUID = 1L;
 
     public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator:latest");
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/operator:latest");
     public static final int DEFAULT_REPLICAS = 1;
     public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
@@ -48,7 +49,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     protected int zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     protected int topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
-    protected Resources resources;
+    protected ResourceRequirements resources;
     protected Logging logging;
     private EntityOperatorJvmOptions jvmOptions;
     protected Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -102,12 +103,12 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     }
 
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
     @Description("Resource constraints (limits and requests).")
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 

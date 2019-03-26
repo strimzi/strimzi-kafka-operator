@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -43,8 +44,6 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
 
     public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
 
-    public static final String DEFAULT_TLS_SIDECAR_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE", "strimzi/zookeeper-stunnel:latest");
     public static final int DEFAULT_REPLICAS = 3;
 
     protected SingleVolumeStorage storage;
@@ -56,7 +55,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     private TlsSidecar tlsSidecar;
     private int replicas;
     private String image;
-    private Resources resources;
+    private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
@@ -129,11 +128,11 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 

@@ -874,7 +874,7 @@ public class MockKube {
         }
 
         MixedOperation<CM, CML, DCM, R> mockWithLabels(Map<String, String> labels) {
-            return mockWithLabelsPredicate(p -> {
+            return mockWithLabels(p -> {
                 Map<String, String> m = new HashMap(p.getMetadata().getLabels());
                 m.keySet().retainAll(labels.keySet());
                 return labels.equals(m);
@@ -882,10 +882,10 @@ public class MockKube {
         }
 
         MixedOperation<CM, CML, DCM, R> mockWithLabel(String label) {
-            return mockWithLabelsPredicate(p -> p.getMetadata().getLabels().containsKey(label));
+            return mockWithLabels(p -> p.getMetadata().getLabels().containsKey(label));
         }
 
-        MixedOperation<CM, CML, DCM, R> mockWithLabelsPredicate(Predicate<CM> predicate) {
+        MixedOperation<CM, CML, DCM, R> mockWithLabels(Predicate<CM> predicate) {
             MixedOperation<CM, CML, DCM, R> mixedWithLabels = mock(MixedOperation.class);
             when(mixedWithLabels.list()).thenAnswer(i2 -> {
                 return mockList(predicate);

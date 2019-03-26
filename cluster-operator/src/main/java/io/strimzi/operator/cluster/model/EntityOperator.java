@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
@@ -48,6 +49,7 @@ public class EntityOperator extends AbstractModel {
     private TlsSidecar tlsSidecar;
 
     private boolean isDeployed;
+    private String tlsSidecarImage;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -115,7 +117,7 @@ public class EntityOperator extends AbstractModel {
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
-    public static EntityOperator fromCrd(Kafka kafkaAssembly) {
+    public static EntityOperator fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         EntityOperator result = null;
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
@@ -155,6 +157,13 @@ public class EntityOperator extends AbstractModel {
                     result.templateSecurityContext = pod.getSecurityContext();
                 }
             }
+
+            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version());
+            if (tlsSidecarImage == null) {
+                throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
+            }
+            result.tlsSidecarImage = tlsSidecarImage;
         }
         return result;
     }
@@ -197,7 +206,7 @@ public class EntityOperator extends AbstractModel {
             containers.addAll(userOperator.getContainers(imagePullPolicy));
         }
 
-        String tlsSidecarImage = EntityOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
+        String tlsSidecarImage = this.tlsSidecarImage;
         if (tlsSidecar != null && tlsSidecar.getImage() != null) {
             tlsSidecarImage = tlsSidecar.getImage();
         }
@@ -205,14 +214,18 @@ public class EntityOperator extends AbstractModel {
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
+                .withCommand("/opt/stunnel/entity_operator_stunnel_run.sh")
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
                         buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
                         createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
-                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/opt/stunnel/stunnel_pre_stop.sh", String.valueOf(templateTerminationGracePeriodSeconds)).endExec().endPreStop().build())
+                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
+                            .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh",
+                                    String.valueOf(templateTerminationGracePeriodSeconds))
+                        .endExec().endPreStop().build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .build();
 

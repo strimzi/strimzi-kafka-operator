@@ -4,7 +4,7 @@ watchNamespaces: []
 
 image:
   repository: strimzi
-  name: cluster-operator
+  name: operator
   tag: latest
   imagePullPolicy: IfNotPresent
 logLevel: INFO
@@ -36,33 +36,33 @@ kafkaConnects2i:
 topicOperator:
   image:
     repository: strimzi
-    name: topic-operator
+    name: operator
     tag: latest
 userOperator:
   image:
     repository: strimzi
-    name: user-operator
+    name: operator
     tag: latest
 kafkaInit:
   image:
     repository: strimzi
-    name: kafka-init
+    name: operator
     tag: latest
 tlsSidecarZookeeper:
   image:
     repository: strimzi
-    name: zookeeper-stunnel
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 tlsSidecarKafka:
   image:
     repository: strimzi
-    name: kafka-stunnel
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 tlsSidecarEntityOperator:
   image:
     repository: strimzi
-    name: entity-operator-stunnel
-    tag: latest
+    name: kafka
+    tagPrefix: latest
 kafkaMirrorMaker:
   image:
     repository: strimzi

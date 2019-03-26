@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.common.model;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import org.apache.logging.log4j.Logger;
 
@@ -15,26 +17,45 @@ import java.util.Map;
 public class ValidationVisitor implements ResourceVisitor.Visitor {
 
     private final Logger logger;
+    private final HasMetadata resource;
 
-    private final String context;
-
-    public ValidationVisitor(String context, Logger logger) {
-        this.context = context;
+    public ValidationVisitor(HasMetadata resource, Logger logger) {
+        this.resource = resource;
         this.logger = logger;
+    }
+
+    String context() {
+        return resource.getKind() + " resource " + resource.getMetadata().getName()
+                + " in namespace " + resource.getMetadata().getNamespace();
     }
 
     private <M extends AnnotatedElement & Member> void checkForDeprecated(List<String> path,
                                                                           M member,
                                                                           Object propertyValue,
                                                                           String propertyName) {
-        if (propertyValue != null
-                && member.isAnnotationPresent(Deprecated.class)) {
-            logger.warn("{} contains an object at path {} but the property {} is deprecated " +
-                            "and will be removed in a future release",
-                    context,
-                    String.join(".", path) + "." + propertyName,
-                    propertyName);
+        if (propertyValue != null) {
+            DeprecatedProperty deprecated = member.getAnnotation(DeprecatedProperty.class);
+            if (deprecated != null) {
+                String msg = String.format("In API version %s the property %s at path %s has been deprecated. ",
+                        resource.getApiVersion(),
+                        propertyName,
+                        path(path, propertyName));
+                if (!deprecated.movedToPath().isEmpty()) {
+                    msg += "This feature should now be configured at path " + deprecated.movedToPath() + ".";
+                }
+                if (!deprecated.description().isEmpty()) {
+                    msg += " " + deprecated.description();
+                }
+                if (!deprecated.removalVersion().isEmpty()) {
+                    msg += " This property is scheduled for removal in version " + deprecated.removalVersion() + ".";
+                }
+                logger.warn("{}: {}", context(), msg);
+            }
         }
+    }
+
+    private String path(List<String> path, String propertyName) {
+        return String.join(".", path) + "." + propertyName;
     }
 
     @Override
@@ -48,8 +69,8 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
         if (object instanceof UnknownPropertyPreserving) {
             Map<String, Object> properties = ((UnknownPropertyPreserving) object).getAdditionalProperties();
             if (properties != null && !properties.isEmpty()) {
-                logger.warn("{} contains object at path {} with {}: {}",
-                        context,
+                logger.warn("{}: Contains object at path {} with {}: {}",
+                        context(),
                         String.join(".", path),
                         properties.size() == 1 ? "an unknown property" : "unknown properties",
                         String.join(", ", properties.keySet()));

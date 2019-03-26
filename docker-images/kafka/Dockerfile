@@ -26,8 +26,7 @@ ENV JMX_EXPORTER_CHECKSUM="6ab370edccc2eeb3985f4c95769c26c090d0e052 jmx_promethe
 RUN curl -O https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar \
     && echo $JMX_EXPORTER_CHECKSUM > jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha1 \
     && sha1sum --check jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha1 \
-    && mkdir /opt/prometheus \
-    && mkdir /opt/prometheus/config \
+    && mkdir -p /opt/prometheus/config \
     && mv jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar /opt/prometheus/jmx_prometheus_javaagent.jar \
     && rm -rf jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.*
 
@@ -38,6 +37,16 @@ RUN curl -O https://www.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA_VER
     && mkdir $KAFKA_HOME \
     && tar xvfz kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz -C $KAFKA_HOME --strip-components=1 \
     && rm -f kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz*
+
+RUN yum -y install stunnel net-tools && yum clean all -y
+
+# set Stunnel home folder
+ENV STUNNEL_HOME=/opt/stunnel
+
+RUN mkdir $STUNNEL_HOME && mkdir -p -m g+rw /usr/local/var/run/
+
+# copy scripts for Stunnel
+COPY ./stunnel-scripts/ $STUNNEL_HOME
 
 # copy scripts for starting Kafka
 COPY ./scripts/ $KAFKA_HOME

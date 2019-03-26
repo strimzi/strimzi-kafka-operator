@@ -16,6 +16,8 @@ The full schema of the `Kafka` resource is described in the xref:type-Kafka-refe
 All labels that are applied to the desired `Kafka` resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
 This provides a convenient mechanism for those resources to be labelled in whatever way the user requires.
 
+include::con-considerations-for-data-storage.adoc[leveloffset=+1]
+
 include::assembly-storage.adoc[leveloffset=+1]
 
 include::assembly-kafka-broker-replicas.adoc[leveloffset=+1]

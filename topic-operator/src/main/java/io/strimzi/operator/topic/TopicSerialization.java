@@ -127,13 +127,13 @@ public class TopicSerialization {
     /**
      * Create a resource to reflect the given Topic.
      */
-    public static KafkaTopic toTopicResource(Topic topic, LabelPredicate resourcePredicate) {
+    public static KafkaTopic toTopicResource(Topic topic, Labels labels) {
         ResourceName resourceName = topic.getOrAsKubeName();
         ObjectMeta om = topic.getMetadata();
         if (om != null) {
             om.setName(resourceName.toString());
             Map<String, String> lbls = new HashMap<>();
-            lbls.putAll(resourcePredicate.labels());
+            lbls.putAll(labels.labels());
             if (topic.getMetadata().getLabels() != null)
                 lbls.putAll(topic.getMetadata().getLabels());
             om.setLabels(lbls);
@@ -142,7 +142,7 @@ public class TopicSerialization {
         } else {
             om = new ObjectMetaBuilder()
                     .withName(resourceName.toString())
-                    .withLabels(resourcePredicate.labels())
+                    .withLabels(labels.labels())
                     .build();
         }
 

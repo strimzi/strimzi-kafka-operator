@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesSubject;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.operator.common.Annotations;
@@ -80,6 +81,7 @@ public class TopicOperator extends AbstractModel {
     private int topicMetadataMaxAttempts;
 
     private TlsSidecar tlsSidecar;
+    private String tlsSidecarImage;
 
     /**
      * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
@@ -207,7 +209,7 @@ public class TopicOperator extends AbstractModel {
      * @param kafkaAssembly desired resource with cluster configuration containing the topic operator one
      * @return Topic Operator instance, null if not configured in the ConfigMap
      */
-    public static TopicOperator fromCrd(Kafka kafkaAssembly) {
+    public static TopicOperator fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         TopicOperator result;
         if (kafkaAssembly.getSpec().getTopicOperator() != null) {
             String namespace = kafkaAssembly.getMetadata().getNamespace();
@@ -228,6 +230,13 @@ public class TopicOperator extends AbstractModel {
             result.setResources(tcConfig.getResources());
             result.setUserAffinity(tcConfig.getAffinity());
             result.setTlsSidecar(tcConfig.getTlsSidecar());
+
+            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+            String tlsSidecarImage = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
+            if (tlsSidecarImage == null) {
+                throw new InvalidResourceException("Version " + kafkaClusterSpec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
+            }
+            result.tlsSidecarImage = tlsSidecarImage;
         } else {
             result = null;
         }
@@ -256,26 +265,22 @@ public class TopicOperator extends AbstractModel {
         Container container = new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_NAME)
                 .withImage(getImage())
+                .withArgs("/opt/strimzi/bin/topic-operator-run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
-                .withResources(ModelUtils.resources(getResources()))
+                .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build();
-
-        String tlsSidecarImage = TopicOperatorSpec.DEFAULT_TLS_SIDECAR_IMAGE;
-        if (tlsSidecar != null && tlsSidecar.getImage() != null) {
-            tlsSidecarImage = tlsSidecar.getImage();
-        }
 
         Container tlsSidecarContainer = new ContainerBuilder()
                 .withName(TLS_SIDECAR_NAME)
                 .withImage(tlsSidecarImage)
                 .withLivenessProbe(ModelUtils.tlsSidecarLivenessProbe(tlsSidecar))
                 .withReadinessProbe(ModelUtils.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(ModelUtils.tlsSidecarResources(tlsSidecar))
+                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(asList(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar),
                         buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect)))
                 .withVolumeMounts(createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
@@ -317,7 +322,7 @@ public class TopicOperator extends AbstractModel {
         return topicOperatorServiceAccountName(cluster);
     }
 
-    public KubernetesRoleBinding generateRoleBinding(String namespace) {
+    public KubernetesRoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
         KubernetesSubject ks = new KubernetesSubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName(getServiceAccountName())
@@ -335,7 +340,7 @@ public class TopicOperator extends AbstractModel {
                     .withName(roleBindingName(cluster))
                     .withOwnerReferences(createOwnerReference())
                     .withLabels(labels.toMap())
-                    .withNamespace(namespace)
+                    .withNamespace(watchedNamespace)
                 .endMetadata()
                 .withRoleRef(roleRef)
                 .withSubjects(ks)

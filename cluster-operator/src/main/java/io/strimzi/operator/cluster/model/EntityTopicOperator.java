@@ -218,11 +218,12 @@ public class EntityTopicOperator extends AbstractModel {
         return singletonList(new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_CONTAINER_NAME)
                 .withImage(getImage())
+                .withArgs("/opt/strimzi/bin/topic_operator_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
                 .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
-                .withResources(ModelUtils.resources(getResources()))
+                .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build());
@@ -253,7 +254,7 @@ public class EntityTopicOperator extends AbstractModel {
             createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }
 
-    public KubernetesRoleBinding generateRoleBinding(String namespace) {
+    public KubernetesRoleBinding generateRoleBinding(String namespace, String watchedNamespace) {
         KubernetesSubject ks = new KubernetesSubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
@@ -269,7 +270,7 @@ public class EntityTopicOperator extends AbstractModel {
         KubernetesRoleBinding rb = new KubernetesRoleBindingBuilder()
                 .withNewMetadata()
                     .withName(roleBindingName(cluster))
-                    .withNamespace(namespace)
+                    .withNamespace(watchedNamespace)
                     .withOwnerReferences(createOwnerReference())
                     .withLabels(labels.toMap())
                 .endMetadata()

@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -33,7 +34,7 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     private static final long serialVersionUID = 1L;
 
     public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/user-operator:latest");
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/operator:latest");
     public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
@@ -44,7 +45,7 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     private String image = DEFAULT_IMAGE;
     private long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
-    private Resources resources;
+    private ResourceRequirements resources;
     private Logging logging;
     private EntityOperatorJvmOptions jvmOptions;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -88,12 +89,12 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     }
 
     @Description("Resource constraints (limits and requests).")
-    public Resources getResources() {
+    public ResourceRequirements getResources() {
         return resources;
     }
 
     @Description("Resource constraints (limits and requests).")
-    public void setResources(Resources resources) {
+    public void setResources(ResourceRequirements resources) {
         this.resources = resources;
     }
 

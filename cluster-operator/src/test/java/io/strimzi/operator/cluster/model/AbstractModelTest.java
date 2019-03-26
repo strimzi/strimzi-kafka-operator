@@ -6,11 +6,12 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.api.kafka.model.CpuMemory;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 
@@ -46,7 +47,7 @@ public class AbstractModelTest {
     }
 
     private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax,
-                                                   Resources resources) {
+                                                   ResourceRequirements resources) {
         AbstractModel am = new AbstractModel(null, null, Labels.forCluster("foo")) {
             @Override
             protected String getDefaultLogConfigFileName() {
@@ -93,11 +94,9 @@ public class AbstractModelTest {
         assertEquals(null, env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX));
     }
 
-    private Resources getResourceLimit() {
-        CpuMemory limits = new CpuMemory();
-        limits.setMemory("16000000000");
-        Resources resources = new Resources(limits, null);
-        return resources;
+    private ResourceRequirements getResourceLimit() {
+        return new ResourceRequirementsBuilder()
+                .addToLimits("memory", new Quantity("16000000000")).build();
     }
 
     @Test
@@ -162,34 +161,6 @@ public class AbstractModelTest {
         } else {
             return null;
         }
-    }
-
-
-    @Test
-    public void testDeserializeSuffixes() {
-        Resources opts = TestUtils.fromJson("{\"limits\": {\"memory\": \"10Gi\", \"cpu\": \"1\"}, \"requests\": {\"memory\": \"5G\", \"cpu\": 1}}", Resources.class);
-        assertEquals(10737418240L, opts.getLimits().memoryAsLong());
-        assertEquals(1000, opts.getLimits().milliCpuAsInt());
-        assertEquals("1", opts.getLimits().getMilliCpu());
-        assertEquals(5000000000L, opts.getRequests().memoryAsLong());
-        assertEquals(1000, opts.getLimits().milliCpuAsInt());
-        assertEquals("1", opts.getLimits().getMilliCpu());
-        AbstractModel abstractModel = new AbstractModel("", "", Labels.forCluster("")) {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return "";
-            }
-
-            /**
-             * @return a list of containers to add to the StatefulSet/Deployment
-             */
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return null;
-            }
-        };
-        abstractModel.setResources(opts);
-        Assert.assertEquals("1", ModelUtils.resources(opts).getLimits().get("cpu").getAmount());
     }
 
     @Test

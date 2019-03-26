@@ -108,7 +108,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
             }
             assertTrue(ar.succeeded());
             verify(mockResource).get();
-            verify(mockResource, never()).patch(any()); // for now all non-namespaced resources should not be patched
+            verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());
             verify(mockResource, never()).createNew();
             verify(mockResource, never()).createOrReplace(any());

@@ -1,0 +1,31 @@
+// Module included in the following assemblies:
+//
+// assembly-deployment-configuration-kafka.adoc
+
+[id='considerations-for-data-storage-{context}']
+
+= Data storage considerations
+
+An efficient data storage infrastructure is essential to the optimal performance of {ProductName}.
+
+{ProductName} requires block storage and is designed to work optimally with cloud-based block storage solutions, including Amazon Elastic Block Store (EBS). The use of file storage is not recommended.
+
+Choose local storage (local persistent volumes) when possible. If local storage is not available, you can use a Storage Area Network (SAN) accessed by a protocol such as Fibre Channel or iSCSI.
+
+== Apache Kafka and Zookeeper storage
+Use separate disks for Apache Kafka and Zookeeper.
+
+Three types of data storage are supported:
+
+* Ephemeral (Recommended for development only)
+* Persistent
+* JBOD  (Just a Bunch of Disks, suitable for Kafka only)
+
+For more information, see xref:assembly-storage-deployment-configuration-kafka[Kafka and Zookeeper storage].
+
+Solid-state drives (SSDs), though not essential, can improve the performance of Kafka in large clusters where data is sent to and received from multiple topics asynchronously. SSDs are particularly effective with Zookeeper, which requires fast, low latency data access.
+
+NOTE: You do not need to provision replicated storage because Kafka and Zookeeper both have built-in data replication.
+
+== File systems
+It is recommended that you configure your storage system to use the XFS file system. AMQ Streams is also compatible with the ext4 file system, but this might require additional configuration for best results.

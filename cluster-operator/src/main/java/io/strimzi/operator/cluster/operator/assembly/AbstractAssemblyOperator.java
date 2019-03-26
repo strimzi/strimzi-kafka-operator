@@ -214,9 +214,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      */
     protected void validate(T resource) {
         if (resource != null) {
-            String context = kind + " resource " + resource.getMetadata().getName()
-                    + " in namespace " + resource.getMetadata().getNamespace();
-            ResourceVisitor.visit(resource, new ValidationVisitor(context, log));
+            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log));
         }
     }
 

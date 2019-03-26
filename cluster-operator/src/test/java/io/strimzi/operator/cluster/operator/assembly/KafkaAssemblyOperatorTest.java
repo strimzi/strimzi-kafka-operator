@@ -329,8 +329,8 @@ public class KafkaAssemblyOperatorTest {
                 ModelUtils.findSecretWithName(secrets, AbstractModel.clusterCaKeySecretName(clusterCm.getMetadata().getName())));
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(clusterCm, VERSIONS);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(clusterCm, VERSIONS);
-        TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm);
-        EntityOperator entityOperator = EntityOperator.fromCrd(clusterCm);
+        TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm, VERSIONS);
+        EntityOperator entityOperator = EntityOperator.fromCrd(clusterCm, VERSIONS);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -366,6 +366,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockKsOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockPolicyOps.reconcile(anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(anyString(), anyString(), pdbCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
         Map<String, PersistentVolumeClaim> zkPvcs = createPvcs(clusterCmNamespace, zookeeperCluster.getStorage(), zookeeperCluster.getReplicas(),
@@ -462,8 +463,8 @@ public class KafkaAssemblyOperatorTest {
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
                     @Override
-                    public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
-                        return Future.succeededFuture(null);
+                    public Future<Void> waitForQuiescence(StatefulSet ss) {
+                        return Future.succeededFuture();
                     }
                 };
             }
@@ -685,8 +686,8 @@ public class KafkaAssemblyOperatorTest {
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(updatedAssembly, VERSIONS);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(originalAssembly, VERSIONS);
         ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(updatedAssembly, VERSIONS);
-        TopicOperator originalTopicOperator = TopicOperator.fromCrd(originalAssembly);
-        EntityOperator originalEntityOperator = EntityOperator.fromCrd(originalAssembly);
+        TopicOperator originalTopicOperator = TopicOperator.fromCrd(originalAssembly, VERSIONS);
+        EntityOperator originalEntityOperator = EntityOperator.fromCrd(originalAssembly, VERSIONS);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -868,6 +869,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockKsOps.maybeRollingUpdate(any(), any(Predicate.class))).thenReturn(Future.succeededFuture());
 
         when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockKsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet scaleUp
         ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);
@@ -903,8 +905,8 @@ public class KafkaAssemblyOperatorTest {
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
                     @Override
-                    public Future<StatefulSet> waitForQuiescence(String namespace, String statefulSetName) {
-                        return Future.succeededFuture(originalKafkaCluster.generateStatefulSet(openShift, null));
+                    public Future<Void> waitForQuiescence(StatefulSet ss) {
+                        return Future.succeededFuture();
                     }
                 };
             }

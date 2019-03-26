@@ -5,6 +5,8 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -109,16 +111,12 @@ class ConnectST extends AbstractST {
                 .addToLabels("type", "kafka-connect")
             .endMetadata()
             .editSpec()
-                .withNewResources()
-                    .withNewLimits()
-                        .withMemory("400M")
-                    .withMilliCpu("2")
-                .endLimits()
-                .withNewRequests()
-                    .withMemory("300M")
-                        .withMilliCpu("1")
-                    .endRequests()
-                .endResources()
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("400M"))
+                        .addToLimits("cpu", new Quantity("2"))
+                        .addToRequests("memory", new Quantity("300M"))
+                        .addToRequests("cpu", new Quantity("1"))
+                        .build())
                 .withNewJvmOptions()
                     .withXmx("200m")
                     .withXms("200m")
