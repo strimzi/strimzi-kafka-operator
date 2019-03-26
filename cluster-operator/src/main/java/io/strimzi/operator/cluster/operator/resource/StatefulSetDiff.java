@@ -21,7 +21,7 @@ public class StatefulSetDiff {
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
         "^(/spec/revisionHistoryLimit"
-        + "|/spec/template/metadata/annotations"  // Actually it's only the statefulset-generation annotation we care about
+        + "|/spec/template/metadata/annotations/strimzi.io~1generation"
         + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"
@@ -56,7 +56,7 @@ public class StatefulSetDiff {
 
     private final boolean changesVolumeClaimTemplate;
     private final boolean isEmpty;
-    private final boolean changesSpecTemplateSpec;
+    private final boolean changesSpecTemplate;
     private final boolean changesLabels;
     private final boolean changesSpecReplicas;
 
@@ -64,7 +64,7 @@ public class StatefulSetDiff {
         JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(desired));
         int num = 0;
         boolean changesVolumeClaimTemplate = false;
-        boolean changesSpecTemplateSpec = false;
+        boolean changesSpecTemplate = false;
         boolean changesLabels = false;
         boolean changesSpecReplicas = false;
         for (JsonNode d : diff) {
@@ -85,14 +85,14 @@ public class StatefulSetDiff {
             changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue);
             // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
             // by k8s
-            changesSpecTemplateSpec |= equalsOrPrefix("/spec/template/spec", pathValue);
+            changesSpecTemplate |= equalsOrPrefix("/spec/template", pathValue);
             changesLabels |= equalsOrPrefix("/metadata/labels", pathValue);
             changesSpecReplicas |= equalsOrPrefix("/spec/replicas", pathValue);
         }
         this.isEmpty = num == 0;
         this.changesLabels = changesLabels;
         this.changesSpecReplicas = changesSpecReplicas;
-        this.changesSpecTemplateSpec = changesSpecTemplateSpec;
+        this.changesSpecTemplate = changesSpecTemplate;
         this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
     }
 
@@ -127,8 +127,8 @@ public class StatefulSetDiff {
     }
 
     /** Returns true if there's a difference in {@code /spec/template/spec} */
-    public boolean changesSpecTemplateSpec() {
-        return changesSpecTemplateSpec;
+    public boolean changesSpecTemplate() {
+        return changesSpecTemplate;
     }
 
     /** Returns true if there's a difference in {@code /metadata/labels} */

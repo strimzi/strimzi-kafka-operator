@@ -45,6 +45,6 @@ public class StatefulSetDiffTest {
                 .endTemplate()
             .endSpec()
             .build();
-        assertFalse(new StatefulSetDiff(ss1, ss2).changesSpecTemplateSpec());
+        assertFalse(new StatefulSetDiff(ss1, ss2).changesSpecTemplate());
     }
 }
