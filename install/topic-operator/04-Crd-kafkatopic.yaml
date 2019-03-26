@@ -25,7 +25,7 @@ spec:
   additionalPrinterColumns:
   - name: Partitions
     description: The number of partitions in the topic
-    JSONPath: .spec.replicas
+    JSONPath: .spec.partitions
     type: integer
     priority: 0
   - name: Replication factor
