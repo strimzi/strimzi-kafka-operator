@@ -22,7 +22,12 @@ crd_install:
 	$(CP) ./cluster-operator/045-Crd-kafkamirrormaker.yaml ../helm-charts/strimzi-kafka-operator/templates/045-Crd-kafkamirrormaker.yaml
 	pushd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.app "{{ template \"strimzi.name\" . }}" \; && popd
 	pushd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.chart "{{ template \"strimzi.chart\" . }}" \; && popd
-	pushd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.component "kafkas.kafka.strimzi.io-crd" \; && popd
+	yq write -i ../helm-charts/strimzi-kafka-operator/templates/040-Crd-kafka.yaml metadata.labels.component "kafkas.kafka.strimzi.io-crd"
+	yq write -i ../helm-charts/strimzi-kafka-operator/templates/041-Crd-kafkaconnect.yaml metadata.labels.component "kafkaconnects.kafka.strimzi.io-crd"
+	yq write -i ../helm-charts/strimzi-kafka-operator/templates/042-Crd-kafkaconnects2i.yaml metadata.labels.component "kafkaconnects2is.kafka.strimzi.io-crd"
+	yq write -i ../helm-charts/strimzi-kafka-operator/templates/043-Crd-kafkatopic.yaml metadata.labels.component "kafkatopicss.kafka.strimzi.io-crd"
+	yq write -i ../helm-charts/strimzi-kafka-operator/templates/044-Crd-kafkauser.yaml metadata.labels.component "kafkauserss.kafka.strimzi.io-crd"
+	yq write -i ../helm-charts/strimzi-kafka-operator/templates/045-Crd-kafkamirrormaker.yaml metadata.labels.component "kafkamirrormakerss.kafka.strimzi.io-crd"
 	pushd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.release "{{ .Release.Name }}" \; && popd
 	pushd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec yq write -i {} metadata.labels.heritage "{{ .Release.Service }}" \; && popd
 	pushd ../helm-charts/strimzi-kafka-operator/templates/ &&  $(FIND) . -type f -name '04*-Crd-*.yaml' -exec $(SED) -i -e '1s/^/{{- if .Values.createGlobalResources -}}\n/' -e '$$s/$$/\n{{- end -}}/' {} \; && popd
