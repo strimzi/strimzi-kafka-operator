@@ -23,8 +23,8 @@ spec:
     shortNames:
     - kc
   additionalPrinterColumns:
-  - name: Replicas
-    description: The number of Kafka Connect replicas
+  - name: Desired replicas
+    description: The desired number of Kafka Connect replicas
     JSONPath: .spec.replicas
     type: integer
     priority: 0

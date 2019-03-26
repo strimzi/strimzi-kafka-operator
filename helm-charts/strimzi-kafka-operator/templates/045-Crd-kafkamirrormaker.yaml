@@ -27,11 +27,21 @@ spec:
     shortNames:
     - kmm
   additionalPrinterColumns:
-  - name: Replicas
-    description: The number of Kafka Mirror Maker replicas
+  - name: Desired replicas
+    description: The desired number of Kafka Mirror Maker replicas
     JSONPath: .spec.replicas
     type: integer
     priority: 0
+  - name: Consumer Bootstrap Servers
+    description: The boostrap servers for the consumer
+    JSONPath: .spec.consumer.bootstrapServers
+    type: string
+    priority: 1
+  - name: Producer Bootstrap Servers
+    description: The boostrap servers for the producer
+    JSONPath: .spec.producer.bootstrapServers
+    type: string
+    priority: 1
   validation:
     openAPIV3Schema:
       properties:

@@ -23,13 +23,13 @@ spec:
     shortNames:
     - k
   additionalPrinterColumns:
-  - name: Kafka scale
-    description: The number of Kafka replicas in the cluster
+  - name: Desired Kafka replicas
+    description: The desired number of Kafka replicas in the cluster
     JSONPath: .spec.kafka.replicas
     type: integer
     priority: 0
-  - name: ZK scale
-    description: The number of Zookeeper replicas in the cluster
+  - name: Desired ZK replicas
+    description: The desired number of Zookeeper replicas in the cluster
     JSONPath: .spec.zookeeper.replicas
     type: integer
     priority: 0

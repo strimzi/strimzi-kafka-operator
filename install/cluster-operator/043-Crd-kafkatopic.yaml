@@ -24,12 +24,12 @@ spec:
     - kt
   additionalPrinterColumns:
   - name: Partitions
-    description: The number of partitions in the topic
+    description: The desired number of partitions in the topic
     JSONPath: .spec.partitions
     type: integer
     priority: 0
   - name: Replication factor
-    description: Number of replicas of each partition
+    description: The desired number of replicas of each partition
     JSONPath: .spec.replicas
     type: integer
     priority: 0
