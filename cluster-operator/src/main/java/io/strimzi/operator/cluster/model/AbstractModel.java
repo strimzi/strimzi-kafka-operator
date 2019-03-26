@@ -715,13 +715,13 @@ public abstract class AbstractModel {
         return service;
     }
 
-    protected Service createHeadlessService(List<ServicePort> ports, Map<String, String> annotations) {
+    protected Service createHeadlessService(List<ServicePort> ports, boolean publishNotReadyAddresses) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(headlessServiceName)
                     .withLabels(getLabelsWithName(headlessServiceName, templateHeadlessServiceLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeAnnotations(annotations, templateHeadlessServiceAnnotations))
+                    .withAnnotations(mergeAnnotations(null, templateHeadlessServiceAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -729,6 +729,7 @@ public abstract class AbstractModel {
                     .withClusterIP("None")
                     .withSelector(getSelectorLabels())
                     .withPorts(ports)
+                    .withPublishNotReadyAddresses(publishNotReadyAddresses)
                 .endSpec()
                 .build();
         log.trace("Created headless service {}", service);

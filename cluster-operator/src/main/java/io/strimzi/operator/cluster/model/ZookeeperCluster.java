@@ -341,8 +341,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public Service generateHeadlessService() {
-        Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-        return createHeadlessService(getServicePortList(), annotations);
+        return createHeadlessService(getServicePortList(), true);
     }
 
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {

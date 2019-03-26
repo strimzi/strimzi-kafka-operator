@@ -649,8 +649,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateHeadlessService() {
-        Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-        return createHeadlessService(getHeadlessServicePorts(), annotations);
+        return createHeadlessService(getHeadlessServicePorts(), true);
     }
 
     /**
