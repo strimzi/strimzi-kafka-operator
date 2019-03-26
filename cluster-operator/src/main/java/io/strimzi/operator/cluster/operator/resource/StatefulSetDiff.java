@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
@@ -15,7 +16,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
-import static java.lang.Integer.parseInt;
 
 public class StatefulSetDiff {
 
@@ -81,8 +81,10 @@ public class StatefulSetDiff {
             Matcher resourceMatchers = RESOURCE_PATH.matcher(pathValue);
             if (resourceMatchers.matches()) {
                 if ("replace".equals(d.path("op").asText())) {
-                    boolean same = compareResources(source, target, pathValue, resourceMatchers);
+                    boolean same = compareMemoryAndCpuResources(source, target, pathValue, resourceMatchers);
                     if (same) {
+                        ObjectMeta md = current.getMetadata();
+                        log.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
                         continue;
                     }
                 }
@@ -90,8 +92,8 @@ public class StatefulSetDiff {
             if (log.isDebugEnabled()) {
                 ObjectMeta md = current.getMetadata();
                 log.debug("StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
-                log.debug("Current StatefulSet path {} has value {}", pathValue, getFromPath(current, pathValue));
-                log.debug("Desired StatefulSet path {} has value {}", pathValue, getFromPath(desired, pathValue));
+                log.debug("Current StatefulSet path {} has value {}", pathValue, lookupPath(source, pathValue));
+                log.debug("Desired StatefulSet path {} has value {}", pathValue, lookupPath(target, pathValue));
             }
 
             num++;
@@ -109,21 +111,25 @@ public class StatefulSetDiff {
         this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
     }
 
-    boolean compareResources(JsonNode source, JsonNode target, String pathValue, Matcher resourceMatchers) {
+    JsonNode lookupPath(JsonNode source, String path) {
         JsonNode s = source;
-        JsonNode t = target;
-        for (String component : pathValue.substring(1).split("/")) {
+        for (String component : path.substring(1).split("/")) {
             if (s.isArray()) {
-                s = s.path(Integer.parseInt(component));
+                try {
+                    s = s.path(Integer.parseInt(component));
+                } catch (NumberFormatException e) {
+                    return MissingNode.getInstance();
+                }
             } else {
                 s = s.path(component);
             }
-            if (t.isArray()) {
-                t = t.path(Integer.parseInt(component));
-            } else {
-                t = t.path(component);
-            }
         }
+        return s;
+    }
+
+    boolean compareMemoryAndCpuResources(JsonNode source, JsonNode target, String pathValue, Matcher resourceMatchers) {
+        JsonNode s = lookupPath(source, pathValue);
+        JsonNode t = lookupPath(target, pathValue);
         String group = resourceMatchers.group(1);
         if (!s.isMissingNode()
             && !t.isMissingNode()) {
@@ -140,27 +146,6 @@ public class StatefulSetDiff {
             }
         }
         return false;
-    }
-
-    private JsonNode getFromPath(StatefulSet current, String pathValue) {
-        JsonNode node1 = patchMapper().valueToTree(current);
-        for (String field : pathValue.replaceFirst("^/", "").split("/")) {
-            JsonNode node2 = node1.get(field);
-            if (node2 == null) {
-                try {
-                    int index = parseInt(field);
-                    node2 = node1.get(index);
-                } catch (NumberFormatException e) {
-                }
-            }
-            if (node2 == null) {
-                node1 = null;
-                break;
-            } else {
-                node1 = node2;
-            }
-        }
-        return node1;
     }
 
     public boolean isEmpty() {
