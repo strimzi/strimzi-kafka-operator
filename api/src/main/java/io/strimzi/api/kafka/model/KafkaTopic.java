@@ -55,13 +55,13 @@ import static java.util.Collections.unmodifiableList;
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Partitions",
-                                description = "The number of partitions in the topic",
+                                description = "The desired number of partitions in the topic",
                                 jsonPath = ".spec.partitions",
                                 type = "integer"
                         ),
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Replication factor",
-                                description = "Number of replicas of each partition",
+                                description = "The desired number of replicas of each partition",
                                 jsonPath = ".spec.replicas",
                                 type = "integer"
                         )

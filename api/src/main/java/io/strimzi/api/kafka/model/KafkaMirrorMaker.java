@@ -54,8 +54,8 @@ import static java.util.Collections.unmodifiableList;
                 },
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Replicas",
-                                description = "The number of Kafka Mirror Maker replicas",
+                                name = "Desired replicas",
+                                description = "The desired number of Kafka Mirror Maker replicas",
                                 jsonPath = ".spec.replicas",
                                 type = "integer"
                         ),

@@ -46,14 +46,14 @@ import static java.util.Collections.unmodifiableList;
                 },
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Kafka scale",
-                                description = "The number of Kafka replicas in the cluster",
+                                name = "Desired Kafka replicas",
+                                description = "The desired number of Kafka replicas in the cluster",
                                 jsonPath = ".spec.kafka.replicas",
                                 type = "integer"
                         ),
                         @Crd.Spec.AdditionalPrinterColumn(
-                                name = "ZK scale",
-                                description = "The number of Zookeeper replicas in the cluster",
+                                name = "Desired ZK replicas",
+                                description = "The desired number of Zookeeper replicas in the cluster",
                                 jsonPath = ".spec.zookeeper.replicas",
                                 type = "integer"
                         )
