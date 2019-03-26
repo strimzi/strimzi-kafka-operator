@@ -58,7 +58,21 @@ import static java.util.Collections.unmodifiableList;
                                 description = "The number of Kafka Mirror Maker replicas",
                                 jsonPath = ".spec.replicas",
                                 type = "integer"
-                        )
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Consumer Bootstrap Servers",
+                                description = "The boostrap servers for the consumer",
+                                jsonPath = ".spec.consumer.bootstrapServers",
+                                type = "string",
+                                priority = 1
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Producer Bootstrap Servers",
+                                description = "The boostrap servers for the producer",
+                                jsonPath = ".spec.producer.bootstrapServers",
+                                type = "string",
+                                priority = 1
+                        ),
                 }
         )
 )
