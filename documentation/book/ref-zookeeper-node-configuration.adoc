@@ -7,7 +7,7 @@
 
 Zookeeper nodes are configured using the `config` property in `Kafka.spec.zookeeper`.
 This property contains the Zookeeper configuration options as keys.
-The values can be described in one of the following JSON types:
+The values can be described using one of the following JSON types:
 
 * String
 * Number
