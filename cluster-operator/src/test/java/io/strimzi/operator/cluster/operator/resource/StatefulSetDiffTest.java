@@ -118,5 +118,23 @@ public class StatefulSetDiffTest {
                 new ResourceRequirementsBuilder()
                         .addToRequests(singletonMap("memory", new Quantity("1181116007")))
                         .build()).isEmpty());
+
+        assertFalse(testCpuResources(
+                new ResourceRequirementsBuilder()
+                        .build(),
+                new ResourceRequirementsBuilder()
+                        .addToRequests(singletonMap("memory", new Quantity("1181116007")))
+                        .build()).isEmpty());
+
+        assertTrue(testCpuResources(
+                new ResourceRequirementsBuilder()
+                        .build(),
+                new ResourceRequirementsBuilder()
+                        .build()).isEmpty());
+
+        assertTrue(testCpuResources(
+                new ResourceRequirementsBuilder()
+                        .build(),
+                null).isEmpty());
     }
 }

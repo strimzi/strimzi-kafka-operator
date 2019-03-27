@@ -24,9 +24,11 @@ public class StatefulSetDiff {
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
         "^(/spec/revisionHistoryLimit"
         + "|/spec/template/metadata/annotations/strimzi.io~1generation"
+        + "|/spec/template/spec/initContainers/[0-9]+/resources"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePath"
         + "|/spec/template/spec/initContainers/[0-9]+/terminationMessagePolicy"
         + "|/spec/template/spec/initContainers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
+        + "|/spec/template/spec/containers/[0-9]+/resources"
         + "|/spec/template/spec/containers/[0-9]+/env/[0-9]+/valueFrom/fieldRef/apiVersion"
         + "|/spec/template/spec/containers/[0-9]+/livenessProbe/failureThreshold"
         + "|/spec/template/spec/containers/[0-9]+/livenessProbe/periodSeconds"
