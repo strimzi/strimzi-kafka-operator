@@ -17,6 +17,8 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
@@ -1016,7 +1018,22 @@ class KafkaST extends AbstractST {
         int diskCountPerReplica = 2;
         int kafkaReplicas = 2;
         int diskSizeGi = 10;
-        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, diskCountPerReplica, diskSizeGi, true).done();
+
+        List<SingleVolumeStorage> volumes = new ArrayList<>();
+
+        for (int i = 0; i < diskCountPerReplica; i++) {
+            volumes.add(new PersistentClaimStorageBuilder()
+                    .withId(i)
+                    .withDeleteClaim(true)
+                    .withSize(diskSizeGi + "Gi").build());
+        }
+
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas)
+                .editSpec().
+                    editKafka()
+                        .withNewJbodStorage().withVolumes(volumes).endJbodStorage()
+                    .endKafka()
+                .endSpec().done();
         // kafka cluster already deployed
 
         ArrayList pvcs = new ArrayList();
@@ -1026,12 +1043,11 @@ class KafkaST extends AbstractST {
             pvcs.add(volumeName);
 
             LOGGER.info("Checking labels for volume:" + volumeName);
-            CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getLabels()
-                    .containsValue("strimzi.io/cluster=".concat(CLUSTER_NAME));
-            CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getLabels()
-                    .containsValue("strimzi.io/kind=Kafka");
-            CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getLabels()
-                    .containsValue("strimzi.io/name=".concat(CLUSTER_NAME).concat("-kafka"));
+            Map<String, String> labels = CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getLabels();
+            assertEquals(CLUSTER_NAME, labels.get("strimzi.io/cluster"));
+            assertEquals("Kafka", labels.get("strimzi.io/kind"));
+            assertEquals(CLUSTER_NAME.concat("-kafka"), labels.get("strimzi.io/name"));
+
             CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getSpec().getResources().
                     getRequests().get("storage").getAmount().contains(diskSizeGi + "Gi");
         }
@@ -1039,7 +1055,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Checking PVC names included in JBOD array");
         for (int i = 0; i < kafkaReplicas; i++) {
             for (int j = 0; j < diskCountPerReplica; j++) {
-                pvcs.contains("data-" + j + "-my-cluster-kafka-" + i);
+                pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
             }
         }
 
@@ -1059,7 +1075,7 @@ class KafkaST extends AbstractST {
             LOGGER.info("Verifying mounted data sources and PVCs on Kafka pod " + i);
             for (int j = 0; j < diskCountPerReplica; j++) {
                 dataSourcesOnPod.contains("data-" + j);
-                pvcsOnPod.contains("data-" + j + "-my-cluster-kafka-" + i);
+                pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
             }
         }
     }

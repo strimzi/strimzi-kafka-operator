@@ -57,8 +57,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
-import io.strimzi.api.kafka.model.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -247,7 +245,6 @@ public class Resources {
         return kafka(defaultKafka(name, kafkaReplicas).build());
     }
 
-
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
         String tOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
         String uOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
@@ -300,71 +297,8 @@ public class Resources {
                     .endSpec();
     }
 
-    DoneableKafka kafkaJBOD(String name, int kafkaReplicas, int diskCount, int diskSizeGi, boolean deleteClaim) {
-        return kafka(jbodKafka(name, kafkaReplicas, diskCount, diskSizeGi, deleteClaim).build());
-    }
-
-    public KafkaBuilder jbodKafka(String name, int kafkaReplicas, int diskCount, int diskSize, boolean deleteClaim) {
-        String tOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
-        String uOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
-
-        List<SingleVolumeStorage> volumes = new ArrayList<>();
-
-        for (int i = 0; i < diskCount; i++) {
-            volumes.add(new PersistentClaimStorageBuilder()
-                    .withId(i)
-                    .withDeleteClaim(deleteClaim)
-                    .withSize(diskSize + "Gi").build());
-        }
-
-        return new KafkaBuilder()
-                    .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
-                    .withNewSpec()
-                        .withNewKafka()
-                            .withVersion(KAFKA_VERSION)
-                            .withReplicas(kafkaReplicas)
-                            .withNewJbodStorage()
-                                .withVolumes(volumes)
-                            .endJbodStorage()
-                            .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
-                            .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
-                            .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
-                            .withNewListeners()
-                                .withNewPlain().endPlain()
-                                .withNewTls().endTls()
-                            .endListeners()
-                            .withNewReadinessProbe()
-                                .withInitialDelaySeconds(15)
-                                .withTimeoutSeconds(5)
-                            .endReadinessProbe()
-                            .withNewLivenessProbe()
-                                .withInitialDelaySeconds(15)
-                                .withTimeoutSeconds(5)
-                            .endLivenessProbe()
-                            .withResources(new ResourceRequirementsBuilder()
-                                .addToRequests("memory", new Quantity("1G")).build())
-                            .withMetrics(new HashMap<>())
-                        .endKafka()
-                        .withNewZookeeper()
-                            .withReplicas(1)
-                .withResources(new ResourceRequirementsBuilder()
-                        .addToRequests("memory", new Quantity("1G")).build())
-                            .withMetrics(new HashMap<>())
-                            .withNewReadinessProbe()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .endReadinessProbe()
-                .withNewLivenessProbe()
-                .withInitialDelaySeconds(15)
-                .withTimeoutSeconds(5)
-                .endLivenessProbe()
-                            .withNewEphemeralStorage().endEphemeralStorage()
-                        .endZookeeper()
-                        .withNewEntityOperator()
-                            .withNewTopicOperator().withImage(tOImage).endTopicOperator()
-                            .withNewUserOperator().withImage(uOImage).endUserOperator()
-                        .endEntityOperator()
-                    .endSpec();
+    DoneableKafka kafkaJBOD(String name, int kafkaReplicas) {
+        return kafka(defaultKafka(name, kafkaReplicas).build());
     }
 
     DoneableKafka kafka(Kafka kafka) {
