@@ -4,40 +4,26 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaAssemblyList;
-import io.strimzi.api.kafka.KafkaConnectAssemblyList;
-import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
-import io.strimzi.api.kafka.KafkaMirrorMakerList;
-import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
@@ -70,7 +56,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
-public class Resources {
+public class Resources extends AbstractResources {
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
     private static final long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(3).toMillis();
@@ -86,65 +72,8 @@ public class Resources {
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     public static final String STRIMZI_DEFAULT_LOG_LEVEL = "DEBUG";
 
-    private final NamespacedKubernetesClient client;
-
     Resources(NamespacedKubernetesClient client) {
-        this.client = client;
-    }
-
-    private NamespacedKubernetesClient client() {
-        return client;
-    }
-
-    private MixedOperation<Kafka, KafkaAssemblyList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafka() {
-        return customResourcesWithCascading(Kafka.class, KafkaAssemblyList.class, DoneableKafka.class);
-    }
-
-    // This logic is necessary only for the deletion of resources with `cascading: true`
-    private <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) client()).getHttpClient(), client().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
-    }
-
-    private MixedOperation<KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnect() {
-        return client()
-                .customResources(Crds.kafkaConnect(),
-                        KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class);
-    }
-
-    private MixedOperation<KafkaConnectS2I, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2I() {
-        return client()
-                .customResources(Crds.kafkaConnectS2I(),
-                        KafkaConnectS2I.class, KafkaConnectS2IAssemblyList.class, DoneableKafkaConnectS2I.class);
-    }
-
-    private MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> kafkaMirrorMaker() {
-        return client()
-                .customResources(Crds.mirrorMaker(),
-                        KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
-    }
-
-    private MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> kafkaTopic() {
-        return client()
-                .customResources(Crds.topic(),
-                        KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
-    }
-
-    private MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUser() {
-        return client()
-                .customResources(Crds.kafkaUser(),
-                        KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
-    }
-
-    private MixedOperation<Deployment, DeploymentList, DoneableDeployment, Resource<Deployment, DoneableDeployment>> clusterOperator() {
-        return customResourcesWithCascading(Deployment.class, DeploymentList.class, DoneableDeployment.class);
-    }
-
-    private MixedOperation<KubernetesClusterRoleBinding, KubernetesClusterRoleBindingList, DoneableKubernetesClusterRoleBinding, Resource<KubernetesClusterRoleBinding, DoneableKubernetesClusterRoleBinding>> kubernetesClusterRoleBinding() {
-        return customResourcesWithCascading(KubernetesClusterRoleBinding.class, KubernetesClusterRoleBindingList.class, DoneableKubernetesClusterRoleBinding.class);
-    }
-
-    private MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> kubernetesRoleBinding() {
-        return customResourcesWithCascading(KubernetesRoleBinding.class, KubernetesRoleBindingList.class, DoneableKubernetesRoleBinding.class);
+        super(client);
     }
 
     private List<Runnable> resources = new ArrayList<>();
@@ -454,7 +383,7 @@ public class Resources {
         return kafka;
     }
 
-    KafkaConnect waitFor(KafkaConnect kafkaConnect) {
+    private KafkaConnect waitFor(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting for Kafka Connect {}", kafkaConnect.getMetadata().getName());
         String namespace = kafkaConnect.getMetadata().getNamespace();
         waitForDeployment(namespace, kafkaConnect.getMetadata().getName() + "-connect");
@@ -485,7 +414,7 @@ public class Resources {
     /**
      * Wait until the SS is ready and all of its Pods are also ready
      */
-    public void waitForStatefulSet(String namespace, String name) {
+    private void waitForStatefulSet(String namespace, String name) {
         StUtils.waitForAllStatefulSetPodsReady(client(), namespace, name);
     }
 
@@ -612,7 +541,7 @@ public class Resources {
         });
     }
 
-    Deployment getDeploymentFromYaml(String yamlPath) {
+    private Deployment getDeploymentFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, Deployment.class);
     }
 
@@ -697,11 +626,11 @@ public class Resources {
         });
     }
 
-    KubernetesRoleBinding getRoleBindingFromYaml(String yamlPath) {
+    private KubernetesRoleBinding getRoleBindingFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, KubernetesRoleBinding.class);
     }
 
-    KubernetesClusterRoleBinding getClusterRoleBindingFromYaml(String yamlPath) {
+    private KubernetesClusterRoleBinding getClusterRoleBindingFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, KubernetesClusterRoleBinding.class);
     }
 
@@ -709,7 +638,7 @@ public class Resources {
         return kubernetesRoleBinding(defaultKubernetesRoleBinding(yamlPath, namespace).build(), clientNamespace);
     }
 
-    KubernetesRoleBindingBuilder defaultKubernetesRoleBinding(String yamlPath, String namespace) {
+    private KubernetesRoleBindingBuilder defaultKubernetesRoleBinding(String yamlPath, String namespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
 
         return new KubernetesRoleBindingBuilder(getRoleBindingFromYaml(yamlPath))
@@ -719,7 +648,7 @@ public class Resources {
                 .endSubject();
     }
 
-    DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String clientNamespace) {
+    private DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String clientNamespace) {
         LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
         client.inNamespace(clientNamespace).rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
         deleteLater(roleBinding);
@@ -730,7 +659,7 @@ public class Resources {
         return kubernetesClusterRoleBinding(defaultKubernetesClusterRoleBinding(yamlPath, namespace).build(), clientNamespace);
     }
 
-    KubernetesClusterRoleBindingBuilder defaultKubernetesClusterRoleBinding(String yamlPath, String namespace) {
+    private KubernetesClusterRoleBindingBuilder defaultKubernetesClusterRoleBinding(String yamlPath, String namespace) {
         LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
 
         return new KubernetesClusterRoleBindingBuilder(getClusterRoleBindingFromYaml(yamlPath))
@@ -738,6 +667,70 @@ public class Resources {
                 .editFirstSubject()
                     .withNamespace(namespace)
                 .endSubject();
+    }
+
+    List<KubernetesClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace) {
+        LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
+
+        List<KubernetesClusterRoleBinding> kCRBList = new ArrayList<>();
+
+        kCRBList.add(
+            new KubernetesClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName("strimzi-cluster-operator-namespaced")
+                .endMetadata()
+                .withNewRoleRef()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-cluster-operator-namespaced")
+                .endRoleRef()
+                .withSubjects(new KubernetesSubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                    .build()
+                )
+                .build()
+        );
+
+        kCRBList.add(
+            new KubernetesClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName("strimzi-entity-operator")
+                .endMetadata()
+                .withNewRoleRef()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-entity-operator")
+                .endRoleRef()
+                .withSubjects(new KubernetesSubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                    .build()
+                )
+                .build()
+        );
+
+        kCRBList.add(
+            new KubernetesClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName("strimzi-topic-operator")
+                .endMetadata()
+                .withNewRoleRef()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-topic-operator")
+                .endRoleRef()
+                .withSubjects(new KubernetesSubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName("strimzi-cluster-operator")
+                    .withNamespace(namespace)
+                    .build()
+                )
+                .build()
+        );
+        return kCRBList;
     }
 
     DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String clientNamespace) {
