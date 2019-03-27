@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvFileSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -81,20 +82,20 @@ public class StrimziUpgradeST extends AbstractST {
 //        }
 //    }
 
-    enum StrimziVersions {
-        FROM_0_8_2_TO_0_11_1 ("0.8.2", "0.11.1", "2.0.0"),
-        FROM_0_11_1_TO_MASTER ("0.11.1", "master", "2.1.1");
-
-        final String fromVersion;
-        final String toVersion;
-        final String kafkaVersion;
-
-        StrimziVersions(String fromVersion, String toVersion, String kafkaVersion) {
-            this.fromVersion = fromVersion;
-            this.toVersion = toVersion;
-            this.kafkaVersion = kafkaVersion;
-        }
-    }
+//    enum StrimziVersions {
+//        FROM_0_8_2_TO_0_11_1 ("0.8.2", "0.11.1", "2.0.0"),
+//        FROM_0_11_1_TO_MASTER ("0.11.1", "master", "2.1.1");
+//
+//        final String fromVersion;
+//        final String toVersion;
+//        final String kafkaVersion;
+//
+//        StrimziVersions(String fromVersion, String toVersion, String kafkaVersion) {
+//            this.fromVersion = fromVersion;
+//            this.toVersion = toVersion;
+//            this.kafkaVersion = kafkaVersion;
+//        }
+//    }
 
     private void waitForClusterReadiness() {
         // Wait for readiness
@@ -142,18 +143,21 @@ public class StrimziUpgradeST extends AbstractST {
 
 
     @ParameterizedTest
-    @EnumSource(value = StrimziVersions.class, names = {"FROM_0_8_2_TO_0_11_1", "FROM_0_11_1_TO_MASTER"})
-    void upgradeStrimziVersion(StrimziVersions versions) throws IOException {
+//    @EnumSource(value = StrimziVersions.class, names = {"FROM_0_8_2_TO_0_11_1", "FROM_0_11_1_TO_MASTER"})
+//    @CsvFileSource(resources = "../systemtest/src/test/resources/parametrized/data/StrimziUpgradeST.csv")
+    @CsvFileSource(resources = "/StrimziUpgradeST.csv")
+    void upgradeStrimziVersion(String fromVersion, String toVersion, String urlFrom, String urlTo, String kafkaVersion) throws IOException {
         KUBE_CLIENT.namespace(NAMESPACE);
         File coDir = null;
         File kafkaEphemeralYaml = null;
         File kafkaTopicYaml = null;
         File kafkaUserYaml = null;
+
         try {
-            String url = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/" + versions.fromVersion + "/strimzi-" + versions.fromVersion + ".zip";
+            String url = urlFrom;
             File dir = StUtils.downloadAndUnzip(url);
 
-            coDir = new File(dir, "strimzi-" + versions.fromVersion + "/install/cluster-operator/");
+            coDir = new File(dir, "strimzi-" + fromVersion + "/install/cluster-operator/");
             // Modify + apply installation files
             copyModifyApply(coDir);
 
@@ -161,15 +165,15 @@ public class StrimziUpgradeST extends AbstractST {
             KUBE_CLIENT.waitForDeployment("strimzi-cluster-operator", 1);
 
             // Deploy a Kafka cluster
-            kafkaEphemeralYaml = new File(dir, "strimzi-" + versions.fromVersion + "/examples/kafka/kafka-ephemeral.yaml");
+            kafkaEphemeralYaml = new File(dir, "strimzi-" + fromVersion + "/examples/kafka/kafka-ephemeral.yaml");
             KUBE_CLIENT.create(kafkaEphemeralYaml);
             // Wait for readiness
             waitForClusterReadiness();
 
             // And a topic and a user
-            kafkaTopicYaml = new File(dir, "strimzi-" + versions.fromVersion + "/examples/topic/kafka-topic.yaml");
+            kafkaTopicYaml = new File(dir, "strimzi-" + fromVersion + "/examples/topic/kafka-topic.yaml");
             KUBE_CLIENT.create(kafkaTopicYaml);
-            kafkaUserYaml = new File(dir, "strimzi-" + versions.fromVersion + "/examples/user/kafka-user.yaml");
+            kafkaUserYaml = new File(dir, "strimzi-" + fromVersion + "/examples/user/kafka-user.yaml");
             KUBE_CLIENT.create(kafkaUserYaml);
 
             makeSnapshots();
@@ -180,15 +184,15 @@ public class StrimziUpgradeST extends AbstractST {
             }
 
             // Update Kafka version
-            if(!versions.kafkaVersion.isEmpty()) {
+            if(!kafkaVersion.isEmpty()) {
                 replaceKafkaResource(CLUSTER_NAME, k -> {
-                    if(k.getSpec().getKafka().getVersion() == null || !k.getSpec().getKafka().getVersion().equals(versions.kafkaVersion)) {
-                        switch (versions.kafkaVersion) {
+                    if(k.getSpec().getKafka().getVersion() == null || !k.getSpec().getKafka().getVersion().equals(kafkaVersion)) {
+                        switch (kafkaVersion) {
                             case "2.0.0": {
                                 replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().getConfig().put("log.message.format.version", "2.0"));
                                 StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
                                 makeSnapshots();
-                                replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().setVersion(versions.kafkaVersion));
+                                replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().setVersion(kafkaVersion));
                                 StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
                                 makeSnapshots();
                                 break;
@@ -197,7 +201,7 @@ public class StrimziUpgradeST extends AbstractST {
                                 replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().getConfig().put("log.message.format.version", "2.1"));
                                 StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
                                 makeSnapshots();
-                                replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().setVersion(versions.kafkaVersion));
+                                replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().setVersion(kafkaVersion));
                                 StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
                                 makeSnapshots();
                                 break;
@@ -206,7 +210,7 @@ public class StrimziUpgradeST extends AbstractST {
                                 replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().getConfig().put("log.message.format.version", "2.1"));
                                 StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
                                 makeSnapshots();
-                                replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().setVersion(versions.kafkaVersion));
+                                replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().setVersion(kafkaVersion));
                                 StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
                                 makeSnapshots();
                                 break;
@@ -243,7 +247,7 @@ public class StrimziUpgradeST extends AbstractST {
 //                }
 //            });
 
-            switch (versions.toVersion) {
+            switch (toVersion) {
                 case "master": {
                     // Upgrade the CO, to current HEAD,
                     LOGGER.info("Updating");
@@ -253,10 +257,10 @@ public class StrimziUpgradeST extends AbstractST {
                     break;
                 }
                 default: {
-                    url = "https://github.com/strimzi/strimzi-kafka-operator/releases/download/" + versions.toVersion + "/strimzi-" + versions.toVersion + ".zip";
+                    url = urlTo;
                     dir = StUtils.downloadAndUnzip(url);
 
-                    coDir = new File(dir, "strimzi-" + versions.toVersion + "/install/cluster-operator/");
+                    coDir = new File(dir, "strimzi-" + toVersion + "/install/cluster-operator/");
                     // Modify + apply installation files
                     copyModifyApply(coDir);
 
@@ -265,7 +269,7 @@ public class StrimziUpgradeST extends AbstractST {
                 }
             }
 
-            waitForRollingUpdate(versions.toVersion, versions.kafkaVersion);
+            waitForRollingUpdate(toVersion, kafkaVersion);
             // Tidy up
         } catch (KubeClusterException e) {
             if (kafkaEphemeralYaml != null) {
