@@ -12,11 +12,13 @@
 [id='assembly-logging-{context}']
 = Logging
 
-Logging enables you to diagnose error and performance issues of {ProductName}.
+Logging enables you to diagnose error and performance issues for {ProductName}.
 For the logging, various logger implementations are used.
-Kafka and Zookeeper use `log4j` logger and Topic Operator, User Operator, and other components use `log4j2` logger.
 
-This section provides information about different loggers and describes how to configure log levels.
+* `log4j` logger for Kafka and Zookeeper
+* `log4j2` logger for Topic Operator, User Operator, and other components
+
+This section provides information about setting loggers and describes how to configure log levels.
 
 You can set the log levels by specifying the loggers and their levels directly (inline) or by using a custom (external) config map.
 
