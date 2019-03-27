@@ -105,7 +105,7 @@ public class QuantitiesTest {
         assertEquals("12345", normalizeMemory("12345"));
         assertEquals("524288000", normalizeMemory("500Mi"));
         assertEquals("1181116006", normalizeMemory("1.1Gi"));
-        assertEquals("1288490189", normalizeMemory("1.2Gi"));
+        assertEquals("1288490188", normalizeMemory("1.2Gi"));
     }
 
     @Test
