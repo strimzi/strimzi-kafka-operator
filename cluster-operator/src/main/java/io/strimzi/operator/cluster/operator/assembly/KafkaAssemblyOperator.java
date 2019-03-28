@@ -1530,7 +1530,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(serviceOperations.endpointReadiness(namespace, kafkaHeadlessService, 1_000, operationTimeoutMs));
         }
 
-
+        /**
+         * Will check all Zookeeper pods whether the user requested the pod and PVC deletion through an annotation
+         *
+         * @return
+         */
         Future<ReconciliationState> zkManualPodCleaning() {
             String stsName = ZookeeperCluster.zookeeperClusterName(name);
             Future<StatefulSet> futureSts = zkSetOperations.getAsync(namespace, stsName);
@@ -1550,6 +1554,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(resultFuture);
         }
 
+        /**
+         * Will check all Kafka pods whether the user requested the pod and PVC deletion through an annotation
+         *
+         * @return
+         */
         Future<ReconciliationState> kafkaManualPodCleaning() {
             String stsName = KafkaCluster.kafkaClusterName(name);
             Future<StatefulSet> futureSts = kafkaSetOperations.getAsync(namespace, stsName);
@@ -1575,6 +1584,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(resultFuture);
         }
 
+        /**
+         * Internal method for checking Pods and PVCs for deletion. It goes through the pods and checks the annotations
+         * to decide whether they should be deleted. For the first pod marked to be deleted, it will gather the existing
+         * and desired PVCs to be able to delete and recreate them.
+         *
+         * This method exists with the first Pod it finds where deletion is required. This is intentional - if multiple
+         * pods are marked for deletion, the next one will be deleted in the next loop.
+         *
+         * @param sts                   StatefulSet which owns the pods which should be checked for deletion
+         * @param desiredPvcs           The list of PVCs which should exist
+         * @param futureExistingPvcs    Future which will return a list of PVCs which actually exist
+         * @return
+         */
         Future<Void> maybeCleanPodAndPvc(StatefulSet sts, List<PersistentVolumeClaim> desiredPvcs, Future<List<PersistentVolumeClaim>> futureExistingPvcs)  {
             if (sts != null) {
                 log.debug("{}: Considering manual cleaning of Pods for StatefulSet {}", reconciliation, sts.getMetadata().getName());
@@ -1608,7 +1630,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                                 .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
                                                 .collect(Collectors.toList());
 
-                                        return cleanPodAndPvc(podName, sts, deletePvcs, createPvcs);
+                                        return cleanPodAndPvc(podName, deletePvcs, createPvcs);
                                     });
                         }
                     }
@@ -1618,7 +1640,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return Future.succeededFuture();
         }
 
-        Future<Void> cleanPodAndPvc(String podName, StatefulSet sts, List<PersistentVolumeClaim> deletePvcs, List<PersistentVolumeClaim> createPvcs) {
+        /**
+         * This is an internal method which actually executes the deletion of the Pod and PVC. There is a lot of
+         * unpredictable behaviour here:
+         *     - The PVCs (sometimes) cannot be deleted before the pods is deleted.
+         *     - Sometimes the Pod is recreated before the PVC is actually deleted and doesn't create the new PVCs
+         *
+         * To address these, we:
+         *     1. Delete the PVC (= mark the PVC for deletion)
+         *     2. Delete the Pod
+         *     3. Reconcile the PVCs (either we create them or we just reconcile what the StatefulSet / Pods created)
+         *     4. Wait for Pod readiness
+         *
+         * @param podName Name of the pod which should be deleted
+         * @param deletePvcs The list of PVCs which should be deleted
+         * @param createPvcs The list of PVCs which should be recreated
+         * @return
+         */
+        Future<Void> cleanPodAndPvc(String podName, List<PersistentVolumeClaim> deletePvcs, List<PersistentVolumeClaim> createPvcs) {
             long pollingIntervalMs = 1_000;
             long timeoutMs = operationTimeoutMs;
 
@@ -1668,6 +1707,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return fut;
         }
 
+        /**
+         * Deletion of PVCs after the cluster is deleted is handled by owner reference and garbage collection. However,
+         * this would not help after scale-downs. Therefore we check if there are any PVCs which should not be present
+         * and delete them when they are.
+         *
+         * This should be called only after the Statefulset reconciliation, rolling update and scale-down when the PVCs
+         * are not used anymore by the pods.
+         *
+         * @return
+         */
         Future<ReconciliationState> zkPersistentClaimDeletion() {
             Future<ReconciliationState> futureResult = Future.future();
             Future<List<PersistentVolumeClaim>> futurePvcs = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabels()));
@@ -1686,6 +1735,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return futureResult;
         }
 
+        /**
+         * Deletion of PVCs after the cluster is deleted is handled by owner reference and garbage collection. However,
+         * this would not help after scale-downs. Therefore we check if there are any PVCs which should not be present
+         * and delete them when they are.
+         *
+         * This should be called only after the Statefulset reconciliation, rolling update and scale-down when the PVCs
+         * are not used anymore by the pods.
+         *
+         * @return
+         */
         Future<ReconciliationState> kafkaPersistentClaimDeletion() {
             Future<ReconciliationState> futureResult = Future.future();
             Future<List<PersistentVolumeClaim>> futurePvcs = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels()));
@@ -1704,6 +1763,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return futureResult;
         }
 
+        /**
+         * Internal method for deleting PVCs after scale-downs or disk removal from JBOD storage. It gets list of
+         * existing and desired PVCs, diffs them and removes those wioch should not exist.
+         *
+         * @param maybeDeletePvcs   List of existing PVCs
+         * @param desiredPvcs       List of PVCs whcih should exist
+         * @return
+         */
         Future<ReconciliationState> persistentClaimDeletion(List<String> maybeDeletePvcs, List<String> desiredPvcs) {
             List<Future> futures = new ArrayList<>();
 

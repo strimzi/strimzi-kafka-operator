@@ -264,6 +264,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
 
     /**
      * Asynchronously lists the resource with the given {@code selector} in the given {@code namespace}.
+     *
      * @param namespace The namespace.
      * @param selector The selector.
      * @return A Future with a list of matching resources.
