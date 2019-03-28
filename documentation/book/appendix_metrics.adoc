@@ -39,22 +39,23 @@ endif::Kubernetes[]
 
 https://prometheus.io/[Prometheus] is an open-source set of components for systems monitoring and alerting. {ProductName} uses the https://github.com/coreos/prometheus-operator[CoreOS Prometheus Operator] to run Prometheus on Kubernetes. This Operator enables you to run a highly available Prometheus server that is suitable for use in production environments.
 
+==== Deploying Prometheus Operator on {OpenShiftName}
+
 To deploy the Prometheus Operator in your Kafka cluster, apply the `.yaml` files from the https://github.com/coreos/prometheus-operator/tree/master/example/rbac/prometheus-operator[Prometheus CoreOS repository].
 
-To use a different namespace than that specified in the repository files, use the following commands to download and edit the files from respository:
+To use a different namespace than that specified in the repository files, use the following commands to download and edit the files from the repository:
 
 [source,shell,subs="+quotes"]  
-curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus-operator-deployment.yaml
-curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus-operator-cluster-role-binding.yaml
-curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-service-account.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus-operator-service-account.yaml
-curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-cluster-role-binding.yaml
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-service-account.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-service-account.yaml
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml > prometheus-operator-cluster-role.yaml
 
-It might happen you need to remove `securityContext` from Prometheus Operator Deployment which is located in the `prometheus-operator-deployment.yaml` file.
-You can do it manually by removing property `spec.template.spec.securityContext` or use this command:
+If needed, you can remove the `securityContext` from the Prometheus Operator Deployment. You can either manually remove the `spec.template.spec.securityContext` property from the `prometheus-operator-deployment.yaml` file, or run the following command:
 [source,shell,subs="+quotes"]
 yq d -i prometheus-operator-deployment.yaml spec.template.spec.securityContext
 
-Now you can apply all the files by the commands:
+Next, apply all the files using the following commands:
 [source,shell,subs="+quotes"]
 oc apply -f prometheus-operator-service-account.yaml
 oc apply -f prometheus-operator-cluster-role.yaml
@@ -79,14 +80,52 @@ When an alert condition is evaluated as true on the Prometheus server, it sends 
 
 For more information about setting up alerting rules, see https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[Alerting Rules] in the Prometheus documentation.
 
-==== Deploying on {OpenShiftName}
+==== Deploying Prometheus Operator on {KubernetesName}
+
+To deploy the Prometheus Operator in your Kafka cluster, apply the `.yaml` files from the https://github.com/coreos/prometheus-operator/tree/master/example/rbac/prometheus-operator[Prometheus CoreOS repository].
+
+To use a different namespace than that specified in the repository files, use the following commands to download and edit the files from the repository:
+
+[source,shell,subs="+quotes"]
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-cluster-role-binding.yaml
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-service-account.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-service-account.yaml
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml > prometheus-operator-cluster-role.yaml
+
+Next, apply all the files using the following commands:
+[source,shell,subs="+quotes"]
+kubectl apply -f prometheus-operator-service-account.yaml
+kubectl apply -f prometheus-operator-cluster-role.yaml
+kubectl apply -f prometheus-operator-cluster-role-binding.yaml
+kubectl apply -f prometheus-operator-deployment.yaml
+
+
+The {ProductName} repository contains configuration files for the Prometheus server. When you apply these configuration files, the following resources are created in your Kafka cluster and managed by the Prometheus Operator.
+
+* A `ClusterRole` that grants permissions to read the Prometheus health endpoints of the Kubernetes system, including cAdvisor and the kubelet for container metrics. The Prometheus server configuration uses the Kubernetes service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
+* A `ServiceAccount` for the Prometheus pods to run under.
+* A `ClusterRoleBinding` which binds the aforementioned `ClusterRole` to the `ServiceAccount`.
+* A `Deployment` to manage the Prometheus Operator pod.
+* A `ServiceMonitor` to manage the configuration of the Prometheus pod.
+* A `Secret` to manage additional Prometheus settings.
+* A `PrometheusRule` to manage alert rules for the Prometheus pod.
+* A `Prometheus` to manage the configuration of the Prometheus pod.
+
+Prometheus also provides an alerting system through the link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager] component.
+To enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`] file describes a `PrometheusRule` resource that defines sample alerting rules for Kafka and Zookeeper metrics.
+When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the Alertmanager which then uses the configured notification methods to notify the user.
+
+For more information about setting up alerting rules, see https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[Alerting Rules] in the Prometheus documentation.
+
+
+==== Deploying Prometheus on {OpenShiftName}
 
 The provided `prometheus.yaml` file, together with the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
 It also discovers an Alertmanager instance in the same namespace.
 If you are using a different namespace, download the resource file and update it using the following command:
 
 [source,shell,subs="+quotes"]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
 
 To define Prometheus jobs that will scrape the metrics data, you must apply the `ServiceMonitor` resource located in the provided `strimzi-service-monitor.yaml` file.
 Download this file using the following command:
@@ -104,7 +143,7 @@ oc create secret generic additional-scrape-configs --from-file=prometheus-additi
 The provided `prometheus-rules.yaml` file creates a `PrometheusRule` with sample alerting rules. Download and update the resource file as follows:
 
 [source,shell,subs="+quotes"]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus-rules.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
 
 To deploy these resources, run the following commands:
 
@@ -115,14 +154,14 @@ oc apply -f prometheus-rules.yaml
 oc apply -f prometheus.yaml
 
 ifdef::Kubernetes[]
-==== Deploying on {KubernetesName}
+==== Deploying Prometheus on {KubernetesName}
 
 The provided `prometheus.yaml` file, with all the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
 It also discovers an Alertmanager instance in the same namespace.
 If you are using a different namespace, download the resource file and update it as follows:
 
 [source,shell,subs="+quotes"]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus.yaml
 
 To define Prometheus jobs that will scrape the metrics data, you must apply the `ServiceMonitor` resource located in the provided `strimzi-service-monitor.yaml` file.
 Download it by using the following command:
@@ -141,12 +180,11 @@ kubectl create secret generic additional-scrape-configs --from-file=prometheus-a
 The provided `prometheus-rules.yaml` file creates a `PrometheusRule` with sample alerting rules. Download and update the resource file as follows:
 
 [source,shell,subs="+quotes"]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/;s/regex: myproject/regex: _my-namespace_/' > prometheus-rules.yaml
+curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-rules.yaml
 
 To deploy these resources, run the following commands:
 
 [source,shell,subs=attributes+]
-kubectl login -u system:admin
 kubectl apply -f strimzi-service-monitor.yaml
 kubectl apply -f prometheus-rules.yaml
 kubectl apply -f prometheus.yaml
