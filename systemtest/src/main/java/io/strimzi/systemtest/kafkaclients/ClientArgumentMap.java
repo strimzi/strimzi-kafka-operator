@@ -58,12 +58,8 @@ public class ClientArgumentMap {
      * @return true if operation is completed
      */
     public Boolean put(ClientArgument key, String value) {
-        ArrayList<String> target = mappings.get(key);
+        ArrayList<String> target = mappings.computeIfAbsent(key, k -> new ArrayList<>());
 
-        if (target == null) {
-            target = new ArrayList<>();
-            mappings.put(key, target);
-        }
         return target.add(value);
     }
 }

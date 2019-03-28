@@ -30,9 +30,9 @@ import static java.net.HttpURLConnection.HTTP_OK;
 
 public class MsgCliApiClient {
     private static final Logger LOGGER = LogManager.getLogger(MsgCliApiClient.class);
-    protected WebClient webClient;
-    protected URL endpoint;
-    protected Vertx vertx;
+    private WebClient webClient;
+    private URL endpoint;
+    private Vertx vertx;
 
     public MsgCliApiClient(URL endpoint) {
         this.endpoint = endpoint;
@@ -44,7 +44,7 @@ public class MsgCliApiClient {
         this.connect();
     }
 
-    protected String apiClientName() {
+    private String apiClientName() {
         return "Kafka Clients";
     }
 
@@ -55,8 +55,8 @@ public class MsgCliApiClient {
                 .setVerifyHost(false));
     }
 
-    protected <T> void responseHandler(AsyncResult<HttpResponse<T>> ar, CompletableFuture<T> promise, int expectedCode,
-                                       String warnMessage) {
+    private <T> void responseHandler(AsyncResult<HttpResponse<T>> ar, CompletableFuture<T> promise, int expectedCode,
+                                     String warnMessage) {
         try {
             if (ar.succeeded()) {
                 HttpResponse<T> response = ar.result();

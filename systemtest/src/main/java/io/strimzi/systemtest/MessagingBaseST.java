@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -44,8 +45,8 @@ public class MessagingBaseST extends AbstractST {
     }
 
     @BeforeAll
-    public void setUpClientBase() throws Exception {
-        String clientUrl = ENVIRONMENT.getKubernetesDomain().equals(".nip.io") ?  new URL(ENVIRONMENT.getKubernetesApiUrl()).getHost() + ".nip.io" : ENVIRONMENT.getKubernetesDomain();
+    public void setUpClientBase() throws MalformedURLException {
+        String clientUrl = ENVIRONMENT.getKubernetesDomain().equals(Environment.KUBERNETES_DOMAIN_DEFAULT) ?  new URL(ENVIRONMENT.getKubernetesApiUrl()).getHost() + Environment.KUBERNETES_DOMAIN_DEFAULT : ENVIRONMENT.getKubernetesDomain();
         cliApiClient = new MsgCliApiClient(new URL("http://" + KAFKA_CLIENTS + "." + clientUrl + ":80"));
     }
 
@@ -60,7 +61,7 @@ public class MessagingBaseST extends AbstractST {
     }
 
     /**
-     * Simple availability check for kafk acluster
+     * Simple availability check for kafka cluster
      * @param producer producer
      * @param consumer consumer
      * @param messageCount message count

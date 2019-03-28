@@ -51,11 +51,4 @@
     <suppress checks="ClassDataAbstractionCoupling"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]Main.java"/>
 
-    <!-- systemtest -->
-    <suppress checks="ClassDataAbstractionCoupling"
-              files="io[/\\]strimzi[/\\]systemtest[/\\]Resources.java"/>
-
-    <suppress checks="ClassFanOutComplexity"
-              files="io[/\\]strimzi[/\\]systemtest[/\\]Resources.java"/>
-
 </suppressions>

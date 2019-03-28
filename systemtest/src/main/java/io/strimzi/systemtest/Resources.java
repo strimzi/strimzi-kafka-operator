@@ -81,7 +81,7 @@ import java.util.stream.IntStream;
 import static io.strimzi.test.TestUtils.changeOrgAndTag;
 import static io.strimzi.test.TestUtils.toYamlString;
 
-@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class Resources extends AbstractResources {
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);

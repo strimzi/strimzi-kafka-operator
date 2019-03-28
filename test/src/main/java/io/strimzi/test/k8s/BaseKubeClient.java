@@ -101,12 +101,12 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     @Override
     public String get(String resource, String resourceName) {
-        return Exec.exec(namespacedCommand("get", resource, resourceName, "-o", "yaml")).out();
+        return Exec.exec(namespacedCommand("get", resource, resourceName, "-o", "yaml")).getStdOut();
     }
 
     @Override
     public String getEvents() {
-        return Exec.exec(namespacedCommand("get", "events")).out();
+        return Exec.exec(namespacedCommand("get", "events")).getStdOut();
     }
 
     @Override
@@ -250,7 +250,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         ObjectMapper mapper = new ObjectMapper();
         TestUtils.waitFor(resource + " " + name, pollMs, timeoutMs, () -> {
             try {
-                String jsonString = Exec.exec(namespacedCommand("get", resource, name, "-o", "json")).out();
+                String jsonString = Exec.exec(namespacedCommand("get", resource, name, "-o", "json")).getStdOut();
                 LOGGER.trace("{}", jsonString);
                 JsonNode actualObj = mapper.readTree(jsonString);
                 return ready.test(actualObj);
@@ -381,22 +381,22 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     @Override
     public List<String> list(String resourceType) {
-        return asList(Exec.exec(namespacedCommand("get", resourceType, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().trim().split(" +")).stream().filter(s -> !s.trim().isEmpty()).collect(Collectors.toList());
+        return asList(Exec.exec(namespacedCommand("get", resourceType, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).getStdOut().trim().split(" +")).stream().filter(s -> !s.trim().isEmpty()).collect(Collectors.toList());
     }
 
     @Override
     public String getResourceAsJson(String resourceType, String resourceName) {
-        return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "json")).out();
+        return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "json")).getStdOut();
     }
 
     @Override
     public String getResourceAsYaml(String resourceType, String resourceName) {
-        return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "yaml")).out();
+        return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "yaml")).getStdOut();
     }
 
     @Override
     public String describe(String resourceType, String resourceName) {
-        return Exec.exec(namespacedCommand("describe", resourceType, resourceName)).out();
+        return Exec.exec(namespacedCommand("describe", resourceType, resourceName)).getStdOut();
     }
 
     @Override
@@ -407,14 +407,14 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         } else {
             args = new String[]{"logs", pod};
         }
-        return Exec.exec(namespacedCommand(args)).out();
+        return Exec.exec(namespacedCommand(args)).getStdOut();
     }
 
     @Override
     public String searchInLog(String resourceType, String resourceName, long sinceSeconds, String... grepPattern) {
         try {
             return Exec.exec("bash", "-c", join(" ", namespacedCommand("logs", resourceType + "/" + resourceName, "--since=" + String.valueOf(sinceSeconds) + "s",
-                    "|", "grep", " -e " + join(" -e ", grepPattern), "-B", "1"))).out();
+                    "|", "grep", " -e " + join(" -e ", grepPattern), "-B", "1"))).getStdOut();
         } catch (KubeClusterException e) {
             if (e.result != null && e.result.exitStatus() == 1) {
                 LOGGER.info("{} not found", grepPattern);
@@ -426,6 +426,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     public List<String> listResourcesByLabel(String resourceType, String label) {
-        return asList(Exec.exec(namespacedCommand("get", resourceType, "-l", label, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().split("\\s+"));
+        return asList(Exec.exec(namespacedCommand("get", resourceType, "-l", label, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).getStdOut().split("\\s+"));
     }
 }

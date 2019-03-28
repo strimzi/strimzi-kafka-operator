@@ -32,17 +32,18 @@ public class Environment {
     private final String strimziTag = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
     private final String testLogDir = System.getenv().getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
     private final String stKafkVersion = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
-    private final String strimziLogLeve = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
+    private final String strimziLogLevel = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
     private final String kubernetesDomain = System.getenv().getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
     private final String kubernetesApiUrl = System.getenv().getOrDefault(KUBERNETES_API_URL_ENV, KUBERNETES_API_URL_DEFAULT);
 
     private Environment() {
         String debugFormat = "{}:{}";
+        LOGGER.info("Used environment variables:");
         LOGGER.info(debugFormat, STRIMZI_ORG_ENV, strimziOrg);
         LOGGER.info(debugFormat, STRIMZI_TAG_ENV, strimziTag);
         LOGGER.info(debugFormat, TEST_LOG_DIR_ENV, testLogDir);
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, stKafkVersion);
-        LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, strimziLogLeve);
+        LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, strimziLogLevel);
         LOGGER.info(debugFormat, KUBERNETES_DOMAIN_ENV, kubernetesDomain);
         LOGGER.info(debugFormat, KUBERNETES_API_URL_ENV, kubernetesApiUrl);
     }
@@ -71,7 +72,7 @@ public class Environment {
     }
 
     public String getStrimziLogLevel() {
-        return strimziLogLeve;
+        return strimziLogLevel;
     }
 
     public String getKubernetesDomain() {
