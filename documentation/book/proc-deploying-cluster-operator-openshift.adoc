@@ -26,7 +26,7 @@ sed -i '' 's/namespace: .\*/namespace: _my-project_/' install/cluster-operator/*
 
 .Procedure
 
-. Deploy the Cluster Operator
+* Deploy the Cluster Operator:
 +
 [source]
 ----
