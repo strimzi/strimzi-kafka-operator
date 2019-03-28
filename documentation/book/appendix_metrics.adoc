@@ -39,7 +39,7 @@ endif::Kubernetes[]
 
 https://prometheus.io/[Prometheus] is an open-source set of components for systems monitoring and alerting. {ProductName} uses the https://github.com/coreos/prometheus-operator[CoreOS Prometheus Operator] to run Prometheus on Kubernetes. This Operator enables you to run a highly available Prometheus server that is suitable for use in production environments.
 
-==== Deploying Prometheus Operator on {OpenShiftName}
+==== Deploying the Prometheus Operator on {OpenShiftName}
 
 To deploy the Prometheus Operator in your Kafka cluster, apply the `.yaml` files from the https://github.com/coreos/prometheus-operator/tree/master/example/rbac/prometheus-operator[Prometheus CoreOS repository].
 
@@ -65,7 +65,7 @@ oc apply -f prometheus-operator-deployment.yaml
 
 The {ProductName} repository contains configuration files for the Prometheus server. When you apply these configuration files, the following resources are created in your Kafka cluster and managed by the Prometheus Operator. 
 
-* A `ClusterRole` that grants permissions to read the Prometheus health endpoints of the Kubernetes system, including cAdvisor and the kubelet for container metrics. The Prometheus server configuration uses the Kubernetes service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
+* A `ClusterRole` that grants permissions to read the Prometheus health endpoints of the {OpenShiftName} system, including cAdvisor and the kubelet for container metrics. The Prometheus server configuration uses the {OpenShiftName} service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
 * A `ServiceAccount` for the Prometheus pods to run under.
 * A `ClusterRoleBinding` which binds the aforementioned `ClusterRole` to the `ServiceAccount`.
 * A `Deployment` to manage the Prometheus Operator pod.
@@ -80,7 +80,7 @@ When an alert condition is evaluated as true on the Prometheus server, it sends 
 
 For more information about setting up alerting rules, see https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[Alerting Rules] in the Prometheus documentation.
 
-==== Deploying Prometheus Operator on {KubernetesName}
+==== Deploying the Prometheus Operator on {KubernetesName}
 
 To deploy the Prometheus Operator in your Kafka cluster, apply the `.yaml` files from the https://github.com/coreos/prometheus-operator/tree/master/example/rbac/prometheus-operator[Prometheus CoreOS repository].
 
@@ -99,10 +99,9 @@ kubectl apply -f prometheus-operator-cluster-role.yaml
 kubectl apply -f prometheus-operator-cluster-role-binding.yaml
 kubectl apply -f prometheus-operator-deployment.yaml
 
-
 The {ProductName} repository contains configuration files for the Prometheus server. When you apply these configuration files, the following resources are created in your Kafka cluster and managed by the Prometheus Operator.
 
-* A `ClusterRole` that grants permissions to read the Prometheus health endpoints of the Kubernetes system, including cAdvisor and the kubelet for container metrics. The Prometheus server configuration uses the Kubernetes service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
+* A `ClusterRole` that grants permissions to read the Prometheus health endpoints of the {KubernetesName} system, including cAdvisor and the kubelet for container metrics. The Prometheus server configuration uses the {KubernetesName} service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
 * A `ServiceAccount` for the Prometheus pods to run under.
 * A `ClusterRoleBinding` which binds the aforementioned `ClusterRole` to the `ServiceAccount`.
 * A `Deployment` to manage the Prometheus Operator pod.
@@ -116,7 +115,6 @@ To enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/
 When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the Alertmanager which then uses the configured notification methods to notify the user.
 
 For more information about setting up alerting rules, see https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[Alerting Rules] in the Prometheus documentation.
-
 
 ==== Deploying Prometheus on {OpenShiftName}
 
