@@ -15,7 +15,7 @@ This procedure describes how to delete a Kafka user created with `KafkaUser` {Pr
 
 .Procedure
 
-. Delete the `KafkaUser` resource in {ProductPlatformName}.
+* Delete the `KafkaUser` resource in {ProductPlatformName}.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl`:
@@ -28,7 +28,6 @@ On {OpenShiftName} this can be done using `oc`:
 +
 [source,shell,subs=+quotes]
 oc delete kafkauser _your-user-name_
-+
 
 .Additional resources
 

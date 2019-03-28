@@ -13,7 +13,7 @@
 .Procedure
 
 . Edit the `listeners` property in the `Kafka.spec.kafka` resource.
-
++
 An example configuration of the plain (unencrypted) listener without authentication:
 +
 [source,yaml,subs=attributes+]

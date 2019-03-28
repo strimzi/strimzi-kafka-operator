@@ -21,9 +21,8 @@ Communication between Kafka brokers is done through the `REPLICATION` listener o
 Communication between Kafka brokers and Zookeeper nodes uses an `stunnel` sidecar, as described above.
 
 == Topic and User Operators
- 
- Like the Cluster Operator, the Topic and User Operators each use an `stunnel` sidecar when communicating with Zookeeper.
- The Topic Operator connects to Kafka brokers on port 9091.
+
+Like the Cluster Operator, the Topic and User Operators each use a `stunnel` sidecar when communicating with Zookeeper. The Topic Operator connects to Kafka brokers on port 9091.
 
 == Kafka Client connections
 
