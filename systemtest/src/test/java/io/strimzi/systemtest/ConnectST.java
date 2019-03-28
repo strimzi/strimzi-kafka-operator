@@ -126,7 +126,7 @@ class ConnectST extends AbstractST {
             .endSpec().done();
 
         String podName = KUBE_CLIENT.list("Pod").stream().filter(n -> n.startsWith(kafkaConnectName(KAFKA_CLUSTER_NAME))).findFirst().get();
-        assertResources(NAMESPACE, podName,
+        assertResources(NAMESPACE, podName, "connect-tests-connect",
                 "400M", "2", "300M", "1");
         assertExpectedJavaOpts(podName,
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");

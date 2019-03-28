@@ -514,15 +514,9 @@ class KafkaST extends AbstractST {
         checkPings(messagesCount, job);
     }
 
+    @Test
     @Tag(REGRESSION)
-    @ParameterizedTest
-    @CsvSource({
-            "1.1Gi, 1181116006400m, 300m, 300m, 1g, 1g",
-            "1G, 1G, 0.3, 300m, 1G, 1G",
-            "1024M, 1024M, 0.5, 500m, 1024M, 1024M",
-            "1024Mi, 1Gi, 500m, 500m, 1024m, 1024m"
-    })
-    void testJvmAndResources(String memory, String expMemory, String cpu, String expCpu, String javaXmx, String javaXms) {
+    void testJvmAndResources() {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
@@ -530,29 +524,28 @@ class KafkaST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withResources(new ResourceRequirementsBuilder()
-                            .addToLimits("memory", new Quantity(memory))
-                            .addToLimits("cpu", new Quantity(cpu))
-                            .addToRequests("memory", new Quantity(memory))
-                            .addToRequests("cpu", new Quantity(cpu))
+                            .addToLimits("memory", new Quantity("1.5Gi"))
+                            .addToLimits("cpu", new Quantity("1"))
+                            .addToRequests("memory", new Quantity("1Gi"))
+                            .addToRequests("cpu", new Quantity("500m"))
                             .build())
                     .withNewJvmOptions()
-                        .withXmx(javaXmx)
-                        .withXms(javaXms)
+                        .withXmx("1g")
+                        .withXms("512m")
                         .withServer(true)
                         .withXx(jvmOptionsXX)
                     .endJvmOptions()
                 .endKafka()
                 .editZookeeper()
-                    .withReplicas(2)
                     .withResources(new ResourceRequirementsBuilder()
-                            .addToLimits("memory", new Quantity(memory))
-                            .addToLimits("cpu", new Quantity(cpu))
-                            .addToRequests("memory", new Quantity(memory))
-                            .addToRequests("cpu", new Quantity(cpu))
+                            .addToLimits("memory", new Quantity("1G"))
+                            .addToLimits("cpu", new Quantity("0.5"))
+                            .addToRequests("memory", new Quantity("0.5G"))
+                            .addToRequests("cpu", new Quantity("250m"))
                             .build())
                     .withNewJvmOptions()
-                        .withXmx(javaXmx)
-                        .withXms(javaXms)
+                        .withXmx("1G")
+                        .withXms("512M")
                         .withServer(true)
                         .withXx(jvmOptionsXX)
                     .endJvmOptions()
@@ -560,40 +553,43 @@ class KafkaST extends AbstractST {
                 .withNewEntityOperator()
                     .withNewTopicOperator()
                         .withResources(new ResourceRequirementsBuilder()
-                                .addToLimits("memory", new Quantity(memory))
-                                .addToLimits("cpu", new Quantity(cpu))
-                                .addToRequests("memory", new Quantity(memory))
-                                .addToRequests("cpu", new Quantity(cpu))
+                                .addToLimits("memory", new Quantity("1024Mi"))
+                                .addToLimits("cpu", new Quantity("500m"))
+                                .addToRequests("memory", new Quantity("512Mi"))
+                                .addToRequests("cpu", new Quantity("0.25"))
                                 .build())
                     .endTopicOperator()
                     .withNewUserOperator()
                         .withResources(new ResourceRequirementsBuilder()
-                                .addToLimits("memory", new Quantity(memory))
-                                .addToLimits("cpu", new Quantity(cpu))
-                                .addToRequests("memory", new Quantity(memory))
-                                .addToRequests("cpu", new Quantity(cpu))
+                                .addToLimits("memory", new Quantity("512M"))
+                                .addToLimits("cpu", new Quantity("300m"))
+                                .addToRequests("memory", new Quantity("256M"))
+                                .addToRequests("cpu", new Quantity("300m"))
                                 .build())
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec().done();
 
-        assertResources(KUBE_CLIENT.namespace(), kafkaPodName(CLUSTER_NAME, 0),
-                expMemory, expCpu, expMemory, expCpu);
+        assertResources(KUBE_CLIENT.namespace(), kafkaPodName(CLUSTER_NAME, 0), "kafka",
+                "1536Mi", "1", "1Gi", "500m");
         assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0),
-                "-Xmx" + javaXmx, "-Xms" + javaXms, "-server", "-XX:+UseG1GC");
+                "-Xmx1g", "-Xms512m", "-server", "-XX:+UseG1GC");
 
-        assertResources(KUBE_CLIENT.namespace(), zookeeperPodName(CLUSTER_NAME, 0),
-                expMemory, expCpu, expMemory, expCpu);
+        assertResources(KUBE_CLIENT.namespace(), zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
+                "1G", "500m", "500M", "250m");
         assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
-                "-Xmx" + javaXmx, "-Xms" + javaXms, "-server", "-XX:+UseG1GC");
+                "-Xmx1G", "-Xms512M", "-server", "-XX:+UseG1GC");
 
         Optional<Pod> pod = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
                 .findFirst();
         assertTrue(pod.isPresent(), "EO pod does not exist");
 
-        assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(),
-                expMemory, expCpu, expMemory, expCpu);
+        assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(), "topic-operator",
+                "1Gi", "500m", "512Mi", "250m");
+        assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(), "user-operator",
+                "512M", "300m", "256M", "300m");
+
     }
 
     @Test
