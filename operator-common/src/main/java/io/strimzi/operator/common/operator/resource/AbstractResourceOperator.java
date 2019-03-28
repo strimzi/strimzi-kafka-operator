@@ -263,6 +263,30 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient, T ext
     }
 
     /**
+     * Asynchronously lists the resource with the given {@code selector} in the given {@code namespace}.
+     * @param namespace The namespace.
+     * @param selector The selector.
+     * @return A Future with a list of matching resources.
+     */
+    public Future<List<T>> listAsync(String namespace, Labels selector) {
+        Future<List<T>> result = Future.future();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
+            future -> {
+                List<T> resources;
+
+                if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
+                    resources = listInAnyNamespace(selector);
+                } else {
+                    resources = listInNamespace(namespace, selector);
+                }
+
+                future.complete(resources);
+            }, true, result.completer()
+        );
+        return result;
+    }
+
+    /**
      * Returns a future that completes when the resource identified by the given {@code namespace} and {@code name}
      * is ready.
      *

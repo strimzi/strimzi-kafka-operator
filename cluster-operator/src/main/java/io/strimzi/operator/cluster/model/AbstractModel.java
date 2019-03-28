@@ -449,24 +449,25 @@ public abstract class AbstractModel {
     protected void setStorage(Storage storage) {
         if (storage instanceof PersistentClaimStorage) {
             PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) storage;
-
-            if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
-                throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
-            }
+            checkPersistentStorageSize(persistentClaimStorage);
         } else if (storage instanceof JbodStorage)  {
             JbodStorage jbodStorage = (JbodStorage) storage;
 
             for (Storage jbodVolume : jbodStorage.getVolumes()) {
                 if (jbodVolume instanceof PersistentClaimStorage) {
                     PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) jbodVolume;
-                    if (persistentClaimStorage.getSize() == null || persistentClaimStorage.getSize().isEmpty()) {
-                        throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
-                    }
+                    checkPersistentStorageSize(persistentClaimStorage);
                 }
             }
         }
 
         this.storage = storage;
+    }
+
+    private void checkPersistentStorageSize(PersistentClaimStorage storage)   {
+        if (storage.getSize() == null || storage.getSize().isEmpty()) {
+            throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+        }
     }
 
     /**

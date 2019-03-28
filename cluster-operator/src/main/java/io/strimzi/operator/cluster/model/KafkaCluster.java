@@ -742,7 +742,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Fill the with volumes, persistent volume claims and related volume mount paths for the storage
+     * Fill the StatefulSet with volumes, persistent volume claims and related volume mount paths for the storage
      * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
      *
      * @param storage the Storage instance from which building volumes, persistent volume claims and
@@ -780,8 +780,8 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Fill the with volumes, persistent volume claims and related volume mount paths for the storage
-     * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
+     * Generate the persistent volume claims for the storage It's called recursively on the related inner volumes if the
+     * storage is of {@link Storage#TYPE_JBOD} type
      *
      * @param storage the Storage instance from which building volumes, persistent volume claims and
      *                related volume mount paths
