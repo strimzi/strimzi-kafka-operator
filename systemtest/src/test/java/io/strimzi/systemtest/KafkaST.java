@@ -481,7 +481,7 @@ class KafkaST extends MessagingBaseST {
     @Tag(REGRESSION)
     void testSendMessagesTlsScramSha() throws InterruptedException, ExecutionException, TimeoutException {
         String kafkaUser = "my-user";
-        int messagesCount = 20;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerTls listenerTls = new KafkaListenerTls();
@@ -500,8 +500,8 @@ class KafkaST extends MessagingBaseST {
         KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        resources().deployKafkaClients(false, CLUSTER_NAME, user).done();
-        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 60000, CLUSTER_NAME, true, topicName, user);
+        resources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        availabilityTest(new VerifiableProducer(), new VerifiableConsumer(), messagesCount, 180000, CLUSTER_NAME, true, topicName, user);
     }
 
     @Test

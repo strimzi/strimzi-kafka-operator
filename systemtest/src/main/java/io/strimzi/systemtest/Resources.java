@@ -5,12 +5,10 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -19,7 +17,6 @@ import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
-import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
@@ -29,7 +26,6 @@ import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPath;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.extensions.IngressBackend;
 import io.fabric8.kubernetes.api.model.extensions.IngressBuilder;
-import io.fabric8.kubernetes.api.model.extensions.IngressList;
 import io.fabric8.kubernetes.api.model.extensions.IngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
@@ -109,15 +105,6 @@ public class Resources extends AbstractResources {
     Resources(NamespacedKubernetesClient client) {
         super(client);
     }
-
-    private MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> service() {
-        return customResourcesWithCascading(Service.class, ServiceList.class, DoneableService.class);
-    }
-
-    private MixedOperation<Ingress, IngressList, DoneableIngress, Resource<Ingress, DoneableIngress>> ingress() {
-        return customResourcesWithCascading(Ingress.class, IngressList.class, DoneableIngress.class);
-    }
-
 
     private List<Runnable> resources = new ArrayList<>();
 
@@ -289,7 +276,7 @@ public class Resources extends AbstractResources {
                                 .addToRequests("memory", new Quantity("1G")).build())
                             .withMetrics(new HashMap<>())
                             .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
+                                .withGcLoggingEnabled(false)
                             .endJvmOptions()
                         .endKafka()
                         .withNewZookeeper()
@@ -307,7 +294,7 @@ public class Resources extends AbstractResources {
                 .endLivenessProbe()
                             .withNewEphemeralStorage().endEphemeralStorage()
                             .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
+                                .withGcLoggingEnabled(false)
                             .endJvmOptions()
                         .endZookeeper()
                         .withNewEntityOperator()

@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(REGRESSION)
 @TestMethodOrder(OrderAnnotation.class)
 class LogSettingST extends AbstractST {
-    static final String NAMESPACE = "log-level-cluster-test";
+    static final String NAMESPACE = "log-setting-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LogSettingST.class);
     private static final String KAFKA_MAP = String.format("%s-%s", CLUSTER_NAME, "kafka-config");
     private static final String ZOOKEEPER_MAP = String.format("%s-%s", CLUSTER_NAME, "zookeeper-config");
@@ -146,11 +146,11 @@ class LogSettingST extends AbstractST {
     @Test
     @Order(7)
     void testGcLoggingNonSetEnabled() {
-        assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is enabled");
-        assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is enabled");
+        assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(GC_LOGGING_SET_NAME)), "Kafka GC logging is enabled");
+        assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(GC_LOGGING_SET_NAME)), "Zookeeper GC logging is enabled");
 
-        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO GC logging is enabled");
-        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO GC logging is enabled");
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), "TO GC logging is enabled");
+        assertTrue(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), "UO GC logging is enabled");
     }
 
     @Test
@@ -199,11 +199,11 @@ class LogSettingST extends AbstractST {
         StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, connectName, connectPods);
         StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, mmName, mmPods);
 
-        assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(GC_LOGGING_SET_NAME)), "Kafka GC logging is disabled");
-        assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(GC_LOGGING_SET_NAME)), "Zookeeper GC logging is disabled");
+        assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is disabled");
+        assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is disabled");
 
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "topic-operator"), "TO GC logging is disabled");
-        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(GC_LOGGING_SET_NAME), "user-operator"), "UO GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator"), "TO GC logging is disabled");
+        assertFalse(checkGcLoggingDeployments(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator"), "UO GC logging is disabled");
 
         assertFalse(checkGcLoggingDeployments(kafkaConnectName(CLUSTER_NAME)), "Connect GC logging is disabled");
         assertFalse(checkGcLoggingDeployments(kafkaMirrorMakerName(CLUSTER_NAME)), "Mirror-maker GC logging is disabled");
@@ -306,25 +306,17 @@ class LogSettingST extends AbstractST {
         testClassResources.kafkaEphemeral(GC_LOGGING_SET_NAME, 3)
             .editSpec()
                 .editKafka()
-                    .withNewJvmOptions()
-                        .withGcLoggingEnabled(false)
-                    .endJvmOptions()
+                    .withJvmOptions(null)
                 .endKafka()
                 .editZookeeper()
-                    .withNewJvmOptions()
-                        .withGcLoggingEnabled(false)
-                    .endJvmOptions()
+                    .withJvmOptions(null)
                 .endZookeeper()
                 .editOrNewEntityOperator()
                     .editOrNewTopicOperator()
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
-                        .endJvmOptions()
+                        .withJvmOptions(null)
                     .endTopicOperator()
                     .editOrNewUserOperator()
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(false)
-                        .endJvmOptions()
+                        .withJvmOptions(null)
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec().done();
