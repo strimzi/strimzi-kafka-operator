@@ -33,7 +33,7 @@ oc annotate statefulset _cluster-name_-kafka strimzi.io/manual-rolling-update=tr
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 A rolling update of all pods within the annotated `StatefulSet` is triggered, as long as the annotation was detected by the reconciliation process.
-Once the rolling update of all the pods is complete, the annotation is removed from the `StatefulSet`.
+When the rolling update of all the pods is complete, the annotation is removed from the `StatefulSet`.
 
 .Additional resources
 

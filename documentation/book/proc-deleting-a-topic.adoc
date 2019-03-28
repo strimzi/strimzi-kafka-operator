@@ -29,7 +29,7 @@ On {OpenShiftName} this can be done using `oc`:
 [source,shell,subs=+quotes]
 oc delete kafkatopic _your-topic-name_
 
-NOTE: Whether the topic can actually be deleted depends on the value of the `delete.topic.enable` Kafka broker configuration, specified in the `Kafka.spec.kafka.config` property.
+NOTE: Whether the topic can actually be deleted depends on the value of the `delete.topic.enable` Kafka broker configuration specified in the `Kafka.spec.kafka.config` property.
 
 .Additional resources
 * For more information about deploying a Kafka cluster using the Cluster Operator, see xref:cluster-operator-str[].
