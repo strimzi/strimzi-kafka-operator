@@ -1,0 +1,32 @@
+[table,stripes=none]
+|===
+|Container image |Namespace/Repository |Description
+
+|Kafka
+a|
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.0.0
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.0.1
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.1.0
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.1.1
+
+a|
+AMQ Streams image for running Kafka, including:
+
+* Kafka broker
+* Kafka Connect
+* Kafka Mirror Maker.
+
+A given image will only be need when running a Kafka broker of that version.
+
+|Operator
+a|
+* {DockerOrg}/operator:{DockerTag}
+
+a|
+AMQ Streams image for running the operators:
+
+* Cluster Operator
+* Topic Operator
+* User Operator
+
+|===

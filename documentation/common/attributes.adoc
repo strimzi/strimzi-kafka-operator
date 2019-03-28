@@ -76,6 +76,7 @@
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
 
 // Docker image names
+:DockerOrg: strimzi
 :DockerTag: {ProductVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]
 :DockerZookeeper: strimzi/zookeeper:{DockerTag}-kafka-{DefaultKafkaVersion}
