@@ -122,7 +122,7 @@ public class EntityUserOperatorTest {
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
 
         assertEquals(namespace, entityUserOperator.getWatchedNamespace());
-        assertEquals(EntityUserOperatorSpec.DEFAULT_IMAGE, entityUserOperator.getImage());
+        assertEquals("strimzi/operator:latest", entityUserOperator.getImage());
         assertEquals(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, entityUserOperator.getReconciliationIntervalMs());
         assertEquals(EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, entityUserOperator.getZookeeperSessionTimeoutMs());
         assertEquals(EntityUserOperator.defaultZookeeperConnect(cluster), entityUserOperator.getZookeeperConnect());

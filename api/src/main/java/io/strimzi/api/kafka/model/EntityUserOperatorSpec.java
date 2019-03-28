@@ -33,8 +33,6 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/operator:latest");
     public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
@@ -42,7 +40,7 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 6;
 
     private String watchedNamespace;
-    private String image = DEFAULT_IMAGE;
+    private String image;
     private long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     private ResourceRequirements resources;

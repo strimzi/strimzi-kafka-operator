@@ -33,8 +33,6 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/operator:latest");
     public static final int DEFAULT_REPLICAS = 1;
     public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
@@ -45,7 +43,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     public static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
 
     protected String watchedNamespace;
-    protected String image = DEFAULT_IMAGE;
+    protected String image;
     protected int reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     protected int zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
     protected int topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
