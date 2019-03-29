@@ -5,6 +5,7 @@ image="test-client"
 PROJECT_NAME=$image
 RELEASE_VERSION=$(cat ../release.version)
 DOCKERFILE_DIR="./"
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-docker.io}
 
 # Kafka versions
 function load_checksums {
@@ -28,16 +29,23 @@ function build {
 
         if [[ $targets == *"docker_build"* ]]; then
             mvn $MVN_ARGS install
+            echo "docker build -q $DOCKER_BUILD_ARGS --build-arg strimzi_version=$RELEASE_VERSION -t strimzi/$PROJECT_NAME:latest $DOCKERFILE_DIR"
             docker build -q $DOCKER_BUILD_ARGS --build-arg strimzi_version=$RELEASE_VERSION -t strimzi/$PROJECT_NAME:latest $DOCKERFILE_DIR
+
+            echo "docker tag strimzi/$PROJECT_NAME:latest strimzi/$PROJECT_NAME:$BUILD_TAG"
             docker tag strimzi/$PROJECT_NAME:latest strimzi/$PROJECT_NAME:$BUILD_TAG
         fi
 
         if [[ $targets == *"docker_tag"* ]]; then
+            echo "docker tag strimzi/$PROJECT_NAME:$BUILD_TAG $DOCKER_REGISTRY/$DOCKER_ORG/$PROJECT_NAME:$DOCKER_TAG"
             docker tag strimzi/$PROJECT_NAME:$BUILD_TAG $DOCKER_REGISTRY/$DOCKER_ORG/$PROJECT_NAME:$DOCKER_TAG
         fi
 
         if [[ $targets == *"docker_push"* ]]; then
+            echo "docker tag strimzi/$PROJECT_NAME:$BUILD_TAG $DOCKER_REGISTRY/$DOCKER_ORG/$PROJECT_NAME:$DOCKER_TAG"
             docker tag strimzi/$PROJECT_NAME:$BUILD_TAG $DOCKER_REGISTRY/$DOCKER_ORG/$PROJECT_NAME:$DOCKER_TAG
+
+            echo "docker push $DOCKER_REGISTRY/$DOCKER_ORG/$PROJECT_NAME:$DOCKER_TAG"
             docker push $DOCKER_REGISTRY/$DOCKER_ORG/$PROJECT_NAME:$DOCKER_TAG
         fi
     done
