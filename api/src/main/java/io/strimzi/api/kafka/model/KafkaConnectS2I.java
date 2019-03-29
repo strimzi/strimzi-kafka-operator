@@ -25,7 +25,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize(
         using = JsonDeserializer.None.class
@@ -40,7 +42,27 @@ import static java.util.Collections.singletonList;
                 ),
                 group = KafkaConnectS2I.RESOURCE_GROUP,
                 scope = KafkaConnectS2I.SCOPE,
-                version = KafkaConnectS2I.VERSION
+                version = KafkaConnectS2I.V1BETA1,
+                versions = {
+                        @Crd.Spec.Version(
+                                name = KafkaConnectS2I.V1BETA1,
+                                served = true,
+                                storage = true
+                        ),
+                        @Crd.Spec.Version(
+                                name = KafkaConnectS2I.V1ALPHA1,
+                                served = true,
+                                storage = false
+                        )
+                },
+                additionalPrinterColumns = {
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Desired replicas",
+                                description = "The desired number of Kafka Connect replicas",
+                                jsonPath = ".spec.replicas",
+                                type = "integer"
+                        )
+                }
         )
 )
 @Buildable(
@@ -57,7 +79,9 @@ public class KafkaConnectS2I extends CustomResource implements UnknownPropertyPr
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
-    public static final String VERSION = "v1alpha1";
+    public static final String V1ALPHA1 = "v1alpha1";
+    public static final String V1BETA1 = "v1beta1";
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaConnectS2I";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";

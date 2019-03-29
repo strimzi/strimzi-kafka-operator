@@ -5,13 +5,23 @@
 package io.strimzi.api.kafka.model;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
+import org.junit.Assume;
 import org.junit.Before;
 
 import static org.junit.Assert.assertNotNull;
 
 public abstract class AbstractCrdIT extends BaseITST {
+
+    protected void assumeKube1_11Plus() {
+        VersionInfo version = new DefaultKubernetesClient().getVersion();
+        String minor = version.getMinor();
+        Assume.assumeTrue("1".equals(version.getMajor())
+                && Integer.parseInt(minor.substring(0, minor.indexOf('+'))) >= 11);
+    }
 
     protected <T extends CustomResource> void createDelete(Class<T> resourceClass, String resource) {
         String ssStr = TestUtils.readResource(resourceClass, resource);

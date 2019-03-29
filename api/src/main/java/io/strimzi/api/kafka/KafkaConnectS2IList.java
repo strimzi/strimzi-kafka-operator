@@ -10,6 +10,6 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 /**
  * A {@code CustomResourceList<KafkaConnectS2IAssembly>} required for using Fabric8 CRD support.
  */
-public class KafkaConnectS2IAssemblyList extends CustomResourceList<KafkaConnectS2I> {
+public class KafkaConnectS2IList extends CustomResourceList<KafkaConnectS2I> {
     private static final long serialVersionUID = 1L;
 }

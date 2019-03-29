@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -37,7 +37,7 @@ public class ResourceOperatorSupplier {
     public final ServiceAccountOperator serviceAccountOperator;
     public final RoleBindingOperator roleBindingOperator;
     public final ClusterRoleBindingOperator clusterRoleBindingOperator;
-    public final CrdOperator<KubernetesClient, Kafka, KafkaAssemblyList, DoneableKafka> kafkaOperator;
+    public final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator;
     public final NetworkPolicyOperator networkPolicyOperator;
     public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
 
@@ -62,7 +62,7 @@ public class ResourceOperatorSupplier {
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
-                new CrdOperator<>(vertx, client, Kafka.class, KafkaAssemblyList .class, DoneableKafka.class));
+                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class));
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -78,7 +78,7 @@ public class ResourceOperatorSupplier {
                                     ClusterRoleBindingOperator clusterRoleBindingOperator,
                                     NetworkPolicyOperator networkPolicyOperator,
                                     PodDisruptionBudgetOperator podDisruptionBudgetOperator,
-                                    CrdOperator<KubernetesClient, Kafka, KafkaAssemblyList, DoneableKafka> kafkaOperator) {
+                                    CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;

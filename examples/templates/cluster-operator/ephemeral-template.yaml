@@ -64,7 +64,7 @@ parameters:
   name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
   value: "3"
 objects:
-- apiVersion: kafka.strimzi.io/v1alpha1
+- apiVersion: kafka.strimzi.io/v1beta1
   kind: Kafka
   metadata:
     name: ${CLUSTER_NAME}

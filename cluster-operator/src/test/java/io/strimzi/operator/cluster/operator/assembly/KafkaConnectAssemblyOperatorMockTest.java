@@ -7,7 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
@@ -77,7 +77,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     .withReplicas(replicas)
                 .endSpec()
             .build();
-        mockClient = new MockKube().withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class)
+        mockClient = new MockKube().withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();
     }
 
@@ -87,9 +87,9 @@ public class KafkaConnectAssemblyOperatorMockTest {
     }
 
     private KafkaConnectAssemblyOperator createConnectCluster(TestContext context) {
-        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectAssemblyList, DoneableKafkaConnect>
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect>
                 connectOperator = new CrdOperator<>(vertx, mockClient,
-                KafkaConnect.class, KafkaConnectAssemblyList.class, DoneableKafkaConnect.class);
+                KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
         ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
         ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
         DeploymentOperator depops = new DeploymentOperator(vertx, mockClient);

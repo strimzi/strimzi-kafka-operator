@@ -25,8 +25,14 @@ public class KafkaCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkacrd-it";
 
     @Test
-    void testKafka() {
-        createDelete(Kafka.class, "Kafka.yaml");
+    void testKafkaV1alpha1() {
+        assumeKube1_11Plus();
+        createDelete(Kafka.class, "KafkaV1alpha1.yaml");
+    }
+
+    @Test
+    void testKafkaV1Beta1() {
+        createDelete(Kafka.class, "KafkaV1beta1.yaml");
     }
 
     @Test

@@ -28,7 +28,20 @@ import java.util.Map;
             kind = "Example",
             plural = "examples"),
         scope = "Namespaced",
-        version = "v1alpha1"))
+        version = "v1alpha1",
+    versions = {
+        @Crd.Spec.Version(name = "v1alpha1", served = true, storage = true),
+        @Crd.Spec.Version(name = "v1beta1", served = true, storage = false)
+    },
+    additionalPrinterColumns = {
+        @Crd.Spec.AdditionalPrinterColumn(
+            name = "Foo",
+            description = "The foo",
+            jsonPath = "...",
+            type = "integer"
+        )
+    }
+    ))
 public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource {
 
     private String ignored;

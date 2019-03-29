@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;

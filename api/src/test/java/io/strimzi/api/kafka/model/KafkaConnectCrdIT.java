@@ -22,8 +22,14 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkaconnect-crd-it";
 
     @Test
-    void testKafkaConnect() {
-        createDelete(KafkaConnect.class, "KafkaConnect.yaml");
+    void testKafkaConnectV1alpha1() {
+        assumeKube1_11Plus();
+        createDelete(KafkaConnect.class, "KafkaConnectV1alpha1.yaml");
+    }
+
+    @Test
+    void testKafkaConnectV1beta1() {
+        createDelete(KafkaConnect.class, "KafkaConnectV1beta1.yaml");
     }
 
     @Test
