@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
@@ -37,8 +38,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -76,6 +75,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
@@ -570,6 +570,16 @@ class KafkaST extends AbstractST {
                 .endEntityOperator()
             .endSpec().done();
 
+        operationID = startTimeMeasuring(Operation.NEXT_RECONCILIATION);
+
+        // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
+        String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+        String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zkSsName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaSsName);
+        Map<String, String> eoPods = StUtils.depSnapshot(CLIENT, NAMESPACE, eoDepName);
+
         assertResources(KUBE_CLIENT.namespace(), kafkaPodName(CLUSTER_NAME, 0), "kafka",
                 "1536Mi", "1", "1Gi", "500m");
         assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0),
@@ -590,6 +600,15 @@ class KafkaST extends AbstractST {
         assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(), "user-operator",
                 "512M", "300m", "256M", "300m");
 
+        TestUtils.waitFor("Wait till reconciliation timeout", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), "Assembly reconciled").isEmpty());
+
+        // Checking no rolling update after last CO reconciliation
+        LOGGER.info("Checking no rolling update for Kafka cluster");
+        assertFalse(StUtils.ssHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods));
+        assertFalse(StUtils.ssHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods));
+        assertFalse(StUtils.ssHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods));
+        TimeMeasuringSystem.stopOperation(operationID);
     }
 
     @Test

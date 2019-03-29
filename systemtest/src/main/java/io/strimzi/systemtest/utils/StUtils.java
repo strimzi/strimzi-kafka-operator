@@ -61,7 +61,7 @@ public class StUtils {
         return podSnapshot(client, namespace, selector);
     }
 
-    private static boolean ssHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
+    public static boolean ssHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
         boolean log = true;
         if (log) {
             LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
