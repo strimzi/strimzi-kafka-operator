@@ -1,3 +1,4 @@
+{{- if .Values.createGlobalResources -}}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -542,3 +543,4 @@ spec:
               type: string
           required:
           - bootstrapServers
+{{- end -}}
