@@ -20,7 +20,7 @@ This has the effect of spreading the broker pods across zones, and also setting 
 
 .Procedure
 
-. Consult your {ProductPlatformName} administrator regarding the node label that represent the zone / rack into which the node is deployed.
+. Consult your {ProductPlatformName} administrator regarding the node label that represents the zone / rack into which the node is deployed.
 . Edit the `rack` property in the `Kafka` resource using the label as the topology key.
 +
 [source,yaml,subs=attributes+]
