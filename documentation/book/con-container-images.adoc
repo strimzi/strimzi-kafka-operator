@@ -1,0 +1,17 @@
+// Module included in the following assemblies:
+//
+// getting-started.adoc
+
+[id='container-images-{context}']
+== Container image deployment
+
+We recommend that you deploy {ProductName} using the YAML files provided. However you can deploy {ProductName} using container images.
+
+Container images for {ProductName} are available in the {DockerRepository}.
+
+If you choose this approach, you must deploy the Kafka and Operator image. Choose the Kafka image according to the appropriate version.
+
+NOTE: Each Kafka version supported for the release has a separate image.
+
+//dev-generated content, do not modify
+include::snip-images.adoc[]
