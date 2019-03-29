@@ -15,7 +15,7 @@ ifdef::Kubernetes[`kubectl` and]
 `oc` command-line tools are installed and configured to connect to the running cluster.
 
 ifndef::Downloading[]
-{ProductName} is based on Strimzi {StrimziVersion}. This chapter describes the procedures to deploy {ProductName} on {OpenShiftName} {OpenShiftVersion}. 
+{ProductName} is based on Strimzi {StrimziVersion}. This chapter describes the procedures to deploy {ProductName} on {OpenShiftName} {OpenShiftVersion}.
 endif::Downloading[]
 
 ifdef::InstallationAppendix[]
@@ -33,6 +33,8 @@ For more information about {OpenShiftName} and setting up {OpenShiftName} cluste
 
 
 include::con-product-downloads.adoc[leveloffset=+1]
+
+include::con-container-images.adoc[leveloffset=+1]
 
 include::assembly-cluster-operator.adoc[leveloffset=+1]
 
