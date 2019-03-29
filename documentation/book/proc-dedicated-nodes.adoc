@@ -12,9 +12,9 @@
 
 .Procedure
 
-. Select the nodes which should be used as dedicated
-. Make sure there are no workloads scheduled on these nodes
-. Set the taints on the selected nodes
+. Select the nodes which should be used as dedicated.
+. Make sure there are no workloads scheduled on these nodes.
+. Set the taints on the selected nodes:
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl taint`:

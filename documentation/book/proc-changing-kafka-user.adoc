@@ -56,14 +56,13 @@ ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
-endif::Kubernetes[]
 +
+endif::Kubernetes[]
 On {OpenShiftName} this can be done using `oc apply`:
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
-+
-. Use the updated credentials from the `my-user` secret in your application.
 
+. Use the updated credentials from the `my-user` secret in your application.
 
 .Additional resources
 

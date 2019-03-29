@@ -19,7 +19,7 @@ WARNING: Deleting a `PersistentVolumeClaim` can cause permanent data loss. The f
 .Procedure
 
 . Find the name of the `Pod` that you want to delete.
-
++
 For example, if the cluster is named _cluster-name_, the pods are named _cluster-name_-kafka-_index_, where _index_ starts at zero and ends at the total number of replicas.
 
 . Annotate the `Pod` resource in {ProductPlatformName}.
@@ -28,12 +28,13 @@ ifdef::Kubernetes[]
 On {KubernetesName} use `kubectl annotate`:
 [source,shell,subs=+quotes]
 kubectl annotate pod _cluster-name_-kafka-_index_ strimzi.io/delete-pod-and-pvc=true
-endif::Kubernetes[]
 +
+endif::Kubernetes[]
 On {OpenShiftName} use `oc annotate`:
++
 [source,shell,subs=+quotes]
 oc annotate pod _cluster-name_-kafka-_index_ strimzi.io/delete-pod-and-pvc=true
-+
+
 . Wait for the next reconciliation, when the annotated pod with the underlying persistent volume claim will be deleted and then recreated.
 
 .Additional resources

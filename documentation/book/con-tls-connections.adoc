@@ -8,9 +8,9 @@
 == Zookeeper communication
 
 Zookeeper does not support TLS itself. 
-By deploying an `stunnel` sidecar within every Zookeeper pod, the Cluster Operator is able to provide data encryption and authentication between Zookeeper nodes in a cluster.
-Zookeeper communicates only with the `stunnel` sidecar over the loopback interface.
-The `stunnel` sidecar then proxies all Zookeeper traffic, TLS decrypting data upon entry into a Zookeeper pod and TLS encrypting data upon departure from a Zookeeper pod.
+By deploying a TLS sidecar within every Zookeeper pod, the Cluster Operator is able to provide data encryption and authentication between Zookeeper nodes in a cluster.
+Zookeeper only communicates with the TLS sidecar over the loopback interface.
+The TLS sidecar then proxies all Zookeeper traffic, TLS decrypting data upon entry into a Zookeeper pod, and TLS encrypting data upon departure from a Zookeeper pod.
 
 This TLS encrypting `stunnel` proxy is instantiated from the `spec.zookeeper.stunnelImage` specified in the Kafka resource.
 
@@ -18,12 +18,11 @@ This TLS encrypting `stunnel` proxy is instantiated from the `spec.zookeeper.stu
 
 Communication between Kafka brokers is done through the `REPLICATION` listener on port 9091, which is encrypted by default.
 
-Communication between Kafka brokers and Zookeeper nodes uses an `stunnel` sidecar, as described above.
+Communication between Kafka brokers and Zookeeper nodes uses a TLS sidecar, as described above.
 
 == Topic and User Operators
- 
- Like the Cluster Operator, the Topic and User Operators each use an `stunnel` sidecar when communicating with Zookeeper.
- The Topic Operator connects to Kafka brokers on port 9091.
+
+Like the Cluster Operator, the Topic and User Operators each use a TLS sidecar when communicating with Zookeeper. The Topic Operator connects to Kafka brokers on port 9091.
 
 == Kafka Client connections
 
