@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.user.model;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.AclRule;
@@ -52,6 +55,11 @@ public class KafkaUserModel {
     public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
 
+    // Owner Reference information
+    private String ownerApiVersion;
+    private String ownerKind;
+    private String ownerUid;
+
     /**
      * Constructor
      *
@@ -83,6 +91,7 @@ public class KafkaUserModel {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
                 Labels.fromResource(kafkaUser).withKind(kafkaUser.getKind()));
+        result.setOwnerReference(kafkaUser);
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
 
         if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
@@ -210,11 +219,39 @@ public class KafkaUserModel {
                     .withName(getSecretName())
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
+                    .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withData(data)
                 .build();
 
         return s;
+    }
+
+    /**
+     * Generate the OwnerReference object to link newly created objects to their parent (the custom resource)
+     *
+     * @return
+     */
+    protected OwnerReference createOwnerReference() {
+        return new OwnerReferenceBuilder()
+                .withApiVersion(ownerApiVersion)
+                .withKind(ownerKind)
+                .withName(name)
+                .withUid(ownerUid)
+                .withBlockOwnerDeletion(false)
+                .withController(false)
+                .build();
+    }
+
+    /**
+     * Set fields needed to generate the OwnerReference object
+     *
+     * @param parent The resource which should be used as parent. It will be used to gather the date needed for generating OwnerReferences.
+     */
+    protected void setOwnerReference(HasMetadata parent)  {
+        this.ownerApiVersion = parent.getApiVersion();
+        this.ownerKind = parent.getKind();
+        this.ownerUid = parent.getMetadata().getUid();
     }
 
     /**

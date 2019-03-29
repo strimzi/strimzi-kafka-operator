@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.user.model;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
@@ -31,6 +33,11 @@ public class KafkaUserModelTest {
     private final CertManager mockCertManager = new MockCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a");
 
+    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+        assertEquals(1, resource.getMetadata().getOwnerReferences().size());
+        assertEquals(ownerRef, resource.getMetadata().getOwnerReferences().get(0));
+    }
+
     @Test
     public void testFromCrd()   {
         KafkaUserModel model = KafkaUserModel.fromCrd(mockCertManager, passwordGenerator, tlsUser, clientsCaCert, clientsCaKey, null);
@@ -55,6 +62,9 @@ public class KafkaUserModelTest {
         assertEquals(ResourceUtils.NAME, generated.getMetadata().getName());
         assertEquals(ResourceUtils.NAMESPACE, generated.getMetadata().getNamespace());
         assertEquals(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND).toMap(), generated.getMetadata().getLabels());
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -65,6 +75,9 @@ public class KafkaUserModelTest {
         assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
         assertEquals("crt file", new String(model.decodeFromSecret(generated, "user.crt")));
         assertEquals("key file", new String(model.decodeFromSecret(generated, "user.key")));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -81,6 +94,9 @@ public class KafkaUserModelTest {
         assertEquals("different-clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
         assertEquals("crt file", new String(model.decodeFromSecret(generated, "user.crt")));
         assertEquals("key file", new String(model.decodeFromSecret(generated, "user.key")));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -92,6 +108,9 @@ public class KafkaUserModelTest {
         assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
         assertEquals("expected-crt", new String(model.decodeFromSecret(generated, "user.crt")));
         assertEquals("expected-key", new String(model.decodeFromSecret(generated, "user.key")));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -103,6 +122,9 @@ public class KafkaUserModelTest {
         assertEquals("clients-ca-crt", new String(model.decodeFromSecret(generated, "ca.crt")));
         assertEquals("crt file", new String(model.decodeFromSecret(generated, "user.crt")));
         assertEquals("key file", new String(model.decodeFromSecret(generated, "user.key")));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -116,6 +138,9 @@ public class KafkaUserModelTest {
 
         assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
         assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -131,6 +156,9 @@ public class KafkaUserModelTest {
 
         assertEquals(singleton(KafkaUserModel.KEY_PASSWORD), generated.getData().keySet());
         assertEquals(existing, generated.getData().get(KafkaUserModel.KEY_PASSWORD));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test
@@ -145,6 +173,9 @@ public class KafkaUserModelTest {
 
         assertEquals(singleton("password"), generated.getData().keySet());
         assertEquals("aaaaaaaaaa", new String(Base64.getDecoder().decode(generated.getData().get(KafkaUserModel.KEY_PASSWORD))));
+
+        // Check owner reference
+        checkOwnerReference(model.createOwnerReference(), generated);
     }
 
     @Test

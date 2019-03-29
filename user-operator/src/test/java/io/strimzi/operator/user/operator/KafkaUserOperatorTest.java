@@ -558,11 +558,9 @@ public class KafkaUserOperatorTest {
         existingScramShaUserSecret.getMetadata().setName("existing-scram-sha-user");
         KafkaUser existingScramShaUser = ResourceUtils.createKafkaUserTls();
         existingScramShaUser.getMetadata().setName("existing-scram-sha-user");
-        Secret deletedUserCert = ResourceUtils.createUserSecretTls();
-        deletedUserCert.getMetadata().setName("deleted-user");
 
         when(mockCrdOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS)))).thenReturn(Arrays.asList(newTlsUser, newScramShaUser, existingTlsUser, existingScramShaUser));
-        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret, deletedUserCert));
+        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.userLabels(ResourceUtils.LABELS).withKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
         when(aclOps.getUsersWithAcls()).thenReturn(new HashSet<String>(Arrays.asList("existing-tls-user", "second-deleted-user")));
         when(scramOps.list()).thenReturn(asList("existing-tls-user", "deleted-scram-sha-user"));
 
@@ -570,18 +568,16 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.get(eq(newScramShaUser.getMetadata().getNamespace()), eq(newScramShaUser.getMetadata().getName()))).thenReturn(newScramShaUser);
         when(mockCrdOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(existingTlsUser);
         when(mockCrdOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingScramShaUser.getMetadata().getName()))).thenReturn(existingScramShaUser);
-        when(mockCrdOps.get(eq(deletedUserCert.getMetadata().getNamespace()), eq(deletedUserCert.getMetadata().getName()))).thenReturn(null);
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
         when(mockSecretOps.get(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(null);
         when(mockSecretOps.get(eq(newScramShaUser.getMetadata().getNamespace()), eq(newScramShaUser.getMetadata().getName()))).thenReturn(null);
         when(mockSecretOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(existingTlsUserSecret);
         when(mockSecretOps.get(eq(existingScramShaUser.getMetadata().getNamespace()), eq(existingScramShaUser.getMetadata().getName()))).thenReturn(existingScramShaUserSecret);
-        when(mockSecretOps.get(eq(deletedUserCert.getMetadata().getNamespace()), eq(deletedUserCert.getMetadata().getName()))).thenReturn(deletedUserCert);
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
-        Async async = context.async(7);
+        Async async = context.async(6);
         KafkaUserOperator op = new KafkaUserOperator(vertx,
                 mockCertManager,
                 mockCrdOps,
@@ -609,7 +605,7 @@ public class KafkaUserOperatorTest {
 
         context.assertEquals(new HashSet(asList("new-tls-user", "existing-tls-user",
                 "new-scram-sha-user", "existing-scram-sha-user")), createdOrUpdated);
-        context.assertEquals(new HashSet(asList("deleted-user", "second-deleted-user", "deleted-scram-sha-user")), deleted);
+        context.assertEquals(new HashSet(asList("second-deleted-user", "deleted-scram-sha-user")), deleted);
     }
 
     @Test
