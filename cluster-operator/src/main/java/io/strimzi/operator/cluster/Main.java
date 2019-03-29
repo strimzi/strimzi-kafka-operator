@@ -223,7 +223,7 @@ public class Main {
                             new KubernetesVersion(Integer.parseInt(major.split("\\D")[0]),
                                     Integer.parseInt(minor.split("\\D")[0])));
                     request.complete(pfa);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     log.error("OpenShift detection failed", e);
                     request.fail(e);
                 }
