@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.systemtest.libClient.KafkaClient;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,6 +16,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.Matchers.equalTo;
@@ -83,6 +88,15 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
+
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            int count = testClient.sendMessages("my-topic", NAMESPACE, CLUSTER_NAME, kafkaUser, 50).get(1, TimeUnit.MINUTES);
+            LOGGER.info("COUNT: {}", count);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+        }
 
         KUBE_CLIENT.deleteByName("KafkaUser", kafkaUser);
         KUBE_CLIENT.waitForResourceDeletion("KafkaUser", kafkaUser);

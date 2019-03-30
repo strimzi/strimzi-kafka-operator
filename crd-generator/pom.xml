@@ -46,10 +46,6 @@
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
     </dependency>
-    <dependency>
-      <groupId>io.strimzi</groupId>
-      <artifactId>crd-annotations</artifactId>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
