@@ -105,8 +105,6 @@ class UserST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     void test() throws InterruptedException, ExecutionException, TimeoutException {
-        LOGGER.info("Running testUpdateUser in namespace {}", NAMESPACE);
-        String kafkaUser = "test-user";
         int messageCount = 50;
 
         resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
@@ -116,12 +114,35 @@ class UserST extends AbstractST {
                 .withNewKafkaListenerExternalLoadBalancer()
                     .withTls(false)
                 .endKafkaListenerExternalLoadBalancer()
-//                .editTls()
-//                .withNewKafkaListenerAuthenticationTlsAuth()
-//                .endKafkaListenerAuthenticationTlsAuth()
-//                .endTls()
                 .endListeners()
-//                .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+                .endSpec().build()).done();
+
+        resources().topic(CLUSTER_NAME, "my-topic-1").done();
+
+        KafkaClient testClient = new KafkaClient();
+        Future producer = testClient.sendMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, messageCount);
+        Future consumer = testClient.receiveMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, messageCount);
+
+        assertThat("Producer producer all messages", producer.get(2, TimeUnit.MINUTES), is(messageCount));
+        assertThat("Consumer consumed all messages", consumer.get(2, TimeUnit.MINUTES), is(messageCount));
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void test_tls() throws InterruptedException, ExecutionException, TimeoutException {
+        LOGGER.info("Running testUpdateUser in namespace {}", NAMESPACE);
+        String kafkaUser = "test-user";
+        int messageCount = 50;
+
+        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+                .editSpec()
+                .editKafka()
+                .editListeners()
+                .withNewKafkaListenerExternalLoadBalancer()
+                .endKafkaListenerExternalLoadBalancer()
+                .endListeners()
+                .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
                 .endSpec().build()).done();
 
@@ -134,19 +155,13 @@ class UserST extends AbstractST {
 
         LOGGER.info("before");
         KafkaClient testClient = new KafkaClient();
-        Future producer = testClient.sendMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, messageCount);
+        Future producer = testClient.sendMessagesTls("my-topic-1", NAMESPACE, CLUSTER_NAME, kafkaUser, messageCount);
 
-        Future consumer = testClient.receiveMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, messageCount);
+        Future consumer = testClient.receiveMessagesTls("my-topic-1", NAMESPACE, CLUSTER_NAME, kafkaUser, messageCount);
 
-        LOGGER.info("after");
+        assertThat("Producer producer all messages", producer.get(2, TimeUnit.MINUTES), is(messageCount));
+        assertThat("Consumer consumed all messages", consumer.get(2, TimeUnit.MINUTES), is(messageCount));
 
-        Thread.sleep(60000);
-        LOGGER.info("after sleep");
-
-        assertThat("Producer producer all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
-        assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-
-//        AvailabilityVerifier mp = waitForInitialAvailability(kafkaUser);
 
         KUBE_CLIENT.deleteByName("KafkaUser", kafkaUser);
         KUBE_CLIENT.waitForResourceDeletion("KafkaUser", kafkaUser);
