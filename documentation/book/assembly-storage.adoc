@@ -14,7 +14,7 @@ As stateful applications, Kafka and Zookeeper need to store data on disk. {Produ
 
 * Ephemeral
 * Persistent
-* JBOD storage.
+* JBOD storage
 
 NOTE: JBOD storage is supported only for Kafka, not for Zookeeper.
 
