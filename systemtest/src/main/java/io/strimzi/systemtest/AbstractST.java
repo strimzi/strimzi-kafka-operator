@@ -587,7 +587,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         CLIENT.inNamespace(namespace).configMaps().list().getItems().stream()
                 .forEach(cm -> {
                     LOGGER.info("Verifying labels for Config map: " + cm.getMetadata().getName());
-                    assertEquals("KafkaConnect", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals("Kafka", cm.getMetadata().getLabels().get("strimzi.io/kind"));
                     assertEquals(clusterName, cm.getMetadata().getLabels().get("strimzi.io/cluster"));
                     assertEquals(appName, cm.getMetadata().getLabels().get("app"));
                 });
@@ -654,6 +654,46 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                     assertEquals(kafkaMMServiceName, service.getMetadata().getLabels().get("strimzi.io/name"));
                 });
     }
+
+    void verifyLabelsForServiceAccounts(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for Service Accounts");
+
+        CLIENT.serviceAccounts().list().getItems().stream()
+                .filter(sa -> sa.getMetadata().getName().equals("strimzi-cluster-operator"))
+                .forEach(sa -> {
+                    LOGGER.info("Verifying labels for service account: " + sa.getMetadata().getName());
+                    assertEquals("strimzi", sa.getMetadata().getLabels().get("app"));
+                });
+
+        CLIENT.serviceAccounts().list().getItems().stream()
+                .filter(sa -> sa.getMetadata().getName().startsWith(clusterName))
+                .forEach(sa -> {
+                    LOGGER.info("Verifying labels for service account: " + sa.getMetadata().getName());
+                    assertEquals(appName, sa.getMetadata().getLabels().get("app"));
+                    assertEquals(clusterName, sa.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("Kafka", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                });
+    }
+
+    void verifyLabelsForRoleBindings(String clusterName, String appName) {
+        LOGGER.info("Verifying labels for Cluster Role bindings");
+        CLIENT.inAnyNamespace().rbac().kubernetesRoleBindings().list().getItems().stream()
+                .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-cluster-operator"))
+                .forEach(rb -> {
+                    LOGGER.info("Verifying labels for cluster role: " + rb.getMetadata().getName());
+                    assertEquals("strimzi", rb.getMetadata().getLabels().get("app"));
+                });
+
+        CLIENT.inAnyNamespace().rbac().kubernetesRoleBindings().list().getItems().stream()
+                .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-".concat(clusterName)))
+                .forEach(rb -> {
+                    LOGGER.info("Verifying labels for cluster role: " + rb.getMetadata().getName());
+                    assertEquals(appName, rb.getMetadata().getLabels().get("app"));
+                    assertEquals(clusterName, rb.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("Kafka", rb.getMetadata().getLabels().get("strimzi.io/kind"));
+                });
+    }
+
 
     /**
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.

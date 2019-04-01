@@ -108,6 +108,8 @@ class KafkaST extends MessagingBaseST {
         verifyLabelsForCRDs(NAMESPACE);
         verifyLabelsForServices(NAMESPACE, clusterName, appName);
         verifyLabelsForConfigMaps(NAMESPACE, clusterName, appName);
+        verifyLabelsForServiceAccounts(clusterName, appName);
+        verifyLabelsForRoleBindings(clusterName, appName);
 
         LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
         oc.deleteByName("Kafka", clusterName);
