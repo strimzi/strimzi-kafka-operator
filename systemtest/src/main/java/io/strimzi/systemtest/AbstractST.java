@@ -95,6 +95,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         Crds.registerCustomKinds();
     }
 
+    protected static final Environment ENVIRONMENT = Environment.getInstance();
+
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
@@ -120,23 +122,18 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
     public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
-    public static final String STRIMZI_ORG = "strimzi";
-    public static final String STRIMZI_TAG = "latest";
     public static final String IMAGE_PULL_POLICY = "Always";
     public static final String REQUESTS_MEMORY = "512Mi";
     public static final String REQUESTS_CPU = "200m";
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
-    public static final String OPERATOR_LOG_LEVEL = "INFO";
 
-    public static final String TEST_LOG_DIR = System.getenv().getOrDefault("TEST_LOG_DIR", "../systemtest/target/logs/");
+    public static final String TEST_LOG_DIR = ENVIRONMENT.getTestLogDir();
 
     Resources resources;
     static Resources testClassResources;
     static String operationID;
     Random rng = new Random();
-
-    protected static final Environment ENVIRONMENT = Environment.getInstance();
 
     protected static NamespacedKubernetesClient namespacedClient() {
         return CLIENT.inNamespace(KUBE_CLIENT.namespace());
@@ -692,8 +689,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * Deploy CO via helm chart. Using config file stored in test resources.
      */
     void deployClusterOperatorViaHelmChart() {
-        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", STRIMZI_ORG);
-        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", STRIMZI_TAG);
+        String dockerOrg = ENVIRONMENT.getStrimziOrg();
+        String dockerTag = ENVIRONMENT.getStrimziTag();
 
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
                 entry("imageRepositoryOverride", dockerOrg),
@@ -703,7 +700,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 entry("resources.requests.cpu", REQUESTS_CPU),
                 entry("resources.limits.memory", LIMITS_MEMORY),
                 entry("resources.limits.cpu", LIMITS_CPU),
-                entry("logLevel", OPERATOR_LOG_LEVEL))
+                entry("logLevel", ENVIRONMENT.getStrimziLogLevel()))
                 .collect(TestUtils.entriesToMap()));
 
         LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);

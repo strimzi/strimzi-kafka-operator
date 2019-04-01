@@ -11,8 +11,8 @@ public class Environment {
     private static final Logger LOGGER = LogManager.getLogger(Environment.class);
     private static Environment instance;
 
-    public static final String STRIMZI_ORG_ENV = "STRIMZI_ORG";
-    public static final String STRIMZI_TAG_ENV = "STRIMZI_TAG";
+    public static final String STRIMZI_ORG_ENV = "DOCKER_ORG";
+    public static final String STRIMZI_TAG_ENV = "DOCKER_TAG";
     public static final String TEST_LOG_DIR_ENV = "TEST_LOG_DIR";
     public static final String ST_KAFKA_VERSION_ENV = "ST_KAFKA_VERSION";
     public static final String STRIMZI_LOG_LEVEL_ENV = "STRIMZI_DEFAULT_LOG_LEVEL";
