@@ -658,14 +658,14 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     void verifyLabelsForServiceAccounts(String clusterName, String appName) {
         LOGGER.info("Verifying labels for Service Accounts");
 
-        CLIENT.serviceAccounts().list().getItems().stream()
+        CLIENT.inAnyNamespace().serviceAccounts().list().getItems().stream()
                 .filter(sa -> sa.getMetadata().getName().equals("strimzi-cluster-operator"))
                 .forEach(sa -> {
                     LOGGER.info("Verifying labels for service account: " + sa.getMetadata().getName());
                     assertEquals("strimzi", sa.getMetadata().getLabels().get("app"));
                 });
 
-        CLIENT.serviceAccounts().list().getItems().stream()
+        CLIENT.inAnyNamespace().serviceAccounts().list().getItems().stream()
                 .filter(sa -> sa.getMetadata().getName().startsWith(clusterName))
                 .forEach(sa -> {
                     LOGGER.info("Verifying labels for service account: " + sa.getMetadata().getName());
@@ -691,6 +691,28 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                     assertEquals(appName, rb.getMetadata().getLabels().get("app"));
                     assertEquals(clusterName, rb.getMetadata().getLabels().get("strimzi.io/cluster"));
                     assertEquals("Kafka", rb.getMetadata().getLabels().get("strimzi.io/kind"));
+                });
+    }
+
+    void verifyLabelsForConnectServiceAccount(String clusterName) {
+        LOGGER.info("Verifying labels for Connect Service Accounts");
+        CLIENT.inAnyNamespace().serviceAccounts().list().getItems().stream()
+                .filter(sa -> sa.getMetadata().getName().equals(clusterName.concat("-connect")))
+                .forEach(sa -> {
+                    LOGGER.info("Verifying labels for service account: " + sa.getMetadata().getName());
+                    assertEquals(clusterName, sa.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("KafkaConnect", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                });
+    }
+
+    void verifyLabelsForMMServiceAccount(String clusterName) {
+        LOGGER.info("Verifying labels for MM Service Accounts");
+        CLIENT.inAnyNamespace().serviceAccounts().list().getItems().stream()
+                .filter(sa -> sa.getMetadata().getName().equals(clusterName.concat("-mirror-maker")))
+                .forEach(sa -> {
+                    LOGGER.info("Verifying labels for service account: " + sa.getMetadata().getName());
+                    assertEquals(clusterName, sa.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("KafkaMirrorMaker", sa.getMetadata().getLabels().get("strimzi.io/kind"));
                 });
     }
 

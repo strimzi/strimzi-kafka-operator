@@ -74,6 +74,7 @@ class ConnectST extends AbstractST {
         verifyLabelsOnConnectPods(NAMESPACE, KAFKA_CLUSTER_NAME, 1);
         verifyLabelsForConnectAPIService(NAMESPACE, KAFKA_CLUSTER_NAME);
         verifyLabelsForConnectConfigMaps(NAMESPACE, KAFKA_CLUSTER_NAME);
+        verifyLabelsForConnectServiceAccount(KAFKA_CLUSTER_NAME);
     }
 
     @Test
