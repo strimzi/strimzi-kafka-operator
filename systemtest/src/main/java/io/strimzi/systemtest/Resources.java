@@ -64,6 +64,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -257,12 +258,9 @@ public class Resources extends AbstractResources {
                             .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                             .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                             .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
-                            .addToConfig("default.replication.factor", Math.min(kafkaReplicas, 3))
                             .withNewListeners()
                                 .withNewPlain().endPlain()
                                 .withNewTls().endTls()
-                                .withNewKafkaListenerExternalRoute()
-                                .endKafkaListenerExternalRoute()
                             .endListeners()
                             .withNewReadinessProbe()
                                 .withInitialDelaySeconds(15)
@@ -840,7 +838,7 @@ public class Resources extends AbstractResources {
     DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
-                .withName(KAFKA_CLIENTS)
+                .withName(clusterName + "-" + KAFKA_CLIENTS)
             .endMetadata()
             .withNewSpec()
                 .withNewSelector()
@@ -861,19 +859,19 @@ public class Resources extends AbstractResources {
 
     private static Service getSystemtestsServiceResource(String appName, int port) {
         return new ServiceBuilder()
-                .withNewMetadata()
+            .withNewMetadata()
                 .withName(appName)
                 .addToLabels("run", appName)
-                .endMetadata()
-                .withNewSpec()
+            .endMetadata()
+            .withNewSpec()
                 .withSelector(Collections.singletonMap("app", appName))
                 .addNewPort()
-                .withName("http")
-                .withPort(port)
-                .withProtocol("TCP")
+                    .withName("http")
+                    .withPort(port)
+                    .withProtocol("TCP")
                 .endPort()
-                .endSpec()
-                .build();
+            .endSpec()
+            .build();
     }
 
     DoneableService createServiceResource(String appName, int port, String clientNamespace) {
@@ -884,7 +882,7 @@ public class Resources extends AbstractResources {
         return new DoneableService(service);
     }
 
-    private static Ingress getSystemtestIngressResource(String appName, int port, String url) throws Exception {
+    private static Ingress getSystemtestIngressResource(String appName, int port, String url) throws MalformedURLException {
         IngressBackend backend = new IngressBackend();
         backend.setServiceName(appName);
         backend.setServicePort(new IntOrString(port));
@@ -1053,7 +1051,7 @@ public class Resources extends AbstractResources {
         Secret secret = client.secrets().withName(kafkaUser.getMetadata().getName()).get();
 
         String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
-        if (password == null) {
+        if (password.isEmpty()) {
             LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), toYamlString(secret));
             throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");
         }

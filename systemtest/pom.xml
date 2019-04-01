@@ -12,7 +12,6 @@
 
     <properties>
         <skipTests>true</skipTests>
-        <guava.version>25.0-jre</guava.version>
     </properties>
 
     <dependencies>

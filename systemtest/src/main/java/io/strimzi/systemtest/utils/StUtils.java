@@ -185,18 +185,19 @@ public class StUtils {
     public static void waitForPodsReady(KubernetesClient client, String namespace, LabelSelector selector, boolean containers) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = client.pods().inNamespace(namespace).withLabelSelector(selector).list().getItems();
+
             if (pods.isEmpty()) {
-                LOGGER.debug("Not ready (no pods matching {})", selector);
+                LOGGER.info("Not ready (no pods matching {})", selector);
                 return false;
             }
             for (Pod pod : pods) {
                 if (!Readiness.isPodReady(pod)) {
-                    LOGGER.debug("Not ready (at least 1 pod not ready: {})", pod.getMetadata().getName());
+                    LOGGER.info("Not ready (at least 1 pod not ready: {})", pod.getMetadata().getName());
                     return false;
                 } else {
                     if (containers) {
                         for (ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
-                            LOGGER.debug("Not ready (at least 1 container of pod {} not ready: {})", pod.getMetadata().getName(), cs.getName());
+                            LOGGER.info("Not ready (at least 1 container of pod {} not ready: {})", pod.getMetadata().getName(), cs.getName());
                             if (!Boolean.TRUE.equals(cs.getReady())) {
                                 return false;
                             }
