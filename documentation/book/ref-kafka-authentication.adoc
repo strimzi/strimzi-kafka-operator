@@ -9,6 +9,7 @@ Authentication is configured as part of the xref:assembly-configuring-kafka-brok
 The authentication mechanism is defined by the `type` field.
 
 When the `authentication` property is missing, no authentication is enabled on a given listener.
+The listener will accept all connections without authentication.
 
 Supported authentication mechanisms:
 
