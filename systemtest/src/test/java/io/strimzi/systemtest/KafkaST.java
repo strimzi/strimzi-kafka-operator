@@ -616,6 +616,15 @@ class KafkaST extends AbstractST {
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
         assertThat(KUBE_CLIENT.list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
 
+        resources().topic(CLUSTER_NAME, "topic-without-labels")
+                .editMetadata()
+                    .withLabels(null)
+                .endMetadata()
+                .done();
+
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli", "topic-without-labels"));
+        assertThat(KUBE_CLIENT.list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "topic-without-labels"));
+
         //Updating first topic using pod CLI
         updateTopicPartitionsCountUsingPodCLI(CLUSTER_NAME, 0, "my-topic", 2);
         assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic"),
