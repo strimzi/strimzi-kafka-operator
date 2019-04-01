@@ -98,15 +98,6 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
-
-        KafkaClient testClient = new KafkaClient();
-        try {
-            int count = testClient.sendMessages("my-topic", NAMESPACE, CLUSTER_NAME, kafkaUser, 50).get(1, TimeUnit.MINUTES);
-            LOGGER.info("COUNT: {}", count);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
-        }
-
         KUBE_CLIENT.deleteByName("KafkaUser", kafkaUser);
         KUBE_CLIENT.waitForResourceDeletion("KafkaUser", kafkaUser);
     }
@@ -143,9 +134,9 @@ class UserST extends AbstractST {
 
         LOGGER.info("before");
         KafkaClient testClient = new KafkaClient();
-        Future producer = testClient.sendMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, kafkaUser, messageCount);
+        Future producer = testClient.sendMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, messageCount);
 
-        Future consumer = testClient.receiveMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, kafkaUser, messageCount);
+        Future consumer = testClient.receiveMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, messageCount);
 
         LOGGER.info("after");
 

@@ -1,24 +1,15 @@
-/*
- * Copyright 2018, Strimzi authors.
- * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
- */
 package io.strimzi.systemtest.libClient;
 
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.VertxFactory;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SslConfigs;
-
-import io.vertx.core.Vertx;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
@@ -32,118 +23,24 @@ import java.nio.file.Files;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
-import static io.strimzi.test.BaseITST.CLIENT;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
+import static io.strimzi.test.BaseITST.CLIENT;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class KafkaClient implements AutoCloseable {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
-    private final List<Vertx> clients = new ArrayList<>();
-    private Properties producerProperties;
-    private Properties consumerProperties;
+public class KafkaCLientProperties {
 
-//    private static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
-//    protected static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient(CONFIG);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaCLientProperties.class);
 
-    public KafkaClient() {
-    }
-
-    public Properties getProducerProperties() {
-        return producerProperties;
-    }
-
-    public KafkaClient setProducerProperties(Properties producerProperties) {
-        this.producerProperties = producerProperties;
-        return this;
-    }
-
-    @Override
-    public void close() {
-        for (Vertx client : clients) {
-            client.close();
-        }
-    }
-
-    public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount) {
-
-        CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.add(vertx);
-
-        vertx.deployVerticle(new Producer(KafkaCLientProperties.createProducerProperties(namespace, clusterName), resultPromise, messageCount, topicName));
-
-        try {
-            resultPromise.get(2, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            resultPromise.completeExceptionally(e);
-        }
-        return resultPromise;
-    }
-
-    public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount) {
-
-        CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.add(vertx);
-
-        vertx.deployVerticle(new Producer(KafkaCLientProperties.createProducerProperties(namespace, clusterName, userName, "SSL"), resultPromise, messageCount, topicName));
-
-        try {
-            resultPromise.get(2, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            resultPromise.completeExceptionally(e);
-        }
-        return resultPromise;
-    }
-
-    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount) {
-
-        CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.add(vertx);
-
-        vertx.deployVerticle(new Consumer(KafkaCLientProperties.createConsumerProperties(namespace, clusterName), resultPromise, messageCount, topicName));
-
-        try {
-            resultPromise.get(2, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            resultPromise.completeExceptionally(e);
-        }
-        return resultPromise;
-    }
-
-    public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount) {
-
-        CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.add(vertx);
-
-        vertx.deployVerticle(new Consumer(KafkaCLientProperties.createConsumerProperties(namespace, clusterName, userName, "SSL"), resultPromise, messageCount, topicName));
-
-        try {
-            resultPromise.get(2, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            resultPromise.completeExceptionally(e);
-        }
-        return resultPromise;
-    }
-
-    private Properties createProducerProperties(String namespace, String clusterName) {
+    public static Properties createProducerProperties(String namespace, String clusterName) {
         return createProducerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL);
     }
 
-    private Properties createProducerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
+    public static Properties createProducerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
         Properties producerProperties = new Properties();
         producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 getExternalBootstrapConnect(namespace, clusterName));
@@ -165,7 +62,7 @@ public class KafkaClient implements AutoCloseable {
      * @param clusterName
      * @return
      */
-    private Properties createConsumerProperties(String namespace, String clusterName) {
+    public static Properties createConsumerProperties(String namespace, String clusterName) {
         return createConsumerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL);
     }
 
@@ -177,7 +74,7 @@ public class KafkaClient implements AutoCloseable {
      * @param securityProtocol
      * @return
      */
-    private Properties createConsumerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
+    public static Properties createConsumerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
         Properties consumerProperties = new Properties();
         consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
                 "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
@@ -201,12 +98,12 @@ public class KafkaClient implements AutoCloseable {
      * @param userName
      * @return
      */
-    private Properties sharedClientProperties(String namespace, String clusterName, String userName) {
+    private static Properties sharedClientProperties(String namespace, String clusterName, String userName) {
         Properties properties = new Properties();
 
         try {
             String tsPassword = "foo";
-            File tsFile = File.createTempFile(getClass().getName(), ".truststore");
+            File tsFile = File.createTempFile(KafkaCLientProperties.class.getName(), ".truststore");
             tsFile.deleteOnExit();
             KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
             ts.load(null, tsPassword.toCharArray());
@@ -298,17 +195,17 @@ public class KafkaClient implements AutoCloseable {
      * @throws IOException
      * @throws InterruptedException
      */
-    private File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
-        File caFile = File.createTempFile(getClass().getName(), ".crt");
+    private static File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
+        File caFile = File.createTempFile(KafkaCLientProperties.class.getName(), ".crt");
         caFile.deleteOnExit();
         Files.write(caFile.toPath(), ca);
-        File certFile = File.createTempFile(getClass().getName(), ".crt");
+        File certFile = File.createTempFile(KafkaCLientProperties.class.getName(), ".crt");
         certFile.deleteOnExit();
         Files.write(certFile.toPath(), cert);
-        File keyFile = File.createTempFile(getClass().getName(), ".key");
+        File keyFile = File.createTempFile(KafkaCLientProperties.class.getName(), ".key");
         keyFile.deleteOnExit();
         Files.write(keyFile.toPath(), key);
-        File keystore = File.createTempFile(getClass().getName(), ".keystore");
+        File keystore = File.createTempFile(KafkaCLientProperties.class.getName(), ".keystore");
         keystore.delete(); // Note horrible race condition, but this is only for testing
         //keystore.deleteOnExit();
         // RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $HOSTNAME -password pass:$2 -out $1

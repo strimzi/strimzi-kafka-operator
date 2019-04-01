@@ -22,16 +22,15 @@ public class Producer<T> extends ClientHandlerBase<Integer> {
     private final AtomicInteger numSent = new AtomicInteger(0);
     private final String topic;
 
-    public Producer(Properties properties, CompletableFuture<Integer> resultPromise, int messageCount, String topic) {
+    Producer(Properties properties, CompletableFuture<Integer> resultPromise, int messageCount, String topic) {
         super(resultPromise, messageCount);
         this.properties = properties;
         this.topic = topic;
-        LOGGER.info("creating producer");
     }
 
     @Override
     protected void handleClient() {
-        KafkaProducer<String, String> producer = KafkaProducer.create(vertx, properties, String.class, String.class);
+        KafkaProducer<String, String> producer = KafkaProducer.create(vertx, properties);
         sendNext(producer, topic);
     }
 
@@ -65,24 +64,3 @@ public class Producer<T> extends ClientHandlerBase<Integer> {
         }
     }
 }
-
-
-//            while(numSent.get() < messageCount) {
-//        producer.write(record, done -> {
-//        if (done.succeeded()) {
-//        RecordMetadata recordMetadata = done.result();
-//        LOGGER.info("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
-//        ", partition=" + recordMetadata.getPartition() +
-//        ", offset=" + recordMetadata.getOffset());
-//
-//        numSent.getAndIncrement();
-//        if (numSent.get() == messageCount) {
-//        LOGGER.info("Producer sent {} messages", numSent.get());
-//        resultPromise.complete(numSent.get());
-//        }
-//        } else {
-//        LOGGER.info("Producer didn't produce any message");
-//        resultPromise.completeExceptionally(done.cause());
-//        }
-//        });
-//        }
