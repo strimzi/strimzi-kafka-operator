@@ -210,6 +210,19 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         namedResource.replace(resource);
     }
 
+    private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
+    T getCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName) {
+        Resource<T, D> namedResource = Crds.operation(CLIENT, crdClass, listClass, doneableClass).inNamespace(KUBE_CLIENT.namespace()).withName(resourceName);
+        return namedResource.get();
+//        T resource = namedResource.get();
+//        editor.accept(resource);
+//        namedResource.replace(resource);
+    }
+
+    Kafka getKafkaResource(String resourceName) {
+        return getCrdResource(Kafka.class, KafkaList.class, DoneableKafka.class, resourceName);
+    }
+
     void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
         replaceCrdResource(Kafka.class, KafkaList.class, DoneableKafka.class, resourceName, editor);
     }

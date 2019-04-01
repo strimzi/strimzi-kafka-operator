@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -183,9 +184,11 @@ public class StrimziUpgradeST extends AbstractST {
                 LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
             }
 
+            replaceKafkaResource(CLUSTER_NAME, ka -> ka.getSpec().getKafka().getConfig().put("log.message.format.version", "2.0"));
+
             // Update Kafka version
             if(!kafkaVersion.isEmpty()) {
-                replaceKafkaResource(CLUSTER_NAME, k -> {
+                Kafka k = getKafkaResource(CLUSTER_NAME);
                     if(k.getSpec().getKafka().getVersion() == null || !k.getSpec().getKafka().getVersion().equals(kafkaVersion)) {
                         switch (kafkaVersion) {
                             case "2.0.0": {
@@ -217,7 +220,7 @@ public class StrimziUpgradeST extends AbstractST {
                             }
                         }
                     }
-                });
+//                });
                 //TODO wait for rolling update after updating version
             }
 
