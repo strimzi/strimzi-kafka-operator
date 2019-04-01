@@ -24,7 +24,7 @@ Reserving the resources will ensure that they are always available.
 
 IMPORTANT: If the resource request is for more than the available free resources in the {ProductPlatformName} cluster, the pod will not be scheduled.
 
-Resources for requests are specified in the `requests` property.
+Resources requests are specified in the `requests` property.
 Resources currently supported by {ProductName}:
 
 * `cpu`
