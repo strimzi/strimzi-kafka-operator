@@ -601,13 +601,13 @@ class KafkaST extends AbstractST {
                 "512M", "300m", "256M", "300m");
 
         TestUtils.waitFor("Wait till reconciliation timeout", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), "Assembly reconciled").isEmpty());
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), "\"Assembly reconciled\"").isEmpty());
 
         // Checking no rolling update after last CO reconciliation
         LOGGER.info("Checking no rolling update for Kafka cluster");
         assertFalse(StUtils.ssHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods));
         assertFalse(StUtils.ssHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods));
-        assertFalse(StUtils.ssHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods));
+        assertFalse(StUtils.depHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods));
         TimeMeasuringSystem.stopOperation(operationID);
     }
 

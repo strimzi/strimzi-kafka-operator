@@ -108,7 +108,7 @@ public class StUtils {
         return true;
     }
 
-    private static boolean depHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
+    public static boolean depHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
         Map<String, String> map = podSnapshot(client, namespace, client.extensions().deployments().inNamespace(namespace).withName(name).get().getSpec().getSelector());
         LOGGER.debug("Current  snapshot: {}", new TreeMap(map));
