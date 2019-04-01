@@ -590,18 +590,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     void testForTopicOperator() throws InterruptedException {
-
-        Map<String, Object> kafkaConfig = new HashMap<>();
-        kafkaConfig.put("offsets.topic.replication.factor", "3");
-        kafkaConfig.put("transaction.state.log.replication.factor", "3");
-        kafkaConfig.put("transaction.state.log.min.isr", "2");
-
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .withConfig(kafkaConfig)
-                .endKafka()
-            .endSpec().done();
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         //Creating topics for testing
         KUBE_CLIENT.create(TOPIC_CM);
@@ -616,6 +605,7 @@ class KafkaST extends AbstractST {
         assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), hasItems("my-topic", "topic-from-cli"));
         assertThat(KUBE_CLIENT.list("kafkatopic"), hasItems("my-topic", "topic-from-cli", "my-topic"));
 
+        // Creating topic without any label
         resources().topic(CLUSTER_NAME, "topic-without-labels")
                 .editMetadata()
                     .withLabels(null)
@@ -645,16 +635,34 @@ class KafkaST extends AbstractST {
         assertNotNull(testTopic.getSpec());
         assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
 
+        //Updating topic without labels
+        replaceTopicResource("topic-without-labels", topic -> {
+            topic.getSpec().setPartitions(2);
+        });
+        assertThat(describeTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-without-labels"),
+                hasItems("PartitionCount:2"));
+        testTopic = fromYamlString(KUBE_CLIENT.get("kafkatopic", "topic-without-labels"), KafkaTopic.class);
+        assertNotNull(testTopic);
+        assertNotNull(testTopic.getSpec());
+        assertEquals(Integer.valueOf(2), testTopic.getSpec().getPartitions());
+
         //Deleting first topic by deletion of CM
         KUBE_CLIENT.deleteByName("kafkatopic", "topic-from-cli");
 
         //Deleting another topic using pod CLI
         deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
         KUBE_CLIENT.waitForResourceDeletion("kafkatopic", "my-topic");
+
+        //Deleting another topic using pod CLI
+        deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "topic-without-labels");
+        KUBE_CLIENT.waitForResourceDeletion("kafkatopic", "topic-without-labels");
+
+        //Checking all topics were deleted
         Thread.sleep(10000L);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         assertThat(topics, not(hasItems("topic-from-cli")));
+        assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
     private void testDockerImagesForKafkaCluster(String clusterName, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
