@@ -17,22 +17,20 @@ public abstract class ClientHandlerBase<T> extends AbstractVerticle {
 
     private static final Logger LOGGER = LogManager.getLogger(Producer.class);
     private Properties properties;
-    private final String containerId;
-    protected final CompletableFuture<T> resultPromise;
-    private int messageCount;
-    private Predicate predicate;
-    private final AtomicInteger numSent = new AtomicInteger(0);
+    final CompletableFuture<T> resultPromise;
+    int messageCount;
 
-    public ClientHandlerBase(String containerId, CompletableFuture<T> resultPromise) {
+    public ClientHandlerBase(CompletableFuture<T> resultPromise, int messageCount) {
         this.resultPromise = resultPromise;
-        this.containerId = containerId;
+        this.messageCount = messageCount;
     }
 
     @Override
     public void start() {
-        produceMessages();
+        LOGGER.info("let's start");
+        handleClient();
     }
 
-    protected abstract void produceMessages();
+    protected abstract void handleClient();
 
 }

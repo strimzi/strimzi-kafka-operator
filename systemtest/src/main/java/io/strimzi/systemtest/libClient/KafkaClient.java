@@ -14,11 +14,15 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.VertxFactory;
 import org.apache.kafka.clients.CommonClientConfigs;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 
 import io.vertx.core.Vertx;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,6 +39,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -74,13 +79,27 @@ public class KafkaClient implements AutoCloseable {
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         Vertx vertx = VertxFactory.create();
         clients.add(vertx);
-        String containerId = "systemtest-sender-" + topicName;
-        CompletableFuture<Void> connectPromise = new CompletableFuture<>();
 
-        vertx.deployVerticle(new Producer(createProducerProperties(namespace, clusterName, userName), containerId, resultPromise, messageCount));
+        vertx.deployVerticle(new Producer(createProducerProperties(namespace, clusterName, userName), resultPromise, messageCount, topicName));
 
         try {
-            connectPromise.get(2, TimeUnit.MINUTES);
+            resultPromise.get(2, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            resultPromise.completeExceptionally(e);
+        }
+        return resultPromise;
+    }
+
+    public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, String userName, int messageCount) {
+
+        CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
+        Vertx vertx = VertxFactory.create();
+        clients.add(vertx);
+
+        vertx.deployVerticle(new Consumer(createConsumerProperties(namespace, clusterName, userName), resultPromise, messageCount, topicName));
+
+        try {
+            resultPromise.get(2, TimeUnit.MINUTES);
         } catch (Exception e) {
             resultPromise.completeExceptionally(e);
         }
@@ -91,11 +110,37 @@ public class KafkaClient implements AutoCloseable {
         Properties producerProperties = new Properties();
         producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 getExternalBootstrapConnect(namespace, clusterName));
-        producerProperties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
-        producerProperties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
+        producerProperties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        producerProperties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerProperties.setProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG, "1000");
-        producerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
+        producerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT");
         producerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-producer");
+        producerProperties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
+
+        producerProperties.putAll(sharedClientProperties(namespace, clusterName, userName));
+
+        return producerProperties;
+    }
+
+    private Properties createConsumerProperties(String namespace, String clusterName, String userName) {
+        Properties consumerProperties = new Properties();
+        consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
+                "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
+        consumerProperties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                getExternalBootstrapConnect(namespace, clusterName));
+        consumerProperties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        consumerProperties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        consumerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT");
+        consumerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-consumer");
+        consumerProperties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        consumerProperties.putAll(sharedClientProperties(namespace, clusterName, userName));
+
+        return consumerProperties;
+    }
+
+    private Properties sharedClientProperties(String namespace, String clusterName, String userName) {
+        Properties properties = new Properties();
 
         try {
             String tsPassword = "foo";
@@ -115,37 +160,38 @@ public class KafkaClient implements AutoCloseable {
             } finally {
                 tsOs.close();
             }
-            producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
-            producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
-            producerProperties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());
+            properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, KeyStore.getDefaultType());
+            properties.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, tsPassword);
+            properties.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, tsFile.getAbsolutePath());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        try {
+//        try {
+//
+//            Secret userSecret = CLIENT.secrets().inNamespace(namespace).withName(userName).get();
+//
+//            String clientsCaCert = userSecret.getData().get("ca.crt");
+//            LOGGER.info(clientsCaCert);
+//
+//            String userCaCert = userSecret.getData().get("user.crt");
+//            String userCaKey = userSecret.getData().get("user.key");
+//            String ksPassword = "foo";
+//            properties.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ksPassword);
+//            LOGGER.info(userCaCert);
+//            LOGGER.info(userCaKey);
+//            File ksFile = createKeystore(Base64.getDecoder().decode(clientsCaCert),
+//                    Base64.getDecoder().decode(userCaCert),
+//                    Base64.getDecoder().decode(userCaKey),
+//                    ksPassword);
+//            properties.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ksFile.getAbsolutePath());
+//
+//            properties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
 
-            Secret userSecret = CLIENT.secrets().inNamespace(namespace).withName(userName).get();
+        return properties;
 
-            String clientsCaCert = userSecret.getData().get("ca.crt");
-            LOGGER.info(clientsCaCert);
-
-            String userCaCert = userSecret.getData().get("user.crt");
-            String userCaKey = userSecret.getData().get("user.key");
-            String ksPassword = "foo";
-            producerProperties.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ksPassword);
-            LOGGER.info(userCaCert);
-            LOGGER.info(userCaKey);
-            File ksFile = createKeystore(Base64.getDecoder().decode(clientsCaCert),
-                    Base64.getDecoder().decode(userCaCert),
-                    Base64.getDecoder().decode(userCaKey),
-                    ksPassword);
-            producerProperties.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ksFile.getAbsolutePath());
-
-            producerProperties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        return producerProperties;
     }
 
     private static String getExternalBootstrapConnect(String namespace, String clusterName) {
