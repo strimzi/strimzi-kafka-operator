@@ -12,11 +12,11 @@ a|
 a|
 {ProductName} image for running Kafka, including:
 
-* Kafka broker
+* Kafka Broker
 * Kafka Connect
 * Kafka Mirror Maker
 * Zookeeper
-* TLS sidecars
+* TLS Sidecars.
 
 |Operator
 a|
