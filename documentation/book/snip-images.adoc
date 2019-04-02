@@ -12,7 +12,7 @@ a|
 a|
 AMQ Streams image for running Kafka, including:
 
-* Kafka broker
+* Kafka Broker
 * Kafka Connect
 * Kafka Mirror Maker.
 
