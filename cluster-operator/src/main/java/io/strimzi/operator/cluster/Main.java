@@ -61,6 +61,8 @@ import java.util.stream.Collectors;
 
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
+    private static final int MINIMAL_SUPPORTED_MAJOR = 1;
+    private static final int MINIMAL_SUPPORTED_MINOR = 9;
 
     static {
         try {
@@ -216,8 +218,8 @@ public class Main {
                             isOpenShift = false;
                         }
                     }
-                    /* test */ String major = client.getVersion().getMajor().equals("") ? "1" : client.getVersion().getMajor();
-                    /* test */ String minor = client.getVersion().getMinor().equals("") ? "9" : client.getVersion().getMinor();
+                    /* test */ String major = client.getVersion().getMajor().equals("") ? Integer.toString(MINIMAL_SUPPORTED_MAJOR) : client.getVersion().getMajor();
+                    /* test */ String minor = client.getVersion().getMinor().equals("") ? Integer.toString(MINIMAL_SUPPORTED_MINOR) : client.getVersion().getMinor();
 
                     PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenShift,
                             new KubernetesVersion(Integer.parseInt(major.split("\\D")[0]),
