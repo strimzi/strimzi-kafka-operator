@@ -5,9 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.libClient.KafkaClient;
-import io.strimzi.systemtest.utils.AvailabilityVerifier;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,15 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static java.util.Collections.singletonMap;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -97,70 +87,6 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(kafkaUser)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
-
-        KUBE_CLIENT.deleteByName("KafkaUser", kafkaUser);
-        KUBE_CLIENT.waitForResourceDeletion("KafkaUser", kafkaUser);
-    }
-
-    @Test
-    @Tag(REGRESSION)
-    void test() throws InterruptedException, ExecutionException, TimeoutException {
-        int messageCount = 50;
-
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
-                .editSpec()
-                .editKafka()
-                .editListeners()
-                .withNewKafkaListenerExternalLoadBalancer()
-                    .withTls(false)
-                .endKafkaListenerExternalLoadBalancer()
-                .endListeners()
-                .endKafka()
-                .endSpec().build()).done();
-
-        resources().topic(CLUSTER_NAME, "my-topic-1").done();
-
-        KafkaClient testClient = new KafkaClient();
-        Future producer = testClient.sendMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, messageCount);
-        Future consumer = testClient.receiveMessages("my-topic-1", NAMESPACE, CLUSTER_NAME, messageCount);
-
-        assertThat("Producer producer all messages", producer.get(2, TimeUnit.MINUTES), is(messageCount));
-        assertThat("Consumer consumed all messages", consumer.get(2, TimeUnit.MINUTES), is(messageCount));
-    }
-
-    @Test
-    @Tag(REGRESSION)
-    void test_tls() throws InterruptedException, ExecutionException, TimeoutException {
-        LOGGER.info("Running testUpdateUser in namespace {}", NAMESPACE);
-        String kafkaUser = "test-user";
-        int messageCount = 50;
-
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
-                .editSpec()
-                .editKafka()
-                .editListeners()
-                .withNewKafkaListenerExternalLoadBalancer()
-                .endKafkaListenerExternalLoadBalancer()
-                .endListeners()
-                .endKafka()
-                .endSpec().build()).done();
-
-        resources().topic(CLUSTER_NAME, "my-topic-1").done();
-
-        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
-        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, 180000,
-                () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(kafkaUser).get() != null,
-                () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
-
-        LOGGER.info("before");
-        KafkaClient testClient = new KafkaClient();
-        Future producer = testClient.sendMessagesTls("my-topic-1", NAMESPACE, CLUSTER_NAME, kafkaUser, messageCount);
-
-        Future consumer = testClient.receiveMessagesTls("my-topic-1", NAMESPACE, CLUSTER_NAME, kafkaUser, messageCount);
-
-        assertThat("Producer producer all messages", producer.get(2, TimeUnit.MINUTES), is(messageCount));
-        assertThat("Consumer consumed all messages", consumer.get(2, TimeUnit.MINUTES), is(messageCount));
-
 
         KUBE_CLIENT.deleteByName("KafkaUser", kafkaUser);
         KUBE_CLIENT.waitForResourceDeletion("KafkaUser", kafkaUser);
