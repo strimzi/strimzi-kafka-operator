@@ -214,9 +214,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     T getCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName) {
         Resource<T, D> namedResource = Crds.operation(CLIENT, crdClass, listClass, doneableClass).inNamespace(KUBE_CLIENT.namespace()).withName(resourceName);
         return namedResource.get();
-//        T resource = namedResource.get();
-//        editor.accept(resource);
-//        namedResource.replace(resource);
     }
 
     Kafka getKafkaResource(String resourceName) {
