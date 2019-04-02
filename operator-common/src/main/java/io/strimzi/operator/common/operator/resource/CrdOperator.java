@@ -39,4 +39,8 @@ public class CrdOperator<C extends KubernetesClient,
     protected MixedOperation<T, L, D, Resource<T, D>> operation() {
         return Crds.operation(client, cls, listCls, doneableCls);
     }
+
+    public static void main(String[] args) {
+        System.out.println("This is a test");
+    }
 }

@@ -44,6 +44,14 @@ import static java.util.Collections.unmodifiableList;
                         @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = true),
                         @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
                 },
+                subresources = @Crd.Spec.Subresources(
+                               status = @Crd.Spec.Subresources.Status(name = "test"),
+                               scale = @Crd.Spec.Subresources.Scale(
+                                       specReplicasPath = ".spec.replicas",
+                                       statusReplicasPath = ".status.replicas",
+                                       labelSelectorPath = ".status.labelSelector"
+                               )
+                ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Desired Kafka replicas",
