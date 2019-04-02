@@ -29,6 +29,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -179,7 +180,7 @@ class SecurityST extends AbstractST {
     @Test
     @OpenShiftOnly
     @Tag(FLAKY)
-    void testAutoRenewCaCertsTriggeredByAnno() {
+    void testAutoRenewCaCertsTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
@@ -247,7 +248,7 @@ class SecurityST extends AbstractST {
     @Test
     @OpenShiftOnly
     @Tag(FLAKY)
-    void testAutoReplaceCaKeysTriggeredByAnno() {
+    void testAutoReplaceCaKeysTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
         resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
@@ -317,7 +318,7 @@ class SecurityST extends AbstractST {
         waitForClusterAvailability(bobUserName);
     }
 
-   private void waitForClusterAvailability(String userName) {
+   private void waitForClusterAvailability(String userName) throws Exception {
         int messageCount = 50;
 
         KafkaClient testClient = new KafkaClient();
@@ -331,6 +332,7 @@ class SecurityST extends AbstractST {
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
+            throw e;
 
         } finally {
             testClient.close();
@@ -391,7 +393,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    void testLoadbalancer() {
+    void testLoadbalancer() throws Exception {
         createClusterWithExternalLoadbalancer();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
@@ -399,13 +401,46 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(userName);
+
+        String topicName = "my-topic-1";
+        String producerName = "producer-test";
+        String consumerName = "consumer-test";
+
+        KafkaClient testClient = new KafkaClient();
+        resources().topic(CLUSTER_NAME, topicName).done();
+
+        CompletableFuture producer = testClient.sendMessagesUntilNotification(topicName, NAMESPACE, CLUSTER_NAME, userName, producerName);
+        CompletableFuture consumer = testClient.receiveMessagesUntilNotification(topicName, NAMESPACE, CLUSTER_NAME, userName, consumerName);
+
+        LOGGER.info("Sleep...");
+        Thread.sleep(30000);
+        LOGGER.info("Wake up!");
+
+        testClient.sendNotificationToClient(producerName, "stop");
+        testClient.sendNotificationToClient(consumerName, "stop");
+
+        int produced = (int) producer.get(1, TimeUnit.MINUTES);
+        int consumed = (int) consumer.get(1, TimeUnit.MINUTES);
+
+        testClient.close();
+
+        LOGGER.info("Producer: {}", produced);
+        LOGGER.info("Consumer: {}", consumed);
+
+        assertThat("Received same as sent", produced, is(consumed));
+
+
+
+//        assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+//        assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+//
+//        waitForClusterAvailability(userName);
     }
 
     @Test
     @OpenShiftOnly
     @Tag(REGRESSION)
-    void testAutoRenewCaCertsTriggerByExpiredCertificate() {
+    void testAutoRenewCaCertsTriggerByExpiredCertificate() throws Exception {
         // 1. Create the Secrets already, and a certificate that's already expired
         String clusterCaKey = createSecret("cluster-ca.key", clusterCaKeySecretName(CLUSTER_NAME), "ca.key");
         String clusterCaCert = createSecret("cluster-ca.crt", clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt");

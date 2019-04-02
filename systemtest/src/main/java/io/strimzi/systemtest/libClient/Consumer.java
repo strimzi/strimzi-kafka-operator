@@ -18,16 +18,30 @@ public class Consumer extends ClientHandlerBase<Integer> {
     private Properties properties;
     private final AtomicInteger numReceived = new AtomicInteger(0);
     private final String topic;
+    private final String clientName;
 
-    Consumer(Properties properties, CompletableFuture<Integer> resultPromise, int messageCount, String topic) {
+    Consumer(Properties properties, CompletableFuture<Integer> resultPromise, int messageCount, String topic, String clientName) {
         super(resultPromise, messageCount);
         this.properties = properties;
         this.topic = topic;
+        this.clientName = clientName;
     }
 
     @Override
     protected void handleClient() {
         KafkaConsumer<String, String> consumer = KafkaConsumer.create(vertx, properties);
+
+        if (messageCount == -1) {
+            LOGGER.info("cekam na message: {}", clientName);
+            vertx.eventBus().consumer(clientName, msg -> {
+                LOGGER.info(msg.body());
+                LOGGER.info(msg.address());
+                if (msg.body().equals("stop")) {
+                    LOGGER.info("Received stop command! Received: {}", numReceived.get());
+                    resultPromise.complete(numReceived.get());
+                }
+            });
+        }
 
         consumer.subscribe(topic, ar -> {
             if (ar.succeeded()) {
@@ -35,8 +49,9 @@ public class Consumer extends ClientHandlerBase<Integer> {
                     LOGGER.debug("Processing key=" + record.key() + ",value=" + record.value() +
                             ",partition=" + record.partition() + ",offset=" + record.offset());
                     numReceived.getAndIncrement();
+
                     if (numReceived.get() == messageCount) {
-                        LOGGER.info("Consumer received {} messages", numReceived.get());
+                        LOGGER.debug("Consumer received {} messages", numReceived.get());
                         resultPromise.complete(numReceived.get());
                     }
                 });

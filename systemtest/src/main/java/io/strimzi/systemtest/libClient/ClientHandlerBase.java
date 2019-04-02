@@ -27,7 +27,6 @@ public abstract class ClientHandlerBase<T> extends AbstractVerticle {
 
     @Override
     public void start() {
-        LOGGER.info("let's start");
         handleClient();
     }
 
