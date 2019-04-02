@@ -28,5 +28,6 @@ AMQ Streams image for running the operators:
 * Cluster Operator
 * Topic Operator
 * User Operator
+* Kafka Initializer
 
 |===
