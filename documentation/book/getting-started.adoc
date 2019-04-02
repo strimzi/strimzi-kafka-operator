@@ -34,8 +34,6 @@ For more information about {OpenShiftName} and setting up {OpenShiftName} cluste
 
 include::con-product-downloads.adoc[leveloffset=+1]
 
-include::con-container-images.adoc[leveloffset=+1]
-
 include::assembly-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-kafka-cluster.adoc[leveloffset=+1]
@@ -51,3 +49,5 @@ include::assembly-getting-started-topic-operator.adoc[leveloffset=+1]
 include::assembly-getting-started-user-operator.adoc[leveloffset=+1]
 
 include::assembly-getting-started-strimzi-admin.adoc[leveloffset=+1]
+
+include::con-container-images.adoc[leveloffset=+1]

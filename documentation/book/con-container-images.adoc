@@ -3,7 +3,7 @@
 // getting-started.adoc
 
 [id='container-images-{context}']
-== Container images
+= Container images
 
 Container images for {ProductName} are available in the {DockerRepository}.
 The installation YAML files provided by {ProductName} will pull the images directly from the {DockerRepository}.
