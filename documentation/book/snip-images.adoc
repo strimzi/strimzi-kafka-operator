@@ -10,7 +10,7 @@ a|
 * {DockerOrg}/kafka:{DockerTag}-kafka-2.1.1
 
 a|
-AMQ Streams image for running Kafka, including:
+{ProductName} image for running Kafka, including:
 
 * Kafka Broker
 * Kafka Connect
