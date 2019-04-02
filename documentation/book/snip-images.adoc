@@ -14,7 +14,9 @@ a|
 
 * Kafka Broker
 * Kafka Connect
-* Kafka Mirror Maker.
+* Kafka Mirror Maker
+* Zookeeper
+* TLS Sidecars.
 
 A given image will only be need when running a Kafka broker of that version.
 
