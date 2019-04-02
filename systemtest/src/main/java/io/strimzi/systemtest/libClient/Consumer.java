@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntPredicate;
 
 
 public class Consumer extends ClientHandlerBase<Integer> {
@@ -20,8 +21,8 @@ public class Consumer extends ClientHandlerBase<Integer> {
     private final String topic;
     private final String clientName;
 
-    Consumer(Properties properties, CompletableFuture<Integer> resultPromise, int messageCount, String topic, String clientName) {
-        super(resultPromise, messageCount);
+    Consumer(Properties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
+        super(resultPromise, msgCntPredicate);
         this.properties = properties;
         this.topic = topic;
         this.clientName = clientName;
@@ -31,8 +32,7 @@ public class Consumer extends ClientHandlerBase<Integer> {
     protected void handleClient() {
         KafkaConsumer<String, String> consumer = KafkaConsumer.create(vertx, properties);
 
-        if (messageCount == -1) {
-            LOGGER.info("cekam na message: {}", clientName);
+        if (msgCntPredicate.test(-1)) {
             vertx.eventBus().consumer(clientName, msg -> {
                 LOGGER.info(msg.body());
                 LOGGER.info(msg.address());
@@ -46,11 +46,11 @@ public class Consumer extends ClientHandlerBase<Integer> {
         consumer.subscribe(topic, ar -> {
             if (ar.succeeded()) {
                 consumer.handler(record -> {
-                    LOGGER.debug("Processing key=" + record.key() + ",value=" + record.value() +
+                    LOGGER.info("Processing key=" + record.key() + ",value=" + record.value() +
                             ",partition=" + record.partition() + ",offset=" + record.offset());
                     numReceived.getAndIncrement();
 
-                    if (numReceived.get() == messageCount) {
+                    if (msgCntPredicate.test(numReceived.get())) {
                         LOGGER.debug("Consumer received {} messages", numReceived.get());
                         resultPromise.complete(numReceived.get());
                     }

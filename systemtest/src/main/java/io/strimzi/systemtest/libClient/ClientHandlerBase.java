@@ -8,21 +8,18 @@ import io.vertx.core.AbstractVerticle;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
+import java.util.function.IntPredicate;
 
 public abstract class ClientHandlerBase<T> extends AbstractVerticle {
 
     private static final Logger LOGGER = LogManager.getLogger(Producer.class);
-    private Properties properties;
     final CompletableFuture<T> resultPromise;
-    int messageCount;
+    IntPredicate msgCntPredicate;
 
-    public ClientHandlerBase(CompletableFuture<T> resultPromise, int messageCount) {
+    public ClientHandlerBase(CompletableFuture<T> resultPromise, IntPredicate msgCntPredicate) {
         this.resultPromise = resultPromise;
-        this.messageCount = messageCount;
+        this.msgCntPredicate = msgCntPredicate;
     }
 
     @Override

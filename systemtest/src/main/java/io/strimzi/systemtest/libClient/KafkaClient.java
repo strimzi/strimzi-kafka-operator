@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.IntPredicate;
 
 public class KafkaClient implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
@@ -44,7 +45,9 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName), resultPromise, messageCount, topicName, clientName));
+        IntPredicate msgCntPredicate = (x) -> x == messageCount;
+
+        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName), resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
@@ -69,7 +72,9 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, "SSL"), resultPromise, messageCount, topicName, clientName));
+        IntPredicate msgCntPredicate = (x) -> x == messageCount;
+
+        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
@@ -93,7 +98,9 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, "SSL"), resultPromise, -1, topicName, clientName));
+        IntPredicate msgCntPredicate = (x) -> x == -1;
+
+        vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
 
         return resultPromise;
     }
@@ -112,7 +119,9 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName), resultPromise, messageCount, topicName, clientName));
+        IntPredicate msgCntPredicate = (x) -> x == messageCount;
+
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName), resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
@@ -137,7 +146,9 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, "SSL"), resultPromise, messageCount, topicName, clientName));
+        IntPredicate msgCntPredicate = (x) -> x == messageCount;
+
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
 
         try {
             resultPromise.get(2, TimeUnit.MINUTES);
@@ -161,7 +172,9 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, "SSL"), resultPromise, -1, topicName, clientName));
+        IntPredicate msgCntPredicate = (x) -> x == -1;
+
+        vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
 
         return resultPromise;
     }

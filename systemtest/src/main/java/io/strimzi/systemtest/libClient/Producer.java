@@ -14,7 +14,7 @@ import io.vertx.kafka.client.producer.RecordMetadata;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-
+import java.util.function.IntPredicate;
 
 public class Producer extends ClientHandlerBase<Integer> {
     private static final Logger LOGGER = LogManager.getLogger(Producer.class);
@@ -23,8 +23,8 @@ public class Producer extends ClientHandlerBase<Integer> {
     private final String topic;
     private final String clientName;
 
-    Producer(Properties properties, CompletableFuture<Integer> resultPromise, int messageCount, String topic, String clientName) {
-        super(resultPromise, messageCount);
+    Producer(Properties properties, CompletableFuture<Integer> resultPromise, IntPredicate msgCntPredicate, String topic, String clientName) {
+        super(resultPromise, msgCntPredicate);
         this.properties = properties;
         this.topic = topic;
         this.clientName = clientName;
@@ -33,8 +33,10 @@ public class Producer extends ClientHandlerBase<Integer> {
     @Override
     protected void handleClient() {
         KafkaProducer<String, String> producer = KafkaProducer.create(vertx, properties);
+        LOGGER.info("producer vytvoren");
 
-        if (messageCount == -1) {
+        if (msgCntPredicate.test(-1)) {
+            LOGGER.info("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
             vertx.eventBus().consumer(clientName, msg -> {
                 LOGGER.info(msg.body());
                 LOGGER.info(msg.address());
@@ -47,13 +49,14 @@ public class Producer extends ClientHandlerBase<Integer> {
                 sendNext(producer, topic);
             });
         } else {
+            LOGGER.info("XXXXXXXXXXXXXXXXXX");
             sendNext(producer, topic);
         }
 
     }
 
     private void sendNext(KafkaProducer<String, String> producer, String topic) {
-        if (numSent.get() != messageCount) {
+        if (msgCntPredicate.negate().test(numSent.get())) {
 
             KafkaProducerRecord<String, String> record =
                     KafkaProducerRecord.create(topic, "message_" + numSent.get());
@@ -61,18 +64,19 @@ public class Producer extends ClientHandlerBase<Integer> {
             producer.write(record, done -> {
                 if (done.succeeded()) {
                     RecordMetadata recordMetadata = done.result();
-                    LOGGER.debug("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
+                    LOGGER.info("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
                             ", partition=" + recordMetadata.getPartition() +
                             ", offset=" + recordMetadata.getOffset());
 
                     numSent.getAndIncrement();
 
-                    if (numSent.get() == messageCount) {
+                    if (msgCntPredicate.test(numSent.get())) {
                         LOGGER.info("Producer sent {} messages", numSent.get());
                         resultPromise.complete(numSent.get());
                     }
 
-                    if (messageCount != -1) {
+                    if (msgCntPredicate.negate().test(-1)) {
+                        LOGGER.info("YYYYYYYYY");
                         sendNext(producer, topic);
                     }
 

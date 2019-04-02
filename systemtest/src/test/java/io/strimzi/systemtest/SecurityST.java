@@ -333,7 +333,6 @@ class SecurityST extends AbstractST {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
             throw e;
-
         } finally {
             testClient.close();
         }
@@ -430,10 +429,6 @@ class SecurityST extends AbstractST {
         assertThat("Received same as sent", produced, is(consumed));
 
 
-
-//        assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
-//        assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-//
 //        waitForClusterAvailability(userName);
     }
 
