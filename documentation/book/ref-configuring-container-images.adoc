@@ -51,7 +51,7 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 . `{DockerZookeeperStunnel}` container image.
 * For Topic Operator:
 . Container image specified in the `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
-.** `{DockerTopicOperator}` container image.
+. `{DockerTopicOperator}` container image.
 * For User Operator:
 . Container image specified in the `STRIMZI_DEFAULT_USER_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerUserOperator}` container image.
