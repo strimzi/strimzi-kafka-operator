@@ -16,7 +16,7 @@ a|
 * Kafka Connect
 * Kafka Mirror Maker
 * Zookeeper
-* TLS Sidecars.
+* TLS Sidecars
 
 |Operator
 a|
