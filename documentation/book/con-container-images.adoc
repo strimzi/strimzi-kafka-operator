@@ -3,7 +3,7 @@
 // getting-started.adoc
 
 [id='container-images-{context}']
-== Container image deployment
+== Container images
 
 We recommend that you deploy {ProductName} using the YAML files provided. However you can deploy {ProductName} using container images.
 
