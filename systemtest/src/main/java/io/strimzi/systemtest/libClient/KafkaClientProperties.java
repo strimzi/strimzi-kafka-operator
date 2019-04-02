@@ -32,15 +32,29 @@ import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapService
 import static io.strimzi.test.BaseITST.CLIENT;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class KafkaCLientProperties {
+class KafkaClientProperties {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaCLientProperties.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaClientProperties.class);
 
-    public static Properties createProducerProperties(String namespace, String clusterName) {
+    /**
+     * Create producer properties with PLAINTEXT security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @return producer properties
+     */
+    static Properties createProducerProperties(String namespace, String clusterName) {
         return createProducerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL);
     }
 
-    public static Properties createProducerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
+    /**
+     * Create producer properties with SSL security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param userName user name for authorization
+     * @param securityProtocol security protocol
+     * @return producer configuration
+     */
+    static Properties createProducerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
         Properties producerProperties = new Properties();
         producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 getExternalBootstrapConnect(namespace, clusterName));
@@ -57,24 +71,24 @@ public class KafkaCLientProperties {
     }
 
     /**
-     *
-     * @param namespace
-     * @param clusterName
-     * @return
+     * Create consumer properties with SSL security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @return consumer configuration
      */
-    public static Properties createConsumerProperties(String namespace, String clusterName) {
+    static Properties createConsumerProperties(String namespace, String clusterName) {
         return createConsumerProperties(namespace, clusterName, "", CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL);
     }
 
     /**
-     *
-     * @param namespace
-     * @param clusterName
-     * @param userName
-     * @param securityProtocol
-     * @return
+     * Create consumer properties with SSL security
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param userName user name for authorization
+     * @param securityProtocol security protocol
+     * @return consumer configuration
      */
-    public static Properties createConsumerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
+    static Properties createConsumerProperties(String namespace, String clusterName, String userName, String securityProtocol) {
         Properties consumerProperties = new Properties();
         consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
                 "my-group-" + new Random().nextInt(Integer.MAX_VALUE));
@@ -92,18 +106,18 @@ public class KafkaCLientProperties {
     }
 
     /**
-     *
-     * @param namespace
-     * @param clusterName
-     * @param userName
-     * @return
+     * Create properties which are same pro producer and consumer
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param userName user name for authorization
+     * @return shared client properties
      */
     private static Properties sharedClientProperties(String namespace, String clusterName, String userName) {
         Properties properties = new Properties();
 
         try {
             String tsPassword = "foo";
-            File tsFile = File.createTempFile(KafkaCLientProperties.class.getName(), ".truststore");
+            File tsFile = File.createTempFile(KafkaClientProperties.class.getName(), ".truststore");
             tsFile.deleteOnExit();
             KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
             ts.load(null, tsPassword.toCharArray());
@@ -157,10 +171,10 @@ public class KafkaCLientProperties {
     }
 
     /**
-     *
-     * @param namespace
-     * @param clusterName
-     * @return
+     * Get external bootstrap connection
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @return bootstrap url as string
      */
     private static String getExternalBootstrapConnect(String namespace, String clusterName) {
         if (CLIENT.isAdaptable(OpenShiftClient.class)) {
@@ -186,26 +200,26 @@ public class KafkaCLientProperties {
     }
 
     /**
-     *
-     * @param ca
-     * @param cert
-     * @param key
-     * @param password
-     * @return
+     * Create keystore
+     * @param ca certificate authority
+     * @param cert certificate
+     * @param key key
+     * @param password password
+     * @return keystore location as File
      * @throws IOException
      * @throws InterruptedException
      */
     private static File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
-        File caFile = File.createTempFile(KafkaCLientProperties.class.getName(), ".crt");
+        File caFile = File.createTempFile(KafkaClientProperties.class.getName(), ".crt");
         caFile.deleteOnExit();
         Files.write(caFile.toPath(), ca);
-        File certFile = File.createTempFile(KafkaCLientProperties.class.getName(), ".crt");
+        File certFile = File.createTempFile(KafkaClientProperties.class.getName(), ".crt");
         certFile.deleteOnExit();
         Files.write(certFile.toPath(), cert);
-        File keyFile = File.createTempFile(KafkaCLientProperties.class.getName(), ".key");
+        File keyFile = File.createTempFile(KafkaClientProperties.class.getName(), ".key");
         keyFile.deleteOnExit();
         Files.write(keyFile.toPath(), key);
-        File keystore = File.createTempFile(KafkaCLientProperties.class.getName(), ".keystore");
+        File keystore = File.createTempFile(KafkaClientProperties.class.getName(), ".keystore");
         keystore.delete(); // Note horrible race condition, but this is only for testing
         //keystore.deleteOnExit();
         // RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $HOSTNAME -password pass:$2 -out $1

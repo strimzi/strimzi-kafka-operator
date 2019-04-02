@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class Consumer<T> extends ClientHandlerBase<Integer> {
+public class Consumer extends ClientHandlerBase<Integer> {
     private static final Logger LOGGER = LogManager.getLogger(Consumer.class);
     private Properties properties;
     private final AtomicInteger numReceived = new AtomicInteger(0);
@@ -23,27 +23,21 @@ public class Consumer<T> extends ClientHandlerBase<Integer> {
         super(resultPromise, messageCount);
         this.properties = properties;
         this.topic = topic;
-        LOGGER.info("creating consumer");
     }
 
     @Override
     protected void handleClient() {
         KafkaConsumer<String, String> consumer = KafkaConsumer.create(vertx, properties);
 
-        LOGGER.info("Subscribe");
         consumer.subscribe(topic, ar -> {
             if (ar.succeeded()) {
-                LOGGER.info("Create handler");
                 consumer.handler(record -> {
-                    LOGGER.info("Processing key=" + record.key() + ",value=" + record.value() +
+                    LOGGER.debug("Processing key=" + record.key() + ",value=" + record.value() +
                             ",partition=" + record.partition() + ",offset=" + record.offset());
                     numReceived.getAndIncrement();
-                    LOGGER.info("Received {}", numReceived.get());
                     if (numReceived.get() == messageCount) {
-                        LOGGER.info("Consumer sent {} messages", numReceived.get());
+                        LOGGER.info("Consumer received {} messages", numReceived.get());
                         resultPromise.complete(numReceived.get());
-                    } else {
-                        LOGGER.info("Not yet finished");
                     }
                 });
             } else {

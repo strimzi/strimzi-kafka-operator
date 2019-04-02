@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class Producer<T> extends ClientHandlerBase<Integer> {
+public class Producer extends ClientHandlerBase<Integer> {
     private static final Logger LOGGER = LogManager.getLogger(Producer.class);
     private Properties properties;
     private final AtomicInteger numSent = new AtomicInteger(0);
@@ -43,7 +43,7 @@ public class Producer<T> extends ClientHandlerBase<Integer> {
             producer.write(record, done -> {
                 if (done.succeeded()) {
                     RecordMetadata recordMetadata = done.result();
-                    LOGGER.info("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
+                    LOGGER.debug("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
                             ", partition=" + recordMetadata.getPartition() +
                             ", offset=" + recordMetadata.getOffset());
 

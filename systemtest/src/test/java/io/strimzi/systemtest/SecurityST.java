@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.libClient.KafkaClient;
 import io.strimzi.systemtest.utils.AvailabilityVerifier;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.annotations.OpenShiftOnly;
@@ -28,6 +29,10 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
@@ -43,6 +48,7 @@ import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -173,14 +179,15 @@ class SecurityST extends AbstractST {
     @Test
     @OpenShiftOnly
     @Tag(FLAKY)
-    void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException {
+    void testAutoRenewCaCertsTriggeredByAnno() throws InterruptedException, TimeoutException, ExecutionException {
         createClusterWithExternalRoute();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("", 1_000, TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        AvailabilityVerifier mp = waitForInitialAvailability(userName);
+//        AvailabilityVerifier mp = waitForInitialAvailability(userName);
+        waitForAvailability(userName);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
@@ -223,10 +230,10 @@ class SecurityST extends AbstractST {
                     initialCaCerts.get(secretName), value);
         }
 
-        waitForAvailability(mp);
-
-        AvailabilityVerifier.Result result = mp.stop(TIMEOUT_FOR_SEND_RECEIVE_MSG);
-        LOGGER.info("Producer/consumer stats during cert renewal {}", result);
+//        waitForAvailability(mp);
+//
+//        AvailabilityVerifier.Result result = mp.stop(TIMEOUT_FOR_SEND_RECEIVE_MSG);
+//        LOGGER.info("Producer/consumer stats during cert renewal {}", result);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
@@ -238,14 +245,16 @@ class SecurityST extends AbstractST {
                 LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems());
             });
 
-        mp = waitForInitialAvailability(bobUserName);
-        mp.stop(30_000);
+        waitForAvailability(bobUserName);
+
+//        mp = waitForInitialAvailability(bobUserName);
+//        mp.stop(30_000);
     }
 
     @Test
     @OpenShiftOnly
     @Tag(FLAKY)
-    void testAutoReplaceCaKeysTriggeredByAnno() throws InterruptedException {
+    void testAutoReplaceCaKeysTriggeredByAnno() throws InterruptedException, TimeoutException, ExecutionException {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
         resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
@@ -253,8 +262,9 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        AvailabilityVerifier mp = waitForInitialAvailability(aliceUserName);
-        mp.stop(30_000);
+        waitForAvailability(aliceUserName);
+//        AvailabilityVerifier mp = waitForInitialAvailability(aliceUserName);
+//        mp.stop(30_000);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
@@ -304,10 +314,11 @@ class SecurityST extends AbstractST {
                     initialCaKeys.get(secretName), value);
         }
 
-        mp = waitForInitialAvailability(aliceUserName);
+//        mp = waitForInitialAvailability(aliceUserName);
+        waitForAvailability(aliceUserName);
 
-        AvailabilityVerifier.Result result = mp.stop(30_000);
-        LOGGER.info("Producer/consumer stats during cert renewal {}", result);
+//        AvailabilityVerifier.Result result = mp.stop(30_000);
+//        LOGGER.info("Producer/consumer stats during cert renewal {}", result);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
@@ -316,22 +327,42 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        mp = waitForInitialAvailability(bobUserName);
-        mp.stop(30_000);
+//        mp = waitForInitialAvailability(bobUserName);
+//        mp.stop(30_000);
+        waitForAvailability(bobUserName);
     }
 
-    private AvailabilityVerifier waitForInitialAvailability(String userName) {
-        AvailabilityVerifier mp = new AvailabilityVerifier(CLIENT, NAMESPACE, CLUSTER_NAME, userName);
-        mp.start();
+//    private AvailabilityVerifier waitForInitialAvailability(String userName) {
+//        AvailabilityVerifier mp = new AvailabilityVerifier(CLIENT, NAMESPACE, CLUSTER_NAME, userName);
+//        mp.start();
+//
+//        TestUtils.waitFor("Some messages sent received", 1_000, TIMEOUT_FOR_SEND_RECEIVE_MSG,
+//            () -> {
+//                AvailabilityVerifier.Result stats = mp.stats();
+//                LOGGER.info("{}", stats);
+//                return stats.sent() > 0
+//                        && stats.received() > 0;
+//            });
+//        return mp;
+//    }
 
-        TestUtils.waitFor("Some messages sent received", 1_000, TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> {
-                AvailabilityVerifier.Result stats = mp.stats();
-                LOGGER.info("{}", stats);
-                return stats.sent() > 0
-                        && stats.received() > 0;
-            });
-        return mp;
+    private void waitForAvailability(String userName) {
+        int messageCount = 50;
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            resources().topic(CLUSTER_NAME, "my-topic-1").done();
+
+            Future producer = testClient.sendMessagesTls("my-topic-1", NAMESPACE, CLUSTER_NAME, userName, messageCount);
+            Future consumer = testClient.receiveMessagesTls("my-topic-1", NAMESPACE, CLUSTER_NAME, userName, messageCount);
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+        } finally {
+            testClient.close();
+        }
     }
 
 
@@ -404,7 +435,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    void testLoadbalancer() throws InterruptedException {
+    void testLoadbalancer() throws InterruptedException, TimeoutException, ExecutionException {
         createClusterWithExternalLoadbalancer();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
@@ -412,18 +443,20 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        AvailabilityVerifier mp = waitForInitialAvailability(userName);
+        waitForAvailability(userName);
 
-        waitForAvailability(mp);
-
-        AvailabilityVerifier.Result result = mp.stop(TIMEOUT_FOR_SEND_RECEIVE_MSG);
-        LOGGER.info("Producer/consumer stats during cert renewal {}", result);
+//        AvailabilityVerifier mp = waitForInitialAvailability(userName);
+//
+//        waitForAvailability(mp);
+//
+//        AvailabilityVerifier.Result result = mp.stop(TIMEOUT_FOR_SEND_RECEIVE_MSG);
+//        LOGGER.info("Producer/consumer stats during cert renewal {}", result);
     }
 
     @Test
     @OpenShiftOnly
     @Tag(REGRESSION)
-    void testAutoRenewCaCertsTriggerByExpiredCertificate() throws InterruptedException {
+    void testAutoRenewCaCertsTriggerByExpiredCertificate() throws InterruptedException, TimeoutException, ExecutionException {
         // 1. Create the Secrets already, and a certificate that's already expired
         String clusterCaKey = createSecret("cluster-ca.key", clusterCaKeySecretName(CLUSTER_NAME), "ca.key");
         String clusterCaCert = createSecret("cluster-ca.crt", clusterCaCertificateSecretName(CLUSTER_NAME), "ca.crt");
@@ -437,7 +470,9 @@ class SecurityST extends AbstractST {
         // Check if user exists
         waitTillSecretExists(userName);
 
-        AvailabilityVerifier mp = waitForInitialAvailability(userName);
+        waitForAvailability(userName);
+
+//        AvailabilityVerifier mp = waitForInitialAvailability(userName);
 
         // Wait until the certificates have been replaced
         waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(CLUSTER_NAME));
@@ -445,10 +480,12 @@ class SecurityST extends AbstractST {
         // Wait until the pods are all up and ready
         waitForClusterStability();
 
-        waitForAvailability(mp);
+        waitForAvailability(userName);
 
-        AvailabilityVerifier.Result result = mp.stop(TIMEOUT_FOR_SEND_RECEIVE_MSG);
-        LOGGER.info("Producer/consumer stats during cert renewal {}", result);
+//        waitForAvailability(mp);
+
+//        AvailabilityVerifier.Result result = mp.stop(TIMEOUT_FOR_SEND_RECEIVE_MSG);
+//        LOGGER.info("Producer/consumer stats during cert renewal {}", result);
     }
 
     private void waitForClusterStability() {

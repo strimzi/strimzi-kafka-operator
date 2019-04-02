@@ -142,7 +142,6 @@ class UserST extends AbstractST {
                 .withNewKafkaListenerExternalLoadBalancer()
                 .endKafkaListenerExternalLoadBalancer()
                 .endListeners()
-                .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
                 .endSpec().build()).done();
 
