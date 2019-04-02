@@ -28,7 +28,7 @@ sed -i '' 's/namespace: .\*/namespace: _my-namespace_/' install/cluster-operator
 . Edit the file `install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml` and in the environment variable `STRIMZI_NAMESPACE` list all the {Namespaces} where Cluster Operator should watch for resources.
 For example:
 +
-[source,yaml]
+[source,yaml,subs="attributes"]
 ----
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -38,7 +38,7 @@ spec:
       serviceAccountName: strimzi-cluster-operator
       containers:
       - name: strimzi-cluster-operator
-        image: strimzi/cluster-operator:latest
+        image: {DockerClusterOperator}
         imagePullPolicy: IfNotPresent
         env:
         - name: STRIMZI_NAMESPACE
