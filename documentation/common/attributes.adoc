@@ -79,10 +79,17 @@
 :DockerTag: {ProductVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]
 :DockerZookeeper: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerZookeeperStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafkaImage: strimzi/kafka
 :DockerKafka: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafkaStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaConnect: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaConnectS2I: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerTopicController: strimzi/kafka:{DockerTag}
+:DockerClusterOperator: strimzi/operator:{DockerTag}
+:DockerKafkaInit: strimzi/operator:{DockerTag}
+:DockerTopicOperator: strimzi/operator:{DockerTag}
+:DockerUserOperator: strimzi/operator:{DockerTag}
+:DockerEntityOperatorStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerImageUser: kafka:kafka
 
 // API Versions

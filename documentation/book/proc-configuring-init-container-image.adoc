@@ -10,7 +10,7 @@ The container image which will be used for this container can be configured usin
 When the `brokerRackInitImage` field is missing, the following images will be used (in the order of priority):
 
 . Container image specified in `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable in Cluster Operator configuration.
-. `strimzi/kafka-init:latest` container image.
+. `{DockerKafkaInit}` container image.
 
 WARNING: Overriding container images is recommended only in situations where you need to use a different container registry.
 For example, if your network does not allow access to the container repository used by {ProductName}, you should either copy the {ProductName} images or build them from source.
