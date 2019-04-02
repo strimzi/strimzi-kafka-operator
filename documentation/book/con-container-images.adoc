@@ -3,13 +3,21 @@
 // getting-started.adoc
 
 [id='container-images-{context}']
-== Container image deployment
-
-We recommend that you deploy {ProductName} using the YAML files provided. However you can deploy {ProductName} using container images.
+== Container image
 
 Container images for {ProductName} are available in the {DockerRepository}.
+The installation YAML files provided by {ProductName} will pull the images directly from the {DockerRepository}.
 
-If you choose this approach, you must deploy the Kafka and Operator image. Choose the Kafka image according to the appropriate version.
+If you do not have access to the {DockerRepository} or want to use your own container repository:
+
+. Pull _all_ container images listed here
+. Push them into your own registry
+. Update the image names in the installation YAML files
+
+NOTE: Each Kafka version supported for the release has a separate image.
+
+//dev-generated content, do not modify
+include::snip-images.adoc[]
 
 NOTE: Each Kafka version supported for the release has a separate image.
 
