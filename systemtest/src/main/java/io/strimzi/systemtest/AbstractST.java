@@ -53,6 +53,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
@@ -337,11 +338,15 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     }
 
-    protected void assertResources(String namespace, String podName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
+    protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = CLIENT.pods().inNamespace(namespace).withName(podName).get();
         assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-            CLIENT.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
-        Container container = po.getSpec().getContainers().get(0);
+                CLIENT.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
+
+        Optional optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
+        assertTrue(optional.isPresent(), "Not found an expected container " + containerName);
+
+        Container container = (Container) optional.get();
         Map<String, Quantity> limits = container.getResources().getLimits();
         assertEquals(memoryLimit, limits.get("memory").getAmount());
         assertEquals(cpuLimit, limits.get("cpu").getAmount());
