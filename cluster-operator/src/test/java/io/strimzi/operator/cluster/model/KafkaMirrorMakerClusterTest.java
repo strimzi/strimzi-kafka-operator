@@ -577,11 +577,11 @@ public class KafkaMirrorMakerClusterTest {
 
     @Test
     public void testResources() {
-        Map <String, Quantity> requests = new HashMap<>(2);
+        Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
 
-        Map <String, Quantity> limits = new HashMap<>(2);
+        Map<String, Quantity> limits = new HashMap<>(2);
         limits.put("cpu", new Quantity("500m"));
         limits.put("memory", new Quantity("1024Mi"));
 
