@@ -95,10 +95,10 @@ oc label secret _<ca-key-secret>_ strimzi.io/kind=Kafka strimzi.io/cluster=_<my-
 . Create the `Kafka` resource for your cluster, configuring either the `Kafka.spec.clusterCa` or the `Kafka.spec.clientsCa` object to _not_ use generated CAs:
 +
 .Example fragment `Kafka` resource configuring the cluster CA to use certificates you supply for yourself
-[source,yaml]
+[source,yaml,subs="attributes"]
 ----
 kind: Kafka
-version: v1alpha1
+version: {KafkaApiVersion}
 spec:
   # ...
   clusterCa:

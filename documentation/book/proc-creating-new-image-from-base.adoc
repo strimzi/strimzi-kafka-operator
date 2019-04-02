@@ -37,7 +37,7 @@ USER {DockerImageUser}
 +
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect-cluster
