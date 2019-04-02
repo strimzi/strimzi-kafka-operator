@@ -8,7 +8,7 @@
 
 . Edit the YAML file to specify the loggers and their level for the required components. For example:
 +
-[source,yaml,subs=+quotes]
+[source,yaml,subs="+quotes,+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
