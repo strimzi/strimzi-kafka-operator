@@ -52,7 +52,7 @@ public class KafkaSetOperator extends StatefulSetOperator {
             log.debug("Changed labels => needs rolling update");
             return true;
         }
-        if (diff.changesSpecTemplateSpec()) {
+        if (diff.changesSpecTemplate()) {
             log.debug("Changed template spec => needs rolling update");
             return true;
         }

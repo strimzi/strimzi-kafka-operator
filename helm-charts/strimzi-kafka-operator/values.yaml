@@ -86,3 +86,4 @@ readinessProbe:
 # imageRepositoryOverride: foobar
 # Override the docker image tag used by all Strimzi images
 # imageTagOverride: latest
+createGlobalResources: true

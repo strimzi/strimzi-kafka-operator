@@ -16,7 +16,7 @@ DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
 clean: $(SUBDIRS) docu_clean
-$(DOCKER_TARGETS): helm_install $(SUBDIRS)
+$(DOCKER_TARGETS): crd_install helm_install $(SUBDIRS)
 release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg release_helm_repo docu_clean
 
 next_version:
@@ -144,6 +144,8 @@ systemtests:
 	./systemtest/scripts/run_tests.sh $(SYSTEMTEST_ARGS)
 
 helm_install: helm-charts
+
+crd_install: install
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)

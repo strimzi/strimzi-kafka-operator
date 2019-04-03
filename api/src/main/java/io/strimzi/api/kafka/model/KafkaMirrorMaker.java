@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
@@ -24,12 +23,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 
-@JsonDeserialize(
-        using = JsonDeserializer.None.class
-)
+@JsonDeserialize
 @Crd(
         apiVersion = KafkaMirrorMaker.CRD_API_VERSION,
         spec = @Crd.Spec(
@@ -40,7 +39,41 @@ import static java.util.Collections.singletonList;
                 ),
                 group = KafkaMirrorMaker.RESOURCE_GROUP,
                 scope = KafkaMirrorMaker.SCOPE,
-                version = KafkaMirrorMaker.VERSION
+                version = KafkaConnectS2I.V1BETA1,
+                versions = {
+                        @Crd.Spec.Version(
+                                name = KafkaMirrorMaker.V1BETA1,
+                                served = true,
+                                storage = true
+                        ),
+                        @Crd.Spec.Version(
+                                name = KafkaMirrorMaker.V1ALPHA1,
+                                served = true,
+                                storage = false
+                        )
+                },
+                additionalPrinterColumns = {
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Desired replicas",
+                                description = "The desired number of Kafka Mirror Maker replicas",
+                                jsonPath = ".spec.replicas",
+                                type = "integer"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Consumer Bootstrap Servers",
+                                description = "The boostrap servers for the consumer",
+                                jsonPath = ".spec.consumer.bootstrapServers",
+                                type = "string",
+                                priority = 1
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Producer Bootstrap Servers",
+                                description = "The boostrap servers for the producer",
+                                jsonPath = ".spec.producer.bootstrapServers",
+                                type = "string",
+                                priority = 1
+                        ),
+                }
         )
 )
 @Buildable(
@@ -58,7 +91,9 @@ public class KafkaMirrorMaker extends CustomResource implements UnknownPropertyP
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
-    public static final String VERSION = "v1alpha1";
+    public static final String V1ALPHA1 = "v1alpha1";
+    public static final String V1BETA1 = "v1beta1";
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaMirrorMaker";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";

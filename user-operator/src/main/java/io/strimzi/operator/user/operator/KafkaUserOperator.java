@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -32,7 +31,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
@@ -167,7 +165,7 @@ public class KafkaUserOperator {
     /**
      * Reconcile assembly resources in the given namespace having the given {@code name}.
      * Reconciliation works by getting the assembly resource (e.g. {@code KafkaUser}) in the given namespace with the given name and
-     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
+     * comparing with the corresponding resource.
      */
     public final void reconcile(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
@@ -227,7 +225,7 @@ public class KafkaUserOperator {
     /**
      * Reconcile User resources in the given namespace having the given selector.
      * Reconciliation works by getting the KafkaUSer custom resources in the given namespace with the given selector and
-     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
+     * comparing with the corresponding resource.
      *
      * @param trigger A description of the triggering event (timer or watch), used for logging
      * @param namespace The namespace
@@ -237,14 +235,6 @@ public class KafkaUserOperator {
         List<KafkaUser> desiredResources = crdOperator.list(namespace, selector);
         Set<String> desiredNames = desiredResources.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", RESOURCE_KIND, trigger, selector, desiredNames);
-
-        Labels resourceSelector = selector.withKind(RESOURCE_KIND);
-        List<? extends HasMetadata> resources = getResources(namespace, resourceSelector);
-        Set<String> resourceNames = resources.stream()
-                .filter(r -> !r.getKind().equals(RESOURCE_KIND)) // exclude desired resource
-                .map(r -> ((HasMetadata) r).getMetadata().getName())
-                .collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", RESOURCE_KIND, trigger, resourceSelector, resourceNames);
 
         CountDownLatch outerLatch = new CountDownLatch(1);
 
@@ -260,7 +250,6 @@ public class KafkaUserOperator {
                 if (res.succeeded()) {
                     log.debug("reconcileAll({}, {}): User with ACLs: {}", RESOURCE_KIND, trigger, res.result());
                     desiredNames.addAll((Collection<? extends String>) res.result());
-                    desiredNames.addAll(resourceNames);
                     desiredNames.addAll(scramShaCredentialOperator.list());
 
                     // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
@@ -283,19 +272,6 @@ public class KafkaUserOperator {
             });
 
         return outerLatch;
-    }
-
-    /**
-     * Gets all resources relevant to KafkaUser
-     *
-     * @param namespace Namespace where to search for resources
-     * @param selector  Labels which the resources should have
-     * @return
-     */
-    private List<HasMetadata> getResources(String namespace, Labels selector) {
-        List<HasMetadata> result = new ArrayList<>();
-        result.addAll(secretOperations.list(namespace, selector));
-        return result;
     }
 
     /**

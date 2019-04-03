@@ -162,6 +162,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         kafkaMirrorMakerCluster.setReplicas(kafkaMirrorMaker.getSpec() != null && kafkaMirrorMaker.getSpec().getReplicas() > 0 ? kafkaMirrorMaker.getSpec().getReplicas() : DEFAULT_REPLICAS);
 
+        kafkaMirrorMakerCluster.setResources(kafkaMirrorMaker.getSpec().getResources());
+
         kafkaMirrorMakerCluster.setWhitelist(kafkaMirrorMaker.getSpec().getWhitelist());
         kafkaMirrorMakerCluster.setProducer(kafkaMirrorMaker.getSpec().getProducer());
         kafkaMirrorMakerCluster.setConsumer(kafkaMirrorMaker.getSpec().getConsumer());

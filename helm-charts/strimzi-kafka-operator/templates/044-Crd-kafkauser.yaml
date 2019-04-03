@@ -1,3 +1,4 @@
+{{- if .Values.createGlobalResources -}}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -10,7 +11,14 @@ metadata:
     heritage: '{{ .Release.Service }}'
 spec:
   group: kafka.strimzi.io
-  version: v1alpha1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false
+  version: v1beta1
   scope: Namespaced
   names:
     kind: KafkaUser
@@ -19,6 +27,17 @@ spec:
     plural: kafkausers
     shortNames:
     - ku
+  additionalPrinterColumns:
+  - name: Authentication
+    description: How the user is authenticated
+    JSONPath: .spec.authentication.type
+    type: string
+    priority: 0
+  - name: Authorization
+    description: How the user is authorised
+    JSONPath: .spec.authorization.type
+    type: string
+    priority: 0
   validation:
     openAPIV3Schema:
       properties:
@@ -95,3 +114,4 @@ spec:
               - type
           required:
           - authentication
+{{- end -}}

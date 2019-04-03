@@ -13,7 +13,7 @@ include::frag-cluster-operator-namespace-sed.adoc[]
 
 .Procedure
 
-. Deploy the Cluster Operator
+* Deploy the Cluster Operator:
 +
 [source]
 ----

@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
@@ -23,12 +22,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 
-@JsonDeserialize(
-        using = JsonDeserializer.None.class
-)
+@JsonDeserialize
 @Crd(
         apiVersion = KafkaUser.CRD_API_VERSION,
         spec = @Crd.Spec(
@@ -39,7 +38,34 @@ import static java.util.Collections.singletonList;
                 ),
                 group = KafkaUser.RESOURCE_GROUP,
                 scope = KafkaUser.SCOPE,
-                version = KafkaUser.VERSION
+                version = KafkaUser.V1BETA1,
+                versions = {
+                        @Crd.Spec.Version(
+                                name = KafkaUser.V1BETA1,
+                                served = true,
+                                storage = true
+                        ),
+                        @Crd.Spec.Version(
+                                name = KafkaUser.V1ALPHA1,
+                                served = true,
+                                storage = false
+                        )
+                },
+                additionalPrinterColumns = {
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Authentication",
+                                description = "How the user is authenticated",
+                                jsonPath = ".spec.authentication.type",
+                                type = "string"
+                        ),
+                        @Crd.Spec.AdditionalPrinterColumn(
+                                name = "Authorization",
+                                description = "How the user is authorised",
+                                jsonPath = ".spec.authorization.type",
+                                type = "string"
+                        )
+                }
+
         )
 )
 @Buildable(
@@ -56,7 +82,9 @@ public class KafkaUser extends CustomResource implements UnknownPropertyPreservi
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
-    public static final String VERSION = "v1alpha1";
+    public static final String V1ALPHA1 = "v1alpha1";
+    public static final String V1BETA1 = "v1beta1";
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaUser";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";

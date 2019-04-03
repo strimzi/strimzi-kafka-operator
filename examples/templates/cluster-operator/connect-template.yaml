@@ -75,7 +75,7 @@ parameters:
   name: HEALTHCHECK_TIMEOUT
   value: "5"
 objects:
-- apiVersion: kafka.strimzi.io/v1alpha1
+- apiVersion: kafka.strimzi.io/v1beta1
   kind: KafkaConnect
   metadata:
     name: ${CLUSTER_NAME}

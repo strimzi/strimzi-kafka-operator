@@ -6,7 +6,14 @@ metadata:
     app: strimzi
 spec:
   group: kafka.strimzi.io
-  version: v1alpha1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false
+  version: v1beta1
   scope: Namespaced
   names:
     kind: KafkaMirrorMaker
@@ -15,6 +22,22 @@ spec:
     plural: kafkamirrormakers
     shortNames:
     - kmm
+  additionalPrinterColumns:
+  - name: Desired replicas
+    description: The desired number of Kafka Mirror Maker replicas
+    JSONPath: .spec.replicas
+    type: integer
+    priority: 0
+  - name: Consumer Bootstrap Servers
+    description: The boostrap servers for the consumer
+    JSONPath: .spec.consumer.bootstrapServers
+    type: string
+    priority: 1
+  - name: Producer Bootstrap Servers
+    description: The boostrap servers for the producer
+    JSONPath: .spec.producer.bootstrapServers
+    type: string
+    priority: 1
   validation:
     openAPIV3Schema:
       properties:

@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
@@ -74,6 +75,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
@@ -522,28 +524,28 @@ class KafkaST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withResources(new ResourceRequirementsBuilder()
-                            .addToLimits("memory", new Quantity("2Gi"))
-                            .addToLimits("cpu", new Quantity("400m"))
-                            .addToRequests("memory", new Quantity("2Gi"))
-                            .addToRequests("cpu", new Quantity("400m"))
+                            .addToLimits("memory", new Quantity("1.5Gi"))
+                            .addToLimits("cpu", new Quantity("1"))
+                            .addToRequests("memory", new Quantity("1Gi"))
+                            .addToRequests("cpu", new Quantity("500m"))
                             .build())
                     .withNewJvmOptions()
                         .withXmx("1g")
-                        .withXms("1G")
+                        .withXms("512m")
                         .withServer(true)
                         .withXx(jvmOptionsXX)
                     .endJvmOptions()
                 .endKafka()
                 .editZookeeper()
                     .withResources(new ResourceRequirementsBuilder()
-                            .addToLimits("memory", new Quantity("1Gi"))
-                            .addToLimits("cpu", new Quantity("300m"))
-                            .addToRequests("memory", new Quantity("1Gi"))
-                            .addToRequests("cpu", new Quantity("300m"))
+                            .addToLimits("memory", new Quantity("1G"))
+                            .addToLimits("cpu", new Quantity("0.5"))
+                            .addToRequests("memory", new Quantity("0.5G"))
+                            .addToRequests("cpu", new Quantity("250m"))
                             .build())
                     .withNewJvmOptions()
-                        .withXmx("600m")
-                        .withXms("300m")
+                        .withXmx("1G")
+                        .withXms("512M")
                         .withServer(true)
                         .withXx(jvmOptionsXX)
                     .endJvmOptions()
@@ -551,40 +553,62 @@ class KafkaST extends AbstractST {
                 .withNewEntityOperator()
                     .withNewTopicOperator()
                         .withResources(new ResourceRequirementsBuilder()
-                                .addToLimits("memory", new Quantity("500M"))
-                                .addToLimits("cpu", new Quantity("300m"))
-                                .addToRequests("memory", new Quantity("500M"))
-                                .addToRequests("cpu", new Quantity("300m"))
+                                .addToLimits("memory", new Quantity("1024Mi"))
+                                .addToLimits("cpu", new Quantity("500m"))
+                                .addToRequests("memory", new Quantity("512Mi"))
+                                .addToRequests("cpu", new Quantity("0.25"))
                                 .build())
                     .endTopicOperator()
                     .withNewUserOperator()
                         .withResources(new ResourceRequirementsBuilder()
-                                .addToLimits("memory", new Quantity("500M"))
+                                .addToLimits("memory", new Quantity("512M"))
                                 .addToLimits("cpu", new Quantity("300m"))
-                                .addToRequests("memory", new Quantity("500M"))
+                                .addToRequests("memory", new Quantity("256M"))
                                 .addToRequests("cpu", new Quantity("300m"))
                                 .build())
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec().done();
 
-        assertResources(KUBE_CLIENT.namespace(), kafkaPodName(CLUSTER_NAME, 0),
-                "2Gi", "400m", "2Gi", "400m");
-        assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0),
-                "-Xmx1g", "-Xms1G", "-server", "-XX:+UseG1GC");
+        operationID = startTimeMeasuring(Operation.NEXT_RECONCILIATION);
 
-        assertResources(KUBE_CLIENT.namespace(), zookeeperPodName(CLUSTER_NAME, 0),
-                "1Gi", "300m", "1Gi", "300m");
+        // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
+        String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
+        String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+        Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zkSsName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaSsName);
+        Map<String, String> eoPods = StUtils.depSnapshot(CLIENT, NAMESPACE, eoDepName);
+
+        assertResources(KUBE_CLIENT.namespace(), kafkaPodName(CLUSTER_NAME, 0), "kafka",
+                "1536Mi", "1", "1Gi", "500m");
+        assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0),
+                "-Xmx1g", "-Xms512m", "-server", "-XX:+UseG1GC");
+
+        assertResources(KUBE_CLIENT.namespace(), zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
+                "1G", "500m", "500M", "250m");
         assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
-                "-Xmx600m", "-Xms300m", "-server", "-XX:+UseG1GC");
+                "-Xmx1G", "-Xms512M", "-server", "-XX:+UseG1GC");
 
         Optional<Pod> pod = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(entityOperatorDeploymentName(CLUSTER_NAME)))
                 .findFirst();
         assertTrue(pod.isPresent(), "EO pod does not exist");
 
-        assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(),
-                "500M", "300m", "500M", "300m");
+        assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(), "topic-operator",
+                "1Gi", "500m", "512Mi", "250m");
+        assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(), "user-operator",
+                "512M", "300m", "256M", "300m");
+
+        TestUtils.waitFor("Wait till reconciliation timeout", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+            () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), "\"Assembly reconciled\"").isEmpty());
+
+        // Checking no rolling update after last CO reconciliation
+        LOGGER.info("Checking no rolling update for Kafka cluster");
+        assertFalse(StUtils.ssHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods));
+        assertFalse(StUtils.ssHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods));
+        assertFalse(StUtils.depHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods));
+        TimeMeasuringSystem.stopOperation(operationID);
     }
 
     @Test

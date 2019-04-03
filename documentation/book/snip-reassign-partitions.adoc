@@ -147,7 +147,7 @@ kubectl exec my-cluster-kafka-0 -c kafka -it -- \
 ----
 endif::Kubernetes[]
 +
-For example, on {OpenShift},
+For example, on {OpenShiftName},
 +
 [source,shell,subs=+quotes]
 ----

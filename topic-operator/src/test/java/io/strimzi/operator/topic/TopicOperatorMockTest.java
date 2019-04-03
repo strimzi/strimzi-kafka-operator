@@ -77,6 +77,7 @@ public class TopicOperatorMockTest {
         m.put(io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
         m.put(io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(io.strimzi.operator.topic.Config.NAMESPACE.key, "myproject");
+        m.put(io.strimzi.operator.topic.Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000");
         session = new Session(kubeClient, new io.strimzi.operator.topic.Config(m));
 
         Async async = context.async();
@@ -213,7 +214,7 @@ public class TopicOperatorMockTest {
     private Config waitUntilTopicInKafka(String topicName, Predicate<Config> p) {
         ConfigResource configResource = new ConfigResource(ConfigResource.Type.TOPIC, topicName);
         AtomicReference<Config> ref = new AtomicReference<>();
-        waitFor("Creation of topic " + topicName, 1_000, 10_000, () -> {
+        waitFor("Creation of topic " + topicName, 1_000, 60_000, () -> {
             try {
                 Map<ConfigResource, Config> descriptionMap = adminClient.describeConfigs(asList(configResource)).all().get();
                 Config desc = descriptionMap.get(configResource);

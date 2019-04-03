@@ -14,6 +14,7 @@
 
 Healthchecks are periodical tests which verify the health of an application.
 When a Healthcheck probe fails, {ProductPlatformName} assumes that the application is not healthy and attempts to fix it.
+
 {ProductPlatformName} supports two types of Healthcheck probes:
 
 * Liveness probes
@@ -22,7 +23,7 @@ When a Healthcheck probe fails, {ProductPlatformName} assumes that the applicati
 For more details about the probes, see {K8sLivenessReadinessProbes}.
 Both types of probes are used in {ProductName} components.
 
-Users can configure selected options for liveness and readiness probes
+Users can configure selected options for liveness and readiness probes.
 
 include::ref-healthchecks.adoc[leveloffset=+1]
 

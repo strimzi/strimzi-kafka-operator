@@ -1,3 +1,4 @@
+{{- if .Values.createGlobalResources -}}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -10,7 +11,14 @@ metadata:
     heritage: '{{ .Release.Service }}'
 spec:
   group: kafka.strimzi.io
-  version: v1alpha1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+  - name: v1alpha1
+    served: true
+    storage: false
+  version: v1beta1
   scope: Namespaced
   names:
     kind: KafkaTopic
@@ -19,6 +27,17 @@ spec:
     plural: kafkatopics
     shortNames:
     - kt
+  additionalPrinterColumns:
+  - name: Partitions
+    description: The desired number of partitions in the topic
+    JSONPath: .spec.partitions
+    type: integer
+    priority: 0
+  - name: Replication factor
+    description: The desired number of replicas of each partition
+    JSONPath: .spec.replicas
+    type: integer
+    priority: 0
   validation:
     openAPIV3Schema:
       properties:
@@ -39,3 +58,4 @@ spec:
           required:
           - partitions
           - replicas
+{{- end -}}
