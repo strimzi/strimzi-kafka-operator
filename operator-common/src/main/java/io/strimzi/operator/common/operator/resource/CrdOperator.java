@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
@@ -57,7 +58,7 @@ public class CrdOperator<C extends KubernetesClient,
         try {
             String baseUrl = this.client.getMasterUrl().toString();
             OkHttpClient client = this.client.adapt(OkHttpClient.class);
-            RequestBody postBody = RequestBody.create(OperationSupport.JSON, resource.toString());
+            RequestBody postBody = RequestBody.create(OperationSupport.JSON, new ObjectMapper().writeValueAsString(resource));
             Request request = new Request.Builder().put(postBody).url(
                     baseUrl + "apis/kafka.strimzi.io/v1beta1/namespaces/" + resource.getMetadata().getNamespace()
                     + "/kafkas/" + resource.getMetadata().getName() + "/status").build();
