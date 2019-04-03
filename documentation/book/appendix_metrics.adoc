@@ -3,7 +3,7 @@
 == Metrics
 
 This section describes how to monitor {ProductName} Kafka and ZooKeeper clusters using Grafana dashboards.
-To run the example dashboards you must configure a Prometheus server and add the appropriate https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter] rules to your Kafka cluster resource.
+To run the example dashboards you must configure a Prometheus server and add the appropriate xref:assembly-deployment-configuration-kafka-{context}[JMX exporter configuration] to your Kafka cluster resource.
 
 WARNING: The resources referenced in this section serve as a good starting point for setting up monitoring, but they are provided as an example only.
 If you require further support on configuration and running Prometheus or Grafana in production then please reach out to their respective communities.
@@ -14,8 +14,8 @@ endif::InstallationAppendix[]
 
 === Kafka Metrics Configuration
 
-{ProductName} uses the https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter] to export JMX metrics from Kafka and ZooKeeper to a Prometheus HTTP metrics endpoint that is scraped by Prometheus server.
-The Grafana dashboard relies on the Kafka and ZooKeeper Prometheus JMX Exporter relabeling rules defined in the example `Kafka` resource configuration in https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml[`kafka-metrics.yaml`].
+{ProductName} uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to export JMX metrics from Kafka and ZooKeeper to a Prometheus HTTP metrics endpoint that is scraped by Prometheus server.
+The Grafana dashboard relies on the Kafka and ZooKeeper Prometheus JMX Exporter relabeling rules defined in the example `Kafka` resource configuration in link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/kafka/kafka-metrics.yaml[`kafka-metrics.yaml`^].
 Copy this configuration to your own `Kafka` resource definition, or run this example, in order to use the provided Grafana dashboards.
 
 ==== Deploying on {OpenShiftName}
@@ -37,11 +37,13 @@ endif::Kubernetes[]
 
 === Prometheus
 
-https://prometheus.io/[Prometheus] is an open-source set of components for systems monitoring and alerting. {ProductName} uses the https://github.com/coreos/prometheus-operator[CoreOS Prometheus Operator] to run Prometheus on Kubernetes. This Operator enables you to run a highly available Prometheus server that is suitable for use in production environments.
+link:https://prometheus.io/[Prometheus^] is an open-source set of components for systems monitoring and alerting.
+{ProductName} uses the link:https://github.com/coreos/prometheus-operator[CoreOS Prometheus Operator^] to run Prometheus on Kubernetes.
+This Operator enables you to run a highly available Prometheus server that is suitable for use in production environments.
 
 ==== Deploying the Prometheus Operator on {OpenShiftName}
 
-To deploy the Prometheus Operator in your Kafka cluster, apply the `.yaml` files from the https://github.com/coreos/prometheus-operator/tree/master/example/rbac/prometheus-operator[Prometheus CoreOS repository].
+To deploy the Prometheus Operator in your Kafka cluster, apply the `.yaml` files from the link:https://github.com/coreos/prometheus-operator/tree/master/example/rbac/prometheus-operator[Prometheus CoreOS repository^].
 
 To use a different namespace than that specified in the repository files, use the following commands to download and edit the files from the repository:
 
@@ -51,7 +53,8 @@ curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/exam
 curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-service-account.yaml | sed -e 's/namespace: .*/namespace: _my-namespace_/' > prometheus-operator-service-account.yaml
 curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml > prometheus-operator-cluster-role.yaml
 
-If needed, you can remove the `securityContext` from the Prometheus Operator Deployment. You can either manually remove the `spec.template.spec.securityContext` property from the `prometheus-operator-deployment.yaml` file, or run the following command:
+If needed, you can remove the `securityContext` from the Prometheus Operator `Deployment`.
+You can either manually remove the `spec.template.spec.securityContext` property from the `prometheus-operator-deployment.yaml` file, or run the following command:
 [source,shell,subs="+quotes"]
 yq d -i prometheus-operator-deployment.yaml spec.template.spec.securityContext
 
@@ -62,8 +65,8 @@ oc apply -f prometheus-operator-cluster-role.yaml
 oc apply -f prometheus-operator-cluster-role-binding.yaml
 oc apply -f prometheus-operator-deployment.yaml
 
-
-The {ProductName} repository contains configuration files for the Prometheus server. When you apply these configuration files, the following resources are created in your Kafka cluster and managed by the Prometheus Operator. 
+The {ProductName} repository contains configuration files for the Prometheus server.
+When you apply these configuration files, the following resources are created in your {OpenShiftName} cluster and managed by the Prometheus Operator.
 
 * A `ClusterRole` that grants permissions to read the Prometheus health endpoints of the {OpenShiftName} system, including cAdvisor and the kubelet for container metrics. The Prometheus server configuration uses the {OpenShiftName} service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
 * A `ServiceAccount` for the Prometheus pods to run under.
@@ -73,12 +76,6 @@ The {ProductName} repository contains configuration files for the Prometheus ser
 * A `Secret` to manage additional Prometheus settings.
 * A `PrometheusRule` to manage alert rules for the Prometheus pod.
 * A `Prometheus` to manage the configuration of the Prometheus pod.
-
-Prometheus also provides an alerting system through the link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager] component.
-To enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`] file describes a `PrometheusRule` resource that defines sample alerting rules for Kafka and Zookeeper metrics.
-When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the Alertmanager which then uses the configured notification methods to notify the user.
-
-For more information about setting up alerting rules, see https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[Alerting Rules] in the Prometheus documentation.
 
 ==== Deploying the Prometheus Operator on {KubernetesName}
 
@@ -99,7 +96,7 @@ kubectl apply -f prometheus-operator-cluster-role.yaml
 kubectl apply -f prometheus-operator-cluster-role-binding.yaml
 kubectl apply -f prometheus-operator-deployment.yaml
 
-The {ProductName} repository contains configuration files for the Prometheus server. When you apply these configuration files, the following resources are created in your Kafka cluster and managed by the Prometheus Operator.
+The {ProductName} repository contains configuration files for the Prometheus server. When you apply these configuration files, the following resources are created in your {KubernetesName} cluster and managed by the Prometheus Operator.
 
 * A `ClusterRole` that grants permissions to read the Prometheus health endpoints of the {KubernetesName} system, including cAdvisor and the kubelet for container metrics. The Prometheus server configuration uses the {KubernetesName} service discovery feature in order to discover the pods in the cluster from which it gets metrics.  For this feature to work correctly, the service account used for running the Prometheus service pod must have access to the API server so it can retrieve the pod list.
 * A `ServiceAccount` for the Prometheus pods to run under.
@@ -110,15 +107,9 @@ The {ProductName} repository contains configuration files for the Prometheus ser
 * A `PrometheusRule` to manage alert rules for the Prometheus pod.
 * A `Prometheus` to manage the configuration of the Prometheus pod.
 
-Prometheus also provides an alerting system through the link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager] component.
-To enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`] file describes a `PrometheusRule` resource that defines sample alerting rules for Kafka and Zookeeper metrics.
-When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the Alertmanager which then uses the configured notification methods to notify the user.
-
-For more information about setting up alerting rules, see https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[Alerting Rules] in the Prometheus documentation.
-
 ==== Deploying Prometheus on {OpenShiftName}
 
-The provided `prometheus.yaml` file, together with the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
+The provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus.yaml[`prometheus.yaml`^] file, together with the Prometheus related resources, creates a `ClusterRoleBinding` in the `myproject` namespace.
 It also discovers an Alertmanager instance in the same namespace.
 If you are using a different namespace, download the resource file and update it using the following command:
 
@@ -150,6 +141,12 @@ oc login -u system:admin
 oc apply -f strimzi-service-monitor.yaml
 oc apply -f prometheus-rules.yaml
 oc apply -f prometheus.yaml
+
+Prometheus also provides an alerting system through the link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager^] component.
+To enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`^] file describes a `PrometheusRule` resource that defines sample alerting rules for Kafka and Zookeeper metrics.
+When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the Alertmanager which then uses the configured notification methods to notify the user.
+
+For more information about setting up alerting rules, see https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[Alerting Rules] in the Prometheus documentation.
 
 ifdef::Kubernetes[]
 ==== Deploying Prometheus on {KubernetesName}
@@ -186,6 +183,13 @@ To deploy these resources, run the following commands:
 kubectl apply -f strimzi-service-monitor.yaml
 kubectl apply -f prometheus-rules.yaml
 kubectl apply -f prometheus.yaml
+
+Prometheus also provides an alerting system through the link:https://prometheus.io/docs/alerting/alertmanager/[Alertmanager] component.
+To enable alerting, the provided link:https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/prometheus-rules.yaml[`prometheus-rules.yaml`] file describes a `PrometheusRule` resource that defines sample alerting rules for Kafka and Zookeeper metrics.
+When an alert condition is evaluated as true on the Prometheus server, it sends the alert data to the Alertmanager which then uses the configured notification methods to notify the user.
+
+For more information about setting up alerting rules, see link:https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/[Alerting Rules^] in the Prometheus documentation.
+
 
 endif::Kubernetes[]
 
