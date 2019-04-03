@@ -18,9 +18,9 @@ If you want to use the Topic Operator with a Kafka cluster that is not managed b
 
 . Ensure that the `Kafka.spec.entityOperator` object exists in the `Kafka` resource. This configures the Entity Operator.
 +
-[source,yaml,subs=+quotes]
+[source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster

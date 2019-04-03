@@ -25,9 +25,9 @@ Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML fil
 
 The cluster name is defined by the name of the resource and cannot be changed after the cluster has been deployed. To change the cluster name before you deploy the cluster, edit the `Kafka.metadata.name` property of the resource in the relevant YAML file.
 
-[source,yaml,subs=+quotes]
+[source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
