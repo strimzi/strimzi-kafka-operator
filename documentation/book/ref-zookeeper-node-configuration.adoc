@@ -5,9 +5,9 @@
 [id='ref-zookeeper-node-configuration-{context}']
 = Zookeeper configuration
 
-Zookeeper nodes can be configured using the `config` property in `Kafka.spec.zookeeper`.
-This property should contain the Zookeeper configuration options as keys.
-The values could be in one of the following JSON types:
+Zookeeper nodes are configured using the `config` property in `Kafka.spec.zookeeper`.
+This property contains the Zookeeper configuration options as keys.
+The values can be described using one of the following JSON types:
 
 * String
 * Number
@@ -24,8 +24,8 @@ Specifically, all configuration options with keys equal to or starting with one 
 * `quorum.auth`
 * `requireClientAuthScheme`
 
-When one of the forbidden options is present in the `config` property, it will be ignored and a warning message will be printed to the Custer Operator log file.
-All other options will be passed to Zookeeper.
+When one of the forbidden options is present in the `config` property, it is ignored and a warning message is printed to the Custer Operator log file.
+All other options are passed to Zookeeper.
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
 When invalid configuration is provided, the Zookeeper cluster might not start or might become unstable.

@@ -11,7 +11,7 @@
 = Connecting to Kafka brokers with Authentication
 
 By default, Kafka Mirror Maker will try to connect to Kafka brokers without any authentication.
-Authentication can be enabled in the `KafkaMirrorMaker` resource.
+Authentication is enabled through the `KafkaMirrorMaker` resource.
 
 include::con-kafka-mirror-maker-authentication.adoc[leveloffset=+1]
 

@@ -9,13 +9,13 @@
 [id='getting-started-{context}']
 = Getting started with {ProductName}
 
-{ProductName} works on all types of clusters, from public and private clouds on to local deployments intended for development.
+{ProductName} works on all types of clusters, from public and private clouds to local deployments intended for development.
 This guide expects that an {ProductPlatformName} cluster is available and the
 ifdef::Kubernetes[`kubectl` and]
 `oc` command-line tools are installed and configured to connect to the running cluster.
 
 ifndef::Downloading[]
-{ProductName} is based on Strimzi {StrimziVersion}. This chapter describes the procedures to deploy {ProductName} on {OpenShiftName} {OpenShiftVersion}. 
+{ProductName} is based on Strimzi {StrimziVersion}. This chapter describes the procedures to deploy {ProductName} on {OpenShiftName} {OpenShiftVersion}.
 endif::Downloading[]
 
 ifdef::InstallationAppendix[]

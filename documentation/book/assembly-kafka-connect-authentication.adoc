@@ -12,7 +12,7 @@
 = Connecting to Kafka brokers with Authentication
 
 By default, Kafka Connect will try to connect to Kafka brokers without any authentication.
-Authentication can be enabled in the `KafkaConnect` and `KafkaConnectS2I` resources.
+Authentication is enabled through the `KafkaConnect` and `KafkaConnectS2I` resources.
 
 include::con-kafka-connect-authentication.adoc[leveloffset=+1]
 

@@ -3,7 +3,7 @@
 // assembly-logging.adoc
 
 [id='kafka-inline-logging-{context}']
-= Using inline logging setting
+= Specifying inline logging
 .Procedure
 
 . Edit the YAML file to specify the loggers and their level for the required components. For example:

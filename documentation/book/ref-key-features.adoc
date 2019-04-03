@@ -5,11 +5,12 @@
 [id='key-features-{context}']
 = Kafka Key Features
 
-* Scalability and performance
-** Designed for horizontal scalability
-* Message ordering guarantee
-** At partition level
+* Designed for horizontal scalability
+* Message ordering guarantee at the partition level
 * Message rewind/replay
-** "Long term" storage
-** Allows to reconstruct application state by replaying the messages
-** Combined with compacted topics allows to use Kafka as key-value store
+** "Long term" storage allows the reconstruction of an application state by replaying the messages
+** Combines with compacted topics to use Kafka as a key-value store
+
+.Additional resources
+
+* For more information about Apache Kafka, see the http://kafka.apache.org[Apache Kafka website^].

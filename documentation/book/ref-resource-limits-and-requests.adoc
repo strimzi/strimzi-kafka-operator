@@ -24,10 +24,11 @@ Reserving the resources will ensure that they are always available.
 
 IMPORTANT: If the resource request is for more than the available free resources in the {ProductPlatformName} cluster, the pod will not be scheduled.
 
-Resource requests can be specified in the `request` property.
-The resource requests currently supported by {ProductName} are memory and CPU.
-Memory is specified under the property `memory`.
-CPU is specified under the property `cpu`.
+Resources requests are specified in the `requests` property.
+Resources requests currently supported by {ProductName}:
+
+* `cpu`
+* `memory`
 
 .An example showing resource request configuration
 [source,yaml,subs="attributes+"]
@@ -71,10 +72,11 @@ The limit is not reserved and might not be always available.
 The container can use the resources up to the limit only when they are available.
 The resource limits should be always higher than the resource requests.
 
-Resource limits can be specified in the `limits` property.
-The resource limits currently supported by {ProductName} are memory and CPU.
-Memory is specified under the property `memory`.
-CPU is specified under the property `cpu`.
+Resource limits are specified in the `limits` property.
+Resource limits currently supported by {ProductName}:
+
+* `cpu`
+* `memory`
 
 .An example showing resource limits configuration
 [source,yaml,subs="attributes+"]
@@ -155,7 +157,7 @@ resources:
 # ...
 ----
 
-For more details about the memory specification and additional supported units, see the {K8sMeaningOfMemory} website.
+For more details about the memory specification and additional supported units, see {K8sMeaningOfMemory}.
 
 == Additional resources
 

@@ -14,7 +14,7 @@ The label selector used to identify `KafkaTopics` to be managed by the operator.
 `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS`::
 The Zookeeper session timeout, in milliseconds.
 For example, `10000`.
-Default: `20000` (20 seconds).
+Default `20000` (20 seconds).
 `STRIMZI_KAFKA_BOOTSTRAP_SERVERS`::
 The list of Kafka bootstrap servers.
 This variable is mandatory.
@@ -24,9 +24,9 @@ This variable is mandatory.
 `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`::
 The interval between periodic reconciliations, in milliseconds.
 `STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS`::
-The number of attempts for getting topics metadata from Kafka.
+The number of attempts at getting topic metadata from Kafka.
 The time between each attempt is defined as an exponential back-off.
-You might want to increase this value when topic creation could take more time due to its larger size (that is, many partitions/replicas).
+Consider increasing this value when topic creation could take more time due to the number of partitions or replicas.
 Default `6`.
 `STRIMZI_LOG_LEVEL`::
 The level for printing logging messages.

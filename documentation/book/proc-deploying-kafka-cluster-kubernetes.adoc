@@ -5,7 +5,7 @@
 [id='deploying-kafka-cluster-kubernetes-{context}']
 = Deploying the Kafka cluster to {KubernetesName}
 
-The following procedure describes how to deploy an ephemeral or persistent Kafka cluster to {KubernetesName} on the command line.
+You can deploy an ephemeral or persistent Kafka cluster to {KubernetesName} on the command line.
 
 .Prerequisites
 

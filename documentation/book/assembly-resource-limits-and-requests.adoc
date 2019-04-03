@@ -13,13 +13,14 @@
 
 = CPU and memory resources
 
-For every deployed container, {ProductName} allows you to specify the resources which should be reserved for it and the maximum resources that can be consumed by it.
+For every deployed container, {ProductName} allows you to request specific resources and define the maximum consumption of those resources.
+
 {ProductName} supports two types of resources:
 
-* Memory
 * CPU
+* Memory
 
-{ProductName} is using the {ProductPlatformName} syntax for specifying CPU and memory resources.
+{ProductName} uses the {ProductPlatformName} syntax for specifying CPU and memory resources.
 
 include::ref-resource-limits-and-requests.adoc[leveloffset=+1]
 
