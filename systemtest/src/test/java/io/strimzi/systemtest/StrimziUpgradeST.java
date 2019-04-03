@@ -196,8 +196,8 @@ public class StrimziUpgradeST extends AbstractST {
             fail("There are no expected images");
         }
         String[] imagesArray = images.split("\\s*,\\s*");
-        String kafkaImage = imagesArray[0];
-        String zkImage = imagesArray[1];
+        String zkImage = imagesArray[0];
+        String kafkaImage = imagesArray[1];
         String uOImage = imagesArray[2];
         String tOImage = imagesArray[3];
 
@@ -253,6 +253,7 @@ public class StrimziUpgradeST extends AbstractST {
             List<Pod> pods1 = CLIENT.pods().inNamespace(NAMESPACE).withLabels(matchLabels).list().getItems();
             for (Pod pod : pods1) {
                 if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
+                    LOGGER.info("Expected image: {} \nCurrent image: {}", image, pod.getSpec().getContainers().get(container).getImage());
                     return false;
                 }
             }
