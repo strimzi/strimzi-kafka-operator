@@ -102,26 +102,26 @@ public @interface Crd {
          * The subresources of a custom resources that this is the definition for.
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
-        Subresources subresources();
+        Subresources subresources() default @Subresources(status = {});
 
         /**
          * The subresources of a custom resources that this is the definition for.
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         @interface Subresources {
-            Status status();
+            Status[] status();
 
             @interface Status {
                 String name();
             }
 
-            Scale scale();
-
-            @interface Scale {
-                String specReplicasPath();
-                String statusReplicasPath();
-                String labelSelectorPath();
-             }
+//            Scale scale();
+//
+//            @interface Scale {
+//                String specReplicasPath();
+//                String statusReplicasPath();
+//                String labelSelectorPath();
+//            }
         }
 
         /**
