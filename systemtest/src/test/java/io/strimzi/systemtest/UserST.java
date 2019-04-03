@@ -16,8 +16,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.List;
-
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -40,8 +38,6 @@ class UserST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                        .endKafkaListenerExternalLoadBalancer()
                         .editTls()
                             .withNewKafkaListenerAuthenticationTlsAuth()
                             .endKafkaListenerAuthenticationTlsAuth()
@@ -118,9 +114,5 @@ class UserST extends AbstractST {
     void teardownEnvironment() {
         testClassResources.deleteResources();
         teardownEnvForOperator();
-    }
-
-    @Override
-    void recreateTestEnv(String coNamespace, List<String> bindingsNamespaces) {
     }
 }

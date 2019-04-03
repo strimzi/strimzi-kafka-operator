@@ -45,7 +45,7 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        IntPredicate msgCntPredicate = (x) -> x == messageCount;
+        IntPredicate msgCntPredicate = x -> x == messageCount;
 
         vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName), resultPromise, msgCntPredicate, topicName, clientName));
 
@@ -72,7 +72,7 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        IntPredicate msgCntPredicate = (x) -> x == messageCount;
+        IntPredicate msgCntPredicate = x -> x == messageCount;
 
         vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
 
@@ -85,20 +85,20 @@ public class KafkaClient implements AutoCloseable {
     }
 
     /**
-     *
-     * @param topicName
-     * @param namespace
-     * @param clusterName
-     * @param userName
-     * @param clientName
-     * @return
+     * Send messages to external entrypoint until stop notification is received by producer. SSL used as a security protocol setting.
+     * @param topicName topic name
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param userName user name for authorization
+     * @param clientName client name
+     * @return future
      */
     public CompletableFuture<Integer> sendMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName) {
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        IntPredicate msgCntPredicate = (x) -> x == -1;
+        IntPredicate msgCntPredicate = x -> x == -1;
 
         vertx.deployVerticle(new Producer(KafkaClientProperties.createProducerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
 
@@ -119,7 +119,7 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        IntPredicate msgCntPredicate = (x) -> x == messageCount;
+        IntPredicate msgCntPredicate = x -> x == messageCount;
 
         vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName), resultPromise, msgCntPredicate, topicName, clientName));
 
@@ -146,7 +146,7 @@ public class KafkaClient implements AutoCloseable {
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        IntPredicate msgCntPredicate = (x) -> x == messageCount;
+        IntPredicate msgCntPredicate = x -> x == messageCount;
 
         vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
 
@@ -159,29 +159,34 @@ public class KafkaClient implements AutoCloseable {
     }
 
     /**
-     *
-     * @param topicName
-     * @param namespace
-     * @param clusterName
-     * @param userName
-     * @param clientName
-     * @return
+     * Receive messages from external entrypoint until stop notification is received by consumer. SSL used as a security protocol setting.
+     * @param topicName topic name
+     * @param namespace kafka namespace
+     * @param clusterName kafka cluster name
+     * @param userName user name for authorization
+     * @param clientName client name
+     * @return future
      */
     public CompletableFuture<Integer> receiveMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName) {
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
         Vertx vertx = VertxFactory.create();
         clients.put(clientName, vertx);
 
-        IntPredicate msgCntPredicate = (x) -> x == -1;
+        IntPredicate msgCntPredicate = x -> x == -1;
 
         vertx.deployVerticle(new Consumer(KafkaClientProperties.createConsumerProperties(namespace, clusterName, userName, "SSL"), resultPromise, msgCntPredicate, topicName, clientName));
 
         return resultPromise;
     }
 
+    /**
+     * Send notification to vert.x event bus
+     * @param clientName client name as a vert.x even bus address
+     * @param notification notification
+     */
     public void sendNotificationToClient(String clientName, String notification) {
         Vertx vertx = clients.get(clientName);
-        LOGGER.info("Sending {} to {}", notification, clientName);
+        LOGGER.debug("Sending {} to {}", notification, clientName);
         vertx.eventBus().publish(clientName, notification);
     }
 }

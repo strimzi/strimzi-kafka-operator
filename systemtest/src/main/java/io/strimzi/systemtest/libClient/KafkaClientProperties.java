@@ -1,3 +1,7 @@
+/*
+ * Copyright 2018, Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.systemtest.libClient;
 
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
@@ -146,14 +150,14 @@ class KafkaClientProperties {
                 Secret userSecret = CLIENT.secrets().inNamespace(namespace).withName(userName).get();
 
                 String clientsCaCert = userSecret.getData().get("ca.crt");
-                LOGGER.info(clientsCaCert);
+                LOGGER.debug("Clients CA cert: {}", clientsCaCert);
 
                 String userCaCert = userSecret.getData().get("user.crt");
                 String userCaKey = userSecret.getData().get("user.key");
                 String ksPassword = "foo";
                 properties.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, ksPassword);
-                LOGGER.info(userCaCert);
-                LOGGER.info(userCaKey);
+                LOGGER.debug("User CA cert: {}", userCaCert);
+                LOGGER.debug("User CA key: {}", userCaKey);
                 File ksFile = createKeystore(Base64.getDecoder().decode(clientsCaCert),
                         Base64.getDecoder().decode(userCaCert),
                         Base64.getDecoder().decode(userCaKey),

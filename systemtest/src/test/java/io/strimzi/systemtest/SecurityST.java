@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.libClient.KafkaClient;
-import io.strimzi.systemtest.utils.AvailabilityVerifier;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -29,7 +28,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -318,15 +316,14 @@ class SecurityST extends AbstractST {
         waitForClusterAvailability(bobUserName);
     }
 
-   private void waitForClusterAvailability(String userName) throws Exception {
+    private void waitForClusterAvailability(String userName) throws Exception {
         int messageCount = 50;
+        String topicName = "test-topic";
 
         KafkaClient testClient = new KafkaClient();
         try {
-            resources().topic(CLUSTER_NAME, "my-topic-1").done();
-
-            Future producer = testClient.sendMessagesTls("my-topic-1", NAMESPACE, CLUSTER_NAME, userName, messageCount);
-            Future consumer = testClient.receiveMessagesTls("my-topic-1", NAMESPACE, CLUSTER_NAME, userName, messageCount);
+            Future producer = testClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount);
+            Future consumer = testClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount);
 
             assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
             assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
@@ -400,36 +397,7 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-
-        String topicName = "my-topic-1";
-        String producerName = "producer-test";
-        String consumerName = "consumer-test";
-
-        KafkaClient testClient = new KafkaClient();
-        resources().topic(CLUSTER_NAME, topicName).done();
-
-        CompletableFuture producer = testClient.sendMessagesUntilNotification(topicName, NAMESPACE, CLUSTER_NAME, userName, producerName);
-        CompletableFuture consumer = testClient.receiveMessagesUntilNotification(topicName, NAMESPACE, CLUSTER_NAME, userName, consumerName);
-
-        LOGGER.info("Sleep...");
-        Thread.sleep(30000);
-        LOGGER.info("Wake up!");
-
-        testClient.sendNotificationToClient(producerName, "stop");
-        testClient.sendNotificationToClient(consumerName, "stop");
-
-        int produced = (int) producer.get(1, TimeUnit.MINUTES);
-        int consumed = (int) consumer.get(1, TimeUnit.MINUTES);
-
-        testClient.close();
-
-        LOGGER.info("Producer: {}", produced);
-        LOGGER.info("Consumer: {}", consumed);
-
-        assertThat("Received same as sent", produced, is(consumed));
-
-
-//        waitForClusterAvailability(userName);
+        waitForClusterAvailability(userName);
     }
 
     @Test

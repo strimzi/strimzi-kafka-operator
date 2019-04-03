@@ -34,10 +34,8 @@ public class Consumer extends ClientHandlerBase<Integer> {
 
         if (msgCntPredicate.test(-1)) {
             vertx.eventBus().consumer(clientName, msg -> {
-                LOGGER.info(msg.body());
-                LOGGER.info(msg.address());
                 if (msg.body().equals("stop")) {
-                    LOGGER.info("Received stop command! Received: {}", numReceived.get());
+                    LOGGER.debug("Received stop command! Consumed messages: {}", numReceived.get());
                     resultPromise.complete(numReceived.get());
                 }
             });
@@ -46,17 +44,17 @@ public class Consumer extends ClientHandlerBase<Integer> {
         consumer.subscribe(topic, ar -> {
             if (ar.succeeded()) {
                 consumer.handler(record -> {
-                    LOGGER.info("Processing key=" + record.key() + ",value=" + record.value() +
+                    LOGGER.debug("Processing key=" + record.key() + ",value=" + record.value() +
                             ",partition=" + record.partition() + ",offset=" + record.offset());
                     numReceived.getAndIncrement();
 
                     if (msgCntPredicate.test(numReceived.get())) {
-                        LOGGER.debug("Consumer received {} messages", numReceived.get());
+                        LOGGER.info("Consumer consumed {} messages", numReceived.get());
                         resultPromise.complete(numReceived.get());
                     }
                 });
             } else {
-                LOGGER.info("Consumer could not subscribe " + ar.cause().getMessage());
+                LOGGER.warn("Consumer could not subscribe " + ar.cause().getMessage());
                 resultPromise.completeExceptionally(ar.cause());
             }
         });

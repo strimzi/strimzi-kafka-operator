@@ -33,23 +33,16 @@ public class Producer extends ClientHandlerBase<Integer> {
     @Override
     protected void handleClient() {
         KafkaProducer<String, String> producer = KafkaProducer.create(vertx, properties);
-        LOGGER.info("producer vytvoren");
 
         if (msgCntPredicate.test(-1)) {
-            LOGGER.info("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
             vertx.eventBus().consumer(clientName, msg -> {
-                LOGGER.info(msg.body());
-                LOGGER.info(msg.address());
                 if (msg.body().equals("stop")) {
-                    LOGGER.info("Received stop command! Sent: {}", numSent.get());
+                    LOGGER.debug("Received stop command! Produced messages: {}", numSent.get());
                     resultPromise.complete(numSent.get());
                 }
             });
-            vertx.setPeriodic(1000, id -> {
-                sendNext(producer, topic);
-            });
+            vertx.setPeriodic(1000, id -> sendNext(producer, topic));
         } else {
-            LOGGER.info("XXXXXXXXXXXXXXXXXX");
             sendNext(producer, topic);
         }
 
@@ -64,25 +57,24 @@ public class Producer extends ClientHandlerBase<Integer> {
             producer.write(record, done -> {
                 if (done.succeeded()) {
                     RecordMetadata recordMetadata = done.result();
-                    LOGGER.info("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
+                    LOGGER.debug("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
                             ", partition=" + recordMetadata.getPartition() +
                             ", offset=" + recordMetadata.getOffset());
 
                     numSent.getAndIncrement();
 
                     if (msgCntPredicate.test(numSent.get())) {
-                        LOGGER.info("Producer sent {} messages", numSent.get());
+                        LOGGER.info("Producer produced {} messages", numSent.get());
                         resultPromise.complete(numSent.get());
                     }
 
                     if (msgCntPredicate.negate().test(-1)) {
-                        LOGGER.info("YYYYYYYYY");
                         sendNext(producer, topic);
                     }
 
                 } else {
-                    LOGGER.info("Producer didn't produce any message");
-                    resultPromise.completeExceptionally(done.cause());
+                    LOGGER.warn("Producer cannot connect to topic {}!", topic);
+                    sendNext(producer, topic);
                 }
             });
 
