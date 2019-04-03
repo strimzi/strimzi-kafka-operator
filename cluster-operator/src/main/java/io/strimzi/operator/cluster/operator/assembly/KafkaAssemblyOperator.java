@@ -334,10 +334,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         CertificateAuthority clusterCaConfig = kafkaAssembly.getSpec().getClusterCa();
 
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
-                        if (clusterCaConfig != null && !clusterCaConfig.isGenerateCertificateAuthority() && (clusterCaCertSecret == null || clusterCaKeySecret == null))   {
-                            future.fail(new InvalidConfigurationException("Cluster CA should not be generated, but the secrets were not found!"));
-                            return;
-                        }
+                        checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
 
                         this.clusterCa = new ClusterCa(certManager, name, clusterCaCertSecret, clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
@@ -353,10 +350,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         CertificateAuthority clientsCaConfig = kafkaAssembly.getSpec().getClientsCa();
 
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
-                        if (clientsCaConfig != null && !clientsCaConfig.isGenerateCertificateAuthority() && (clientsCaCertSecret == null || clientsCaKeySecret == null))   {
-                            future.fail(new InvalidConfigurationException("Clients CA should not be generated, but the secrets were not found!"));
-                            return;
-                        }
+                        checkCustomCaSecret(clientsCaConfig, clientsCaCertSecret, clientsCaKeySecret, "Clients CA");
 
                         this.clientsCa = new ClientsCa(certManager,
                                 clientsCaCertName, clientsCaCertSecret,
@@ -396,6 +390,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 result.completer()
             );
             return result;
+        }
+
+        /**
+         * Utility method for checking the Secret existence when custom CA is used. The custom CA is configured but the
+         * secrets do not exist, it will throw InvalifConfigurationException.
+         *
+         * @param ca            The CA Configuration from the Custom Resource
+         * @param certSecret    Secret with the certificate public key
+         * @param keySecret     Secret with the certificate private key
+         * @param caDescription The name of the CA for which this check is executed ("Cluster CA" or "Clients CA" - used
+         *                      in the exception message)
+         */
+        public void checkCustomCaSecret(CertificateAuthority ca, Secret certSecret, Secret keySecret, String caDescription)   {
+            if (ca != null && !ca.isGenerateCertificateAuthority() && (certSecret == null || keySecret == null))   {
+                throw new InvalidConfigurationException(caDescription + " should not be generated, but the secrets were not found.");
+            }
         }
 
         /**
