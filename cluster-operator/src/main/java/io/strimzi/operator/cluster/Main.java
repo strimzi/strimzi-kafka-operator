@@ -219,7 +219,7 @@ public class Main {
 
                     request.complete(isOpenShift);
                 } catch (Exception e) {
-                    log.error("OpenShift detection failed", e);
+                    log.error("OpenShift detection failed. You can use Cluster Operator's `assumeOpenShift` flag.", e);
                     request.fail(e);
                 }
             }, fut.completer());
