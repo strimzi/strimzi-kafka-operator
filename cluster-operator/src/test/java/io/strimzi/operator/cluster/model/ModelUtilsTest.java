@@ -7,6 +7,10 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.strimzi.api.kafka.model.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
@@ -125,5 +129,21 @@ public class ModelUtilsTest {
         protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
             return null;
         }
+    }
+
+    @Test
+    public void testStorageSerializationAndDeserialization()    {
+        Storage jbod = new JbodStorageBuilder().withVolumes(
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build(),
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
+                .build();
+
+        Storage ephemeral = new EphemeralStorageBuilder().build();
+
+        Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
+
+        assertEquals(jbod, ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(jbod)));
+        assertEquals(ephemeral, ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(ephemeral)));
+        assertEquals(persistent, ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(persistent)));
     }
 }

@@ -7,6 +7,7 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -225,10 +226,12 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
     @Test
     public void deleteWhenResourceExistsStillDeletes(TestContext context) {
-        T resource = resource();
+        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
 
+        T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.cascading(eq(true))).thenReturn(mockERPD);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -244,16 +247,19 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         Async async = context.async();
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
             assertTrue(ar.succeeded());
-            verify(mockResource).delete();
+            verify(mockERPD).delete();
             async.complete();
         });
     }
 
     @Test
     public void successfulDeletion(TestContext context) {
+        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
+        when(mockResource.cascading(eq(true))).thenReturn(mockERPD);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -270,19 +276,21 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             assertTrue(ar.succeeded());
-            verify(mockResource).delete();
+            verify(mockERPD).delete();
             async.complete();
         });
     }
 
     @Test
     public void deletionThrows(TestContext context) {
-        T resource = resource();
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
+        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+        when(mockERPD.delete()).thenThrow(ex);
 
+        T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.delete()).thenThrow(ex);
+        when(mockResource.cascading(eq(true))).thenReturn(mockERPD);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
