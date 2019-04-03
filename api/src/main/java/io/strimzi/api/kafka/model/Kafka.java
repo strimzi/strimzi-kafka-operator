@@ -45,12 +45,7 @@ import static java.util.Collections.unmodifiableList;
                         @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
                 },
                 subresources = @Crd.Spec.Subresources(
-                               status = @Crd.Spec.Subresources.Status(name = "test"),
-                               scale = @Crd.Spec.Subresources.Scale(
-                                       specReplicasPath = ".spec.replicas",
-                                       statusReplicasPath = ".status.replicas",
-                                       labelSelectorPath = ".status.labelSelector"
-                               )
+                               status = @Crd.Spec.Subresources.Status(name = "test")
                 ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
@@ -101,6 +96,7 @@ public class Kafka extends CustomResource implements UnknownPropertyPreserving {
     private ObjectMeta metadata;
     private KafkaSpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private KafkaStatus status;
 
     @Override
     public String getApiVersion() {
@@ -135,6 +131,15 @@ public class Kafka extends CustomResource implements UnknownPropertyPreserving {
 
     public void setSpec(KafkaSpec spec) {
         this.spec = spec;
+    }
+
+    @Description("The status of the Kafka and Zookeeper clusters, and Topic Operator.")
+    public KafkaStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(KafkaStatus status) {
+        this.status = status;
     }
 
     @Override

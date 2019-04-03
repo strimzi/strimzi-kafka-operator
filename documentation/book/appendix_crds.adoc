@@ -7,9 +7,16 @@
 
 [options="header"]
 |====
+<<<<<<< HEAD
 |Property     |Description
 |spec  1.2+<.<|The specification of the Kafka and Zookeeper clusters, and Topic Operator.
+=======
+|Field          |Description
+|spec    1.2+<.<|The specification of the Kafka and Zookeeper clusters, and Topic Operator.
+>>>>>>> wip
 |xref:type-KafkaSpec-{context}[`KafkaSpec`]
+|status  1.2+<.<|The status of the Kafka and Zookeeper clusters, and Topic Operator.
+|xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |====
 
 [id='type-KafkaSpec-{context}']
@@ -1024,6 +1031,19 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |integer
 |certificateExpirationPolicy   1.2+<.<|How should CA certificate expiration be handled when `generateCertificateAuthority=true`. The default is for a new CA certificate to be generated reusing the existing private key.
 |string (one of [replace-key, renew-certificate])
+|====
+
+[id='type-KafkaStatus-{context}']
+### `KafkaStatus` schema reference
+
+Used in: xref:type-Kafka-{context}[`Kafka`]
+
+
+[options="header"]
+|====
+|Field         |Description
+|state  1.2+<.<|the state.
+|string
 |====
 
 [id='type-KafkaConnect-{context}']
