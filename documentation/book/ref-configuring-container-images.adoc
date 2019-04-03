@@ -42,28 +42,28 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 
 * For Kafka broker TLS sidecar:
 . Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE` environment variable from the Cluster Operator configuration.
-. `strimzi/kafka-stunnel:latest` container image.
+. `{DockerKafkaStunnel}` container image.
 * For Zookeeper nodes:
 . Container image specified in the `STRIMZI_DEFAULT_ZOOKEEPER_IMAGE` environment variable from the Cluster Operator configuration.
-. `strimzi/zookeeper:latest` container image.
+. `{DockerZookeeper}` container image.
 * For Zookeeper node TLS sidecar:
 . Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE` environment variable from the Cluster Operator configuration.
-. `strimzi/zookeeper-stunnel:latest` container image.
+. `{DockerZookeeperStunnel}` container image.
 * For Topic Operator:
 . Container image specified in the `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
-.** `strimzi/topic-operator:latest` container image.
+. `{DockerTopicOperator}` container image.
 * For User Operator:
 . Container image specified in the `STRIMZI_DEFAULT_USER_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
-. `strimzi/user-operator:latest` container image.
+. `{DockerUserOperator}` container image.
 * For Entity Operator TLS sidecar:
 . Container image specified in the `STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE` environment variable from the Cluster Operator configuration.
-. `strimzi/entity-operator-stunnel:latest` container image.
+. `{DockerEntityOperatorStunnel}` container image.
 * For Kafka Connect:
 . Container image specified in the `STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE` environment variable from the Cluster Operator configuration.
-. `strimzi/kafka-connect:latest` container image.
+. `{DockerKafkaConnect}` container image.
 * For Kafka Connect with Source2image support:
 . Container image specified in the `STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE` environment variable from the Cluster Operator configuration.
-. `strimzi/kafka-connect-s2i:latest` container image.
+. `{DockerKafkaConnectS2I}` container image.
 
 WARNING: Overriding container images is recommended only in special situations, where you need to use a different container registry.
 For example, because your network does not allow access to the container repository used by {ProductName}.

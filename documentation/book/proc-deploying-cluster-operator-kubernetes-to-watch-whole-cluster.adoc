@@ -20,7 +20,7 @@ You can configure the Cluster Operator to watch {ProductName} resources across a
 
 .. Set the value of the `STRIMZI_NAMESPACE` environment variable to `*`.
 +
-[source,yaml]
+[source,yaml,subs="attributes"]
 ----
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -31,7 +31,7 @@ spec:
       serviceAccountName: strimzi-cluster-operator
       containers:
       - name: strimzi-cluster-operator
-        image: strimzi/cluster-operator:latest
+        image: {DockerClusterOperator}
         imagePullPolicy: IfNotPresent
         env:
         - name: STRIMZI_NAMESPACE
