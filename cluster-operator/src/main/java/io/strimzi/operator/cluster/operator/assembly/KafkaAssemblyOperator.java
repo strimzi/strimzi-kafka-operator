@@ -55,6 +55,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -331,6 +332,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 .build();
 
                         CertificateAuthority clusterCaConfig = kafkaAssembly.getSpec().getClusterCa();
+
+                        // When we are not supposed to generate the CA but it does not exist, we should just throw an error
+                        checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
+
                         this.clusterCa = new ClusterCa(certManager, name, clusterCaCertSecret, clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
                                 ModelUtils.getRenewalDays(clusterCaConfig),
@@ -343,6 +348,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.clusterCa.initCaSecrets(clusterSecrets);
 
                         CertificateAuthority clientsCaConfig = kafkaAssembly.getSpec().getClientsCa();
+
+                        // When we are not supposed to generate the CA but it does not exist, we should just throw an error
+                        checkCustomCaSecret(clientsCaConfig, clientsCaCertSecret, clientsCaKeySecret, "Clients CA");
+
                         this.clientsCa = new ClientsCa(certManager,
                                 clientsCaCertName, clientsCaCertSecret,
                                 clientsCaKeyName, clientsCaKeySecret,
@@ -353,13 +362,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
                                 caLabels.toMap(), ownerRef);
 
-                        secretOperations.reconcile(reconciliation.namespace(), clusterCaCertName, this.clusterCa.caCertSecret())
-                                .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clusterCaKeyName, this.clusterCa.caKeySecret()))
-                                .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clientsCaCertName, this.clientsCa.caCertSecret()))
-                                .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clientsCaKeyName, this.clientsCa.caKeySecret()))
-                                .compose(ignored -> {
-                                    future.complete(this);
-                                }, future);
+                        List<Future> secretReconciliations = new ArrayList<>(2);
+
+                        if (clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority())   {
+                            Future clusterSecretReconciliation = secretOperations.reconcile(reconciliation.namespace(), clusterCaCertName, this.clusterCa.caCertSecret())
+                                    .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clusterCaKeyName, this.clusterCa.caKeySecret()));
+                            secretReconciliations.add(clusterSecretReconciliation);
+                        }
+
+                        if (clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority())   {
+                            Future clientsSecretReconciliation = secretOperations.reconcile(reconciliation.namespace(), clientsCaCertName, this.clientsCa.caCertSecret())
+                                .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clientsCaKeyName, this.clientsCa.caKeySecret()));
+                            secretReconciliations.add(clientsSecretReconciliation);
+                        }
+
+                        CompositeFuture.join(secretReconciliations).setHandler(res -> {
+                            if (res.succeeded())    {
+                                future.complete(this);
+                            } else {
+                                future.fail(res.cause());
+                            }
+                        });
                     } catch (Throwable e) {
                         future.fail(e);
                     }
@@ -367,6 +390,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 result.completer()
             );
             return result;
+        }
+
+        /**
+         * Utility method for checking the Secret existence when custom CA is used. The custom CA is configured but the
+         * secrets do not exist, it will throw InvalifConfigurationException.
+         *
+         * @param ca            The CA Configuration from the Custom Resource
+         * @param certSecret    Secret with the certificate public key
+         * @param keySecret     Secret with the certificate private key
+         * @param caDescription The name of the CA for which this check is executed ("Cluster CA" or "Clients CA" - used
+         *                      in the exception message)
+         */
+        public void checkCustomCaSecret(CertificateAuthority ca, Secret certSecret, Secret keySecret, String caDescription)   {
+            if (ca != null && !ca.isGenerateCertificateAuthority() && (certSecret == null || keySecret == null))   {
+                throw new InvalidConfigurationException(caDescription + " should not be generated, but the secrets were not found.");
+            }
         }
 
         /**
