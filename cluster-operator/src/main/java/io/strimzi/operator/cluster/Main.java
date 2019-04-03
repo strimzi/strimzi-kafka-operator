@@ -61,8 +61,6 @@ import java.util.stream.Collectors;
 
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
-    private static final int MINIMAL_SUPPORTED_MAJOR = 1;
-    private static final int MINIMAL_SUPPORTED_MINOR = 9;
 
     static {
         try {
@@ -196,10 +194,10 @@ public class Main {
         return kafkaConnectS2IClusterOperations;
     }
 
-    static Future<PlatformFeaturesAvailability> getPlatformFeaturesAvailability(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
+    static Future<Boolean> isOpenshift(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
         if (client.isAdaptable(OkHttpClient.class)) {
             OkHttpClient ok = client.adapt(OkHttpClient.class);
-            Future<PlatformFeaturesAvailability> fut = Future.future();
+            Future<Boolean> fut = Future.future();
 
             vertx.executeBlocking(request -> {
                 try {
@@ -218,13 +216,8 @@ public class Main {
                             isOpenShift = false;
                         }
                     }
-                    /* test */ String major = client.getVersion().getMajor().equals("") ? Integer.toString(MINIMAL_SUPPORTED_MAJOR) : client.getVersion().getMajor();
-                    /* test */ String minor = client.getVersion().getMinor().equals("") ? Integer.toString(MINIMAL_SUPPORTED_MINOR) : client.getVersion().getMinor();
 
-                    PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(isOpenShift,
-                            new KubernetesVersion(Integer.parseInt(major.split("\\D")[0]),
-                                    Integer.parseInt(minor.split("\\D")[0])));
-                    request.complete(pfa);
+                    request.complete(isOpenShift);
                 } catch (Exception e) {
                     log.error("OpenShift detection failed", e);
                     request.fail(e);
@@ -235,6 +228,23 @@ public class Main {
             log.error("Cannot adapt KubernetesClient to OkHttpClient");
             return Future.failedFuture("Cannot adapt KubernetesClient to OkHttpClient");
         }
+    }
+
+
+    static Future<PlatformFeaturesAvailability> getPlatformFeaturesAvailability(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
+        Future<PlatformFeaturesAvailability> fut2 = Future.future();
+        isOpenshift(vertx, client, config).setHandler(is -> {
+            /* test */
+            String major = client.getVersion().getMajor().equals("") ? Integer.toString(KubernetesVersion.MINIMAL_SUPPORTED_MAJOR) : client.getVersion().getMajor();
+            /* test */
+            String minor = client.getVersion().getMinor().equals("") ? Integer.toString(KubernetesVersion.MINIMAL_SUPPORTED_MINOR) : client.getVersion().getMinor();
+
+            PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(is.result(),
+                    new KubernetesVersion(Integer.parseInt(major.split("\\D")[0]),
+                            Integer.parseInt(minor.split("\\D")[0])));
+            fut2.complete(pfa);
+        });
+        return fut2;
     }
 
     private static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {

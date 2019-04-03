@@ -11,11 +11,21 @@ public class KubernetesVersion implements Comparable<KubernetesVersion> {
 
     private int major;
     private int minor;
+
+    // unsupported versions
     public static final KubernetesVersion V1_8 = new KubernetesVersion(1, 8);
+
+    // supported versions
     public static final KubernetesVersion V1_9 = new KubernetesVersion(1, 9);
     public static final KubernetesVersion V1_10 = new KubernetesVersion(1, 10);
     public static final KubernetesVersion V1_11 = new KubernetesVersion(1, 11);
     public static final KubernetesVersion V1_12 = new KubernetesVersion(1, 12);
+    public static final KubernetesVersion V1_13 = new KubernetesVersion(1, 13);
+    public static final KubernetesVersion V1_14 = new KubernetesVersion(1, 14);
+
+    public static final KubernetesVersion MINIMAL_SUPPORTED_VERSION = V1_9;
+    public static final int MINIMAL_SUPPORTED_MAJOR = MINIMAL_SUPPORTED_VERSION.major;
+    public static final int MINIMAL_SUPPORTED_MINOR = MINIMAL_SUPPORTED_VERSION.minor;
 
     public KubernetesVersion(int major, int minor) {
         this.major = major;
