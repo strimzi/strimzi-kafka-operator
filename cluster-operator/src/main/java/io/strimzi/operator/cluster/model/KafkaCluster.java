@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
@@ -82,6 +83,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class KafkaCluster extends AbstractModel {
 
     protected static final String INIT_NAME = "kafka-init";
@@ -758,6 +760,7 @@ public class KafkaCluster extends AbstractModel {
         volumeList.add(createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
         volumeList.add(createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
 
         return volumeList;
     }
@@ -776,6 +779,7 @@ public class KafkaCluster extends AbstractModel {
         volumeMountList.add(createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(createVolumeMount("ready-files", "/var/opt/kafka"));
 
         if (rack != null || isExposedWithNodePort()) {
             volumeMountList.add(createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
@@ -872,8 +876,8 @@ public class KafkaCluster extends AbstractModel {
                     .withInitialDelaySeconds(readinessInitialDelay)
                     .withTimeoutSeconds(readinessTimeout)
                     .withNewExec()
-                        // The kafka-agent will create /tmp/kafka-ready in the container
-                        .withCommand("test", "-f", "/tmp/kafka-ready")
+                        // The kafka-agent will create /var/opt/kafka/kafka-ready in the container
+                        .withCommand("test", "-f", "/var/opt/kafka/kafka-ready")
                     .endExec()
                 .endReadinessProbe()
                 .withResources(getResources())

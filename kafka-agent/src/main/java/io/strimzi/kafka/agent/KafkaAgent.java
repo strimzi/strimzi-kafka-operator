@@ -131,11 +131,13 @@ public class KafkaAgent {
                             LOGGER.error("Could not write session connected file {}", sessionConnectedFile, e);
                         }
                     }
-                } else if (i++ % 60 == 0) {
-                    if (!sessionConnectedFile.delete()) {
+                } else {
+                    if (sessionConnectedFile.exists() && !sessionConnectedFile.delete()) {
                         LOGGER.error("Could not delete session connected file {}", sessionConnectedFile);
                     }
-                    LOGGER.debug("Metric {} = {}", sessionStateName, sessionStateStr);
+                    if (i++ % 60 == 0) {
+                        LOGGER.debug("Metric {} = {}", sessionStateName, sessionStateStr);
+                    }
                 }
             }
         };
