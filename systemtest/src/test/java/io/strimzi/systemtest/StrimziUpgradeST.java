@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
@@ -50,7 +51,7 @@ public class StrimziUpgradeST extends AbstractST {
 
     @ParameterizedTest
     @CsvFileSource(resources = "/StrimziUpgradeST.csv")
-    void upgradeStrimziVersion(String fromVersion, String toVersion, String urlFrom, String urlTo, String kafkaVersion, String procedures) throws IOException {
+    void upgradeStrimziVersion(String fromVersion, String toVersion, String urlFrom, String urlTo, String images, String procedures) throws IOException {
         KUBE_CLIENT.namespace(NAMESPACE);
         File coDir = null;
         File kafkaEphemeralYaml = null;
@@ -125,14 +126,14 @@ public class StrimziUpgradeST extends AbstractST {
                 }
             }
 
-            // Upgrade the CO, to current HEAD,
+            // Upgrade the CO
             // Modify + apply installation files
-            if ("master" .equals(toVersion)) {
+            if ("HEAD" .equals(toVersion)) {
                 LOGGER.info("Updating");
                 copyModifyApply(new File("../install/cluster-operator"));
                 LOGGER.info("Waiting for CO redeployment");
                 KUBE_CLIENT.waitForDeployment("strimzi-cluster-operator", 1);
-                waitForRollingUpdate("latest", kafkaVersion);
+                waitForRollingUpdate(images);
             } else {
                 url = urlTo;
                 dir = StUtils.downloadAndUnzip(url);
@@ -140,7 +141,7 @@ public class StrimziUpgradeST extends AbstractST {
                 copyModifyApply(coDir);
                 LOGGER.info("Waiting for CO deployment");
                 KUBE_CLIENT.waitForDeployment("strimzi-cluster-operator", 1);
-                waitForRollingUpdate(toVersion, kafkaVersion);
+                waitForRollingUpdate(images);
             }
 
             // Tidy up
@@ -190,20 +191,27 @@ public class StrimziUpgradeST extends AbstractST {
         KUBE_CLIENT.waitForDeployment("my-cluster-entity-operator", 1);
     }
 
-    private void waitForRollingUpdate(String strimziVersion, String kafkaVersion) {
-        String dockerTagWithKafkaVersion = strimziVersion + "-kafka-" + kafkaVersion;
+    private void waitForRollingUpdate(String images) {
+        if (images.isEmpty()) {
+            fail("There are no expected images");
+        }
+        String[] imagesArray = images.split("\\s*,\\s*");
+        String kafkaImage = imagesArray[0];
+        String zkImage = imagesArray[1];
+        String uOImage = imagesArray[2];
+        String tOImage = imagesArray[3];
 
         LOGGER.info("Waiting for ZK SS roll");
         StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods);
         LOGGER.info("Checking ZK pods using new image");
         waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
-                "strimzi/zookeeper:" + dockerTagWithKafkaVersion);
+                zkImage);
 
         LOGGER.info("Waiting for Kafka SS roll");
         StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
         LOGGER.info("Checking Kafka pods using new image");
         waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
-                "strimzi/kafka:" + dockerTagWithKafkaVersion);
+                kafkaImage);
         LOGGER.info("Waiting for EO Dep roll");
         // Check the TO and UO also got upgraded
         StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods);
@@ -211,11 +219,11 @@ public class StrimziUpgradeST extends AbstractST {
         waitTillAllContainersUseImage(
                 CLIENT.apps().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
                 0,
-                "strimzi/topic-operator:" + strimziVersion);
+                tOImage);
         waitTillAllContainersUseImage(
                 CLIENT.apps().deployments().inNamespace(NAMESPACE).withName(eoDepName).get().getSpec().getSelector().getMatchLabels(),
                 1,
-                "strimzi/user-operator:" + strimziVersion);
+                uOImage);
     }
 
     private void makeSnapshots() {
