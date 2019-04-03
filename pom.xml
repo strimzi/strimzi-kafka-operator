@@ -96,6 +96,7 @@
         <jupiter.version>5.4.0</jupiter.version>
         <junit.platform.version>1.4.0</junit.platform.version>
         <gson.version>2.8.2</gson.version>
+        <vertx.kafka.client>3.6.3</vertx.kafka.client>
     </properties>
 
     <distributionManagement>
@@ -679,9 +680,9 @@
                                         <!-- use org.apache.logging.log4j:log4j-slf4j-impl -->
                                         <exclude>ch.qos.logback:*</exclude>
                                         <!-- use org.apache.logging.log4j:log4j-1.2-api shim -->
-                                        <!--<exclude>log4j:log4j</exclude>-->
-                                        <!--&lt;!&ndash; use org.apache.logging.log4j:log4j-slf4j-impl &ndash;&gt;-->
-                                        <!--<exclude>org.slf4j:slf4j-log4j12</exclude>-->
+                                        <exclude>log4j:log4j</exclude>
+                                        <!-- use org.apache.logging.log4j:log4j-slf4j-impl -->
+                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>
