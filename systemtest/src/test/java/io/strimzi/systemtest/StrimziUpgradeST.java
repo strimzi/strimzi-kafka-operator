@@ -88,9 +88,9 @@ public class StrimziUpgradeST extends AbstractST {
             }
 
             // Execution of required procedures before upgrading CO
-            if(!procedures.isEmpty()) {
+            if (!procedures.isEmpty()) {
                 String[] proceduresArray = procedures.split("\\s*,\\s*");
-                for(String procedure : proceduresArray) {
+                for (String procedure : proceduresArray) {
                     switch (procedure) {
                         case "set log message format version to 2.0": {
                             replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", "2.0"));
