@@ -198,8 +198,8 @@ public class StrimziUpgradeST extends AbstractST {
         String[] imagesArray = images.split("\\s*,\\s*");
         String zkImage = imagesArray[0];
         String kafkaImage = imagesArray[1];
-        String uOImage = imagesArray[2];
-        String tOImage = imagesArray[3];
+        String tOImage = imagesArray[2];
+        String uOImage = imagesArray[3];
 
         LOGGER.info("Waiting for ZK SS roll");
         StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods);
