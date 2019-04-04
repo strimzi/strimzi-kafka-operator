@@ -94,11 +94,11 @@
 :DockerImageUser: kafka:kafka
 
 // API Versions
-:KafkaApiVersion: kafka.strimzi.io/v1alpha1
-:KafkaConnectApiVersion: kafka.strimzi.io/v1alpha1
-:KafkaConnectS2IApiVersion: kafka.strimzi.io/v1alpha1
-:KafkaTopicApiVersion: kafka.strimzi.io/v1alpha1
-:KafkaUserApiVersion: kafka.strimzi.io/v1alpha1
+:KafkaApiVersion: kafka.strimzi.io/v1beta1
+:KafkaConnectApiVersion: kafka.strimzi.io/v1beta1
+:KafkaConnectS2IApiVersion: kafka.strimzi.io/v1beta1
+:KafkaTopicApiVersion: kafka.strimzi.io/v1beta1
+:KafkaUserApiVersion: kafka.strimzi.io/v1beta1
 
 // Section enablers
 :Kubernetes:
