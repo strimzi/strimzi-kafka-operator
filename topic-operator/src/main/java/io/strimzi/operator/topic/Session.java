@@ -37,7 +37,7 @@ public class Session extends AbstractVerticle {
     /*test*/ AdminClient adminClient;
     /*test*/ K8sImpl k8s;
     /*test*/ TopicOperator topicOperator;
-    /*test*/ Watch topicWatch;
+    private Watch topicWatch;
     /*test*/ ZkTopicsWatcher topicsWatcher;
     /*test*/ TopicConfigsWatcher topicConfigsWatcher;
     /*test*/ ZkTopicWatcher topicWatcher;
@@ -161,14 +161,20 @@ public class Session extends AbstractVerticle {
                 LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
                 topicsWatcher.start(zk);
 
+                Future<Void> f = Future.future();
                 Thread resourceThread = new Thread(() -> {
-                    LOGGER.debug("Watching KafkaTopics matching {}", labels);
-                    Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
-                            .inNamespace(namespace).withLabels(labels.labels()).watch(new K8sTopicWatcher(topicOperator));
-                    LOGGER.debug("Watching setup");
+                    try {
+                        LOGGER.debug("Watching KafkaTopics matching {}", labels);
+                        Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
+                                .inNamespace(namespace).withLabels(labels.labels()).watch(new K8sTopicWatcher(topicOperator));
+                        LOGGER.debug("Watching setup");
 
-                    // start the HTTP server for healthchecks
-                    healthServer = this.startHealthServer();
+                        // start the HTTP server for healthchecks
+                        healthServer = this.startHealthServer();
+                        f.complete();
+                    } catch (Throwable t) {
+                        f.fail(t);
+                    }
 
                 }, "resource-watcher");
                 LOGGER.debug("Starting {}", resourceThread);
@@ -189,7 +195,7 @@ public class Session extends AbstractVerticle {
                     }
                 };
                 periodic.handle(null);
-                startupFuture.complete();
+                f.setHandler(startupFuture);
                 LOGGER.info("Started");
             });
     }
