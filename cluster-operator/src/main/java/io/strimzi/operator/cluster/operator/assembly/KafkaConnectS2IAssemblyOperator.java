@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
@@ -67,7 +68,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
 
     /**
      * @param vertx                      The Vertx instance
-     * @param isOpenShift                Whether we're running with OpenShift
+     * @param pfa                        Platform features availability properties
      * @param configMapOperations        For operating on ConfigMaps
      * @param deploymentConfigOperations For operating on Deployments
      * @param serviceOperations          For operating on Services
@@ -76,7 +77,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
      * @param secretOperations           For operating on Secrets
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public KafkaConnectS2IAssemblyOperator(Vertx vertx, boolean isOpenShift,
+    public KafkaConnectS2IAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                            CertManager certManager,
                                            CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectOperator,
                                            ConfigMapOperator configMapOperations,
@@ -90,7 +91,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                                            ResourceOperatorSupplier supplier,
                                            KafkaVersion.Lookup versions,
                                            ImagePullPolicy imagePullPolicy) {
-        super(vertx, isOpenShift, ResourceType.CONNECT_S2I, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
+        super(vertx, pfa, ResourceType.CONNECT_S2I, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
@@ -108,7 +109,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
             log.error("{} spec cannot be null", kafkaConnectS2I.getMetadata().getName());
             return Future.failedFuture("Spec cannot be null");
         }
-        if (isOpenShift) {
+        if (pfa.isOpenshift()) {
             KafkaConnectS2ICluster connect;
             try {
                 connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2I, versions);
@@ -127,7 +128,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                     .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                     .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
-                    .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations, isOpenShift, imagePullPolicy)))
+                    .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations, pfa.isOpenshift(), imagePullPolicy)))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))
                     .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))

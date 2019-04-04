@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -43,6 +44,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
@@ -123,6 +125,9 @@ public class KafkaAssemblyOperatorTest {
         LOG_ZOOKEEPER_CONFIG.setLoggers(singletonMap("zookeeper.root.logger", "INFO"));
         LOG_CONNECT_CONFIG.setLoggers(singletonMap("connect.root.logger.level", "INFO"));
     }
+
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
+
     private final boolean openShift;
     private final boolean metrics;
     private final KafkaListeners kafkaListeners;
@@ -453,7 +458,7 @@ public class KafkaAssemblyOperatorTest {
             when(mockRotueOps.reconcile(eq(clusterCmNamespace), routeNameCaptor.capture(), routeCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         }
 
-        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
@@ -895,7 +900,7 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
         when(mockDepOps.reconcile(anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
 
-        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
@@ -1012,7 +1017,7 @@ public class KafkaAssemblyOperatorTest {
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
-        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,
@@ -1089,7 +1094,7 @@ public class KafkaAssemblyOperatorTest {
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
-        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
                 supplier,

@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -144,7 +145,7 @@ public class ClusterOperatorTest {
         Map<String, String> env = new HashMap<>();
         env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
-        Main.run(vertx, client, openShift, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();
         });
@@ -222,7 +223,7 @@ public class ClusterOperatorTest {
         Map<String, String> env = new HashMap<>();
         env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
-        Main.run(vertx, client, openShift, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+        Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_9), ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();
         });

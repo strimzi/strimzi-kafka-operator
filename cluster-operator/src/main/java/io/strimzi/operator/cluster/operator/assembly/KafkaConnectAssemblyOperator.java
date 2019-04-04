@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -61,13 +62,13 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
 
     /**
      * @param vertx The Vertx instance
-     * @param isOpenShift Whether we're running with OpenShift
+     * @param pfa Platform features availability properties
      * @param configMapOperations For operating on ConfigMaps
      * @param deploymentOperations For operating on Deployments
      * @param serviceOperations For operating on Services
      * @param secretOperations For operating on Secrets
      */
-    public KafkaConnectAssemblyOperator(Vertx vertx, boolean isOpenShift,
+    public KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         CertManager certManager,
                                         CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> connectOperator,
                                         ConfigMapOperator configMapOperations,
@@ -79,7 +80,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                                         ResourceOperatorSupplier supplier,
                                         KafkaVersion.Lookup versions,
                                         ImagePullPolicy imagePullPolicy) {
-        super(vertx, isOpenShift, ResourceType.CONNECT, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
+        super(vertx, pfa, ResourceType.CONNECT, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
         this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentOperations = deploymentOperations;
@@ -116,7 +117,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
-                .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment(annotations, isOpenShift, imagePullPolicy)))
+                .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null));
     }
 

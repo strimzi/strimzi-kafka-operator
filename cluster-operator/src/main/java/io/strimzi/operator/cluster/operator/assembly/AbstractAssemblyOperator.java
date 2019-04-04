@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
@@ -64,7 +65,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
 
     protected final Vertx vertx;
-    protected final boolean isOpenShift;
+    protected final PlatformFeaturesAvailability pfa;
     protected final ResourceType assemblyType;
     protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
@@ -76,7 +77,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     /**
      * @param vertx The Vertx instance
-     * @param isOpenShift True iff running on OpenShift
+     * @param pfa Properties with features availability
      * @param assemblyType Assembly type
      * @param certManager Certificate manager
      * @param resourceOperator For operating on the desired resource
@@ -85,7 +86,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param podDisruptionBudgetOperator For operating PodDisruptionBudgets
      * @param imagePullPolicy The user-configured image pull policy. Null if the user didn't configured it.
      */
-    protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, ResourceType assemblyType,
+    protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, ResourceType assemblyType,
                                        CertManager certManager,
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
                                        SecretOperator secretOperations,
@@ -93,7 +94,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                        PodDisruptionBudgetOperator podDisruptionBudgetOperator,
                                        ImagePullPolicy imagePullPolicy) {
         this.vertx = vertx;
-        this.isOpenShift = isOpenShift;
+        this.pfa = pfa;
         this.assemblyType = assemblyType;
         this.kind = assemblyType.name;
         this.resourceOperator = resourceOperator;

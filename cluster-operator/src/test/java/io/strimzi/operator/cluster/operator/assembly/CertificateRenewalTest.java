@@ -13,12 +13,14 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
@@ -97,7 +99,7 @@ public class CertificateRenewalTest {
         when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
         when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, false, 1L, certManager,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), 1L, certManager,
                 new ResourceOperatorSupplier(null, null, null,
                         null, null, secretOps, null, null,
                         null, null, null, null, null, null),

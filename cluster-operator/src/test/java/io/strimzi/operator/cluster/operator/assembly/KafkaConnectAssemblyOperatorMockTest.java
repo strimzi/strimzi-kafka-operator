@@ -11,9 +11,11 @@ import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
@@ -96,7 +98,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         SecretOperator secretops = new SecretOperator(vertx, mockClient);
         NetworkPolicyOperator policyops = new NetworkPolicyOperator(vertx, mockClient);
         PodDisruptionBudgetOperator pdbops = new PodDisruptionBudgetOperator(vertx, mockClient);
-        KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, true,
+        KafkaConnectAssemblyOperator kco = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 connectOperator,
                 cmops, depops, svcops, secretops, policyops, pdbops, ResourceUtils.supplierWithMocks(true), VERSIONS, null);
