@@ -115,15 +115,15 @@ class KafkaST extends AbstractST {
         oc.deleteByName("Kafka", clusterName);
 
         // Delete all pods created by this test
-        CLIENT.pods().list().getItems().stream()
+        CLIENT.pods().inNamespace(NAMESPACE).list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-                .forEach(p -> CLIENT.pods().delete(p));
+                .forEach(p -> CLIENT.pods().inNamespace(NAMESPACE).delete(p));
 
         oc.waitForResourceDeletion("statefulset", kafkaClusterName(clusterName));
         oc.waitForResourceDeletion("statefulset", zookeeperClusterName(clusterName));
         oc.waitForResourceDeletion("deployment", entityOperatorDeploymentName(clusterName));
 
-        CLIENT.pods().list().getItems().stream()
+        CLIENT.pods().inNamespace(NAMESPACE).list().getItems().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(clusterName))
                 .forEach(p -> waitForPodDeletion(NAMESPACE, p.getMetadata().getName()));
         deleteCustomResources("../examples/templates/cluster-operator");
