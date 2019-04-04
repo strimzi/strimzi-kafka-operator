@@ -17,8 +17,6 @@ import org.junit.jupiter.api.BeforeAll;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,7 +54,7 @@ public class MessagingBaseST extends AbstractST {
      * @param consumer consumer
      * @param clusterName cluster name
      */
-    void availabilityTest(AbstractClient producer, AbstractClient consumer, String clusterName) throws InterruptedException, ExecutionException, TimeoutException {
+    void availabilityTest(AbstractClient producer, AbstractClient consumer, String clusterName) throws Exception {
         availabilityTest(producer, consumer, 100, 20000, clusterName, false, "my-topic", null);
     }
 
@@ -68,7 +66,7 @@ public class MessagingBaseST extends AbstractST {
      * @param timeout timeout
      * @param clusterName cluster name
      */
-    void availabilityTest(AbstractClient producer, AbstractClient consumer, int messageCount, int timeout, String clusterName) throws InterruptedException, ExecutionException, TimeoutException {
+    void availabilityTest(AbstractClient producer, AbstractClient consumer, int messageCount, int timeout, String clusterName) throws Exception {
         availabilityTest(producer, consumer, messageCount, timeout, clusterName, false, "my-topic", null);
     }
 
@@ -83,7 +81,7 @@ public class MessagingBaseST extends AbstractST {
      * @param topicName topic name
      * @param user user for tls if it's used for messages
      */
-    void availabilityTest(AbstractClient producer, AbstractClient consumer, int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws InterruptedException, ExecutionException, TimeoutException {
+    void availabilityTest(AbstractClient producer, AbstractClient consumer, int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         sendMessages(producer, messageCount, timeout, clusterName, tlsListener, topicName, user);
         receiveMessages(consumer, messageCount, timeout, clusterName, tlsListener, topicName, user);
         assertSentAndReceivedMessages(sent, received);
@@ -100,7 +98,7 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      * @return count of send and acknowledged messages
      */
-    int sendMessages(AbstractClient producer, int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws InterruptedException, ExecutionException, TimeoutException {
+    int sendMessages(AbstractClient producer, int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap producerArguments = new ClientArgumentMap();
         producerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
@@ -141,7 +139,7 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      * @return count of received messages
      */
-    int receiveMessages(AbstractClient consumer, int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws InterruptedException, ExecutionException, TimeoutException {
+    int receiveMessages(AbstractClient consumer, int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
@@ -190,7 +188,7 @@ public class MessagingBaseST extends AbstractST {
                 out = cliApiClient.getClientInfo(processUuid);
                 setResponse(out);
                 return !out.getBoolean("isRunning");
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 return false;
             }

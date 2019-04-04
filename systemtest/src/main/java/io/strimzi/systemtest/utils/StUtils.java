@@ -187,17 +187,17 @@ public class StUtils {
             List<Pod> pods = client.pods().inNamespace(namespace).withLabelSelector(selector).list().getItems();
 
             if (pods.isEmpty()) {
-                LOGGER.info("Not ready (no pods matching {})", selector);
+                LOGGER.debug("Not ready (no pods matching {})", selector);
                 return false;
             }
             for (Pod pod : pods) {
                 if (!Readiness.isPodReady(pod)) {
-                    LOGGER.info("Not ready (at least 1 pod not ready: {})", pod.getMetadata().getName());
+                    LOGGER.debug("Not ready (at least 1 pod not ready: {})", pod.getMetadata().getName());
                     return false;
                 } else {
                     if (containers) {
                         for (ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
-                            LOGGER.info("Not ready (at least 1 container of pod {} not ready: {})", pod.getMetadata().getName(), cs.getName());
+                            LOGGER.debug("Not ready (at least 1 container of pod {} not ready: {})", pod.getMetadata().getName(), cs.getName());
                             if (!Boolean.TRUE.equals(cs.getReady())) {
                                 return false;
                             }

@@ -22,7 +22,7 @@ public class Environment {
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String TEST_LOG_DIR_DEFAULT = "../systemtest/target/logs/";
-    public static final String ST_KAFKA_VERSION_DEFAULT = "2.1.0";
+    public static final String ST_KAFKA_VERSION_DEFAULT = "2.1.1";
     public static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     public static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     public static final String KUBERNETES_API_URL_DEFAULT = "https://127.0.0.1:8443";

@@ -47,8 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -385,7 +383,7 @@ class KafkaST extends MessagingBaseST {
      */
     @Test
     @Tag(REGRESSION)
-    void testSendMessagesPlainAnonymous() throws InterruptedException, TimeoutException, ExecutionException {
+    void testSendMessagesPlainAnonymous() throws Exception {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -402,7 +400,7 @@ class KafkaST extends MessagingBaseST {
      */
     @Test
     @Tag(REGRESSION)
-    void testSendMessagesTlsAuthenticated() throws InterruptedException, ExecutionException, TimeoutException {
+    void testSendMessagesTlsAuthenticated() throws Exception {
         String kafkaUser = "my-user";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -435,7 +433,7 @@ class KafkaST extends MessagingBaseST {
      */
     @Test
     @Tag(REGRESSION)
-    void testSendMessagesPlainScramSha() throws InterruptedException, ExecutionException, TimeoutException {
+    void testSendMessagesPlainScramSha() throws Exception {
         String kafkaUser = "my-user";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -479,7 +477,7 @@ class KafkaST extends MessagingBaseST {
      */
     @Test
     @Tag(REGRESSION)
-    void testSendMessagesTlsScramSha() throws InterruptedException, ExecutionException, TimeoutException {
+    void testSendMessagesTlsScramSha() throws Exception {
         String kafkaUser = "my-user";
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -704,7 +702,7 @@ class KafkaST extends MessagingBaseST {
             String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "kafka");
             String kafkaVersion = Crds.kafkaOperation(CLIENT).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getVersion();
             if (kafkaVersion == null) {
-                kafkaVersion = "2.2.0";
+                kafkaVersion = ENVIRONMENT.getStKafkaVersionEnv();
             }
             assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), imgFromPod);
             imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "tls-sidecar");
@@ -758,7 +756,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     @Tag(CCI_FLAKY)
-    void testMirrorMaker() throws InterruptedException, ExecutionException, TimeoutException {
+    void testMirrorMaker() throws Exception {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceName = CLUSTER_NAME + "-source";
@@ -800,7 +798,7 @@ class KafkaST extends MessagingBaseST {
      */
     @Test
     @Tag(CCI_FLAKY)
-    void testMirrorMakerTlsAuthenticated() throws InterruptedException, ExecutionException, TimeoutException {
+    void testMirrorMakerTlsAuthenticated() throws Exception {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceUserName = "my-user-source";
@@ -898,7 +896,7 @@ class KafkaST extends MessagingBaseST {
      */
     @Test
     @Tag(CCI_FLAKY)
-    void testMirrorMakerTlsScramSha() throws InterruptedException, ExecutionException, TimeoutException {
+    void testMirrorMakerTlsScramSha() throws Exception {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";

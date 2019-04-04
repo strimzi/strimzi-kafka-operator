@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.vertx.core.VertxException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,6 +32,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -40,8 +42,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -431,6 +435,41 @@ public final class TestUtils {
             return Collections.unmodifiableMap(map);
         } else {
             return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Repeat request n-times in a row
+     *
+     * @param retry count of remaining retries
+     * @param fn    request function
+     * @return
+     */
+    public static <T> T doRequestNTimes(int retry, Callable<T> fn, Optional<Runnable> reconnect) throws Exception {
+        try {
+            return fn.call();
+        } catch (Exception ex) {
+            if (ex.getCause() instanceof VertxException && ex.getCause().getMessage().contains("Connection was closed")) {
+                if (reconnect.isPresent()) {
+                    LOGGER.warn("connection was closed, trying to reconnect...");
+                    reconnect.get().run();
+                }
+            }
+            if (ex.getCause() instanceof UnknownHostException && retry > 0) {
+                try {
+                    LOGGER.info("{} remaining iterations", retry);
+                    return doRequestNTimes(retry - 1, fn, reconnect);
+                } catch (Exception ex2) {
+                    throw ex2;
+                }
+            } else {
+                if (ex.getCause() != null) {
+                    ex.getCause().printStackTrace();
+                } else {
+                    ex.printStackTrace();
+                }
+                throw ex;
+            }
         }
     }
     

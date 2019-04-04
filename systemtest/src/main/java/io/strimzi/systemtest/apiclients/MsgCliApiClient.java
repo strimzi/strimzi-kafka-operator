@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.apiclients;
 
 import io.strimzi.systemtest.kafkaclients.AbstractClient;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -21,6 +22,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +36,7 @@ public class MsgCliApiClient {
     private WebClient webClient;
     private URL endpoint;
     private Vertx vertx;
+    private final int initRetry = 10;
 
     public MsgCliApiClient(URL endpoint) {
         this.endpoint = endpoint;
@@ -53,6 +57,10 @@ public class MsgCliApiClient {
                 .setSsl(false)
                 .setTrustAll(true)
                 .setVerifyHost(false));
+    }
+
+    protected <T> T doRequestNTimes(int retry, Callable<T> fn, Optional<Runnable> reconnect) throws Exception {
+        return TestUtils.doRequestNTimes(retry, fn, reconnect);
     }
 
     private <T> void responseHandler(AsyncResult<HttpResponse<T>> ar, CompletableFuture<T> promise, int expectedCode,
@@ -94,19 +102,21 @@ public class MsgCliApiClient {
      * @throws ExecutionException
      * @throws TimeoutException
      */
-    public JsonObject startClients(List<String> clientArguments, int count) throws InterruptedException, ExecutionException, TimeoutException {
+    public JsonObject startClients(List<String> clientArguments, int count) throws Exception {
         CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
         JsonObject request = new JsonObject();
         request.put("command", new JsonArray(clientArguments));
         request.put("count", count);
 
-        webClient.post(endpoint.getPort(), endpoint.getHost(), "")
-                .as(BodyCodec.jsonObject())
-                .timeout(120_000)
-                .sendJson(request,
-                    ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error starting messaging clients"));
-        return responsePromise.get(150_000, TimeUnit.SECONDS);
-
+        return doRequestNTimes(initRetry, () -> {
+            webClient.post(endpoint.getPort(), endpoint.getHost(), "")
+                    .as(BodyCodec.jsonObject())
+                    .timeout(120_000)
+                    .sendJson(request,
+                        ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error starting messaging clients"));
+            return responsePromise.get(150_000, TimeUnit.SECONDS);
+        },
+        Optional.empty());
     }
 
     /**
@@ -118,17 +128,20 @@ public class MsgCliApiClient {
      * @throws ExecutionException
      * @throws TimeoutException
      */
-    public JsonObject getClientInfo(String uuid) throws InterruptedException, ExecutionException, TimeoutException {
+    public JsonObject getClientInfo(String uuid) throws Exception {
         CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
         JsonObject request = new JsonObject();
         request.put("id", uuid);
 
-        webClient.get(endpoint.getPort(), endpoint.getHost(), "")
-                .as(BodyCodec.jsonObject())
-                .timeout(120000)
-                .sendJson(request,
-                    ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error getting messaging clients info"));
-        return responsePromise.get(150000, TimeUnit.SECONDS);
+        return doRequestNTimes(initRetry, () -> {
+            webClient.get(endpoint.getPort(), endpoint.getHost(), "")
+                    .as(BodyCodec.jsonObject())
+                    .timeout(120000)
+                    .sendJson(request,
+                        ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error getting messaging clients info"));
+            return responsePromise.get(150000, TimeUnit.SECONDS);
+        },
+        Optional.empty());
 
     }
 
@@ -141,17 +154,20 @@ public class MsgCliApiClient {
      * @throws ExecutionException
      * @throws TimeoutException
      */
-    public JsonObject stopClient(String uuid) throws InterruptedException, ExecutionException, TimeoutException {
+    public JsonObject stopClient(String uuid) throws Exception {
         CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
         JsonObject request = new JsonObject();
         request.put("id", uuid);
 
-        webClient.delete(endpoint.getPort(), endpoint.getHost(), "")
-                .as(BodyCodec.jsonObject())
-                .timeout(120000)
-                .sendJson(request,
-                    ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error removing messaging clients"));
-        return responsePromise.get(150000, TimeUnit.SECONDS);
+        return doRequestNTimes(initRetry, () -> {
+            webClient.delete(endpoint.getPort(), endpoint.getHost(), "")
+                    .as(BodyCodec.jsonObject())
+                    .timeout(120000)
+                    .sendJson(request,
+                        ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error removing messaging clients"));
+            return responsePromise.get(150000, TimeUnit.SECONDS);
+        },
+        Optional.empty());
     }
 
     /***
@@ -159,7 +175,7 @@ public class MsgCliApiClient {
      * @param client
      * @return result of webClient
      */
-    public JsonObject sendAndGetStatus(AbstractClient client) throws InterruptedException, ExecutionException, TimeoutException {
+    public JsonObject sendAndGetStatus(AbstractClient client) throws Exception {
         List<String> apiArgument = new LinkedList<>();
         apiArgument.add(client.getExecutable());
         apiArgument.addAll(client.getArguments());
