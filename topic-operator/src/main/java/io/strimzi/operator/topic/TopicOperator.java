@@ -612,19 +612,16 @@ public class TopicOperator {
                             if (metadataResult.succeeded()) {
 
                                 // getting topic metadata from Kafka
-                                if (metadataResult.result() == null) {
+                                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
+
+                                // if partitions aren't changed on Kafka yet, we retry with exponential backoff
+                                if (topicResult.result().getNumPartitions() == kafkaTopic.getNumPartitions()) {
                                     retry();
                                 } else {
-                                    Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-
-                                    // if partitions aren't changed on Kafka yet, we retry with exponential backoff
-                                    if (topicResult.result().getNumPartitions() == kafkaTopic.getNumPartitions()) {
-                                        retry();
-                                    } else {
-                                        LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
-                                        TopicOperator.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
-                                    }
+                                    LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
+                                    TopicOperator.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
                                 }
+
                             } else {
                                 fut.fail(metadataResult.cause());
                             }

@@ -29,17 +29,13 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
-import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.admin.TopicDescription;
-import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.InvalidReplicationFactorException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
@@ -59,7 +55,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BooleanSupplier;
@@ -68,6 +63,9 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(VertxUnitRunner.class)
 public class TopicOperatorIT extends BaseITST {
@@ -83,7 +81,7 @@ public class TopicOperatorIT extends BaseITST {
 
     private final Vertx vertx = Vertx.vertx();
     private KafkaCluster kafkaCluster;
-    private AdminClient adminClient;
+    private volatile AdminClient adminClient;
     private KubernetesClient kubeClient;
     private volatile ZkTopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
@@ -147,10 +145,6 @@ public class TopicOperatorIT extends BaseITST {
             }
         } while (true);
 
-        Properties adminClientProps = new Properties();
-        adminClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.brokerList());
-        adminClient = AdminClient.create(adminClientProps);
-
         kubeClient = CLIENT.inNamespace(NAMESPACE);
         Crds.registerCustomKinds();
         LOGGER.info("Using namespace {}", NAMESPACE);
@@ -166,6 +160,7 @@ public class TopicOperatorIT extends BaseITST {
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
                 deploymentId = ar.result();
+                adminClient = session.adminClient;
                 topicsConfigWatcher = session.topicConfigsWatcher;
                 topicWatcher = session.topicWatcher;
                 topicsWatcher = session.topicsWatcher;
@@ -176,7 +171,6 @@ public class TopicOperatorIT extends BaseITST {
             }
         });
         async.await();
-
 
         waitFor(context, () -> this.topicWatcher.started(), timeout, "Topic watcher not started");
         waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
@@ -216,6 +210,7 @@ public class TopicOperatorIT extends BaseITST {
         if (deploymentId != null) {
             vertx.undeploy(deploymentId, ar -> {
                 deploymentId = null;
+                adminClient = null;
                 topicsConfigWatcher = null;
                 topicWatcher = null;
                 topicsWatcher = null;
@@ -227,9 +222,6 @@ public class TopicOperatorIT extends BaseITST {
             });
         }
         async.await();
-
-        adminClient.close();
-
         if (kafkaCluster != null) {
             kafkaCluster.shutdown();
         }
@@ -246,9 +238,8 @@ public class TopicOperatorIT extends BaseITST {
         // Wait for the topic to be created
         waitFor(context, () -> {
             try {
-                DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(singletonList(topicName));
-                KafkaFuture<TopicDescription> topicDescriptionKafkaFuture = describeTopicsResult.values().get(topicName);
-                return topicDescriptionKafkaFuture != null && topicDescriptionKafkaFuture.get() != null;
+                adminClient.describeTopics(singletonList(topicName)).values().get(topicName).get();
+                return true;
             } catch (ExecutionException e) {
                 if (e.getCause() instanceof UnknownTopicOrPartitionException) {
                     return false;
@@ -314,15 +305,8 @@ public class TopicOperatorIT extends BaseITST {
         // Wait for the resource to be modified
         waitFor(context, () -> {
             KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
-            if (topic == null) {
-                return false;
-            }
             LOGGER.info("Polled topic {}, waiting for config change", resourceName);
-            Map<String, String> config1 = TopicSerialization.fromTopicResource(topic).getConfig();
-            if (config1 == null) {
-                return false;
-            }
-            String gotValue = config1.get(key);
+            String gotValue = TopicSerialization.fromTopicResource(topic).getConfig().get(key);
             LOGGER.info("Got value {}", gotValue);
             return changedValue.equals(gotValue);
         }, timeout, "Expected the topic to have been deleted by now");
@@ -341,9 +325,6 @@ public class TopicOperatorIT extends BaseITST {
         // Wait for the resource to be modified
         waitFor(context, () -> {
             KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
-            if (topic == null) {
-                return false;
-            }
             LOGGER.info("Polled topic {}, waiting for partitions change", resourceName);
             int gotValue = TopicSerialization.fromTopicResource(topic).getNumPartitions();
             LOGGER.info("Got value {}", gotValue);
@@ -417,14 +398,14 @@ public class TopicOperatorIT extends BaseITST {
                     collect(Collectors.toList());
             LOGGER.debug("Waiting for events: {}", filtered.stream().map(evt -> evt.getMessage()).collect(Collectors.toList()));
             if (!filtered.isEmpty()) {
-                context.assertEquals(1, filtered.size());
+                assertEquals(1, filtered.size());
                 Event event = filtered.get(0);
 
-                context.assertEquals(expectedMessage, event.getMessage());
-                context.assertEquals(expectedType.name, event.getType());
-                context.assertNotNull(event.getInvolvedObject());
-                context.assertEquals("KafkaTopic", event.getInvolvedObject().getKind());
-                context.assertEquals(kafkaTopic.getMetadata().getName(), event.getInvolvedObject().getName());
+                assertEquals(expectedMessage, event.getMessage());
+                assertEquals(expectedType.name, event.getType());
+                assertNotNull(event.getInvolvedObject());
+                assertEquals("KafkaTopic", event.getInvolvedObject().getKind());
+                assertEquals(kafkaTopic.getMetadata().getName(), event.getInvolvedObject().getName());
                 return true;
             } else {
                 return false;
@@ -491,7 +472,7 @@ public class TopicOperatorIT extends BaseITST {
         try {
             operation().inNamespace(NAMESPACE).create(kafkaTopic);
         } catch (InvalidReplicationFactorException e) {
-            context.assertTrue(e.getMessage().contains("Replication factor: 42 larger than available brokers"));
+            assertTrue(e.getMessage().contains("Replication factor: 42 larger than available brokers"));
         }
     }
 
@@ -506,7 +487,7 @@ public class TopicOperatorIT extends BaseITST {
         try {
             operation().inNamespace(NAMESPACE).create(kafkaTopic);
         } catch (KubernetesClientException e) {
-            context.assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
+            assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
         }
     }
 
@@ -571,7 +552,7 @@ public class TopicOperatorIT extends BaseITST {
         try {
             operation().inNamespace(NAMESPACE).withName(topicResource.getMetadata().getName()).replace(changedTopic);
         } catch (KubernetesClientException e) {
-            context.assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
+            assertTrue(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"));
         }
     }
 
@@ -697,12 +678,12 @@ public class TopicOperatorIT extends BaseITST {
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap(), metadata).build();
         KafkaTopic topicResource = TopicSerialization.toTopicResource(topic, labels);
         createKafkaTopicResource(context, topicResource);
-        context.assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().size());
-        context.assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
-        context.assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
-        context.assertEquals("groot", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"));
-        context.assertEquals(2, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
-        context.assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
+        assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().size());
+        assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
+        assertEquals(1, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
+        assertEquals("groot", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"));
+        assertEquals(2, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
+        assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
 
         // edit kafka topic
         topicName = "test-kafka-topic-with-owner-ref-2";
@@ -711,10 +692,10 @@ public class TopicOperatorIT extends BaseITST {
         topicResource = TopicSerialization.toTopicResource(topic2, labels);
         topicResource.getMetadata().getAnnotations().put("han", "solo");
         createKafkaTopicResource(context, topicResource2);
-        context.assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
-        context.assertEquals(2, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
-        context.assertEquals("groot", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"));
-        context.assertEquals("solo", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("han"));
+        assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
+        assertEquals(2, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().size());
+        assertEquals("groot", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("iam"));
+        assertEquals("solo", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getAnnotations().get("han"));
 
         // edit k8s topic
         topicName = "test-kafka-topic-with-owner-ref-3";
@@ -722,9 +703,9 @@ public class TopicOperatorIT extends BaseITST {
         topic3.getMetadata().getLabels().put("stan", "lee");
         topicResource = TopicSerialization.toTopicResource(topic3, labels);
         createKafkaTopicResource(context, topicResource);
-        context.assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
-        context.assertEquals(3, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
-        context.assertEquals("lee", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("stan"));
-        context.assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
+        assertEquals(uid, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getOwnerReferences().get(0).getUid());
+        assertEquals(3, operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().size());
+        assertEquals("lee", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("stan"));
+        assertEquals("root", operation().inNamespace(NAMESPACE).withName(topicName).get().getMetadata().getLabels().get("iam"));
     }
 }

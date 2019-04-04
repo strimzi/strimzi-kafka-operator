@@ -33,14 +33,14 @@ public class Util {
         Handler<Long> handler = new Handler<Long>() {
             @Override
             public void handle(Long timerId) {
-                vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<Boolean>executeBlocking(
+                vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                     future -> {
                         try {
                             if (ready.getAsBoolean())   {
-                                future.complete(true);
+                                future.complete();
                             } else {
                                 LOGGER.trace("{} is not ready", logContext);
-                                future.complete(false);
+                                future.fail("Not ready yet");
                             }
                         } catch (Throwable e) {
                             LOGGER.warn("Caught exception while waiting for {} to get ready", logContext, e);
@@ -49,10 +49,10 @@ public class Util {
                     },
                     true,
                     res -> {
-                        if (res.succeeded() && res.result()) {
+                        if (res.succeeded()) {
                             LOGGER.debug("{} is ready", logContext);
                             fut.complete();
-                        } else if (res.succeeded() && !res.result()) {
+                        } else {
                             long timeLeft = deadline - System.currentTimeMillis();
                             if (timeLeft <= 0) {
                                 String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be ready", timeoutMs, logContext);
@@ -62,8 +62,6 @@ public class Util {
                                 // Schedule ourselves to run again
                                 vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
                             }
-                        } else {
-                            fut.fail(res.cause());
                         }
                     }
                 );
