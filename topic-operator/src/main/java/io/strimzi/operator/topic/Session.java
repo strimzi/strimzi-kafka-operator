@@ -34,10 +34,10 @@ public class Session extends AbstractVerticle {
     private final KubernetesClient kubeClient;
 
     /*test*/ OperatorAssignedKafkaImpl kafka;
-    /*test*/ AdminClient adminClient;
+    private AdminClient adminClient;
     /*test*/ K8sImpl k8s;
     /*test*/ TopicOperator topicOperator;
-    /*test*/ Watch topicWatch;
+    private Watch topicWatch;
     /*test*/ ZkTopicsWatcher topicsWatcher;
     /*test*/ TopicConfigsWatcher topicConfigsWatcher;
     /*test*/ ZkTopicWatcher topicWatcher;
@@ -71,41 +71,51 @@ public class Session extends AbstractVerticle {
             long t0 = System.currentTimeMillis();
             long timeout = 120_000L;
             LOGGER.info("Stopping");
-            LOGGER.debug("Stopping kube watch");
-            topicWatch.close();
+            Watch x = topicWatch;
+            if (x != null) {
+                LOGGER.debug("Stopping kube watch");
+                x.close();
+            }
             LOGGER.debug("Stopping zk watches");
             topicsWatcher.stop();
 
-            while (topicOperator.isWorkInflight()) {
-                if (System.currentTimeMillis() - t0 > timeout) {
-                    LOGGER.error("Timeout waiting for inflight work to finish");
-                    break;
+            Future<Void> fut = Future.future();
+            vertx.setTimer(1_000, new Handler<Long>() {
+                @Override
+                public void handle(Long timerId) {
+                    if (topicOperator.isWorkInflight()) {
+                        if (System.currentTimeMillis() - t0 > timeout) {
+                            LOGGER.error("Timeout waiting for inflight work to finish");
+                            fut.complete();
+                        } else {
+                            vertx.setTimer(1_000, this);
+                        }
+                    } else {
+                        fut.complete();
+                    }
                 }
-                LOGGER.debug("Waiting for inflight work to finish");
-                try {
-                    Thread.sleep(1_000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-            LOGGER.debug("Stopping kafka {}", kafka);
-            kafka.stop();
+            });
+            fut.map(ignored -> {
+                LOGGER.debug("Stopping kafka {}", kafka);
+                kafka.stop();
 
-            LOGGER.debug("Disconnecting from zookeeper {}", zk);
-            zk.disconnect(zkResult -> {
-                if (zkResult.failed()) {
-                    LOGGER.warn("Error disconnecting from zookeeper: {}", String.valueOf(zkResult.cause()));
-                }
-                LOGGER.debug("Closing AdminClient {}", adminClient);
-                adminClient.close(timeout - (System.currentTimeMillis() - t0), TimeUnit.MILLISECONDS);
+                LOGGER.debug("Disconnecting from zookeeper {}", zk);
+                zk.disconnect(zkResult -> {
+                    if (zkResult.failed()) {
+                        LOGGER.warn("Error disconnecting from zookeeper: {}", String.valueOf(zkResult.cause()));
+                    }
+                    LOGGER.debug("Closing AdminClient {}", adminClient);
+                    adminClient.close(timeout - (System.currentTimeMillis() - t0), TimeUnit.MILLISECONDS);
 
-                HttpServer healthServer = this.healthServer;
-                if (healthServer != null) {
-                    healthServer.close();
-                }
+                    HttpServer healthServer = this.healthServer;
+                    if (healthServer != null) {
+                        healthServer.close();
+                    }
 
-                LOGGER.info("Stopped");
-                blockingResult.complete();
+                    LOGGER.info("Stopped");
+                    blockingResult.complete();
+                });
+                return null;
             });
         }, stopFuture);
     }

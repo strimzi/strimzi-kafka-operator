@@ -23,7 +23,9 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
@@ -138,7 +140,10 @@ public class Resources extends AbstractResources {
     }
 
     private KafkaMirrorMaker deleteLater(KafkaMirrorMaker resource) {
-        return deleteLater(kafkaMirrorMaker(), resource);
+        MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> x = kafkaMirrorMaker();
+
+        LOGGER.info("Delete KMM later KMMNS={} ClientNS={}", resource.getMetadata().getNamespace(), client().getNamespace());
+        return deleteLater(x, resource);
     }
 
     private KafkaTopic deleteLater(KafkaTopic resource) {
