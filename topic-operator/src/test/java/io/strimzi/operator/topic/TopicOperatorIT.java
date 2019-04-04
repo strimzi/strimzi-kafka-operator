@@ -17,13 +17,13 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.KafkaTopicList;
+import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.operator.common.Util;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -376,37 +376,16 @@ public class TopicOperatorIT extends BaseITST {
         alterTopicNumPartitions(context, topicName, resourceName);
     }
 
-
     private void waitFor(TestContext context, BooleanSupplier ready, long timeout, String message) {
         Async async = context.async();
-        long t0 = System.currentTimeMillis();
-        Future<Void> fut = Future.future();
-        vertx.setPeriodic(3_000L, timerId -> {
-            // Wait for a resource to be created
-            boolean isFinished;
-            try {
-                isFinished = ready.getAsBoolean();
-                if (isFinished) {
-                    fut.complete();
-                }
-            } catch (Throwable e) {
-                fut.fail(e);
-                isFinished = true;
-            }
-            if (isFinished) {
+        Util.waitFor(vertx, message, 3_000, timeout, ready).setHandler(ar -> {
+            if (ar.succeeded()) {
                 async.complete();
-                vertx.cancelTimer(timerId);
-            }
-            long timeLeft = timeout - (System.currentTimeMillis() - t0);
-            if (timeLeft <= 0) {
-                vertx.cancelTimer(timerId);
-                context.fail(message);
+            } else {
+                context.fail(ar.cause());
             }
         });
-        async.await(timeout);
-        if (fut.failed()) {
-            context.fail(fut.cause());
-        }
+        async.awaitSuccess();
     }
 
     private void waitForEvent(TestContext context, KafkaTopic kafkaTopic, String expectedMessage, TopicOperator.EventType expectedType) {
