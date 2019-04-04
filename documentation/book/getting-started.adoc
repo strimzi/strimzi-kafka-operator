@@ -49,3 +49,5 @@ include::assembly-getting-started-topic-operator.adoc[leveloffset=+1]
 include::assembly-getting-started-user-operator.adoc[leveloffset=+1]
 
 include::assembly-getting-started-strimzi-admin.adoc[leveloffset=+1]
+
+include::con-container-images.adoc[leveloffset=+1]

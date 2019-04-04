@@ -1,0 +1,33 @@
+[table,stripes=none]
+|===
+|Container image |Namespace/Repository |Description
+
+|Kafka
+a|
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.0.0
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.0.1
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.1.0
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.1.1
+
+a|
+{ProductName} image for running Kafka, including:
+
+* Kafka Broker
+* Kafka Connect
+* Kafka Mirror Maker
+* Zookeeper
+* TLS Sidecars
+
+|Operator
+a|
+* {DockerOrg}/operator:{DockerTag}
+
+a|
+AMQ Streams image for running the operators:
+
+* Cluster Operator
+* Topic Operator
+* User Operator
+* Kafka Initializer
+
+|===
