@@ -792,10 +792,10 @@ public class KafkaCluster extends AbstractModel {
         if (storage != null) {
             if (storage instanceof PersistentClaimStorage) {
                 Integer id = ((PersistentClaimStorage) storage).getId();
-                String pvcName = ModelUtils.getVolumePrefix(id) + "-" + name;
+                String pvcBaseName = ModelUtils.getVolumePrefix(id) + "-" + name;
 
                 for (int i = 0; i < replicas; i++)  {
-                    pvcs.add(createPersistentVolumeClaim(pvcName + "-" + i, (PersistentClaimStorage) storage));
+                    pvcs.add(createPersistentVolumeClaim(pvcBaseName + "-" + i, (PersistentClaimStorage) storage));
                 }
             } else if (storage instanceof JbodStorage) {
                 for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {

@@ -100,6 +100,7 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "/delete-claim";
+    /** Annotation on PVCs storing the original configuration (so we can revert changes). */
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "/storage";
     @Deprecated
     public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = "cluster.operator.strimzi.io/delete-claim";

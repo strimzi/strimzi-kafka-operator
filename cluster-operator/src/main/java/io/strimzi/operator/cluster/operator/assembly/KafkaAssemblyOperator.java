@@ -1543,9 +1543,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             futureSts.setHandler(res -> {
                 if (res.succeeded())    {
                     List<PersistentVolumeClaim> desiredPvcs = zkCluster.generatePersistentVolumeClaims();
-                    Future<List<PersistentVolumeClaim>> existingPvcs = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabels()));
+                    Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabels()));
 
-                    maybeCleanPodAndPvc(res.result(), desiredPvcs, existingPvcs).setHandler(resultFuture.completer());
+                    maybeCleanPodAndPvc(res.result(), desiredPvcs, existingPvcsFuture).setHandler(resultFuture.completer());
                 } else {
                     resultFuture.fail(res.cause());
                 }
@@ -1573,9 +1573,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // This is needed because the restarted pod will be created from old statefulset with old storage configuration.
                     List<PersistentVolumeClaim> desiredPvcs = kafkaCluster.generatePersistentVolumeClaims(getOldStorage(sts));
 
-                    Future<List<PersistentVolumeClaim>> existingPvcs = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels()));
+                    Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels()));
 
-                    maybeCleanPodAndPvc(sts, desiredPvcs, existingPvcs).setHandler(resultFuture.completer());
+                    maybeCleanPodAndPvc(sts, desiredPvcs, existingPvcsFuture).setHandler(resultFuture.completer());
                 } else {
                     resultFuture.fail(res.cause());
                 }
@@ -1589,15 +1589,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * to decide whether they should be deleted. For the first pod marked to be deleted, it will gather the existing
          * and desired PVCs to be able to delete and recreate them.
          *
-         * This method exists with the first Pod it finds where deletion is required. This is intentional - if multiple
-         * pods are marked for deletion, the next one will be deleted in the next loop.
+         * This method exits with the first Pod it finds where deletion is required. The deletion is done asynchronously
+         * so if we deleted multiple pods at the same time we would either need to sync the deletions of different pods
+         * to not happen in parallel or have a risk that there will be several pods deleted at the same time (which can
+         * affect availability). If multiple pods are marked for deletion, the next one will be deleted in the next loop.
          *
          * @param sts                   StatefulSet which owns the pods which should be checked for deletion
          * @param desiredPvcs           The list of PVCs which should exist
-         * @param futureExistingPvcs    Future which will return a list of PVCs which actually exist
+         * @param existingPvcsFuture    Future which will return a list of PVCs which actually exist
          * @return
          */
-        Future<Void> maybeCleanPodAndPvc(StatefulSet sts, List<PersistentVolumeClaim> desiredPvcs, Future<List<PersistentVolumeClaim>> futureExistingPvcs)  {
+        Future<Void> maybeCleanPodAndPvc(StatefulSet sts, List<PersistentVolumeClaim> desiredPvcs, Future<List<PersistentVolumeClaim>> existingPvcsFuture)  {
             if (sts != null) {
                 log.debug("{}: Considering manual cleaning of Pods for StatefulSet {}", reconciliation, sts.getMetadata().getName());
 
@@ -1612,7 +1614,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 false, AbstractScalableResourceOperator.ANNO_OP_STRIMZI_IO_DELETE_POD_AND_PVC)) {
                             log.debug("{}: Pod and PVCs for {} should be deleted based on annotation", reconciliation, podName);
 
-                            return futureExistingPvcs
+                            return existingPvcsFuture
                                     .compose(existingPvcs -> {
                                         List<PersistentVolumeClaim> deletePvcs;
 
@@ -1665,7 +1667,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             for (PersistentVolumeClaim pvc : deletePvcs)    {
                 String pvcName = pvc.getMetadata().getName();
-                log.debug("{}: Deleting PVC {} for Pod {} based on annotation", reconciliation, pvcName, podName);
+                log.debug("{}: Deleting PVC {} for Pod {} based on {} annotation", reconciliation, pvcName, podName, AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC);
                 deleteResults.add(pvcOperations.reconcile(namespace, pvcName, null));
             }
 
@@ -1728,7 +1730,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     persistentClaimDeletion(maybeDeletePvcs, desiredPvcs).setHandler(futureResult.completer());
                 } else {
-                    futurePvcs.fail(res.cause());
+                    futureResult.fail(res.cause());
                 }
             });
 
@@ -1756,7 +1758,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     persistentClaimDeletion(maybeDeletePvcs, desiredPvcs).setHandler(futureResult.completer());
                 } else {
-                    futurePvcs.fail(res.cause());
+                    futureResult.fail(res.cause());
                 }
             });
 

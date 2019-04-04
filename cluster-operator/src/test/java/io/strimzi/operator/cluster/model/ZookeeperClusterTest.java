@@ -665,12 +665,7 @@ public class ZookeeperClusterTest {
     }
 
     @Test
-    public void testGeneratePersistentVolumeClaims()    {
-
-        /**********
-         * Persistent storage with claim deletion
-         */
-
+    public void testGeneratePersistentVolumeClaimsParsistentWithClaimDeletion() {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                 .editZookeeper()
@@ -695,25 +690,24 @@ public class ZookeeperClusterTest {
             assertEquals(1, pvc.getMetadata().getOwnerReferences().size());
             assertEquals("true", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
         }
+    }
 
-        /**********
-         * Persistent storage without claim deletion
-         */
-
-        ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+    @Test
+    public void testGeneratePersistentVolumeClaimsPersistentWithoutClaimDeletion() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                 .editZookeeper()
                 .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorage()
                 .endZookeeper()
                 .endSpec()
                 .build();
-        zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
         // Check Storage annotation on STS
         assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
 
         // Check PVCs
-        pvcs = zc.generatePersistentVolumeClaims();
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
 
         assertEquals(3, pvcs.size());
 
@@ -724,25 +718,24 @@ public class ZookeeperClusterTest {
             assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
             assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
         }
+    }
 
-        /**********
-         * Ephemeral storage
-         */
-
-        ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+    @Test
+    public void testGeneratePersistentVolumeClaimsephemeral()    {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
                 .editSpec()
                 .editZookeeper()
                 .withNewEphemeralStorage().endEphemeralStorage()
                 .endZookeeper()
                 .endSpec()
                 .build();
-        zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
         // Check Storage annotation on STS
         assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
 
         // Check PVCs
-        pvcs = zc.generatePersistentVolumeClaims();
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
 
         assertEquals(0, pvcs.size());
     }
