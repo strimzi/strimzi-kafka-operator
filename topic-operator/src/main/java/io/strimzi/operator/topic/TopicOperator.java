@@ -887,6 +887,7 @@ public class TopicOperator {
     }
 
     public boolean isWorkInflight() {
+        LOGGER.debug("Inflight: {}", inFlight.toString());
         return inFlight.size() > 0;
     }
 
