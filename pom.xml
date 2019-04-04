@@ -110,6 +110,7 @@
     </distributionManagement>
 
     <modules>
+        <module>kafka-agent</module>
         <module>test</module>
         <module>crd-annotations</module>
         <module>crd-generator</module>

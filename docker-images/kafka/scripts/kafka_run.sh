@@ -22,9 +22,11 @@ if [ -z "$KAFKA_LOG4J_OPTS" ]; then
   export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
 fi
 
+export KAFKA_OPTS="-javaagent:${KAFKA_HOME}/libs/kafka-agent-${STRIMZI_VERSION}.jar=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
+
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then
-  export KAFKA_OPTS="-javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+  export KAFKA_OPTS="${KAFKA_OPTS} -javaagent:/opt/prometheus/jmx_prometheus_javaagent.jar=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
 fi
 
 # We don't need LOG_DIR because we write no log files, but setting it to a
