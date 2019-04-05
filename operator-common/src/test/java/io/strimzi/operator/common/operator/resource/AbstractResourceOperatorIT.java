@@ -11,14 +11,15 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -28,11 +29,11 @@ import org.junit.runner.RunWith;
  */
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
-    public static final String RESOURCE_NAME = "my-cluster"; //"my-test-resource";
+    public static final String RESOURCE_NAME = "my-test-resource";
     protected static Vertx vertx;
     protected static KubernetesClient client;
     protected static String namespace;
-    protected static String defaultNamespace = "myproject";//"my-test-namespace";
+    protected static String defaultNamespace = "my-test-namespace";
 
     @BeforeClass
     public static void before() {
@@ -67,13 +68,13 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
 
     @Test
     public void testFullCycle(TestContext context)    {
-        //Async async = context.async();
+        Async async = context.async();
         AbstractResourceOperator op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();
 
-        /*Future<ReconcileResult<T>> createFuture = op.reconcile(namespace, RESOURCE_NAME, newResource);
+        Future<ReconcileResult<T>> createFuture = op.reconcile(namespace, RESOURCE_NAME, newResource);
 
         createFuture.setHandler(create -> {
             if (create.succeeded()) {
@@ -124,7 +125,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient, T e
                 context.fail(create.cause());
                 async.complete();
             }
-        });*/
+        });
     }
 }
 
