@@ -4,14 +4,10 @@
  */
 package io.strimzi.systemtest.libClient;
 
-import io.strimzi.systemtest.VertxFactory;
-
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -19,16 +15,14 @@ import java.util.function.IntPredicate;
 
 public class KafkaClient implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
-    private final Map<String, Vertx> clients = new HashMap<>();
+    private Vertx vertx = Vertx.vertx();
 
     public KafkaClient() {
     }
 
     @Override
     public void close() {
-        for (Map.Entry<String, Vertx> client : clients.entrySet()) {
-            client.getValue().close();
-        }
+        vertx.close();
     }
 
     /**
@@ -42,8 +36,6 @@ public class KafkaClient implements AutoCloseable {
     public Future<Integer> sendMessages(String topicName, String namespace, String clusterName, int messageCount) {
         String clientName = "sender-plain-" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.put(clientName, vertx);
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
@@ -69,8 +61,6 @@ public class KafkaClient implements AutoCloseable {
     public Future<Integer> sendMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount) {
         String clientName = "sender-ssl" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.put(clientName, vertx);
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
@@ -95,8 +85,6 @@ public class KafkaClient implements AutoCloseable {
      */
     public CompletableFuture<Integer> sendMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName) {
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.put(clientName, vertx);
 
         IntPredicate msgCntPredicate = x -> x == -1;
 
@@ -116,8 +104,6 @@ public class KafkaClient implements AutoCloseable {
     public Future<Integer> receiveMessages(String topicName, String namespace, String clusterName, int messageCount) {
         String clientName = "receiver-plain-" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.put(clientName, vertx);
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
@@ -141,10 +127,8 @@ public class KafkaClient implements AutoCloseable {
      * @return future with received message count
      */
     public Future<Integer> receiveMessagesTls(String topicName, String namespace, String clusterName, String userName, int messageCount) {
-        String clientName = "receiver-plain-" + clusterName;
+        String clientName = "receiver-ssl-" + clusterName;
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.put(clientName, vertx);
 
         IntPredicate msgCntPredicate = x -> x == messageCount;
 
@@ -169,8 +153,6 @@ public class KafkaClient implements AutoCloseable {
      */
     public CompletableFuture<Integer> receiveMessagesUntilNotification(String topicName, String namespace, String clusterName, String userName, String clientName) {
         CompletableFuture<Integer> resultPromise = new CompletableFuture<>();
-        Vertx vertx = VertxFactory.create();
-        clients.put(clientName, vertx);
 
         IntPredicate msgCntPredicate = x -> x == -1;
 
@@ -185,7 +167,6 @@ public class KafkaClient implements AutoCloseable {
      * @param notification notification
      */
     public void sendNotificationToClient(String clientName, String notification) {
-        Vertx vertx = clients.get(clientName);
         LOGGER.debug("Sending {} to {}", notification, clientName);
         vertx.eventBus().publish(clientName, notification);
     }
