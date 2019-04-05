@@ -63,7 +63,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
     protected static final int LOCK_TIMEOUT_MS = 10000;
 
-
     protected final Vertx vertx;
     protected final PlatformFeaturesAvailability pfa;
     protected final ResourceType assemblyType;
@@ -126,11 +125,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected abstract Future<Void> createOrUpdate(Reconciliation reconciliation, T assemblyResource);
 
     /**
-     * Subclasses implement this method to delete the cluster.
-     */
-    protected abstract Future<Void> delete(Reconciliation reconciliation);
-
-    /**
      * The name of the given {@code resource}, as read from its metadata.
      * @param resource The resource
      */
@@ -147,10 +141,10 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     /**
      * Reconcile assembly resources in the given namespace having the given {@code name}.
      * Reconciliation works by getting the assembly resource (e.g. {@code KafkaAssembly}) in the given namespace with the given name and
-     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
+     * comparing with the corresponding resources}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created or updated} if ConfigMap is without same-named resources</li>
-     * <li>An assembly will be {@linkplain #delete(Reconciliation) deleted} if resources without same-named ConfigMap</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created or updated} if CustomResource is without same-named resources</li>
+     * <li>An assembly will be deleted automatically by garbage collection when the custom resoruce is deleted</li>
      * </ul>
      */
     public final void reconcileAssembly(Reconciliation reconciliation, Handler<AsyncResult<Void>> handler) {
@@ -184,17 +178,10 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                 }
                             });
                     } else {
-                        log.info("{}: Assembly {} should be deleted", reconciliation, assemblyName);
-                        delete(reconciliation).setHandler(deleteResult -> {
-                            lock.release();
-                            log.debug("{}: Lock {} released", reconciliation, lockName);
-                            if (deleteResult.succeeded())   {
-                                log.info("{}: Assembly {} deleted", reconciliation, assemblyName);
-                            } else {
-                                log.error("{}: Deletion of assembly {} failed", reconciliation, assemblyName, deleteResult.cause());
-                            }
-                            handler.handle(deleteResult);
-                        });
+                        log.info("{}: Assembly {} should be deleted by garbage collection", reconciliation, assemblyName);
+                        lock.release();
+                        log.debug("{}: Lock {} released", reconciliation, lockName);
+                        handler.handle(Future.succeededFuture());
                     }
                 } catch (Throwable ex) {
                     lock.release();
@@ -223,10 +210,10 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     /**
      * Reconcile assembly resources in the given namespace having the given selector.
      * Reconciliation works by getting the assembly ConfigMaps in the given namespace with the given selector and
-     * comparing with the corresponding {@linkplain #getResources(String, Labels) resource}.
+     * comparing with the corresponding resources}.
      * <ul>
-     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created} for all ConfigMaps without same-named resources</li>
-     * <li>An assembly will be {@linkplain #delete(Reconciliation) deleted} for all resources without same-named ConfigMaps</li>
+     * <li>An assembly will be {@linkplain #createOrUpdate(Reconciliation, HasMetadata) created} for all Custom Resource without same-named resources</li>
+     * <li>An assembly will be deleted automatically by the garbage collection when the Custom Resource is deleted</li>
      * </ul>
      *
      * @param trigger A description of the triggering event (timer or watch), used for logging
@@ -234,29 +221,12 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      */
     public final CountDownLatch reconcileAll(String trigger, String namespace) {
 
-        // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
+        // get Kafka CustomResources (or Connect, Connect-s2i, or Mirror Maker)
         List<T> desiredResources = resourceOperator.list(namespace, Labels.EMPTY);
         Set<NamespaceAndName> desiredNames = desiredResources.stream()
                 .map(cr -> new NamespaceAndName(cr.getMetadata().getNamespace(), cr.getMetadata().getName()))
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, Labels.EMPTY, desiredNames);
-
-        // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
-        Labels resourceSelector = Labels.EMPTY.withKind(assemblyType.name);
-        List<? extends HasMetadata> resources = getResources(namespace, resourceSelector);
-        // now extract the cluster name from those
-        Set<NamespaceAndName> resourceNames = resources.stream()
-                .filter(r -> !r.getKind().equals(kind)) // exclude desired resource
-                .map(resource ->
-                        new NamespaceAndName(
-                                resource.getMetadata().getNamespace(),
-                                resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL)
-                        )
-                )
-                .collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, resourceSelector, resourceNames);
-
-        desiredNames.addAll(resourceNames);
 
         // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
         // Using futures would be more complex for no benefit
@@ -272,14 +242,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
 
         return latch;
     }
-
-    /**
-     * Gets all the assembly resources (for all assemblies) in the given namespace.
-     * Assembly resources (e.g. the {@code KafkaAssembly} resource) may be included in the result.
-     * @param namespace The namespace
-     * @return The matching resources.
-     */
-    protected abstract List<HasMetadata> getResources(String namespace, Labels selector);
 
     public Future<Watch> createWatch(String watchNamespace, Consumer<KubernetesClientException> onClose) {
         Future<Watch> result = Future.future();

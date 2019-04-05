@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
@@ -17,7 +16,7 @@ import java.util.regex.Pattern;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
-public class StatefulSetDiff {
+public class StatefulSetDiff extends AbstractResourceDiff {
 
     private static final Logger log = LogManager.getLogger(StatefulSetDiff.class.getName());
 
@@ -113,22 +112,6 @@ public class StatefulSetDiff {
         this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
     }
 
-    JsonNode lookupPath(JsonNode source, String path) {
-        JsonNode s = source;
-        for (String component : path.substring(1).split("/")) {
-            if (s.isArray()) {
-                try {
-                    s = s.path(Integer.parseInt(component));
-                } catch (NumberFormatException e) {
-                    return MissingNode.getInstance();
-                }
-            } else {
-                s = s.path(component);
-            }
-        }
-        return s;
-    }
-
     boolean compareMemoryAndCpuResources(JsonNode source, JsonNode target, String pathValue, Matcher resourceMatchers) {
         JsonNode s = lookupPath(source, pathValue);
         JsonNode t = lookupPath(target, pathValue);
@@ -150,6 +133,11 @@ public class StatefulSetDiff {
         return false;
     }
 
+    /**
+     * Returns whether the Diff is empty or not
+     *
+     * @return true when the StatefulSets are identical
+     */
     public boolean isEmpty() {
         return isEmpty;
     }

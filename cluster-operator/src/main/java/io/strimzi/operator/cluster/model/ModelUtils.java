@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -267,5 +269,21 @@ public class ModelUtils {
      */
     public static String getVolumePrefix(Integer id) {
         return id == null ? AbstractModel.VOLUME_NAME : AbstractModel.VOLUME_NAME + "-" + id;
+    }
+
+    public static Storage decodeStorageFromJson(String json) {
+        try {
+            return new ObjectMapper().readValue(json, Storage.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String encodeStorageToJson(Storage storage) {
+        try {
+            return new ObjectMapper().writeValueAsString(storage);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

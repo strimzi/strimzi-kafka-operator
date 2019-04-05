@@ -40,12 +40,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    protected boolean shouldIncrementGeneration(StatefulSet current, StatefulSet desired) {
-        StatefulSetDiff diff = new StatefulSetDiff(current, desired);
-        if (diff.changesVolumeClaimTemplates()) {
-            log.warn("Changing Zookeeper storage type or size is not possible. The changes will be ignored.");
-            diff = revertStorageChanges(current, desired);
-        }
+    protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
         return !diff.isEmpty() && needsRollingUpdate(diff);
     }
 
@@ -61,6 +56,10 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         }
         if (diff.changesSpecTemplate()) {
             log.debug("Changed template spec => needs rolling update");
+            return true;
+        }
+        if (diff.changesVolumeClaimTemplates()) {
+            log.debug("Changed volume claim template => needs rolling update");
             return true;
         }
         return false;

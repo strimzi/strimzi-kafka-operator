@@ -71,7 +71,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.Storage.deleteClaim;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -590,8 +589,6 @@ public class KafkaAssemblyOperatorMockTest {
         kco.reconcileAssembly(new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
-            assertPvcs(context, !originalKafkaDeleteClaim ? deleteClaim(zkStorage) ? emptySet() : zkPvcs :
-                    deleteClaim(zkStorage) ? kafkaPvcs : allPvcs);
             deleteAsync.complete();
         });
     }

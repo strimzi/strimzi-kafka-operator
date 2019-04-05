@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -21,11 +22,14 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.strimzi.api.kafka.model.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.RackBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -658,5 +662,109 @@ public class ZookeeperClusterTest {
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertEquals(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build(), zooRule.getFrom().get(3));
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsParsistentWithClaimDeletion() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(true).withSize("100Gi").endPersistentClaimStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(3, pvcs.size());
+
+        for (PersistentVolumeClaim pvc : pvcs) {
+            assertEquals(new Quantity("100Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
+            assertEquals("gp2-ssd", pvc.getSpec().getStorageClassName());
+            assertTrue(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME));
+            assertEquals(1, pvc.getMetadata().getOwnerReferences().size());
+            assertEquals("true", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsPersistentWithoutClaimDeletion() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(3, pvcs.size());
+
+        for (PersistentVolumeClaim pvc : pvcs) {
+            assertEquals(new Quantity("100Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
+            assertEquals("gp2-ssd", pvc.getSpec().getStorageClassName());
+            assertTrue(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME));
+            assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
+            assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsephemeral()    {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withNewEphemeralStorage().endEphemeralStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(0, pvcs.size());
+    }
+
+    @Test
+    public void testStorageReverting() {
+        SingleVolumeStorage ephemeral = new EphemeralStorageBuilder().build();
+        SingleVolumeStorage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
+
+        // Test Storage changes and how the are reverted
+
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withStorage(ephemeral)
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS, persistent);
+        assertEquals(persistent, zc.getStorage());
+
+        ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withStorage(persistent)
+                .endZookeeper()
+                .endSpec()
+                .build();
+        zc = ZookeeperCluster.fromCrd(ka, VERSIONS, ephemeral);
+        assertEquals(ephemeral, zc.getStorage());
     }
 }

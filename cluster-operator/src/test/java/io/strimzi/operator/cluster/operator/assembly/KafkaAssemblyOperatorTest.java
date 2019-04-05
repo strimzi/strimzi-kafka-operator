@@ -394,6 +394,11 @@ public class KafkaAssemblyOperatorTest {
                     return null;
                 });
 
+        when(mockPvcOps.listAsync(eq(clusterCmNamespace), ArgumentMatchers.any(Labels.class)))
+                .thenAnswer(invocation -> {
+                    return Future.succeededFuture(Collections.EMPTY_LIST);
+                });
+
         Set<String> expectedPvcs = new HashSet<>(zkPvcs.keySet());
         expectedPvcs.addAll(kafkaPvcs.keySet());
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
@@ -742,6 +747,19 @@ public class KafkaAssemblyOperatorTest {
                     }
                     return null;
                 });
+
+        when(mockPvcOps.listAsync(eq(clusterNamespace), ArgumentMatchers.any(Labels.class)))
+                .thenAnswer(invocation -> {
+                    Labels labels = invocation.getArgument(1);
+                    if (labels.toMap().get(Labels.STRIMZI_NAME_LABEL).contains("kafka")) {
+                        return Future.succeededFuture(new ArrayList<PersistentVolumeClaim>(kafkaPvcs.values()));
+                    } else if (labels.toMap().get(Labels.STRIMZI_NAME_LABEL).contains("zookeeper")) {
+                        return Future.succeededFuture(new ArrayList<PersistentVolumeClaim>(zkPvcs.values()));
+                    }
+                    return Future.succeededFuture(Collections.EMPTY_LIST);
+                });
+
+        when(mockPvcOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         // Mock CM get
         when(mockKafkaOps.get(clusterNamespace, clusterName)).thenReturn(updatedAssembly);

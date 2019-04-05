@@ -7,18 +7,14 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -132,35 +128,5 @@ public class KafkaSetOperatorTest {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 "foo", null));
         assertTrue(KafkaSetOperator.needsRollingUpdate(diff()));
-    }
-
-    @Test
-    public void testChangeStorageType() {
-        Kafka kafkaa = getResource();
-        Kafka kafkab = getResource();
-        PersistentClaimStorage pcs = new PersistentClaimStorage();
-        pcs.setSize("100Gi");
-
-        JbodStorage jbod = new JbodStorage();
-        SingleVolumeStorage volume = new PersistentClaimStorage() {
-            @Override
-            public String getType() {
-                return null;
-            }
-        };
-        volume.setId(0);
-        jbod.setVolumes(Arrays.asList(volume));
-
-        kafkaa.getSpec().getKafka().setStorage(pcs);
-        kafkab.getSpec().getKafka().setStorage(jbod);
-        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
-        a = KafkaCluster.fromCrd(kafkaa, versions).generateStatefulSet(true, null);
-        b = KafkaCluster.fromCrd(kafkab, versions).generateStatefulSet(true, null);
-        b.getMetadata().getLabels().put("new", "label");
-
-        KafkaSetOperator kso = new KafkaSetOperator(null, null, 0);
-        assertTrue(kso.shouldIncrementGeneration(a, b));
-        assertTrue(kso.revertStorageChanges(a, b).changesLabels());
-        assertFalse(kso.revertStorageChanges(a, b).changesVolumeClaimTemplates());
     }
 }
