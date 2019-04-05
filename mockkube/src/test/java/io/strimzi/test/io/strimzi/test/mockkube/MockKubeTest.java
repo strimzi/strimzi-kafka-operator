@@ -254,6 +254,48 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         // TODO inAnyNamespace()
     }
 
+    @Test
+    public void watches() {
+        RT pod = pod();
+
+        MyWatcher all = new MyWatcher();
+        MyWatcher namedMyPod = new MyWatcher();
+        MyWatcher namedYourPod = new MyWatcher();
+        MyWatcher hasMyLabel = new MyWatcher();
+        MyWatcher hasYourLabel = new MyWatcher();
+        MyWatcher hasMyLabelFoo = new MyWatcher();
+        MyWatcher hasMyLabelBar = new MyWatcher();
+        MyWatcher hasBothMyLabels = new MyWatcher();
+        MyWatcher hasOnlyOneOfMyLabels = new MyWatcher();
+        mixedOp().watch(all);
+        mixedOp().withName(pod.getMetadata().getName()).watch(namedMyPod);
+        mixedOp().withName("your-pod").watch(namedYourPod);
+        mixedOp().withLabel("my-label").watch(hasMyLabel);
+        mixedOp().withLabel("your-label").watch(hasYourLabel);
+        mixedOp().withLabel("my-label", "foo").watch(hasMyLabelFoo);
+        mixedOp().withLabel("my-label", "bar").watch(hasMyLabelBar);
+        mixedOp().withLabels(map("my-label", "foo", "my-other-label", "bar")).watch(hasBothMyLabels);
+        mixedOp().withLabels(map("my-label", "foo", "your-label", "bar")).watch(hasOnlyOneOfMyLabels);
+
+        mixedOp().withName(pod.getMetadata().getName()).create(pod);
+
+        assertEquals(all.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(all.lastEvent().resource, pod);
+        assertEquals(namedMyPod.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(namedMyPod.lastEvent().resource, pod);
+        assertTrue(namedYourPod.events.isEmpty());
+        assertEquals(hasMyLabel.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(hasMyLabel.lastEvent().resource, pod);
+        assertTrue(hasYourLabel.events.isEmpty());
+        assertEquals(hasMyLabelFoo.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(hasMyLabelFoo.lastEvent().resource, pod);
+        assertTrue(hasMyLabelBar.events.isEmpty());
+        assertEquals(hasBothMyLabels.lastEvent().action, Watcher.Action.ADDED);
+        assertEquals(hasBothMyLabels.lastEvent().resource, pod);
+        assertTrue(hasOnlyOneOfMyLabels.events.isEmpty());
+
+    }
+
     // TODO Test Deployment/StatefulSet creation causes ReplicaSet and Pod creation
     // TODO Test Deployment/SS Pod deletion causes new Pod creation
     // TODO Test Pod with VCT causes PVC creation

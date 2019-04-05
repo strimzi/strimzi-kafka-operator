@@ -978,9 +978,10 @@ public class MockKube {
         protected void fireWatchers(String resourceName, CM removed, Watcher.Action action) {
             LOGGER.debug("Firing watchers on {}", resourceName);
             for (PredicatedWatcher<CM> watcher : watchers) {
-                if (watcher.predicate.test(removed))
-                LOGGER.debug("Firing watcher {} with {} and resource {}", watcher, action, removed);
-                watcher.watcher.eventReceived(action, removed);
+                if (watcher.predicate.test(removed)) {
+                    LOGGER.debug("Firing watcher {} with {} and resource {}", watcher, action, removed);
+                    watcher.watcher.eventReceived(action, removed);
+                }
             }
             LOGGER.debug("Finished firing watchers on {}", resourceName);
         }
