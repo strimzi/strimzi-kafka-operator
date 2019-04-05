@@ -1114,7 +1114,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(kafka_server_brokertopicmetrics_bytesin_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
+          "expr": "sum(irate(kafka_server_brokertopicmetrics_bytesin_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",topic!=\"\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1124,7 +1124,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum(irate(kafka_server_brokertopicmetrics_bytesout_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
+          "expr": "sum(irate(kafka_server_brokertopicmetrics_bytesout_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",topic!=\"\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1211,7 +1211,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(kafka_server_brokertopicmetrics_messagesin_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
+          "expr": "sum(irate(kafka_server_brokertopicmetrics_messagesin_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",topic!=\"\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Total Message In Per Second",
@@ -1296,14 +1296,14 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(kafka_server_brokertopicmetrics_totalproducerequests_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
+          "expr": "sum(irate(kafka_server_brokertopicmetrics_totalproducerequests_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",topic!=\"\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Total Produce Request Rate",
           "refId": "A"
         },
         {
-          "expr": "sum(irate(kafka_server_brokertopicmetrics_failedproducerequests_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
+          "expr": "sum(irate(kafka_server_brokertopicmetrics_failedproducerequests_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",topic!=\"\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1389,14 +1389,14 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(kafka_server_brokertopicmetrics_totalfetchrequests_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
+          "expr": "sum(irate(kafka_server_brokertopicmetrics_totalfetchrequests_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",topic!=\"\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Fetch Request Rate",
           "refId": "A"
         },
         {
-          "expr": "  sum(irate(kafka_server_brokertopicmetrics_failedfetchrequests_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
+          "expr": "  sum(irate(kafka_server_brokertopicmetrics_failedfetchrequests_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",topic!=\"\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Failed Fetch Request Rate",
