@@ -651,7 +651,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateHeadlessService() {
-        return createHeadlessService(getHeadlessServicePorts(), true);
+        return createHeadlessService(getHeadlessServicePorts());
     }
 
     /**
