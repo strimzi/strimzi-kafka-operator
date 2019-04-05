@@ -1001,6 +1001,7 @@ public class TopicOperator {
 
         LOGGER.debug("Reconciling kafka topics {}", topicsFromKafka);
 
+        final ReconcileState result = new ReconcileState(succeeded, undetermined, failed);
         if (topicsFromKafka.size() > 0) {
             CountDownLatch countDownLatch = new CountDownLatch(topicsFromKafka.size());
             for (TopicName topicName : topicsFromKafka) {
@@ -1016,16 +1017,15 @@ public class TopicOperator {
                     }
                     countDownLatch.countDown();
                     if (countDownLatch.getCount() == 0) {
-                        topicFutures.complete(new ReconcileState(succeeded, undetermined, failed));
+                        topicFutures.complete(result);
                     }
                 });
             }
         } else {
-            topicFutures.complete(new ReconcileState(succeeded, undetermined, failed));
+            topicFutures.complete(result);
         }
 
         return topicFutures;
-    }
 
     /**
      * Reconcile the given topic which has the given {@code privateTopic} in the topic store.
