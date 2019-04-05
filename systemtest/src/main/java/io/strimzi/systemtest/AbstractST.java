@@ -466,51 +466,20 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             () -> kubeClient().getPod(podName) == null);
     }
 
-    void verifyLabelsOnZkPods(String namespace, String clusterName, int zkPods, String appName) {
-        LOGGER.info("Verifying labels for Zookeeper pods");
+    void verifyLabelsOnKafkaOrZkPods(String namespace, String clusterName, String podType, int replicas, String appName) {
+        LOGGER.info("Verifying labels for " + podType);
 
-        //Verifying labels for zookeeper pods
-        for (int i = 0; i < zkPods; i++) {
-            LOGGER.info("Checking labels for ZooKeeper-" + i);
-            String zkPodName = clusterName.concat("-zookeeper-" + i);
-            Map<String, String> labels = CLIENT.inNamespace(namespace).pods().withName(zkPodName).get().getMetadata().getLabels();
+        for (int i = 0; i < replicas; i++) {
+            LOGGER.info("Checking labels for " + podType + "-" + i);
+            String podName = clusterName.concat("-" + podType + "-" + i);
+            Map<String, String> labels = CLIENT.inNamespace(namespace).pods().withName(podName).get().getMetadata().getLabels();
             assertEquals(appName, labels.get("app"));
-            assertTrue(labels.get("controller-revision-hash").matches("openshift-my-cluster-zookeeper-.+"));
-            assertEquals(zkPodName, labels.get("statefulset.kubernetes.io/pod-name"));
+            assertTrue(labels.get("controller-revision-hash").matches("openshift-my-cluster-" + podType + "-.+"));
+            assertEquals(podName, labels.get("statefulset.kubernetes.io/pod-name"));
             assertEquals(clusterName, labels.get("strimzi.io/cluster"));
             assertEquals("Kafka", labels.get("strimzi.io/kind"));
-            assertEquals(clusterName.concat("-zookeeper"), labels.get("strimzi.io/name"));
+            assertEquals(clusterName.concat("-").concat(podType), labels.get("strimzi.io/name"));
         }
-    }
-
-    void verifyLabelsOnKafkaPods(String namespace, String clusterName, int kafkaPods, String appName) {
-        LOGGER.info("Verifying labels for kafka pods");
-
-        for (int i = 0; i < kafkaPods; i++) {
-            LOGGER.info("Checking labels for Kafka-" + i);
-            String kafkaPodName = clusterName.concat("-kafka-" + i);
-            Map<String, String> labels = CLIENT.inNamespace(namespace).pods().withName(kafkaPodName).get().getMetadata().getLabels();
-            assertEquals(appName, labels.get("app"));
-            assertTrue(labels.get("controller-revision-hash").matches("openshift-my-cluster-kafka-.+"));
-            assertEquals(kafkaPodName, labels.get("statefulset.kubernetes.io/pod-name"));
-            assertEquals(clusterName, labels.get("strimzi.io/cluster"));
-            assertEquals("Kafka", labels.get("strimzi.io/kind"));
-            assertEquals(clusterName.concat("-kafka"), labels.get("strimzi.io/name"));
-        }
-    }
-
-    void verifyLabelsOnEOPod(String namespace, String clusterName, String appName) {
-        LOGGER.info("Verifying labels for EO pod");
-
-        //Verifying labels for entity-operator
-        String entityOperatorPodName = KUBE_CLIENT.listResourcesByLabel("pod",
-                "strimzi.io/name=" + clusterName + "-entity-operator").get(0);
-        Map<String, String> eoLabels = CLIENT.inNamespace(namespace).pods().withName(entityOperatorPodName).get().getMetadata().getLabels();
-        assertEquals(appName, eoLabels.get("app"));
-        assertTrue(eoLabels.get("pod-template-hash").matches("\\d+"));
-        assertEquals(clusterName, eoLabels.get("strimzi.io/cluster"));
-        assertEquals("Kafka", eoLabels.get("strimzi.io/kind"));
-        assertEquals(clusterName.concat("-entity-operator"), eoLabels.get("strimzi.io/name"));
     }
 
     void verifyLabelsOnCOPod(String namespace) {
@@ -525,15 +494,17 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         assertEquals("cluster-operator", coLabels.get("strimzi.io/kind"));
     }
 
-    void verifyLabelsForSecrets(String namespace, String clusterName, String appName) {
-        LOGGER.info("Verifying labels for secrets");
-        CLIENT.inNamespace(namespace).secrets().list().getItems().stream()
-                .filter(p -> p.getMetadata().getName().matches("(" + clusterName + ")-(clients|cluster|(entity))(-operator)?(-ca)?(-certs?)?"))
-                .forEach(p -> {
-                    LOGGER.info("Verifying secret: " + p.getMetadata().getName());
-                    assertEquals(appName, p.getMetadata().getLabels().get("app"));
-                    assertEquals("Kafka", p.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(clusterName, p.getMetadata().getLabels().get("strimzi.io/cluster"));
+    void verifyLabelsOnPods(String namespace, String clusterName, String podType, String appName, String kind) {
+        LOGGER.info("Verifying labels on pod: ".concat(podType));
+        CLIENT.inNamespace(namespace).pods().list().getItems().stream()
+                .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-" + podType)))
+                .forEach(pod -> {
+                    LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
+                    assertEquals(appName, pod.getMetadata().getLabels().get("app"));
+                    assertTrue(pod.getMetadata().getLabels().get("pod-template-hash").matches("\\d+"));
+                    assertEquals(clusterName, pod.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals(kind, pod.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals(clusterName.concat("-" + podType), pod.getMetadata().getLabels().get("strimzi.io/name"));
                 });
     }
 
@@ -547,7 +518,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 });
     }
 
-    void verifyLabelsForServices(String namespace, String clusterName, String appName) {
+    void verifyLabelsForKafkaAndZKServices(String namespace, String clusterName, String appName) {
         LOGGER.info("Verifying labels for Services");
         List<String> servicesList = new ArrayList<>();
         servicesList.add(clusterName + "-kafka-bootstrap");
@@ -557,7 +528,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         for (String serviceName : servicesList) {
             CLIENT.inNamespace(namespace).services().list().getItems().stream()
-                    .filter(crd -> crd.getMetadata().getName().equals(serviceName))
+                    .filter(service -> service.getMetadata().getName().equals(serviceName))
                     .forEach(service -> {
                         LOGGER.info("Verifying labels for service: ");
                         assertEquals(appName, service.getMetadata().getLabels().get("app"));
@@ -568,90 +539,50 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    void verifyLabelsForConnectAPIService(String namespace, String clusterName) {
+    void verifyLabelsForService(String namespace, String clusterName, String serviceToTest, String kind) {
         LOGGER.info("Verifying labels for Kafka Connect Services");
 
-        String kafkaConnectAPIServiceName = clusterName.concat("-connect-api");
+        String serviceName = clusterName.concat("-").concat(serviceToTest);
         CLIENT.inNamespace(namespace).services().list().getItems().stream()
-                .filter(crd -> crd.getMetadata().getName().equals(kafkaConnectAPIServiceName))
+                .filter(service -> service.getMetadata().getName().equals(serviceName))
                 .forEach(service -> {
-                    LOGGER.info("Verifying labels for service: ");
+                    LOGGER.info("Verifying labels for service: " + service.getMetadata().getName());
                     assertEquals(clusterName, service.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals("KafkaConnect", service.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(kafkaConnectAPIServiceName, service.getMetadata().getLabels().get("strimzi.io/name"));
+                    assertEquals(kind, service.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals(serviceName, service.getMetadata().getLabels().get("strimzi.io/name"));
                 });
     }
 
-    void verifyLabelsForConfigMaps(String namespace, String clusterName, String appName) {
-        LOGGER.info("Verifying labels for Config Maps");
+    void verifyLabelsForSecrets(String namespace, String clusterName, String appName) {
+        LOGGER.info("Verifying labels for secrets");
+        CLIENT.inNamespace(namespace).secrets().list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().matches("(" + clusterName + ")-(clients|cluster|(entity))(-operator)?(-ca)?(-certs?)?"))
+                .forEach(p -> {
+                    LOGGER.info("Verifying secret: " + p.getMetadata().getName());
+                    assertEquals(appName, p.getMetadata().getLabels().get("app"));
+                    assertEquals("Kafka", p.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals(clusterName, p.getMetadata().getLabels().get("strimzi.io/cluster"));
+                });
+    }
+
+    void verifyLabelsForConfigMaps(String namespace, String clusterName, String appName, String additionalClusterName) {
+        LOGGER.info("Verifying labels for Config maps");
+
         CLIENT.inNamespace(namespace).configMaps().list().getItems().stream()
                 .forEach(cm -> {
-                    LOGGER.info("Verifying labels for Config map: " + cm.getMetadata().getName());
-                    assertEquals("Kafka", cm.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(clusterName, cm.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals(appName, cm.getMetadata().getLabels().get("app"));
-                });
-    }
-
-    void verifyLabelsForConnectConfigMaps(String namespace, String clusterName) {
-        LOGGER.info("Verifying labels for Kafka Connect Config Maps");
-        CLIENT.inNamespace(namespace).configMaps().list().getItems().stream()
-                .filter(pod -> pod.getMetadata().getName().equals(clusterName.concat("-connect-config")))
-                .forEach(cm -> {
-                    LOGGER.info("Verifying labels for Config map: " + cm.getMetadata().getName());
-                    assertEquals("KafkaConnect", cm.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(clusterName, cm.getMetadata().getLabels().get("strimzi.io/cluster"));
-                });
-    }
-
-    void verifyLabelsOnConnectPods(String namespace, String clusterName, int connectPods) {
-        LOGGER.info("Verifying labels on Kafka Connect pods");
-        CLIENT.inNamespace(namespace).pods().list().getItems().stream()
-                .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-connect")))
-                .forEach(pod -> {
-                    LOGGER.info("Verifying labels for Connect pod: " + pod.getMetadata().getName());
-                    assertTrue(pod.getMetadata().getLabels().get("pod-template-hash").matches("\\d+"));
-                    assertEquals(clusterName, pod.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals("KafkaConnect", pod.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(clusterName.concat("-connect"), pod.getMetadata().getLabels().get("strimzi.io/name"));
-                });
-    }
-
-    void verifyLabelsForMMConfigMaps(String namespace, String clusterName) {
-        LOGGER.info("Verifying labels for  Mirror Maker Config Maps");
-        CLIENT.inNamespace(namespace).configMaps().list().getItems().stream()
-                .filter(pod -> pod.getMetadata().getName().equals(clusterName.concat("-mirror-maker-config")))
-                .forEach(cm -> {
-                    LOGGER.info("Verifying labels for MM Config map: " + cm.getMetadata().getName());
-                    assertEquals("KafkaMirrorMaker", cm.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(clusterName, cm.getMetadata().getLabels().get("strimzi.io/cluster"));
-                });
-    }
-
-    void verifyLabelsOnMMPods(String namespace, String clusterName, int mmPods) {
-        LOGGER.info("Verifying labels on Mirror Maker pods");
-        CLIENT.inNamespace(namespace).pods().list().getItems().stream()
-                .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-mirror-maker")))
-                .forEach(pod -> {
-                    LOGGER.info("Verifying labels for MM pod: " + pod.getMetadata().getName());
-                    assertTrue(pod.getMetadata().getLabels().get("pod-template-hash").matches("\\d+"));
-                    assertEquals(clusterName, pod.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals("KafkaMirrorMaker", pod.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(clusterName.concat("-mirror-maker"), pod.getMetadata().getLabels().get("strimzi.io/name"));
-                });
-    }
-
-    void verifyLabelsForMMService(String namespace, String clusterName) {
-        LOGGER.info("Verifying labels for Mirror Maker Services");
-
-        String kafkaMMServiceName = clusterName.concat("-mirror-maker");
-        CLIENT.inNamespace(namespace).services().list().getItems().stream()
-                .filter(crd -> crd.getMetadata().getName().equals(kafkaMMServiceName))
-                .forEach(service -> {
-                    LOGGER.info("Verifying labels for MM service: ");
-                    assertEquals(clusterName, service.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals("KafkaMirrorMaker", service.getMetadata().getLabels().get("strimzi.io/kind"));
-                    assertEquals(kafkaMMServiceName, service.getMetadata().getLabels().get("strimzi.io/name"));
+                    LOGGER.info("Verifying labels for CM: " + cm.getMetadata().getName());
+                    if (cm.getMetadata().getName().equals(clusterName.concat("-connect-config"))) {
+                        assertEquals(null, cm.getMetadata().getLabels().get("app"));
+                        assertEquals("KafkaConnect", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                    } else if (cm.getMetadata().getName().contains("-mirror-maker-config")) {
+                        assertEquals(null, cm.getMetadata().getLabels().get("app"));
+                        assertEquals("KafkaMirrorMaker", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                    } else {
+                        assertEquals(appName, cm.getMetadata().getLabels().get("app"));
+                        assertEquals("Kafka", cm.getMetadata().getLabels().get("strimzi.io/kind"));
+                        assertTrue(cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(clusterName) ||
+                                cm.getMetadata().getLabels().get("strimzi.io/cluster").equals(additionalClusterName));
+                    }
                 });
     }
 
@@ -669,9 +600,17 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 .filter(sa -> sa.getMetadata().getName().startsWith(clusterName))
                 .forEach(sa -> {
                     LOGGER.info("Verifying labels for service account: " + sa.getMetadata().getName());
-                    assertEquals(appName, sa.getMetadata().getLabels().get("app"));
+                    if (sa.getMetadata().getName().equals(clusterName.concat("-connect"))) {
+                        assertEquals(null, sa.getMetadata().getLabels().get("app"));
+                        assertEquals("KafkaConnect", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                    } else if (sa.getMetadata().getName().equals(clusterName.concat("-mirror-maker"))) {
+                        assertEquals(null, sa.getMetadata().getLabels().get("app"));
+                        assertEquals("KafkaMirrorMaker", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                    } else {
+                        assertEquals(appName, sa.getMetadata().getLabels().get("app"));
+                        assertEquals("Kafka", sa.getMetadata().getLabels().get("strimzi.io/kind"));
+                    }
                     assertEquals(clusterName, sa.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals("Kafka", sa.getMetadata().getLabels().get("strimzi.io/kind"));
                 });
     }
 
@@ -693,29 +632,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                     assertEquals("Kafka", rb.getMetadata().getLabels().get("strimzi.io/kind"));
                 });
     }
-
-    void verifyLabelsForConnectServiceAccount(String clusterName) {
-        LOGGER.info("Verifying labels for Connect Service Accounts");
-        CLIENT.inAnyNamespace().serviceAccounts().list().getItems().stream()
-                .filter(sa -> sa.getMetadata().getName().equals(clusterName.concat("-connect")))
-                .forEach(sa -> {
-                    LOGGER.info("Verifying labels for service account: " + sa.getMetadata().getName());
-                    assertEquals(clusterName, sa.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals("KafkaConnect", sa.getMetadata().getLabels().get("strimzi.io/kind"));
-                });
-    }
-
-    void verifyLabelsForMMServiceAccount(String clusterName) {
-        LOGGER.info("Verifying labels for MM Service Accounts");
-        CLIENT.inAnyNamespace().serviceAccounts().list().getItems().stream()
-                .filter(sa -> sa.getMetadata().getName().equals(clusterName.concat("-mirror-maker")))
-                .forEach(sa -> {
-                    LOGGER.info("Verifying labels for service account: " + sa.getMetadata().getName());
-                    assertEquals(clusterName, sa.getMetadata().getLabels().get("strimzi.io/cluster"));
-                    assertEquals("KafkaMirrorMaker", sa.getMetadata().getLabels().get("strimzi.io/kind"));
-                });
-    }
-
 
     /**
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
