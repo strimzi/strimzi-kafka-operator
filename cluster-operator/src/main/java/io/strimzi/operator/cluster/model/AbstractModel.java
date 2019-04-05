@@ -69,6 +69,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -715,13 +716,14 @@ public abstract class AbstractModel {
         return service;
     }
 
-    protected Service createHeadlessService(List<ServicePort> ports, boolean publishNotReadyAddresses) {
+    protected Service createHeadlessService(List<ServicePort> ports) {
+        Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(headlessServiceName)
                     .withLabels(getLabelsWithName(headlessServiceName, templateHeadlessServiceLabels))
                     .withNamespace(namespace)
-                    .withAnnotations(mergeAnnotations(null, templateHeadlessServiceAnnotations))
+                    .withAnnotations(mergeAnnotations(annotations, templateHeadlessServiceAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
@@ -729,7 +731,7 @@ public abstract class AbstractModel {
                     .withClusterIP("None")
                     .withSelector(getSelectorLabels())
                     .withPorts(ports)
-                    .withPublishNotReadyAddresses(publishNotReadyAddresses)
+                    .withPublishNotReadyAddresses(true)
                 .endSpec()
                 .build();
         log.trace("Created headless service {}", service);

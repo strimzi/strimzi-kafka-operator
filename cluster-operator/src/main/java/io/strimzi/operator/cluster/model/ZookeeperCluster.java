@@ -341,7 +341,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public Service generateHeadlessService() {
-        return createHeadlessService(getServicePortList(), true);
+        return createHeadlessService(getServicePortList());
     }
 
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
