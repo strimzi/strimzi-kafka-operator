@@ -172,7 +172,7 @@ public class Session extends AbstractVerticle {
                 Future<Void> f = Future.future();
                 Thread resourceThread = new Thread(() -> {
                     try {
-                        LOGGER.debug("Watching KafkaTopics matching {}", labels);
+                        LOGGER.debug("Watching KafkaTopics matching {}", labels.labels());
                         Session.this.topicWatch = kubeClient.customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class)
                                 .inNamespace(namespace).withLabels(labels.labels()).watch(new K8sTopicWatcher(topicOperator));
                         LOGGER.debug("Watching setup");
