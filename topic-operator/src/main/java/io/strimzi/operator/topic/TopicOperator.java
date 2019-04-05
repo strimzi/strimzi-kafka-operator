@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
@@ -993,37 +994,37 @@ public class TopicOperator {
      * Reconcile all the topics in {@code foundFromKafka}, returning a ReconciliationState.
      */
     private Future<ReconcileState> reconcileFromKafka(String reconciliationType, List<TopicName> topicsFromKafka) {
-        List<Future<Boolean>> topicFutures = new ArrayList<>();
+        Future<ReconcileState> topicFutures = Future.future();
+        Set<TopicName> succeeded = new HashSet<>();
+        Set<TopicName> undetermined = new HashSet<>();
+        List<Future> failed = new ArrayList<>();
+
         LOGGER.debug("Reconciling kafka topics {}", topicsFromKafka);
-        // First reconcile the topics in kafka
-        for (TopicName topicName : topicsFromKafka) {
-            LOGGER.debug("{} reconciliation of topic {}", reconciliationType, topicName);
-            // Now look up the topic in the private store to find out its KafkaTopic name
-            topicStore.read(topicName, tsr -> {
-                if (tsr.failed()) {
-                    topicFutures.add(Future.failedFuture(
+
+        if (topicsFromKafka.size() > 0) {
+            CountDownLatch countDownLatch = new CountDownLatch(topicsFromKafka.size());
+            for (TopicName topicName : topicsFromKafka) {
+                topicStore.read(topicName, tsr -> {
+                    if (tsr.failed()) {
+                        failed.add(Future.failedFuture(
                             new OperatorException("Error getting KafkaTopic " + topicName + " during " + reconciliationType + " reconciliation", tsr.cause())));
-                } else if (tsr.result() == null) {
-                    topicFutures.add(Future.succeededFuture(Boolean.FALSE));
-                } else {
-                    topicFutures.add(reconcileWithPrivateTopic(reconciliationType, topicName, tsr.result()));
-                }
-            });
-        }
-        return CompositeFuture.any((List) topicFutures).map(composite -> {
-            Set<TopicName> succeeded = new HashSet<>();
-            Set<TopicName> undetermined = new HashSet<>();
-            List<Future> failed = new ArrayList<>();
-            for (int i = 0; i < composite.size(); i++) {
-                TopicName topicName = topicsFromKafka.get(i);
-                if (composite.succeeded(i)) {
-                    (composite.resultAt(i) ? succeeded : undetermined).add(topicName);
-                } else {
-                    failed.add(topicFutures.get(i));
-                }
+                    } else if (tsr.result() == null) {
+                        undetermined.add(topicName);
+                    } else {
+                        reconcileWithPrivateTopic(reconciliationType, topicName, tsr.result());
+                        succeeded.add(topicName);
+                    }
+                    countDownLatch.countDown();
+                    if (countDownLatch.getCount() == 0) {
+                        topicFutures.complete(new ReconcileState(succeeded, undetermined, failed));
+                    }
+                });
             }
-            return new ReconcileState(succeeded, undetermined, failed);
-        });
+        } else {
+            topicFutures.complete(new ReconcileState(succeeded, undetermined, failed));
+        }
+
+        return topicFutures;
     }
 
     /**
