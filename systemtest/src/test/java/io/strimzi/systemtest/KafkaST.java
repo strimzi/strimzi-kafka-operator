@@ -508,7 +508,7 @@ class KafkaST extends MessagingBaseST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        resources().kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editKafka()
                     .withResources(new ResourceRequirementsBuilder()
@@ -884,8 +884,8 @@ class KafkaST extends MessagingBaseST {
         );
 
         int sent = sendMessages(new VerifiableProducer(), messagesCount, 20000, kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedSource = receiveMessages(new VerifiableConsumer(), messagesCount, 180000, kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedTarget = receiveMessages(new VerifiableConsumer(), messagesCount, 180000, kafkaClusterTargetName, true, topicSourceName, userTarget);
+        int receivedSource = receiveMessages(new VerifiableConsumer(), messagesCount, 60000, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedTarget = receiveMessages(new VerifiableConsumer(), messagesCount, 60000, kafkaClusterTargetName, true, topicSourceName, userTarget);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -993,8 +993,8 @@ class KafkaST extends MessagingBaseST {
         );
 
         int sent = sendMessages(new VerifiableProducer(), messagesCount, 20000, kafkaSourceName, true, topicName, userSource);
-        int receivedSource = receiveMessages(new VerifiableConsumer(), messagesCount, 180000, kafkaSourceName, true, topicName, userSource);
-        int receivedTarget = receiveMessages(new VerifiableConsumer(), messagesCount, 180000, kafkaTargetName, true, topicName, userTarget);
+        int receivedSource = receiveMessages(new VerifiableConsumer(), messagesCount, 60000, kafkaSourceName, true, topicName, userSource);
+        int receivedTarget = receiveMessages(new VerifiableConsumer(), messagesCount, 60000, kafkaTargetName, true, topicName, userTarget);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);

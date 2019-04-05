@@ -185,7 +185,6 @@ public class StUtils {
     public static void waitForPodsReady(KubernetesClient client, String namespace, LabelSelector selector, boolean containers) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = client.pods().inNamespace(namespace).withLabelSelector(selector).list().getItems();
-
             if (pods.isEmpty()) {
                 LOGGER.debug("Not ready (no pods matching {})", selector);
                 return false;

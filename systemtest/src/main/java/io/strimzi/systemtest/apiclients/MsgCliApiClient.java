@@ -202,7 +202,6 @@ public class MsgCliApiClient {
         apiArgument.addAll(client.getArguments());
 
         JsonObject response = startClients(apiArgument, 1);
-        LOGGER.info(response.toString());
 
         JsonArray ids = response.getJsonArray("clients");
         return ids.getString(0);

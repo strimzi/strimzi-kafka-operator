@@ -275,10 +275,6 @@ class ConnectST extends AbstractST {
 
     @AfterAll
     void teardownEnvironment() {
-        LOGGER.info("Collecting events in namespace {}", NAMESPACE);
-        String events = KUBE_CLIENT.getEvents();
-        // Write events to file
-        LOGGER.info("Events: {}", events);
         testClassResources.deleteResources();
         teardownEnvForOperator();
     }
