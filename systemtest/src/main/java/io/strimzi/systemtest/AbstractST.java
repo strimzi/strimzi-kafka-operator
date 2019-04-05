@@ -341,7 +341,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = CLIENT.pods().inNamespace(namespace).withName(podName).get();
         assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-                CLIENT.pods().list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
+                CLIENT.pods().inNamespace(namespace).list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
 
         Optional optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
         assertTrue(optional.isPresent(), "Not found an expected container " + containerName);
@@ -1049,10 +1049,10 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             LOGGER.info("Collecting logs for pods in namespace {}", namespace);
 
             try {
-                client.pods().list().getItems().forEach(pod -> {
+                client.pods().inNamespace(namespace).list().getItems().forEach(pod -> {
                     String podName = pod.getMetadata().getName();
                     pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
-                        String log = client.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
+                        String log = client.pods().inNamespace(namespace).withName(podName).inContainer(containerStatus.getName()).getLog();
                         // Write logs from containers to files
                         writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
                     });
