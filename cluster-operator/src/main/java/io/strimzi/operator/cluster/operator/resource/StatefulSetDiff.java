@@ -136,7 +136,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
     /**
      * Returns whether the Diff is empty or not
      *
-     * @return
+     * @return true when the StatefulSets are identical
      */
     public boolean isEmpty() {
         return isEmpty;

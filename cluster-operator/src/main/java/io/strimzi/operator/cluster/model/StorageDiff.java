@@ -63,18 +63,26 @@ public class StorageDiff extends AbstractResourceDiff {
     /**
      * Returns whether the Diff is empty or not
      *
-     * @return
+     * @return true when the storage configurations are the same
      */
     public boolean isEmpty() {
         return isEmpty;
     }
 
-    /** Returns true if there's a difference in {@code /type} */
+    /**
+     * Returns true if there's a difference in {@code /type}
+     *
+     * @return true when the storage configurations have different type
+     */
     public boolean changesType() {
         return changesType;
     }
 
-    /** Returns true if there's a difference in {@code /size} */
+    /**
+     * Returns true if there's a difference in {@code /size}
+     *
+     * @return true when the size of the volumes changed
+     */
     public boolean changesSize() {
         return changesSize;
     }
