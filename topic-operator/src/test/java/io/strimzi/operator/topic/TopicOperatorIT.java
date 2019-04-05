@@ -385,7 +385,7 @@ public class TopicOperatorIT extends BaseITST {
                 context.fail(ar.cause());
             }
         });
-        async.awaitSuccess();
+        async.await();
     }
 
     private void waitForEvent(TestContext context, KafkaTopic kafkaTopic, String expectedMessage, TopicOperator.EventType expectedType) {
