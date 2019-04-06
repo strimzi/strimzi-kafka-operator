@@ -62,8 +62,7 @@ public class CrdOperator<C extends KubernetesClient,
             RequestBody postBody = RequestBody.create(OperationSupport.JSON, new ObjectMapper().writeValueAsString(resource));
             Request request = new Request.Builder().put(postBody).url(
                     baseUrl + "apis/kafka.strimzi.io/v1beta1/namespaces/" + resource.getMetadata().getNamespace()
-                    + "/kafkausers/" + resource.getMetadata().getName() + "/status").build();
-                    //+ "/kafkas/" + resource.getMetadata().getName() + "/status").build();
+                    + "/kafkas/" + resource.getMetadata().getName() + "/status").build();
             String method = request.method();
             log.debug("Making {} request {}", method, request);
             Response response = client.newCall(request).execute();

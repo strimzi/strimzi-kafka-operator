@@ -4,113 +4,87 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Doneable;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.KafkaUserList;
-import io.strimzi.api.kafka.model.DoneableKafkaUser;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.KafkaUserBuilder;
-import io.strimzi.api.kafka.model.KafkaUserStatus;
+import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.vertx.core.Future;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(VertxUnitRunner.class)
-public class CrdOperatorIT<C extends KubernetesClient,
-        T extends CustomResource,
-        L extends CustomResourceList<T>,
-        D extends Doneable<T>> extends AbstractResourceOperatorIT<C, T, L, D, Resource<T, D>> {
+public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> {
 
     protected final Logger log = LogManager.getLogger(getClass());
-    CrdOperator<C, T, L, D> crdOperator;
-    T customResource;
+    CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
+    Kafka customResource;
 
     @Override
-    protected AbstractResourceOperator<C, T, L, D, Resource<T, D>> operator() {
-        return new CrdOperator(vertx, client, KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
+    protected AbstractResourceOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> operator() {
+        return new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
     }
 
-    protected T getResource() {
-        KafkaUser user = new KafkaUserBuilder().withApiVersion("kafka.strimzi.io/v1beta1").withMetadata(
-                new ObjectMetaBuilder()
-                        .withName(RESOURCE_NAME)
-                        .withNamespace(namespace)
-                        .build())
-                .withNewSpec()
-                .withNewKafkaUserTlsClientAuthentication()
-                .endKafkaUserTlsClientAuthentication()
-                .withNewKafkaUserAuthorizationSimple()
-                .withAcls()
-                .endKafkaUserAuthorizationSimple()
+    protected Kafka getResource() {
+
+        return new KafkaBuilder()
+                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withNewMetadata()
+                    .withName(RESOURCE_NAME)
+                    .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec().
+                        withNewKafka()
+                            .withReplicas(1)
+                            .withNewListeners()
+                                .withNewPlain()
+                                .endPlain()
+                            .endListeners()
+                            .withNewEphemeralStorage()
+                            .endEphemeralStorage()
+                        .endKafka()
+                        .withNewZookeeper()
+                            .withReplicas(1)
+                            .withNewEphemeralStorage()
+                            .endEphemeralStorage()
+                        .endZookeeper()
                 .endSpec()
-                .build();
-
-        return (T) user;
+                .withNewStatus()
+                .endStatus().build();
     }
 
     @Override
-    protected T getOriginal() {
-        KafkaUser ku = (KafkaUser) getResource();
-        log.info("{}", ku);
-        log.info("================================================================");
-
-        return (T) ku;
-        //String kafkaUser = "test-user";
-
-        //KafkaUser user = resources().User(CLUSTER_NAME, kafkaUser).done();
-        //KUBE_CLIENT.waitForResourceCreation("kafkaUser", kafkaUser);
-        //String kafkaUserAsJson = KUBE_CLIENT.getResourceAsJson("KafkaUser", kafkaUser);
-
-        //customResource = crdOperator.get("myproject", "my-cluster");
-        //crdOperator.updateStatus( (T) new KafkaBuilder((Kafka)customResource).withNewStatus().withState("").endStatus().build() );
-        //customResource = crdOperator.get("myproject", "my-cluster");
-
-        //log.info("Custom Resource: {}", customResource.toString() );
-        //return customResource;
+    protected Kafka getOriginal() {
+        return getResource();
     }
 
     @Override
-    protected T getModified()  {
-        //crdOperator.updateStatus( (T) new KafkaBuilder((Kafka)customResource).withNewStatus().withState("foo").endStatus().build() );
-        //T modifiedCustomResource = crdOperator.get("myproject", "my-cluster");
+    protected Kafka getModified()  {
+        return new KafkaBuilder(getResource()).editSpec().editKafka().withReplicas(2).endKafka().endSpec().build();
 
-        //log.info("Updated Custom Resource: {}", modifiedCustomResource.toString() );
-        //return modifiedCustomResource;
-        //return customResource;
-
-        KafkaUser ku = (KafkaUser)getResource();
-        //KafkaUser ku = (KafkaUser) crdOperator.get(namespace, RESOURCE_NAME);
-        KafkaUserStatus kus = new KafkaUserStatus();
-        kus.setState("test");
-
-        ku.setStatus(kus);
-
-        log.info("{}", ku);
-
-        return (T) ku;
     }
 
     @Override
     public void testFullCycle(TestContext context)    {
-        Async async = context.async();
+        /*Async async = context.async();
         AbstractResourceOperator op = operator();
 
-        T newResource = getOriginal();
-        T modResource = getModified();
+        Kafka newResource = getOriginal();
+        Kafka modResource = getModified();
 
-        Future<ReconcileResult<T>> createFuture = op.reconcile(namespace, RESOURCE_NAME, newResource);
+        Future<ReconcileResult<Kafka>> createFuture = op.reconcile(namespace, RESOURCE_NAME, newResource);
 
         createFuture.setHandler(create -> {
             if (create.succeeded()) {
-                T created = (T) op.get(namespace, RESOURCE_NAME);
+                Kafka created = (Kafka) op.get(namespace, RESOURCE_NAME);
 
                 if (created == null)    {
                     context.fail("Failed to get created Resource");
@@ -122,11 +96,11 @@ public class CrdOperatorIT<C extends KubernetesClient,
                     //assertResources(context, newResource, created);
                     async.complete();
 
-                    /*Future<ReconcileResult<T>> modifyFuture = op.reconcile(namespace, RESOURCE_NAME, modResource);
+                    /*Future<ReconcileResult<Kafka>> modifyFuture = op.reconcile(namespace, RESOURCE_NAME, modResource);
 
                     modifyFuture.setHandler(modify -> {
                         if (modify.succeeded()) {
-                            T modified = (T) op.get(namespace, RESOURCE_NAME);
+                            Kafka modified = (Kafka) op.get(namespace, RESOURCE_NAME);
 
                             if (modified == null)    {
                                 context.fail("Failed to get modified Resource");
@@ -134,11 +108,11 @@ public class CrdOperatorIT<C extends KubernetesClient,
                             } else {
                                 assertResources(context, modResource, modified);
                                 // Override this
-                                Future<ReconcileResult<T>> deleteFuture = op.reconcile(namespace, RESOURCE_NAME, null);
+                                Future<ReconcileResult<Kafka>> deleteFuture = op.reconcile(namespace, RESOURCE_NAME, null);
 
                                 deleteFuture.setHandler(delete -> {
                                     if (delete.succeeded()) {
-                                        T deleted = (T) op.get(namespace, RESOURCE_NAME);
+                                        Kafka deleted = (Kafka) op.get(namespace, RESOURCE_NAME);
 
                                         if (deleted == null)    {
                                             async.complete();
@@ -156,7 +130,57 @@ public class CrdOperatorIT<C extends KubernetesClient,
                             context.fail(modify.cause());
                             async.complete();
                         }
-                    });*/
+                    });
+                }
+
+            } else {
+                context.fail(create.cause());
+                async.complete();
+            }
+        });*/
+    }
+
+    @Test
+    public void statusTest(TestContext context) throws InterruptedException {
+        Async async = context.async();
+
+        crdOperator =  new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
+
+        Future<ReconcileResult<Kafka>> createFuture = crdOperator.reconcile(namespace, RESOURCE_NAME, getResource());
+
+        createFuture.setHandler(create -> {
+            if (create.succeeded()) {
+                Kafka k0 = (Kafka) crdOperator.get(namespace, RESOURCE_NAME);
+
+                if (k0 == null)    {
+                    context.fail("Failed to get created Resource");
+                    async.complete();
+                } else {
+                    // k1 needs the same resourceID as k0 in order to update it
+                    Kafka k1 = new KafkaBuilder(k0).withNewStatus().withState("test").endStatus().build();
+                    crdOperator.updateStatus(k1);
+                    Kafka k2 = crdOperator.get(namespace, RESOURCE_NAME);
+                    assertEquals(k1.getStatus().toString(), k2.getStatus().toString());
+                    async.complete();
+
+                    Future<ReconcileResult<Kafka>> deleteFuture = crdOperator.reconcile(namespace, RESOURCE_NAME, null);
+                    deleteFuture.setHandler(delete -> {
+                        if (delete.succeeded()) {
+                            Kafka deleted = (Kafka) crdOperator.get(namespace, RESOURCE_NAME);
+
+                            if (deleted == null)    {
+                                log.info("Resource deleted");
+                                async.complete();
+                            } else {
+                                context.fail("Failed to delete Resource");
+                                async.complete();
+                            }
+                        } else {
+                            context.fail(delete.cause());
+                            async.complete();
+                        }
+                    });
+
                 }
 
             } else {
@@ -167,7 +191,7 @@ public class CrdOperatorIT<C extends KubernetesClient,
     }
 
     @Override
-    protected void assertResources(TestContext context, T expected, T actual)   {
+    protected void assertResources(TestContext context, Kafka expected, Kafka actual)   {
         context.assertEquals(expected.getMetadata().getName(), actual.getMetadata().getName());
         //context.assertEquals(expected.getMetadata().getNamespace(), actual.getMetadata().getNamespace());
         //context.assertEquals(expected.getMetadata().getLabels(), actual.getMetadata().getLabels());
