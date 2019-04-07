@@ -1,0 +1,1 @@
+For the full set of Strimzi logos and pictures see [here](http://design.jboss.org/strimzi/)
