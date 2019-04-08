@@ -307,7 +307,7 @@
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-dependencies</artifactId>
                 <version>${vertx.version}</version>
-                <scope>compile</scope>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>

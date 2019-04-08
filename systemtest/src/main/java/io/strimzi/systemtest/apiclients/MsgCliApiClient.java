@@ -133,8 +133,6 @@ public class MsgCliApiClient {
     public JsonObject getClientInfo(String uuid) throws Exception {
         CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
 
-//        Future<JsonObject> responsePromise = Future.future();
-
         JsonObject request = new JsonObject();
         request.put("id", uuid);
 
