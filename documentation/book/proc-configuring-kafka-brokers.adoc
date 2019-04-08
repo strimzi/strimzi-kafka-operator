@@ -14,7 +14,9 @@ You can configure an existing Kafka broker, or create a new Kafka broker with a 
 
 .Procedure
 
-. In the `Kafka` resource that specifies the cluster deployment, edit the `config` property. For example:
+. Open the YAML configuration file that contains the `Kafka` resource specifying the cluster deployment.
+
+. Edit the `config` property in the `Kafka.spec.kafka` resource. For example:
 +
 [source,yaml,subs=attributes+]
 ----
@@ -46,4 +48,4 @@ On {OpenShiftName}, use `oc apply`:
 [source,shell,subs=+quotes]
 oc apply -f _kafka.yaml_
 +
-where `_kafka.yaml_` is the filename of the YAML configuration file for the resource that you want to configure; for example, `kafka-persistent.yaml`.
+where `_kafka.yaml_` is the YAML configuration file for the resource that you want to configure; for example, `kafka-persistent.yaml`.
