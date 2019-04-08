@@ -1,3 +1,4 @@
+# oc create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
 global:
   slack_api_url: https://hooks.slack.com/services/change/me/please
 route:

@@ -7,7 +7,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      strimzi.io/name: my-cluster-kafka-bootstrap
+      strimzi.io/kind: Kafka
       app: strimzi
   endpoints:
   #### job_name: kubernetes-cadvisor

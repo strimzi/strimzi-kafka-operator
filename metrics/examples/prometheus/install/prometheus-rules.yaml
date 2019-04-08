@@ -5,7 +5,6 @@ metadata:
     role: alert-rules
     app: strimzi
   name: prometheus-k8s-rules
-  namespace: myproject
 spec:
   groups:
   - name: kafka
