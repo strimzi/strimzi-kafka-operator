@@ -7,16 +7,40 @@ package io.strimzi.systemtest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Class which holds environment variables for system tests.
+ */
 public class Environment {
     private static final Logger LOGGER = LogManager.getLogger(Environment.class);
     private static Environment instance;
 
+    /**
+     * Specify organization which owns image used in system tests.
+     */
     public static final String STRIMZI_ORG_ENV = "DOCKER_ORG";
+    /**
+     * Specify image tags used in system tests.
+     */
     public static final String STRIMZI_TAG_ENV = "DOCKER_TAG";
+    /**
+     * Directory for store logs collected during the tests.
+     */
     public static final String TEST_LOG_DIR_ENV = "TEST_LOG_DIR";
+    /**
+     * Kafka version used in images during the system tests.
+     */
     public static final String ST_KAFKA_VERSION_ENV = "ST_KAFKA_VERSION";
+    /**
+     * Log level for cluster operator.
+     */
     public static final String STRIMZI_LOG_LEVEL_ENV = "STRIMZI_DEFAULT_LOG_LEVEL";
+    /**
+     * Cluster domain. It's used for specify URL endpoint of testing clients.
+     */
     public static final String KUBERNETES_DOMAIN_ENV = "KUBERNETES_DOMAIN";
+    /**
+     * URL of the kubernetes cluster. It's used for specify URL endpoint of testing clients.
+     */
     public static final String KUBERNETES_API_URL_ENV = "KUBERNETES_API_URL";
 
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
