@@ -66,7 +66,7 @@ class RollingUpdateST extends AbstractST {
                 .done();
 
         TestUtils.waitFor("Wait till rolling update of pods start", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT,
-            () -> !CLIENT.pods().withName(firstZkPodName).isReady());
+            () -> !CLIENT.pods().inNamespace(NAMESPACE).withName(firstZkPodName).isReady());
 
         TestUtils.waitFor("Wait till rolling update timeout", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT_WAIT,
             () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logZkPattern).isEmpty());
@@ -118,7 +118,7 @@ class RollingUpdateST extends AbstractST {
                 .done();
 
         TestUtils.waitFor("Wait till rolling update of pods start", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT,
-            () -> !CLIENT.pods().withName(firstKafkaPodName).isReady());
+            () -> !CLIENT.pods().inNamespace(NAMESPACE).withName(firstKafkaPodName).isReady());
 
         TestUtils.waitFor("Wait till rolling update timeouted", CO_OPERATION_TIMEOUT_POLL, CO_OPERATION_TIMEOUT_WAIT,
             () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), logKafkaPattern).isEmpty());

@@ -84,28 +84,28 @@ public class Resources extends AbstractResources {
             case Kafka.RESOURCE_KIND:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     waitForDeletion((Kafka) resource);
                 });
                 break;
             case KafkaConnect.RESOURCE_KIND:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     waitForDeletion((KafkaConnect) resource);
                 });
                 break;
             case KafkaConnectS2I.RESOURCE_KIND:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
                 break;
             case KafkaMirrorMaker.RESOURCE_KIND:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
+                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
                 break;
