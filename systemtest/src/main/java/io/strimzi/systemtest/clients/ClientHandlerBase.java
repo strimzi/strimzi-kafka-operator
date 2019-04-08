@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.libClient;
+package io.strimzi.systemtest.clients;
 
 import io.vertx.core.AbstractVerticle;
 import org.apache.logging.log4j.LogManager;
@@ -13,7 +13,7 @@ import java.util.function.IntPredicate;
 
 public abstract class ClientHandlerBase<T> extends AbstractVerticle {
 
-    private static final Logger LOGGER = LogManager.getLogger(Producer.class);
+    private static final Logger LOGGER = LogManager.getLogger(ClientHandlerBase.class);
     final CompletableFuture<T> resultPromise;
     IntPredicate msgCntPredicate;
 

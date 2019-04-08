@@ -7,7 +7,7 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.libClient.KafkaClient;
+import io.strimzi.systemtest.clients.KafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -177,7 +177,7 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(FLAKY)
+    @Tag(REGRESSION)
     void testAutoRenewCaCertsTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String userName = "alice";

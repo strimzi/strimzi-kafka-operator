@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.libClient;
+package io.strimzi.systemtest.clients;
 
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -16,9 +16,6 @@ import java.util.function.IntPredicate;
 public class KafkaClient implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(KafkaClient.class);
     private Vertx vertx = Vertx.vertx();
-
-    public KafkaClient() {
-    }
 
     @Override
     public void close() {
