@@ -775,7 +775,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     void recreateEnvironmentAfterFailure(ExtensionContext context) {
         if (context.getExecutionException().isPresent()) {
             LOGGER.info("Test execution contains exception, going to recreate test environment");
-//            recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
+            recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
             LOGGER.info("Env recreated.");
         }
     }
