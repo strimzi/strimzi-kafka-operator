@@ -7,7 +7,7 @@
 = Deploying the standalone Topic Operator
 
 Deploying the Topic Operator as a standalone component is more complicated than installing it using the Cluster Operator, but it is more flexible.
-For instance it can operate _with_ any Kafka cluster, not necessarily one deployed by the Cluster Operator.
+For instance, it can operate _with_ any Kafka cluster, not necessarily one deployed by the Cluster Operator.
 
 .Prerequisites
 
