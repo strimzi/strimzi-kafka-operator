@@ -8,7 +8,6 @@ import io.strimzi.systemtest.kafkaclients.AbstractClient;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -31,6 +30,9 @@ import java.util.concurrent.TimeoutException;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 
+/**
+ * API for communication with kafka clients deployed as a Deployment inside Kubernetes
+ */
 public class MsgCliApiClient {
     private static final Logger LOGGER = LogManager.getLogger(MsgCliApiClient.class);
     private WebClient webClient;
@@ -38,13 +40,13 @@ public class MsgCliApiClient {
     private Vertx vertx;
     private final int initRetry = 10;
 
+    /**
+     * Constructor for api clients
+     * @param endpoint URL on which deployed clients listening
+     */
     public MsgCliApiClient(URL endpoint) {
         this.endpoint = endpoint;
-        VertxOptions options = new VertxOptions()
-                .setWorkerPoolSize(1)
-                .setInternalBlockingPoolSize(1)
-                .setEventLoopPoolSize(1);
-        this.vertx = Vertx.vertx(options);
+        this.vertx = Vertx.vertx();
         this.connect();
     }
 
@@ -93,9 +95,9 @@ public class MsgCliApiClient {
     }
 
     /**
-     * Start new messaging webClient(s)
+     * Start new messaging kafka client(s)
      *
-     * @param clientArguments list of arguments for webClient (together with webClient name!)
+     * @param clientArguments list of arguments for kafka client (together with kafka client name!)
      * @param count           count of clients that will be started
      * @return
      * @throws InterruptedException
@@ -120,16 +122,19 @@ public class MsgCliApiClient {
     }
 
     /**
-     * Get all info about messaging webClient (stdOut, stdErr, code, isRunning)
+     * Get all info about messaging kafka client (uuid, stdOut, stdErr, code, isRunning)
      *
-     * @param uuid webClient id
-     * @return
+     * @param uuid kafka client id
+     * @return client info
      * @throws InterruptedException
      * @throws ExecutionException
      * @throws TimeoutException
      */
     public JsonObject getClientInfo(String uuid) throws Exception {
         CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
+
+//        Future<JsonObject> responsePromise = Future.future();
+
         JsonObject request = new JsonObject();
         request.put("id", uuid);
 
@@ -146,10 +151,10 @@ public class MsgCliApiClient {
     }
 
     /**
-     * Stop messaging webClient and get all informations about them (stdOut, stdErr, code, isRunning)
+     * Stop messaging kafka client and get all information about them (uuid, stdOut, stdErr, code, isRunning)
      *
-     * @param uuid webClient id
-     * @return
+     * @param uuid kafka client id
+     * @return cline info
      * @throws InterruptedException
      * @throws ExecutionException
      * @throws TimeoutException
@@ -171,9 +176,9 @@ public class MsgCliApiClient {
     }
 
     /***
-     * Send request with one webClient and receive result
-     * @param client
-     * @return result of webClient
+     * Send request with one kafka client and receive result
+     * @param client kafka client
+     * @return result of kafka client
      */
     public JsonObject sendAndGetStatus(AbstractClient client) throws Exception {
         List<String> apiArgument = new LinkedList<>();
@@ -192,9 +197,9 @@ public class MsgCliApiClient {
     }
 
     /***
-     * Send request with one webClient and receive id
-     * @param client
-     * @return id of webClient
+     * Send request with one kafka client and receive id
+     * @param client kafka client
+     * @return id of kafka client
      */
     public String sendAndGetId(AbstractClient client) throws Exception {
         List<String> apiArgument = new LinkedList<>();

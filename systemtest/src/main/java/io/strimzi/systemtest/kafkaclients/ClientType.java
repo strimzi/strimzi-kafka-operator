@@ -21,7 +21,7 @@ public enum ClientType {
             case CLI_KAFKA_VERIFIABLE_CONSUMER:
                 return "/opt/kafka/consumer.sh";
             default:
-                return "";
+                throw new IllegalArgumentException("Unexpected client type!");
         }
     }
 }

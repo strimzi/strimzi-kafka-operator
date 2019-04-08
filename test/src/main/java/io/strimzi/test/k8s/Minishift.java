@@ -25,7 +25,7 @@ public class Minishift implements KubeCluster {
     @Override
     public boolean isClusterUp() {
         try {
-            String output = Exec.exec(CMD, "status").getStdOut();
+            String output = Exec.exec(CMD, "status").out();
             return output.contains("Minishift:  Running")
                     && output.contains("OpenShift:  Running");
         } catch (KubeClusterException e) {

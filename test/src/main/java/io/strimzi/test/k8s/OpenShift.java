@@ -26,7 +26,7 @@ public class OpenShift implements KubeCluster {
             return true;
         } catch (KubeClusterException e) {
             if (e.result.exitStatus() == 1) {
-                if (e.result.getStdOut().contains("not yet ready")) {
+                if (e.result.out().contains("not yet ready")) {
                     LOGGER.debug("Waiting for oc cluster to finish coming up");
                     // In this case it is still coming up, so wait for rather than saying it's not up
                     TestUtils.waitFor("oc cluster up", 1_000, 60_000, () -> {

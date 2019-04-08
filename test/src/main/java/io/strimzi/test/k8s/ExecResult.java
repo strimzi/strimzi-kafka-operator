@@ -24,11 +24,11 @@ public class ExecResult implements Serializable {
         return returnCode;
     }
 
-    public String getStdOut() {
+    public String out() {
         return stdOut;
     }
 
-    public String getStdErr() {
+    public String err() {
         return stdErr;
     }
 }
