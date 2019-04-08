@@ -7,7 +7,9 @@ package io.strimzi.systemtest.apiclients;
 import io.strimzi.systemtest.kafkaclients.AbstractClient;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -46,7 +48,11 @@ public class MsgCliApiClient {
      */
     public MsgCliApiClient(URL endpoint) {
         this.endpoint = endpoint;
-        this.vertx = Vertx.vertx();
+        VertxOptions options = new VertxOptions()
+                .setWorkerPoolSize(1)
+                .setInternalBlockingPoolSize(1)
+                .setEventLoopPoolSize(1);
+        this.vertx = Vertx.vertx(options);
         this.connect();
     }
 
@@ -65,7 +71,7 @@ public class MsgCliApiClient {
         return TestUtils.doRequestNTimes(retry, fn, reconnect);
     }
 
-    private <T> void responseHandler(AsyncResult<HttpResponse<T>> ar, CompletableFuture<T> promise, int expectedCode,
+    private <T> void responseHandler(AsyncResult<HttpResponse<T>> ar, Future<T> promise, int expectedCode,
                                      String warnMessage) {
         try {
             if (ar.succeeded()) {
@@ -73,15 +79,15 @@ public class MsgCliApiClient {
                 T body = response.body();
                 if (response.statusCode() != expectedCode) {
                     LOGGER.error("expected-code: {}, response-code: {}, body: {}", expectedCode, response.statusCode(), response.body());
-                    promise.completeExceptionally(new RuntimeException("Status " + response.statusCode() + " body: " + (body != null ? body.toString() : null)));
+                    promise.fail(new RuntimeException("Status " + response.statusCode() + " body: " + (body != null ? body.toString() : null)));
                 } else if (response.statusCode() < HTTP_OK || response.statusCode() >= HttpURLConnection.HTTP_MULT_CHOICE) {
-                    promise.completeExceptionally(new RuntimeException(body.toString()));
+                    promise.fail(new RuntimeException(body.toString()));
                 } else {
                     promise.complete(ar.result().body());
                 }
             } else {
                 LOGGER.warn(warnMessage);
-                promise.completeExceptionally(ar.cause());
+                promise.fail(ar.cause());
             }
         } catch (io.vertx.core.json.DecodeException decEx) {
             if (ar.result().bodyAsString().contains("application is not available")) {
@@ -105,18 +111,26 @@ public class MsgCliApiClient {
      * @throws TimeoutException
      */
     public JsonObject startClients(List<String> clientArguments, int count) throws Exception {
-        CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
+        Future<JsonObject> responsePromise = Future.future();
+//        CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
         JsonObject request = new JsonObject();
         request.put("command", new JsonArray(clientArguments));
         request.put("count", count);
 
         return doRequestNTimes(initRetry, () -> {
-            webClient.post(endpoint.getPort(), endpoint.getHost(), "")
-                    .as(BodyCodec.jsonObject())
-                    .timeout(120_000)
-                    .sendJson(request,
-                        ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error starting messaging clients"));
-            return responsePromise.get(150_000, TimeUnit.SECONDS);
+                webClient.post(endpoint.getPort(), endpoint.getHost(), "")
+                        .as(BodyCodec.jsonObject())
+                        .timeout(120_000)
+                        .sendJson(request,
+                                ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error starting messaging clients"));
+
+            // Here I should wait till responsePromies will be completed somehow
+            // After putting there breakpoint, responsePromise will never be completed (evn without bp)
+            if (responsePromise.result() == null) {
+                throw new Exception("Result is null!");
+            }
+
+            return responsePromise.result();
         },
         Optional.empty());
     }
@@ -131,7 +145,8 @@ public class MsgCliApiClient {
      * @throws TimeoutException
      */
     public JsonObject getClientInfo(String uuid) throws Exception {
-        CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
+        Future<JsonObject> responsePromise = Future.future();
+//        CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
 
 //        Future<JsonObject> responsePromise = Future.future();
 
@@ -144,7 +159,9 @@ public class MsgCliApiClient {
                     .timeout(120000)
                     .sendJson(request,
                         ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error getting messaging clients info"));
-            return responsePromise.get(150000, TimeUnit.SECONDS);
+
+            return responsePromise.result();
+//            return responsePromise.get(150000, TimeUnit.SECONDS);
         },
         Optional.empty());
 
@@ -160,7 +177,8 @@ public class MsgCliApiClient {
      * @throws TimeoutException
      */
     public JsonObject stopClient(String uuid) throws Exception {
-        CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
+//        CompletableFuture<JsonObject> responsePromise = new CompletableFuture<>();
+        Future<JsonObject> responsePromise = Future.future();
         JsonObject request = new JsonObject();
         request.put("id", uuid);
 
@@ -170,7 +188,8 @@ public class MsgCliApiClient {
                     .timeout(120000)
                     .sendJson(request,
                         ar -> responseHandler(ar, responsePromise, HttpURLConnection.HTTP_OK, "Error removing messaging clients"));
-            return responsePromise.get(150000, TimeUnit.SECONDS);
+//            return responsePromise.get(150000, TimeUnit.SECONDS);
+            return responsePromise.result();
         },
         Optional.empty());
     }
