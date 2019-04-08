@@ -5,17 +5,16 @@
 [id='ref-kafka-broker-configuration-{context}']
 = Kafka broker configuration
 
-Kafka broker can be configured using the `config` property in `Kafka.spec.kafka`.
+A Kafka broker can be configured using the `config` property in `Kafka.spec.kafka`.
 
-This property should contain the Kafka broker configuration options as keys.
-The values could be in one of the following JSON types:
+This property should contain the Kafka broker configuration options as keys with values in one of the following JSON types:
 
 * String
 * Number
 * Boolean
 
-Users can specify and configure the options listed in {ApacheKafkaBrokerConfig} with the exception of those options which are managed directly by {ProductName}.
-Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
+You can specify and configure all of the options in the "Broker Configs" section of the {ApacheKafkaBrokerConfig} apart from those managed directly by {ProductName}.
+Specifically, you are prevented from modifying all configuration options with keys equal to or starting with one of the following strings:
 
 * `listeners`
 * `advertised.`
@@ -35,14 +34,14 @@ Specifically, all configuration options with keys equal to or starting with one 
 * `authorizer.`
 * `super.user`
 
-When one of the forbidden options is present in the `config` property, it will be ignored and a warning message will be printed to the Cluster Operator log file.
-All other options will be passed to Kafka.
+If the `config` property specifies a restricted option, it is ignored and a warning message is printed to the Cluster Operator log file.
+All other supported options are passed to Kafka.
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the provided `config` object.
-When invalid configuration is provided, the Kafka cluster might not start or might become unstable.
-In such cases, the configuration in the `Kafka.spec.kafka.config` object should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
+If invalid configuration is provided, the Kafka cluster might not start or might become unstable.
+In such cases, you must fix the configuration in the `Kafka.spec.kafka.config` object and the Cluster Operator will roll out the new configuration to all Kafka brokers.
 
-.An example showing Kafka broker configuration
+.An example Kafka broker configuration
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
