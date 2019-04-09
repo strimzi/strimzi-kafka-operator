@@ -3,18 +3,18 @@
 // assembly-zookeeper-replicas.adoc
 
 [id='proc-configuring-zookeeper-replicas-{context}']
-= Changing the number of replicas
+= Changing the number of Zookeeper replicas
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster exists.
+* An {ProductPlatformName} cluster is available.
 * The Cluster Operator is running.
 
 .Procedure
 
 . Open the YAML configuration file that contains the `Kafka` resource specifying the cluster deployment.
 
-. Edit the `replicas` property in the `Kafka.spec.zookeeper` resource.
+. In the `zookeeper.replicas` property in the `Kafka` resource, enter the number of replicated Zookeeper servers.
 For example:
 +
 [source,yaml,subs=attributes+]

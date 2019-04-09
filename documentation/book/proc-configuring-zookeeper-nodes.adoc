@@ -7,14 +7,14 @@
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster exists.
+* An {ProductPlatformName} cluster is available.
 * The Cluster Operator is running.
 
 .Procedure
 
 . Open the YAML configuration file that contains the `Kafka` resource specifying the cluster deployment.
 
-. Edit the `config` property in the `Kafka.spec.zookeeper` resource. For example:
+. In the `zookeeper.config` property in the `Kafka` resource, enter one or more Zookeeper configuration settings. For example:
 +
 [source,yaml,subs=attributes+]
 ----
