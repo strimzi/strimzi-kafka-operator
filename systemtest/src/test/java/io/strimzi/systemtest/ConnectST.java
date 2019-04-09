@@ -35,6 +35,7 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
+import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.getFileAsString;
@@ -275,6 +276,27 @@ class ConnectST extends AbstractST {
 
     @AfterAll
     void teardownEnvironment() {
+        LOGGER.info("Collecting logs for pods in namespace {}", NAMESPACE);
+        try {
+            CLIENT.pods().list().getItems().forEach(pod -> {
+                String podName = pod.getMetadata().getName();
+                pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
+                    String log = CLIENT.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
+                    // Write logs from containers to files
+                    if (podName.contains("strimzi") || podName.contains("kafka-0")) {
+                        LOGGER.info("POD: {}\n{}", podName, log);
+                    }
+                });
+            });
+
+            LOGGER.info("Collecting events in namespace {}", NAMESPACE);
+            String events = KUBE_CLIENT.getEvents();
+            LOGGER.info("EVENTS: \n{}", events);
+
+        } catch (Exception allExceptions) {
+            LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
+        }
+
         testClassResources.deleteResources();
         teardownEnvForOperator();
     }
