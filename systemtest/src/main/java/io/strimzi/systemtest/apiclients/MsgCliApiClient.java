@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.apiclients;
 
-import io.strimzi.systemtest.kafkaclients.AbstractClient;
+import io.strimzi.systemtest.kafkaclients.VerifiableClient;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
@@ -178,7 +178,7 @@ public class MsgCliApiClient {
      * @param client kafka client
      * @return result of kafka client
      */
-    public JsonObject sendAndGetStatus(AbstractClient client) throws Exception {
+    public JsonObject sendAndGetStatus(VerifiableClient client) throws Exception {
         List<String> apiArgument = new LinkedList<>();
         apiArgument.add(client.getExecutable());
         apiArgument.addAll(client.getArguments());
@@ -199,7 +199,7 @@ public class MsgCliApiClient {
      * @param client kafka client
      * @return id of kafka client
      */
-    public String sendAndGetId(AbstractClient client) throws Exception {
+    public String sendAndGetId(VerifiableClient client) throws Exception {
         List<String> apiArgument = new LinkedList<>();
         apiArgument.add(client.getExecutable());
         apiArgument.addAll(client.getArguments());

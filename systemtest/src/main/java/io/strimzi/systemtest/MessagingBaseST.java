@@ -6,9 +6,9 @@ package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.apiclients.MsgCliApiClient;
-import io.strimzi.systemtest.kafkaclients.AbstractClient;
 import io.strimzi.systemtest.kafkaclients.ClientArgument;
 import io.strimzi.systemtest.kafkaclients.ClientArgumentMap;
+import io.strimzi.systemtest.kafkaclients.VerifiableClient;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -20,6 +20,8 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.kafkaclients.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
+import static io.strimzi.systemtest.kafkaclients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -50,30 +52,24 @@ public class MessagingBaseST extends AbstractST {
 
     /**
      * Simple availability check for kafka cluster
-     * @param producer producer
-     * @param consumer consumer
      * @param clusterName cluster name
      */
-    void availabilityTest(AbstractClient producer, AbstractClient consumer, String clusterName) throws Exception {
-        availabilityTest(producer, consumer, 100, 20000, clusterName, false, "my-topic", null);
+    void availabilityTest(String clusterName) throws Exception {
+        availabilityTest(100, 20000, clusterName, false, "my-topic", null);
     }
 
     /**
      * Simple availability check for kafka cluster
-     * @param producer producer
-     * @param consumer consumer
      * @param messageCount message count
      * @param timeout timeout
      * @param clusterName cluster name
      */
-    void availabilityTest(AbstractClient producer, AbstractClient consumer, int messageCount, int timeout, String clusterName) throws Exception {
-        availabilityTest(producer, consumer, messageCount, timeout, clusterName, false, "my-topic", null);
+    void availabilityTest(int messageCount, int timeout, String clusterName) throws Exception {
+        availabilityTest(messageCount, timeout, clusterName, false, "my-topic", null);
     }
 
     /**
      * Simple availability check for kafka cluster
-     * @param producer producer
-     * @param consumer consumer
      * @param messageCount message count
      * @param timeout timeout for producer and consumer to be finished
      * @param clusterName cluster name
@@ -81,15 +77,14 @@ public class MessagingBaseST extends AbstractST {
      * @param topicName topic name
      * @param user user for tls if it's used for messages
      */
-    void availabilityTest(AbstractClient producer, AbstractClient consumer, int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
-        sendMessages(producer, messageCount, timeout, clusterName, tlsListener, topicName, user);
-        receiveMessages(consumer, messageCount, timeout, clusterName, tlsListener, topicName, user);
+    void availabilityTest(int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+        sendMessages(messageCount, timeout, clusterName, tlsListener, topicName, user);
+        receiveMessages(messageCount, timeout, clusterName, tlsListener, topicName, user);
         assertSentAndReceivedMessages(sent, received);
     }
 
     /**
      * Method for send messages to specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
-     * @param producer producer
      * @param messageCount messages count
      * @param timeout timeout for producer to be finished
      * @param clusterName cluster name
@@ -98,12 +93,14 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      * @return count of send and acknowledged messages
      */
-    int sendMessages(AbstractClient producer, int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    int sendMessages(int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap producerArguments = new ClientArgumentMap();
         producerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
         producerArguments.put(ClientArgument.TOPIC, topicName);
         producerArguments.put(ClientArgument.MAX_MESSAGES, Integer.toString(messageCount));
+
+        VerifiableClient producer = new VerifiableClient(CLI_KAFKA_VERIFIABLE_PRODUCER);
 
         if (user != null) {
             producerArguments.put(ClientArgument.USER, user.getMetadata().getName().replace("-", "_"));
@@ -130,7 +127,6 @@ public class MessagingBaseST extends AbstractST {
 
     /**
      * Method for receive messages from specific kafka cluster. It uses test-client API for communication with deployed clients inside kubernetes cluster
-     * @param consumer consumer
      * @param messageCount message count
      * @param timeout timeout for consumer to be finished
      * @param clusterName cluster name
@@ -139,7 +135,7 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      * @return count of received messages
      */
-    int receiveMessages(AbstractClient consumer, int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    int receiveMessages(int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
@@ -147,6 +143,8 @@ public class MessagingBaseST extends AbstractST {
         consumerArguments.put(ClientArgument.VERBOSE, "");
         consumerArguments.put(ClientArgument.TOPIC, topicName);
         consumerArguments.put(ClientArgument.MAX_MESSAGES, Integer.toString(messageCount));
+
+        VerifiableClient consumer = new VerifiableClient(CLI_KAFKA_VERIFIABLE_CONSUMER);
 
         if (user != null) {
             consumerArguments.put(ClientArgument.USER, user.getMetadata().getName().replace("-", "_"));

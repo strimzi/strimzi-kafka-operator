@@ -11,24 +11,24 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 
 /**
- * Class represent abstract kafka client which keeps common features of kafka clients
+ * Class represent verifiable kafka client which keeps common features of kafka clients
  */
-public abstract class AbstractClient {
-    private static final Logger LOGGER = LogManager.getLogger(AbstractClient.class);
-    protected ArrayList<ClientArgument> allowedArgs = new ArrayList<>();
+public class VerifiableClient {
+    private static final Logger LOGGER = LogManager.getLogger(VerifiableClient.class);
+    protected ArrayList<ClientArgument> allowedArguments = new ArrayList<>();
     private ClientType clientType;
     private JsonArray messages = new JsonArray();
     private ArrayList<String> arguments = new ArrayList<>();
     private String executable;
 
     /**
-     * Constructor of abstract kafka client
+     * Constructor of verifiable kafka client
      *
      * @param clientType type of kafka client
      */
-    public AbstractClient(ClientType clientType) {
+    public VerifiableClient(ClientType clientType) {
         this.clientType = clientType;
-        this.fillAllowedArgs();
+        this.setAllowedArguments(clientType);
         this.executable = ClientType.getCommand(clientType);
     }
 
@@ -90,12 +90,41 @@ public abstract class AbstractClient {
      * @return true if argument is supported
      */
     private boolean validateArgument(ClientArgument arg) {
-        return this.allowedArgs.contains(arg);
+        return this.allowedArguments.contains(arg);
     }
 
     /**
-     * Fill with clients supported args
+     * Set allowed args for verifiable clients
+     * @param clientType client type
      */
-    protected abstract void fillAllowedArgs();
-
+    protected void setAllowedArguments(ClientType clientType) {
+        switch (clientType) {
+            case CLI_KAFKA_VERIFIABLE_PRODUCER:
+                allowedArguments.add(ClientArgument.TOPIC);
+                allowedArguments.add(ClientArgument.BROKER_LIST);
+                allowedArguments.add(ClientArgument.MAX_MESSAGES);
+                allowedArguments.add(ClientArgument.THROUGHPUT);
+                allowedArguments.add(ClientArgument.ACKS);
+                allowedArguments.add(ClientArgument.PRODUCER_CONFIG);
+                allowedArguments.add(ClientArgument.MESSAGE_CREATE_TIME);
+                allowedArguments.add(ClientArgument.VALUE_PREFIX);
+                allowedArguments.add(ClientArgument.REPEATING_KEYS);
+                allowedArguments.add(ClientArgument.USER);
+            case CLI_KAFKA_VERIFIABLE_CONSUMER:
+                allowedArguments.add(ClientArgument.BROKER_LIST);
+                allowedArguments.add(ClientArgument.TOPIC);
+                allowedArguments.add(ClientArgument.GROUP_ID);
+                allowedArguments.add(ClientArgument.MAX_MESSAGES);
+                allowedArguments.add(ClientArgument.SESSION_TIMEOUT);
+                allowedArguments.add(ClientArgument.VERBOSE);
+                allowedArguments.add(ClientArgument.ENABLE_AUTOCOMMIT);
+                allowedArguments.add(ClientArgument.RESET_POLICY);
+                allowedArguments.add(ClientArgument.ASSIGMENT_STRATEGY);
+                allowedArguments.add(ClientArgument.CONSUMER_CONFIG);
+                allowedArguments.add(ClientArgument.USER);
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected client type!");
+        }
+    }
 }
