@@ -16,7 +16,7 @@ You can configure an existing Kafka broker, or create a new Kafka broker with a 
 
 . Open the YAML configuration file that contains the `Kafka` resource specifying the cluster deployment.
 
-. In the `kafka.config` property in the `Kafka` resource, enter one or more Kafka configuration settings. For example:
+. In the `spec.kafka.config` property in the `Kafka` resource, enter one or more Kafka configuration settings. For example:
 +
 [source,yaml,subs=attributes+]
 ----

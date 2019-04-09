@@ -14,7 +14,7 @@
 
 . Open the YAML configuration file that contains the `Kafka` resource specifying the cluster deployment.
 
-. In the `zookeeper.config` property in the `Kafka` resource, enter one or more Zookeeper configuration settings. For example:
+. In the `spec.zookeeper.config` property in the `Kafka` resource, enter one or more Zookeeper configuration settings. For example:
 +
 [source,yaml,subs=attributes+]
 ----
