@@ -225,7 +225,6 @@ class KafkaClientProperties {
         Files.write(keyFile.toPath(), key);
         File keystore = File.createTempFile(KafkaClientProperties.class.getName(), ".keystore");
         keystore.delete(); // Note horrible race condition, but this is only for testing
-        //keystore.deleteOnExit();
         // RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $HOSTNAME -password pass:$2 -out $1
         if (new ProcessBuilder("openssl",
                 "pkcs12",
