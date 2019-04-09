@@ -8,7 +8,7 @@ ENV JAVA_OPTS "-DLOG_LEVEL=info"
 COPY scripts $KAFKA_HOME
 COPY scripts/dynamic_resources.sh /bin/dynamic_resources.sh
 
-ADD target/test-client-${STRIMZI_VERSION}.jar /test-client.jar
+ADD tmp/test-client-${STRIMZI_VERSION}.jar /test-client.jar
 
 USER 1001
 
