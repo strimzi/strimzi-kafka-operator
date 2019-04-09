@@ -1105,8 +1105,6 @@ class KafkaST extends AbstractST {
         int diskCountPerReplica = 2;
         int kafkaReplicas = 2;
         int diskSizeGi = 10;
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-        resources().topic(CLUSTER_NAME, topicName).withNewSpec().withPartitions(diskCountPerReplica).withReplicas(kafkaReplicas).endSpec().done();
 
         List<SingleVolumeStorage> volumes = new ArrayList<>();
         volumes.add(new PersistentClaimStorageBuilder()
@@ -1133,8 +1131,6 @@ class KafkaST extends AbstractST {
         int diskCountPerReplica = 2;
         int kafkaReplicas = 2;
         int diskSizeGi = 10;
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-        resources().topic(CLUSTER_NAME, topicName).withNewSpec().withPartitions(diskCountPerReplica).withReplicas(kafkaReplicas).endSpec().done();
 
         List<SingleVolumeStorage> volumes = new ArrayList<>();
         for (int i = 0; i < diskCountPerReplica; i++) {
@@ -1159,8 +1155,6 @@ class KafkaST extends AbstractST {
         int diskCountPerReplica = 2;
         int kafkaReplicas = 2;
         int diskSizeGi = 10;
-        String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-        resources().topic(CLUSTER_NAME, topicName).withNewSpec().withPartitions(diskCountPerReplica).withReplicas(kafkaReplicas).endSpec().done();
 
         List<SingleVolumeStorage> volumes = new ArrayList<>();
         for (int i = 0; i < diskCountPerReplica; i++) {
