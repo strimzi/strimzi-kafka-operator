@@ -1119,15 +1119,7 @@ class KafkaST extends AbstractST {
                 .withDeleteClaim(false)
                 .withSize(diskSizeGi + "Gi").build());
 
-        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas)
-                .editSpec().
-                editKafka()
-                .withNewJbodStorage().withVolumes(volumes).endJbodStorage()
-                .endKafka()
-                .editZookeeper().
-                withReplicas(1).
-                endZookeeper()
-                .endSpec().done();
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(2, 2, 10);
         LOGGER.info("Deleting cluster");
@@ -1152,15 +1144,7 @@ class KafkaST extends AbstractST {
                     .withSize(diskSizeGi + "Gi").build());
         }
 
-        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas)
-                .editSpec().
-                editKafka()
-                .withNewJbodStorage().withVolumes(volumes).endJbodStorage()
-                .endKafka()
-                .editZookeeper().
-                withReplicas(1).
-                endZookeeper()
-                .endSpec().done();
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
         // kafka cluster already deployed
 
         verifyVolumeNamesAndLabels(2, 2, 10);
@@ -1186,15 +1170,7 @@ class KafkaST extends AbstractST {
                     .withSize(diskSizeGi + "Gi").build());
         }
 
-        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas)
-                .editSpec().
-                editKafka()
-                .withNewJbodStorage().withVolumes(volumes).endJbodStorage()
-                .endKafka()
-                .editZookeeper().
-                withReplicas(1).
-                endZookeeper()
-                .endSpec().done();
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(2, 2, 10);
         LOGGER.info("Deleting cluster");
@@ -1224,20 +1200,17 @@ class KafkaST extends AbstractST {
     void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, int diskSizeGi) {
 
         ArrayList pvcs = new ArrayList();
-        for (int i = 0; i < kafkaReplicas * diskCountPerReplica; i++) {
-            LOGGER.info("Getting list of all PVCs in namespace");
-            String volumeName = CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getName();
-            pvcs.add(volumeName);
 
-            LOGGER.info("Checking labels for volume:" + volumeName);
-            Map<String, String> labels = CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getMetadata().getLabels();
-            assertEquals(CLUSTER_NAME, labels.get("strimzi.io/cluster"));
-            assertEquals("Kafka", labels.get("strimzi.io/kind"));
-            assertEquals(CLUSTER_NAME.concat("-kafka"), labels.get("strimzi.io/name"));
-
-            CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().get(i).getSpec().getResources().
-                    getRequests().get("storage").getAmount().contains(diskSizeGi + "Gi");
-        }
+        CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().stream()
+                .forEach(volume -> {
+                    String volumeName = volume.getMetadata().getName();
+                    pvcs.add(volumeName);
+                    LOGGER.info("Checking labels for volume:" + volumeName);
+                    assertEquals(CLUSTER_NAME, volume.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("Kafka", volume.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals(CLUSTER_NAME.concat("-kafka"), volume.getMetadata().getLabels().get("strimzi.io/name"));
+                    assertEquals(diskSizeGi + "Gi", volume.getSpec().getResources().getRequests().get("storage").getAmount());
+                });
 
         LOGGER.info("Checking PVC names included in JBOD array");
         for (int i = 0; i < kafkaReplicas; i++) {

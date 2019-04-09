@@ -43,6 +43,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -175,8 +176,17 @@ public class Resources extends AbstractResources {
         return kafka(defaultKafka(name, kafkaReplicas).build());
     }
 
-    DoneableKafka kafkaJBOD(String name, int kafkaReplicas) {
-        return kafka(defaultKafka(name, kafkaReplicas).build());
+    DoneableKafka kafkaJBOD(String name, int kafkaReplicas, List<SingleVolumeStorage> volumes) {
+        return kafka(defaultKafka(name, kafkaReplicas).
+                editSpec()
+                    .editKafka()
+                        .withNewJbodStorage().withVolumes(volumes).endJbodStorage()
+                    .endKafka()
+                    .editZookeeper().
+                        withReplicas(1)
+                    .endZookeeper()
+                .endSpec()
+                .build());
     }
 
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
