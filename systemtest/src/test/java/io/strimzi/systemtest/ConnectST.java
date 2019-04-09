@@ -277,16 +277,16 @@ class ConnectST extends AbstractST {
     void teardownEnvironment() {
         LOGGER.info("Collecting logs for pods in namespace {}", NAMESPACE);
         try {
-            CLIENT.pods().list().getItems().forEach(pod -> {
-                String podName = pod.getMetadata().getName();
-                pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
-                    String log = CLIENT.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
-                    // Write logs from containers to files
-                    if (podName.contains("strimzi") || podName.contains("kafka-0")) {
-                        LOGGER.info("POD: {}\n{}", podName, log);
-                    }
-                });
-            });
+//            CLIENT.pods().list().getItems().forEach(pod -> {
+//                String podName = pod.getMetadata().getName();
+//                pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
+//                    String log = CLIENT.pods().withName(podName).inContainer(containerStatus.getName()).getLog();
+//                    // Write logs from containers to files
+//                    if (podName.contains("strimzi") || podName.contains("kafka-0")) {
+//                        LOGGER.info("POD: {}\n{}", podName, log);
+//                    }
+//                });
+//            });
 
             LOGGER.info("Collecting events in namespace {}", NAMESPACE);
             String events = KUBE_CLIENT.getEvents();
