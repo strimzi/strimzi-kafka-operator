@@ -175,6 +175,10 @@ public class Resources extends AbstractResources {
         return kafka(defaultKafka(name, kafkaReplicas).build());
     }
 
+    DoneableKafka kafkaJBOD(String name, int kafkaReplicas) {
+        return kafka(defaultKafka(name, kafkaReplicas).build());
+    }
+
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
         String tOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
         String uOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
