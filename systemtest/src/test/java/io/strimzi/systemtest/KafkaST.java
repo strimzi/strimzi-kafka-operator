@@ -614,18 +614,7 @@ class KafkaST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     void testForTopicOperator() throws InterruptedException {
-
-        Map<String, Object> kafkaConfig = new HashMap<>();
-        kafkaConfig.put("offsets.topic.replication.factor", "3");
-        kafkaConfig.put("transaction.state.log.replication.factor", "3");
-        kafkaConfig.put("transaction.state.log.min.isr", "2");
-
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .withConfig(kafkaConfig)
-                .endKafka()
-            .endSpec().done();
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         //Creating topics for testing
         KUBE_CLIENT.create(TOPIC_CM);
@@ -666,10 +655,44 @@ class KafkaST extends AbstractST {
         //Deleting another topic using pod CLI
         deleteTopicUsingPodCLI(CLUSTER_NAME, 0, "my-topic");
         KUBE_CLIENT.waitForResourceDeletion("kafkatopic", "my-topic");
+
+        //Checking all topics were deleted
         Thread.sleep(10000L);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         assertThat(topics, not(hasItems("topic-from-cli")));
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testTopicWithoutLabels() {
+        // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
+        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+
+        // Creating topic without any label
+        resources().topic(CLUSTER_NAME, "topic-without-labels")
+            .editMetadata()
+                .withLabels(null)
+            .endMetadata()
+            .done();
+
+        // Checking that resource was created
+        assertThat(KUBE_CLIENT.list("kafkatopic"), hasItems("topic-without-labels"));
+        // Checking that TO didn't handl new topic and zk pods don't contain new topic
+        assertThat(listTopicsUsingPodCLI(CLUSTER_NAME, 0), not(hasItems("topic-without-labels")));
+
+        // Checking TO logs
+        String tOPodName = KUBE_CLIENT.listResourcesByLabel("pod", "strimzi.io/name=my-cluster-entity-operator").get(0);
+        String tOlogs = KUBE_CLIENT.logs(tOPodName, "topic-operator");
+        assertThat(tOlogs, not(containsString("Created topic 'topic-without-labels'")));
+
+        //Deleting topic
+        KUBE_CLIENT.deleteByName("kafkatopic", "topic-without-labels");
+        KUBE_CLIENT.waitForResourceDeletion("kafkatopic", "topic-without-labels");
+
+        //Checking all topics were deleted
+        List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
+        assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
     private void testDockerImagesForKafkaCluster(String clusterName, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
