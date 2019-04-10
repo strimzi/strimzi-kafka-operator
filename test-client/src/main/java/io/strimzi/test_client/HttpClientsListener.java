@@ -65,8 +65,8 @@ public class HttpClientsListener extends AbstractVerticle {
             HttpServerResponse response = successfulResponse(request);
             JsonObject responseData = new JsonObject();
             responseData.put("ecode", executor.getRetCode());
-            responseData.put("stdOut", executor.getStdOut());
-            responseData.put("stdErr", executor.getStdErr());
+            responseData.put("stdOut", executor.out());
+            responseData.put("stdErr", executor.err());
             responseData.put("isRunning", executor.isRunning());
             response.end(responseData.toString());
 
@@ -86,8 +86,8 @@ public class HttpClientsListener extends AbstractVerticle {
             JsonObject responseData = new JsonObject();
 
             responseData.put("ecode", executor.getRetCode());
-            responseData.put("stdOut", executor.getStdOut());
-            responseData.put("stdErr", executor.getStdErr());
+            responseData.put("stdOut", executor.out());
+            responseData.put("stdErr", executor.err());
             responseData.put("isRunning", executor.isRunning());
             response.end(responseData.toString());
         });

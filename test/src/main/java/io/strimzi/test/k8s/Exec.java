@@ -66,7 +66,7 @@ public class Exec {
      *
      * @return string stdOut
      */
-    public String getStdOut() {
+    public String out() {
         return stdOut;
     }
 
@@ -75,7 +75,7 @@ public class Exec {
      *
      * @return string stdErr
      */
-    public String getStdErr() {
+    public String err() {
         return stdErr;
     }
 
@@ -139,17 +139,17 @@ public class Exec {
             synchronized (LOCK) {
                 if (logToOutput) {
                     LOGGER.info("Return code: {}", ret);
-                    LOGGER.info("stdout: \n{}", executor.getStdOut());
-                    LOGGER.info("stderr: \n{}", executor.getStdErr());
+                    LOGGER.info("stdout: \n{}", executor.out());
+                    LOGGER.info("stderr: \n{}", executor.err());
                 }
             }
 
-            execResult = new ExecResult(ret, executor.getStdOut(), executor.getStdErr());
+            execResult = new ExecResult(ret, executor.out(), executor.err());
 
             if (ret != 0) {
                 String msg = "`" + join(" ", command) + "` got status code " + ret + " and stderr:\n------\n" + executor.stdErr + "\n------\nand stdout:\n------\n" + executor.stdOut + "\n------";
 
-                Matcher matcher = ERROR_PATTERN.matcher(executor.getStdErr());
+                Matcher matcher = ERROR_PATTERN.matcher(executor.err());
                 KubeClusterException t = null;
 
                 if (matcher.find()) {
@@ -164,7 +164,7 @@ public class Exec {
                             break;
                     }
                 }
-                matcher = INVALID_PATTERN.matcher(executor.getStdErr());
+                matcher = INVALID_PATTERN.matcher(executor.err());
                 if (matcher.find()) {
                     t = new KubeClusterException.InvalidResource(execResult, msg);
                 }
@@ -173,7 +173,7 @@ public class Exec {
                 }
                 throw t;
             }
-            return new ExecResult(ret, executor.getStdOut(), executor.getStdErr());
+            return new ExecResult(ret, executor.out(), executor.err());
 
         } catch (IOException | ExecutionException e) {
             throw new KubeClusterException(e);
