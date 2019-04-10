@@ -1,5 +1,4 @@
 sudo: required
-dist: xenial
 language: java
 notifications:
   slack:
