@@ -117,11 +117,11 @@ public class Main {
                 networkPolicyOperator, podDisruptionBudgetOperator, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
-        if (pfa.isBuilds() && pfa.isApps() && pfa.isImages()) {
+        if (pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages()) {
             kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, pfa, serviceOperations,
                     configMapOperations, secretOperations, certManager, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
         } else {
-            log.warn("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
+            log.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
         }
 
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =

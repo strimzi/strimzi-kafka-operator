@@ -105,7 +105,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
             log.error("{} spec cannot be null", kafkaConnectS2I.getMetadata().getName());
             return Future.failedFuture("Spec cannot be null");
         }
-        if (pfa.isImages() && pfa.isApps() && pfa.isBuilds()) {
+        if (pfa.hasImages() && pfa.hasApps() && pfa.hasBuilds()) {
             KafkaConnectS2ICluster connect;
             try {
                 connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2I, versions);

@@ -1182,7 +1182,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaBootstrapRoute() {
             Route route = kafkaCluster.generateExternalBootstrapRoute();
 
-            if (pfa.isRoutes()) {
+            if (pfa.hasRoutes()) {
                 return withVoid(routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), route));
             } else if (route != null) {
                 log.warn("{}: The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation, name);
@@ -1199,7 +1199,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             for (int i = 0; i < replicas; i++) {
                 Route route = kafkaCluster.generateExternalRoute(i);
 
-                if (pfa.isRoutes()) {
+                if (pfa.hasRoutes()) {
                     routeFutures.add(routeOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), route));
                 } else if (route != null) {
                     log.warn("{}: The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation, name);

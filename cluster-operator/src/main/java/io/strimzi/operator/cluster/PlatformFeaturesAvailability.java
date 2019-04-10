@@ -29,7 +29,6 @@ public class PlatformFeaturesAvailability {
 
     public static Future<PlatformFeaturesAvailability> create(Vertx vertx, KubernetesClient client) {
         Future<PlatformFeaturesAvailability> pfaFuture = Future.future();
-        Future<Void> composeFuture = Future.future();
         OkHttpClient httpClient = getOkHttpClient(client);
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability();
@@ -53,16 +52,8 @@ public class PlatformFeaturesAvailability {
             return checkApiAvailability(vertx, httpClient, client.getMasterUrl().toString(), "image.openshift.io", "v1");
         }).compose(supported -> {
             pfa.setImages(supported);
-            composeFuture.complete();
-        }, composeFuture);
-
-        composeFuture.setHandler(res -> {
-            if (res.succeeded())  {
-                pfaFuture.complete(pfa);
-            } else {
-                pfaFuture.fail(res.cause());
-            }
-        });
+            pfaFuture.complete(pfa);
+        }, pfaFuture);
 
         return pfaFuture;
     }
@@ -110,8 +101,8 @@ public class PlatformFeaturesAvailability {
                 resp.close();
                 request.complete(isSupported);
             } catch (Exception e) {
-                log.error("Detection of {}/{} API failed.", api, version, e);
-                request.fail(e);
+                log.error("Detection of {}/{} API failed. This API will be disabled.", api, version, e);
+                request.complete(false);
             }
         }, fut.completer());
 
@@ -135,7 +126,7 @@ public class PlatformFeaturesAvailability {
     }
 
     public boolean isOpenshift() {
-        return this.isRoutes();
+        return this.hasRoutes();
     }
 
     public boolean isNamespaceAndPodSelectorNetworkPolicySupported() {
@@ -150,7 +141,7 @@ public class PlatformFeaturesAvailability {
         this.kubernetesVersion = kubernetesVersion;
     }
 
-    public boolean isRoutes() {
+    public boolean hasRoutes() {
         return routes;
     }
 
@@ -158,7 +149,7 @@ public class PlatformFeaturesAvailability {
         this.routes = routes;
     }
 
-    public boolean isBuilds() {
+    public boolean hasBuilds() {
         return builds;
     }
 
@@ -166,7 +157,7 @@ public class PlatformFeaturesAvailability {
         this.builds = builds;
     }
 
-    public boolean isImages() {
+    public boolean hasImages() {
         return images;
     }
 
@@ -174,7 +165,7 @@ public class PlatformFeaturesAvailability {
         this.images = images;
     }
 
-    public boolean isApps() {
+    public boolean hasApps() {
         return apps;
     }
 

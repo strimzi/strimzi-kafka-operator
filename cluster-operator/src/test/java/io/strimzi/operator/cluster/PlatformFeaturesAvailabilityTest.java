@@ -135,10 +135,10 @@ public class PlatformFeaturesAvailabilityTest {
         futurePfa.setHandler(res -> {
             if (res.succeeded())    {
                 PlatformFeaturesAvailability pfa = res.result();
-                context.assertTrue(pfa.isRoutes());
-                context.assertTrue(pfa.isBuilds());
-                context.assertFalse(pfa.isImages());
-                context.assertFalse(pfa.isApps());
+                context.assertTrue(pfa.hasRoutes());
+                context.assertTrue(pfa.hasBuilds());
+                context.assertFalse(pfa.hasImages());
+                context.assertFalse(pfa.hasApps());
                 async.complete();
             } else {
                 context.fail("Failed to create PlatformFeaturesAvailability object");
@@ -168,10 +168,10 @@ public class PlatformFeaturesAvailabilityTest {
         futurePfa.setHandler(res -> {
             if (res.succeeded())    {
                 PlatformFeaturesAvailability pfa = res.result();
-                context.assertTrue(pfa.isRoutes());
-                context.assertTrue(pfa.isBuilds());
-                context.assertTrue(pfa.isImages());
-                context.assertTrue(pfa.isApps());
+                context.assertTrue(pfa.hasRoutes());
+                context.assertTrue(pfa.hasBuilds());
+                context.assertTrue(pfa.hasImages());
+                context.assertTrue(pfa.hasApps());
                 async.complete();
             } else {
                 context.fail("Failed to create PlatformFeaturesAvailability object");
@@ -195,10 +195,10 @@ public class PlatformFeaturesAvailabilityTest {
         futurePfa.setHandler(res -> {
             if (res.succeeded())    {
                 PlatformFeaturesAvailability pfa = res.result();
-                context.assertFalse(pfa.isRoutes());
-                context.assertFalse(pfa.isBuilds());
-                context.assertFalse(pfa.isImages());
-                context.assertFalse(pfa.isApps());
+                context.assertFalse(pfa.hasRoutes());
+                context.assertFalse(pfa.hasBuilds());
+                context.assertFalse(pfa.hasImages());
+                context.assertFalse(pfa.hasApps());
                 async.complete();
             } else {
                 context.fail("Failed to create PlatformFeaturesAvailability object");
