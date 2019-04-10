@@ -20,11 +20,13 @@ done
 cat <<EOF
 
 a|
-AMQ Streams image for running Kafka, including:
+{ProductName} image for running Kafka, including:
 
 * Kafka broker
 * Kafka Connect
-* Kafka Mirror Maker.
+* Kafka Mirror Maker
+* Zookeeper
+* TLS Sidecars
 
 A given image will only be need when running a Kafka broker of that version.
 
@@ -38,6 +40,7 @@ AMQ Streams image for running the operators:
 * Cluster Operator
 * Topic Operator
 * User Operator
+* Kafka Initializer
 
 |===
 EOF
