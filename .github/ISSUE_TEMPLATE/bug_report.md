@@ -30,7 +30,7 @@ A clear and concise description of what you expected to happen.
 Attach or copy paste the custom resources you used.
 
 **Logs**
-Attach or copy paste the relevant logs.
+Attach or copy and paste the relevant logs.
 
 **Additional context**
 Add any other context about the problem here.
