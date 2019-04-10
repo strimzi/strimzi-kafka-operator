@@ -11,4 +11,4 @@ assignees: ''
 Describe your problem or suggestion
 
 **Documentation Link**
-Provide a link to the documentation where the bud / suggestion should be applied
+Provide a link to the documentation where the bug / suggestion should be applied
