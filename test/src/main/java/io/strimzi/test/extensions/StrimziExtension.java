@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
@@ -129,7 +130,7 @@ public class StrimziExtension implements ExecutionCondition {
                 LOGGER.info("Test class {} with tags {} does not have any tag restrictions by tags: {}. Checking method tags ...",
                         context.getDisplayName(), declaredTags, enabledTags);
                 for (Method method : testClass.getDeclaredMethods()) {
-                    if (method.getAnnotation(Test.class) == null) {
+                    if (method.getAnnotation(Test.class) == null && method.getAnnotation(ParameterizedTest.class) == null) {
                         continue;
                     }
                     if (!isWrongClusterType(method) && !isIgnoredByTag(method)) {
