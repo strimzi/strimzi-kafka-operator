@@ -20,7 +20,7 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Desktop (please complete the following information):**
+**Environment (please complete the following information):**
  - Strimzi version: [e.g. master, 0.11.1]
  - Installation method: [e.g. YAML files, Helm chart, OperatorHub.io]
  - Kubernetes cluster: [e.g. Kubernetes 1.14, OpenShift 3.9]
