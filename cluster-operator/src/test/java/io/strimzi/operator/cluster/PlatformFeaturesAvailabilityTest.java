@@ -63,9 +63,9 @@ public class PlatformFeaturesAvailabilityTest {
                 "  \"platform\": \"linux/amd64\"\n" +
                 "}";
 
-        HttpServer mockHttp = mockApi(version, Collections.EMPTY_LIST);
+        HttpServer mockHttp = startMockApi(context, version, Collections.EMPTY_LIST);
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:8080");
+        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
         Async async = context.async();
@@ -81,7 +81,7 @@ public class PlatformFeaturesAvailabilityTest {
         });
 
         async.awaitSuccess();
-        mockHttp.close();
+        stopMockApi(context, mockHttp);
     }
 
     @Test
@@ -98,9 +98,9 @@ public class PlatformFeaturesAvailabilityTest {
                 "  \"platform\": \"linux/amd64\"\n" +
                 "}";
 
-        HttpServer mockHttp = mockApi(version, Collections.EMPTY_LIST);
+        HttpServer mockHttp = startMockApi(context, version, Collections.EMPTY_LIST);
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:8080");
+        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
         Async async = context.async();
@@ -116,7 +116,7 @@ public class PlatformFeaturesAvailabilityTest {
         });
 
         async.awaitSuccess();
-        mockHttp.close();
+        stopMockApi(context, mockHttp);
     }
 
     @Test
@@ -125,9 +125,9 @@ public class PlatformFeaturesAvailabilityTest {
         apis.add("/apis/route.openshift.io/v1");
         apis.add("/apis/build.openshift.io/v1");
 
-        HttpServer mockHttp = mockApi(apis);
+        HttpServer mockHttp = startMockApi(context, apis);
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:8080");
+        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
         Async async = context.async();
@@ -147,7 +147,7 @@ public class PlatformFeaturesAvailabilityTest {
         });
 
         async.awaitSuccess();
-        mockHttp.close();
+        stopMockApi(context, mockHttp);
     }
 
     @Test
@@ -158,9 +158,9 @@ public class PlatformFeaturesAvailabilityTest {
         apis.add("/apis/apps.openshift.io/v1");
         apis.add("/apis/image.openshift.io/v1");
 
-        HttpServer mockHttp = mockApi(apis);
+        HttpServer mockHttp = startMockApi(context, apis);
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:8080");
+        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
         Async async = context.async();
@@ -180,14 +180,14 @@ public class PlatformFeaturesAvailabilityTest {
         });
 
         async.awaitSuccess();
-        mockHttp.close();
+        stopMockApi(context, mockHttp);
     }
 
     @Test
     public void testApiDetectionKubernetes(TestContext context)  {
-        HttpServer mockHttp = mockApi(Collections.EMPTY_LIST);
+        HttpServer mockHttp = startMockApi(context, Collections.EMPTY_LIST);
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:8080");
+        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
         Future<PlatformFeaturesAvailability> futurePfa = PlatformFeaturesAvailability.create(vertx, client);
 
         Async async = context.async();
@@ -207,11 +207,13 @@ public class PlatformFeaturesAvailabilityTest {
         });
 
         async.awaitSuccess();
-        mockHttp.close();
+        stopMockApi(context, mockHttp);
     }
 
-    public HttpServer mockApi(String version, List<String> apis)   {
-        return vertx.createHttpServer().requestHandler(request -> {
+    public HttpServer startMockApi(TestContext context, String version, List<String> apis)   {
+        Async start = context.async();
+
+        HttpServer server = vertx.createHttpServer().requestHandler(request -> {
             if (HttpMethod.GET.equals(request.method()) && apis.contains(request.uri()))   {
                 request.response().setStatusCode(200).end();
             } else if (HttpMethod.GET.equals(request.method()) && "/version".equals(request.uri())) {
@@ -219,10 +221,20 @@ public class PlatformFeaturesAvailabilityTest {
             } else {
                 request.response().setStatusCode(404).end();
             }
-        }).listen(8080);
+        }).listen(0, res -> {
+            if (res.succeeded())    {
+                start.complete();
+            } else {
+                throw new RuntimeException(res.cause());
+            }
+        });
+
+        start.await();
+
+        return server;
     }
 
-    public HttpServer mockApi(List<String> apis)    {
+    public HttpServer startMockApi(TestContext context, List<String> apis)    {
         String version = "{\n" +
                 "  \"major\": \"1\",\n" +
                 "  \"minor\": \"9\",\n" +
@@ -235,6 +247,20 @@ public class PlatformFeaturesAvailabilityTest {
                 "  \"platform\": \"linux/amd64\"\n" +
                 "}";
 
-        return mockApi(version, apis);
+        return startMockApi(context, version, apis);
+    }
+
+    public void stopMockApi(TestContext context, HttpServer server) {
+        Async stop = context.async();
+
+        server.close(res -> {
+            if (res.succeeded())    {
+                stop.complete();
+            } else {
+                throw new RuntimeException("Failed to stop Mock HTTP server");
+            }
+        });
+
+        stop.await();
     }
 }
