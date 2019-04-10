@@ -1250,7 +1250,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Messages In Per Second",
+      "description": "Incoming Messages Rate",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -1312,7 +1312,7 @@
         }
       ],
       "thresholds": "0,2",
-      "title": "Messages In Per Second",
+      "title": "Incoming Messages Rate",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
@@ -1550,7 +1550,7 @@
           "expr": "sum(irate(kafka_server_brokertopicmetrics_messagesin_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",topic=~\"$kafka_topic\",topic!=\"\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "Total Message In Per Second",
+          "legendFormat": "Total Incoming Messages Rate",
           "refId": "D"
         }
       ],
