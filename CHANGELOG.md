@@ -5,6 +5,7 @@
 * Log at the warn level when a custom resource uses deprecated or unknown properties
 * Reduce the number of images needed to run Strimzi to just two: `kafka` and `operator`.
 * Add support for unprivileged users to install the operator with Helm
+* Support for Kafka 2.2.0
 
 ## 0.11.0
 

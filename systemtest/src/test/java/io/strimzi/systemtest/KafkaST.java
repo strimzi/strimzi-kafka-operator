@@ -714,7 +714,7 @@ class KafkaST extends AbstractST {
             String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "kafka");
             String kafkaVersion = Crds.kafkaOperation(CLIENT).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getVersion();
             if (kafkaVersion == null) {
-                kafkaVersion = "2.1.0";
+                kafkaVersion = "2.2.0";
             }
             assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), imgFromPod);
             imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "tls-sidecar");

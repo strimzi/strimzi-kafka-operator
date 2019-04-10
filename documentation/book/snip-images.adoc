@@ -8,15 +8,16 @@ a|
 * {DockerOrg}/kafka:{DockerTag}-kafka-2.0.1
 * {DockerOrg}/kafka:{DockerTag}-kafka-2.1.0
 * {DockerOrg}/kafka:{DockerTag}-kafka-2.1.1
+* {DockerOrg}/kafka:{DockerTag}-kafka-2.2.0
 
 a|
-{ProductName} image for running Kafka, including:
+AMQ Streams image for running Kafka, including:
 
-* Kafka Broker
+* Kafka broker
 * Kafka Connect
-* Kafka Mirror Maker
-* Zookeeper
-* TLS Sidecars
+* Kafka Mirror Maker.
+
+A given image will only be need when running a Kafka broker of that version.
 
 |Operator
 a|
@@ -28,6 +29,5 @@ AMQ Streams image for running the operators:
 * Cluster Operator
 * Topic Operator
 * User Operator
-* Kafka Initializer
 
 |===
