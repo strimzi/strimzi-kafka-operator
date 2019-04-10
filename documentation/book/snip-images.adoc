@@ -15,7 +15,7 @@ a|
 
 * Kafka Broker
 * Kafka Connect
-* Kafka Mirror Maker.
+* Kafka Mirror Maker
 * Zookeeper
 * TLS Sidecars
 
