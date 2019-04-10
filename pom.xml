@@ -303,12 +303,12 @@
                 <artifactId>vertx-core</artifactId>
                 <version>${vertx.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.vertx</groupId>
-                <artifactId>vertx-dependencies</artifactId>
-                <version>${vertx.version}</version>
-                <scope>import</scope>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>io.vertx</groupId>-->
+<!--                <artifactId>vertx-dependencies</artifactId>-->
+<!--                <version>${vertx.version}</version>-->
+<!--                <scope>import</scope>-->
+<!--            </dependency>-->
             <dependency>
                 <groupId>io.strimzi</groupId>
                 <artifactId>certificate-manager</artifactId>
