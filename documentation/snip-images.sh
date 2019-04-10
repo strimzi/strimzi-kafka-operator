@@ -22,7 +22,7 @@ cat <<EOF
 a|
 {ProductName} image for running Kafka, including:
 
-* Kafka broker
+* Kafka Broker
 * Kafka Connect
 * Kafka Mirror Maker
 * Zookeeper
