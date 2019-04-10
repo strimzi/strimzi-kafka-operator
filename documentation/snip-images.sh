@@ -28,8 +28,6 @@ a|
 * Zookeeper
 * TLS Sidecars
 
-A given image will only be need when running a Kafka broker of that version.
-
 |Operator
 a|
 * {DockerOrg}/operator:{DockerTag}
