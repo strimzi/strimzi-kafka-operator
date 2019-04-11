@@ -8,7 +8,6 @@ spec:
   selector:
     matchLabels:
       strimzi.io/kind: Kafka
-      app: strimzi
   endpoints:
   #### job_name: kubernetes-cadvisor
   # configured in additional secret
