@@ -115,12 +115,12 @@ public class StrimziUpgradeST extends AbstractST {
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkSsName, zkPods);
             LOGGER.info("Checking ZK pods using new image");
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zkSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/zookeeper:latest-kafka-2.0.0");
+                    "strimzi/kafka:latest-kafka-2.2.0");
             LOGGER.info("Waiting for Kafka SS roll");
             StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods);
             LOGGER.info("Checking Kafka pods using new image");
             waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
-                    "strimzi/kafka:latest-kafka-2.1.0");
+                    "strimzi/kafka:latest-kafka-2.2.0");
             LOGGER.info("Waiting for EO Dep roll");
             // Check the TO and UO also got upgraded
             StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoDepName, eoPods);
