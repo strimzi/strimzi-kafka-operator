@@ -106,7 +106,6 @@
             <version>${kafka.version}</version>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-kafka-client</artifactId>
@@ -127,7 +126,6 @@
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
         </dependency>
-
     </dependencies>
 
     <build>
