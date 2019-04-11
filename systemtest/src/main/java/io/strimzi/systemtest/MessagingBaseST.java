@@ -5,10 +5,10 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.apiclients.MsgCliApiClient;
-import io.strimzi.systemtest.kafkaclients.ClientArgument;
-import io.strimzi.systemtest.kafkaclients.ClientArgumentMap;
-import io.strimzi.systemtest.kafkaclients.VerifiableClient;
+import io.strimzi.systemtest.clients.api.MsgCliApiClient;
+import io.strimzi.systemtest.clients.api.ClientArgument;
+import io.strimzi.systemtest.clients.api.ClientArgumentMap;
+import io.strimzi.systemtest.clients.api.VerifiableClient;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -20,8 +20,8 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.kafkaclients.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
-import static io.strimzi.systemtest.kafkaclients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
+import static io.strimzi.systemtest.clients.api.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
+import static io.strimzi.systemtest.clients.api.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

@@ -2,9 +2,8 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.apiclients;
+package io.strimzi.systemtest.clients.api;
 
-import io.strimzi.systemtest.kafkaclients.VerifiableClient;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
