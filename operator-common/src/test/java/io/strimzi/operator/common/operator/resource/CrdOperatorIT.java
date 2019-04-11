@@ -72,76 +72,18 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
 
     }
 
+    /**
+     * Needs CustomResourceOperationsImpl constructor patch for cascade deletion
+     * https://github.com/fabric8io/kubernetes-client/pull/1325
+     *
+     * Remove this override when project is using fabric8 version > 4.1.1
+     */
     @Override
     public void testFullCycle(TestContext context)    {
-        /*Async async = context.async();
-        AbstractResourceOperator op = operator();
-
-        Kafka newResource = getOriginal();
-        Kafka modResource = getModified();
-
-        Future<ReconcileResult<Kafka>> createFuture = op.reconcile(namespace, RESOURCE_NAME, newResource);
-
-        createFuture.setHandler(create -> {
-            if (create.succeeded()) {
-                Kafka created = (Kafka) op.get(namespace, RESOURCE_NAME);
-
-                if (created == null)    {
-                    context.fail("Failed to get created Resource");
-                    async.complete();
-                } else  {
-
-                    //crdOperator.updateStatus(modResource);
-
-                    //assertResources(context, newResource, created);
-                    async.complete();
-
-                    /*Future<ReconcileResult<Kafka>> modifyFuture = op.reconcile(namespace, RESOURCE_NAME, modResource);
-
-                    modifyFuture.setHandler(modify -> {
-                        if (modify.succeeded()) {
-                            Kafka modified = (Kafka) op.get(namespace, RESOURCE_NAME);
-
-                            if (modified == null)    {
-                                context.fail("Failed to get modified Resource");
-                                async.complete();
-                            } else {
-                                assertResources(context, modResource, modified);
-                                // Override this
-                                Future<ReconcileResult<Kafka>> deleteFuture = op.reconcile(namespace, RESOURCE_NAME, null);
-
-                                deleteFuture.setHandler(delete -> {
-                                    if (delete.succeeded()) {
-                                        Kafka deleted = (Kafka) op.get(namespace, RESOURCE_NAME);
-
-                                        if (deleted == null)    {
-                                            async.complete();
-                                        } else {
-                                            context.fail("Failed to delete Resource");
-                                            async.complete();
-                                        }
-                                    } else {
-                                        context.fail(delete.cause());
-                                        async.complete();
-                                    }
-                                });
-                            }
-                        } else {
-                            context.fail(modify.cause());
-                            async.complete();
-                        }
-                    });
-                }
-
-            } else {
-                context.fail(create.cause());
-                async.complete();
-            }
-        });*/
     }
 
     @Test
-    public void statusTest(TestContext context) throws InterruptedException {
+    public void statusTest(TestContext context) {
         Async async = context.async();
 
         crdOperator =  new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
