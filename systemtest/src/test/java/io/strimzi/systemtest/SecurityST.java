@@ -41,7 +41,6 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaCertificateSecr
 import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
-import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -70,7 +69,6 @@ class SecurityST extends AbstractST {
     private static final long TIMEOUT_FOR_CLUSTER_STABLE = 1_200_000;
 
     @Test
-    @Tag(REGRESSION)
     void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
         resources().kafkaEphemeral(CLUSTER_NAME, 2)
@@ -177,7 +175,6 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(REGRESSION)
     void testAutoRenewCaCertsTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String userName = "alice";
@@ -245,7 +242,6 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(FLAKY)
     void testAutoReplaceCaKeysTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
@@ -402,7 +398,6 @@ class SecurityST extends AbstractST {
 
     @Test
     @OpenShiftOnly
-    @Tag(REGRESSION)
     void testAutoRenewCaCertsTriggerByExpiredCertificate() throws Exception {
         // 1. Create the Secrets already, and a certificate that's already expired
         String clusterCaKey = createSecret("cluster-ca.key", clusterCaKeySecretName(CLUSTER_NAME), "ca.key");
