@@ -83,9 +83,9 @@
         <valid4j.version>1.1</valid4j.version>
         <fasterxml.jackson.version>2.9.8</fasterxml.jackson.version>
         <fasterxml.jackson-annotations.version>2.9.8</fasterxml.jackson-annotations.version>
-        <kafka.version>2.1.1</kafka.version>
+        <kafka.version>2.2.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
-        <scala-library.version>2.12.7</scala-library.version>
+        <scala-library.version>2.12.0</scala-library.version>
         <zookeeper.version>3.4.13</zookeeper.version>
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
