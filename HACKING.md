@@ -200,7 +200,15 @@ To execute an expected group of system tests need to add system property `junitT
 `-DjunitTags=acceptance,regression` - to execute many test groups
 `-DjunitTags=all` - to execute all test groups
 
-If `junitTags` system property isn't defined, all tests without an explicitly declared test group will be executed.
+If `junitTags` system property isn't defined, all tests without an explicitly declared test group will be executed. The following table shows currently used tags:
+
+| Name | Description |
+| :---: | :---: |
+| acceptance | Marks tests executed on Travis | 
+| regression | Regression tests |
+| flaky | Test which are flaky |
+| cci_flaky | Test which are flaky only on specific QE environment |
+| all | Execute all tests with any tag |  
 
 ### Helper script
 
