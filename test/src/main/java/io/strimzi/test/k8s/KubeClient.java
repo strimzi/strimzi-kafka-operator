@@ -4,6 +4,8 @@
  */
 package io.strimzi.test.k8s;
 
+import io.strimzi.test.executor.ProcessResult;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.Date;
@@ -17,21 +19,6 @@ import static java.util.stream.Collectors.toList;
  * @param <K> The subtype of KubeClient, for fluency.
  */
 public interface KubeClient<K extends KubeClient<K>> {
-
-    static KubeClient<?> findClient(KubeCluster cluster) {
-        KubeClient client = null;
-        List<KubeClient> kubeClients = Arrays.asList(cluster.defaultClient(), new Kubectl(), new Oc());
-        for (KubeClient kc: kubeClients) {
-            if (kc.clientAvailable()) {
-                client = kc;
-                break;
-            }
-        }
-        if (client == null) {
-            throw new RuntimeException("No clients found on $PATH, tried " + kubeClients + " $PATH=" + System.getenv("PATH"));
-        }
-        return client;
-    }
 
     String defaultNamespace();
 

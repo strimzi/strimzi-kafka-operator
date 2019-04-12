@@ -4,6 +4,8 @@
  */
 package io.strimzi.test.k8s;
 
+import io.strimzi.test.executor.Exec;
+
 public class Minishift implements KubeCluster {
     public static final String CMD = "minishift";
 

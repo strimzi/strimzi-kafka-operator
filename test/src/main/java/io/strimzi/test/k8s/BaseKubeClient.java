@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.Exec;
+import io.strimzi.test.executor.ProcessResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,9 +34,9 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     private static final Logger LOGGER = LogManager.getLogger(BaseKubeClient.class);
 
-    public static final String CREATE = "create";
-    public static final String APPLY = "apply";
-    public static final String DELETE = "delete";
+    private static final String CREATE = "create";
+    private static final String APPLY = "apply";
+    private static final String DELETE = "delete";
     public static final String DEPLOYMENT = "deployment";
     public static final String STATEFUL_SET = "statefulset";
     public static final String SERVICE = "service";

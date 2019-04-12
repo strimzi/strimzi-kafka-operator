@@ -5,6 +5,7 @@
 package io.strimzi.test.k8s;
 
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
