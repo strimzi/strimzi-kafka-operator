@@ -1,6 +1,7 @@
 # Strimzi Governance
 
 This document defines project governance for the Strimzi project.
+The maintainers are identified in the [`MAINTAINERS`](MAINTAINERS) file. 
 
 ## Voting
 
