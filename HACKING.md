@@ -235,4 +235,4 @@ However, since system tests use command line `Executor` for some actions, make s
 System tests uses admin user for some actions. You can specify admin user via variable `TEST_CLUSTER_ADMIN` (by default it use `developer` because `system:admin` cannot be used over remote connections).
 
 ### Execute ST with custom Kafka version
-To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` with one of the following values: `2.0.0`, `2.0.1`, `2.1.0`
+To set custom Kafka version in system tests need to add system property `ST_KAFKA_VERSION` with one of the versions of Kafka given in the `kafka-versions` file.
