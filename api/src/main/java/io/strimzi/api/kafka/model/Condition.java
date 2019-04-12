@@ -10,29 +10,10 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
-/**
- * status:
- *   conditions:
- *   - lastTransitionTime: 2019-04-08T09:13:27Z
- *     status: "False"
- *     type: ZookeeperRollingRestart
- *   - lastTransitionTime: 2019-04-08T09:13:27Z
- *     status: "True"
- *     type: KafkaRollingRestart
- *     reason: "KafkaUpgradePhase1"
- *   - lastTransitionTime: 2019-04-08T09:13:27Z
- *     status: "False"
- *     type: EntityOperatorRestarting
- *   listeners:
- *     plain:
- *       host: foobar
- *       port: 123
- */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,
@@ -40,26 +21,47 @@ import static java.util.Collections.emptyMap;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class KafkaStatus implements UnknownPropertyPreserving, Serializable {
-
-    private ListenersStatus listeners;
-    private List<Condition> conditions;
+public class Condition implements UnknownPropertyPreserving, Serializable {
+    private String status;
+    private String reason;
+    private String type;
+    private String lastTransitionTime;
     private Map<String, Object> additionalProperties;
 
-    public ListenersStatus getListeners() {
-        return listeners;
+    public String getStatus() {
+        return status;
     }
 
-    public void setListeners(ListenersStatus listeners) {
-        this.listeners = listeners;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
-    public List<Condition> getConditions() {
-        return conditions;
+    public String getReason() {
+        return reason;
     }
 
-    public void setConditions(List<Condition> conditions) {
-        this.conditions = conditions;
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getLastTransitionTime() {
+        return lastTransitionTime;
+    }
+
+    public void setLastTransitionTime(String lastTransitionTime) {
+        this.lastTransitionTime = lastTransitionTime;
+    }
+
+    public void setAdditionalProperties(Map<String, Object> additionalProperties) {
+        this.additionalProperties = additionalProperties;
     }
 
     @Override
