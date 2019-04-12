@@ -413,7 +413,6 @@ public class TopicOperator {
                     // delete privateState
                     LOGGER.debug("KafkaTopic deleted in k8s and topic deleted in kafka => delete from topicStore");
                     enqueue(new DeleteFromTopicStore(privateTopic.getTopicName(), involvedObject, reconciliationResultHandler));
-                    reconciliationResultHandler.handle(Future.succeededFuture());
                 } else {
                     // it was deleted in k8s so delete in kafka and privateState
                     LOGGER.debug("KafkaTopic deleted in k8s => delete topic from kafka and from topicStore");
