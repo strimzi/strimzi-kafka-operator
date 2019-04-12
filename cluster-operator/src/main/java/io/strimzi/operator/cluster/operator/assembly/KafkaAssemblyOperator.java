@@ -1170,11 +1170,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaBootstrapRoute() {
             Route route = kafkaCluster.generateExternalBootstrapRoute();
 
-            if (routeOperations != null) {
+            if (pfa.hasRoutes()) {
                 return withVoid(routeOperations.reconcile(namespace, KafkaCluster.serviceName(name), route));
             } else if (route != null) {
-                log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
-                return withVoid(Future.failedFuture("Exposing Kafka cluster " + name + " using OpenShift Routes is available only on OpenShift"));
+                log.warn("{}: The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation, name);
+                return withVoid(Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + name + " using routes is not possible."));
             }
 
             return withVoid(Future.succeededFuture());
@@ -1187,11 +1187,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             for (int i = 0; i < replicas; i++) {
                 Route route = kafkaCluster.generateExternalRoute(i);
 
-                if (routeOperations != null) {
+                if (pfa.hasRoutes()) {
                     routeFutures.add(routeOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), route));
                 } else if (route != null) {
-                    log.warn("{}: Exposing Kafka cluster {} using OpenShift Routes is available only on OpenShift", reconciliation, name);
-                    return withVoid(Future.failedFuture("Exposing Kafka cluster " + name + " using OpenShift Routes is available only on OpenShift"));
+                    log.warn("{}: The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation, name);
+                    return withVoid(Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + name + " using routes is not possible."));
                 }
             }
 

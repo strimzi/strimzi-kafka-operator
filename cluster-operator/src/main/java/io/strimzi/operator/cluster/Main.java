@@ -4,11 +4,9 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRole;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
@@ -23,7 +21,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
@@ -43,9 +40,6 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -78,16 +72,18 @@ public class Main {
 
         maybeCreateClusterRoles(vertx, config, client).setHandler(crs -> {
             if (crs.succeeded())    {
-                getPlatformFeaturesAvailability(vertx, client, config).setHandler(os -> {
-                    if (os.succeeded()) {
-                        run(vertx, client, os.result(), config).setHandler(ar -> {
+                PlatformFeaturesAvailability.create(vertx, client).setHandler(pfa -> {
+                    if (pfa.succeeded()) {
+                        log.info("Environment facts gathered: {}", pfa.result());
+
+                        run(vertx, client, pfa.result(), config).setHandler(ar -> {
                             if (ar.failed()) {
                                 log.error("Unable to start operator for 1 or more namespace", ar.cause());
                                 System.exit(1);
                             }
                         });
                     } else {
-                        log.error("Failed to distinguish between Kubernetes and OpenShift", os.cause());
+                        log.error("Failed to gather environment facts", pfa.cause());
                         System.exit(1);
                     }
                 });
@@ -121,11 +117,11 @@ public class Main {
                 networkPolicyOperator, podDisruptionBudgetOperator, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
-        if (pfa.isOpenshift()) {
+        if (pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages()) {
             kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, pfa, serviceOperations,
                     configMapOperations, secretOperations, certManager, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
         } else {
-            maybeLogS2iOnKubeWarning(vertx, client);
+            log.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
         }
 
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
@@ -158,19 +154,6 @@ public class Main {
         return CompositeFuture.join(futures);
     }
 
-    private static void maybeLogS2iOnKubeWarning(Vertx vertx, KubernetesClient client) {
-        try {
-            // Check the KafkaConnectS2I isn't installed and whinge if it is
-            CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaConnectS2I.CRD_NAME).get();
-            if (crd != null) {
-                log.warn("The KafkaConnectS2I custom resource definition can only be installed on OpenShift, because plain Kubernetes doesn't support S2I. " +
-                        "Execute 'kubectl delete crd " + KafkaConnectS2I.CRD_NAME + "' to remove this warning.");
-            }
-        } catch (KubernetesClientException e) {
-
-        }
-    }
-
     private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, ResourceOperatorSupplier resourceOperatorSupplier, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
         ImageStreamOperator imagesStreamOperations;
         BuildConfigOperator buildConfigOperations;
@@ -192,59 +175,6 @@ public class Main {
                  configMapOperations, deploymentConfigOperations,
                 serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, resourceOperatorSupplier, versions, imagePullPolicy);
         return kafkaConnectS2IClusterOperations;
-    }
-
-    static Future<Boolean> isOpenshift(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
-        if (client.isAdaptable(OkHttpClient.class)) {
-            OkHttpClient ok = client.adapt(OkHttpClient.class);
-            Future<Boolean> fut = Future.future();
-
-            vertx.executeBlocking(request -> {
-                try {
-                    Boolean isOpenShift;
-                    if (config.isAssumeOpenShift() != null)  {
-                        log.debug("OpenShift has been set to {} through {}.", config.isAssumeOpenShift(), ClusterOperatorConfig.STRIMZI_ASSUME_OPENSHIFT);
-                        isOpenShift = config.isAssumeOpenShift();
-                    } else {
-                        Response resp = ok.newCall(new Request.Builder().get().url(client.getMasterUrl().toString() + "apis/route.openshift.io/v1").build()).execute();
-                        if (resp.code() >= 200 && resp.code() < 300) {
-                            log.debug("{} returned {}. We are on OpenShift.", resp.request().url(), resp.code());
-                            // We should be on OpenShift based on the /apis/route.openshift.io/v1 result. We can now safely try isAdaptable() to be 100% sure.
-                            isOpenShift = Boolean.TRUE.equals(client.isAdaptable(OpenShiftClient.class));
-                        } else {
-                            log.debug("{} returned {}. We are not on OpenShift.", resp.request().url(), resp.code());
-                            isOpenShift = false;
-                        }
-                    }
-
-                    request.complete(isOpenShift);
-                } catch (Exception e) {
-                    log.error("OpenShift detection failed. You can use Cluster Operator's `assumeOpenShift` flag.", e);
-                    request.fail(e);
-                }
-            }, fut.completer());
-            return fut;
-        } else {
-            log.error("Cannot adapt KubernetesClient to OkHttpClient");
-            return Future.failedFuture("Cannot adapt KubernetesClient to OkHttpClient");
-        }
-    }
-
-
-    static Future<PlatformFeaturesAvailability> getPlatformFeaturesAvailability(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config)  {
-        Future<PlatformFeaturesAvailability> fut2 = Future.future();
-        isOpenshift(vertx, client, config).setHandler(is -> {
-            /* test */
-            String major = client.getVersion().getMajor().equals("") ? Integer.toString(KubernetesVersion.MINIMAL_SUPPORTED_MAJOR) : client.getVersion().getMajor();
-            /* test */
-            String minor = client.getVersion().getMinor().equals("") ? Integer.toString(KubernetesVersion.MINIMAL_SUPPORTED_MINOR) : client.getVersion().getMinor();
-
-            PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(is.result(),
-                    new KubernetesVersion(Integer.parseInt(major.split("\\D")[0]),
-                            Integer.parseInt(minor.split("\\D")[0])));
-            fut2.complete(pfa);
-        });
-        return fut2;
     }
 
     private static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
