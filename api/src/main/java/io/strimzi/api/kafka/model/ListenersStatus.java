@@ -5,61 +5,52 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
-/**
- * status:
- *   conditions:
- *   - lastTransitionTime: 2019-04-08T09:13:27Z
- *     status: "False"
- *     type: ZookeeperRollingRestart
- *   - lastTransitionTime: 2019-04-08T09:13:27Z
- *     status: "True"
- *     type: KafkaRollingRestart
- *     reason: "KafkaUpgradePhase1"
- *   - lastTransitionTime: 2019-04-08T09:13:27Z
- *     status: "False"
- *     type: EntityOperatorRestarting
- *   listeners:
- *     plain:
- *       host: foobar
- *       port: 123
- */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({ "plain", "tls", "external"})
 @EqualsAndHashCode
-public class KafkaStatus implements UnknownPropertyPreserving, Serializable {
-
-    private ListenersStatus listeners;
-    private List<Condition> conditions;
+public class ListenersStatus implements UnknownPropertyPreserving, Serializable {
+    private ListenerStatus plain;
+    private ListenerStatus tls;
+    private ListenerStatus external;
     private Map<String, Object> additionalProperties;
 
-    public ListenersStatus getListeners() {
-        return listeners;
+    public ListenerStatus getPlain() {
+        return plain;
     }
 
-    public void setListeners(ListenersStatus listeners) {
-        this.listeners = listeners;
+    public void setPlain(ListenerStatus plain) {
+        this.plain = plain;
     }
 
-    public List<Condition> getConditions() {
-        return conditions;
+    public ListenerStatus getTls() {
+        return tls;
     }
 
-    public void setConditions(List<Condition> conditions) {
-        this.conditions = conditions;
+    public void setTls(ListenerStatus tls) {
+        this.tls = tls;
+    }
+
+    public ListenerStatus getExternal() {
+        return external;
+    }
+
+    public void setExternal(ListenerStatus external) {
+        this.external = external;
     }
 
     @Override
