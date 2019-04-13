@@ -81,6 +81,8 @@ if [ "$KAFKA_EXTERNAL_ENABLED" ]; then
 
   if [ "$KAFKA_EXTERNAL_ENABLED" = "route" ]; then
     ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://$(get_address_for_broker $KAFKA_BROKER_ID)"
+  elif [ "$KAFKA_EXTERNAL_ENABLED" = "ingress" ]; then
+    ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://$(get_address_for_broker $KAFKA_BROKER_ID)"
   elif [ "$KAFKA_EXTERNAL_ENABLED" = "loadbalancer" ]; then
     ADVERTISED_LISTENERS="${ADVERTISED_LISTENERS},EXTERNAL://$(get_address_for_broker $KAFKA_BROKER_ID)"
   elif [ "$KAFKA_EXTERNAL_ENABLED" = "nodeport" ]; then
