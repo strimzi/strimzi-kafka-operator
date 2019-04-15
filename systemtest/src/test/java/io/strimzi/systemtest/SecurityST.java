@@ -177,7 +177,7 @@ class SecurityST extends AbstractST {
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("", 1_000, TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
-                () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
         waitForClusterAvailability(userName);
 
@@ -228,11 +228,11 @@ class SecurityST extends AbstractST {
         String bobUserName = "bob";
         resources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("", 1_000, 60_000, () -> {
-                    return CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null;
-                },
-                () -> {
-                    LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems());
-                });
+            return CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null;
+        },
+            () -> {
+                LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems());
+            });
 
         waitForClusterAvailability(bobUserName);
     }
@@ -245,8 +245,8 @@ class SecurityST extends AbstractST {
         String aliceUserName = "alice";
         resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
         waitFor("Alic's secret to exist", 1_000, 60_000,
-                () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
-                () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
+            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
         waitForClusterAvailability(aliceUserName);
 
@@ -304,8 +304,8 @@ class SecurityST extends AbstractST {
         String bobUserName = "bob";
         resources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("Bob's secret to exist", 1_000, 60_000,
-                () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null,
-                () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null,
+            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
         waitForClusterAvailability(bobUserName);
     }
@@ -313,53 +313,53 @@ class SecurityST extends AbstractST {
     private void createClusterWithExternalRoute() {
         LOGGER.info("Creating a cluster");
         resources().kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalRoute()
-                        .endKafkaListenerExternalRoute()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                    .withNewPersistentClaimStorage()
-                        .withSize("2Gi")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withReplicas(3)
-                    .withNewPersistentClaimStorage()
-                        .withSize("2Gi")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .done();
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalRoute()
+                            .endKafkaListenerExternalRoute()
+                        .endListeners()
+                        .withConfig(singletonMap("default.replication.factor", 3))
+                        .withNewPersistentClaimStorage()
+                            .withSize("2Gi")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endKafka()
+                    .editZookeeper()
+                        .withReplicas(3)
+                        .withNewPersistentClaimStorage()
+                            .withSize("2Gi")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endZookeeper()
+                .endSpec()
+                .done();
     }
 
     private void createClusterWithExternalLoadbalancer() {
         LOGGER.info("Creating a cluster");
         resources().kafkaEphemeral(CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .editListeners()
-                        .withNewKafkaListenerExternalLoadBalancer()
-                        .endKafkaListenerExternalLoadBalancer()
-                    .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
-                    .withNewPersistentClaimStorage()
-                        .withSize("2Gi")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                .withReplicas(3)
-                    .withNewPersistentClaimStorage()
-                        .withSize("2Gi")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .done();
+                .editSpec()
+                    .editKafka()
+                        .editListeners()
+                            .withNewKafkaListenerExternalLoadBalancer()
+                            .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                        .withConfig(singletonMap("default.replication.factor", 3))
+                        .withNewPersistentClaimStorage()
+                            .withSize("2Gi")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endKafka()
+                    .editZookeeper()
+                    .withReplicas(3)
+                        .withNewPersistentClaimStorage()
+                            .withSize("2Gi")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
+                    .endZookeeper()
+                .endSpec()
+                .done();
     }
 
     @Test
@@ -369,8 +369,8 @@ class SecurityST extends AbstractST {
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
-                () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
-                () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
+            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
         waitForClusterAvailability(userName);
     }
