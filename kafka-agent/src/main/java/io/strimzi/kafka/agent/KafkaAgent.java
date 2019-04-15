@@ -145,6 +145,7 @@ public class KafkaAgent {
 
     private void touch(File file) throws IOException {
         new FileOutputStream(file).close();
+        file.deleteOnExit();
     }
 
     /**
@@ -158,11 +159,11 @@ public class KafkaAgent {
         } else {
             File brokerReadyFile = new File(agentArgs.substring(0, index));
             File sessionConnectedFile = new File(agentArgs.substring(index + 1));
-            if (brokerReadyFile.exists()) {
-                LOGGER.error("Broker readiness file already exists: {}", brokerReadyFile);
+            if (brokerReadyFile.exists() && !brokerReadyFile.delete()) {
+                LOGGER.error("Broker readiness file already exists and could not be deleted: {}", brokerReadyFile);
                 System.exit(1);
-            } else if (sessionConnectedFile.exists()) {
-                LOGGER.error("Session connected file already exists: {}", sessionConnectedFile);
+            } else if (sessionConnectedFile.exists() && !sessionConnectedFile.delete()) {
+                LOGGER.error("Session connected file already exists and could not be deleted: {}", sessionConnectedFile);
                 System.exit(1);
             } else {
                 new KafkaAgent(brokerReadyFile, sessionConnectedFile).run();
