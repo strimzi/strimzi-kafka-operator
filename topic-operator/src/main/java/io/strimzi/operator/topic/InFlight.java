@@ -115,7 +115,7 @@ class InFlight<T> {
             } else {
                 LOGGER.debug("Queueing {} for deferred execution after {}", action, current);
                 current.setHandler(ar -> {
-                    LOGGER.debug("Queueing {} after deferred execution", action);
+                    LOGGER.debug("Executing {} after now {} has finished", action, current);
                     vertx.runOnContext(ar2 ->
                             action.handle(fut.fut));
                 });
