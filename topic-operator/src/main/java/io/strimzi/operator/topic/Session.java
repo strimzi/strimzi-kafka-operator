@@ -83,13 +83,13 @@ public class Session extends AbstractVerticle {
                     if (!topicOperator.isWorkInflight()) {
                         LOGGER.error("Inflight work has finished");
                         f.complete();
-                    }
-                    if (System.currentTimeMillis() > deadline) {
+                    } else if (System.currentTimeMillis() > deadline) {
                         LOGGER.error("Timeout waiting for inflight work to finish");
                         f.complete();
+                    } else {
+                        LOGGER.debug("Waiting for inflight work to finish");
+                        vertx.setTimer(1_000, this);
                     }
-                    LOGGER.debug("Waiting for inflight work to finish");
-                    vertx.setTimer(1_000, this);
                 }
             };
             longHandler.handle(null);
