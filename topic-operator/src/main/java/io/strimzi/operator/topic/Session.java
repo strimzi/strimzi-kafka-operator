@@ -34,7 +34,7 @@ public class Session extends AbstractVerticle {
     private final KubernetesClient kubeClient;
 
     /*test*/ OperatorAssignedKafkaImpl kafka;
-    /*test*/ AdminClient adminClient;
+    private AdminClient adminClient;
     /*test*/ K8sImpl k8s;
     /*test*/ TopicOperator topicOperator;
     private Watch topicWatch;
