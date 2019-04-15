@@ -93,6 +93,9 @@ class InFlight<T> {
         this.vertx = vertx;
     }
 
+    public String toString() {
+        return this.map.toString();
+    }
 
     /**
      * Run the given {@code action} on the context thread,

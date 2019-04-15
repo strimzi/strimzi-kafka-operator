@@ -94,7 +94,7 @@ public class TopicOperatorMockTest {
                 context.fail("Failed to deploy session");
             }
         });
-        async.await();
+        async.awaitSuccess();
 
         int timeout = 30_000;
 
@@ -125,6 +125,7 @@ public class TopicOperatorMockTest {
     }
 
     private void updateInKube(KafkaTopic topic) {
+        LOGGER.info("Updating topic {} in kube", topic.getMetadata().getName());
         Crds.topicOperation(kubeClient).withName(topic.getMetadata().getName()).patch(topic);
     }
 
@@ -169,6 +170,7 @@ public class TopicOperatorMockTest {
         // Config change + reconcile
         updateInKube(new KafkaTopicBuilder(kt).editSpec().addToConfig("retention.bytes", retention + 1).endSpec().build());
         waitUntilTopicInKafka(kafkaName, config -> Integer.toString(retention + 1).equals(config.get("retention.bytes").value()));
+        // Another reconciliation
         reconcile(context);
 
         // Check things still the same
