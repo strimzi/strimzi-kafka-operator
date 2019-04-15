@@ -1,0 +1,18 @@
+// This module is included in the following assemblies:
+//
+// assembly-downgrading-kafka-versions.adoc
+
+[id='com-target-downgrade-version-{context}']
+
+= Target downgrade version
+
+How the Cluster Operator handles a downgrade operation dpendds on the `log.message.format.version`.
+
+* If the target downgrade version of Kafka has the same `log.message.format.version` as the current verison, the Cluster Operator downgrades by performing a single rolling restart of the brokers.
+* If the target downgrade version of Kafka has a different `log.message.format.version`, downgrading is only possible if the running cluster has _always_ had `log.message.format.version` set to the version used by the downgraded version.
++
+This is typically only the case if the upgrade procedure was aborted before the `log.message.format.version` was changed.
+In this case, the downgrade requires:
++
+** Two rolling restarts of the brokers if the interbroker protocol of the two versions is different
+** A single rolling restart if they are the same
