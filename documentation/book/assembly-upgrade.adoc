@@ -24,7 +24,7 @@ In summary, upgrading {ProductName} is a two-stage process. To upgrade brokers a
 ifdef::StrimziUpgrades[]
 == Kafka versions
 
-The Kafka message format version and inter-broker protocol version are subject to change. As a result, the upgrade process involves making both configuration changes to existing Kafka brokers and code changes to client applications (consumers and producers). The following table shows the differences between the Kafka versions:
+The Kafka message format version and inter-broker protocol version are subject to change. As a result, the upgrade process involves making configuration changes to existing Kafka brokers and client applications (consumers and producers). The following table shows the differences between the Kafka versions:
 
 include::snip-kafka-versions.adoc[leveloffset=+1]
 

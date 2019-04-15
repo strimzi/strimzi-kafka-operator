@@ -2,7 +2,7 @@
 //
 // assembly-upgrading-kafka-versions.adoc
 
-[id='proc-upgrading-brokers-newer-kafka-0-9-0-to-0-10-0-{context}']
+[id='proc-upgrading-brokers-newer-kafka-{context}']
 
 = Upgrading Kafka brokers and client applications
 
@@ -136,7 +136,7 @@ The updates:
 +
 NOTE: Clients are still using the old version, so brokers will convert messages to the old version before sending them to the clients. To minimize this additional load, updates the clients as quickly as possible.
 
-. Upgrade all client applications (consumers) to use the new version of the client binaries.
+. Upgrade all client applications (consumers and producers) to use the new version of the client binaries.
 +
 See xref:con-strategies-for-upgrading-clients-str[]
 +
