@@ -39,6 +39,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.systemtest.clients.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -71,6 +72,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -87,12 +91,14 @@ import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static java.util.Arrays.asList;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     static {
@@ -114,6 +120,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
     private static final long GET_BROKER_API_TIMEOUT = 60_000L;
     private static final long GET_BROKER_API_INTERVAL = 5_000L;
+    static final long TIMEOUT_FOR_GET_SECRETS = 60_000;
     static final long GLOBAL_TIMEOUT = 300000;
     static final long GLOBAL_POLL_INTERVAL = 1000;
     static final long TEARDOWN_GLOBAL_WAIT = 10000;
@@ -1210,6 +1217,55 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     void deleteClusterOperatorViaHelmChart() {
         LOGGER.info("Deleting cluster operator with Helm Chart after test class {}", testClass);
         helmClient().delete(HELM_RELEASE_NAME);
+    }
+
+    /**
+     *
+     * @param userName
+     * @param namespace
+     * @throws Exception
+     */
+    void waitForClusterAvailabilityTls(String userName, String namespace) throws Exception {
+        int messageCount = 50;
+        String topicName = "test-topic";
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future producer = testClient.sendMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount);
+            Future consumer = testClient.receiveMessagesTls(topicName, namespace, CLUSTER_NAME, userName, messageCount);
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
+    }
+
+    /**
+     *
+     * @param namespace
+     * @throws Exception
+     */
+    void waitForClusterAvailability(String namespace) throws Exception {
+        int messageCount = 50;
+        String topicName = "test-topic";
+
+        KafkaClient testClient = new KafkaClient();
+        try {
+            Future producer = testClient.sendMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+            Future consumer = testClient.receiveMessages(topicName, namespace, CLUSTER_NAME, messageCount);
+
+            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
+            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
+        } catch (InterruptedException | ExecutionException | java.util.concurrent.TimeoutException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            testClient.close();
+        }
     }
 
     @AfterEach

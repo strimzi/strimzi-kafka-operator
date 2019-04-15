@@ -7,7 +7,6 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.clients.KafkaClient;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.annotations.OpenShiftOnly;
 import io.strimzi.test.extensions.StrimziExtension;
@@ -28,10 +27,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
@@ -47,7 +42,6 @@ import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -64,9 +58,6 @@ class SecurityST extends AbstractST {
     private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
     public static final String STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
     public static final String STRIMZI_IO_FORCE_REPLACE = "strimzi.io/force-replace";
-
-    private static final long TIMEOUT_FOR_GET_SECRETS = 60_000;
-    private static final long TIMEOUT_FOR_SEND_RECEIVE_MSG = 30_000;
     private static final long TIMEOUT_FOR_CLUSTER_STABLE = 1_200_000;
 
     @Test
@@ -185,7 +176,7 @@ class SecurityST extends AbstractST {
         waitFor("", 1_000, TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
@@ -228,7 +219,7 @@ class SecurityST extends AbstractST {
                     initialCaCerts.get(secretName), value);
         }
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
@@ -240,7 +231,7 @@ class SecurityST extends AbstractST {
                 LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems());
             });
 
-        waitForClusterAvailability(bobUserName);
+        waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
     }
 
     @Test
@@ -254,7 +245,7 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(aliceUserName);
+        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
@@ -304,7 +295,7 @@ class SecurityST extends AbstractST {
                     initialCaKeys.get(secretName), value);
         }
 
-        waitForClusterAvailability(aliceUserName);
+        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
@@ -313,26 +304,7 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(bobUserName);
-    }
-
-    private void waitForClusterAvailability(String userName) throws Exception {
-        int messageCount = 50;
-        String topicName = "test-topic";
-
-        KafkaClient testClient = new KafkaClient();
-        try {
-            Future producer = testClient.sendMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount);
-            Future consumer = testClient.receiveMessagesTls(topicName, NAMESPACE, CLUSTER_NAME, userName, messageCount);
-
-            assertThat("Producer produced all messages", producer.get(1, TimeUnit.MINUTES), is(messageCount));
-            assertThat("Consumer consumed all messages", consumer.get(1, TimeUnit.MINUTES), is(messageCount));
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
-            throw e;
-        } finally {
-            testClient.close();
-        }
+        waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
     }
 
     private void createClusterWithExternalRoute() {
@@ -361,45 +333,6 @@ class SecurityST extends AbstractST {
                 .done();
     }
 
-    private void createClusterWithExternalLoadbalancer() {
-        LOGGER.info("Creating a cluster");
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalLoadBalancer()
-                            .endKafkaListenerExternalLoadBalancer()
-                        .endListeners()
-                        .withConfig(singletonMap("default.replication.factor", 3))
-                        .withNewPersistentClaimStorage()
-                            .withSize("2Gi")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                    .endKafka()
-                    .editZookeeper()
-                        .withReplicas(3)
-                        .withNewPersistentClaimStorage()
-                            .withSize("2Gi")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                    .endZookeeper()
-                .endSpec()
-                .done();
-    }
-
-    @Test
-    @OpenShiftOnly
-    void testLoadbalancer() throws Exception {
-        createClusterWithExternalLoadbalancer();
-        String userName = "alice";
-        resources().tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
-            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
-            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
-
-        waitForClusterAvailability(userName);
-    }
-
     @Test
     @OpenShiftOnly
     @Tag(REGRESSION)
@@ -417,7 +350,7 @@ class SecurityST extends AbstractST {
         // Check if user exists
         waitTillSecretExists(userName);
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Wait until the certificates have been replaced
         waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(CLUSTER_NAME));
@@ -425,7 +358,7 @@ class SecurityST extends AbstractST {
         // Wait until the pods are all up and ready
         waitForClusterStability();
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
     }
 
     private void waitForClusterStability() {
