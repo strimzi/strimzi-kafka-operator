@@ -3,7 +3,7 @@
 // master.adoc
 
 [id='assembly-upgrade-{context}']
-= Upgrade
+= {ProductName} and Kafka upgrades
 
 You can upgrade {ProductName} with no cluster downtime. Each version of {ProductName} supports a range of versions of Apache Kafka. You can upgrade to a higher Kafka version as long as that version is supported by your version of {ProductName}.
 In some cases, you can also downgrade to a lower supported Kafka version.
