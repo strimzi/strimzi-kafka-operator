@@ -42,6 +42,8 @@ import org.apache.kafka.clients.admin.DescribeReplicaLogDirsOptions;
 import org.apache.kafka.clients.admin.DescribeReplicaLogDirsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsOptions;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.ElectPreferredLeadersOptions;
+import org.apache.kafka.clients.admin.ElectPreferredLeadersResult;
 import org.apache.kafka.clients.admin.ExpireDelegationTokenOptions;
 import org.apache.kafka.clients.admin.ExpireDelegationTokenResult;
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsOptions;
@@ -67,6 +69,7 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
 
 import java.lang.reflect.Constructor;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +81,12 @@ class MockAdminClient extends AdminClient {
 
     @Override
     public void close(long l, TimeUnit timeUnit) {
+        return;
+    }
 
+    @Override
+    public void close(Duration duration) {
+        return;
     }
 
     @Override
@@ -205,6 +213,11 @@ class MockAdminClient extends AdminClient {
 
     @Override
     public DeleteConsumerGroupsResult deleteConsumerGroups(Collection<String> collection, DeleteConsumerGroupsOptions deleteConsumerGroupsOptions) {
+        return null;
+    }
+
+    @Override
+    public ElectPreferredLeadersResult electPreferredLeaders(Collection<TopicPartition> collection, ElectPreferredLeadersOptions electPreferredLeadersOptions) {
         return null;
     }
 
