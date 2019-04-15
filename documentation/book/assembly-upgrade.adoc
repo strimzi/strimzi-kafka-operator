@@ -5,7 +5,7 @@
 [id='assembly-upgrade-{context}']
 = {ProductName} and Kafka upgrades
 
-You can upgrade {ProductName} with no cluster downtime. Each version of {ProductName} supports a range of versions of Apache Kafka. You can upgrade to a higher Kafka version as long as that version is supported by your version of {ProductName}.
+You can upgrade {ProductName} with no cluster downtime. Each version of {ProductName} supports a one or more versions of Apache Kafka. You can upgrade to a higher Kafka version as long as that version is supported by your version of {ProductName}.
 In some cases, you can also downgrade to a lower supported Kafka version.
 
 Later versions of {ProductName} provide support for newer versions of Kafka, so you need to upgrade {ProductName} _before_ you can upgrade to a higher supported Kafka version.
