@@ -124,7 +124,7 @@ public class TopicOperatorTest {
                 healthDelay, healthTimeout, metricsCm, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, new TopicOperatorSpec(), kafkaLogJson, zooLogJson);
         TopicOperator tc = TopicOperator.fromCrd(resource, VERSIONS);
-        Assert.assertEquals(TopicOperatorSpec.DEFAULT_IMAGE, tc.getImage());
+        Assert.assertEquals("strimzi/operator:latest", tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());
         assertEquals(TopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, tc.getReconciliationIntervalMs());
         assertEquals(TopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, tc.getZookeeperSessionTimeoutMs());

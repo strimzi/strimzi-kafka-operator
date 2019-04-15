@@ -67,7 +67,6 @@ public class EntityUserOperator extends AbstractModel {
     protected EntityUserOperator(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         this.name = userOperatorName(cluster);
-        this.image = EntityUserOperatorSpec.DEFAULT_IMAGE;
         this.readinessPath = "/";
         this.readinessTimeout = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
         this.readinessInitialDelay = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
@@ -187,7 +186,11 @@ public class EntityUserOperator extends AbstractModel {
                         Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
                 result.setOwnerReference(kafkaAssembly);
-                result.setImage(userOperatorSpec.getImage());
+                String image = userOperatorSpec.getImage();
+                if (image == null) {
+                    image = System.getenv().getOrDefault("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", "strimzi/operator:latest");
+                }
+                result.setImage(image);
                 result.setWatchedNamespace(userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : namespace);
                 result.setReconciliationIntervalMs(userOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
                 result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
