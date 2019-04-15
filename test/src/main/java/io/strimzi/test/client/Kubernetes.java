@@ -56,8 +56,7 @@ public abstract class Kubernetes {
     protected final Environment environment;
     protected final KubernetesClient client;
     protected final String defaultNamespace;
-    NamespaceHolder namespaceHolder = NamespaceHolder.getInstance();
-    private String namespace = namespaceHolder.getNamespace();
+    private String namespace = NamespaceHolder.getNamespace();
 
     protected Kubernetes(Environment environment, KubernetesClient client, String defaultNamespace) {
         this.environment = environment;
@@ -65,7 +64,6 @@ public abstract class Kubernetes {
         this.defaultNamespace = defaultNamespace;
     }
 
-    //TODO create holder for namespace
     public String getNamespace() {
         return defaultNamespace;
     }
@@ -269,7 +267,7 @@ public abstract class Kubernetes {
      * Gets deployment config status
      */
     public boolean getDeploymentConfigStatus(String deploymentCofigName) {
-        return client.adapt(OpenShiftclient.class).deploymentConfigs().inNamespace(namespace).withName(deploymentCofigName).isReady();
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespace).withName(deploymentCofigName).isReady();
     }
 
     public Secret createSecret(Secret secret) {
@@ -298,45 +296,47 @@ public abstract class Kubernetes {
     }
 
     public void deleteService (String serviceName) {
-        client.inNamespace(namespace).services().withName(serviceName).delete();
+        client.services().inNamespace(namespace).withName(serviceName).delete();
     }
 
     public Job createJob(Job job) {
-        return client.inNamespace(namespace).extensions().jobs().create(job);
+        return client.extensions().jobs().inNamespace(namespace).create(job);
     }
 
     public Job getJob(String jobName) {
-        return client.inNamespace(namespace).extensions().jobs().withName(jobName).get();
+        return client.extensions().jobs().inNamespace(namespace).withName(jobName).get();
     }
 
     public MixedOperation<Job, JobList, DoneableJob, ScalableResource<Job, DoneableJob>> listJobs() {
-        return client.inNamespace(namespace).extensions().jobs();
+//    public MixedOperation<Job, JobList, DoneableJob, ScalableResource<Job, DoneableJob>> listJobs() {
+//        return client.extensions().jobs().inNamespace(namespace);
+        return client.extensions().jobs(); //TODO need namespace here
     }
 
     public String logs(String podName, String containerName) {
         if (containerName != null) {
-            return client.inNamespace(namespace).pods().withName(podName).inContainer(containerName).getLog();
+            return client.pods().inNamespace(namespace).withName(podName).inContainer(containerName).getLog();
         } else {
-            return client.inNamespace(namespace).pods().withName(podName).getLog();
+            return client.pods().inNamespace(namespace).withName(podName).getLog();
         }
     }
 
     public List<Event> listEvents(String resourceType, String resourceName) {
-        return client.inNamespace(namespace).events().list().getItems().stream()
+        return client.events().inNamespace(namespace).list().getItems().stream()
                 .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
                 .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
                 .collect(Collectors.toList());
     }
 
     public KubernetesRoleBinding createOrReplaceKubernetesRoleBinding (KubernetesRoleBinding kubernetesRoleBinding) {
-        return client.inNamespace(namespace).rbac().kubernetesRoleBindings().createOrReplace(kubernetesRoleBinding);
+        return client.rbac().kubernetesRoleBindings().inNamespace(namespace).createOrReplace(kubernetesRoleBinding);
     }
 
     public KubernetesClusterRoleBinding createOrReplaceKubernetesClusterRoleBinding (KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
-        return client.inNamespace(namespace).rbac().kubernetesClusterRoleBindings().createOrReplace(kubernetesClusterRoleBinding);
+        return client.rbac().kubernetesClusterRoleBindings().inNamespace(namespace).createOrReplace(kubernetesClusterRoleBinding);
     }
 
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources (CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return client.inNamespace(namespace).customResources(crd,resourceType, listClass, doneClass);
+        return client.customResources(crd,resourceType, listClass, doneClass); //TODO namespace here
     }
 }

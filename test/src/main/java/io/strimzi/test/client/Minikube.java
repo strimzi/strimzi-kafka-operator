@@ -6,10 +6,14 @@ package io.strimzi.test.client;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.test.Environment;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class Minikube extends Kubernetes {
 
-    protected Minikube(Environment environment, String defaultNamespace) {
+    private static final Logger LOGGER = LogManager.getLogger(Minikube.class);
+
+    Minikube(Environment environment, String defaultNamespace) {
         super(environment, new DefaultKubernetesClient(), defaultNamespace);
     }
 }
