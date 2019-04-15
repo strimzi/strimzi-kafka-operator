@@ -30,6 +30,7 @@ On {KubernetesName}, use:
 kubectl edit kafka _my-cluster_
 ----
 endif::Kubernetes[]
+
 +
 On {OpenShiftName}, use:
 +
@@ -140,6 +141,12 @@ NOTE: Clients are still using the old version, so brokers will convert messages 
 See xref:con-strategies-for-upgrading-clients-str[]
 +
 WARNING: You cannot downgrade after completing this step. If you need to revert the update at this point, follow the procedure xref:proc-downgrading-brokers-older-kafka-{context}[].
+
++
+If required, set the version property for Kafka Connect and Mirror Maker as the new version of Kafka:
++
+.. For Kafka Connect, update `KafkaConnect.spec.version`
+.. For MIrror Maker, update `KafkaMirrorMaker.spec.version`
 
 . If the `log.message.format.version` identified in step 1 is the same as the new version proceed to the next step.
 +
