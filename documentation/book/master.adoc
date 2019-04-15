@@ -21,6 +21,8 @@ include::assembly-security.adoc[leveloffset=+1]
 
 include::assembly-upgrade.adoc[leveloffset=+1]
 
+include::proc-uninstalling.adoc[leveloffset=+1]
+
 [appendix]
 include::faq.adoc[leveloffset=+1]
 
