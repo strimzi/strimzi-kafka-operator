@@ -41,7 +41,8 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     public static final String STATEFUL_SET = "statefulset";
     public static final String SERVICE = "service";
     public static final String CM = "cm";
-    private String namespace = defaultNamespace();
+    private String defaultNamespace = defaultNamespace();
+    private String namespace = defaultNamespace;
 
     protected abstract String cmd();
 

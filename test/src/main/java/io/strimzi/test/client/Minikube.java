@@ -14,6 +14,6 @@ public class Minikube extends Kubernetes {
     private static final Logger LOGGER = LogManager.getLogger(Minikube.class);
 
     Minikube(Environment environment, String defaultNamespace) {
-        super(environment, new DefaultKubernetesClient(), defaultNamespace);
+        super(environment, new DefaultKubernetesClient(KUBE_CONFIG), defaultNamespace);
     }
 }

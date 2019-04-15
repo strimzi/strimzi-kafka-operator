@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobList;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
@@ -52,37 +53,51 @@ import static io.strimzi.test.k8s.KubeCluster.ENV_VAR_TEST_CLUSTER;
 
 public abstract class Kubernetes {
 
+    private static Kubernetes kubernetes;
     private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
-    protected final Environment environment;
+    private static final Environment ENVIRONMENT = new Environment();
     protected final KubernetesClient client;
     protected final String defaultNamespace;
     private String namespace = NamespaceHolder.getNamespace();
+    public static final Config KUBE_CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
 
-    protected Kubernetes(Environment environment, KubernetesClient client, String defaultNamespace) {
-        this.environment = environment;
+    protected Kubernetes(KubernetesClient client, String defaultNamespace) {
         this.client = client;
         this.defaultNamespace = defaultNamespace;
+    }
+
+    public KubernetesClient getClient() {
+        return client;
     }
 
     public String getNamespace() {
         return defaultNamespace;
     }
 
-    public static Kubernetes create(Environment environment) {
+    public static Kubernetes getInstance() {
+        if (kubernetes == null) {
+            kubernetes = Kubernetes.create();
+            return kubernetes;
+        } else {
+            return kubernetes;
+        }
+    }
+
+    public static Kubernetes create() {
 
         Kubernetes kubernetes;
         String clusterName = System.getenv(ENV_VAR_TEST_CLUSTER);
         if (clusterName != null) {
             switch (clusterName.toLowerCase(Locale.ENGLISH)) {
                 case "oc":
-                    kubernetes = new OpenShift(environment, "myproject");
+                    kubernetes = new OpenShift(ENVIRONMENT, "myproject");
                     break;
                 case "minishift":
-                    kubernetes = new OpenShift(environment, "myproject");
+                    kubernetes = new OpenShift(ENVIRONMENT, "myproject");
                     break;
 
                 case "minikube":
-                    kubernetes = new Minikube(environment, "default");
+                    kubernetes = new Minikube(ENVIRONMENT, "default");
                     break;
                 default:
                     throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER + "=" + clusterName + " is not a supported cluster type");
@@ -313,12 +328,12 @@ public abstract class Kubernetes {
         return client.extensions().jobs(); //TODO need namespace here
     }
 
+    public String logs(String podName) {
+        return client.pods().inNamespace(namespace).withName(podName).getLog();
+    }
+
     public String logs(String podName, String containerName) {
-        if (containerName != null) {
-            return client.pods().inNamespace(namespace).withName(podName).inContainer(containerName).getLog();
-        } else {
-            return client.pods().inNamespace(namespace).withName(podName).getLog();
-        }
+        return client.pods().inNamespace(namespace).withName(podName).inContainer(containerName).getLog();
     }
 
     public List<Event> listEvents(String resourceType, String resourceName) {
