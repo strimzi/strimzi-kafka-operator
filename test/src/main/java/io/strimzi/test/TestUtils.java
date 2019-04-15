@@ -439,13 +439,13 @@ public final class TestUtils {
     }
 
     /**
-     * Repeat request n-times in a row
+     * Repeat request n-times in a row in case of call failed
      *
      * @param retry count of remaining retries
      * @param fn    request function
      * @return
      */
-    public static <T> T doRequestNTimes(int retry, Callable<T> fn, Optional<Runnable> reconnect) throws Exception {
+    public static <T> T doRequestTillSuccess(int retry, Callable<T> fn, Optional<Runnable> reconnect) throws Exception {
         try {
             return fn.call();
         } catch (Exception ex) {
@@ -458,7 +458,7 @@ public final class TestUtils {
             if (ex.getCause() instanceof UnknownHostException && retry > 0) {
                 try {
                     LOGGER.info("{} remaining iterations", retry);
-                    return doRequestNTimes(retry - 1, fn, reconnect);
+                    return doRequestTillSuccess(retry - 1, fn, reconnect);
                 } catch (Exception ex2) {
                     throw ex2;
                 }

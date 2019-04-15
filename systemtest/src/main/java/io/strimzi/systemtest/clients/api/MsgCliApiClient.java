@@ -60,8 +60,8 @@ public class MsgCliApiClient {
                 .setVerifyHost(false));
     }
 
-    protected <T> T doRequestNTimes(int retry, Callable<T> fn, Optional<Runnable> reconnect) throws Exception {
-        return TestUtils.doRequestNTimes(retry, fn, reconnect);
+    protected <T> T doRequestTillSuccess(int retry, Callable<T> fn, Optional<Runnable> reconnect) throws Exception {
+        return TestUtils.doRequestTillSuccess(retry, fn, reconnect);
     }
 
     private <T> void responseHandler(AsyncResult<HttpResponse<T>> ar, CompletableFuture<T> promise, int expectedCode,
@@ -109,7 +109,7 @@ public class MsgCliApiClient {
         request.put("command", new JsonArray(clientArguments));
         request.put("count", count);
 
-        return doRequestNTimes(initRetry, () -> {
+        return doRequestTillSuccess(initRetry, () -> {
             webClient.post(endpoint.getPort(), endpoint.getHost(), "")
                     .as(BodyCodec.jsonObject())
                     .timeout(120_000)
@@ -135,7 +135,7 @@ public class MsgCliApiClient {
         JsonObject request = new JsonObject();
         request.put("id", uuid);
 
-        return doRequestNTimes(initRetry, () -> {
+        return doRequestTillSuccess(initRetry, () -> {
             webClient.get(endpoint.getPort(), endpoint.getHost(), "")
                     .as(BodyCodec.jsonObject())
                     .timeout(120000)
@@ -161,7 +161,7 @@ public class MsgCliApiClient {
         JsonObject request = new JsonObject();
         request.put("id", uuid);
 
-        return doRequestNTimes(initRetry, () -> {
+        return doRequestTillSuccess(initRetry, () -> {
             webClient.delete(endpoint.getPort(), endpoint.getHost(), "")
                     .as(BodyCodec.jsonObject())
                     .timeout(120000)
