@@ -1220,9 +1220,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     *
-     * @param userName
-     * @param namespace
+     * Wait for cluster availability, check availability of external routes with TLS
+     * @param userName user name
+     * @param namespace cluster namespace
      * @throws Exception
      */
     void waitForClusterAvailabilityTls(String userName, String namespace) throws Exception {
@@ -1245,8 +1245,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     /**
-     *
-     * @param namespace
+     * Wait for cluster availability, check availability of external routes without TLS
+     * @param namespace cluster namespace
      * @throws Exception
      */
     void waitForClusterAvailability(String namespace) throws Exception {

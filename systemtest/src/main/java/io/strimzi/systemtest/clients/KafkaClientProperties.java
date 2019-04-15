@@ -118,6 +118,8 @@ class KafkaClientProperties {
      */
     private static Properties sharedClientProperties(String namespace, String clusterName, String userName) {
         Properties properties = new Properties();
+        // For turn of hostname verification
+        properties.setProperty("ssl.endpoint.identification.algorithm", "");
 
         try {
             String tsPassword = "foo";
@@ -202,7 +204,6 @@ class KafkaClientProperties {
         if (extBootstrapServiceType.equals("NodePort")) {
             int port = extBootstrapService.getSpec().getPorts().get(0).getNodePort();
             String externalAddress = CLIENT.nodes().list().getItems().get(0).getStatus().getAddresses().get(0).getAddress();
-//            return extBootstrapService.getSpec().getClusterIP() + ":" + port;
             return externalAddress + ":" + port;
         } else if (extBootstrapServiceType.equals("LoadBalancer")) {
             LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);
