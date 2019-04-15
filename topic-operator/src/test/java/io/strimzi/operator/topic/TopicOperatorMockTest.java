@@ -19,10 +19,12 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,6 +34,7 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -55,6 +58,19 @@ public class TopicOperatorMockTest {
 
     // TODO this is all in common with TOIT, so factor out a common base class
 
+    @After
+    public void tearDown() {
+        if (vertx != null && deploymentId != null) {
+            vertx.undeploy(deploymentId);
+        }
+        if (adminClient != null) {
+            adminClient.close();
+        }
+        if (kafkaCluster != null) {
+            kafkaCluster.shutdown();
+        }
+    }
+
     @Before
     public void createMockKube(TestContext context) throws Exception {
         Assume.assumeTrue("This test is flaky on Travis, for unknown reasons",
@@ -72,6 +88,10 @@ public class TopicOperatorMockTest {
         kafkaCluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
         kafkaCluster.startup();
 
+        Properties p = new Properties();
+        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.brokerList());
+        adminClient = AdminClient.create(p);
+
         Map<String, String> m = new HashMap();
         m.put(io.strimzi.operator.topic.Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
         m.put(io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
@@ -84,7 +104,6 @@ public class TopicOperatorMockTest {
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
                 deploymentId = ar.result();
-                adminClient = session.adminClient;
                 topicsConfigWatcher = session.topicConfigsWatcher;
                 topicWatcher = session.topicWatcher;
                 topicsWatcher = session.topicsWatcher;
