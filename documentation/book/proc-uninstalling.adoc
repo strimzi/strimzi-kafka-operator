@@ -2,8 +2,10 @@
 //
 // master.adoc
 
-[id='ininstalling-{context}']
+[id='uninstalling-{context}']
 = Uninstalling {ProductName}
+
+This procedure describes how to uninstall {ProductName} and remove resources related to the deployment.
 
 . Identify resources:
 +
