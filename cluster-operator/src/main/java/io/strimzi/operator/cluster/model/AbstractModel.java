@@ -454,6 +454,10 @@ public abstract class AbstractModel {
         } else if (storage instanceof JbodStorage)  {
             JbodStorage jbodStorage = (JbodStorage) storage;
 
+            if (jbodStorage.getVolumes().size() == 0)   {
+                throw new InvalidResourceException("JbodStorage need to contain at least one volume!");
+            }
+
             for (Storage jbodVolume : jbodStorage.getVolumes()) {
                 if (jbodVolume instanceof PersistentClaimStorage) {
                     PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) jbodVolume;

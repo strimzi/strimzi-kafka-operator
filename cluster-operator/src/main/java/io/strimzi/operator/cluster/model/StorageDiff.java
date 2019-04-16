@@ -20,6 +20,7 @@ public class StorageDiff extends AbstractResourceDiff {
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
         "^(/deleteClaim"
+        + "|/volumes/[0-9]+"
         + "|/volumes/[0-9]+/deleteClaim)$");
 
     private final boolean isEmpty;
@@ -35,19 +36,20 @@ public class StorageDiff extends AbstractResourceDiff {
 
         boolean changesType = false;
         boolean changesSize = false;
+        boolean volumeAddedRemoved = false;
 
         for (JsonNode d : diff) {
             String pathValue = d.get("path").asText();
 
             if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                log.debug("Ignoring Storage diff {}", d);
+                log.info("Ignoring Storage diff {}", d);
                 continue;
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("Storage differs: {}", d);
-                log.debug("Current Storage path {} has value {}", pathValue, lookupPath(source, pathValue));
-                log.debug("Desired Storage path {} has value {}", pathValue, lookupPath(target, pathValue));
+            if (log.isInfoEnabled()) {
+                log.info("Storage differs: {}", d);
+                log.info("Current Storage path {} has value {}", pathValue, lookupPath(source, pathValue));
+                log.info("Desired Storage path {} has value {}", pathValue, lookupPath(target, pathValue));
             }
 
             num++;
