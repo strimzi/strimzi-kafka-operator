@@ -42,14 +42,14 @@ public class StorageDiff extends AbstractResourceDiff {
             String pathValue = d.get("path").asText();
 
             if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                log.info("Ignoring Storage diff {}", d);
+                log.debug("Ignoring Storage diff {}", d);
                 continue;
             }
 
-            if (log.isInfoEnabled()) {
-                log.info("Storage differs: {}", d);
-                log.info("Current Storage path {} has value {}", pathValue, lookupPath(source, pathValue));
-                log.info("Desired Storage path {} has value {}", pathValue, lookupPath(target, pathValue));
+            if (log.isDebugEnabled()) {
+                log.debug("Storage differs: {}", d);
+                log.debug("Current Storage path {} has value {}", pathValue, lookupPath(source, pathValue));
+                log.debug("Desired Storage path {} has value {}", pathValue, lookupPath(target, pathValue));
             }
 
             num++;

@@ -1602,6 +1602,20 @@ public class KafkaClusterTest {
         }
     }
 
+    @Test(expected = InvalidResourceException.class)
+    public void testGeneratePersistentVolumeClaimsJbodWithoutVolumes() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withStorage(new JbodStorageBuilder().withVolumes(Collections.EMPTY_LIST)
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
     @Test
     public void testGeneratePersistentVolumeClaimsEphemeral()    {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
