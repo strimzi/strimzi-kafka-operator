@@ -7,17 +7,21 @@
 
 This procedure describes how to uninstall {ProductName} and remove resources related to the deployment.
 
-. Identify resources:
-+
---
-* Referenced by `Kafka`, `KafkaConnect` or `KafkaMirrorMaker`
-* Consumed by the operators
---
-+
-These include resources specific to a deployment, such as:
+.Prerequisites
+
+In order to perform this procedure, you need to identify resources specific to a deployment, such as:
 +
 * Secrets (Custom CAs and certificates, Kafka Connect secrets, and other secrets)
 * Logging `ConfigMaps`
++
+These are resources:
++
+--
+* Referenced by `Kafka`, `KafkaConnect` or `KafkaMirrorMaker` configuration
+* Consumed by the operators
+--
+
+.Procedure
 
 . Delete the cluster operator `Deployment`, related `CustomResourceDefinitions` and `RBAC` resources:
 +
@@ -28,4 +32,4 @@ These include resources specific to a deployment, such as:
 +
 Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect` or `KafkaMirrorMaker`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
 
-. Delete the resources identified in step 1.
+. Delete the resources you identified in the prerequisites.
