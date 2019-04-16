@@ -50,8 +50,8 @@ public class OpenShiftTemplatesST extends AbstractST {
 
     public static final String NAMESPACE = "template-test";
 
-    public static KubeClusterResource cluster = KubeClusterResource.getInstance();
-    private Oc oc = (Oc) KUBE_CLIENT;
+    public static KubeClusterResource cluster = new KubeClusterResource();
+    private Oc oc = (Oc) KUBE_CMD_CLIENT;
 
     private Kafka getKafkaWithName(String clusterName) {
         return CLIENT.customResources(Crds.kafka(), Kafka.class, KafkaList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();

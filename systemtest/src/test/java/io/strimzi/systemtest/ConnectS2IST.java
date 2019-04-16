@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.FLAKY;
@@ -43,11 +44,11 @@ class ConnectS2IST extends AbstractST {
         File dir = StUtils.downloadAndUnzip("https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/0.3.0/debezium-connector-mongodb-0.3.0-plugin.zip");
 
         // Start a new image build using the plugins directory
-        KUBE_CLIENT.exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath());
+        KUBE_CMD_CLIENT.exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath());
 
-        KUBE_CLIENT.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
+        KUBE_CMD_CLIENT.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
 
-        String connectS2IPodName = KUBE_CLIENT.listResourcesByLabel("pod", "type=kafka-connect-s2i").get(0);
+        String connectS2IPodName = KUBE_CLIENT.listPods(Collections.singletonMap("type", "kafka-connect-s2i")).get(0).getMetadata().getName();
         String plugins = KUBE_CLIENT.execInPod(connectS2IPodName, "curl", "-X", "GET", "http://localhost:8083/connector-plugins").out();
 
         assertThat(plugins, containsString("io.debezium.connector.mongodb.MongoDbConnector"));

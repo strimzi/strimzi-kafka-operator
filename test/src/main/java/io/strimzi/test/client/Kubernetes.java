@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.fabric8.kubernetes.api.model.batch.Job;
@@ -28,6 +29,7 @@ import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.test.k8s.NamespaceHolder;
@@ -169,6 +171,13 @@ public class Kubernetes extends NamespaceHolder {
         return client.pods().inNamespace(namespace).withName(name).get();
     }
 
+    /**
+     * Deletes pod
+     */
+    public Boolean deletePod(Pod pod) {
+        return client.pods().inNamespace(namespace).delete(pod);
+    }
+
     public Date getCreationTimestampForPod(String podName) {
         DateFormat df = new SimpleDateFormat("yyyyMMdd'T'kkmmss'Z'");
         Pod pod = getPod(podName);
@@ -186,6 +195,13 @@ public class Kubernetes extends NamespaceHolder {
      */
     public StatefulSet getStatefulSet(String statefulSetName) {
         return  client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).get();
+    }
+
+    /**
+     * Gets stateful set
+     */
+    public RollableScalableResource<StatefulSet, DoneableStatefulSet> statefulSet(String statefulSetName) {
+        return client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName);
     }
 
     /**

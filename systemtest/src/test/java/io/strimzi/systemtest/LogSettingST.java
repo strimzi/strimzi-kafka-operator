@@ -212,12 +212,12 @@ class LogSettingST extends AbstractST {
         boolean result = false;
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
             LOGGER.info("Check log level setting since {} seconds. Logger: {} Expected: {}", since, entry.getKey(), entry.getValue());
-            String configMap = KUBE_CLIENT.get("configMap", configMapName);
+            String configMap = KUBE_CMD_CLIENT.get("configMap", configMapName);
             String loggerConfig = String.format("%s=%s", entry.getKey(), entry.getValue());
             result = configMap.contains(loggerConfig);
 
             if (result) {
-                String log = KUBE_CLIENT.searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
+                String log = KUBE_CMD_CLIENT.searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
                 result = log.isEmpty();
             }
         }

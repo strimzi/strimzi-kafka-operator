@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -35,11 +36,11 @@ class RecoveryST extends AbstractST {
         String entityOperatorDeploymentName = entityOperatorDeploymentName(CLUSTER_NAME);
         LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", CLUSTER_NAME);
 
-        KUBE_CLIENT.deleteByName(DEPLOYMENT, entityOperatorDeploymentName);
-        KUBE_CLIENT.waitForResourceDeletion(DEPLOYMENT, entityOperatorDeploymentName);
+        KUBE_CMD_CLIENT.deleteByName(DEPLOYMENT, entityOperatorDeploymentName);
+        KUBE_CMD_CLIENT.waitForResourceDeletion(DEPLOYMENT, entityOperatorDeploymentName);
 
         LOGGER.info("Waiting for recovery {}", entityOperatorDeploymentName);
-        KUBE_CLIENT.waitForDeployment(entityOperatorDeploymentName, 1);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -53,11 +54,11 @@ class RecoveryST extends AbstractST {
         String kafkaStatefulSetName = kafkaClusterName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", CLUSTER_NAME);
 
-        KUBE_CLIENT.deleteByName(STATEFUL_SET, kafkaStatefulSetName);
-        KUBE_CLIENT.waitForResourceDeletion(STATEFUL_SET, kafkaStatefulSetName);
+        KUBE_CMD_CLIENT.deleteByName(STATEFUL_SET, kafkaStatefulSetName);
+        KUBE_CMD_CLIENT.waitForResourceDeletion(STATEFUL_SET, kafkaStatefulSetName);
 
         LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
-        KUBE_CLIENT.waitForStatefulSet(kafkaStatefulSetName, 1);
+        StUtils.waitForAllStatefulSetPodsReady(kafkaStatefulSetName);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -71,11 +72,11 @@ class RecoveryST extends AbstractST {
         String zookeeperStatefulSetName = zookeeperClusterName(CLUSTER_NAME);
         LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", CLUSTER_NAME);
 
-        KUBE_CLIENT.deleteByName(STATEFUL_SET, zookeeperStatefulSetName);
-        KUBE_CLIENT.waitForResourceDeletion(STATEFUL_SET, zookeeperStatefulSetName);
+        KUBE_CMD_CLIENT.deleteByName(STATEFUL_SET, zookeeperStatefulSetName);
+        KUBE_CMD_CLIENT.waitForResourceDeletion(STATEFUL_SET, zookeeperStatefulSetName);
 
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
-        KUBE_CLIENT.waitForStatefulSet(zookeeperStatefulSetName, 3);
+        StUtils.waitForAllStatefulSetPodsReady(zookeeperStatefulSetName);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -89,10 +90,10 @@ class RecoveryST extends AbstractST {
         String kafkaServiceName = kafkaServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
 
-        KUBE_CLIENT.deleteByName(SERVICE, kafkaServiceName);
+        KUBE_CMD_CLIENT.deleteByName(SERVICE, kafkaServiceName);
 
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
-        KUBE_CLIENT.waitForResourceCreation(SERVICE, kafkaServiceName);
+        KUBE_CMD_CLIENT.waitForResourceCreation(SERVICE, kafkaServiceName);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -107,10 +108,10 @@ class RecoveryST extends AbstractST {
 
         LOGGER.info("Running deleteKafkaService with cluster {}", CLUSTER_NAME);
 
-        KUBE_CLIENT.deleteByName(SERVICE, zookeeperServiceName);
+        KUBE_CMD_CLIENT.deleteByName(SERVICE, zookeeperServiceName);
 
         LOGGER.info("Waiting for creation {}", zookeeperServiceName);
-        KUBE_CLIENT.waitForResourceCreation(SERVICE, zookeeperServiceName);
+        KUBE_CMD_CLIENT.waitForResourceCreation(SERVICE, zookeeperServiceName);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -124,10 +125,10 @@ class RecoveryST extends AbstractST {
         String kafkaHeadlessServiceName = kafkaHeadlessServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
 
-        KUBE_CLIENT.deleteByName(SERVICE, kafkaHeadlessServiceName);
+        KUBE_CMD_CLIENT.deleteByName(SERVICE, kafkaHeadlessServiceName);
 
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
-        KUBE_CLIENT.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
+        KUBE_CMD_CLIENT.waitForResourceCreation(SERVICE, kafkaHeadlessServiceName);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -141,10 +142,10 @@ class RecoveryST extends AbstractST {
         String zookeeperHeadlessServiceName = zookeeperHeadlessServiceName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", CLUSTER_NAME);
 
-        KUBE_CLIENT.deleteByName(SERVICE, zookeeperHeadlessServiceName);
+        KUBE_CMD_CLIENT.deleteByName(SERVICE, zookeeperHeadlessServiceName);
 
         LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
-        KUBE_CLIENT.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
+        KUBE_CMD_CLIENT.waitForResourceCreation(SERVICE, zookeeperHeadlessServiceName);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -158,11 +159,11 @@ class RecoveryST extends AbstractST {
         String kafkaMetricsConfigName = kafkaMetricsConfigName(CLUSTER_NAME);
         LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", CLUSTER_NAME);
 
-        KUBE_CLIENT.deleteByName(CM, kafkaMetricsConfigName);
-        KUBE_CLIENT.waitForResourceDeletion(CM, kafkaMetricsConfigName);
+        KUBE_CMD_CLIENT.deleteByName(CM, kafkaMetricsConfigName);
+        KUBE_CMD_CLIENT.waitForResourceDeletion(CM, kafkaMetricsConfigName);
 
         LOGGER.info("Waiting for creation {}", kafkaMetricsConfigName);
-        KUBE_CLIENT.waitForResourceCreation(CM, kafkaMetricsConfigName);
+        KUBE_CMD_CLIENT.waitForResourceCreation(CM, kafkaMetricsConfigName);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -176,11 +177,11 @@ class RecoveryST extends AbstractST {
         String zookeeperMetricsConfigName = zookeeperMetricsConfigName(CLUSTER_NAME);
         LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", CLUSTER_NAME);
 
-        KUBE_CLIENT.deleteByName(CM, zookeeperMetricsConfigName);
-        KUBE_CLIENT.waitForResourceDeletion(CM, zookeeperMetricsConfigName);
+        KUBE_CMD_CLIENT.deleteByName(CM, zookeeperMetricsConfigName);
+        KUBE_CMD_CLIENT.waitForResourceDeletion(CM, zookeeperMetricsConfigName);
 
         LOGGER.info("Waiting for creation {}", zookeeperMetricsConfigName);
-        KUBE_CLIENT.waitForResourceCreation(CM, zookeeperMetricsConfigName);
+        KUBE_CMD_CLIENT.waitForResourceCreation(CM, zookeeperMetricsConfigName);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log

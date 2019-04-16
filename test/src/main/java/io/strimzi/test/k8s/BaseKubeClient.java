@@ -288,47 +288,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
-    public K waitForPod(String name) {
-        // wait when all pods are ready
-        return waitFor("pod", name,
-            actualObj -> {
-                JsonNode containerStatuses = actualObj.get("status").get("containerStatuses");
-                if (containerStatuses != null && containerStatuses.isArray()) {
-                    for (final JsonNode objNode : containerStatuses) {
-                        if (!objNode.get("ready").asBoolean()) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-        );
-    }
-
-    @Override
-    public K waitForStatefulSet(String name, int expectPods) {
-        return waitFor("statefulset", name,
-            actualObj -> {
-                int rep = actualObj.get("status").get("replicas").asInt();
-                JsonNode currentReplicas = actualObj.get("status").get("currentReplicas");
-
-                if (currentReplicas != null &&
-                        ((expectPods >= 0 && expectPods == currentReplicas.asInt() && expectPods == rep)
-                        || (expectPods < 0 && rep == currentReplicas.asInt()))) {
-                    LOGGER.debug("Waiting for pods of statefulset {}", name);
-                    if (expectPods >= 0) {
-                        for (int ii = 0; ii < expectPods; ii++) {
-                            waitForPod(name + "-" + ii);
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            });
-    }
-
-    @Override
     public K waitForResourceCreation(String resourceType, String resourceName) {
         // wait when resource to be created
         return waitFor(resourceType, resourceName,

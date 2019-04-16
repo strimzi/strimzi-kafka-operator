@@ -9,8 +9,9 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.systemtest.Resources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.client.Kubernetes;
@@ -35,7 +36,7 @@ public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
     public static final KubeClusterResource CLUSTER = new KubeClusterResource();
-    public static Kubernetes KUBERNETES = CLUSTER.client();
+    public static Kubernetes KUBE_CLIENT = CLUSTER.client();
 
     private StUtils() { }
 
@@ -44,7 +45,7 @@ public class StUtils {
      * matching the given {@code selector}.
      */
     private static Map<String, String> podSnapshot(String namespace, LabelSelector selector) {
-        List<Pod> pods = KUBERNETES.listPods(selector);
+        List<Pod> pods = KUBE_CLIENT.listPods(selector);
         return pods.stream()
                 .collect(
                         Collectors.toMap(pod -> pod.getMetadata().getName(),
@@ -53,14 +54,14 @@ public class StUtils {
 
     /** Returns a map of pod name to resource version for the pods currently in the given statefulset */
     public static Map<String, String> ssSnapshot(String namespace, String name) {
-        StatefulSet statefulSet = KUBERNETES.getStatefulSet(name);
+        StatefulSet statefulSet = KUBE_CLIENT.getStatefulSet(name);
         LabelSelector selector = statefulSet.getSpec().getSelector();
         return podSnapshot(namespace, selector);
     }
 
     /** Returns a map of pod name to resource version for the pods currently in the given deployment */
     public static Map<String, String> depSnapshot(String namespace, String name) {
-        Deployment deployment = KUBERNETES.getDeployment(name);
+        Deployment deployment = KUBE_CLIENT.getDeployment(name);
         LabelSelector selector = deployment.getSpec().getSelector();
         return podSnapshot(namespace, selector);
     }
@@ -73,7 +74,7 @@ public class StUtils {
         LabelSelector selector = null;
         int times = 60;
         do {
-            selector = KUBERNETES.getStatefulSetSelectors(name);
+            selector = KUBE_CLIENT.getStatefulSetSelectors(name);
             if (selector == null) {
                 if (times-- == 0) {
                     throw new RuntimeException("Retry failed");
@@ -114,7 +115,7 @@ public class StUtils {
 
     public static boolean depHasRolled(String namespace, String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
-        Map<String, String> map = podSnapshot(namespace, KUBERNETES.getDeployment(name).getSpec().getSelector());
+        Map<String, String> map = podSnapshot(namespace, KUBE_CLIENT.getDeployment(name).getSpec().getSelector());
         LOGGER.debug("Current  snapshot: {}", new TreeMap(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
@@ -149,7 +150,7 @@ public class StUtils {
         long timeLeft = TestUtils.waitFor("Deployment roll of " + name,
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(namespace, name, snapshot));
         StUtils.waitForDeploymentReady(namespace, name);
-        StUtils.waitForPodsReady(namespace, KUBERNETES.getDeployment(name).getSpec().getSelector(), true);
+        StUtils.waitForPodsReady(namespace, KUBE_CLIENT.getDeployment(name).getSpec().getSelector(), true);
         return depSnapshot(namespace, name);
     }
 
@@ -180,18 +181,18 @@ public class StUtils {
     /**
      * Wait until the SS is ready and all of its Pods are also ready
      */
-    public static void waitForAllStatefulSetPodsReady(String namespace, String name) {
+    public static void waitForAllStatefulSetPodsReady(String name) {
         LOGGER.info("Waiting for StatefulSet {} to be ready", name);
         TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KUBERNETES.getStatefulSetStatus(name));
+            () -> KUBE_CLIENT.getStatefulSetStatus(name));
         LOGGER.info("StatefulSet {} is ready", name);
         LOGGER.info("Waiting for Pods of StatefulSet {} to be ready", name);
-        waitForPodsReady(namespace, KUBERNETES.getStatefulSetSelectors(name), true);
+        waitForPodsReady(KUBE_CLIENT.getStatefulSetSelectors(name), true);
     }
 
-    public static void waitForPodsReady(String namespace, LabelSelector selector, boolean containers) {
+    public static void waitForPodsReady(LabelSelector selector, boolean containers) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
-            List<Pod> pods = KUBERNETES.listPods(selector);
+            List<Pod> pods = KUBE_CLIENT.listPods(selector);
             if (pods.isEmpty()) {
                 LOGGER.debug("Not ready (no pods matching {})", selector);
                 return false;
@@ -223,7 +224,17 @@ public class StUtils {
     public static void waitForDeploymentReady(String namespace, String name) {
         LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KUBERNETES.getDeploymentStatus(name));
+            () -> KUBE_CLIENT.getDeploymentStatus(name));
+        LOGGER.info("Deployment {} is ready", name);
+    }
+
+    /**
+     * Wait until the deployment is ready
+     */
+    public static void waitForDeploymentReady(String name) {
+        LOGGER.info("Waiting for Deployment {}", name);
+        TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> KUBE_CLIENT.getDeploymentStatus(name));
         LOGGER.info("Deployment {} is ready", name);
     }
 
@@ -232,8 +243,58 @@ public class StUtils {
      */
     public static void waitForDeploymentConfigReady(String namespace, String name) {
         LOGGER.info("Waiting for Deployment Config {}", name);
-        TestUtils.waitFor("deployment config " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-                () -> KUBERNETES.getDeploymentConfigStatus(name));
+        TestUtils.waitFor("deployment config " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> KUBE_CLIENT.getDeploymentConfigStatus(name));
         LOGGER.info("Deployment Config {} is ready", name);
+    }
+
+    /**
+     * Wait until the stateful set will be deleted
+     */
+    public static void waitForStatefulSetDeletion(String name) {
+        LOGGER.info("Waiting for StatefulSet deletion {}", name);
+        TestUtils.waitFor("StatefulSet is deleted" + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> !KUBE_CLIENT.getStatefulSetStatus(name));
+        LOGGER.info("StatefulSet {} was deleted", name);
+    }
+
+    public static void waitForSecretReady (String secretName) {
+        TestUtils.waitFor("Expected secret exists", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
+            return KUBE_CLIENT.getSecret(secretName) != null;
+        });
+    }
+
+    public static void waitForKafkaUserDeletion (String userName) {
+        LOGGER.info("Waiting for Kafka user deletion {}", userName);
+        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                Crds.kafkaUserOperation(KUBE_CLIENT.getClient()).inNamespace(KUBE_CLIENT.getNamespace()).withName(userName).get() == null
+        );
+    }
+
+    public static String getPodNameByPrefix (String prefix) {
+        return KUBE_CLIENT.listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
+                .findFirst().get().getMetadata().getName();
+    }
+
+    public static void waitForPod(String name) {
+        LOGGER.info("Waiting when Pod {} will be ready", name);
+
+        TestUtils.waitFor("pod " + name + " will be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> {
+                    List<ContainerStatus> statuses =  KUBE_CLIENT.getPod(name).getStatus().getContainerStatuses();
+                    for (ContainerStatus containerStatus : statuses) {
+                        if (!containerStatus.getReady()) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+    }
+
+    public static void waitForPodDeletion(String name) {
+        LOGGER.info("Waiting when Pod {} will be deleted", name);
+
+        TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> KUBE_CLIENT.getPod(name) == null);
     }
 }
