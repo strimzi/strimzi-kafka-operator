@@ -3,7 +3,7 @@
 // master.adoc
 
 [id='assembly-upgrade-cluster-operator-{context}']
-= Cluster Operator upgrade
+= Upgrading the Cluster Operator
 
 Upgrade your Cluster Operator deployment to use a new version of {ProductName}. Supported upgrades are outlined in this section.
 
