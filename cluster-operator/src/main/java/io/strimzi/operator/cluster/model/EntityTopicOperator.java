@@ -67,7 +67,6 @@ public class EntityTopicOperator extends AbstractModel {
     protected EntityTopicOperator(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         this.name = topicOperatorName(cluster);
-        this.image = EntityTopicOperatorSpec.DEFAULT_IMAGE;
         this.readinessPath = "/";
         this.readinessTimeout = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
         this.readinessInitialDelay = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
@@ -199,7 +198,11 @@ public class EntityTopicOperator extends AbstractModel {
                         Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
                 result.setOwnerReference(kafkaAssembly);
-                result.setImage(topicOperatorSpec.getImage());
+                String image = topicOperatorSpec.getImage();
+                if (image == null) {
+                    image = System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/operator:latest");
+                }
+                result.setImage(image);
                 result.setWatchedNamespace(topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace);
                 result.setReconciliationIntervalMs(topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
                 result.setZookeeperSessionTimeoutMs(topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);

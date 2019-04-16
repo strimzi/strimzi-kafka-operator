@@ -13,4 +13,7 @@ function get_gc_opts {
 
 if [ "${STRIMZI_KAFKA_GC_LOG_ENABLED}" == "true" ]; then
     export KAFKA_GC_LOG_OPTS=$(get_gc_opts)
+else
+    export KAFKA_GC_LOG_OPTS=" "
+    export GC_LOG_ENABLED="false"
 fi

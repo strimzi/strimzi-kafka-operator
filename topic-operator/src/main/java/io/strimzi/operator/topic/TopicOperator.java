@@ -608,22 +608,24 @@ public class TopicOperator {
                     TopicMetadataHandler handler = new TopicMetadataHandler(vertx, kafka, topicName, topicMetadataBackOff()) {
                         @Override
                         public void handle(AsyncResult<TopicMetadata> metadataResult) {
+                            try {
+                                if (metadataResult.succeeded()) {
+                                    // getting topic metadata from Kafka
+                                    Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
 
-                            if (metadataResult.succeeded()) {
+                                    // if partitions aren't changed on Kafka yet, we retry with exponential backoff
+                                    if (topicResult.result().getNumPartitions() == kafkaTopic.getNumPartitions()) {
+                                        retry();
+                                    } else {
+                                        LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
+                                        TopicOperator.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
+                                    }
 
-                                // getting topic metadata from Kafka
-                                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(metadataResult.result());
-
-                                // if partitions aren't changed on Kafka yet, we retry with exponential backoff
-                                if (topicResult.result().getNumPartitions() == kafkaTopic.getNumPartitions()) {
-                                    retry();
                                 } else {
-                                    LOGGER.info("Topic {} partitions changed to {}", topicName, kafkaTopic.getNumPartitions());
-                                    TopicOperator.this.reconcileOnTopicChange(topicName, kafkaTopic, fut.completer());
+                                    fut.fail(metadataResult.cause());
                                 }
-
-                            } else {
-                                fut.fail(metadataResult.cause());
+                            } catch (Throwable t) {
+                                fut.fail(t);
                             }
                         }
 
@@ -885,6 +887,7 @@ public class TopicOperator {
     }
 
     public boolean isWorkInflight() {
+        LOGGER.debug("Inflight: {}", inFlight.toString());
         return inFlight.size() > 0;
     }
 

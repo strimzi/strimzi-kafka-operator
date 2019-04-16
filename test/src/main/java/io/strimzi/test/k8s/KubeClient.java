@@ -93,7 +93,7 @@ public interface KubeClient<K extends KubeClient<K>> {
      * @param command The command
      * @return The process result.
      */
-    ProcessResult execInPod(String pod, String... command);
+    ExecResult execInPod(String pod, String... command);
 
     /**
      * Execute the given {@code command} in the given {@code container} which is deployed in {@code pod}.
@@ -102,14 +102,14 @@ public interface KubeClient<K extends KubeClient<K>> {
      * @param command The command
      * @return The process result.
      */
-    ProcessResult execInPodContainer(String pod, String container, String... command);
+    ExecResult execInPodContainer(String pod, String container, String... command);
 
     /**
      * Execute the given {@code command}.
      * @param command The command
      * @return The process result.
      */
-    ProcessResult exec(String... command);
+    ExecResult exec(String... command);
 
     /**
      * Wait for the deployment with the given {@code name} to

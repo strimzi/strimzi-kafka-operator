@@ -45,9 +45,6 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
 
     private static final long serialVersionUID = 1L;
 
-    public static final String DEFAULT_INIT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", "strimzi/operator:latest");
-
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
             + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user";

@@ -91,7 +91,6 @@ public class TopicOperator extends AbstractModel {
 
         super(namespace, cluster, labels);
         this.name = topicOperatorName(cluster);
-        this.image = TopicOperatorSpec.DEFAULT_IMAGE;
         this.replicas = TopicOperatorSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessTimeout = TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
@@ -220,7 +219,11 @@ public class TopicOperator extends AbstractModel {
             TopicOperatorSpec tcConfig = kafkaAssembly.getSpec().getTopicOperator();
 
             result.setOwnerReference(kafkaAssembly);
-            result.setImage(tcConfig.getImage());
+            String image = tcConfig.getImage();
+            if (image == null) {
+                image = System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/operator:latest");
+            }
+            result.setImage(image);
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
             result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds() * 1_000);
             result.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeoutSeconds() * 1_000);

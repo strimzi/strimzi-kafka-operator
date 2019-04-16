@@ -212,7 +212,7 @@ public class KafkaCluster extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
 
-        this.initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
+        this.initImage = System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/operator:latest");
     }
 
     public static String kafkaClusterName(String cluster) {
@@ -311,7 +311,7 @@ public class KafkaCluster extends AbstractModel {
 
         String initImage = kafkaClusterSpec.getBrokerRackInitImage();
         if (initImage == null) {
-            initImage = KafkaClusterSpec.DEFAULT_INIT_IMAGE;
+            initImage = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", "strimzi/operator:latest");
         }
         result.setInitImage(initImage);
 

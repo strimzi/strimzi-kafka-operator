@@ -142,7 +142,6 @@ spec:
         memory: "512Mi"
   topicOperator:
     watchedNamespace: "my-ns"
-    image: "strimzi/operator:latest"
     reconciliationIntervalSeconds: 90
     zookeeperSessionTimeoutSeconds: 20
     topicMetadataMaxAttempts: 6

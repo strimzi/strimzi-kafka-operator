@@ -11,7 +11,7 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=kafka-agent mockkube crd-annotations test crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init docker-images helm-charts install examples metrics
+SUBDIRS=kafka-agent mockkube crd-annotations test crd-generator api certificate-manager operator-common cluster-operator topic-operator user-operator kafka-init docker-images helm-charts install examples metrics test-client
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: $(SUBDIRS)
@@ -104,14 +104,14 @@ docu_versions:
 	documentation/version-dependent-attrs.sh kafka-versions > documentation/book/common/version-dependent-attrs.adoc
 	documentation/snip-images.sh kafka-versions > documentation/book/snip-images.adoc
 
-docu_html: docu_htmlclean docu_check docu_versions
+docu_html: docu_htmlclean docu_versions docu_check
 	mkdir -p documentation/html
 	$(CP) -vrL documentation/book/images documentation/html/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/book/master.adoc -o documentation/html/index.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/contributing/master.adoc -o documentation/html/contributing.html
 
 
-docu_htmlnoheader: docu_htmlnoheaderclean docu_check docu_versions
+docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 	mkdir -p documentation/htmlnoheader
 	$(CP) -vrL documentation/book/images documentation/htmlnoheader/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -s documentation/book/master.adoc -o documentation/htmlnoheader/master.html

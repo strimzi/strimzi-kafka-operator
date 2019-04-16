@@ -4,15 +4,29 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
+import io.fabric8.kubernetes.api.model.extensions.DoneableIngress;
+import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPath;
+import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.api.model.extensions.IngressBackend;
+import io.fabric8.kubernetes.api.model.extensions.IngressBuilder;
+import io.fabric8.kubernetes.api.model.extensions.IngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
@@ -44,20 +58,31 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
+import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
+import static io.strimzi.test.TestUtils.changeOrgAndTag;
+import static io.strimzi.test.TestUtils.toYamlString;
+
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class Resources extends AbstractResources {
+
+    private static final Environment ENVIRONMENT = Environment.getInstance();
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
     private static final long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(3).toMillis();
@@ -67,11 +92,17 @@ public class Resources extends AbstractResources {
     private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
     private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
     public static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
-    private static final String KAFKA_VERSION = System.getenv().getOrDefault("ST_KAFKA_VERSION", "2.1.1");
+    private static final String KAFKA_VERSION = ENVIRONMENT.getStKafkaVersionEnv();
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
     public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     public static final String STRIMZI_DEFAULT_LOG_LEVEL = "DEBUG";
+    public static final String KAFKA_CLIENTS = "kafka-clients";
+
+    public static final String DEPLOYMENT = "Deployment";
+    public static final String SERVICE = "Service";
+    public static final String INGRESS = "Ingress";
+    public static final String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
 
     Resources(NamespacedKubernetesClient client) {
         super(client);
@@ -110,11 +141,33 @@ public class Resources extends AbstractResources {
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
                 break;
-            case "ClusterRoleBinding":
+            case DEPLOYMENT:
+                resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    x.delete(resource);
+                    client.apps().deployments().delete((Deployment) resource);
+                    waitForDeletion((Deployment) resource);
+                });
+                break;
+            case CLUSTER_ROLE_BINDING:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
                     client.rbac().kubernetesClusterRoleBindings().delete((KubernetesClusterRoleBinding) resource);
+                });
+                break;
+            case SERVICE:
+                resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    x.delete(resource);
+                    client.services().delete((Service) resource);
+                });
+                break;
+            case INGRESS:
+                resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    x.delete(resource);
+                    client.extensions().ingresses().delete((Ingress) resource);
                 });
                 break;
             default :
@@ -151,7 +204,7 @@ public class Resources extends AbstractResources {
     }
 
     private Deployment deleteLater(Deployment resource) {
-        return deleteLater(clusterOperator(), resource);
+        return deleteLater(deployment(), resource);
     }
 
     private KubernetesClusterRoleBinding deleteLater(KubernetesClusterRoleBinding resource) {
@@ -162,8 +215,16 @@ public class Resources extends AbstractResources {
         return deleteLater(kubernetesRoleBinding(), resource);
     }
 
+    private Service deleteLater(Service resource) {
+        return deleteLater(service(), resource);
+    }
+
+    private Ingress deleteLater(Ingress resource) {
+        return deleteLater(ingress(), resource);
+    }
+
     Job deleteLater(Job resource) {
-        return deleteLater(client().extensions().jobs(), resource);
+        return deleteLater(client().batch().jobs(), resource);
     }
 
     void deleteResources() {
@@ -173,7 +234,11 @@ public class Resources extends AbstractResources {
     }
 
     DoneableKafka kafkaEphemeral(String name, int kafkaReplicas) {
-        return kafka(defaultKafka(name, kafkaReplicas).build());
+        return kafkaEphemeral(name, kafkaReplicas, 3);
+    }
+
+    DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
+        return kafka(defaultKafka(name, kafkaReplicas, zookeeperReplicas).build());
     }
 
     DoneableKafka kafkaJBOD(String name, int kafkaReplicas, List<SingleVolumeStorage> volumes) {
@@ -190,6 +255,10 @@ public class Resources extends AbstractResources {
     }
 
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
+        return defaultKafka(name, kafkaReplicas, 3);
+    }
+
+    public KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
         String tOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
         String uOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
 
@@ -218,11 +287,14 @@ public class Resources extends AbstractResources {
                             .withResources(new ResourceRequirementsBuilder()
                                 .addToRequests("memory", new Quantity("1G")).build())
                             .withMetrics(new HashMap<>())
+                            .withNewJvmOptions()
+                                .withGcLoggingEnabled(false)
+                            .endJvmOptions()
                         .endKafka()
                         .withNewZookeeper()
-                            .withReplicas(3)
-                .withResources(new ResourceRequirementsBuilder()
-                        .addToRequests("memory", new Quantity("1G")).build())
+                            .withReplicas(zookeeperReplicas)
+                            .withResources(new ResourceRequirementsBuilder()
+                                .addToRequests("memory", new Quantity("1G")).build())
                             .withMetrics(new HashMap<>())
                             .withNewReadinessProbe()
                 .withInitialDelaySeconds(15)
@@ -233,6 +305,9 @@ public class Resources extends AbstractResources {
                 .withTimeoutSeconds(5)
                 .endLivenessProbe()
                             .withNewEphemeralStorage().endEphemeralStorage()
+                            .withNewJvmOptions()
+                                .withGcLoggingEnabled(false)
+                            .endJvmOptions()
                         .endZookeeper()
                         .withNewEntityOperator()
                             .withNewTopicOperator().withImage(tOImage).endTopicOperator()
@@ -419,11 +494,11 @@ public class Resources extends AbstractResources {
         return kafkaMirrorMaker;
     }
 
-    private Deployment waitFor(Deployment clusterOperator) {
-        LOGGER.info("Waiting for Cluster Operator {}", clusterOperator.getMetadata().getName());
+    private Deployment waitFor(Deployment deployment) {
+        LOGGER.info("Waiting for deployment {}", deployment.getMetadata().getName());
         String namespace = client.getNamespace();
-        waitForDeployment(namespace, clusterOperator.getMetadata().getName());
-        return clusterOperator;
+        waitForDeployment(namespace, deployment.getMetadata().getName());
+        return deployment;
     }
 
     /**
@@ -487,6 +562,15 @@ public class Resources extends AbstractResources {
                 .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
     }
 
+    private void waitForDeletion(Deployment deployment) {
+        LOGGER.info("Waiting when all the pods are terminated for Deployment {}", deployment.getMetadata().getName());
+        String namespace = deployment.getMetadata().getNamespace();
+
+        client.pods().inNamespace(namespace).list().getItems().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(deployment.getMetadata().getName()))
+                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+    }
+
     private void waitForPodDeletion(String namespace, String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
@@ -523,6 +607,7 @@ public class Resources extends AbstractResources {
     DoneableKafkaUser tlsUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
+                        .withClusterName(clusterName)
                         .withName(name)
                         .withNamespace(client().getNamespace())
                         .addToLabels("strimzi.io/cluster", clusterName)
@@ -537,6 +622,7 @@ public class Resources extends AbstractResources {
     DoneableKafkaUser scramShaUser(String clusterName, String name) {
         return user(new KafkaUserBuilder().withMetadata(
                 new ObjectMetaBuilder()
+                        .withClusterName(clusterName)
                         .withName(name)
                         .withNamespace(client().getNamespace())
                         .addToLabels("strimzi.io/cluster", clusterName)
@@ -565,7 +651,7 @@ public class Resources extends AbstractResources {
     }
 
     DoneableDeployment clusterOperator(String namespace, String operationTimeout) {
-        return clusterOperator(defaultCLusterOperator(namespace, operationTimeout).build());
+        return createNewDeployment(defaultCLusterOperator(namespace, operationTimeout).build());
     }
 
     DeploymentBuilder defaultCLusterOperator(String namespace, String operationTimeout) {
@@ -581,7 +667,7 @@ public class Resources extends AbstractResources {
         for (EnvVar envVar : envVars) {
             switch (envVar.getName()) {
                 case "STRIMZI_LOG_LEVEL":
-                    envVar.setValue(System.getenv().getOrDefault("TEST_STRIMZI_LOG_LEVEL", STRIMZI_DEFAULT_LOG_LEVEL));
+                    envVar.setValue(ENVIRONMENT.getStrimziLogLevel());
                     break;
                 case "STRIMZI_NAMESPACE":
                     envVar.setValue(namespace);
@@ -620,9 +706,9 @@ public class Resources extends AbstractResources {
                 .endSpec();
     }
 
-    DoneableDeployment clusterOperator(Deployment clusterOperator) {
-        return new DoneableDeployment(clusterOperator, co -> {
-            TestUtils.waitFor("Cluster operator creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
+    DoneableDeployment createNewDeployment(Deployment deployment) {
+        return new DoneableDeployment(deployment, co -> {
+            TestUtils.waitFor("Deployment creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         client.apps().deployments().createOrReplace(co);
@@ -754,6 +840,241 @@ public class Resources extends AbstractResources {
         deleteLater(clusterRoleBinding);
         return new DoneableKubernetesClusterRoleBinding(clusterRoleBinding);
     }
+
+    DoneableDeployment deployKafkaClients(String clusterName) {
+        return deployKafkaClients(false, clusterName, null);
+    }
+
+    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName) {
+        return deployKafkaClients(tlsListener, clusterName, null);
+    }
+
+    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, KafkaUser... kafkaUsers) {
+        Deployment kafkaClient = new DeploymentBuilder()
+            .withNewMetadata()
+                .withName(clusterName + "-" + KAFKA_CLIENTS)
+            .endMetadata()
+            .withNewSpec()
+                .withNewSelector()
+                .addToMatchLabels("app", KAFKA_CLIENTS)
+                .endSelector()
+                .withReplicas(1)
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .addToLabels("app", KAFKA_CLIENTS)
+                    .endMetadata()
+                    .withSpec(createClientSpec(tlsListener, kafkaUsers))
+                .endTemplate()
+            .endSpec()
+            .build();
+
+        return createNewDeployment(kafkaClient);
+    }
+
+    private static Service getSystemtestsServiceResource(String appName, int port) {
+        return new ServiceBuilder()
+            .withNewMetadata()
+                .withName(appName)
+                .addToLabels("run", appName)
+            .endMetadata()
+            .withNewSpec()
+                .withSelector(Collections.singletonMap("app", appName))
+                .addNewPort()
+                    .withName("http")
+                    .withPort(port)
+                    .withProtocol("TCP")
+                .endPort()
+            .endSpec()
+            .build();
+    }
+
+    DoneableService createServiceResource(String appName, int port, String clientNamespace) {
+        Service service = getSystemtestsServiceResource(appName, port);
+        LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
+        client.services().inNamespace(clientNamespace).create(service);
+        deleteLater(service);
+        return new DoneableService(service);
+    }
+
+    private static Ingress getSystemtestIngressResource(String appName, int port, String url) throws MalformedURLException {
+        IngressBackend backend = new IngressBackend();
+        backend.setServiceName(appName);
+        backend.setServicePort(new IntOrString(port));
+        HTTPIngressPath path = new HTTPIngressPath();
+        path.setPath("/");
+        path.setBackend(backend);
+
+        return new IngressBuilder()
+                .withNewMetadata()
+                .withName(appName)
+                .addToLabels("route", appName)
+                .endMetadata()
+                .withNewSpec()
+                .withRules(new IngressRuleBuilder()
+                        .withHost(appName + "." +  (ENVIRONMENT.getKubernetesDomain().equals(".nip.io") ?  new URL(url).getHost() + ".nip.io" : ENVIRONMENT.getKubernetesDomain()))
+                        .withNewHttp()
+                        .withPaths(path)
+                        .endHttp()
+                        .build())
+                .endSpec()
+                .build();
+    }
+
+    DoneableIngress createIngress(String appName, int port, String url, String clientNamespace) throws Exception {
+        Ingress ingress = getSystemtestIngressResource(appName, port, url);
+        LOGGER.info("Creating ingress {} in namespace {}", ingress.getMetadata().getName(), clientNamespace);
+        client.extensions().ingresses().inNamespace(clientNamespace).create(ingress);
+        deleteLater(ingress);
+        return new DoneableIngress(ingress);
+    }
+
+    private PodSpec createClientSpec(boolean tlsListener, KafkaUser... kafkaUsers) {
+        PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
+        ContainerBuilder containerBuilder = new ContainerBuilder()
+                .withName(KAFKA_CLIENTS)
+                .withImage(changeOrgAndTag("strimzi/test-client:latest-kafka-" + KAFKA_VERSION))
+                .addNewPort()
+                    .withContainerPort(4242)
+                .endPort()
+                .withNewLivenessProbe()
+                    .withNewTcpSocket()
+                    .withNewPort(4242)
+                        .endTcpSocket()
+                    .withInitialDelaySeconds(10)
+                    .withPeriodSeconds(5)
+                .endLivenessProbe()
+                .withImagePullPolicy("IfNotPresent");
+
+        if (kafkaUsers == null) {
+            String producerConfiguration = "acks=all\n";
+            String consumerConfiguration = "auto.offset.reset=earliest\n";
+
+            containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
+            containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
+
+        } else {
+            for (KafkaUser kafkaUser : kafkaUsers) {
+                String kafkaUserName = kafkaUser.getMetadata().getName();
+                boolean tlsUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
+                boolean scramShaUser = kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
+
+                String producerConfiguration = "acks=all\n";
+                String consumerConfiguration = "auto.offset.reset=earliest\n";
+                containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
+                containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION").withValue(consumerConfiguration).endEnv();
+
+                String envVariablesSuffix = String.format("_%s", kafkaUserName.replace("-", "_"));
+                containerBuilder.addNewEnv().withName("KAFKA_USER" + envVariablesSuffix).withValue(kafkaUserName).endEnv();
+
+                if (tlsListener) {
+                    if (scramShaUser) {
+                        producerConfiguration += "security.protocol=SASL_SSL\n";
+                        producerConfiguration += saslConfigs(kafkaUser);
+                        consumerConfiguration += "security.protocol=SASL_SSL\n";
+                        consumerConfiguration += saslConfigs(kafkaUser);
+                    } else {
+                        producerConfiguration += "security.protocol=SSL\n";
+                        consumerConfiguration += "security.protocol=SSL\n";
+                    }
+                    producerConfiguration +=
+                            "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                                    "ssl.truststore.type=pkcs12\n";
+                    consumerConfiguration += "auto.offset.reset=earliest\n" +
+                            "ssl.truststore.location=/tmp/" + kafkaUserName + "-truststore.p12\n" +
+                            "ssl.truststore.type=pkcs12\n";
+                } else {
+                    if (scramShaUser) {
+                        producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                        producerConfiguration += saslConfigs(kafkaUser);
+                        consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
+                        consumerConfiguration += saslConfigs(kafkaUser);
+                    } else {
+                        producerConfiguration += "security.protocol=PLAINTEXT\n";
+                        consumerConfiguration += "security.protocol=PLAINTEXT\n";
+                    }
+                }
+
+                if (tlsUser) {
+                    producerConfiguration +=
+                            "ssl.keystore.location=/tmp/" + kafkaUserName + "-keystore.p12\n" +
+                                    "ssl.keystore.type=pkcs12\n";
+                    consumerConfiguration += "auto.offset.reset=earliest\n" +
+                            "ssl.keystore.location=/tmp/" + kafkaUserName + "-keystore.p12\n" +
+                            "ssl.keystore.type=pkcs12\n";
+
+                    containerBuilder.addNewEnv().withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
+                            .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv();
+
+                    String userSecretVolumeName = "tls-cert-" + kafkaUserName;
+                    String userSecretMountPoint = "/opt/kafka/user-secret-" + kafkaUserName;
+
+                    containerBuilder.addNewVolumeMount()
+                            .withName(userSecretVolumeName)
+                            .withMountPath(userSecretMountPoint)
+                            .endVolumeMount()
+                            .addNewEnv().withName("USER_LOCATION" + envVariablesSuffix).withValue(userSecretMountPoint).endEnv();
+
+                    podSpecBuilder.addNewVolume()
+                            .withName(userSecretVolumeName)
+                            .withNewSecret()
+                            .withSecretName(kafkaUserName)
+                            .endSecret()
+                            .endVolume();
+                }
+
+                if (tlsListener) {
+                    String clusterName = kafkaUser.getMetadata().getLabels().get("strimzi.io/cluster");
+                    String clusterCaSecretName = clusterCaCertSecretName(clusterName);
+                    String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;
+                    String caSecretMountPoint = "/opt/kafka/cluster-ca-" + kafkaUserName;
+
+                    containerBuilder.addNewVolumeMount()
+                            .withName(clusterCaSecretVolumeName)
+                            .withMountPath(caSecretMountPoint)
+                            .endVolumeMount()
+                            .addNewEnv().withName("PRODUCER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
+                            .addNewEnv().withName("CONSUMER_TLS" + envVariablesSuffix).withValue("TRUE").endEnv()
+                            .addNewEnv().withName("CA_LOCATION" + envVariablesSuffix).withValue(caSecretMountPoint).endEnv()
+                            .addNewEnv().withName("TRUSTSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/"  + kafkaUserName + "-truststore.p12").endEnv();
+
+                    if (tlsUser) {
+                        containerBuilder.addNewEnv().withName("KEYSTORE_LOCATION" + envVariablesSuffix).withValue("/tmp/" + kafkaUserName + "-keystore.p12").endEnv();
+                    }
+
+                    podSpecBuilder.addNewVolume()
+                            .withName(clusterCaSecretVolumeName)
+                            .withNewSecret()
+                            .withSecretName(clusterCaSecretName)
+                            .endSecret()
+                            .endVolume();
+                }
+
+                containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION" + envVariablesSuffix).withValue(producerConfiguration).endEnv();
+                containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION"  + envVariablesSuffix).withValue(consumerConfiguration).endEnv();
+            }
+        }
+        return podSpecBuilder.withContainers(containerBuilder.build()).build();
+    }
+
+
+    String clusterCaCertSecretName(String cluster) {
+        return cluster + "-cluster-ca-cert";
+    }
+
+    String saslConfigs(KafkaUser kafkaUser) {
+        Secret secret = client.secrets().withName(kafkaUser.getMetadata().getName()).get();
+
+        String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
+        if (password.isEmpty()) {
+            LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), toYamlString(secret));
+            throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");
+        }
+        return "sasl.mechanism=SCRAM-SHA-512\n" +
+                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
+                "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
+                "password=\"" + password + "\";\n";
+    }
+
 
     private String getImageValueFromCO(String name) {
         Deployment clusterOperator = getDeploymentFromYaml(STRIMZI_PATH_TO_CO_CONFIG);

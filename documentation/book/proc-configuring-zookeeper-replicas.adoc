@@ -3,16 +3,18 @@
 // assembly-zookeeper-replicas.adoc
 
 [id='proc-configuring-zookeeper-replicas-{context}']
-= Changing number of replicas
+= Changing the number of Zookeeper replicas
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster
-* A running Cluster Operator
+* An {ProductPlatformName} cluster is available.
+* The Cluster Operator is running.
 
 .Procedure
 
-. Edit the `replicas` property in the `Kafka` resource.
+. Open the YAML configuration file that contains the `Kafka` resource specifying the cluster deployment.
+
+. In the `spec.zookeeper.replicas` property in the `Kafka` resource, enter the number of replicated Zookeeper servers.
 For example:
 +
 [source,yaml,subs=attributes+]
@@ -29,16 +31,18 @@ spec:
     replicas: 3
     # ...
 ----
-+
-. Create or update the resource.
+
+. Apply the new configuration to create or update the resource.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName}, use `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+kubectl apply -f _kafka.yaml_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName}, use `oc apply`:
 +
 [source,shell,subs=+quotes]
-oc apply -f _your-file_
+oc apply -f _kafka.yaml_
++
+where `_kafka.yaml_` is the YAML configuration file for the resource that you want to configure; for example, `kafka-persistent.yaml`.

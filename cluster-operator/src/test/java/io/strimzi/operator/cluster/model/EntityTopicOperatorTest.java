@@ -123,7 +123,7 @@ public class EntityTopicOperatorTest {
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
 
         assertEquals(namespace, entityTopicOperator.getWatchedNamespace());
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_IMAGE, entityTopicOperator.getImage());
+        assertEquals("strimzi/operator:latest", entityTopicOperator.getImage());
         assertEquals(EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, entityTopicOperator.getReconciliationIntervalMs());
         assertEquals(EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, entityTopicOperator.getZookeeperSessionTimeoutMs());
         assertEquals(EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS, entityTopicOperator.getTopicMetadataMaxAttempts());

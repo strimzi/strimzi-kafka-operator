@@ -63,47 +63,79 @@ public class Crds {
     }
 
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls) {
+        String version = null;
+        if (cls.equals(Kafka.class)) {
+            version = Kafka.VERSIONS.get(0);
+        } else if (cls.equals(KafkaConnect.class)) {
+            version = KafkaConnect.VERSIONS.get(0);
+        } else if (cls.equals(KafkaConnectS2I.class)) {
+            version = KafkaConnectS2I.VERSIONS.get(0);
+        } else if (cls.equals(KafkaTopic.class)) {
+            version = Kafka.VERSIONS.get(0);
+        } else if (cls.equals(KafkaUser.class)) {
+            version = Kafka.VERSIONS.get(0);
+        } else if (cls.equals(KafkaMirrorMaker.class)) {
+            version = KafkaMirrorMaker.VERSIONS.get(0);
+        } else {
+            throw new RuntimeException();
+        }
+
+        return crd(cls, version);
+    }
+
+    private static CustomResourceDefinition crd(Class<? extends CustomResource> cls, String version) {
         String scope;
         String crdApiVersion;
         String plural;
         String group;
-        String version = null;
         if (cls.equals(Kafka.class)) {
             scope = Kafka.SCOPE;
             crdApiVersion = Kafka.CRD_API_VERSION;
             plural = Kafka.RESOURCE_PLURAL;
             group = Kafka.RESOURCE_GROUP;
-            version = Kafka.VERSIONS.get(0);
+            if (!Kafka.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }
         } else if (cls.equals(KafkaConnect.class)) {
             scope = KafkaConnect.SCOPE;
             crdApiVersion = KafkaConnect.CRD_API_VERSION;
             plural = KafkaConnect.RESOURCE_PLURAL;
             group = KafkaConnect.RESOURCE_GROUP;
-            version = KafkaConnect.VERSIONS.get(0);
+            if (!KafkaConnect.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }
         } else if (cls.equals(KafkaConnectS2I.class)) {
             scope = KafkaConnectS2I.SCOPE;
             crdApiVersion = KafkaConnectS2I.CRD_API_VERSION;
             plural = KafkaConnectS2I.RESOURCE_PLURAL;
             group = KafkaConnectS2I.RESOURCE_GROUP;
-            version = KafkaConnectS2I.VERSIONS.get(0);
+            if (!KafkaConnectS2I.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }
         } else if (cls.equals(KafkaTopic.class)) {
             scope = KafkaTopic.SCOPE;
             crdApiVersion = KafkaTopic.CRD_API_VERSION;
             plural = KafkaTopic.RESOURCE_PLURAL;
             group = KafkaTopic.RESOURCE_GROUP;
-            version = Kafka.VERSIONS.get(0);
+            if (!KafkaTopic.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }
         } else if (cls.equals(KafkaUser.class)) {
             scope = KafkaUser.SCOPE;
             crdApiVersion = KafkaUser.CRD_API_VERSION;
             plural = KafkaUser.RESOURCE_PLURAL;
             group = KafkaUser.RESOURCE_GROUP;
-            version = Kafka.VERSIONS.get(0);
+            if (!KafkaUser.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }
         } else if (cls.equals(KafkaMirrorMaker.class)) {
             scope = KafkaMirrorMaker.SCOPE;
             crdApiVersion = KafkaMirrorMaker.CRD_API_VERSION;
             plural = KafkaMirrorMaker.RESOURCE_PLURAL;
             group = KafkaMirrorMaker.RESOURCE_GROUP;
-            version = KafkaMirrorMaker.VERSIONS.get(0);
+            if (!KafkaMirrorMaker.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }
         } else {
             throw new RuntimeException();
         }
@@ -131,6 +163,10 @@ public class Crds {
 
     public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaOperation(KubernetesClient client) {
         return client.customResources(kafka(), Kafka.class, KafkaList.class, DoneableKafka.class);
+    }
+
+    public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaV1Alpha1Operation(KubernetesClient client) {
+        return client.customResources(crd(Kafka.class, "v1alpha1"), Kafka.class, KafkaList.class, DoneableKafka.class);
     }
 
     public static CustomResourceDefinition kafkaConnect() {

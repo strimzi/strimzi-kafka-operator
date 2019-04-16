@@ -36,8 +36,8 @@ public class BaseITST {
 
     public static final KubeClusterResource CLUSTER = new KubeClusterResource();
 
-    private static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
-    protected static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient(CONFIG);
+    public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
+    public static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient(CONFIG);
 
     public static final KubeClient<?> KUBE_CLIENT = CLUSTER.client();
     private static final String DEFAULT_NAMESPACE = KUBE_CLIENT.defaultNamespace();

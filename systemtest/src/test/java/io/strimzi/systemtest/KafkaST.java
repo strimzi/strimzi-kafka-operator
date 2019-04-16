@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.Kafka;
@@ -72,6 +71,7 @@ import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.extensions.StrimziExtension.CCI_FLAKY;
 import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -84,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @ExtendWith(StrimziExtension.class)
-class KafkaST extends AbstractST {
+class KafkaST extends MessagingBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
 
@@ -384,30 +384,26 @@ class KafkaST extends AbstractST {
      */
     @Test
     @Tag(REGRESSION)
-    void testSendMessagesPlainAnonymous() throws InterruptedException {
-        String name = "send-messages-plain-anon";
-        int messagesCount = 20;
+    void testSendMessagesPlainAnonymous() throws Exception {
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         resources().topic(CLUSTER_NAME, topicName).done();
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, null, false));
+        resources().deployKafkaClients(CLUSTER_NAME).done();
 
-        // Now get the pod logs (which will be both producer and consumer logs)
-        checkPings(messagesCount, job);
+        availabilityTest(messagesCount, 60000, CLUSTER_NAME, false, topicName, null);
     }
 
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @Tag(CCI_FLAKY)
-    void testSendMessagesTlsAuthenticated() {
+    @Tag(REGRESSION)
+    void testSendMessagesTlsAuthenticated() throws Exception {
         String kafkaUser = "my-user";
-        String name = "send-messages-tls-auth";
-        int messagesCount = 20;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
@@ -429,22 +425,18 @@ class KafkaST extends AbstractST {
         KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, true));
-
-        // Now check the pod logs the messages were produced and consumed
-        checkPings(messagesCount, job);
+        resources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        availabilityTest(messagesCount, 60000, CLUSTER_NAME, true, topicName, user);
     }
 
     /**
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
-    @Tag(CCI_FLAKY)
-    void testSendMessagesPlainScramSha() {
+    @Tag(REGRESSION)
+    void testSendMessagesPlainScramSha() throws Exception {
         String kafkaUser = "my-user";
-        String name = "send-messages-plain-scram-sha";
-        int messagesCount = 20;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerAuthenticationScramSha512 auth = new KafkaListenerAuthenticationScramSha512();
@@ -463,6 +455,7 @@ class KafkaST extends AbstractST {
         resources().topic(CLUSTER_NAME, topicName).done();
         KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
+
         String brokerPodLog = podLog(CLUSTER_NAME + "-kafka-0", "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUser) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
@@ -476,22 +469,18 @@ class KafkaST extends AbstractST {
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, false));
-
-        // Now check the pod logs the messages were produced and consumed
-        checkPings(messagesCount, job);
+        resources().deployKafkaClients(false, CLUSTER_NAME, user).done();
+        availabilityTest(messagesCount, 60000, CLUSTER_NAME, false, topicName, user);
     }
 
     /**
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    @Tag(CCI_FLAKY)
-    void testSendMessagesTlsScramSha() {
+    @Tag(REGRESSION)
+    void testSendMessagesTlsScramSha() throws Exception {
         String kafkaUser = "my-user";
-        String name = "send-messages-tls-scram-sha";
-        int messagesCount = 20;
+        int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
         KafkaListenerTls listenerTls = new KafkaListenerTls();
@@ -510,11 +499,8 @@ class KafkaST extends AbstractST {
         KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        // Create ping job
-        Job job = waitForJobSuccess(pingJob(name, topicName, messagesCount, user, true));
-
-        // Now check the pod logs the messages were produced and consumed
-        checkPings(messagesCount, job);
+        resources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        availabilityTest(messagesCount, 180000, CLUSTER_NAME, true, topicName, user);
     }
 
     @Test
@@ -717,7 +703,7 @@ class KafkaST extends AbstractST {
             String imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "kafka");
             String kafkaVersion = Crds.kafkaOperation(CLIENT).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getVersion();
             if (kafkaVersion == null) {
-                kafkaVersion = "2.1.0";
+                kafkaVersion = ENVIRONMENT.getStKafkaVersionEnv();
             }
             assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion), imgFromPod);
             imgFromPod = getContainerImageNameFromPod(kafkaPodName(clusterName, i), "tls-sidecar");
@@ -771,22 +757,26 @@ class KafkaST extends AbstractST {
 
     @Test
     @Tag(CCI_FLAKY)
-    void testMirrorMaker() {
+    void testMirrorMaker() throws Exception {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String nameProducerSource = "send-messages-producer-source";
-        String nameConsumerSource = "send-messages-consumer-source";
-        String nameConsumerTarget = "send-messages-consumer-target";
         String kafkaSourceName = CLUSTER_NAME + "-source";
         String kafkaTargetName = CLUSTER_NAME + "-target";
-        int messagesCount = 20;
+        int messagesCount = 200;
 
         // Deploy source kafka
-        resources().kafkaEphemeral(kafkaSourceName, 3).done();
+        resources().kafkaEphemeral(kafkaSourceName, 1, 1).done();
         // Deploy target kafka
-        resources().kafkaEphemeral(kafkaTargetName, 3).done();
+        resources().kafkaEphemeral(kafkaTargetName, 1, 1).done();
         // Deploy Topic
         resources().topic(kafkaSourceName, topicSourceName).done();
+
+        resources().deployKafkaClients(CLUSTER_NAME).done();
+
+        // Check brokers availability
+        availabilityTest(messagesCount, 60000, kafkaSourceName);
+        availabilityTest(messagesCount, 60000, kafkaTargetName);
+
         // Deploy Mirror Maker
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
@@ -796,14 +786,12 @@ class KafkaST extends AbstractST {
             !KUBE_CLIENT.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        // Create job to send 20 records using Kafka producer for source cluster
-        waitForJobSuccess(sendRecordsToClusterJob(kafkaSourceName, nameProducerSource, topicSourceName, messagesCount, null, false));
-        // Create job to read 20 records using Kafka producer for source cluster
-        waitForJobSuccess(readMessagesFromClusterJob(kafkaSourceName, nameConsumerSource, topicSourceName, messagesCount, null, false));
-        // Create job to read 20 records using Kafka consumer for target cluster
-        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(kafkaTargetName, nameConsumerTarget, topicSourceName, messagesCount, null, false));
-        // Check consumed messages in target cluster
-        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+        int sent = sendMessages(messagesCount, 20000, kafkaSourceName, false, topicSourceName, null);
+        int receivedSource = receiveMessages(messagesCount, 60000, kafkaSourceName, false, topicSourceName, null);
+        int receivedTarget = receiveMessages(messagesCount, 60000, kafkaTargetName, false, topicSourceName, null);
+
+        assertSentAndReceivedMessages(sent, receivedSource);
+        assertSentAndReceivedMessages(sent, receivedTarget);
     }
 
     /**
@@ -811,23 +799,21 @@ class KafkaST extends AbstractST {
      */
     @Test
     @Tag(CCI_FLAKY)
-    void testMirrorMakerTlsAuthenticated() {
+    void testMirrorMakerTlsAuthenticated() throws Exception {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String nameProducerSource = "send-messages-producer-source";
-        String nameConsumerSource = "send-messages-consumer-source";
-        String nameConsumerTarget = "send-messages-consumer-target";
-        String kafkaUser = "my-user";
-        String kafkaSourceName = CLUSTER_NAME + "-source";
-        String kafkaTargetName = CLUSTER_NAME + "-target";
-        int messagesCount = 20;
+        String kafkaSourceUserName = "my-user-source";
+        String kafkaUserTargetName = "my-user-target";
+        String kafkaClusterSourceName = CLUSTER_NAME + "-source";
+        String kafkaClusterTargetName = CLUSTER_NAME + "-target";
+        int messagesCount = 200;
 
         KafkaListenerAuthenticationTls auth = new KafkaListenerAuthenticationTls();
         KafkaListenerTls listenerTls = new KafkaListenerTls();
         listenerTls.setAuth(auth);
 
         // Deploy source kafka with tls listener and mutual tls auth
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-source", 3)
+        resources().kafka(resources().defaultKafka(kafkaClusterSourceName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -839,7 +825,7 @@ class KafkaST extends AbstractST {
                 .endSpec().build()).done();
 
         // Deploy target kafka with tls listener and mutual tls auth
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME + "-target", 3)
+        resources().kafka(resources().defaultKafka(kafkaClusterTargetName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -851,24 +837,33 @@ class KafkaST extends AbstractST {
                 .endSpec().build()).done();
 
         // Deploy topic
-        resources().topic(kafkaSourceName, topicSourceName).done();
+        resources().topic(kafkaClusterSourceName, topicSourceName).done();
 
         // Create Kafka user
-        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
-        waitTillSecretExists(kafkaUser);
+        KafkaUser userSource = resources().tlsUser(kafkaClusterSourceName, kafkaSourceUserName).done();
+        waitTillSecretExists(kafkaSourceUserName);
+
+        KafkaUser userTarget = resources().tlsUser(kafkaClusterTargetName, kafkaUserTargetName).done();
+        waitTillSecretExists(kafkaUserTargetName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
         certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaSourceName));
+        certSecretSource.setSecretName(clusterCaCertSecretName(kafkaClusterSourceName));
 
         // Initialize CertSecretSource with certificate and secret names for producer
         CertSecretSource certSecretTarget = new CertSecretSource();
         certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
+        certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaClusterTargetName));
+
+        resources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
+
+        // Check brokers availability
+        availabilityTest(messagesCount, 60000, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(messagesCount, 60000, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
-        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
+        resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group", 1, true)
                 .editSpec()
                 .editConsumer()
                     .withNewTls()
@@ -889,14 +884,12 @@ class KafkaST extends AbstractST {
             !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        // Create job to send 20 records using Kafka producer for source cluster
-        waitForJobSuccess(sendRecordsToClusterJob(kafkaSourceName, nameProducerSource, topicSourceName, messagesCount, user, true));
-        // Create job to read 20 records using Kafka producer for source cluster
-        waitForJobSuccess(readMessagesFromClusterJob(kafkaSourceName, nameConsumerSource, topicSourceName, messagesCount, user, true));
-        // Create job to read 20 records using Kafka consumer for target cluster
-        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(kafkaTargetName, nameConsumerTarget, topicSourceName, messagesCount, user, true));
-        // Check consumed messages in target cluster
-        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+        int sent = sendMessages(messagesCount, 20000, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedSource = receiveMessages(messagesCount, 60000, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedTarget = receiveMessages(messagesCount, 60000, kafkaClusterTargetName, true, topicSourceName, userTarget);
+
+        assertSentAndReceivedMessages(sent, receivedSource);
+        assertSentAndReceivedMessages(sent, receivedTarget);
     }
 
     /**
@@ -904,21 +897,17 @@ class KafkaST extends AbstractST {
      */
     @Test
     @Tag(CCI_FLAKY)
-    void testMirrorMakerTlsScramSha() {
+    void testMirrorMakerTlsScramSha() throws Exception {
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String kafkaUserSource = "my-user-source";
         String kafkaUserTarget = "my-user-target";
-        String nameProducerSource = "send-messages-producer-source";
-        String nameConsumerSource = "read-messages-consumer-source";
-        String nameConsumerTarget = "read-messages-consumer-target";
         String kafkaSourceName = CLUSTER_NAME + "-source";
         String kafkaTargetName = CLUSTER_NAME + "-target";
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
-        int messagesCount = 20;
-
+        int messagesCount = 200;
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        resources().kafka(resources().defaultKafka(kafkaSourceName, 3)
+        resources().kafka(resources().defaultKafka(kafkaSourceName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -928,7 +917,7 @@ class KafkaST extends AbstractST {
                 .endSpec().build()).done();
 
         // Deploy target kafka with tls listener and SCRAM-SHA authentication
-        resources().kafka(resources().defaultKafka(kafkaTargetName, 3)
+        resources().kafka(resources().defaultKafka(kafkaTargetName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -936,9 +925,6 @@ class KafkaST extends AbstractST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-
-        // Deploy topic
-        resources().topic(kafkaSourceName, topicName).done();
 
         // Create Kafka user for source cluster
         KafkaUser userSource = resources().scramShaUser(kafkaSourceName, kafkaUserSource).done();
@@ -968,6 +954,13 @@ class KafkaST extends AbstractST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
 
+        // Deploy client
+        resources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
+
+        // Check brokers availability
+        availabilityTest(messagesCount, 60000, kafkaSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(messagesCount, 60000, kafkaTargetName, true, "my-topic-test-2", userTarget);
+
         // Deploy Mirror Maker with TLS and ScramSha512
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
                 .editSpec()
@@ -991,20 +984,21 @@ class KafkaST extends AbstractST {
                 .endProducer()
                 .endSpec().done();
 
+        // Deploy topic
+        resources().topic(kafkaSourceName, topicName).done();
+
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
         waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
             !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        // Create job to send 20 records using Kafka producer for source cluster
-        waitForJobSuccess(sendRecordsToClusterJob(CLUSTER_NAME + "-source", nameProducerSource, topicName, messagesCount, userSource, true));
-        // Create job to read 20 records using Kafka consumer for source cluster
-        waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-source", nameConsumerSource, topicName, messagesCount, userSource, true));
-        // Create job to read 20 records using Kafka consumer for target cluster
-        Job jobReadMessagesForTarget = waitForJobSuccess(readMessagesFromClusterJob(CLUSTER_NAME + "-target", nameConsumerTarget, topicName, messagesCount, userTarget, true));
-        // Check consumed messages in target cluster
-        checkRecordsForConsumer(messagesCount, jobReadMessagesForTarget);
+        int sent = sendMessages(messagesCount, 20000, kafkaSourceName, true, topicName, userSource);
+        int receivedSource = receiveMessages(messagesCount, 60000, kafkaSourceName, true, topicName, userSource);
+        int receivedTarget = receiveMessages(messagesCount, 60000, kafkaTargetName, true, topicName, userTarget);
+
+        assertSentAndReceivedMessages(sent, receivedSource);
+        assertSentAndReceivedMessages(sent, receivedTarget);
     }
 
     @Test
@@ -1054,6 +1048,55 @@ class KafkaST extends AbstractST {
         // check rolling update messages in CO log
         coLog = KUBE_CLIENT.logs(coPodName);
         assertThat(coLog, containsString("Rolling Zookeeper pod " + zookeeperClusterName(CLUSTER_NAME) + "-0" + " to manual rolling update"));
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testNodePort() throws Exception {
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalNodePort()
+                            .withTls(false)
+                        .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+                .editZookeeper()
+                    .withReplicas(1)
+                .endZookeeper()
+            .endSpec()
+            .done();
+
+        waitForClusterAvailability(NAMESPACE);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testNodePortTls() throws Exception {
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                    .withNewKafkaListenerExternalNodePort()
+                    .endKafkaListenerExternalNodePort()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+                .editZookeeper()
+                    .withReplicas(1)
+                .endZookeeper()
+            .endSpec()
+            .done();
+
+        String userName = "alice";
+        resources().tlsUser(CLUSTER_NAME, userName).done();
+        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
+            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
+            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
     }
 
     private Map<String, String> getAnnotationsForSS(String namespace, String ssName) {
@@ -1235,8 +1278,10 @@ class KafkaST extends AbstractST {
     }
 
     @BeforeEach
-    void createTestResources() {
+    void createTestResources() throws Exception {
         createResources();
+        resources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
+        resources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, ENVIRONMENT.getKubernetesApiUrl(), NAMESPACE).done();
     }
 
     @AfterEach
