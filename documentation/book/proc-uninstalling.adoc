@@ -10,16 +10,14 @@ This procedure describes how to uninstall {ProductName} and remove resources rel
 .Prerequisites
 
 In order to perform this procedure, you need to identify resources specific to a deployment, such as:
-+
+
 * Secrets (Custom CAs and certificates, Kafka Connect secrets, and other secrets)
 * Logging `ConfigMaps`
-+
+
 These are resources:
-+
---
-* Referenced by `Kafka`, `KafkaConnect` or `KafkaMirrorMaker` configuration
+
+* Referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I` or `KafkaMirrorMaker` configuration
 * Consumed by the operators
---
 
 .Procedure
 
@@ -30,6 +28,6 @@ These are resources:
 {cmdcli} delete -f install/cluster-operator
 ----
 +
-Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect` or `KafkaMirrorMaker`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
+WARNING: Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaConnectS2I` or `KafkaMirrorMaker`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
 
 . Delete the resources you identified in the prerequisites.
