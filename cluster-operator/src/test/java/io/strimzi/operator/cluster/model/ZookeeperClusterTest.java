@@ -191,7 +191,7 @@ public class ZookeeperClusterTest {
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
         OrderedProperties expectedConfig = new OrderedProperties()
                 .addPair("autopurge.purgeInterval", "1")
-                .addPair("timeTick", "2000")
+                .addPair("tickTime", "2000")
                 .addPair("syncLimit", "2")
                 .addPair("initLimit", "5")
                 .addPair("foo", "bar");
