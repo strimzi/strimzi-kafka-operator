@@ -32,7 +32,7 @@ storage:
 
 The ids cannot be changed once the JBOD volumes are created.
 
-NOTE: Adding and removing volumes from a JBOD configuration is not currently supported.
+Users can add or remove volumes from the JBOD configuration.
 
 == JBOD and Persistent Volume Claims
 
