@@ -42,6 +42,10 @@ public class Environment {
      * URL of the kubernetes cluster. It's used for specify URL endpoint of testing clients.
      */
     public static final String KUBERNETES_API_URL_ENV = "KUBERNETES_API_URL";
+    /**
+     * CO reconciliation interval.
+     */
+    public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
 
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
@@ -50,6 +54,7 @@ public class Environment {
     public static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     public static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     public static final String KUBERNETES_API_URL_DEFAULT = "https://127.0.0.1:8443";
+    public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT = "30000";
     public static final int INGRESS_DEFAULT_PORT = 4242;
 
     private final String strimziOrg = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
@@ -59,6 +64,7 @@ public class Environment {
     private final String strimziLogLevel = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
     private final String kubernetesDomain = System.getenv().getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
     private final String kubernetesApiUrl = System.getenv().getOrDefault(KUBERNETES_API_URL_ENV, KUBERNETES_API_URL_DEFAULT);
+    private final String strimziFullReconciliationIntervalMs = System.getenv().getOrDefault(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT);
 
     private Environment() {
         String debugFormat = "{}:{}";
@@ -105,5 +111,9 @@ public class Environment {
 
     public String getKubernetesApiUrl() {
         return kubernetesApiUrl;
+    }
+
+    public String getStrimziFullReconciliationInterval() {
+        return strimziFullReconciliationIntervalMs;
     }
 }

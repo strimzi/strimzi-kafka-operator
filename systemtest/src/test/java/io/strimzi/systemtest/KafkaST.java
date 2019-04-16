@@ -38,7 +38,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -88,13 +87,6 @@ class KafkaST extends MessagingBaseST {
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
     private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
-
-    private static final long POLL_INTERVAL_FOR_CREATION = 1_000;
-    private static final long TIMEOUT_FOR_MIRROR_MAKER_CREATION = 120_000;
-    private static final long TIMEOUT_FOR_TOPIC_CREATION = 60_000;
-    private static final long TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION = 450_000;
-    private static final long WAIT_FOR_ROLLING_UPDATE_INTERVAL = Duration.ofSeconds(5).toMillis();
-    private static final long WAIT_FOR_ROLLING_UPDATE_TIMEOUT = Duration.ofMinutes(5).toMillis();
 
     @Test
     @Tag(FLAKY)
@@ -390,7 +382,7 @@ class KafkaST extends MessagingBaseST {
 
         resources().deployKafkaClients(CLUSTER_NAME).done();
 
-        availabilityTest(messagesCount, 60000, CLUSTER_NAME, false, topicName, null);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
     }
 
     /**
@@ -423,7 +415,7 @@ class KafkaST extends MessagingBaseST {
         waitTillSecretExists(kafkaUser);
 
         resources().deployKafkaClients(true, CLUSTER_NAME, user).done();
-        availabilityTest(messagesCount, 60000, CLUSTER_NAME, true, topicName, user);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
     }
 
     /**
@@ -467,7 +459,7 @@ class KafkaST extends MessagingBaseST {
         }
 
         resources().deployKafkaClients(false, CLUSTER_NAME, user).done();
-        availabilityTest(messagesCount, 60000, CLUSTER_NAME, false, topicName, user);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
     }
 
     /**
@@ -604,7 +596,7 @@ class KafkaST extends MessagingBaseST {
 
         //Creating topics for testing
         KUBE_CLIENT.create(TOPIC_CM);
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_TOPIC_CREATION, () -> {
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
         });
@@ -643,7 +635,7 @@ class KafkaST extends MessagingBaseST {
         KUBE_CLIENT.waitForResourceDeletion("kafkatopic", "my-topic");
 
         //Checking all topics were deleted
-        Thread.sleep(10000L);
+        Thread.sleep(TIMEOUT_TEARDOWN);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         assertThat(topics, not(hasItems("topic-from-cli")));
@@ -771,21 +763,21 @@ class KafkaST extends MessagingBaseST {
         resources().deployKafkaClients(CLUSTER_NAME).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, 60000, kafkaSourceName);
-        availabilityTest(messagesCount, 60000, kafkaTargetName);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaSourceName);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaTargetName);
 
         // Deploy Mirror Maker
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
+        waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
             !KUBE_CLIENT.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        int sent = sendMessages(messagesCount, 20000, kafkaSourceName, false, topicSourceName, null);
-        int receivedSource = receiveMessages(messagesCount, 60000, kafkaSourceName, false, topicSourceName, null);
-        int receivedTarget = receiveMessages(messagesCount, 60000, kafkaTargetName, false, topicSourceName, null);
+        int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, false, topicSourceName, null);
+        int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaSourceName, false, topicSourceName, null);
+        int receivedTarget = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaTargetName, false, topicSourceName, null);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -856,8 +848,8 @@ class KafkaST extends MessagingBaseST {
         resources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, 60000, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, 60000, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group", 1, true)
@@ -877,13 +869,13 @@ class KafkaST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join the group
-        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
+        waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
             !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        int sent = sendMessages(messagesCount, 20000, kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedSource = receiveMessages(messagesCount, 60000, kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedTarget = receiveMessages(messagesCount, 60000, kafkaClusterTargetName, true, topicSourceName, userTarget);
+        int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedTarget = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, true, topicSourceName, userTarget);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -955,8 +947,8 @@ class KafkaST extends MessagingBaseST {
         resources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, 60000, kafkaSourceName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, 60000, kafkaTargetName, true, "my-topic-test-2", userTarget);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with TLS and ScramSha512
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
@@ -986,13 +978,13 @@ class KafkaST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
+        waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
             !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        int sent = sendMessages(messagesCount, 20000, kafkaSourceName, true, topicName, userSource);
-        int receivedSource = receiveMessages(messagesCount, 60000, kafkaSourceName, true, topicName, userSource);
-        int receivedTarget = receiveMessages(messagesCount, 60000, kafkaTargetName, true, topicName, userTarget);
+        int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, true, topicName, userSource);
+        int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaSourceName, true, topicName, userSource);
+        int receivedTarget = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaTargetName, true, topicName, userTarget);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -1149,7 +1141,7 @@ class KafkaST extends MessagingBaseST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
     @BeforeAll
