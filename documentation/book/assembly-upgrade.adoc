@@ -54,7 +54,7 @@ The Kafka message format version and inter-broker protocol version are subject t
 Although Kafka 2.0.0 and 2.1.1 use the same version of Zookeeper, it is recommended that you update your Zookeeper cluster to use the newest Zookeeper binaries before proceeding with the main {ProductName} 1.1.0 upgrade.
 endif::StrimziUpgrades[]
 
-*Message format version*
+.Message format version
 
 When a producer sends a message to a Kafka broker, the message is encoded using a specific format. This is referred to as the message format version. You can configure a Kafka broker to convert messages from newer format versions to a given older format version before the broker appends the message to the log.
 
