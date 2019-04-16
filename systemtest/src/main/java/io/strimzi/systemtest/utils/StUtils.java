@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.client.Kubernetes;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,6 +34,8 @@ import java.util.zip.ZipInputStream;
 public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
+    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
+    public static Kubernetes KUBERNETES = CLUSTER.client();
 
     private StUtils() { }
 
@@ -39,8 +43,8 @@ public class StUtils {
      * Returns a map of resource name to resource version for all the pods in the given {@code namespace}
      * matching the given {@code selector}.
      */
-    private static Map<String, String> podSnapshot(KubernetesClient client, String namespace, LabelSelector selector) {
-        List<Pod> pods = client.pods().inNamespace(namespace).withLabelSelector(selector).list().getItems();
+    private static Map<String, String> podSnapshot(String namespace, LabelSelector selector) {
+        List<Pod> pods = KUBERNETES.listPods(selector);
         return pods.stream()
                 .collect(
                         Collectors.toMap(pod -> pod.getMetadata().getName(),
@@ -48,20 +52,20 @@ public class StUtils {
     }
 
     /** Returns a map of pod name to resource version for the pods currently in the given statefulset */
-    public static Map<String, String> ssSnapshot(KubernetesClient client, String namespace, String name) {
-        StatefulSet statefulSet = client.apps().statefulSets().inNamespace(namespace).withName(name).get();
+    public static Map<String, String> ssSnapshot(String namespace, String name) {
+        StatefulSet statefulSet = KUBERNETES.getStatefulSet(name);
         LabelSelector selector = statefulSet.getSpec().getSelector();
-        return podSnapshot(client, namespace, selector);
+        return podSnapshot(namespace, selector);
     }
 
     /** Returns a map of pod name to resource version for the pods currently in the given deployment */
-    public static Map<String, String> depSnapshot(KubernetesClient client, String namespace, String name) {
-        Deployment deployment = client.apps().deployments().inNamespace(namespace).withName(name).get();
+    public static Map<String, String> depSnapshot(String namespace, String name) {
+        Deployment deployment = KUBERNETES.getDeployment(name);
         LabelSelector selector = deployment.getSpec().getSelector();
-        return podSnapshot(client, namespace, selector);
+        return podSnapshot(namespace, selector);
     }
 
-    public static boolean ssHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
+    public static boolean ssHasRolled(String namespace, String name, Map<String, String> snapshot) {
         boolean log = true;
         if (log) {
             LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
@@ -69,7 +73,7 @@ public class StUtils {
         LabelSelector selector = null;
         int times = 60;
         do {
-            selector = client.apps().statefulSets().inNamespace(namespace).withName(name).get().getSpec().getSelector();
+            selector = KUBERNETES.getStatefulSetSelectors(name);
             if (selector == null) {
                 if (times-- == 0) {
                     throw new RuntimeException("Retry failed");
@@ -82,7 +86,7 @@ public class StUtils {
             }
         } while (selector == null);
 
-        Map<String, String> map = podSnapshot(client, namespace, selector);
+        Map<String, String> map = podSnapshot(namespace, selector);
         if (log) {
             LOGGER.debug("Current snapshot: {}", new TreeMap(map));
         }
@@ -108,9 +112,9 @@ public class StUtils {
         return true;
     }
 
-    public static boolean depHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
+    public static boolean depHasRolled(String namespace, String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
-        Map<String, String> map = podSnapshot(client, namespace, client.extensions().deployments().inNamespace(namespace).withName(name).get().getSpec().getSelector());
+        Map<String, String> map = podSnapshot(namespace, KUBERNETES.getDeployment(name).getSpec().getSelector());
         LOGGER.debug("Current  snapshot: {}", new TreeMap(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
@@ -131,22 +135,22 @@ public class StUtils {
         TestUtils.waitFor("SS roll of " + name,
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, timeout, () -> {
                 try {
-                    return ssHasRolled(client, namespace, name, snapshot);
+                    return ssHasRolled(namespace, name, snapshot);
                 } catch (Exception e) {
                     e.printStackTrace();
                     return false;
                 }
             });
-        StUtils.waitForAllStatefulSetPodsReady(client, namespace, name);
-        return ssSnapshot(client, namespace, name);
+        StUtils.waitForAllStatefulSetPodsReady(namespace, name);
+        return ssSnapshot(namespace, name);
     }
 
-    public static Map<String, String> waitTillDepHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
+    public static Map<String, String> waitTillDepHasRolled(String namespace, String name, Map<String, String> snapshot) {
         long timeLeft = TestUtils.waitFor("Deployment roll of " + name,
-                Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(client, namespace, name, snapshot));
-        StUtils.waitForDeploymentReady(client, namespace, name);
-        StUtils.waitForPodsReady(client, namespace, client.apps().deployments().inNamespace(namespace).withName(name).get().getSpec().getSelector(), true);
-        return depSnapshot(client, namespace, name);
+                Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(namespace, name, snapshot));
+        StUtils.waitForDeploymentReady(namespace, name);
+        StUtils.waitForPodsReady(namespace, KUBERNETES.getDeployment(name).getSpec().getSelector(), true);
+        return depSnapshot(namespace, name);
     }
 
     public static File downloadAndUnzip(String url) throws IOException {
@@ -176,18 +180,18 @@ public class StUtils {
     /**
      * Wait until the SS is ready and all of its Pods are also ready
      */
-    public static void waitForAllStatefulSetPodsReady(KubernetesClient client, String namespace, String name) {
+    public static void waitForAllStatefulSetPodsReady(String namespace, String name) {
         LOGGER.info("Waiting for StatefulSet {} to be ready", name);
         TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client.apps().statefulSets().inNamespace(namespace).withName(name).isReady());
+            () -> KUBERNETES.getStatefulSetStatus(name));
         LOGGER.info("StatefulSet {} is ready", name);
         LOGGER.info("Waiting for Pods of StatefulSet {} to be ready", name);
-        waitForPodsReady(client, namespace, client.apps().statefulSets().inNamespace(namespace).withName(name).get().getSpec().getSelector(), true);
+        waitForPodsReady(namespace, KUBERNETES.getStatefulSetSelectors(name), true);
     }
 
-    public static void waitForPodsReady(KubernetesClient client, String namespace, LabelSelector selector, boolean containers) {
+    public static void waitForPodsReady(String namespace, LabelSelector selector, boolean containers) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
-            List<Pod> pods = client.pods().inNamespace(namespace).withLabelSelector(selector).list().getItems();
+            List<Pod> pods = KUBERNETES.listPods(selector);
             if (pods.isEmpty()) {
                 LOGGER.debug("Not ready (no pods matching {})", selector);
                 return false;
@@ -216,10 +220,20 @@ public class StUtils {
     /**
      * Wait until the deployment is ready
      */
-    public static void waitForDeploymentReady(KubernetesClient client, String namespace, String name) {
+    public static void waitForDeploymentReady(String namespace, String name) {
         LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client.apps().deployments().inNamespace(namespace).withName(name).isReady());
+            () -> KUBERNETES.getDeploymentStatus(name));
         LOGGER.info("Deployment {} is ready", name);
+    }
+
+    /**
+     * Wait until the deployment config is ready
+     */
+    public static void waitForDeploymentConfigReady(String namespace, String name) {
+        LOGGER.info("Waiting for Deployment Config {}", name);
+        TestUtils.waitFor("deployment config " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> KUBERNETES.getDeploymentConfigStatus(name));
+        LOGGER.info("Deployment Config {} is ready", name);
     }
 }

@@ -49,10 +49,13 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.test.Environment;
 import io.strimzi.test.client.Kubernetes;
+import io.strimzi.test.k8s.KubeClusterResource;
+import okhttp3.OkHttpClient;
 
 abstract class AbstractResources {
 
-    public static Kubernetes KUBERNETES = Kubernetes.getInstance();
+    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
+    public static Kubernetes KUBERNETES = CLUSTER.client();
 
     MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafka() {
         return customResourcesWithCascading(Kafka.class, KafkaList.class, DoneableKafka.class);
@@ -60,7 +63,7 @@ abstract class AbstractResources {
 
     // This logic is necessary only for the deletion of resources with `cascading: true`
     <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return new CustomResourceOperationsImpl<T, L, D>(KUBERNETES.getClient(), KUBERNETES.getClient().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
+        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) KUBERNETES.getClient()).getHttpClient(), KUBERNETES.getClient().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, KUBERNETES.getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
     }
 
     MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnect() {

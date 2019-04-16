@@ -4,8 +4,6 @@
  */
 package io.strimzi.test;
 
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.test.client.Kubernetes;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -35,12 +33,11 @@ public class BaseITST {
     private static final Logger LOGGER = LogManager.getLogger(BaseITST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
 
-    public static final KubeClusterResource CLUSTER = KubeClusterResource.getInstance();
+    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
 
-    public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
-    public static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient(CONFIG);
+    public static final KubeClient<?> KUBE_CLIENT = CLUSTER.cmdClient();
+    public static final Kubernetes KUBERNETES = CLUSTER.client();
 
-    public static final KubeClient<?> KUBE_CLIENT = CLUSTER.client();
     private static final String DEFAULT_NAMESPACE = KUBE_CLIENT.defaultNamespace();
 
     protected String clusterOperatorNamespace = DEFAULT_NAMESPACE;

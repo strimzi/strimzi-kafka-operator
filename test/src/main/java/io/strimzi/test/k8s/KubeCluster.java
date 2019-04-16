@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
+import io.strimzi.test.client.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,8 +30,10 @@ public interface KubeCluster {
     /** Attempt to stop a cluster */
     void clusterDown();
 
-    /** Return a default client for this kind of cluster. */
-    KubeClient defaultClient();
+    /** Return a default CMD cmdClient for this kind of cluster. */
+    KubeClient defaultCmdClient();
+
+    Kubernetes defaultClient();
 
     /**
      * Returns the cluster named by the TEST_CLUSTER environment variable, if set, otherwise finds a cluster that's

@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobList;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
-import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
@@ -31,11 +30,10 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.test.Environment;
+import io.strimzi.test.k8s.NamespaceHolder;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.omg.CosNaming.NameHelper;
 
 import java.io.ByteArrayOutputStream;
 import java.text.DateFormat;
@@ -43,25 +41,19 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeCluster.ENV_VAR_TEST_CLUSTER;
+public class Kubernetes extends NamespaceHolder {
 
-public abstract class Kubernetes {
-
-    private static Kubernetes kubernetes;
     private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
-    private static final Environment ENVIRONMENT = new Environment();
     protected final KubernetesClient client;
-    protected final String defaultNamespace;
-    private String namespace = NamespaceHolder.getNamespace();
-    public static final Config KUBE_CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
+    protected String defaultNamespace;
+    protected String namespace = NamespaceHolder.getNamespaceFromHolder() != null ? NamespaceHolder.getNamespaceFromHolder() : defaultNamespace;
 
-    protected Kubernetes(KubernetesClient client, String defaultNamespace) {
+    public Kubernetes(KubernetesClient client, String defaultNamespace) {
         this.client = client;
         this.defaultNamespace = defaultNamespace;
     }
@@ -70,44 +62,9 @@ public abstract class Kubernetes {
         return client;
     }
 
-    public String getNamespace() {
-        return defaultNamespace;
+    public String getNamespace(){
+        return namespace;
     }
-
-    public static Kubernetes getInstance() {
-        if (kubernetes == null) {
-            kubernetes = Kubernetes.create();
-            return kubernetes;
-        } else {
-            return kubernetes;
-        }
-    }
-
-    public static Kubernetes create() {
-
-        Kubernetes kubernetes;
-        String clusterName = System.getenv(ENV_VAR_TEST_CLUSTER);
-        if (clusterName != null) {
-            switch (clusterName.toLowerCase(Locale.ENGLISH)) {
-                case "oc":
-                    kubernetes = new OpenShift(ENVIRONMENT, "myproject");
-                    break;
-                case "minishift":
-                    kubernetes = new OpenShift(ENVIRONMENT, "myproject");
-                    break;
-
-                case "minikube":
-                    kubernetes = new Minikube(ENVIRONMENT, "default");
-                    break;
-                default:
-                    throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER + "=" + clusterName + " is not a supported cluster type");
-            }
-        } else {
-            throw new IllegalArgumentException("variable " + ENV_VAR_TEST_CLUSTER + " not defined");
-        }
-        return kubernetes;
-    }
-
 
     public void createNamespace(String name) {
         Namespace ns = new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build();
@@ -324,7 +281,7 @@ public abstract class Kubernetes {
 
     public MixedOperation<Job, JobList, DoneableJob, ScalableResource<Job, DoneableJob>> listJobs() {
 //    public MixedOperation<Job, JobList, DoneableJob, ScalableResource<Job, DoneableJob>> listJobs() {
-//        return client.extensions().jobs().inNamespace(namespace);
+//        return cmdClient.extensions().jobs().inNamespace(namespace);
         return client.extensions().jobs(); //TODO need namespace here
     }
 
@@ -349,6 +306,10 @@ public abstract class Kubernetes {
 
     public KubernetesClusterRoleBinding createOrReplaceKubernetesClusterRoleBinding (KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
         return client.rbac().kubernetesClusterRoleBindings().inNamespace(namespace).createOrReplace(kubernetesClusterRoleBinding);
+    }
+
+    public Boolean deleteKubernetesClusterRoleBinding (KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
+        return client.rbac().kubernetesClusterRoleBindings().inNamespace(namespace).delete(kubernetesClusterRoleBinding);
     }
 
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources (CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {

@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.test.client.Kubernetes;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -33,12 +35,13 @@ import java.util.Properties;
 import java.util.Random;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
-import static io.strimzi.test.BaseITST.CLIENT;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class KafkaClientProperties {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientProperties.class);
+    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
+    public static final Kubernetes KUBERNETES = CLUSTER.client();
 
     /**
      * Create producer properties with PLAINTEXT security
@@ -128,7 +131,7 @@ class KafkaClientProperties {
             KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
             ts.load(null, tsPassword.toCharArray());
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            for (Map.Entry<String, String> entry : CLIENT.secrets().inNamespace(namespace).withName(KafkaResources.clusterCaCertificateSecretName(clusterName)).get().getData().entrySet()) {
+            for (Map.Entry<String, String> entry : KUBERNETES.getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName)).getData().entrySet()) {
                 String clusterCaCert = entry.getValue();
                 Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(clusterCaCert)));
                 ts.setCertificateEntry(entry.getKey(), cert);
@@ -149,7 +152,7 @@ class KafkaClientProperties {
         if (!userName.isEmpty()) {
             try {
 
-                Secret userSecret = CLIENT.secrets().inNamespace(namespace).withName(userName).get();
+                Secret userSecret = KUBERNETES.getSecret(userName);
 
                 String clientsCaCert = userSecret.getData().get("ca.crt");
                 LOGGER.debug("Clients CA cert: {}", clientsCaCert);
@@ -183,14 +186,14 @@ class KafkaClientProperties {
      * @return bootstrap url as string
      */
     private static String getExternalBootstrapConnect(String namespace, String clusterName) {
-        if (CLIENT.isAdaptable(OpenShiftClient.class)) {
-            Route route = CLIENT.adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
+        if (KUBERNETES.getClient().isAdaptable(OpenShiftClient.class)) {
+            Route route = KUBERNETES.getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
             if (route != null && !route.getStatus().getIngress().isEmpty()) {
                 return route.getStatus().getIngress().get(0).getHost() + ":443";
             }
         }
 
-        Service extBootstrapService = CLIENT.services()
+        Service extBootstrapService = KUBERNETES.getClient().services()
                 .inNamespace(namespace)
                 .withName(externalBootstrapServiceName(clusterName))
                 .get();

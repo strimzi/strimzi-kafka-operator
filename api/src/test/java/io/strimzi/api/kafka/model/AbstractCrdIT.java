@@ -42,13 +42,13 @@ public abstract class AbstractCrdIT extends BaseITST {
         RuntimeException thrown2 = null;
         try {
             try {
-                CLUSTER.client().applyContent(ssStr);
+                CLUSTER.cmdClient().applyContent(ssStr);
             } catch (RuntimeException t) {
                 thrown = t;
             }
         } finally {
             try {
-                CLUSTER.client().deleteContent(ssStr);
+                CLUSTER.cmdClient().deleteContent(ssStr);
             } catch (RuntimeException t) {
                 thrown2 = t;
             }

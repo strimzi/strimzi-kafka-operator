@@ -4,6 +4,8 @@
  */
 package io.strimzi.test.k8s;
 
+import io.strimzi.test.client.Kubernetes;
+
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
  * for use with {@code @BeforeAll} (or {@code BeforeEach}.
@@ -21,7 +23,8 @@ public class KubeClusterResource {
 
     private final boolean bootstrap;
     private KubeCluster cluster;
-    private KubeClient client;
+    private KubeClient cmdClient;
+    private Kubernetes client;
     private HelmClient helmClient;
 
     private static KubeClusterResource instance;
@@ -40,22 +43,29 @@ public class KubeClusterResource {
     public KubeClusterResource(KubeCluster cluster, KubeClient client) {
         bootstrap = false;
         this.cluster = cluster;
-        this.client = client;
+        this.cmdClient = client;
     }
 
     public KubeClusterResource(KubeCluster cluster, KubeClient client, HelmClient helmClient) {
         bootstrap = false;
         this.cluster = cluster;
-        this.client = client;
+        this.cmdClient = client;
         this.helmClient = helmClient;
     }
 
     /** Gets the namespace in use */
     public String defaultNamespace() {
-        return client().defaultNamespace();
+        return cmdClient().defaultNamespace();
     }
 
-    public KubeClient client() {
+    public KubeClient cmdClient() {
+        if (bootstrap && cmdClient == null) {
+            this.cmdClient = cluster().defaultCmdClient();
+        }
+        return cmdClient;
+    }
+
+    public Kubernetes client() {
         if (bootstrap && client == null) {
             this.client = cluster().defaultClient();
         }
@@ -64,7 +74,7 @@ public class KubeClusterResource {
 
     public HelmClient helmClient() {
         if (bootstrap && helmClient == null) {
-            this.helmClient = HelmClient.findClient(client());
+            this.helmClient = HelmClient.findClient(cmdClient());
         }
         return helmClient;
     }
@@ -80,6 +90,9 @@ public class KubeClusterResource {
         if (bootstrap) {
             if (cluster == null) {
                 this.cluster = KubeCluster.bootstrap();
+            }
+            if (cmdClient == null) {
+                this.cmdClient = cluster.defaultCmdClient();
             }
             if (client == null) {
                 this.client = cluster.defaultClient();
