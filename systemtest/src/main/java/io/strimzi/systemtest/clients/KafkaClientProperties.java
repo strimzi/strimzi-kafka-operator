@@ -118,6 +118,8 @@ class KafkaClientProperties {
      */
     private static Properties sharedClientProperties(String namespace, String clusterName, String userName) {
         Properties properties = new Properties();
+        // For turn of hostname verification
+        properties.setProperty("ssl.endpoint.identification.algorithm", "");
 
         try {
             String tsPassword = "foo";
@@ -192,15 +194,28 @@ class KafkaClientProperties {
                 .inNamespace(namespace)
                 .withName(externalBootstrapServiceName(clusterName))
                 .get();
+
         if (extBootstrapService == null) {
             throw new RuntimeException("Kafka cluster " + clusterName + " doesn't have an external bootstrap service");
         }
-        LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);
-        String result = loadBalancerIngress.getHostname();
-        if (result == null) {
-            result = loadBalancerIngress.getIp();
+
+        String extBootstrapServiceType = extBootstrapService.getSpec().getType();
+
+        if (extBootstrapServiceType.equals("NodePort")) {
+            int port = extBootstrapService.getSpec().getPorts().get(0).getNodePort();
+            String externalAddress = CLIENT.nodes().list().getItems().get(0).getStatus().getAddresses().get(0).getAddress();
+            return externalAddress + ":" + port;
+        } else if (extBootstrapServiceType.equals("LoadBalancer")) {
+            LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);
+            String result = loadBalancerIngress.getHostname();
+
+            if (result == null) {
+                result = loadBalancerIngress.getIp();
+            }
+            return result + ":9094";
+        } else {
+            throw new RuntimeException("Unexpected external bootstrap service for Kafka cluster " + clusterName);
         }
-        return result + ":9094";
     }
 
     /**
