@@ -220,21 +220,21 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     }
 
     @Override
-    public ProcessResult execInPod(String pod, String... command) {
+    public ExecResult execInPod(String pod, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "--");
         cmd.addAll(asList(command));
         return Exec.exec(cmd);
     }
 
     @Override
-    public ProcessResult execInPodContainer(String pod, String container, String... command) {
+    public ExecResult execInPodContainer(String pod, String container, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "-c", container, "--");
         cmd.addAll(asList(command));
         return Exec.exec(cmd);
     }
 
     @Override
-    public ProcessResult exec(String... command) {
+    public ExecResult exec(String... command) {
         return Exec.exec(asList(command));
     }
 

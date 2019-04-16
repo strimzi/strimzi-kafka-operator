@@ -5,11 +5,17 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
+import io.fabric8.kubernetes.api.model.extensions.DoneableIngress;
+import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.api.model.extensions.IngressList;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.DoneableKubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
@@ -92,7 +98,7 @@ abstract class AbstractResources {
                         KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
     }
 
-    MixedOperation<Deployment, DeploymentList, DoneableDeployment, Resource<Deployment, DoneableDeployment>> clusterOperator() {
+    MixedOperation<Deployment, DeploymentList, DoneableDeployment, Resource<Deployment, DoneableDeployment>> deployment() {
         return customResourcesWithCascading(Deployment.class, DeploymentList.class, DoneableDeployment.class);
     }
 
@@ -102,6 +108,14 @@ abstract class AbstractResources {
 
     MixedOperation<KubernetesRoleBinding, KubernetesRoleBindingList, DoneableKubernetesRoleBinding, Resource<KubernetesRoleBinding, DoneableKubernetesRoleBinding>> kubernetesRoleBinding() {
         return customResourcesWithCascading(KubernetesRoleBinding.class, KubernetesRoleBindingList.class, DoneableKubernetesRoleBinding.class);
+    }
+
+    MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> service() {
+        return customResourcesWithCascading(Service.class, ServiceList.class, DoneableService.class);
+    }
+
+    MixedOperation<Ingress, IngressList, DoneableIngress, Resource<Ingress, DoneableIngress>> ingress() {
+        return customResourcesWithCascading(Ingress.class, IngressList.class, DoneableIngress.class);
     }
 
 }

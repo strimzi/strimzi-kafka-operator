@@ -59,8 +59,6 @@ class ConnectST extends AbstractST {
             "status.storage.topic=connect-cluster-status\n" +
             "offset.storage.topic=connect-cluster-offsets\n");
 
-    private static Resources classResources;
-
     @Test
     @Tag(REGRESSION)
     void testDeployUndeploy() {
@@ -232,7 +230,7 @@ class ConnectST extends AbstractST {
 
         String connectVersion = Crds.kafkaConnectOperation(CLIENT).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
         if (connectVersion == null) {
-            connectVersion = "2.2.0";
+            connectVersion = ENVIRONMENT.getStKafkaVersionEnv();
         }
 
         assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), connectImageName);
@@ -277,6 +275,29 @@ class ConnectST extends AbstractST {
 
     @AfterAll
     void teardownEnvironment() {
+        LOGGER.info("Collecting logs for pods in namespace {}", NAMESPACE);
+        try {
+            CLIENT.pods().inNamespace(NAMESPACE).list().getItems().forEach(pod -> {
+                String podName = pod.getMetadata().getName();
+                LOGGER.info("POD NAME: {}", podName);
+                pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
+                    LOGGER.info("POD STATUS: {}", containerStatus.getName());
+                    String log = CLIENT.pods().inNamespace(NAMESPACE).withName(podName).inContainer(containerStatus.getName()).getLog();
+                    // Write logs from containers to files
+                    if (podName.contains("strimzi") || podName.contains("kafka-0") || podName.contains("zookeeper-0")) {
+                        LOGGER.info("POD: {}\n{}", podName, log);
+                    }
+                });
+            });
+
+            LOGGER.info("Collecting events in namespace {}", NAMESPACE);
+            String events = KUBE_CLIENT.getEvents();
+            LOGGER.info("EVENTS: \n{}", events);
+
+        } catch (Exception allExceptions) {
+            LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
+        }
+
         testClassResources.deleteResources();
         teardownEnvForOperator();
     }

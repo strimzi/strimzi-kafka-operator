@@ -196,9 +196,9 @@ class SecurityST extends AbstractST {
             initialCaCerts.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                     .editMetadata()
-                    .addToAnnotations(STRIMZI_IO_FORCE_RENEW, "true")
+                        .addToAnnotations(STRIMZI_IO_FORCE_RENEW, "true")
                     .endMetadata()
-                    .build();
+                .build();
             LOGGER.info("Patching secret {} with {}", secretName, STRIMZI_IO_FORCE_RENEW);
             CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).patch(annotated);
         }
@@ -352,7 +352,7 @@ class SecurityST extends AbstractST {
                         .endPersistentClaimStorage()
                     .endKafka()
                     .editZookeeper()
-                    .withReplicas(3)
+                        .withReplicas(3)
                         .withNewPersistentClaimStorage()
                             .withSize("2Gi")
                             .withDeleteClaim(true)
@@ -462,8 +462,8 @@ class SecurityST extends AbstractST {
         String certAsString = TestUtils.readResource(getClass(), resourceName);
         Secret secret = new SecretBuilder()
                 .withNewMetadata()
-                .withName(secretName)
-                .addToLabels(map(
+                    .withName(secretName)
+                    .addToLabels(map(
                         "strimzi.io/cluster", CLUSTER_NAME,
                         "strimzi.io/kind", "Kafka"))
                 .endMetadata()

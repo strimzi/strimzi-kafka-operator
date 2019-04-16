@@ -35,6 +35,8 @@ docker-images/kafka/.*.tmp
 docker-images/kafka/tmp/**
 docker-images/operator/.*.tmp
 docker-images/operator/tmp/**
+docker-images/test-client/.*.tmp
+docker-images/test-client/tmp/**
 
 
 # Connect plugin (tests)
