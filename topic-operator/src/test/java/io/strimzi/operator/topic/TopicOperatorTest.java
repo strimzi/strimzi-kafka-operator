@@ -722,6 +722,10 @@ public class TopicOperatorTest {
                 .create(privateTopic, ar -> { });
         mockTopicStore.setUpdateTopicResponse(topicName, null);
 
+        mockK8s.setCreateResponse(resourceName, null);
+        mockK8s.createResource(resource, ar -> {
+            assertSucceeded(context, ar);
+        });
         mockK8s.setModifyResponse(resourceName, null);
 
         Async async = context.async(3);
@@ -735,6 +739,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(resourceName, ar2 -> {
                 assertSucceeded(context, ar2);
+                context.assertNotNull(ar2.result());
                 context.assertEquals("baz", TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"));
                 async.countDown();
             });
