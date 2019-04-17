@@ -19,14 +19,15 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   # kafka and zookeeper sections...
-  topicOperator:
-    resources:
-      request:
-        cpu: "1"
-        memory: 500Mi
-      limit:
-        cpu: "1"
-        memory: 500Mi
+  entityOperator:
+    topicOperator:
+      resources:
+        request:
+          cpu: "1"
+          memory: 500Mi
+        limit:
+          cpu: "1"
+          memory: 500Mi
 ----
 
 . Create or update the `Kafka` resource.
