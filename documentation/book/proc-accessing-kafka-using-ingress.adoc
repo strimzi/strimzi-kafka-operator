@@ -5,6 +5,8 @@
 [id='proc-accessing-kafka-using-ingress-{context}']
 = Accessing Kafka using {KubernetesName} ingress
 
+This procedure shows how to access {ProductName} Kafka clusters from outside of {KubernetesName} using Ingress.
+
 .Prerequisites
 
 * An {KubernetesName} cluster
