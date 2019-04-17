@@ -329,6 +329,6 @@ public class Kubernetes extends NamespaceHolder {
     }
 
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return client.customResources(crd,resourceType, listClass, doneClass); //TODO namespace here
+        return client.customResources(crd, resourceType, listClass, doneClass); //TODO namespace here
     }
 }
