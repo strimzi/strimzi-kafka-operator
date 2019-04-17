@@ -7,7 +7,6 @@
 :numbered:
 :sectanchors!:
 :sectnums:
-:sectlinks:
 :source-highlighter: highlightjs
 :toc: left
 :linkattrs:
@@ -17,35 +16,30 @@
 :ProductLongName: Strimzi
 :ProductName: Strimzi
 :ContextProduct: strimzi
-:ProductVersion: latest
-:GithubVersion: master
 :OpenShiftName: OpenShift
 :OpenShiftLongName: OpenShift Origin
 :OpenShiftVersion: 3.9 and later
+:KubernetesVersion: 1.9 and later
 :KubernetesName: Kubernetes
 :KubernetesLongName: Kubernetes
-:KubernetesVersion: 1.9 and later
 :ProductPlatformName: {OpenShiftName} or {KubernetesName}
 :ProductPlatformLongName: {OpenShiftLongName} or {KubernetesLongName}
 :Namespace: {OpenShiftName} project or {KubernetesName} namespace
 :Namespaces: {OpenShiftName} projects or {KubernetesName} namespaces
 
-// Kafka upgrade attributes
+// Kafka upgrade attributes used in strimzi and kafka upgrades section
 :ProductVersionUpgradingFrom: 0.9.0
 :ProductVersionUpgradingTo: 0.10.0
 :KafkaVersionLower: 2.0.0
 :KafkaVersionHigher: 2.1.1
-:ExistingKafkaVersionUpgradingClusterOperator: 2.0.1
+//log message format version
 :LogMsgVersLower: 2.0
 :LogMsgVersHigher: 2.1
+//used in the procedure for cluster operator upgrade
+:ExistingKafkaVersionUpgradingClusterOperator: 2.0.1
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
-
-// Helm Chart
-:ChartName: strimzi-kafka-operator
-:ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
-:ChartRepositoryUrl: http://strimzi.io/charts/
 
 // External links
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
@@ -64,41 +58,30 @@
 :K8sNetworkPolicyPeerAPI: link:https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer API reference^]
 :K8sPodDisruptionBudgets: link:https://kubernetes.io/docs/concepts/workloads/pods/disruptions/[Disruptions^]
 :K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Disruptions^]
-
-:ApacheKafkaBrokerConfig: link:http://kafka.apache.org/documentation/#brokerconfigs[Apache Kafka documentation^]
+:ApacheKafkaBrokerConfig: link:http://kafka.apache.org/20/documentation.html#brokerconfigs[Apache Kafka documentation^]
 :ApacheKafkaConnectConfig: link:http://kafka.apache.org/20/documentation.html#connectconfigs[Apache Kafka documentation^]
 :ApacheZookeeperConfig: link:http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html[Zookeeper documentation^]
 :ApacheKafkaConsumerConfig: link:http://kafka.apache.org/20/documentation.html#newconsumerconfigs[Apache Kafka documentation^]
 :ApacheKafkaProducerConfig: link:http://kafka.apache.org/20/documentation.html#producerconfigs[Apache Kafka documentation^]
-
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
-
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
 
 // Docker image names
-:DockerOrg: docker.io/strimzi
 :DockerTag: {ProductVersion}
 :DockerRepository: https://hub.docker.com/u/strimzi[Docker Hub^]
-:DockerZookeeper: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerZookeeperStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaImage: strimzi/kafka
+:DockerZookeeper: strimzi/zookeeper:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafka: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaConnect: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaConnectS2I: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerClusterOperator: strimzi/operator:{DockerTag}
-:DockerKafkaInit: strimzi/operator:{DockerTag}
-:DockerTopicOperator: strimzi/operator:{DockerTag}
-:DockerUserOperator: strimzi/operator:{DockerTag}
-:DockerEntityOperatorStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafkaConnect: strimzi/kafka-connect:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafkaConnectS2I: strimzi/kafka-connect-s2i:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerTopicController: strimzi/topic-controller:{DockerTag}
 :DockerImageUser: kafka:kafka
 
 // API Versions
-:KafkaApiVersion: kafka.strimzi.io/v1beta1
-:KafkaConnectApiVersion: kafka.strimzi.io/v1beta1
-:KafkaConnectS2IApiVersion: kafka.strimzi.io/v1beta1
-:KafkaTopicApiVersion: kafka.strimzi.io/v1beta1
-:KafkaUserApiVersion: kafka.strimzi.io/v1beta1
+:KafkaApiVersion: kafka.strimzi.io/v1alpha1
+:KafkaConnectApiVersion: kafka.strimzi.io/v1alpha1
+:KafkaConnectS2IApiVersion: kafka.strimzi.io/v1alpha1
+:KafkaTopicApiVersion: kafka.strimzi.io/v1alpha1
+:KafkaUserApiVersion: kafka.strimzi.io/v1alpha1
 
 // Section enablers
 :Kubernetes:
@@ -108,3 +91,15 @@
 :MetricsAppendix:
 :Downloading:
 :SecurityImg:
+
+//UPSTREAM ONLY (AT PRESENT)
+:sectlinks:
+:GithubVersion: master
+
+// Helm Chart upstream only - deploy cluster operator
+:ChartName: strimzi-kafka-operator
+:ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
+:ChartRepositoryUrl: http://strimzi.io/charts/
+
+//not used upstream
+:ProductVersion: latest
