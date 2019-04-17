@@ -51,7 +51,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 abstract class AbstractResources {
 
     public static final KubeClusterResource CLUSTER = new KubeClusterResource();
-    public static Kubernetes KUBERNETES = CLUSTER.client();
+    public static final Kubernetes KUBE_CLIENT = CLUSTER.client();
 
     MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafka() {
         return customResourcesWithCascading(Kafka.class, KafkaList.class, DoneableKafka.class);
@@ -59,35 +59,35 @@ abstract class AbstractResources {
 
     // This logic is necessary only for the deletion of resources with `cascading: true`
     <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
-        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) KUBERNETES.getClient()).getHttpClient(), KUBERNETES.getClient().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, KUBERNETES.getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
+        return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) KUBE_CLIENT.getClient()).getHttpClient(), KUBE_CLIENT.getClient().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, KUBE_CLIENT.getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
     }
 
     MixedOperation<KafkaConnect, KafkaConnectList, DoneableKafkaConnect, Resource<KafkaConnect, DoneableKafkaConnect>> kafkaConnect() {
-        return KUBERNETES
+        return KUBE_CLIENT
                 .customResources(Crds.kafkaConnect(),
                         KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
     }
 
     MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2I() {
-        return KUBERNETES
+        return KUBE_CLIENT
                 .customResources(Crds.kafkaConnectS2I(),
                         KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class);
     }
 
     MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> kafkaMirrorMaker() {
-        return KUBERNETES
+        return KUBE_CLIENT
                 .customResources(Crds.mirrorMaker(),
                         KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
     }
 
     MixedOperation<KafkaTopic, KafkaTopicList, DoneableKafkaTopic, Resource<KafkaTopic, DoneableKafkaTopic>> kafkaTopic() {
-        return KUBERNETES
+        return KUBE_CLIENT
                 .customResources(Crds.topic(),
                         KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class);
     }
 
     MixedOperation<KafkaUser, KafkaUserList, DoneableKafkaUser, Resource<KafkaUser, DoneableKafkaUser>> kafkaUser() {
-        return KUBERNETES
+        return KUBE_CLIENT
                 .customResources(Crds.kafkaUser(),
                         KafkaUser.class, KafkaUserList.class, DoneableKafkaUser.class);
     }

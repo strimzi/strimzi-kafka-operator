@@ -367,7 +367,7 @@ class SecurityST extends AbstractST {
         kafkaPods[0] = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
         eoPods[0] = StUtils.depSnapshot(NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> zkSnapshot = StUtils.ssSnapshot( NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+            Map<String, String> zkSnapshot = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
             Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
             Map<String, String> eoSnapshot = StUtils.depSnapshot(NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);

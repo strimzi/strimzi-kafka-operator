@@ -86,8 +86,8 @@ class KafkaST extends MessagingBaseST {
         Oc oc = (Oc) KUBE_CMD_CLIENT;
         String clusterName = "openshift-my-cluster";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
-        StUtils.waitForAllStatefulSetPodsReady((zookeeperClusterName(clusterName)));
-        StUtils.waitForAllStatefulSetPodsReady((kafkaClusterName(clusterName)));
+        StUtils.waitForAllStatefulSetPodsReady(zookeeperClusterName(clusterName));
+        StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(clusterName));
         StUtils.waitForDeploymentReady(entityOperatorDeploymentName(clusterName));
 
         //Testing docker images
