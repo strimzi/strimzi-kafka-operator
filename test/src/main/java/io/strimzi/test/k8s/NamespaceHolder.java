@@ -8,7 +8,10 @@ public class NamespaceHolder {
 
     private static String namespace;
 
-    public String setNamespaceToHolder(String setNamespace) {
+    private NamespaceHolder() {
+    }
+
+    static String setNamespaceToHolder(String setNamespace) {
         String previousNamespace = namespace;
         namespace = setNamespace;
         return previousNamespace;

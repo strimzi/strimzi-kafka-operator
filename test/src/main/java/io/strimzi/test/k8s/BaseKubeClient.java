@@ -64,8 +64,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     @Override
     public String namespace(String namespace) {
-        String previous = this.namespace;
-        this.namespace = namespace;
+        String previous = NamespaceHolder.setNamespaceToHolder(namespace);
         return previous;
     }
 
