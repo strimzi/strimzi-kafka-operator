@@ -11,7 +11,7 @@
 = Kafka broker listeners
 
 {ProductName} allows users to configure the listeners which will be enabled in Kafka brokers.
-Three types of listeners are supported:
+Three types of listener are supported:
 
 * Plain listener on port 9092 (without encryption)
 * TLS listener on port 9093 (with encryption)

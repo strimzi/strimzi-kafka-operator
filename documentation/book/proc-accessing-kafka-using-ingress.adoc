@@ -56,7 +56,7 @@ oc apply -f _your-file_
 [source,shell]
 oc extract secret/_cluster-name_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt
 +
-. Use the extracted certificate in your Kafka client to configure TLS connection.
+. Use the extracted certificate in your Kafka client to configure the TLS connection.
 If you enabled any authentication, you will also need to configure SASL or TLS authentication.
 Connect with your client to the host you specified in the configuration on port 443.
 
