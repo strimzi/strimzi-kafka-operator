@@ -74,7 +74,7 @@ On {OpenShiftName}
 oc get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the Strimzi version followed by the Kafka version: `0.11.0-kafka-{KafkaVersionLower}`.
+The image tag shows the Strimzi version followed by the Kafka version. For example, `0.11.0-kafka-{KafkaVersionLower}`.
 
 . Update existing resources to handle deprecated custom resource properties.
 +
