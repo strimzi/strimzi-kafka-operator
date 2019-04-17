@@ -100,14 +100,14 @@
 :Downloading:
 :SecurityImg:
 
-//USED UPSTREAM ONLY
+//EXCLUSIVE TO STRIMZI
 :sectlinks:
 :GithubVersion: master
 
-// Helm Chart upstream only - deploy cluster operator
+// Helm Chart - deploy cluster operator
 :ChartName: strimzi-kafka-operator
 :ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
 :ChartRepositoryUrl: http://strimzi.io/charts/
 
-//not used upstream
+//not used
 :ProductVersion: latest
