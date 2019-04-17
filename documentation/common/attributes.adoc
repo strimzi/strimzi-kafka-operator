@@ -100,7 +100,7 @@
 :Downloading:
 :SecurityImg:
 
-//UPSTREAM ONLY (AT PRESENT)
+//UPSTREAM ONLY
 :sectlinks:
 :GithubVersion: master
 
