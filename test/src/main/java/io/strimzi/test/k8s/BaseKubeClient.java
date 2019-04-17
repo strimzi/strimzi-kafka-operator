@@ -37,6 +37,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     private static final String CREATE = "create";
     private static final String APPLY = "apply";
     private static final String DELETE = "delete";
+
     public static final String DEPLOYMENT = "deployment";
     public static final String STATEFUL_SET = "statefulset";
     public static final String SERVICE = "service";

@@ -7,6 +7,7 @@ package io.strimzi.test.k8s;
 import io.strimzi.test.executor.ProcessResult;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -111,21 +112,6 @@ public interface KubeClient<K extends KubeClient<K>> {
      * @return This kube client.
      */
     K waitForDeploymentConfig(String name);
-
-    /**
-     * Wait for the pod with the given {@code name} to be in the ready state.
-     * @param name The pod name.
-     * @return This kube client.
-     */
-    K waitForPod(String name);
-
-    /**
-     * Wait for the statefulset with the given {@code name} to have
-     * currentReplicas == replicas, and if {@code waitForPods} is true
-     * wait for the pods to be in the ready state.
-     * * @return This kube client.
-     */
-    K waitForStatefulSet(String name, int expectPods);
 
     /**
      * Wait for the resource with the given {@code name} to be created.
