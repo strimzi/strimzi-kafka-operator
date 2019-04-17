@@ -32,16 +32,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectS2IList;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.model.DoneableKafka;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.test.k8s.NamespaceHolder;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
@@ -74,7 +64,7 @@ public class Kubernetes extends NamespaceHolder {
         return client;
     }
 
-    public String getNamespace(){
+    public String getNamespace() {
         return namespace;
     }
 
@@ -87,15 +77,15 @@ public class Kubernetes extends NamespaceHolder {
         client.namespaces().withName(name).delete();
     }
 
-    public void deleteConfigMap (String configMapName) {
+    public void deleteConfigMap(String configMapName) {
         client.configMaps().inNamespace(namespace).withName(configMapName).delete();
     }
 
-    public ConfigMap getConfigMap (String configMapName) {
+    public ConfigMap getConfigMap(String configMapName) {
         return client.configMaps().inNamespace(namespace).withName(configMapName).get();
     }
 
-    public boolean getConfigMapStatus (String configMapName) {
+    public boolean getConfigMapStatus(String configMapName) {
         return client.configMaps().inNamespace(namespace).withName(configMapName).isReady();
     }
 
@@ -228,11 +218,11 @@ public class Kubernetes extends NamespaceHolder {
         return client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).isReady();
     }
 
-    public void deleteStatefulSet (String statefulSetName) {
+    public void deleteStatefulSet(String statefulSetName) {
         client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).delete();
     }
 
-    public Deployment createOrReplaceDeployment (Deployment deployment) {
+    public Deployment createOrReplaceDeployment(Deployment deployment) {
         return client.apps().deployments().inNamespace(namespace).createOrReplace(deployment);
     }
 
@@ -257,7 +247,7 @@ public class Kubernetes extends NamespaceHolder {
         return client.apps().deployments().inNamespace(namespace).withName(deploymentName).isReady();
     }
 
-    public void deleteDeployment (String deploymentName) {
+    public void deleteDeployment(String deploymentName) {
         client.apps().deployments().inNamespace(namespace).withName(deploymentName).delete();
     }
 
@@ -285,15 +275,15 @@ public class Kubernetes extends NamespaceHolder {
         return client.secrets().inNamespace(namespace).list().getItems();
     }
 
-    public Service getService (String serviceName) {
+    public Service getService(String serviceName) {
         return client.services().inNamespace(namespace).withName(serviceName).get();
     }
 
-    public boolean getServiceStatus (String serviceName) {
+    public boolean getServiceStatus(String serviceName) {
         return client.services().inNamespace(namespace).withName(serviceName).isReady();
     }
 
-    public void deleteService (String serviceName) {
+    public void deleteService(String serviceName) {
         client.services().inNamespace(namespace).withName(serviceName).delete();
     }
 
@@ -326,31 +316,19 @@ public class Kubernetes extends NamespaceHolder {
                 .collect(Collectors.toList());
     }
 
-    public KubernetesRoleBinding createOrReplaceKubernetesRoleBinding (KubernetesRoleBinding kubernetesRoleBinding) {
+    public KubernetesRoleBinding createOrReplaceKubernetesRoleBinding(KubernetesRoleBinding kubernetesRoleBinding) {
         return client.rbac().kubernetesRoleBindings().inNamespace(namespace).createOrReplace(kubernetesRoleBinding);
     }
 
-    public KubernetesClusterRoleBinding createOrReplaceKubernetesClusterRoleBinding (KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
+    public KubernetesClusterRoleBinding createOrReplaceKubernetesClusterRoleBinding(KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
         return client.rbac().kubernetesClusterRoleBindings().inNamespace(namespace).createOrReplace(kubernetesClusterRoleBinding);
     }
 
-    public Boolean deleteKubernetesClusterRoleBinding (KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
+    public Boolean deleteKubernetesClusterRoleBinding(KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
         return client.rbac().kubernetesClusterRoleBindings().inNamespace(namespace).delete(kubernetesClusterRoleBinding);
     }
 
-    public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources (CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
+    public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
         return client.customResources(crd,resourceType, listClass, doneClass); //TODO namespace here
-    }
-
-    public Kafka getKafka(String clusterName) {
-        return client.customResources(Crds.kafka(), Kafka.class, KafkaList.class, DoneableKafka.class).inNamespace(namespace).withName(clusterName).get();
-    }
-
-    public KafkaConnect getKafkaConnect(String clusterName) {
-        return client.customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class).inNamespace(namespace).withName(clusterName).get();
-    }
-
-    public KafkaConnectS2I getKafkaConnectS2I(String clusterName) {
-        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class).inNamespace(namespace).withName(clusterName).get();
     }
 }

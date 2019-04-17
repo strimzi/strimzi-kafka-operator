@@ -5,6 +5,9 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectS2IList;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.JbodStorage;
@@ -50,6 +53,18 @@ public class OpenShiftTemplatesST extends AbstractST {
 
     public static KubeClusterResource cluster = new KubeClusterResource();
     private Oc oc = (Oc) KUBE_CMD_CLIENT;
+
+    public Kafka getKafka(String clusterName) {
+        return KUBE_CLIENT.getClient().customResources(Crds.kafka(), Kafka.class, KafkaList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
+    }
+
+    public KafkaConnect getKafkaConnect(String clusterName) {
+        return KUBE_CLIENT.getClient().customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class).inNamespace(NAMESPACE).withName(clusterName).get();
+    }
+
+    public KafkaConnectS2I getKafkaConnectS2I(String clusterName) {
+        return KUBE_CLIENT.getClient().customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class).inNamespace(NAMESPACE).withName(clusterName).get();
+    }
 
     @Test
     void testStrimziEphemeral() {
