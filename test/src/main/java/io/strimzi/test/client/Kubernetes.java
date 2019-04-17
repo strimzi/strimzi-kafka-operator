@@ -48,7 +48,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class Kubernetes extends NamespaceHolder {
+public class Kubernetes {
 
     private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
     protected final KubernetesClient client;
