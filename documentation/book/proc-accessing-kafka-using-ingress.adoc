@@ -51,7 +51,7 @@ spec:
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
 
-. Extract the public certificate of the broker certification authority
+. Extract the public certificate of the broker certificate authority
 +
 [source,shell]
 oc extract secret/_cluster-name_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt

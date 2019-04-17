@@ -167,7 +167,7 @@ For more information about enabling TLS passthrough see {NginxIngressControllerT
 Because it is using the TLS passthrough functionality, TLS encryption will be always used when exposing Kafka using `Ingress`.
 
 The Ingress controller does not assign any hostnames automatically.
-You have to specify the hostnames which should be used by the bootstrap and per-broker services in the `configuration` section.
+You have to specify the hostnames which should be used by the bootstrap and per-broker services in the `spec.kafka.listeners.external.configuration` section.
 You also have to make sure that the hostnames resolve to the Ingress endpoints.
 {ProductName} will not perform any validation that the requested hosts are available and properly routed to the Ingress endpoints.
 
