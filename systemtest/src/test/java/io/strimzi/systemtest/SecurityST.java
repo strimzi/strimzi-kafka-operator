@@ -8,6 +8,9 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.OpenShiftOnly;
+import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
@@ -35,6 +38,8 @@ import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
+import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -165,21 +170,21 @@ class SecurityST extends AbstractST {
         createClusterWithExternalRoute();
         String userName = "alice";
         testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
-            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+        waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS, () -> KUBE_CLIENT.getSecret("alice") != null,
+            () -> LOGGER.error("Couldn't find user secret {}", KUBE_CLIENT.listSecrets()));
 
         waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Get all pods, and their resource versions
-        Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> zkPods = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaCerts = new HashMap<>();
         List<String> secrets = asList(clusterCaCertificateSecretName(CLUSTER_NAME),
                 clientsCaCertificateSecretName(CLUSTER_NAME));
         for (String secretName : secrets) {
-            Secret secret = CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).get();
+            Secret secret = KUBE_CLIENT.getSecret(secretName);
             String value = secret.getData().get("ca.crt");
             assertNotNull("ca.crt in " + secretName + " should not be null", value);
             initialCaCerts.put(secretName, value);
@@ -189,21 +194,21 @@ class SecurityST extends AbstractST {
                     .endMetadata()
                 .build();
             LOGGER.info("Patching secret {} with {}", secretName, STRIMZI_IO_FORCE_RENEW);
-            CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).patch(annotated);
+            KUBE_CLIENT.patchSecret(secretName, annotated);
         }
 
-        Map<String, String> eoPod = StUtils.depSnapshot(CLIENT, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        Map<String, String> eoPod = StUtils.depSnapshot(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Wait for zk to rolling restart ...");
-        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
+        StUtils.waitTillSsHasRolled(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
         LOGGER.info("Wait for kafka to rolling restart ...");
-        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
+        StUtils.waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
         LOGGER.info("Wait for EO to rolling restart ...");
-        eoPod = StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPod);
+        eoPod = StUtils.waitTillDepHasRolled(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPod);
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
-            Secret secret = CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).get();
+            Secret secret = KUBE_CLIENT.getSecret(secretName);
             assertNotNull(secret, "Secret " + secretName + " should exist");
             assertNotNull(secret.getData(), "CA cert in " + secretName + " should have non-null 'data'");
             String value = secret.getData().get("ca.crt");
@@ -217,10 +222,10 @@ class SecurityST extends AbstractST {
         String bobUserName = "bob";
         testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS, () -> {
-            return CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null;
+            return KUBE_CLIENT.getSecret(bobUserName) != null;
         },
             () -> {
-                LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems());
+                LOGGER.error("Couldn't find user secret {}", KUBE_CLIENT.listSecrets());
             });
 
         waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
@@ -232,24 +237,24 @@ class SecurityST extends AbstractST {
     void testAutoReplaceCaKeysTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
-        testMethodResources().tlsUser(CLUSTER_NAME, aliceUserName).done();
+        resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
         waitFor("Alic's secret to exist", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
-            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
-            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+            () -> KUBE_CLIENT.getSecret(aliceUserName) != null,
+            () -> LOGGER.error("Couldn't find user secret {}", KUBE_CLIENT.listSecrets()));
 
         waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
 
         // Get all pods, and their resource versions
-        Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
-        Map<String, String> eoPod = StUtils.depSnapshot(CLIENT, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        Map<String, String> zkPods = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> eoPod = StUtils.depSnapshot(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaKeys = new HashMap<>();
         List<String> secrets = asList(clusterCaKeySecretName(CLUSTER_NAME),
                 clientsCaKeySecretName(CLUSTER_NAME));
         for (String secretName : secrets) {
-            Secret secret = CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).get();
+            Secret secret = KUBE_CLIENT.getSecret(secretName);
             String value = secret.getData().get("ca.key");
             assertNotNull("ca.key in " + secretName + " should not be null", value);
             initialCaKeys.put(secretName, value);
@@ -259,26 +264,26 @@ class SecurityST extends AbstractST {
                     .endMetadata()
                     .build();
             LOGGER.info("Patching secret {} with {}", secretName, STRIMZI_IO_FORCE_REPLACE);
-            CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).patch(annotated);
+            KUBE_CLIENT.patchSecret(secretName, annotated);
         }
 
         LOGGER.info("Wait for zk to rolling restart (1)...");
-        zkPods = StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
+        zkPods = StUtils.waitTillSsHasRolled(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
         LOGGER.info("Wait for kafka to rolling restart (1)...");
-        kafkaPods = StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
+        kafkaPods = StUtils.waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
         LOGGER.info("Wait for EO to rolling restart (1)...");
-        eoPod = StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPod);
+        eoPod = StUtils.waitTillDepHasRolled(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPod);
 
         LOGGER.info("Wait for zk to rolling restart (2)...");
-        zkPods = StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
+        zkPods = StUtils.waitTillSsHasRolled(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), zkPods);
         LOGGER.info("Wait for kafka to rolling restart (2)...");
-        kafkaPods = StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
+        kafkaPods = StUtils.waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), kafkaPods);
         LOGGER.info("Wait for EO to rolling restart (2)...");
-        eoPod = StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPod);
+        eoPod = StUtils.waitTillDepHasRolled(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), eoPod);
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
-            Secret secret = CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).get();
+            Secret secret = KUBE_CLIENT.getSecret(secretName);
             assertNotNull(secret, "Secret " + secretName + " should exist");
             assertNotNull(secret.getData(), "CA key in " + secretName + " should have non-null 'data'");
             String value = secret.getData().get("ca.key");
@@ -291,10 +296,10 @@ class SecurityST extends AbstractST {
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
-        testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
+        resources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("Bob's secret to exist", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
-            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null,
-            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+            () -> KUBE_CLIENT.getSecret(bobUserName) != null,
+            () -> LOGGER.error("Couldn't find user secret {}", KUBE_CLIENT.listSecrets()));
 
         waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
     }
@@ -358,13 +363,13 @@ class SecurityST extends AbstractST {
         Map<String, String>[] kafkaPods = new Map[1];
         Map<String, String>[] eoPods = new Map[1];
         AtomicInteger count = new AtomicInteger();
-        zkPods[0] = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        kafkaPods[0] = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
-        eoPods[0] = StUtils.depSnapshot(CLIENT, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
+        zkPods[0] = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+        kafkaPods[0] = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
+        eoPods[0] = StUtils.depSnapshot(NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> zkSnapshot = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-            Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
-            Map<String, String> eoSnapshot = StUtils.depSnapshot(CLIENT, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
+            Map<String, String> zkSnapshot = StUtils.ssSnapshot( NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+            Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
+            Map<String, String> eoSnapshot = StUtils.depSnapshot(NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
@@ -393,7 +398,7 @@ class SecurityST extends AbstractST {
 
     private void waitForCertToChange(String originalCert, String secretName) {
         waitFor("Cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Secret secret = CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).get();
+            Secret secret = KUBE_CLIENT.getSecret(secretName);
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
                 String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
                 boolean changed = !originalCert.equals(currentCert);
@@ -417,8 +422,8 @@ class SecurityST extends AbstractST {
                         "strimzi.io/kind", "Kafka"))
                 .endMetadata()
                 .withData(singletonMap(keyName, Base64.getEncoder().encodeToString(certAsString.getBytes(StandardCharsets.US_ASCII))))
-                .build();
-        CLIENT.secrets().inNamespace(NAMESPACE).create(secret);
+            .build();
+        KUBE_CLIENT.createSecret(secret);
         return certAsString;
     }
 

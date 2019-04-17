@@ -25,6 +25,9 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 class RollingUpdateST extends AbstractST {

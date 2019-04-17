@@ -84,11 +84,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return defaultContext();
     }
 
-    @Override
-    public boolean clientAvailable() {
-        return Exec.isExecutableOnPath(cmd());
-    }
-
     protected List<String> namespacedCommand(String... rest) {
         return namespacedCommand(asList(rest));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018, EnMasse authors.
+ * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.test.client;
@@ -32,6 +32,16 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectS2IList;
+import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaConnect;
+import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.test.k8s.NamespaceHolder;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
@@ -330,5 +340,17 @@ public class Kubernetes extends NamespaceHolder {
 
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources (CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
         return client.customResources(crd,resourceType, listClass, doneClass); //TODO namespace here
+    }
+
+    public Kafka getKafka(String clusterName) {
+        return client.customResources(Crds.kafka(), Kafka.class, KafkaList.class, DoneableKafka.class).inNamespace(namespace).withName(clusterName).get();
+    }
+
+    public KafkaConnect getKafkaConnect(String clusterName) {
+        return client.customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class).inNamespace(namespace).withName(clusterName).get();
+    }
+
+    public KafkaConnectS2I getKafkaConnectS2I(String clusterName) {
+        return client.customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class).inNamespace(namespace).withName(clusterName).get();
     }
 }

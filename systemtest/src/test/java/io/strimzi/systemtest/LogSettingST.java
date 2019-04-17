@@ -9,16 +9,19 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorJvmOptions;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.List;
@@ -170,11 +173,11 @@ class LogSettingST extends AbstractST {
         String eoName = entityOperatorDeploymentName(CLUSTER_NAME);
         String kafkaName = kafkaClusterName(CLUSTER_NAME);
         String zkName = zookeeperClusterName(CLUSTER_NAME);
-        Map<String, String> connectPods = StUtils.depSnapshot(CLIENT, NAMESPACE, connectName);
-        Map<String, String> mmPods = StUtils.depSnapshot(CLIENT, NAMESPACE, mmName);
-        Map<String, String> eoPods = StUtils.depSnapshot(CLIENT, NAMESPACE, eoName);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaName);
-        Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zkName);
+        Map<String, String> connectPods = StUtils.depSnapshot(NAMESPACE, connectName);
+        Map<String, String> mmPods = StUtils.depSnapshot(NAMESPACE, mmName);
+        Map<String, String> eoPods = StUtils.depSnapshot(NAMESPACE, eoName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaName);
+        Map<String, String> zkPods = StUtils.ssSnapshot(NAMESPACE, zkName);
 
         JvmOptions jvmOptions = new JvmOptions();
         jvmOptions.setGcLoggingEnabled(false);
@@ -192,11 +195,11 @@ class LogSettingST extends AbstractST {
         replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
 
-        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaName, kafkaPods);
-        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkName, zkPods);
-        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoName, eoPods);
-        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, connectName, connectPods);
-        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, mmName, mmPods);
+        StUtils.waitTillSsHasRolled(NAMESPACE, kafkaName, kafkaPods);
+        StUtils.waitTillSsHasRolled(NAMESPACE, zkName, zkPods);
+        StUtils.waitTillDepHasRolled(NAMESPACE, eoName, eoPods);
+        StUtils.waitTillDepHasRolled(NAMESPACE, connectName, connectPods);
+        StUtils.waitTillDepHasRolled(NAMESPACE, mmName, mmPods);
 
         assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is disabled");
         assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is disabled");
@@ -227,7 +230,7 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName, String containerName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        List<Container> containers = CLIENT.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers();
+        List<Container> containers = KUBE_CLIENT.getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers();
         Container container = getContainerByName(containerName, containers);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
@@ -235,14 +238,14 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        Container container = CLIENT.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = KUBE_CLIENT.getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
 
     private Boolean checkGcLoggingStatefulSets(String statefulSetName) {
         LOGGER.info("Checking stateful set: {}", statefulSetName);
-        Container container = CLIENT.inNamespace(NAMESPACE).apps().statefulSets().withName(statefulSetName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = KUBE_CLIENT.getStatefulSet(statefulSetName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }

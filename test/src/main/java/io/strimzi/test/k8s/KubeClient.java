@@ -7,7 +7,6 @@ package io.strimzi.test.k8s;
 import io.strimzi.test.executor.ProcessResult;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 

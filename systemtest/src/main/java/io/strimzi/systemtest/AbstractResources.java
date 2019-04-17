@@ -23,8 +23,6 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingList;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.CustomResourceOperationsImpl;
@@ -47,10 +45,8 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.test.Environment;
 import io.strimzi.test.client.Kubernetes;
 import io.strimzi.test.k8s.KubeClusterResource;
-import okhttp3.OkHttpClient;
 
 abstract class AbstractResources {
 

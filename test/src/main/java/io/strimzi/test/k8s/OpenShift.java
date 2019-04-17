@@ -6,7 +6,7 @@ package io.strimzi.test.k8s;
 
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.strimzi.test.Environment;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.client.Kubernetes;
 import io.strimzi.test.executor.Exec;

@@ -69,7 +69,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @BeforeEach
     void createSecondNamespaceResources() {
         KUBE_CMD_CLIENT.namespace(SECOND_NAMESPACE);
-        secondNamespaceResources = new Resources(namespacedClient());
+        secondNamespaceResources = new Resources();
         KUBE_CMD_CLIENT.namespace(CO_NAMESPACE);
     }
 

@@ -206,7 +206,7 @@ public class StrimziUpgradeST extends AbstractST {
         LOGGER.info("Waiting for Kafka SS roll");
         StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, kafkaPods);
         LOGGER.info("Checking Kafka pods using new image");
-        waitTillAllPodsUseImage(CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaSsName).get().getSpec().getSelector().getMatchLabels(),
+        waitTillAllPodsUseImage(KUBE_CLIENT.getStatefulSet(kafkaSsName).getSpec().getSelector().getMatchLabels(),
                 kafkaImage);
         LOGGER.info("Waiting for EO Dep roll");
         // Check the TO and UO also got upgraded

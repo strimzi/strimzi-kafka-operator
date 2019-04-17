@@ -1,9 +1,9 @@
 /*
- * Copyright 2016-2018, EnMasse authors.
+ * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-package io.strimzi.test;
+package io.strimzi.systemtest;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,14 +71,6 @@ public class Environment {
 
     public String testLogDir() {
         return testLogDir;
-    }
-
-    public UserCredentials keycloakCredentials() {
-        if (keycloakAdminUser == null || keycloakAdminPassword == null) {
-            return null;
-        } else {
-            return new UserCredentials(keycloakAdminUser, keycloakAdminPassword);
-        }
     }
 
     public boolean useMinikube() {

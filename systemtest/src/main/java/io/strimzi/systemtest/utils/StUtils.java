@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -142,7 +143,7 @@ public class StUtils {
                     return false;
                 }
             });
-        StUtils.waitForAllStatefulSetPodsReady(namespace, name);
+        StUtils.waitForAllStatefulSetPodsReady(name);
         return ssSnapshot(namespace, name);
     }
 
@@ -150,7 +151,7 @@ public class StUtils {
         long timeLeft = TestUtils.waitFor("Deployment roll of " + name,
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(namespace, name, snapshot));
         StUtils.waitForDeploymentReady(namespace, name);
-        StUtils.waitForPodsReady(namespace, KUBE_CLIENT.getDeployment(name).getSpec().getSelector(), true);
+        StUtils.waitForPodsReady(KUBE_CLIENT.getDeployment(name).getSpec().getSelector(), true);
         return depSnapshot(namespace, name);
     }
 
@@ -218,6 +219,22 @@ public class StUtils {
         });
     }
 
+    public static void waitForPodUpdate(String podName, Date startTime) {
+        TestUtils.waitFor(podName + " update",Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                startTime.before(KUBE_CLIENT.getCreationTimestampForPod(podName))
+        );
+    }
+
+    /**
+     * Wait until the deployment will be deleted
+     */
+    public static void waitForDeploymentDeletion(String name) {
+        LOGGER.info("Waiting for Deployment deletion {}", name);
+        TestUtils.waitFor("deployment is deleted" + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> !KUBE_CLIENT.getDeploymentStatus(name));
+        LOGGER.info("Deployment {} was deleted", name);
+    }
+
     /**
      * Wait until the deployment is ready
      */
@@ -258,6 +275,16 @@ public class StUtils {
         LOGGER.info("StatefulSet {} was deleted", name);
     }
 
+    /**
+     * Wait until the config map will be deleted
+     */
+    public static void waitForConfigMapDeletion(String name) {
+        LOGGER.info("Waiting for config map deletion {}", name);
+        TestUtils.waitFor("Config map " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> !KUBE_CLIENT.getConfigMapStatus(name));
+        LOGGER.info("Config map {} was deleted", name);
+    }
+
     public static void waitForSecretReady (String secretName) {
         TestUtils.waitFor("Expected secret exists", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             return KUBE_CLIENT.getSecret(secretName) != null;
@@ -296,5 +323,12 @@ public class StUtils {
 
         TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
                 () -> KUBE_CLIENT.getPod(name) == null);
+    }
+
+    public static void waitForKafkaTopicDeletion (String topicName) {
+        LOGGER.info("Waiting for Kafka topic deletion {}", topicName);
+        TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+                Crds.topicOperation(KUBE_CLIENT.getClient()).inNamespace(KUBE_CLIENT.getNamespace()).withName(topicName).get() == null
+        );
     }
 }

@@ -39,7 +39,6 @@ import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.TimeoutException;
-import io.strimzi.test.executor.ProcessResult;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.timemeasuring.Operation;
@@ -398,7 +397,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
         return Arrays.asList(KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
-                "bin/kafka-topics.sh --list --zookeeper localhost:" + port).out().split("\\s+"));
+                "bin/kafka-topics.sh --list --zookeeper localhost:" + port).split("\\s+"));
     }
 
     public String createTopicUsingPodCLI(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {

@@ -1,7 +1,5 @@
 package io.strimzi.test.k8s;
 
-import io.strimzi.test.k8s.BaseKubeClient;
-
 public class NamespaceHolder {
 
     private static String namespace;
