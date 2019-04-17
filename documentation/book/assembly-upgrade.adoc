@@ -56,7 +56,8 @@ endif::StrimziUpgrades[]
 
 .Message format version
 
-When a producer sends a message to a Kafka broker, the message is encoded using a specific format. This is referred to as the message format version. You can configure a Kafka broker to convert messages from newer format versions to a given older format version before the broker appends the message to the log.
+When a producer sends a message to a Kafka broker, the message is encoded using a specific format. 
+The format can change between Kafka releases, so messages include a version identifying which version of the format they were encoded with. You can configure a Kafka broker to convert messages from newer format versions to a given older format version before the broker appends the message to the log.
 
 In Kafka, there are two different methods for setting the message format version:
 
