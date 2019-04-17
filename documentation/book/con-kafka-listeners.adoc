@@ -161,7 +161,7 @@ Kafka clients can use these `Ingress` resources to connect to Kafka on port 443.
 
 NOTE: External listeners using `Ingress` have been currently tested only with the {NginxIngressController}.
 
-{ProductName} is using the TLS passthrough feature of the {NginxIngressController}.
+{ProductName} uses the TLS passthrough feature of the {NginxIngressController}.
 Make sure TLS passthrough is enabled in your {NginxIngressController} deployment.
 For more information about enabling TLS passthrough see {NginxIngressControllerTLSPassthrough}.
 Because it is using the TLS passthrough functionality, TLS encryption will be always used when exposing Kafka using `Ingress`.
