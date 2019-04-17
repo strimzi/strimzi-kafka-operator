@@ -22,8 +22,7 @@ Broker down-conversion is configured in two ways:
 
 * The broker-level `log.message.format.version` is the default for topics that do not have the topic-level `message.format.version` configured.
 
-Another aspect to consider is that once new-version messages have been published to a topic then they will be visible to consumers.
-This is because brokers perform down-conversion when they receive messages from producers, not when they are sent to consumers.
+Messages published to a topic in a new-version format will be visible to consumers, because brokers perform down-conversion when they receive messages from producers, not when they are sent to consumers.
 
 There are a number of strategies you can use to upgrade your clients:
 
