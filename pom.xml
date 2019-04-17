@@ -69,11 +69,11 @@
         <jacoco.version>0.7.9</jacoco.version>
         <license.maven.version>2.11</license.maven.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
-        <sundrio.version>0.17.2</sundrio.version>
+        <sundrio.version>0.18.0</sundrio.version>
 
-        <fabric8.kubernetes-client.version>4.2.0</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>4.2.0</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>4.2.0</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>4.2.1</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>4.2.1</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>4.2.1</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <okhttp.version>3.12.0</okhttp.version>
         <vertx.version>3.7.1</vertx.version>
@@ -94,7 +94,6 @@
         <slf4j.version>1.7.25</slf4j.version>
         <quartz.version>2.2.1</quartz.version>
         <debezium.version>0.9.0.Final</debezium.version>
-        <bouncy.version>1.61</bouncy.version>
 
         <jupiter.version>5.5.0-RC1</jupiter.version>
         <junit.platform.version>1.4.0</junit.platform.version>
@@ -384,16 +383,6 @@
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${bouncy.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
