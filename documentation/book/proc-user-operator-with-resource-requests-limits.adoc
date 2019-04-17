@@ -1,9 +1,9 @@
 // Module included in the following assemblies:
 //
-// assembly-deploying-the-topic-operator.adoc
+// assembly-deploying-the-user-operator.adoc
 
-[id='proc-topic-operator-with-resource-requests-limits-{context}']
-= Configuring the Topic Operator with resource requests and limits
+[id='proc-user-operator-with-resource-requests-limits-{context}']
+= Configuring the User Operator with resource requests and limits
 
 .Prerequisites
 
@@ -11,7 +11,7 @@
 
 .Procedure
 
-. Edit the `Kafka` resource specifying in the `Kafka.spec.entityOperator.topicOperator.resources` property the resource requests and limits you want the Topic Operator to have.
+. Edit the `Kafka` resource specifying in the `Kafka.spec.entityOperator.userOperator.resources` property the resource requests and limits you want the User Operator to have.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -19,7 +19,7 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   # kafka and zookeeper sections...
-  topicOperator:
+  userOperator:
     resources:
       request:
         cpu: "1"
