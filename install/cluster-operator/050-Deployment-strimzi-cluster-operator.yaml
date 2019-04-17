@@ -15,7 +15,7 @@ spec:
       serviceAccountName: strimzi-cluster-operator
       containers:
       - name: strimzi-cluster-operator
-        image: strimzi/cluster-operator:0.11.1
+        image: strimzi/cluster-operator:0.11.2
         imagePullPolicy: IfNotPresent
         env:
         - name: STRIMZI_NAMESPACE
@@ -27,39 +27,39 @@ spec:
         - name: STRIMZI_OPERATION_TIMEOUT_MS
           value: "300000"
         - name: STRIMZI_DEFAULT_ZOOKEEPER_IMAGE
-          value: strimzi/zookeeper:0.11.1-kafka-2.0.0
+          value: strimzi/zookeeper:0.11.2-kafka-2.0.0
         - name: STRIMZI_KAFKA_IMAGES
           value: |
-            2.0.0=strimzi/kafka:0.11.1-kafka-2.0.0
-            2.0.1=strimzi/kafka:0.11.1-kafka-2.0.1
-            2.1.0=strimzi/kafka:0.11.1-kafka-2.1.0
+            2.0.0=strimzi/kafka:0.11.2-kafka-2.0.0
+            2.0.1=strimzi/kafka:0.11.2-kafka-2.0.1
+            2.1.0=strimzi/kafka:0.11.2-kafka-2.1.0
         - name: STRIMZI_KAFKA_CONNECT_IMAGES
           value: |
-            2.0.0=strimzi/kafka-connect:0.11.1-kafka-2.0.0
-            2.0.1=strimzi/kafka-connect:0.11.1-kafka-2.0.1
-            2.1.0=strimzi/kafka-connect:0.11.1-kafka-2.1.0
+            2.0.0=strimzi/kafka-connect:0.11.2-kafka-2.0.0
+            2.0.1=strimzi/kafka-connect:0.11.2-kafka-2.0.1
+            2.1.0=strimzi/kafka-connect:0.11.2-kafka-2.1.0
         - name: STRIMZI_KAFKA_CONNECT_S2I_IMAGES
           value: |
-            2.0.0=strimzi/kafka-connect-s2i:0.11.1-kafka-2.0.0
-            2.0.1=strimzi/kafka-connect-s2i:0.11.1-kafka-2.0.1
-            2.1.0=strimzi/kafka-connect-s2i:0.11.1-kafka-2.1.0
+            2.0.0=strimzi/kafka-connect-s2i:0.11.2-kafka-2.0.0
+            2.0.1=strimzi/kafka-connect-s2i:0.11.2-kafka-2.0.1
+            2.1.0=strimzi/kafka-connect-s2i:0.11.2-kafka-2.1.0
         - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
           value: |
-            2.0.0=strimzi/kafka-mirror-maker:0.11.1-kafka-2.0.0
-            2.0.1=strimzi/kafka-mirror-maker:0.11.1-kafka-2.0.1
-            2.1.0=strimzi/kafka-mirror-maker:0.11.1-kafka-2.1.0
+            2.0.0=strimzi/kafka-mirror-maker:0.11.2-kafka-2.0.0
+            2.0.1=strimzi/kafka-mirror-maker:0.11.2-kafka-2.0.1
+            2.1.0=strimzi/kafka-mirror-maker:0.11.2-kafka-2.1.0
         - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-          value: strimzi/topic-operator:0.11.1
+          value: strimzi/topic-operator:0.11.2
         - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-          value: strimzi/user-operator:0.11.1
+          value: strimzi/user-operator:0.11.2
         - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-          value: strimzi/kafka-init:0.11.1
+          value: strimzi/kafka-init:0.11.2
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE
-          value: strimzi/zookeeper-stunnel:0.11.1
+          value: strimzi/zookeeper-stunnel:0.11.2
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE
-          value: strimzi/kafka-stunnel:0.11.1
+          value: strimzi/kafka-stunnel:0.11.2
         - name: STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE
-          value: strimzi/entity-operator-stunnel:0.11.1
+          value: strimzi/entity-operator-stunnel:0.11.2
         - name: STRIMZI_LOG_LEVEL
           value: INFO
         livenessProbe:
