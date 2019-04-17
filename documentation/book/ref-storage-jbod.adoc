@@ -47,4 +47,4 @@ Where `_id_` is the ID of the volume used for storing data for Kafka broker pod 
 The JBOD volumes will be used by the Kafka brokers as log directories mounted into the following path:
 
 `/var/lib/kafka/data-_id_/kafka-log_idx_`::
-Where `_id_` is the ID of the volume used for storing data for Kafka broker pod `_idx_`. E.g. `/var/lib/kafka/data-0/kafka-log0`.
+Where `_id_` is the ID of the volume used for storing data for Kafka broker pod `_idx_`. For example `/var/lib/kafka/data-0/kafka-log0`.
