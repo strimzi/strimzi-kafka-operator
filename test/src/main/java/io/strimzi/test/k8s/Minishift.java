@@ -4,16 +4,15 @@
  */
 package io.strimzi.test.k8s;
 
-import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.test.client.Kubernetes;
 import io.strimzi.test.executor.Exec;
 
 public class Minishift implements KubeCluster {
 
     private static final String CMD = "minishift";
-    private static final Environment ENVIRONMENT = new Environment();
+    public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
 
     @Override
     public boolean isAvailable() {
@@ -47,9 +46,7 @@ public class Minishift implements KubeCluster {
     }
 
     public Kubernetes defaultClient() {
-        return new Kubernetes(new DefaultOpenShiftClient(new ConfigBuilder().withMasterUrl(ENVIRONMENT.getApiUrl())
-                .withOauthToken(ENVIRONMENT.getApiToken())
-                .build()), "myproject");
+        return new Kubernetes(new DefaultOpenShiftClient(CONFIG), "myproject");
     }
 
     public String toString() {

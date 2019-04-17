@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.test.client.Kubernetes;
 import io.strimzi.test.executor.Exec;
 
+import static io.strimzi.test.k8s.Minishift.CONFIG;
+
 /**
  * A {@link KubeCluster} implementation for {@code minikube} and {@code minishift}.
  */
@@ -45,7 +47,7 @@ public class Minikube implements KubeCluster {
     }
 
     public Kubernetes defaultClient() {
-        return new Kubernetes(new DefaultKubernetesClient(), "default");
+        return new Kubernetes(new DefaultKubernetesClient(CONFIG), "default");
     }
 
     public String toString() {

@@ -4,20 +4,20 @@
  */
 package io.strimzi.test.k8s;
 
-import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.client.Kubernetes;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.test.k8s.Minishift.CONFIG;
+
 public class OpenShift implements KubeCluster {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShift.class);
     private static final String OC = "oc";
-    private static final Environment ENVIRONMENT = new Environment();
 
     @Override
     public boolean isAvailable() {
@@ -68,9 +68,7 @@ public class OpenShift implements KubeCluster {
     }
 
     public Kubernetes defaultClient() {
-        return new Kubernetes(new DefaultOpenShiftClient(new ConfigBuilder().withMasterUrl(ENVIRONMENT.getApiUrl())
-                .withOauthToken(ENVIRONMENT.getApiToken())
-                .build()), "myproject");
+        return new Kubernetes(new DefaultOpenShiftClient(CONFIG), "myproject");
     }
 
     public String toString() {

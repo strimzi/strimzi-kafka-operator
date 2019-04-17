@@ -59,28 +59,28 @@ public class KubeClusterResource {
     }
 
     public KubeClient cmdClient() {
-        if (bootstrap && cmdClient == null) {
+        if (cmdClient == null) {
             this.cmdClient = cluster().defaultCmdClient();
         }
         return cmdClient;
     }
 
     public Kubernetes client() {
-        if (bootstrap && client == null) {
+        if (client == null) {
             this.client = cluster().defaultClient();
         }
         return client;
     }
 
     public HelmClient helmClient() {
-        if (bootstrap && helmClient == null) {
+        if (helmClient == null) {
             this.helmClient = HelmClient.findClient(cmdClient());
         }
         return helmClient;
     }
 
     public KubeCluster cluster() {
-        if (bootstrap && cluster == null) {
+        if (cluster == null) {
             this.cluster = KubeCluster.bootstrap();
         }
         return cluster;
