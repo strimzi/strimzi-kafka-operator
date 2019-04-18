@@ -64,7 +64,7 @@ public class MessagingBaseST extends AbstractST {
      * @param timeout timeout
      * @param clusterName cluster name
      */
-    void availabilityTest(int messageCount, int timeout, String clusterName) throws Exception {
+    void availabilityTest(int messageCount, long timeout, String clusterName) throws Exception {
         availabilityTest(messageCount, timeout, clusterName, false, "my-topic", null);
     }
 
@@ -77,7 +77,7 @@ public class MessagingBaseST extends AbstractST {
      * @param topicName topic name
      * @param user user for tls if it's used for messages
      */
-    void availabilityTest(int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    void availabilityTest(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         sendMessages(messageCount, timeout, clusterName, tlsListener, topicName, user);
         receiveMessages(messageCount, timeout, clusterName, tlsListener, topicName, user);
         assertSentAndReceivedMessages(sent, received);
@@ -93,7 +93,7 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      * @return count of send and acknowledged messages
      */
-    int sendMessages(int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    int sendMessages(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap producerArguments = new ClientArgumentMap();
         producerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
@@ -135,7 +135,7 @@ public class MessagingBaseST extends AbstractST {
      * @param user user for tls if it's used for messages
      * @return count of received messages
      */
-    int receiveMessages(int messageCount, int timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
+    int receiveMessages(int messageCount, long timeout, String clusterName, boolean tlsListener, String topicName, KafkaUser user) throws Exception {
         String bootstrapServer = tlsListener ? clusterName + "-kafka-bootstrap:9093" : clusterName + "-kafka-bootstrap:9092";
         ClientArgumentMap consumerArguments = new ClientArgumentMap();
         consumerArguments.put(ClientArgument.BROKER_LIST, bootstrapServer);
@@ -179,8 +179,8 @@ public class MessagingBaseST extends AbstractST {
      * @param description description for wait method
      * @param timeout timeout
      */
-    private void waitTillProcessFinish(String processUuid, String description, int timeout) {
-        TestUtils.waitFor("Wait till " + description + " finished", 2000, timeout, () -> {
+    private void waitTillProcessFinish(String processUuid, String description, long timeout) {
+        TestUtils.waitFor("Wait till " + description + " finished", GLOBAL_POLL_INTERVAL, timeout, () -> {
             JsonObject out;
             try {
                 out = cliApiClient.getClientInfo(processUuid);

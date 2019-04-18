@@ -88,7 +88,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
-public abstract class AbstractST extends BaseITST implements TestSeparator {
+public abstract class AbstractST extends BaseITST implements TestSeparator, Constants {
 
     static {
         Crds.registerCustomKinds();
@@ -103,25 +103,16 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
     protected static final String TO_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
-    protected static final String TEST_TOPIC_NAME = "test-topic";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     protected static final String TLS_SIDECAR_ZOOKEEPER_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ZOOKEEPER_IMAGE";
     protected static final String TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
+    protected static final String TEST_TOPIC_NAME = "test-topic";
     private static final String CLUSTER_OPERATOR_PREFIX = "strimzi";
-    private static final long GET_BROKER_API_TIMEOUT = 60_000L;
-    private static final long GET_BROKER_API_INTERVAL = 5_000L;
-    static final long TIMEOUT_FOR_GET_SECRETS = 60_000;
-    static final long GLOBAL_TIMEOUT = 300000;
-    static final long GLOBAL_POLL_INTERVAL = 1000;
-    static final long TEARDOWN_GLOBAL_WAIT = 10000;
-    public static final Pattern BRACE_PATTERN = Pattern.compile("^\\{.*\\}$", Pattern.MULTILINE);
-    public static final String KAFKA_CLIENTS = "kafka-clients";
 
     public static final String TOPIC_CM = "../examples/topic/kafka-topic.yaml";
     public static final String HELM_CHART = "../helm-charts/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
-    public static final String IMAGE_PULL_POLICY = "Always";
     public static final String REQUESTS_MEMORY = "512Mi";
     public static final String REQUESTS_CPU = "200m";
     public static final String LIMITS_MEMORY = "512Mi";
