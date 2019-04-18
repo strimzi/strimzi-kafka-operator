@@ -9,27 +9,19 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
-import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.operator.cluster.operator.resource.AbstractResourceDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 public class StorageDiff extends AbstractResourceDiff {
     private static final Logger log = LogManager.getLogger(StorageDiff.class.getName());
-
-    /*private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-        "^(/deleteClaim"
-        + "|/volumes/[0-9]+"
-        + "|/volumes/[0-9]+/deleteClaim)$");*/
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/deleteClaim|/)$");
