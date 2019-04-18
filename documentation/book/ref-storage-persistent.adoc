@@ -73,7 +73,7 @@ storage:
 
 == Persistent Volume Claim naming
 
-When the persistent storage is used, it will create Persistent Volume Claims with the following names:
+When persistent storage is used, it creates Persistent Volume Claims with the following names:
 
 `data-_cluster-name_-kafka-_idx_`::
 Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`.
@@ -83,7 +83,7 @@ Persistent Volume Claim for the volume used for storing data for the Zookeeper n
 
 == Log directories
 
-The persistent volume will be used by the Kafka brokers as log directory mounted into the following path:
+The persistent volume will be used by the Kafka brokers as log directories mounted into the following path:
 
 `/var/lib/kafka/data/kafka-log_idx_`::
 Where `_idx_` is the Kafka broker pod index. For example `/var/lib/kafka/data/kafka-log0`.

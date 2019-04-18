@@ -24,7 +24,7 @@ Any data in partitions still assigned to the disks which are going to be removed
 
 . Edit the `spec.kafka.storage.volumes` property in the `Kafka` resource.
 Remove one or more volumes from the `volumes` array.
-For example, remove the volume with ids `1` and `2`:
+For example, remove the volumes with ids `1` and `2`:
 +
 [source,yaml,subs=attributes+]
 ----
