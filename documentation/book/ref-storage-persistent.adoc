@@ -73,7 +73,7 @@ storage:
 
 == Persistent Volume Claim naming
 
-When the persistent storage is used, it will create Persistent Volume Claims with the following names:
+When persistent storage is used, it creates Persistent Volume Claims with the following names:
 
 `data-_cluster-name_-kafka-_idx_`::
 Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`.

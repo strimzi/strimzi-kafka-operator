@@ -96,7 +96,7 @@ To reassign a partition to a specific volume, the `log_dirs` option has to be ad
 }
 ----
 
-The `log_dirs` object should contain the same number log directories as is the number of replicas in the the `replicas` object.
+The `log_dirs` object should contain the same number log directories as is the number of replicas in the `replicas` object.
 The value should be either an absolute path to the log directory or the `any` keyword.
 
 For example:
