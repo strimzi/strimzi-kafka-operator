@@ -143,16 +143,22 @@ public class StorageDiffTest {
         assertTrue(diff.isEmpty());
         assertFalse(diff.changesSize());
 
-        // Volume replaced with another ID => Will trigger isEmpty
+        // Volume replaced with another ID and another volume which is kept changed
         diff = new StorageDiff(jbod3, jbod6);
         assertFalse(diff.changesType());
         assertFalse(diff.isEmpty());
         assertTrue(diff.changesSize());
 
-        // Volume replaced with another ID in single volume broker => Will trigger isEmpty
+        // Volume replaced with another ID in single volume broker
         diff = new StorageDiff(jbod, jbod4);
         assertFalse(diff.changesType());
-        assertFalse(diff.isEmpty());
+        assertTrue(diff.isEmpty());
+        assertFalse(diff.changesSize());
+
+        // Volume replaced with another ID without chenging the volumes which are kept
+        diff = new StorageDiff(jbod2, jbod6);
+        assertFalse(diff.changesType());
+        assertTrue(diff.isEmpty());
         assertFalse(diff.changesSize());
     }
 }
