@@ -16,18 +16,18 @@ In order to perform this procedure, you need to identify resources specific to a
 
 These are resources:
 
-* Referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I` or `KafkaMirrorMaker` configuration
+* Referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `KafkaMirrorMaker` configuration
 * Consumed by the operators
 
 .Procedure
 
-. Delete the cluster operator `Deployment`, related `CustomResourceDefinitions` and `RBAC` resources:
+. Delete the cluster operator `Deployment`, related `CustomResourceDefinitions`, and `RBAC` resources:
 +
 [options="nowrap",subs="+quotes,attributes"]
 ----
 {cmdcli} delete -f install/cluster-operator
 ----
 +
-WARNING: Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaConnectS2I` or `KafkaMirrorMaker`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
+WARNING: Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `KafkaMirrorMaker`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
 
 . Delete the resources you identified in the prerequisites.
