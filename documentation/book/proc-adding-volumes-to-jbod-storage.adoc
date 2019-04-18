@@ -7,8 +7,6 @@
 
 This procedure describes how to add volumes to a Kafka cluster configured to use JBOD storage.
 It cannot be applied to Kafka clusters configured to use any other storage type.
-While adding new volumes, you should not change configuration of any other volumes or remove them.
-Otherwise the changes will be rejected by the Cluster Operator and not applied.
 
 NOTE: When adding the new volume under an `id` which was already used in the past and removed, you have to make sure that the previously used PersistentColumeClaims have been deleted.
 
