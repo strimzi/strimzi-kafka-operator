@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Configures boker ingress
+ * Configures broker ingress
  */
 @JsonPropertyOrder({"broker", "advertisedHost", "advertisedPort", "host"})
 @JsonInclude(JsonInclude.Include.NON_NULL)

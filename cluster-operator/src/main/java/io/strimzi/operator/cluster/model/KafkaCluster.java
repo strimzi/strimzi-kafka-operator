@@ -706,12 +706,6 @@ public class KafkaCluster extends AbstractModel {
      */
     public Ingress generateExternalIngress(int pod) {
         if (isExposedWithIngress()) {
-            Map<String, String> internalAnnotations = new HashMap<>(4);
-            internalAnnotations.put("kubernetes.io/ingress.class", "nginx");
-            internalAnnotations.put("ingress.kubernetes.io/ssl-passthrough", "true");
-            internalAnnotations.put("nginx.ingress.kubernetes.io/ssl-passthrough", "true");
-            internalAnnotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
-
             KafkaListenerExternalIngress listener = (KafkaListenerExternalIngress) listeners.getExternal();
             Map<String, String> dnsAnnotations = null;
             String host = null;
@@ -757,7 +751,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(perPodServiceName)
                         .withLabels(getLabelsWithName(perPodServiceName, templatePerPodIngressLabels))
-                        .withAnnotations(mergeAnnotations(internalAnnotations, templatePerPodIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(mergeAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -775,16 +769,10 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Generates a bootstrap ingress which can be used to bootstrap clients outside of Kubernetes.
-     * @return The generated Routes
+     * @return The generated Ingress
      */
     public Ingress generateExternalBootstrapIngress() {
         if (isExposedWithIngress()) {
-            Map<String, String> internalAnnotations = new HashMap<>(4);
-            internalAnnotations.put("kubernetes.io/ingress.class", "nginx");
-            internalAnnotations.put("ingress.kubernetes.io/ssl-passthrough", "true");
-            internalAnnotations.put("nginx.ingress.kubernetes.io/ssl-passthrough", "true");
-            internalAnnotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
-
             KafkaListenerExternalIngress listener = (KafkaListenerExternalIngress) listeners.getExternal();
             Map<String, String> dnsAnnotations;
             String host;
@@ -819,7 +807,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(serviceName)
                         .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapIngressLabels))
-                        .withAnnotations(mergeAnnotations(internalAnnotations, templateExternalBootstrapIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(mergeAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -833,6 +821,21 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return null;
+    }
+
+    /**
+     * Generates the annotations needed to configure the Ingress as TLS passthrough
+     *
+     * @return  Map with the annotations
+     */
+    private Map<String, String> generateInternalIngressAnnotations() {
+        Map<String, String> internalAnnotations = new HashMap<>(4);
+        internalAnnotations.put("kubernetes.io/ingress.class", "nginx");
+        internalAnnotations.put("ingress.kubernetes.io/ssl-passthrough", "true");
+        internalAnnotations.put("nginx.ingress.kubernetes.io/ssl-passthrough", "true");
+        internalAnnotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
+
+        return internalAnnotations;
     }
 
     /**
@@ -1597,15 +1600,16 @@ public class KafkaCluster extends AbstractModel {
      * @return
      */
     public boolean isExposedWithTls() {
-        if (isExposed() && listeners.getExternal() instanceof KafkaListenerExternalRoute) {
-            return true;
-        } else if (isExposed() && listeners.getExternal() instanceof KafkaListenerExternalIngress) {
-            return true;
-        } else if (isExposed()) {
-            if (listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer) {
-                return ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).isTls();
-            } else if (listeners.getExternal() instanceof KafkaListenerExternalNodePort) {
-                return ((KafkaListenerExternalNodePort) listeners.getExternal()).isTls();
+        if (isExposed()) {
+            if (listeners.getExternal() instanceof KafkaListenerExternalRoute
+                || listeners.getExternal() instanceof KafkaListenerExternalIngress) {
+                return true;
+            } else {
+                if (listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer) {
+                    return ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).isTls();
+                } else if (listeners.getExternal() instanceof KafkaListenerExternalNodePort) {
+                    return ((KafkaListenerExternalNodePort) listeners.getExternal()).isTls();
+                }
             }
         }
 

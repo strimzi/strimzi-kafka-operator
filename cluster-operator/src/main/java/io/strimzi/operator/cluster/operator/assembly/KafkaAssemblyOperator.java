@@ -1214,7 +1214,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
 
                 this.kafkaExternalBootstrapDnsName.add(ingress.getSpec().getRules().get(0).getHost());
-                //this.kafkaExternalBootstrapDnsName.add(ingress.getSpec().getTls().get(0).getHosts().get(0));
 
                 return withVoid(ingressOperations.reconcile(namespace, KafkaCluster.serviceName(name), ingress));
             } else {
@@ -1238,7 +1237,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     }
 
                     String host = ingress.getSpec().getRules().get(0).getHost();
-                    //String host = ingress.getSpec().getTls().get(0).getHosts().get(0);
                     dnsNames.add(host);
 
                     this.kafkaExternalDnsNames.put(i, dnsNames);
