@@ -4,7 +4,7 @@
  */
 package io.strimzi.test_client;
 
-import io.strimzi.test.k8s.Exec;
+import io.strimzi.test.executor.Exec;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;

@@ -153,7 +153,7 @@ public class TopicOperatorIT extends BaseITST {
         p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.brokerList());
         adminClient = AdminClient.create(p);
 
-        kubeClient = CLIENT.inNamespace(NAMESPACE);
+        kubeClient = KUBE_CLIENT.getClient();
         Crds.registerCustomKinds();
         LOGGER.info("Using namespace {}", NAMESPACE);
         startTopicOperator(context);

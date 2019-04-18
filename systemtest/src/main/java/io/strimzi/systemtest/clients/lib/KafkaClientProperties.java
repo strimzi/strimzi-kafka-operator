@@ -41,7 +41,7 @@ class KafkaClientProperties {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientProperties.class);
     public static final KubeClusterResource CLUSTER = new KubeClusterResource();
-    public static final Kubernetes KUBERNETES = CLUSTER.client();
+    public static final Kubernetes KUBE_CLIENT = CLUSTER.client();
 
     /**
      * Create producer properties with PLAINTEXT security
@@ -131,7 +131,7 @@ class KafkaClientProperties {
             KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
             ts.load(null, tsPassword.toCharArray());
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            for (Map.Entry<String, String> entry : KUBERNETES.getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName)).getData().entrySet()) {
+            for (Map.Entry<String, String> entry : KUBE_CLIENT.getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName)).getData().entrySet()) {
                 String clusterCaCert = entry.getValue();
                 Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(clusterCaCert)));
                 ts.setCertificateEntry(entry.getKey(), cert);
@@ -152,7 +152,7 @@ class KafkaClientProperties {
         if (!userName.isEmpty()) {
             try {
 
-                Secret userSecret = KUBERNETES.getSecret(userName);
+                Secret userSecret = KUBE_CLIENT.getSecret(userName);
 
                 String clientsCaCert = userSecret.getData().get("ca.crt");
                 LOGGER.debug("Clients CA cert: {}", clientsCaCert);
@@ -186,14 +186,14 @@ class KafkaClientProperties {
      * @return bootstrap url as string
      */
     private static String getExternalBootstrapConnect(String namespace, String clusterName) {
-        if (KUBERNETES.getClient().isAdaptable(OpenShiftClient.class)) {
-            Route route = KUBERNETES.getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
+        if (KUBE_CLIENT.getClient().isAdaptable(OpenShiftClient.class)) {
+            Route route = KUBE_CLIENT.getClient().adapt(OpenShiftClient.class).routes().inNamespace(namespace).withName(clusterName + "-kafka-bootstrap").get();
             if (route != null && !route.getStatus().getIngress().isEmpty()) {
                 return route.getStatus().getIngress().get(0).getHost() + ":443";
             }
         }
 
-        Service extBootstrapService = KUBERNETES.getClient().services()
+        Service extBootstrapService = KUBE_CLIENT.getClient().services()
                 .inNamespace(namespace)
                 .withName(externalBootstrapServiceName(clusterName))
                 .get();
@@ -206,7 +206,7 @@ class KafkaClientProperties {
 
         if (extBootstrapServiceType.equals("NodePort")) {
             int port = extBootstrapService.getSpec().getPorts().get(0).getNodePort();
-            String externalAddress = CLIENT.nodes().list().getItems().get(0).getStatus().getAddresses().get(0).getAddress();
+            String externalAddress = KUBE_CLIENT.listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
             return externalAddress + ":" + port;
         } else if (extBootstrapServiceType.equals("LoadBalancer")) {
             LoadBalancerIngress loadBalancerIngress = extBootstrapService.getStatus().getLoadBalancer().getIngress().get(0);

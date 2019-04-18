@@ -180,11 +180,11 @@ public class StrimziUpgradeST extends AbstractST {
     private void waitForClusterReadiness() {
         // Wait for readiness
         LOGGER.info("Waiting for Zookeeper StatefulSet");
-        StUtils.waitForAllStatefulSetPodsReady(("my-cluster-zookeeper", 3);
+        StUtils.waitForAllStatefulSetPodsReady("my-cluster-zookeeper");
         LOGGER.info("Waiting for Kafka StatefulSet");
-        StUtils.waitForAllStatefulSetPodsReady(("my-cluster-kafka", 3);
+        StUtils.waitForAllStatefulSetPodsReady("my-cluster-kafka");
         LOGGER.info("Waiting for EO Deployment");
-        StUtils.waitForDeploymentReady(("my-cluster-entity-operator", 1);
+        StUtils.waitForDeploymentReady("my-cluster-entity-operator");
     }
 
     private void waitForRollingUpdate(String images) {

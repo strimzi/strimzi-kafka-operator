@@ -4,7 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
-import io.strimzi.test.executor.ProcessResult;
+import io.strimzi.test.executor.ExecResult;
 
 public class KubeClusterException extends RuntimeException {
     public final ExecResult result;

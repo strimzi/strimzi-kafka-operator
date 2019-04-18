@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
@@ -22,6 +23,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobList;
+import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -269,6 +271,18 @@ public class Kubernetes {
 
     public Secret getSecret(String secretName) {
         return client.secrets().inNamespace(namespace).withName(secretName).get();
+    }
+
+    public Service createService(Service service) {
+        return client.services().inNamespace(namespace).create(service);
+    }
+
+    public Ingress createIngress(Ingress ingress) {
+        return client.extensions().ingresses().inNamespace(namespace).create(ingress);
+    }
+
+    public List<Node> listNodes() {
+        return client.nodes().list().getItems();
     }
 
     public List<Secret> listSecrets() {

@@ -289,7 +289,7 @@ public class Exec {
      * @param cmd command
      * @return true.false
      */
-    static boolean isExecutableOnPath(String cmd) {
+    public static boolean isExecutableOnPath(String cmd) {
         for (String dir : PATH_SPLITTER.split(System.getenv("PATH"))) {
             if (new File(dir, cmd).canExecute()) {
                 return true;

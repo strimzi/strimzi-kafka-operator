@@ -4,7 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
-import io.strimzi.test.executor.ProcessResult;
+import io.strimzi.test.executor.ExecResult;
 
 import java.io.File;
 import java.util.Date;

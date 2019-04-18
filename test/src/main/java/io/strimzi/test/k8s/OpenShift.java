@@ -4,7 +4,6 @@
  */
 package io.strimzi.test.k8s;
 
-import io.fabric8.kubernetes.client.Config;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.client.Kubernetes;

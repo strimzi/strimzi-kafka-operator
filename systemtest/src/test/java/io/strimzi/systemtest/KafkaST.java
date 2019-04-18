@@ -868,10 +868,10 @@ class KafkaST extends MessagingBaseST {
             .done();
 
         String userName = "alice";
-        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
+        resources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
-            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
-            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+            () -> KUBE_CLIENT.getSecret("alice") != null,
+            () -> LOGGER.error("Couldn't find user secret {}", KUBE_CLIENT.listSecrets()));
 
         waitForClusterAvailabilityTls(userName, NAMESPACE);
     }

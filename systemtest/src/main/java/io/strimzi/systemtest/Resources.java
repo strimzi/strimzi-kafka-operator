@@ -131,29 +131,7 @@ public class Resources extends AbstractResources {
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
-                    client.apps().deployments().delete((Deployment) resource);
                     waitForDeletion((Deployment) resource);
-                });
-                break;
-            case CLUSTER_ROLE_BINDING:
-                resources.add(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
-                    KUBE_CLIENT.deleteKubernetesClusterRoleBinding((KubernetesClusterRoleBinding) resource);
-                });
-                break;
-            case SERVICE:
-                resources.add(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
-                    client.services().delete((Service) resource);
-                });
-                break;
-            case INGRESS:
-                resources.add(() -> {
-                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
-                    client.extensions().ingresses().delete((Ingress) resource);
                 });
                 break;
             default :
@@ -542,7 +520,7 @@ public class Resources extends AbstractResources {
         LOGGER.info("Waiting when all the pods are terminated for Deployment {}", deployment.getMetadata().getName());
         String namespace = deployment.getMetadata().getNamespace();
 
-        client.pods().inNamespace(namespace).list().getItems().stream()
+        KUBE_CLIENT.listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(deployment.getMetadata().getName()))
                 .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
     }
@@ -867,7 +845,7 @@ public class Resources extends AbstractResources {
     DoneableService createServiceResource(String appName, int port, String clientNamespace) {
         Service service = getSystemtestsServiceResource(appName, port);
         LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
-        client.services().inNamespace(clientNamespace).create(service);
+        KUBE_CLIENT.createService(service);
         deleteLater(service);
         return new DoneableService(service);
     }
@@ -899,7 +877,7 @@ public class Resources extends AbstractResources {
     DoneableIngress createIngress(String appName, int port, String url, String clientNamespace) throws Exception {
         Ingress ingress = getSystemtestIngressResource(appName, port, url);
         LOGGER.info("Creating ingress {} in namespace {}", ingress.getMetadata().getName(), clientNamespace);
-        client.extensions().ingresses().inNamespace(clientNamespace).create(ingress);
+        KUBE_CLIENT.createIngress(ingress);
         deleteLater(ingress);
         return new DoneableIngress(ingress);
     }
@@ -1038,7 +1016,7 @@ public class Resources extends AbstractResources {
     }
 
     String saslConfigs(KafkaUser kafkaUser) {
-        Secret secret = client.secrets().withName(kafkaUser.getMetadata().getName()).get();
+        Secret secret = KUBE_CLIENT.getSecret(kafkaUser.getMetadata().getName());
 
         String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
         if (password.isEmpty()) {
