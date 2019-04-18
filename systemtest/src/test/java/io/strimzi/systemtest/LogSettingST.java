@@ -169,12 +169,16 @@ class LogSettingST extends AbstractST {
     @Test
     @Order(9)
     void testGcLoggingSetDisabled() {
-        String connectName = CLUSTER_NAME + "-connect";
-        String mmName = CLUSTER_NAME + "-mirror-maker";
+        String connectName = kafkaConnectName(CLUSTER_NAME);
+        String mmName = kafkaMirrorMakerName(CLUSTER_NAME);
         String eoName = entityOperatorDeploymentName(CLUSTER_NAME);
+        String kafkaName = kafkaClusterName(CLUSTER_NAME);
+        String zkName = zookeeperClusterName(CLUSTER_NAME);
         Map<String, String> connectPods = StUtils.depSnapshot(CLIENT, NAMESPACE, connectName);
         Map<String, String> mmPods = StUtils.depSnapshot(CLIENT, NAMESPACE, mmName);
         Map<String, String> eoPods = StUtils.depSnapshot(CLIENT, NAMESPACE, eoName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaName);
+        Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zkName);
 
         JvmOptions jvmOptions = new JvmOptions();
         jvmOptions.setGcLoggingEnabled(false);
@@ -192,9 +196,9 @@ class LogSettingST extends AbstractST {
         replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
 
-        StUtils.waitForAllStatefulSetPodsReady(CLIENT, NAMESPACE, kafkaClusterName(CLUSTER_NAME));
-        StUtils.waitForAllStatefulSetPodsReady(CLIENT, NAMESPACE, zookeeperClusterName(CLUSTER_NAME));
-        StUtils.waitForDeploymentReady(CLUSTER_NAME, NAMESPACE, , );
+        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaName, kafkaPods);
+        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkName, zkPods);
+        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoName, eoPods);
         StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, connectName, connectPods);
         StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, mmName, mmPods);
 
