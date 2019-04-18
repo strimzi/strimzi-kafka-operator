@@ -129,7 +129,7 @@ Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgr
 ----
 ====
 +
-The updates:
+The rolling updates:
 +
 * Ensure each pod is using the broker binaries for the new version
 * Configures the brokers to send messages using the interbroker protocol of the new version
