@@ -12,6 +12,8 @@
 
 .Procedure
 
+. You need the name of the secret for the certificate used for TLS Server Authetication and ...
+
 . Find out the name of the secret with the certificate which should be used for TLS Server Authentication and the key under which the certificate is stored in the secret.
 If such secret does not exist yet, prepare the certificate in a file and create the secret.
 +
