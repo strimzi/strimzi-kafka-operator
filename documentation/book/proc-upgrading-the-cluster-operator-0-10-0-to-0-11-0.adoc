@@ -80,7 +80,7 @@ The image tag shows the Strimzi version followed by the Kafka version. For examp
 +
 * If you have `Kafka` resources that specify `Kafka.spec.topicOperator`, rewrite them to use `Kafka.spec.entityOperator.topicOperator` instead.
 
-You now have an updated Cluster Operator, but the version of Kafka running in all the clusters it manages is unchanged.
+You now have an updated Cluster Operator, but the version of Kafka running in the cluster it manages is unchanged.
 
 .What to do next
 

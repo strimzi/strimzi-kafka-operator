@@ -136,7 +136,7 @@ The updates:
 +
 NOTE: Clients are still using the old version, so brokers will convert messages to the old version before sending them to the clients. To minimize this additional load, updates the clients as quickly as possible.
 
-. Upgrade all client applications (consumers and producers) to use the new version of the client binaries.
+. Depending on your chosen strategy for upgrading clients, upgrade all client applications to use the new version of the client binaries.
 +
 See xref:con-strategies-for-upgrading-clients-str[]
 +
