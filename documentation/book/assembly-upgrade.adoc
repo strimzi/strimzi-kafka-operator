@@ -70,7 +70,7 @@ In Kafka, there are two different methods for setting the message format version
 
 The default value of `message.format.version` for a  topic is defined by the `log.message.format.version` that is set on the Kafka broker. You can manually set the `message.format.version` of a topic by modifying its topic configuration.
 
-In the upgrade tasks, we assume that the message format version is defined by the `log.message.format.version`.
+The upgrade tasks in this section assume that the message format version is defined by the `log.message.format.version`.
 
 ifndef::StrimziUpgrades[]
 == Upgrade prerequisites
