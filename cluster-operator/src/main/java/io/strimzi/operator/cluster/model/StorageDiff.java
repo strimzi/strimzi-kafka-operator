@@ -47,10 +47,10 @@ public class StorageDiff extends AbstractResourceDiff {
 
             for (Integer volumeId : volumeIds)  {
                 SingleVolumeStorage currentVolume = ((JbodStorage) current).getVolumes().stream()
-                        .filter(volume -> volume != null && volume.getId() != null && volume.getId() == volumeId)
+                        .filter(volume -> volume != null && volumeId.equals(volume.getId()))
                         .findAny().orElse(null);
                 SingleVolumeStorage desiredVolume = ((JbodStorage) desired).getVolumes().stream()
-                        .filter(volume -> volume != null && volume.getId() != null && volume.getId() == volumeId)
+                        .filter(volume -> volume != null && volumeId.equals(volume.getId()))
                         .findAny().orElse(null);
 
                 StorageDiff diff = new StorageDiff(currentVolume, desiredVolume, "(volume ID: " + volumeId + ") ");
