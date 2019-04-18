@@ -6,7 +6,7 @@
 
 = Target downgrade version
 
-How the Cluster Operator handles a downgrade operation dpendds on the `log.message.format.version`.
+How the Cluster Operator handles a downgrade operation depends on the `log.message.format.version`.
 
 * If the target downgrade version of Kafka has the same `log.message.format.version` as the current verison, the Cluster Operator downgrades by performing a single rolling restart of the brokers.
 * If the target downgrade version of Kafka has a different `log.message.format.version`, downgrading is only possible if the running cluster has _always_ had `log.message.format.version` set to the version used by the downgraded version.
