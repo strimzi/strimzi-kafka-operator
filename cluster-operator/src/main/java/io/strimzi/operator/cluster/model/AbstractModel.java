@@ -455,7 +455,7 @@ public abstract class AbstractModel {
             JbodStorage jbodStorage = (JbodStorage) storage;
 
             if (jbodStorage.getVolumes().size() == 0)   {
-                throw new InvalidResourceException("JbodStorage need to contain at least one volume!");
+                throw new InvalidResourceException("JbodStorage needs to contain at least one volume!");
             }
 
             for (Storage jbodVolume : jbodStorage.getVolumes()) {

@@ -36,7 +36,6 @@ public class StorageDiff extends AbstractResourceDiff {
 
         boolean changesType = false;
         boolean changesSize = false;
-        boolean volumeAddedRemoved = false;
 
         for (JsonNode d : diff) {
             String pathValue = d.get("path").asText();
