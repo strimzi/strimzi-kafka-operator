@@ -238,8 +238,6 @@ public class JbodStorageTest {
         });
         createAsync.await();
 
-        Set<String> expectedPvcs = expectedPvcs(this.kafka);
-
         // trying to update id for a volume from in the JBOD storage
         volumes.get(0).setId(3);
 
@@ -250,6 +248,8 @@ public class JbodStorageTest {
                     .endKafka()
                 .endSpec()
                 .build();
+
+        Set<String> expectedPvcs = expectedPvcs(changedKafka);
 
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
