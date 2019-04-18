@@ -12,7 +12,7 @@ Newer versions of {ProductName} may support newer versions of Kafka, but you nee
 
 .Procedure outline
 
-In summary, upgrading {ProductName} is a two-stage process. To upgrade brokers and clients without downtime, you _must_ complete the upgrade procedures in the order shown here.
+In summary, upgrading {ProductName} is a two-stage process. To upgrade brokers and clients without downtime, you _must_ complete the upgrade procedures in the following order:
 
 . First, update your Cluster Operator to the latest {ProductName} version.
 ** xref:assembly-upgrade-cluster-operator-{context}[]
