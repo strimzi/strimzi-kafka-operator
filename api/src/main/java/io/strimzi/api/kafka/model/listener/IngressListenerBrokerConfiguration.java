@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -32,6 +33,7 @@ public class IngressListenerBrokerConfiguration extends ExternalListenerBrokerOv
 
     @Description("Host for the broker ingress. " +
             "This field will be used in the Ingress resource.")
+    @JsonProperty(required = true)
     public String getHost() {
         return host;
     }

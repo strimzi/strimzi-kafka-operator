@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -30,6 +31,7 @@ public class IngressListenerBootstrapConfiguration extends ExternalListenerBoots
 
     @Description("Host for the bootstrap route. " +
             "This field will be used in the Ingress resource.")
+    @JsonProperty(required = true)
     public String getHost() {
         return host;
     }

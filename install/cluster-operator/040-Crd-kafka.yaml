@@ -246,6 +246,8 @@ spec:
                                   type: object
                                 host:
                                   type: string
+                              required:
+                              - host
                             brokers:
                               type: array
                               items:
@@ -261,6 +263,8 @@ spec:
                                     type: string
                                   dnsAnnotations:
                                     type: object
+                                required:
+                                - host
                         networkPolicyPeers:
                           type: array
                           items:

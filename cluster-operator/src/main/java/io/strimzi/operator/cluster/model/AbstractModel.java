@@ -1127,15 +1127,17 @@ public abstract class AbstractModel {
             merged.putAll(internal);
         }
 
-        for (Map<String, String> template : templates) {
-            if (template != null) {
-                for (String key : template.keySet()) {
-                    if (key.contains("strimzi.io")) {
-                        throw new IllegalArgumentException("User annotations includes a Strimzi annotation: " + key);
+        if (templates != null) {
+            for (Map<String, String> template : templates) {
+                if (template != null) {
+                    for (String key : template.keySet()) {
+                        if (key.contains("strimzi.io")) {
+                            throw new InvalidResourceException("User annotations includes a Strimzi annotation: " + key);
+                        }
                     }
-                }
 
-                merged.putAll(template);
+                    merged.putAll(template);
+                }
             }
         }
 
