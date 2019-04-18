@@ -132,7 +132,7 @@ Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgr
 The rolling updates:
 +
 * Ensure each pod is using the broker binaries for the new version
-* Configures the brokers to send messages using the interbroker protocol of the new version
+* Configure the brokers to send messages using the interbroker protocol of the new version of Kafka
 +
 NOTE: Clients are still using the old version, so brokers will convert messages to the old version before sending them to the clients. To minimize this additional load, updates the clients as quickly as possible.
 
