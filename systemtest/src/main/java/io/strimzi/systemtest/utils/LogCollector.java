@@ -49,6 +49,9 @@ public class LogCollector {
                     String log = client.pods().inNamespace(namespace).withName(podName).inContainer(containerStatus.getName()).getLog();
                     // Write logs from containers to files
                     writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+                    // Describe all pods
+                    String describe = KUBE_CLIENT.describe("pod", podName);
+                    writeFile(logDir + "/" + "describe-pod-" + podName + "-container-" + containerStatus.getName() + ".log", describe);
                 });
             });
         } catch (Exception allExceptions) {
