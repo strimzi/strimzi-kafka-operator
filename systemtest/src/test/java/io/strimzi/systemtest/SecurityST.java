@@ -174,7 +174,7 @@ class SecurityST extends AbstractST {
         waitFor("", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
@@ -217,7 +217,7 @@ class SecurityST extends AbstractST {
                     initialCaCerts.get(secretName), value);
         }
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
@@ -229,7 +229,7 @@ class SecurityST extends AbstractST {
                 LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems());
             });
 
-        waitForClusterAvailability(bobUserName);
+        waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
     }
 
     @Test
@@ -243,7 +243,7 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(aliceUserName);
+        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
@@ -293,7 +293,7 @@ class SecurityST extends AbstractST {
                     initialCaKeys.get(secretName), value);
         }
 
-        waitForClusterAvailability(aliceUserName);
+        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
@@ -302,7 +302,7 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(bobUserName);
+        waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
     }
 
     private void createClusterWithExternalRoute() {
@@ -338,6 +338,7 @@ class SecurityST extends AbstractST {
                     .editKafka()
                         .editListeners()
                             .withNewKafkaListenerExternalLoadBalancer()
+                                .withTls(false)
                             .endKafkaListenerExternalLoadBalancer()
                         .endListeners()
                         .withConfig(singletonMap("default.replication.factor", 3))
@@ -367,7 +368,8 @@ class SecurityST extends AbstractST {
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(userName);
+//        waitForClusterAvailabilityTls(userName, NAMESPACE);
+        waitForClusterAvailability(NAMESPACE);
     }
 
     @Test
@@ -386,7 +388,7 @@ class SecurityST extends AbstractST {
         // Check if user exists
         waitTillSecretExists(userName);
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Wait until the certificates have been replaced
         waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(CLUSTER_NAME));
@@ -394,7 +396,7 @@ class SecurityST extends AbstractST {
         // Wait until the pods are all up and ready
         waitForClusterStability();
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
     }
 
     private void waitForClusterStability() {
