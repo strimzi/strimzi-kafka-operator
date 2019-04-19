@@ -11,10 +11,11 @@
 = Kafka broker listeners
 
 {ProductName} allows users to configure the listeners which will be enabled in Kafka brokers.
-Two types of listeners are supported:
+Three types of listener are supported:
 
 * Plain listener on port 9092 (without encryption)
 * TLS listener on port 9093 (with encryption)
+* External listener on port 9094 for access from outside of {ProductPlatformName}
 
 include::con-mutual-tls-authentication.adoc[leveloffset=+1]
 
@@ -29,6 +30,10 @@ include::proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
 include::proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
 
 include::proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
+
+ifdef::Kubernetes[]
+include::proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
+endif::Kubernetes[]
 
 include::proc-restricting-access-to-listeners-using-network-policies.adoc[leveloffset=+1]
 

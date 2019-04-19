@@ -1,0 +1,66 @@
+// Module included in the following assemblies:
+//
+// assembly-configuring-kafka-listeners.adoc
+
+[id='proc-accessing-kafka-using-ingress-{context}']
+= Accessing Kafka using {KubernetesName} ingress
+
+This procedure shows how to access {ProductName} Kafka clusters from outside of {KubernetesName} using Ingress.
+
+.Prerequisites
+
+* An {KubernetesName} cluster
+* Deployed {NginxIngressController} with TLS passthrough enabled
+* A running Cluster Operator
+
+.Procedure
+
+. Deploy Kafka cluster with an external listener enabled and configured to the type `ingress`.
++
+An example configuration with an external listener configured to use `Ingress`:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    listeners:
+      external:
+        type: ingress
+        authentication:
+          type: tls
+        configuration:
+          bootstrap:
+            host: bootstrap.myingress.com
+          brokers:
+          - broker: 0
+            host: broker-0.myingress.com
+          - broker: 1
+            host: broker-1.myingress.com
+          - broker: 2
+            host: broker-2.myingress.com
+    # ...
+  zookeeper:
+    # ...
+----
+
+. Make sure the hosts in the `configuration` section properly resolve to the Ingress endpoints.
+
+. Create or update the resource.
++
+[source,shell,subs=+quotes]
+oc apply -f _your-file_
+
+. Extract the public certificate of the broker certificate authority
++
+[source,shell]
+oc extract secret/_cluster-name_-cluster-ca-cert --keys=ca.crt --to=- > ca.crt
++
+. Use the extracted certificate in your Kafka client to configure the TLS connection.
+If you enabled any authentication, you will also need to configure SASL or TLS authentication.
+Connect with your client to the host you specified in the configuration on port 443.
+
+.Additional resources
+* For more information about the schema, see xref:type-KafkaListeners-reference[`KafkaListeners` schema reference].

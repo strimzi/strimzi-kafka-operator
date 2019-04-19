@@ -43,8 +43,11 @@ The external listener is used to connect to a Kafka cluster from outside of an {
 * `route`
 * `loadbalancer`
 * `nodeport`
+ifdef::Kubernetes[]
+* `ingress`
+endif::Kubernetes[]
 
-.Exposing Kafka using {OpenShiftName} Routes
+=== Exposing Kafka using {OpenShiftName} `Routes`
 
 An external listener of type `route` exposes Kafka by using {OpenShiftName} `Routes` and the HAProxy router.
 A dedicated `Route` is created for every Kafka broker pod.
@@ -85,7 +88,7 @@ listeners:
 
 For more information on using `Routes` to access Kafka, see xref:proc-accessing-kafka-using-routes-{context}[].
 
-.Exposing Kafka using loadbalancers
+=== Exposing Kafka using loadbalancers
 
 External listeners of type `loadbalancer` expose Kafka by using `Loadbalancer` type `Services`.
 A new loadbalancer service is created for every Kafka broker pod.
@@ -97,7 +100,7 @@ To disable it, set the `tls` field to `false`.
 
 For more information on using loadbalancers to access Kafka, see xref:proc-accessing-kafka-using-loadbalancers-{context}[].
 
-.Exposing Kafka using node ports
+=== Exposing Kafka using node ports
 
 External listeners of type `nodeport` expose Kafka by using `NodePort` type `Services`.
 When exposing Kafka in this way, Kafka clients connect directly to the nodes of {ProductPlatformName}.
@@ -148,7 +151,89 @@ listeners:
 
 For more information on using node ports to access Kafka, see xref:proc-accessing-kafka-using-nodeports-{context}[].
 
-.Customizing advertised addresses on external listeners
+ifdef::Kubernetes[]
+=== Exposing Kafka using {KubernetesName} `Ingress`
+
+An external listener of type `ingress` exposes Kafka by using {KubernetesName} `Ingress` and the {NginxIngressController}.
+A dedicated `Ingress` resource is created for every Kafka broker pod.
+An additional `Ingress` resource is created to serve as a Kafka bootstrap address.
+Kafka clients can use these `Ingress` resources to connect to Kafka on port 443.
+
+NOTE: External listeners using `Ingress` have been currently tested only with the {NginxIngressController}.
+
+{ProductName} uses the TLS passthrough feature of the {NginxIngressController}.
+Make sure TLS passthrough is enabled in your {NginxIngressController} deployment.
+For more information about enabling TLS passthrough see {NginxIngressControllerTLSPassthrough}.
+Because it is using the TLS passthrough functionality, TLS encryption cannot be disabled when exposing Kafka using `Ingress`.
+
+The Ingress controller does not assign any hostnames automatically.
+You have to specify the hostnames which should be used by the bootstrap and per-broker services in the `spec.kafka.listeners.external.configuration` section.
+You also have to make sure that the hostnames resolve to the Ingress endpoints.
+{ProductName} will not perform any validation that the requested hosts are available and properly routed to the Ingress endpoints.
+
+.Example of an external listener of type `ingress`
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: ingress
+    authentication:
+      type: tls
+    configuration:
+      bootstrap:
+        host: bootstrap.myingress.com
+      brokers:
+      - broker: 0
+        host: broker-0.myingress.com
+      - broker: 1
+        host: broker-1.myingress.com
+      - broker: 2
+        host: broker-2.myingress.com
+# ...
+----
+
+Optionally, you can use the `dnsAnnotations` property in the `configuration` section to add additional annotations to the Ingress resources.
+These annotations can be used to instrument any DNS tooling such as {KubernetesExternalDNS}.
+
+.Example of an external listener of type `ingress` using {KubernetesExternalDNS} annotations
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: ingress
+    authentication:
+      type: tls
+    configuration:
+      bootstrap:
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: bootstrap.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: bootstrap.myingress.com
+      brokers:
+      - broker: 0
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: broker-0.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: broker-0.myingress.com
+      - broker: 1
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: broker-1.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: broker-1.myingress.com
+      - broker: 2
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: broker-2.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: broker-2.myingress.com
+# ...
+----
+
+For more information on using `Ingress` to access Kafka, see xref:proc-accessing-kafka-using-ingress-{context}[].
+endif::Kubernetes[]
+
+=== Customizing advertised addresses on external listeners
 
 By default, {ProductName} tries to automatically determine the hostnames and ports that your Kafka cluster advertises to its clients.
 This is not sufficient in all situations, because the infrastructure on which {ProductName} is running might not provide the right hostname or port through which Kafka can be accessed.
