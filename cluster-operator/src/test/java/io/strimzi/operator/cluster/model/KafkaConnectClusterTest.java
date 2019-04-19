@@ -331,6 +331,35 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
+    public void testGenerateDeploymentWithSaslPlainAuth() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                .withNewKafkaConnectAuthenticationSaslPlain()
+                    .withUsername("user1")
+                    .withNewPasswordSecret()
+                        .withSecretName("user1-secret")
+                        .withPassword("password")
+                    .endPasswordSecret()
+                .endKafkaConnectAuthenticationSaslPlain()
+            .endSpec()
+            .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null);
+
+        assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertEquals(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "user1-secret",
+                containers.get(0).getVolumeMounts().get(1).getMountPath());
+
+        assertEquals("user1-secret/password",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_PLAIN_PASSWORD_FILE));
+        assertEquals("user1",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME));
+    }
+
+    @Test
     public void testTemplate() {
         Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
         Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
