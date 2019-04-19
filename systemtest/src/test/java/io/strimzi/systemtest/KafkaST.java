@@ -1042,7 +1042,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testNodePort() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        resources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -1052,9 +1052,6 @@ class KafkaST extends MessagingBaseST {
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
-                .editZookeeper()
-                    .withReplicas(1)
-                .endZookeeper()
             .endSpec()
             .done();
 
@@ -1064,7 +1061,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testNodePortTls() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        resources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -1073,9 +1070,49 @@ class KafkaST extends MessagingBaseST {
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
-                .editZookeeper()
-                    .withReplicas(1)
-                .endZookeeper()
+            .endSpec()
+            .done();
+
+        String userName = "alice";
+        resources().tlsUser(CLUSTER_NAME, userName).done();
+        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
+            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
+            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testLoadBalancer() throws Exception {
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
+
+        waitForClusterAvailability(NAMESPACE);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testLoadBalancerTls() throws Exception {
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
             .endSpec()
             .done();
 

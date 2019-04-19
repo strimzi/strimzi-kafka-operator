@@ -331,47 +331,6 @@ class SecurityST extends AbstractST {
                 .done();
     }
 
-    private void createClusterWithExternalLoadbalancer() {
-        LOGGER.info("Creating a cluster");
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalLoadBalancer()
-                                .withTls(false)
-                            .endKafkaListenerExternalLoadBalancer()
-                        .endListeners()
-                        .withConfig(singletonMap("default.replication.factor", 3))
-                        .withNewPersistentClaimStorage()
-                            .withSize("2Gi")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                    .endKafka()
-                    .editZookeeper()
-                        .withReplicas(3)
-                        .withNewPersistentClaimStorage()
-                            .withSize("2Gi")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                    .endZookeeper()
-                .endSpec()
-                .done();
-    }
-
-    @Test
-    @OpenShiftOnly
-    void testLoadbalancer() throws Exception {
-        createClusterWithExternalLoadbalancer();
-        String userName = "alice";
-        resources().tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
-            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
-            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
-
-//        waitForClusterAvailabilityTls(userName, NAMESPACE);
-        waitForClusterAvailability(NAMESPACE);
-    }
-
     @Test
     @OpenShiftOnly
     void testAutoRenewCaCertsTriggerByExpiredCertificate() throws Exception {
