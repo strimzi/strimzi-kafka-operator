@@ -55,7 +55,6 @@ public class Kubernetes {
     private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
     protected final KubernetesClient client;
     protected String defaultNamespace;
-    protected String namespace = NamespaceHolder.getNamespaceFromHolder() != null ? NamespaceHolder.getNamespaceFromHolder() : defaultNamespace;
 
     public Kubernetes(KubernetesClient client, String defaultNamespace) {
         this.client = client;
@@ -67,7 +66,7 @@ public class Kubernetes {
     }
 
     public String getNamespace() {
-        return namespace;
+        return NamespaceHolder.getNamespaceFromHolder() != null ? NamespaceHolder.getNamespaceFromHolder() : defaultNamespace;
     }
 
     public void createNamespace(String name) {
@@ -80,15 +79,15 @@ public class Kubernetes {
     }
 
     public void deleteConfigMap(String configMapName) {
-        client.configMaps().inNamespace(namespace).withName(configMapName).delete();
+        client.configMaps().inNamespace(getNamespace()).withName(configMapName).delete();
     }
 
     public ConfigMap getConfigMap(String configMapName) {
-        return client.configMaps().inNamespace(namespace).withName(configMapName).get();
+        return client.configMaps().inNamespace(getNamespace()).withName(configMapName).get();
     }
 
     public boolean getConfigMapStatus(String configMapName) {
-        return client.configMaps().inNamespace(namespace).withName(configMapName).isReady();
+        return client.configMaps().inNamespace(getNamespace()).withName(configMapName).isReady();
     }
 
 
@@ -96,7 +95,7 @@ public class Kubernetes {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
         CompletableFuture<String> data = new CompletableFuture<>();
-        try (ExecWatch execWatch = client.pods().inNamespace(namespace)
+        try (ExecWatch execWatch = client.pods().inNamespace(getNamespace())
                 .withName(podName)
                 .readingInput(null)
                 .writingOutput(baos)
@@ -127,7 +126,7 @@ public class Kubernetes {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
         CompletableFuture<String> data = new CompletableFuture<>();
-        try (ExecWatch execWatch = client.pods().inNamespace(namespace)
+        try (ExecWatch execWatch = client.pods().inNamespace(getNamespace())
                 .withName(podName).inContainer(container)
                 .readingInput(null)
                 .writingOutput(baos)
@@ -155,29 +154,29 @@ public class Kubernetes {
     }
 
     public List<Pod> listPods(LabelSelector selector) {
-        return client.pods().inNamespace(namespace).withLabelSelector(selector).list().getItems();
+        return client.pods().inNamespace(getNamespace()).withLabelSelector(selector).list().getItems();
     }
 
     public List<Pod> listPods(Map<String, String> labelSelector) {
-        return client.pods().inNamespace(namespace).withLabels(labelSelector).list().getItems();
+        return client.pods().inNamespace(getNamespace()).withLabels(labelSelector).list().getItems();
     }
 
     public List<Pod> listPods() {
-        return client.pods().inNamespace(namespace).list().getItems();
+        return client.pods().inNamespace(getNamespace()).list().getItems();
     }
 
     /**
      * Gets pod
      */
     public Pod getPod(String name) {
-        return client.pods().inNamespace(namespace).withName(name).get();
+        return client.pods().inNamespace(getNamespace()).withName(name).get();
     }
 
     /**
      * Deletes pod
      */
     public Boolean deletePod(Pod pod) {
-        return client.pods().inNamespace(namespace).delete(pod);
+        return client.pods().inNamespace(getNamespace()).delete(pod);
     }
 
     public Date getCreationTimestampForPod(String podName) {
@@ -196,89 +195,89 @@ public class Kubernetes {
      * Gets stateful set
      */
     public StatefulSet getStatefulSet(String statefulSetName) {
-        return  client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).get();
+        return  client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).get();
     }
 
     /**
      * Gets stateful set
      */
     public RollableScalableResource<StatefulSet, DoneableStatefulSet> statefulSet(String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName);
+        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName);
     }
 
     /**
      * Gets stateful set selectors
      */
     public LabelSelector getStatefulSetSelectors(String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).get().getSpec().getSelector();
+        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).get().getSpec().getSelector();
     }
 
     /**
      * Gets stateful set status
      */
     public boolean getStatefulSetStatus(String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).isReady();
+        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).isReady();
     }
 
     public void deleteStatefulSet(String statefulSetName) {
-        client.apps().statefulSets().inNamespace(namespace).withName(statefulSetName).delete();
+        client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).delete();
     }
 
     public Deployment createOrReplaceDeployment(Deployment deployment) {
-        return client.apps().deployments().inNamespace(namespace).createOrReplace(deployment);
+        return client.apps().deployments().inNamespace(getNamespace()).createOrReplace(deployment);
     }
 
     /**
      * Gets deployment
      */
     public Deployment getDeployment(String deploymentName) {
-        return client.apps().deployments().inNamespace(namespace).withName(deploymentName).get();
+        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).get();
     }
 
     /**
      * Gets deployment status
      */
     public LabelSelector getDeploymentSelectors(String deploymentName) {
-        return client.apps().deployments().inNamespace(namespace).withName(deploymentName).get().getSpec().getSelector();
+        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).get().getSpec().getSelector();
     }
 
     /**
      * Gets deployment status
      */
     public boolean getDeploymentStatus(String deploymentName) {
-        return client.apps().deployments().inNamespace(namespace).withName(deploymentName).isReady();
+        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).isReady();
     }
 
     public void deleteDeployment(String deploymentName) {
-        client.apps().deployments().inNamespace(namespace).withName(deploymentName).delete();
+        client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).delete();
     }
 
     /**
      * Gets deployment config status
      */
     public boolean getDeploymentConfigStatus(String deploymentCofigName) {
-        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespace).withName(deploymentCofigName).isReady();
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentCofigName).isReady();
     }
 
     public Secret createSecret(Secret secret) {
-        return client.secrets().inNamespace(namespace).create(secret);
+        return client.secrets().inNamespace(getNamespace()).create(secret);
     }
 
     public Secret patchSecret(String secretName, Secret secret) {
-        return client.secrets().inNamespace(namespace).withName(secretName).patch(secret);
+        return client.secrets().inNamespace(getNamespace()).withName(secretName).patch(secret);
     }
 
 
     public Secret getSecret(String secretName) {
-        return client.secrets().inNamespace(namespace).withName(secretName).get();
+        return client.secrets().inNamespace(getNamespace()).withName(secretName).get();
     }
 
     public Service createService(Service service) {
-        return client.services().inNamespace(namespace).create(service);
+        return client.services().inNamespace(getNamespace()).create(service);
     }
 
     public Ingress createIngress(Ingress ingress) {
-        return client.extensions().ingresses().inNamespace(namespace).create(ingress);
+        return client.extensions().ingresses().inNamespace(getNamespace()).create(ingress);
     }
 
     public List<Node> listNodes() {
@@ -286,60 +285,60 @@ public class Kubernetes {
     }
 
     public List<Secret> listSecrets() {
-        return client.secrets().inNamespace(namespace).list().getItems();
+        return client.secrets().inNamespace(getNamespace()).list().getItems();
     }
 
     public Service getService(String serviceName) {
-        return client.services().inNamespace(namespace).withName(serviceName).get();
+        return client.services().inNamespace(getNamespace()).withName(serviceName).get();
     }
 
     public boolean getServiceStatus(String serviceName) {
-        return client.services().inNamespace(namespace).withName(serviceName).isReady();
+        return client.services().inNamespace(getNamespace()).withName(serviceName).isReady();
     }
 
     public void deleteService(String serviceName) {
-        client.services().inNamespace(namespace).withName(serviceName).delete();
+        client.services().inNamespace(getNamespace()).withName(serviceName).delete();
     }
 
     public Job createJob(Job job) {
-        return client.extensions().jobs().inNamespace(namespace).create(job);
+        return client.extensions().jobs().inNamespace(getNamespace()).create(job);
     }
 
     public Job getJob(String jobName) {
-        return client.extensions().jobs().inNamespace(namespace).withName(jobName).get();
+        return client.extensions().jobs().inNamespace(getNamespace()).withName(jobName).get();
     }
 
     public MixedOperation<Job, JobList, DoneableJob, ScalableResource<Job, DoneableJob>> listJobs() {
 //    public MixedOperation<Job, JobList, DoneableJob, ScalableResource<Job, DoneableJob>> listJobs() {
-//        return cmdClient.extensions().jobs().inNamespace(namespace);
+//        return cmdClient.extensions().jobs().inNamespace(getNamespace());
         return client.extensions().jobs(); //TODO need namespace here
     }
 
     public String logs(String podName) {
-        return client.pods().inNamespace(namespace).withName(podName).getLog();
+        return client.pods().inNamespace(getNamespace()).withName(podName).getLog();
     }
 
     public String logs(String podName, String containerName) {
-        return client.pods().inNamespace(namespace).withName(podName).inContainer(containerName).getLog();
+        return client.pods().inNamespace(getNamespace()).withName(podName).inContainer(containerName).getLog();
     }
 
     public List<Event> listEvents(String resourceType, String resourceName) {
-        return client.events().inNamespace(namespace).list().getItems().stream()
+        return client.events().inNamespace(getNamespace()).list().getItems().stream()
                 .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
                 .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
                 .collect(Collectors.toList());
     }
 
     public KubernetesRoleBinding createOrReplaceKubernetesRoleBinding(KubernetesRoleBinding kubernetesRoleBinding) {
-        return client.rbac().kubernetesRoleBindings().inNamespace(namespace).createOrReplace(kubernetesRoleBinding);
+        return client.rbac().kubernetesRoleBindings().inNamespace(getNamespace()).createOrReplace(kubernetesRoleBinding);
     }
 
     public KubernetesClusterRoleBinding createOrReplaceKubernetesClusterRoleBinding(KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
-        return client.rbac().kubernetesClusterRoleBindings().inNamespace(namespace).createOrReplace(kubernetesClusterRoleBinding);
+        return client.rbac().kubernetesClusterRoleBindings().inNamespace(getNamespace()).createOrReplace(kubernetesClusterRoleBinding);
     }
 
     public Boolean deleteKubernetesClusterRoleBinding(KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
-        return client.rbac().kubernetesClusterRoleBindings().inNamespace(namespace).delete(kubernetesClusterRoleBinding);
+        return client.rbac().kubernetesClusterRoleBindings().inNamespace(getNamespace()).delete(kubernetesClusterRoleBinding);
     }
 
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {

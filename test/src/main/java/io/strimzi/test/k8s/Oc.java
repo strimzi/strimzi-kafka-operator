@@ -90,11 +90,6 @@ public class Oc extends BaseKubeClient<Oc> {
     private class AdminOc extends Oc {
 
         @Override
-        public String namespace() {
-            return Oc.this.namespace();
-        }
-
-        @Override
         protected Context defaultContext() {
             return adminContext();
         }
