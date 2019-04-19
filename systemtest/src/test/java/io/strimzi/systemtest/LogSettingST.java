@@ -362,7 +362,6 @@ class LogSettingST extends AbstractST {
     @AfterAll
     void deleteClassResources() {
         TimeMeasuringSystem.stopOperation(operationID);
-        testClassResources.deleteResources();
         teardownEnvForOperator();
     }
 
