@@ -918,7 +918,7 @@ public class Resources extends AbstractResources implements Constants {
                     .withInitialDelaySeconds(10)
                     .withPeriodSeconds(5)
                 .endLivenessProbe()
-                .withImagePullPolicy(IMAGE_PULL_POLICY);
+                .withImagePullPolicy("IfNotPresent");
 
         if (kafkaUsers == null) {
             String producerConfiguration = "acks=all\n";
