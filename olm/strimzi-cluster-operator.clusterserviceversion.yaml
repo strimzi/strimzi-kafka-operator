@@ -414,6 +414,18 @@ spec:
           - delete
           - patch
           - update
+        - apiGroups:
+          - extensions
+          resources:
+          - ingresses
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - delete
+          - patch
+          - update
       deployments:
       - name: strimzi-cluster-operator
         spec:

@@ -14,6 +14,7 @@ import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -43,6 +44,7 @@ public class ResourceOperatorSupplier {
     public final NetworkPolicyOperator networkPolicyOperator;
     public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     public final PodOperator podOperations;
+    public final IngressOperator ingressOperations;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client, new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
@@ -66,6 +68,7 @@ public class ResourceOperatorSupplier {
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
                 new PodOperator(vertx, client),
+                new IngressOperator(vertx, client),
                 new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class));
     }
 
@@ -83,6 +86,7 @@ public class ResourceOperatorSupplier {
                                     NetworkPolicyOperator networkPolicyOperator,
                                     PodDisruptionBudgetOperator podDisruptionBudgetOperator,
                                     PodOperator podOperations,
+                                    IngressOperator ingressOperations,
                                     CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
@@ -99,5 +103,6 @@ public class ResourceOperatorSupplier {
         this.podDisruptionBudgetOperator = podDisruptionBudgetOperator;
         this.kafkaOperator = kafkaOperator;
         this.podOperations = podOperations;
+        this.ingressOperations = ingressOperations;
     }
 }

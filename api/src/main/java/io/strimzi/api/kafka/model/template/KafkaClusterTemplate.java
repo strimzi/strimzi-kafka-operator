@@ -38,6 +38,8 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private ResourceTemplate perPodService;
     private ResourceTemplate externalBootstrapRoute;
     private ResourceTemplate perPodRoute;
+    private ResourceTemplate externalBootstrapIngress;
+    private ResourceTemplate perPodIngress;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -101,6 +103,36 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
         this.perPodService = perPodService;
     }
 
+    @Description("Template for Kafka external bootstrap `Ingress`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getExternalBootstrapIngress() {
+        return externalBootstrapIngress;
+    }
+
+    public void setExternalBootstrapIngress(ResourceTemplate externalBootstrapIngress) {
+        this.externalBootstrapIngress = externalBootstrapIngress;
+    }
+
+    @Description("Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getPerPodIngress() {
+        return perPodIngress;
+    }
+
+    public void setPerPodIngress(ResourceTemplate perPodIngress) {
+        this.perPodIngress = perPodIngress;
+    }
+
+    @Description("Template for Kafka `PodDisruptionBudget`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
+        return podDisruptionBudget;
+    }
+
+    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
+        this.podDisruptionBudget = podDisruptionBudget;
+    }
+
     @Description("Template for Kafka external bootstrap `Route`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getExternalBootstrapRoute() {
@@ -119,16 +151,6 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     public void setPerPodRoute(ResourceTemplate perPodRoute) {
         this.perPodRoute = perPodRoute;
-    }
-
-    @Description("Template for Kafka `PodDisruptionBudget`.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
-        return podDisruptionBudget;
-    }
-
-    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
-        this.podDisruptionBudget = podDisruptionBudget;
     }
 
     @Override

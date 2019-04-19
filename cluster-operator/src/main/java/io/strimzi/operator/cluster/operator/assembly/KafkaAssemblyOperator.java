@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -59,6 +60,7 @@ import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOper
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -125,6 +127,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final RoleBindingOperator roleBindingOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
     private final PodOperator podOperations;
+    private final IngressOperator ingressOperations;
 
     private final KafkaVersion.Lookup versions;
 
@@ -153,6 +156,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.roleBindingOperator = supplier.roleBindingOperator;
         this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
         this.podOperations = supplier.podOperations;
+        this.ingressOperations = supplier.ingressOperations;
         this.versions = versions;
     }
 
@@ -201,6 +205,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaReplicaServices())
                 .compose(state -> state.kafkaBootstrapRoute())
                 .compose(state -> state.kafkaReplicaRoutes())
+                .compose(state -> state.kafkaBootstrapIngress())
+                .compose(state -> state.kafkaReplicaIngress())
                 .compose(state -> state.kafkaExternalBootstrapServiceReady())
                 .compose(state -> state.kafkaReplicaServicesReady())
                 .compose(state -> state.kafkaBootstrapRouteReady())
@@ -1196,6 +1202,53 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             return withVoid(CompositeFuture.join(routeFutures));
+        }
+
+        Future<ReconciliationState> kafkaBootstrapIngress() {
+            if (kafkaCluster.isExposedWithIngress()) {
+                Ingress ingress = kafkaCluster.generateExternalBootstrapIngress();
+
+                if (kafkaCluster.getExternalListenerBootstrapOverride() != null && kafkaCluster.getExternalListenerBootstrapOverride().getAddress() != null) {
+                    log.debug("{}: Adding address {} from overrides to certificate DNS names", reconciliation, kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
+                    this.kafkaExternalBootstrapDnsName.add(kafkaCluster.getExternalListenerBootstrapOverride().getAddress());
+                }
+
+                this.kafkaExternalBootstrapDnsName.add(ingress.getSpec().getRules().get(0).getHost());
+
+                return withVoid(ingressOperations.reconcile(namespace, KafkaCluster.serviceName(name), ingress));
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
+        }
+
+        Future<ReconciliationState> kafkaReplicaIngress() {
+            if (kafkaCluster.isExposedWithIngress()) {
+                int replicas = kafkaCluster.getReplicas();
+                List<Future> routeFutures = new ArrayList<>(replicas);
+
+                for (int i = 0; i < replicas; i++) {
+                    Ingress ingress = kafkaCluster.generateExternalIngress(i);
+
+                    Set<String> dnsNames = new HashSet<>();
+
+                    String dnsOverride = kafkaCluster.getExternalServiceAdvertisedHostOverride(i);
+                    if (dnsOverride != null)    {
+                        dnsNames.add(dnsOverride);
+                    }
+
+                    String host = ingress.getSpec().getRules().get(0).getHost();
+                    dnsNames.add(host);
+
+                    this.kafkaExternalDnsNames.put(i, dnsNames);
+                    this.kafkaExternalAddresses.add(kafkaCluster.getExternalAdvertisedUrl(i, host, "443"));
+
+                    routeFutures.add(ingressOperations.reconcile(namespace, KafkaCluster.externalServiceName(name, i), ingress));
+                }
+
+                return withVoid(CompositeFuture.join(routeFutures));
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
         }
 
         Future<ReconciliationState> kafkaExternalBootstrapServiceReady() {

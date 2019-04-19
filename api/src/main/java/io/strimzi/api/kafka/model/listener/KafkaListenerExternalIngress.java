@@ -16,7 +16,7 @@ import lombok.EqualsAndHashCode;
 import java.util.List;
 
 /**
- * Configures the external listener which exposes Kafka outside of OpenShift using Routes
+ * Configures the external listener which exposes Kafka outside of Kubernetes using Ingress
  */
 @Buildable(
         editableEnabled = false,
@@ -26,19 +26,19 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "authentication", "overrides"})
 @EqualsAndHashCode
-public class KafkaListenerExternalRoute extends KafkaListenerExternal {
+public class KafkaListenerExternalIngress extends KafkaListenerExternal {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_ROUTE = "route";
+    public static final String TYPE_INGRESS = "ingress";
 
     private KafkaListenerAuthentication auth;
     private List<NetworkPolicyPeer> networkPolicyPeers;
-    private RouteListenerOverride overrides;
+    private IngressListenerConfiguration configuration;
 
-    @Description("Must be `" + TYPE_ROUTE + "`")
+    @Description("Must be `" + TYPE_INGRESS + "`")
     @Override
     public String getType() {
-        return TYPE_ROUTE;
+        return TYPE_INGRESS;
     }
 
     @Override
@@ -71,12 +71,11 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
     }
 
     @Description("Overrides for external bootstrap and broker services and externally advertised addresses")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public RouteListenerOverride getOverrides() {
-        return overrides;
+    public IngressListenerConfiguration getConfiguration() {
+        return configuration;
     }
 
-    public void setOverrides(RouteListenerOverride overrides) {
-        this.overrides = overrides;
+    public void setConfiguration(IngressListenerConfiguration configuration) {
+        this.configuration = configuration;
     }
 }

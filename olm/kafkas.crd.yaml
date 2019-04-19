@@ -234,6 +234,37 @@ spec:
                               - scram-sha-512
                           required:
                           - type
+                        configuration:
+                          type: object
+                          properties:
+                            bootstrap:
+                              type: object
+                              properties:
+                                address:
+                                  type: string
+                                dnsAnnotations:
+                                  type: object
+                                host:
+                                  type: string
+                              required:
+                              - host
+                            brokers:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  broker:
+                                    type: integer
+                                  advertisedHost:
+                                    type: string
+                                  advertisedPort:
+                                    type: integer
+                                  host:
+                                    type: string
+                                  dnsAnnotations:
+                                    type: object
+                                required:
+                                - host
                         networkPolicyPeers:
                           type: array
                           items:
@@ -315,6 +346,7 @@ spec:
                           - route
                           - loadbalancer
                           - nodeport
+                          - ingress
                       required:
                       - type
                 authorization:
@@ -748,6 +780,16 @@ spec:
                               type: object
                             annotations:
                               type: object
+                    externalBootstrapIngress:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
                     externalBootstrapRoute:
                       type: object
                       properties:
@@ -759,6 +801,16 @@ spec:
                             annotations:
                               type: object
                     externalBootstrapService:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              type: object
+                            annotations:
+                              type: object
+                    perPodIngress:
                       type: object
                       properties:
                         metadata:
