@@ -252,6 +252,10 @@ public class Kubernetes {
         client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).delete();
     }
 
+    public void deleteDeployment(Deployment deployment) {
+        client.apps().deployments().inNamespace(getNamespace()).delete(deployment);
+    }
+
     /**
      * Gets deployment config status
      */
@@ -280,6 +284,10 @@ public class Kubernetes {
         return client.extensions().ingresses().inNamespace(getNamespace()).create(ingress);
     }
 
+    public Boolean deleteIngress(Ingress ingress) {
+        return client.extensions().ingresses().inNamespace(getNamespace()).delete(ingress);
+    }
+
     public List<Node> listNodes() {
         return client.nodes().list().getItems();
     }
@@ -298,6 +306,10 @@ public class Kubernetes {
 
     public void deleteService(String serviceName) {
         client.services().inNamespace(getNamespace()).withName(serviceName).delete();
+    }
+
+    public void deleteService(Service service) {
+        client.services().inNamespace(getNamespace()).delete(service);
     }
 
     public Job createJob(Job job) {

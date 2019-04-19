@@ -10,10 +10,10 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
@@ -131,9 +131,30 @@ public class Resources extends AbstractResources {
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
+                    KUBE_CLIENT.deleteDeployment((Deployment) resource);
                     waitForDeletion((Deployment) resource);
                 });
                 break;
+            case CLUSTER_ROLE_BINDING:
+                resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    x.delete(resource);
+                    KUBE_CLIENT.deleteKubernetesClusterRoleBinding((KubernetesClusterRoleBinding) resource);
+                });
+                break;
+            case SERVICE:
+                resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    x.delete(resource);
+                    KUBE_CLIENT.deleteService((Service) resource);
+                });
+                break;
+            case INGRESS:
+                resources.add(() -> {
+                    LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
+                    x.delete(resource);
+                    KUBE_CLIENT.deleteIngress((Ingress) resource);
+                });
             default :
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
