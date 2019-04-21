@@ -1,0 +1,13 @@
+// Module included in the following assemblies:
+//
+// assembly-cluster-operator.adoc
+
+[id='deploying-cluster-operator-using-operator-hub-{context}']
+= Deploying the Cluster Operator using OperatorHub.io
+
+{OperatorHub} is a catalog of Kubernetes operators.
+Operator Hub is using {OperatorLifecycleManager} to install and manage Kubernetes operators.
+You can install stable versions of {ProductName} using OperatorHub.
+To do so, go to the {OperatorHub} website and follow the instructions there.
+
+
