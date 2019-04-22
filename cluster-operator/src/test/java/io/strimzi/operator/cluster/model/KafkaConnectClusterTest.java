@@ -335,16 +335,16 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
-    public void testGenerateDeploymentWithSaslPlainAuth() {
+    public void testGenerateDeploymentWithPlainAuth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                .withNewKafkaConnectAuthenticationSaslPlain()
+                .withNewKafkaConnectAuthenticationPlain()
                     .withUsername("user1")
                     .withNewPasswordSecret()
                         .withSecretName("user1-secret")
                         .withPassword("password")
                     .endPasswordSecret()
-                .endKafkaConnectAuthenticationSaslPlain()
+                .endKafkaConnectAuthenticationPlain()
             .endSpec()
             .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);

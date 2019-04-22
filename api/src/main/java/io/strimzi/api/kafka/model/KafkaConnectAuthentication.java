@@ -23,7 +23,7 @@ import java.util.Map;
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaConnectAuthenticationTls.TYPE_TLS, value = KafkaConnectAuthenticationTls.class),
         @JsonSubTypes.Type(name = KafkaConnectAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaConnectAuthenticationScramSha512.class),
-        @JsonSubTypes.Type(name = KafkaConnectAuthenticationSaslPlain.TYPE_SASL_PLAIN, value = KafkaConnectAuthenticationSaslPlain.class),
+        @JsonSubTypes.Type(name = KafkaConnectAuthenticationPlain.TYPE_PLAIN, value = KafkaConnectAuthenticationPlain.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
@@ -33,9 +33,9 @@ public abstract class KafkaConnectAuthentication implements UnknownPropertyPrese
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
-            "Currently the only supported types are `tls`, `scram-sha-512` and `sasl-plain`. " +
+            "Currently the only supported types are `tls`, `scram-sha-512` and `plain`. " +
             "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
-            "`sasl-plain` type uses SASL PLAIN Authentication. " +
+            "`plain` type uses SASL PLAIN Authentication. " +
             "`tls` type uses TLS Client Authentication. " +
             "`tls` type is supported only over TLS connections.")
     public abstract String getType();

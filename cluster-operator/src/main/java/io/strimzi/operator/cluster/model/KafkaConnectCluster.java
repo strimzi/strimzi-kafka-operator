@@ -29,7 +29,7 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectAuthenticationSaslPlain;
+import io.strimzi.api.kafka.model.KafkaConnectAuthenticationPlain;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
@@ -201,13 +201,13 @@ public class KafkaConnectCluster extends AbstractModel {
                     log.warn("SCRAM-SHA-512 authentication selected, but no username and password configured.");
                     throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but no username and password configured.");
                 }
-            } else if (spec.getAuthentication() instanceof KafkaConnectAuthenticationSaslPlain) {
-                KafkaConnectAuthenticationSaslPlain auth = (KafkaConnectAuthenticationSaslPlain) spec.getAuthentication();
+            } else if (spec.getAuthentication() instanceof KafkaConnectAuthenticationPlain) {
+                KafkaConnectAuthenticationPlain auth = (KafkaConnectAuthenticationPlain) spec.getAuthentication();
                 if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
                     kafkaConnect.setPlainUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
                 } else  {
-                    log.warn("SASL-PLAIN authentication selected, but no username and password configured.");
-                    throw new InvalidResourceException("SASL-PLAIN authentication selected, but no username and password configured.");
+                    log.warn("PLAIN authentication selected, but no username and password configured.");
+                    throw new InvalidResourceException("PLAIN authentication selected, but no username and password configured.");
                 }
             }
         }
