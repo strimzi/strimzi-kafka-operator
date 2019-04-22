@@ -20,18 +20,18 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class KafkaConnectAuthenticationSaslPlain extends KafkaConnectAuthentication {
+public class KafkaConnectAuthenticationPlain extends KafkaConnectAuthentication {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_SASL_PLAIN = "sasl-plain";
+    public static final String TYPE_PLAIN = "plain";
 
     private String username;
     private PasswordSecretSource passwordSecret;
 
-    @Description("Must be `" + TYPE_SASL_PLAIN + "`")
+    @Description("Must be `" + TYPE_PLAIN + "`")
     @Override
     public String getType() {
-        return TYPE_SASL_PLAIN;
+        return TYPE_PLAIN;
     }
 
     @Description("Password used for the authentication.")
