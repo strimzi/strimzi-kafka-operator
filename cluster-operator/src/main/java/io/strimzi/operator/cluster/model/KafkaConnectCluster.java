@@ -76,7 +76,6 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY = "KAFKA_CONNECT_TLS_AUTH_KEY";
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE = "KAFKA_CONNECT_SASL_PASSWORD_FILE";
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_USERNAME = "KAFKA_CONNECT_SASL_USERNAME";
-    protected static final String ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD = "KAFKA_CONNECT_SASL_PASSWORD";
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_PLAIN_PASSWORD_FILE = "KAFKA_CONNECT_SASL_PLAIN_PASSWORD_FILE";
 
     protected String bootstrapServers;
