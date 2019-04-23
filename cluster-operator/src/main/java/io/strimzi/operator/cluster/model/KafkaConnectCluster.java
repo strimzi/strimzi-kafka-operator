@@ -77,7 +77,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY = "KAFKA_CONNECT_TLS_AUTH_KEY";
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE = "KAFKA_CONNECT_SASL_PASSWORD_FILE";
     protected static final String ENV_VAR_KAFKA_CONNECT_SASL_USERNAME = "KAFKA_CONNECT_SASL_USERNAME";
-    protected static final String ENV_VAR_KAFKA_CONNECT_SASL_PLAIN_PASSWORD_FILE = "KAFKA_CONNECT_SASL_PLAIN_PASSWORD_FILE";
+    protected static final String ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM = "KAFKA_CONNECT_SASL_MECHANISM";
 
     protected String bootstrapServers;
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.EMPTY_LIST;
@@ -86,8 +86,8 @@ public class KafkaConnectCluster extends AbstractModel {
     private List<CertSecretSource> trustedCertificates;
     private CertAndKeySecretSource tlsAuthCertAndKey;
     private PasswordSecretSource passwordSecret;
-    private PasswordSecretSource plainPasswordSecret;
     private String username;
+    private String saslMechanism;
 
     /**
      * Constructor
@@ -197,6 +197,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 KafkaConnectAuthenticationScramSha512 auth = (KafkaConnectAuthenticationScramSha512) spec.getAuthentication();
                 if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
                     kafkaConnect.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
+                    kafkaConnect.setSaslMechanism(auth.getType());
                 } else  {
                     log.warn("SCRAM-SHA-512 authentication selected, but no username and password configured.");
                     throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but no username and password configured.");
@@ -204,7 +205,8 @@ public class KafkaConnectCluster extends AbstractModel {
             } else if (spec.getAuthentication() instanceof KafkaConnectAuthenticationPlain) {
                 KafkaConnectAuthenticationPlain auth = (KafkaConnectAuthenticationPlain) spec.getAuthentication();
                 if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
-                    kafkaConnect.setPlainUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
+                    kafkaConnect.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
+                    kafkaConnect.setSaslMechanism(auth.getType());
                 } else  {
                     log.warn("PLAIN authentication selected, but no username and password configured.");
                     throw new InvalidResourceException("PLAIN authentication selected, but no username and password configured.");
@@ -283,8 +285,6 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         } else if (passwordSecret != null)  {
             volumeList.add(createSecretVolume(passwordSecret.getSecretName(), passwordSecret.getSecretName(), isOpenShift));
-        } else if (plainPasswordSecret != null)  {
-            volumeList.add(createSecretVolume(plainPasswordSecret.getSecretName(), plainPasswordSecret.getSecretName(), isOpenShift));
         }
 
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
@@ -356,9 +356,6 @@ public class KafkaConnectCluster extends AbstractModel {
         } else if (passwordSecret != null)  {
             volumeMountList.add(createVolumeMount(passwordSecret.getSecretName(),
                     PASSWORD_VOLUME_MOUNT + passwordSecret.getSecretName()));
-        } else if (plainPasswordSecret != null)  {
-            volumeMountList.add(createVolumeMount(plainPasswordSecret.getSecretName(),
-                    PASSWORD_VOLUME_MOUNT + plainPasswordSecret.getSecretName()));
         }
 
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
@@ -463,10 +460,7 @@ public class KafkaConnectCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_USERNAME, username));
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE,
                     String.format("%s/%s", passwordSecret.getSecretName(), passwordSecret.getPassword())));
-        } else if (plainPasswordSecret != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_USERNAME, username));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_PLAIN_PASSWORD_FILE,
-                    String.format("%s/%s", plainPasswordSecret.getSecretName(), plainPasswordSecret.getPassword())));
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM, saslMechanism));
         }
 
         varList.addAll(getExternalConfigurationEnvVars());
@@ -540,7 +534,7 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * Set the username and password for SASL SCRAM-SHA-512 based authentication
+     * Set the username and password for SASL based authentication
      *
      * @param username          Username
      * @param passwordSecret    Secret with password
@@ -551,14 +545,11 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * Set the username and password for SASL PLAIN based authentication
-     *
-     * @param username          Username
-     * @param plainPasswordSecret    Secret with plain password
+     * Set the sasl mechanism, supported mechanisms including scram-sha-512 and plain
+     * @param saslMechanism
      */
-    protected void setPlainUsernameAndPassword(String username, PasswordSecretSource plainPasswordSecret) {
-        this.username = username;
-        this.plainPasswordSecret = plainPasswordSecret;
+    protected void setSaslMechanism(String saslMechanism) {
+        this.saslMechanism = saslMechanism;
     }
 
     /**
