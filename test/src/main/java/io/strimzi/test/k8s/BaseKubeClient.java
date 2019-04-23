@@ -43,7 +43,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     public static final String SERVICE = "service";
     public static final String CM = "cm";
     private String defaultNamespace = defaultNamespace();
-    private String namespace = NamespaceHolder.getNamespaceFromHolder() != null ? NamespaceHolder.getNamespaceFromHolder() : defaultNamespace;
 
     protected abstract String cmd();
 
@@ -64,13 +63,12 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     @Override
     public String namespace(String namespace) {
-        String previous = NamespaceHolder.setNamespaceToHolder(namespace);
-        return previous;
+        return NamespaceHolder.setNamespaceToHolder(namespace);
     }
 
     @Override
     public String namespace() {
-        return namespace;
+        return NamespaceHolder.getNamespaceFromHolder() != null ? NamespaceHolder.getNamespaceFromHolder() : defaultNamespace;
     }
 
     @Override
