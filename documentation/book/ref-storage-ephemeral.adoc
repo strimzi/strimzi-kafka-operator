@@ -31,3 +31,10 @@ spec:
       type: ephemeral
     # ...
 ----
+
+== Log directories
+
+The ephemeral volume will be used by the Kafka brokers as log directories mounted into the following path:
+
+`/var/lib/kafka/data/kafka-log_idx_`::
+Where `_idx_` is the Kafka broker pod index. For example `/var/lib/kafka/data/kafka-log0`.

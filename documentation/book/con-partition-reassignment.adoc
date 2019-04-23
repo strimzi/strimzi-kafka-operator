@@ -81,3 +81,32 @@ The following is an example reassignment JSON file that assigns topic `topic-a`,
 
 Partitions not included in the JSON are not changed.
 
+== Reassigning partitions between JBOD volumes
+
+When using JBOD storage in your Kafka cluster, you can choose to reassign the partitions between specific volumes and their log directories (each volume has a single log directory).
+To reassign a partition to a specific volume, add the `log_dirs` option to _<PartitionObjects>_ in the reassignment JSON file.
+
+[source,subs=+quotes]
+----
+{
+  "topic": _<TopicName>_,
+  "partition": _<Partition>_,
+  "replicas": [ _<AssignedBrokerIds>_ ],
+  "log_dirs": [ _<AssignedLogDirs>_ ]
+}
+----
+
+The `log_dirs` object should contain the same number of log directories as the number of replicas specified in the `replicas` object.
+The value should be either an absolute path to the log directory, or the `any` keyword.
+
+For example:
+
+[source,subs=+quotes]
+----
+{
+      "topic": "topic-a",
+      "partition": 4,
+      "replicas": [2,4,7].
+      "log_dirs": [ "/var/lib/kafka/data-0/kafka-log2", "/var/lib/kafka/data-0/kafka-log4", "/var/lib/kafka/data-0/kafka-log7" ]
+}
+----
