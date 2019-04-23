@@ -1,11 +1,11 @@
 // Module included in the following assemblies:
 //
-// assembly-deploying-the-topic-operator.adoc
+// assembly-deploying-the-user-operator.adoc
 
-[id='proc-topic-operator-with-resource-requests-limits-{context}']
-= Configuring the Topic Operator with resource requests and limits
+[id='proc-user-operator-with-resource-requests-limits-{context}']
+= Configuring the User Operator with resource requests and limits
 
-You can allocate resources, such as CPU and memory, to the Topic Operator and set a limit on the amount of resources it can consume.
+You can allocate resources, such as CPU and memory, to the User Operator and set a limit on the amount of resources it can consume.
 
 .Prerequisites
 
@@ -25,7 +25,7 @@ On {OpenShiftName}, use:
 [source,shell,subs=+quotes]
 oc edit kafka my-cluster
 
-. In the `spec.entityOperator.topicOperator.resources` property in the `Kafka` resource, set the resource requests and limits for the Topic Operator.
+. In the `spec.entityOperator.userOperator.resources` property in the `Kafka` resource, set the resource requests and limits for the User Operator.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -34,7 +34,7 @@ kind: Kafka
 spec:
   # kafka and zookeeper sections...
   entityOperator:
-    topicOperator:
+    userOperator:
       resources:
         request:
           cpu: "1"
