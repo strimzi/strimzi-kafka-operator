@@ -7,7 +7,7 @@
 
 The Topic Operator provides a way of managing topics in a Kafka cluster via {ProductPlatformName} resources.
 
-.Example Architecture for the Topic Operator
+.Example architecture for the Topic Operator
 
 image:topic_operator.png[Topic Operator]
 
