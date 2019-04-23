@@ -46,25 +46,26 @@ if [ -n "$KAFKA_CONNECT_SASL_USERNAME" ] && [ -n "$KAFKA_CONNECT_SASL_PASSWORD_F
     PASSWORD=$(cat /opt/kafka/connect-password/$KAFKA_CONNECT_SASL_PASSWORD_FILE)
 
     if [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xplain" ]; then
-        SASL_MECHANISM="PLAIN"
-
         # SSL encryption should always be used if SASL mechanism is PLAIN
         SECURITY_PROTOCOL="SASL_SSL"
+        SASL_MECHANISM="PLAIN"
+        JAAS_SECURITY_MODULE="plain.PlainLoginModule"
 
     elif [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xscram-sha-512" ]; then
         SASL_MECHANISM="SCRAM-SHA-512"
+        JAAS_SECURITY_MODULE="scram.ScramLoginModule"
     fi
 
 
     SASL_AUTH_CONFIGURATION=$(cat <<EOF
 sasl.mechanism=${SASL_MECHANISM}
-sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
+sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
 
 producer.sasl.mechanism=${SASL_MECHANISM}
-producer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
+producer.sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
 
 consumer.sasl.mechanism=${SASL_MECHANISM}
-consumer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
+consumer.sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
 
 EOF
 )
