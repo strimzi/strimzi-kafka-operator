@@ -11,7 +11,7 @@ The currently supported authentication types are:
 
 * TLS client authentication
 * SASL based authentication using the SCRAM-SHA-512 mechanism
-
+* SASL based authentication using the PLAIN mechanism
 
 == TLS Client Authentication
 
@@ -41,9 +41,9 @@ spec:
   # ...
 ----
 
-== SCRAM-SHA-512 authentication
+== SASL based SCRAM-SHA-512 authentication
 
-To configure Kafka Connect to use SCRAM-SHA-512 authentication, set the `type` property to `scram-sha-512`.
+To configure Kafka Connect to use SASL based SCRAM-SHA-512 authentication, set the `type` property to `scram-sha-512`.
 This authentication mechanism requires a username and password.
 
 * Specify the username in the `username` property.
@@ -51,7 +51,7 @@ This authentication mechanism requires a username and password.
 
 WARNING: Do not specify the actual password in the `password` field.
 
-.An example SCRAM-SHA-512 client authentication configuration
+.An example SASL based SCRAM-SHA-512 client authentication configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -62,6 +62,34 @@ spec:
   # ...
   authentication:
     type: scram-sha-512
+    username: my-connect-user
+    passwordSecret:
+      secretName: my-connect-user
+      password: my-connect-password-key
+  # ...
+----
+
+== SASL based PLAIN authentication
+
+To configure Kafka Connect to use SASL based PLAIN authentication, set the `type` property to `plain`.
+This authentication mechanism requires a username and password.
+
+* Specify the username in the `username` property.
+* In the `passwordSecret` property, specify a link to a `Secret` containing the password. The `secretName` property contains the name of such a `Secret` and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
+
+WARNING: Do not specify the actual password in the `password` field.
+
+.An example showing SASL based PLAIN client authentication configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  authentication:
+    type: plain
     username: my-connect-user
     passwordSecret:
       secretName: my-connect-user
