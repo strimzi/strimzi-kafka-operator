@@ -126,9 +126,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      * @param pfa Platform features availability properties
      */
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                 ClusterOperatorConfig config,
                                  CertManager certManager,
-                                 ResourceOperatorSupplier supplier) {
+                                 ResourceOperatorSupplier supplier,
+                                 ClusterOperatorConfig config) {
         super(vertx, pfa, ResourceType.KAFKA, certManager,
                 supplier.kafkaOperator, supplier, config);
         this.operationTimeoutMs = config.getOperationTimeoutMs();

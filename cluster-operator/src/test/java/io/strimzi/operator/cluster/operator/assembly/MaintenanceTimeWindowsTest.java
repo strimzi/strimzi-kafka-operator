@@ -114,7 +114,7 @@ public class MaintenanceTimeWindowsTest {
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
 
-        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(this.vertx, pfa, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000), null, ros);
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(this.vertx, pfa, null, ros, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 

@@ -79,7 +79,7 @@ public class Main {
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa,
-                config, certManager, resourceOperatorSupplier);
+                certManager, resourceOperatorSupplier, config);
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
                 certManager, resourceOperatorSupplier, config);
 

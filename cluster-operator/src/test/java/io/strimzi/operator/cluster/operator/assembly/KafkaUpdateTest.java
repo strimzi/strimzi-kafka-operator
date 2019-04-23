@@ -151,11 +151,12 @@ public class KafkaUpdateTest {
             return Future.succeededFuture();
         });
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), ResourceUtils.dummyClusterOperatorConfig(lookup, 1L),
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 new ResourceOperatorSupplier(null, null, null,
                         kso, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, null));
+                        null, null, null, null, null, null, null, null, null, null, null),
+                ResourceUtils.dummyClusterOperatorConfig(lookup, 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
         Async async = context.async();

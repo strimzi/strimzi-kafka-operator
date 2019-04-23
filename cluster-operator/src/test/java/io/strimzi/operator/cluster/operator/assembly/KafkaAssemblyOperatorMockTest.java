@@ -250,7 +250,7 @@ public class KafkaAssemblyOperatorMockTest {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         ResourceOperatorSupplier supplier = supplierWithMocks();
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, pfa, config, new MockCertManager(), supplier);
+        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), supplier, config);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
