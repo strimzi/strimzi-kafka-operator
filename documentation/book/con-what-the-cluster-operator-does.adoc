@@ -11,8 +11,9 @@ As part of the Kafka cluster, it can also deploy the topic operator which provid
 The Cluster Operator is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
 On {OpenShiftName} such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
 
-.Example Architecture diagram of the Cluster Operator.
-image::cluster_operator.png[Cluster Operator]
+.Example architecture for the Cluster Operator
+
+image:cluster_operator.png[Cluster Operator]
 
 When the Cluster Operator is up, it starts to _watch_ for certain {ProductPlatformName} resources containing the desired Kafka, Kafka Connect, or Kafka Mirror Maker cluster configuration.
 By default, it watches only in the same namespace or project where it is installed.

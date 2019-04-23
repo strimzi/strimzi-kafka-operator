@@ -7,7 +7,9 @@
 
 The Topic Operator provides a way of managing topics in a Kafka cluster via {ProductPlatformName} resources.
 
-image::topic_operator.png[Topic Operator]
+.Example architecture for the Topic Operator
+
+image:topic_operator.png[Topic Operator]
 
 The role of the Topic Operator is to keep a set of `KafkaTopic` {ProductPlatformName} resources describing Kafka topics in-sync with corresponding Kafka topics.
 
