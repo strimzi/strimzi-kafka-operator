@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TopicOperatorSpec;
 import io.strimzi.api.kafka.model.TopicOperatorSpecBuilder;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -113,7 +114,7 @@ public class MaintenanceTimeWindowsTest {
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
 
-        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(this.vertx, pfa, 2_000, null, ros, VERSIONS, null);
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(this.vertx, pfa, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000), null, ros);
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 

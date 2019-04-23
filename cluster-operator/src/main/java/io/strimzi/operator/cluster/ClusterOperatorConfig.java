@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -12,11 +14,13 @@ import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOpe
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableSet;
@@ -37,6 +41,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_KAFKA_CONNECT_S2I_IMAGES = "STRIMZI_KAFKA_CONNECT_S2I_IMAGES";
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES";
     public static final String STRIMZI_IMAGE_PULL_POLICY = "STRIMZI_IMAGE_PULL_POLICY";
+    public static final String STRIMZI_IMAGE_PULL_SECRETS = "STRIMZI_IMAGE_PULL_SECRETS";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
@@ -48,6 +53,7 @@ public class ClusterOperatorConfig {
     private final boolean createClusterRoles;
     private final KafkaVersion.Lookup versions;
     private final ImagePullPolicy imagePullPolicy;
+    private final Set<LocalObjectReference> imagePullSecrets;
 
     /**
      * Constructor
@@ -58,14 +64,16 @@ public class ClusterOperatorConfig {
      * @param createClusterRoles true to create the cluster roles
      * @param versions The configured Kafka versions
      * @param imagePullPolicy Image pull policy configured by the user
+     * @param imagePullSecrets Set of secrets for pulling container images from secured repositories
      */
-    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
+    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy, Set<LocalObjectReference> imagePullSecrets) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
         this.createClusterRoles = createClusterRoles;
         this.versions = versions;
         this.imagePullPolicy = imagePullPolicy;
+        this.imagePullSecrets = imagePullSecrets;
     }
 
     /**
@@ -74,6 +82,7 @@ public class ClusterOperatorConfig {
      * @param map   map from which loading configuration parameters
      * @return  Cluster Operator configuration instance
      */
+    @SuppressWarnings("checkstyle:NPathComplexity")
     public static ClusterOperatorConfig fromMap(Map<String, String> map) {
 
         String namespacesList = map.get(ClusterOperatorConfig.STRIMZI_NAMESPACE);
@@ -148,7 +157,18 @@ public class ClusterOperatorConfig {
             }
         }
 
-        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup, imagePullPolicy);
+        String imagePullSecretList = map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS);
+        Set<LocalObjectReference> imagePullSecrets = null;
+        if (imagePullSecretList != null && !imagePullSecretList.isEmpty()) {
+            if (imagePullSecretList.matches("(\\s?[a-z0-9.-]+\\s?,)*\\s?[a-z0-9.-]+\\s?")) {
+                imagePullSecrets = Arrays.stream(imagePullSecretList.trim().split("\\s*,+\\s*")).map(secret -> new LocalObjectReferenceBuilder().withName(secret).build()).collect(Collectors.toSet());
+            } else {
+                throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS
+                        + " is not a valid list of secret names");
+            }
+        }
+
+        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup, imagePullPolicy, imagePullSecrets);
     }
 
 
@@ -191,6 +211,13 @@ public class ClusterOperatorConfig {
         return imagePullPolicy;
     }
 
+    /**
+     * @return Retuns list of configured ImagePullSecrets. Null if no secrets were configured.
+     */
+    public Set<LocalObjectReference> getImagePullSecrets() {
+        return imagePullSecrets;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -200,6 +227,7 @@ public class ClusterOperatorConfig {
                 ",createClusterRoles=" + createClusterRoles +
                 ",versions=" + versions +
                 ",imagePullPolicy=" + imagePullPolicy +
+                ",imagePullSecrets=" + imagePullSecrets +
                 ")";
     }
 }

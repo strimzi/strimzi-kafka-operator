@@ -41,6 +41,7 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -49,10 +50,13 @@ import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
@@ -79,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -492,9 +497,12 @@ public class ResourceUtils {
                 mock(KafkaSetOperator.class), mock(ConfigMapOperator.class), mock(SecretOperator.class),
                 mock(PvcOperator.class), mock(DeploymentOperator.class),
                 mock(ServiceAccountOperator.class), mock(RoleBindingOperator.class), mock(ClusterRoleBindingOperator.class),
-                mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(PodOperator.class), mock(IngressOperator.class), mock(CrdOperator.class));
-        when(supplier.serviceAccountOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleBindingOperator.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+                mock(NetworkPolicyOperator.class), mock(PodDisruptionBudgetOperator.class), mock(PodOperator.class),
+                mock(IngressOperator.class), mock(ImageStreamOperator.class), mock(BuildConfigOperator.class),
+                mock(DeploymentConfigOperator.class), mock(CrdOperator.class), mock(CrdOperator.class), mock(CrdOperator.class),
+                mock(CrdOperator.class));
+        when(supplier.serviceAccountOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleBindingOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
 
         if (openShift) {
@@ -527,5 +535,30 @@ public class ResourceUtils {
         });
 
         return supplier;
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
+        ClusterOperatorConfig config = new ClusterOperatorConfig(
+                singleton("dummy"),
+                60_000,
+                operationTimeoutMs,
+                false,
+                versions,
+                null,
+                null);
+
+        return config;
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {
+        return dummyClusterOperatorConfig(versions, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
+        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), operationTimeoutMs);
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig() {
+        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()));
     }
 }

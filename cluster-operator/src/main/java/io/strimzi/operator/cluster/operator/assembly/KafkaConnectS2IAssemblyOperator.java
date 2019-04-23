@@ -13,8 +13,8 @@ import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -23,17 +23,9 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
-import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
-import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -53,49 +45,25 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
 
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
-    private final ServiceOperator serviceOperations;
     private final DeploymentConfigOperator deploymentConfigOperations;
     private final ImageStreamOperator imagesStreamOperations;
     private final BuildConfigOperator buildConfigOperations;
-    private final ConfigMapOperator configMapOperations;
-    private final ClusterRoleBindingOperator clusterRoleBindingOperations;
-    private final ServiceAccountOperator serviceAccountOperations;
     private final KafkaVersion.Lookup versions;
 
     /**
      * @param vertx                      The Vertx instance
      * @param pfa                        Platform features availability properties
-     * @param configMapOperations        For operating on ConfigMaps
-     * @param deploymentConfigOperations For operating on Deployments
-     * @param serviceOperations          For operating on Services
-     * @param imagesStreamOperations     For operating on ImageStreams, may be null
-     * @param buildConfigOperations      For operating on BuildConfigs, may be null
-     * @param secretOperations           For operating on Secrets
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                            CertManager certManager,
-                                           CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectOperator,
-                                           ConfigMapOperator configMapOperations,
-                                           DeploymentConfigOperator deploymentConfigOperations,
-                                           ServiceOperator serviceOperations,
-                                           ImageStreamOperator imagesStreamOperations,
-                                           BuildConfigOperator buildConfigOperations,
-                                           SecretOperator secretOperations,
-                                           NetworkPolicyOperator networkPolicyOperator,
-                                           PodDisruptionBudgetOperator podDisruptionBudgetOperator,
                                            ResourceOperatorSupplier supplier,
-                                           KafkaVersion.Lookup versions,
-                                           ImagePullPolicy imagePullPolicy) {
-        super(vertx, pfa, ResourceType.CONNECT_S2I, certManager, connectOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
-        this.configMapOperations = configMapOperations;
-        this.serviceOperations = serviceOperations;
-        this.deploymentConfigOperations = deploymentConfigOperations;
-        this.imagesStreamOperations = imagesStreamOperations;
-        this.buildConfigOperations = buildConfigOperations;
-        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
-        this.serviceAccountOperations = supplier.serviceAccountOperator;
-        this.versions = versions;
+                                           ClusterOperatorConfig config) {
+        super(vertx, pfa, ResourceType.CONNECT_S2I, certManager, supplier.connectS2IOperator, supplier, config);
+        this.deploymentConfigOperations = supplier.deploymentConfigOperations;
+        this.imagesStreamOperations = supplier.imagesStreamOperations;
+        this.buildConfigOperations = supplier.buildConfigOperations;
+        this.versions = config.versions();
     }
 
     @Override

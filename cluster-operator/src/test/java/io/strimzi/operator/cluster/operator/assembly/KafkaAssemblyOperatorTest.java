@@ -339,6 +339,7 @@ public class KafkaAssemblyOperatorTest {
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
@@ -464,11 +465,9 @@ public class KafkaAssemblyOperatorTest {
         }
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
-                ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                config,
                 certManager,
-                supplier,
-                VERSIONS,
-                null) {
+                supplier) {
             @Override
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
@@ -701,6 +700,7 @@ public class KafkaAssemblyOperatorTest {
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
@@ -711,8 +711,8 @@ public class KafkaAssemblyOperatorTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
-        RoleBindingOperator mockRbo = supplier.roleBindingOperator;
+        ServiceAccountOperator mockSao = supplier.serviceAccountOperations;
+        RoleBindingOperator mockRbo = supplier.roleBindingOperations;
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
         RouteOperator mockRouteOps = supplier.routeOperations;
 
@@ -919,11 +919,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockDepOps.reconcile(anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
-                ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                config,
                 certManager,
-                supplier,
-                VERSIONS,
-                null) {
+                supplier) {
             @Override
             public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
                 return new ReconciliationState(r, ka) {
@@ -970,6 +968,7 @@ public class KafkaAssemblyOperatorTest {
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
@@ -978,8 +977,8 @@ public class KafkaAssemblyOperatorTest {
         PvcOperator mockPvcOps = supplier.pvcOperations;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        ServiceAccountOperator mockSao = supplier.serviceAccountOperator;
-        RoleBindingOperator mockRbo = supplier.roleBindingOperator;
+        ServiceAccountOperator mockSao = supplier.serviceAccountOperations;
+        RoleBindingOperator mockRbo = supplier.roleBindingOperations;
         ClusterRoleBindingOperator mockCrbo = supplier.clusterRoleBindingOperator;
         String clusterCmNamespace = "test";
 
@@ -1036,11 +1035,9 @@ public class KafkaAssemblyOperatorTest {
         Set<String> deleted = new CopyOnWriteArraySet<>();
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
-                ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                config,
                 certManager,
-                supplier,
-                VERSIONS,
-                null) {
+                supplier) {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 createdOrUpdated.add(kafkaAssembly.getMetadata().getName());
@@ -1063,6 +1060,7 @@ public class KafkaAssemblyOperatorTest {
 
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -1113,11 +1111,9 @@ public class KafkaAssemblyOperatorTest {
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
-                ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
+                config,
                 certManager,
-                supplier,
-                VERSIONS,
-                null) {
+                supplier) {
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 createdOrUpdated.add(kafkaAssembly.getMetadata().getName());

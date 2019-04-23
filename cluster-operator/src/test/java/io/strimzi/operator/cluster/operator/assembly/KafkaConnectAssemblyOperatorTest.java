@@ -24,7 +24,6 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -58,7 +57,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,13 +86,12 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testCreateCluster(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
-        PodDisruptionBudgetOperator mockPdbOps = mock(PodDisruptionBudgetOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -114,11 +111,9 @@ public class KafkaConnectAssemblyOperatorTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm, VERSIONS);
 
@@ -161,13 +156,12 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterNoDiff(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
-        PodDisruptionBudgetOperator mockPdbOps = mock(PodDisruptionBudgetOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -199,11 +193,8 @@ public class KafkaConnectAssemblyOperatorTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -234,13 +225,12 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateCluster(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
-        PodDisruptionBudgetOperator mockPdbOps = mock(PodDisruptionBudgetOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -300,11 +290,8 @@ public class KafkaConnectAssemblyOperatorTest {
             return Future.succeededFuture();
         }).when(mockCmOps).reconcile(eq(clusterCmNamespace), anyString(), any());
 
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -347,13 +334,12 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterFailure(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
-        PodDisruptionBudgetOperator mockPdbOps = mock(PodDisruptionBudgetOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -390,11 +376,8 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -408,13 +391,12 @@ public class KafkaConnectAssemblyOperatorTest {
     public void testUpdateClusterScaleUp(TestContext context) {
         final int scaleTo = 4;
 
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
-        PodDisruptionBudgetOperator mockPdbOps = mock(PodDisruptionBudgetOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -441,11 +423,8 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -461,13 +440,12 @@ public class KafkaConnectAssemblyOperatorTest {
     public void testUpdateClusterScaleDown(TestContext context) {
         int scaleTo = 2;
 
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
-        PodDisruptionBudgetOperator mockPdbOps = mock(PodDisruptionBudgetOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
 
         String clusterCmName = "foo";
         String clusterCmNamespace = "test";
@@ -494,11 +472,8 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null);
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         Async async = context.async();
         ops.createOrUpdate(new Reconciliation("test-trigger", ResourceType.CONNECT, clusterCmNamespace, clusterCmName), clusterCm).setHandler(createResult -> {
@@ -512,13 +487,11 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testReconcile(TestContext context) {
-        CrdOperator mockConnectOps = mock(CrdOperator.class);
-        ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
-        ServiceOperator mockServiceOps = mock(ServiceOperator.class);
-        DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
-        SecretOperator mockSecretOps = mock(SecretOperator.class);
-        NetworkPolicyOperator mockPolicyOps = mock(NetworkPolicyOperator.class);
-        PodDisruptionBudgetOperator mockPdbOps = mock(PodDisruptionBudgetOperator.class);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
 
         String clusterCmNamespace = "test";
 
@@ -546,11 +519,8 @@ public class KafkaConnectAssemblyOperatorTest {
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
         Async async = context.async(2);
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(),
-                mockConnectOps,
-                mockCmOps, mockDcOps, mockServiceOps, mockSecretOps, mockPolicyOps, mockPdbOps, supplier, VERSIONS, null) {
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
 
             @Override
             public Future<Void> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly) {

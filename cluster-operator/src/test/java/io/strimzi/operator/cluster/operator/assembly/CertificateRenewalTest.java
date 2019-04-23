@@ -18,7 +18,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -58,7 +57,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.operator.cluster.model.Ca.CA_CRT;
 import static io.strimzi.operator.cluster.model.Ca.CA_KEY;
 import static io.strimzi.test.TestUtils.set;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -99,11 +97,10 @@ public class CertificateRenewalTest {
         when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
         when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), 1L, certManager,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), ResourceUtils.dummyClusterOperatorConfig(1L), certManager,
                 new ResourceOperatorSupplier(null, null, null,
-                        null, null, secretOps, null, null,
-                        null, null, null, null, null, null, null, null),
-                new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), null);
+                        null, null, secretOps, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null, null));
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
         Kafka kafka = new KafkaBuilder()

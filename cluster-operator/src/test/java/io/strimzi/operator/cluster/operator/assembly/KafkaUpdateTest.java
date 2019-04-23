@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -150,12 +151,11 @@ public class KafkaUpdateTest {
             return Future.succeededFuture();
         });
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), 1L,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), ResourceUtils.dummyClusterOperatorConfig(lookup, 1L),
                 new MockCertManager(),
                 new ResourceOperatorSupplier(null, null, null,
-                        kso, null, null, null, null,
-                        null, null, null, null, null, null, null, null),
-                lookup, null);
+                        kso, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null, null, null));
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
         Async async = context.async();

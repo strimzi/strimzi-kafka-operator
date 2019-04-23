@@ -47,7 +47,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testReconciliationInterval() {
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), null);
+        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), null, null);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(60_000, config.getReconciliationIntervalMs());
