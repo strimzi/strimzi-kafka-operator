@@ -84,7 +84,7 @@ Partitions not included in the JSON are not changed.
 == Reassigning partitions between JBOD volumes
 
 When using JBOD storage in your Kafka cluster, you can choose to reassign the partitions between specific volumes and their log directories (each volume has a single log directory).
-To reassign a partition to a specific volume, the `log_dirs` option has to be added to _<PartitionObjects>_.
+To reassign a partition to a specific volume, add the `log_dirs` option to _<PartitionObjects>_ in the reassignment JSON file.
 
 [source,subs=+quotes]
 ----
