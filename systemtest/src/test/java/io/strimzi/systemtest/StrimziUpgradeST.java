@@ -91,13 +91,13 @@ public class StrimziUpgradeST extends AbstractST {
                     switch (procedure) {
                         case "set log message format version to 2.0": {
                             replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", "2.0"));
-                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, kafkaPods);
+                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
                             makeSnapshots();
                             break;
                         }
                         case "set log message format version to 2.1": {
                             replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", "2.1"));
-                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, kafkaPods);
+                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
                             makeSnapshots();
                             break;
                         }
@@ -108,13 +108,13 @@ public class StrimziUpgradeST extends AbstractST {
                         }
                         case "set Kafka version to 2.1.0": {
                             replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion("2.1.0"));
-                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, kafkaPods);
+                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
                             makeSnapshots();
                             break;
                         }
                         case "set Kafka version to 2.1.1": {
                             replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion("2.1.1"));
-                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, kafkaPods);
+                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
                             makeSnapshots();
                             break;
                         }
@@ -180,9 +180,9 @@ public class StrimziUpgradeST extends AbstractST {
     private void waitForClusterReadiness() {
         // Wait for readiness
         LOGGER.info("Waiting for Zookeeper StatefulSet");
-        StUtils.waitForAllStatefulSetPodsReady("my-cluster-zookeeper");
+        StUtils.waitForAllStatefulSetPodsReady("my-cluster-zookeeper", 3);
         LOGGER.info("Waiting for Kafka StatefulSet");
-        StUtils.waitForAllStatefulSetPodsReady("my-cluster-kafka");
+        StUtils.waitForAllStatefulSetPodsReady("my-cluster-kafka", 3);
         LOGGER.info("Waiting for EO Deployment");
         StUtils.waitForDeploymentReady("my-cluster-entity-operator");
     }
@@ -198,19 +198,19 @@ public class StrimziUpgradeST extends AbstractST {
         String uOImage = imagesArray[3];
 
         LOGGER.info("Waiting for ZK SS roll");
-        StUtils.waitTillSsHasRolled(NAMESPACE, zkSsName, zkPods);
+        StUtils.waitTillSsHasRolled(NAMESPACE, zkSsName, 3, zkPods);
         LOGGER.info("Checking ZK pods using new image");
         waitTillAllPodsUseImage(KUBE_CLIENT.getStatefulSet(zkSsName).getSpec().getSelector().getMatchLabels(),
                 zkImage);
 
         LOGGER.info("Waiting for Kafka SS roll");
-        StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, kafkaPods);
+        StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
         LOGGER.info("Checking Kafka pods using new image");
         waitTillAllPodsUseImage(KUBE_CLIENT.getStatefulSet(kafkaSsName).getSpec().getSelector().getMatchLabels(),
                 kafkaImage);
         LOGGER.info("Waiting for EO Dep roll");
         // Check the TO and UO also got upgraded
-        StUtils.waitTillDepHasRolled(NAMESPACE, eoDepName, eoPods);
+        StUtils.waitTillDepHasRolled(NAMESPACE, eoDepName, 1, eoPods);
         LOGGER.info("Checking EO pod using new image");
         waitTillAllContainersUseImage(
                 KUBE_CLIENT.getDeployment(eoDepName).getSpec().getSelector().getMatchLabels(),

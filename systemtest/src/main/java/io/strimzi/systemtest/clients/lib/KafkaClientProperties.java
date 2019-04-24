@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.test.client.Kubernetes;
+import io.strimzi.test.k8s.Kubernetes;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

@@ -6,11 +6,9 @@ package io.strimzi.systemtest;
 
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -217,7 +215,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         AtomicReference<String> versions = new AtomicReference<>();
         waitFor("kafka-broker-api-versions.sh success", Constants.GET_BROKER_API_INTERVAL, Constants.GET_BROKER_API_TIMEOUT, () -> {
             try {
-                String output = KUBE_CLIENT.execInPod(podName,
+                String output = KUBE_CLIENT.execInPod(podName, "kafka",
                         "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092");
                 versions.set(output);
                 return true;
@@ -309,12 +307,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
-        KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c", command);
+        KUBE_CLIENT.execInPod(podName, "kafka", "/bin/bash", "-c", command);
     }
 
     public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
         LOGGER.info("Consuming messages");
-        String output = KUBE_CLIENT.execInPod(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
+        String output = KUBE_CLIENT.execInPod(kafkaPodName(clusterName, kafkaPodID), "kafka", "/bin/bash", "-c",
                 "bin/kafka-verifiable-consumer.sh --broker-list " +
                         KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --group-id " + groupID + " & sleep "
                         + timeout + "; kill %1");
@@ -342,7 +340,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     protected void assertExpectedJavaOpts(String podName, String expectedXmx, String expectedXms, String expectedServer, String expectedXx) {
-        List<List<String>> cmdLines = commandLines(podName, "java");
+        List<List<String>> cmdLines = commandLines(podName, "kafka", "java");
         assertEquals(1, cmdLines.size(), "Expected exactly 1 java process to be running");
         List<String> cmd = cmdLines.get(0);
         int toIndex = cmd.indexOf("-jar");
@@ -365,9 +363,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    private List<List<String>> commandLines(String podName, String cmd) {
+    private List<List<String>> commandLines(String podName, String containerName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        String output = KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        String output = KUBE_CLIENT.execInPod(podName, containerName, "/bin/bash", "-c",
                 "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
         );
         for (String cmdLine : output.split("\n")) {
@@ -489,88 +487,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
                 "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
                 "password=\"" + password + "\";\n";
-    }
-
-    private PodSpecBuilder createPodSpecForProducer(ContainerBuilder cb, KafkaUser kafkaUser, boolean tlsListener, String bootstrapServer) {
-        PodSpecBuilder podSpecBuilder = new PodSpecBuilder()
-                .withRestartPolicy("OnFailure");
-
-        String kafkaUserName = kafkaUser != null ? kafkaUser.getMetadata().getName() : null;
-        boolean scramShaUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication;
-        boolean tlsUser = kafkaUser != null && kafkaUser.getSpec() != null && kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication;
-
-        String producerConfiguration = "acks=all\n";
-        if (tlsListener) {
-            if (scramShaUser) {
-                producerConfiguration += "security.protocol=SASL_SSL\n";
-                producerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                producerConfiguration += "security.protocol=SSL\n";
-            }
-            producerConfiguration +=
-                    "ssl.truststore.location=/tmp/truststore.p12\n" +
-                            "ssl.truststore.type=pkcs12\n";
-        } else {
-            if (scramShaUser) {
-                producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                producerConfiguration += saslConfigs(kafkaUser);
-            } else {
-                producerConfiguration += "security.protocol=PLAINTEXT\n";
-            }
-        }
-
-        if (tlsUser) {
-            producerConfiguration +=
-                    "ssl.keystore.location=/tmp/keystore.p12\n" +
-                            "ssl.keystore.type=pkcs12\n";
-            cb.addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv();
-
-            String userSecretVolumeName = "tls-cert";
-            String userSecretMountPoint = "/opt/kafka/user-secret";
-            cb.addNewVolumeMount()
-                    .withName(userSecretVolumeName)
-                    .withMountPath(userSecretMountPoint)
-                    .endVolumeMount()
-                    .addNewEnv().withName("USER_LOCATION").withValue(userSecretMountPoint).endEnv();
-            podSpecBuilder
-                    .addNewVolume()
-                    .withName(userSecretVolumeName)
-                    .withNewSecret()
-                    .withSecretName(kafkaUserName)
-                    .endSecret()
-                    .endVolume();
-        }
-
-        cb.addNewEnv().withName("PRODUCER_CONFIGURATION").withValue(producerConfiguration).endEnv();
-
-        if (kafkaUserName != null) {
-            cb.addNewEnv().withName("KAFKA_USER").withValue(kafkaUserName).endEnv();
-        }
-
-        if (tlsListener) {
-            String clusterCaSecretName = clusterCaCertSecretName(bootstrapServer);
-            String clusterCaSecretVolumeName = "ca-cert";
-            String caSecretMountPoint = "/opt/kafka/cluster-ca";
-            cb.addNewVolumeMount()
-                .withName(clusterCaSecretVolumeName)
-                .withMountPath(caSecretMountPoint)
-                .endVolumeMount()
-                .addNewEnv().withName("PRODUCER_TLS").withValue("TRUE").endEnv()
-                .addNewEnv().withName("CA_LOCATION").withValue(caSecretMountPoint).endEnv()
-                .addNewEnv().withName("TRUSTSTORE_LOCATION").withValue("/tmp/truststore.p12").endEnv();
-            if (tlsUser) {
-                cb.addNewEnv().withName("KEYSTORE_LOCATION").withValue("/tmp/keystore.p12").endEnv();
-            }
-            podSpecBuilder
-                .addNewVolume()
-                    .withName(clusterCaSecretVolumeName)
-                        .withNewSecret()
-                            .withSecretName(clusterCaSecretName)
-                        .endSecret()
-                .endVolume();
-        }
-
-        return podSpecBuilder.withContainers(cb.build());
     }
 
     String clusterCaCertSecretName(String cluster) {

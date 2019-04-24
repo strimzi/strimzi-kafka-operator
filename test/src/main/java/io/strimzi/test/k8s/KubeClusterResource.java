@@ -4,8 +4,6 @@
  */
 package io.strimzi.test.k8s;
 
-import io.strimzi.test.client.Kubernetes;
-
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
  * for use with {@code @BeforeAll} (or {@code BeforeEach}.

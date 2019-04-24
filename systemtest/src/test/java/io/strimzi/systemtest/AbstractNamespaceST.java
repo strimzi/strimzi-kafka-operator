@@ -32,7 +32,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
         LOGGER.info("Waiting for creation {} in namespace {}", kafkaName, SECOND_NAMESPACE);
         KUBE_CMD_CLIENT.namespace(SECOND_NAMESPACE);
-        StUtils.waitForAllStatefulSetPodsReady(kafkaName);
+        StUtils.waitForAllStatefulSetPodsReady(kafkaName, 3);
     }
 
     void checkMirrorMakerForKafkaInDifNamespaceThanCO() {

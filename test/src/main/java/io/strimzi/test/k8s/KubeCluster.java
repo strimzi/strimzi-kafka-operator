@@ -4,7 +4,6 @@
  */
 package io.strimzi.test.k8s;
 
-import io.strimzi.test.client.Kubernetes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

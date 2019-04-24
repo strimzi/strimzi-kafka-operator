@@ -45,7 +45,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.test.client.Kubernetes;
+import io.strimzi.test.k8s.Kubernetes;
 import io.strimzi.test.k8s.KubeClusterResource;
 
 abstract class AbstractResources {

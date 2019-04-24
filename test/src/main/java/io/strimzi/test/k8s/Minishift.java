@@ -6,7 +6,6 @@ package io.strimzi.test.k8s;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
-import io.strimzi.test.client.Kubernetes;
 import io.strimzi.test.executor.Exec;
 
 public class Minishift implements KubeCluster {

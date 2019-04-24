@@ -454,8 +454,8 @@ public class Resources extends AbstractResources {
         String name = kafka.getMetadata().getName();
         LOGGER.info("Waiting for Kafka {}", name);
         String namespace = kafka.getMetadata().getNamespace();
-        waitForStatefulSet(namespace, KafkaResources.zookeeperStatefulSetName(name));
-        waitForStatefulSet(namespace, KafkaResources.kafkaStatefulSetName(name));
+        waitForStatefulSet(KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
+        waitForStatefulSet(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
         StUtils.waitForDeploymentReady(namespace, KafkaResources.entityOperatorDeploymentName(name));
         return kafka;
     }
@@ -491,8 +491,8 @@ public class Resources extends AbstractResources {
     /**
      * Wait until the SS is ready and all of its Pods are also ready
      */
-    private void waitForStatefulSet(String namespace, String name) {
-        StUtils.waitForAllStatefulSetPodsReady(name);
+    private void waitForStatefulSet(String name, int expectedPods) {
+        StUtils.waitForAllStatefulSetPodsReady(name, expectedPods);
     }
 
     private void waitForDeploymentConfig(String namespace, String name) {

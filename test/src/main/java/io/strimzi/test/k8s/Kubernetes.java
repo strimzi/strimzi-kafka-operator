@@ -2,7 +2,7 @@
  * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.client;
+package io.strimzi.test.k8s;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Doneable;
@@ -34,7 +34,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.test.k8s.NamespaceHolder;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +42,7 @@ import java.io.ByteArrayOutputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -91,12 +91,13 @@ public class Kubernetes {
     }
 
 
-    public String execInPod(String podName, String... command) {
+    public String execInPod(String podName, String containerName, String... command) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
         CompletableFuture<String> data = new CompletableFuture<>();
         try (ExecWatch execWatch = client.pods().inNamespace(getNamespace())
                 .withName(podName)
+                .inContainer(containerName)
                 .readingInput(null)
                 .writingOutput(baos)
                 .usingListener(new ExecListener() {
@@ -159,6 +160,10 @@ public class Kubernetes {
 
     public List<Pod> listPods(Map<String, String> labelSelector) {
         return client.pods().inNamespace(getNamespace()).withLabels(labelSelector).list().getItems();
+    }
+
+    public List<Pod> listPods(String key, String value) {
+        return listPods(Collections.singletonMap(key, value));
     }
 
     public List<Pod> listPods() {

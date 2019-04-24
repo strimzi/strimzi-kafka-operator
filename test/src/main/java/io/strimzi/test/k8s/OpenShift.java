@@ -6,7 +6,6 @@ package io.strimzi.test.k8s;
 
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.client.Kubernetes;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
