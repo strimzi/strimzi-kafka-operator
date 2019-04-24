@@ -161,7 +161,7 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertEquals("2", kafka.getSpec().getKafka().getConfig().get("default.replication.factor"));
         assertEquals("5", kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"));
         assertEquals("5", kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"));
-        assertEquals("2Gi", ((PersistentClaimStorage)((JbodStorage) kafka.getSpec().getKafka().getStorage()).getVolumes().get(0)).getSize());
+        assertEquals("2Gi", ((PersistentClaimStorage) ((JbodStorage) kafka.getSpec().getKafka().getStorage()).getVolumes().get(0)).getSize());
         assertEquals("2Gi", ((PersistentClaimStorage) kafka.getSpec().getZookeeper().getStorage()).getSize());
     }
 
