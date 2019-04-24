@@ -70,6 +70,9 @@
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 :CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
 
+:OperatorHub: link:https://operatorhub.io/[OperatorHub.io^]
+:OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
+
 // Container image names and repositories
 :DockerOrg: docker.io/strimzi
 :DockerTag: {ProductVersion}
@@ -98,6 +101,7 @@
 // Section enablers
 :Kubernetes:
 :Helm:
+:OperatorHubio:
 :StrimziUpgrades:
 :InstallationAppendix:
 :MetricsAppendix:

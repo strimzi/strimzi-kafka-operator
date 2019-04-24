@@ -25,6 +25,10 @@ ifdef::Helm[]
 include::proc-deploying-cluster-operator-helm-chart.adoc[leveloffset=+1]
 endif::Helm[]
 
+ifdef::OperatorHubio[]
+include::con-deploying-cluster-operator-from-operator-hub.adoc[leveloffset=+1]
+endif::OperatorHubio[]
+
 include::con-cluster-operator-reconciliation.adoc[leveloffset=+1]
 
 include::ref-operators-cluster-operator-configuration.adoc[leveloffset=+1]
