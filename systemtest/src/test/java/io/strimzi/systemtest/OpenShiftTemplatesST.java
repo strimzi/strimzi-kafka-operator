@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -42,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * not that the created resource is processed by operator(s) in the appropriate way.
  */
 @OpenShiftOnly
+@Tag(REGRESSION)
 public class OpenShiftTemplatesST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
@@ -64,7 +66,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(ACCEPTANCE)
     void testStrimziEphemeral() {
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -96,7 +97,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -126,7 +126,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testStrimziPersistentWithCustomParameters() {
         String clusterName = "test-persistent-with-custom-parameters";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
@@ -160,7 +159,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testConnect() {
         String clusterName = "test-connect";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
@@ -172,7 +170,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testS2i() {
         String clusterName = "test-s2i";
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
@@ -184,7 +181,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testTopicOperator() {
         String topicName = "test-topic-topic";
         oc.newApp("strimzi-topic", map(
@@ -217,6 +213,11 @@ public class OpenShiftTemplatesST extends AbstractST {
     void tearDownEnvironmentAfterAll() {
         deleteCustomResources();
         deleteNamespaces();
+    }
+
+    @Override
+    void tearDownEnvironmentAfterEach() {
+
     }
 
     @Override

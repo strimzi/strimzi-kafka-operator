@@ -15,10 +15,12 @@ import org.junit.jupiter.api.TestInfo;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
+@Tag(REGRESSION)
 class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);

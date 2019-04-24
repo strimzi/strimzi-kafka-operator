@@ -17,9 +17,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
+@Tag(REGRESSION)
 class ConnectS2IST extends AbstractST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";

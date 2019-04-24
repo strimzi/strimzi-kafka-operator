@@ -9,8 +9,8 @@ pipeline {
         }
     }
     parameters {
-        string(name: 'JUNIT_TAGS', defaultValue: 'acceptance,regression', description: 'maven parameter for executing specific subset of tests with specific tag')
         string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
+        string(name: 'TEST_PROFILE', defaultValue: 'regression', description: 'maven parameter for executing specific test profile')
     }
     options {
         timeout(time: 7, unit: 'HOURS')
@@ -42,16 +42,16 @@ pipeline {
         stage('Parse parameters from comment') {
             steps {
                 script {
-                    env.JUNIT_TAGS = params.JUNIT_TAGS
                     env.TEST_CASE = params.TEST_CASE
-                    if (env.ghprbCommentBody.contains('tags=')) {
-                        env.JUNIT_TAGS = env.ghprbCommentBody.split('tags=')[1].split(/\s/)[0]
-                    }
-                    echo "JUNIT_TAGS: ${env.JUNIT_TAGS}"
+                    env.TEST_PROFILE = params.TEST_PROFILE
                     if (env.ghprbCommentBody.contains('testcase=')) {
                         env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
                     }
                     echo "TEST_CASE: ${env.TEST_CASE}"
+                    if (env.ghprbCommentBody.contains('profile=')) {
+                        env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
+                    }
+                    echo "TEST_PROFILE: ${env.TEST_PROFILE}"
                 }
             }
         }
@@ -75,7 +75,7 @@ pipeline {
         stage('Execute system tests') {
             steps {
                 script {
-                    lib.runSystemTests(env.WORKSPACE, env.JUNIT_TAGS, env.TEST_CASE)
+                    lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE)
                 }
             }
         }

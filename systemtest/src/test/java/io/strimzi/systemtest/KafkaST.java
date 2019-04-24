@@ -46,6 +46,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
@@ -68,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
+@Tag(REGRESSION)
 class KafkaST extends MessagingBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
@@ -110,8 +112,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
-    void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
+    void testKafkaAndZookeeperScaleUpScaleDown() {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -184,7 +185,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testEODeletion() {
         // Deploy kafka cluster with EO
         Kafka kafka = testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -207,7 +207,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testZookeeperScaleUpScaleDown() {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -261,7 +260,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testCustomAndUpdatedValues() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
@@ -375,7 +373,6 @@ class KafkaST extends MessagingBaseST {
      * Test sending messages over plain transport, without auth
      */
     @Test
-    @Tag(REGRESSION)
     void testSendMessagesPlainAnonymous() throws Exception {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -392,7 +389,6 @@ class KafkaST extends MessagingBaseST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @Test
-    @Tag(REGRESSION)
     void testSendMessagesTlsAuthenticated() throws Exception {
         String kafkaUser = "my-user";
         int messagesCount = 200;
@@ -425,7 +421,6 @@ class KafkaST extends MessagingBaseST {
      * Test sending messages over plain transport using scram sha auth
      */
     @Test
-    @Tag(REGRESSION)
     void testSendMessagesPlainScramSha() throws Exception {
         String kafkaUser = "my-user";
         int messagesCount = 200;
@@ -469,7 +464,6 @@ class KafkaST extends MessagingBaseST {
      * Test sending messages over tls transport using scram sha auth
      */
     @Test
-    @Tag(REGRESSION)
     void testSendMessagesTlsScramSha() throws Exception {
         String kafkaUser = "my-user";
         int messagesCount = 200;
@@ -496,7 +490,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testJvmAndResources() {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
@@ -593,7 +586,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testForTopicOperator() throws InterruptedException {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
@@ -645,7 +637,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testTopicWithoutLabels() {
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
@@ -720,7 +711,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testRackAware() {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
@@ -754,7 +744,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testManualTriggeringRollingUpdate() {
         String coPodName = KUBE_CLIENT.listResourcesByLabel("pod", "name=strimzi-cluster-operator").get(0);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
@@ -803,7 +792,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testNodePort() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -822,7 +810,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testNodePortTls() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
@@ -846,7 +833,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testLoadBalancer() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -865,7 +851,6 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testLoadBalancerTls() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()

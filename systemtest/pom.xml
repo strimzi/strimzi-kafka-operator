@@ -165,28 +165,28 @@
             <id>acceptance</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance &amp; !regression</groups>
+                <groups>acceptance</groups>
             </properties>
         </profile>
         <profile>
             <id>regression</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance &amp; regression</groups>
+                <groups>regression &amp; !flaky &amp; !cci_flaky</groups>
             </properties>
         </profile>
         <profile>
             <id>all</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>acceptance &amp; regression &amp; flaky &amp; cci_flaky</groups>
+                <groups>acceptance | regression | flaky | cci_flaky</groups>
             </properties>
         </profile>
         <profile>
             <id>flaky</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>flaky &amp; cci_flaky</groups>
+                <groups>flaky | cci_flaky</groups>
             </properties>
         </profile>
     </profiles>
