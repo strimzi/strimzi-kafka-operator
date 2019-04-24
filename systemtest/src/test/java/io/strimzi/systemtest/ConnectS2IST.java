@@ -8,8 +8,6 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -57,14 +55,9 @@ class ConnectS2IST extends AbstractST {
         createResources();
     }
 
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-    }
-
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating testMethodResources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
@@ -72,12 +65,6 @@ class ConnectS2IST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
         deployTestSpecificResources();
-    }
-
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
     }
 
     void deployTestSpecificResources() {

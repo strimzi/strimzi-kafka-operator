@@ -8,7 +8,6 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -190,7 +189,7 @@ class RecoveryST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating testMethodResources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
@@ -199,12 +198,6 @@ class RecoveryST extends AbstractST {
         testClassResources.clusterOperator(NAMESPACE).done();
 
         deployTestSpecificResources();
-    }
-
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
     }
 
     void deployTestSpecificResources() {

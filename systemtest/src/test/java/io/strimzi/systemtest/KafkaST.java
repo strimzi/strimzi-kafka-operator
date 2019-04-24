@@ -30,8 +30,6 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -115,7 +113,7 @@ class KafkaST extends MessagingBaseST {
     @Tag(REGRESSION)
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -189,7 +187,7 @@ class KafkaST extends MessagingBaseST {
     @Tag(REGRESSION)
     void testEODeletion() {
         // Deploy kafka cluster with EO
-        Kafka kafka = resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        Kafka kafka = testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         // Get pod name to check termination process
         Optional<Pod> pod = CLIENT.pods().inNamespace(KUBE_CLIENT.namespace()).list().getItems()
@@ -201,7 +199,7 @@ class KafkaST extends MessagingBaseST {
         // Remove EO from Kafka DTO
         kafka.getSpec().setEntityOperator(null);
         // Replace Kafka configuration with removed EO
-        resources.kafka(kafka).done();
+        testMethodResources.kafka(kafka).done();
 
         // Wait when EO(UO + TO) will be removed
         KUBE_CLIENT.waitForResourceDeletion("deployment", entityOperatorDeploymentName(CLUSTER_NAME));
@@ -212,7 +210,7 @@ class KafkaST extends MessagingBaseST {
     @Tag(REGRESSION)
     void testZookeeperScaleUpScaleDown() {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
         final int initialZkReplicas = CLIENT.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(zookeeperClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
@@ -275,7 +273,7 @@ class KafkaST extends MessagingBaseST {
         zookeeperConfig.put("initLimit", "5");
         zookeeperConfig.put("syncLimit", "2");
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 2)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 2)
             .editSpec()
                 .editKafka()
                     .withNewReadinessProbe()
@@ -382,10 +380,10 @@ class KafkaST extends MessagingBaseST {
         int messagesCount = 200;
         String topicName = TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-        resources().topic(CLUSTER_NAME, topicName).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
 
-        resources().deployKafkaClients(CLUSTER_NAME).done();
+        testMethodResources().deployKafkaClients(CLUSTER_NAME).done();
 
         availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
     }
@@ -405,7 +403,7 @@ class KafkaST extends MessagingBaseST {
         listenerTls.setAuth(auth);
 
         // Use a Kafka with plain listener disabled
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -415,11 +413,11 @@ class KafkaST extends MessagingBaseST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        resources().topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        resources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, user).done();
         availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
     }
 
@@ -438,7 +436,7 @@ class KafkaST extends MessagingBaseST {
         listenerTls.setAuthentication(auth);
 
         // Use a Kafka with plain listener disabled
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 1)
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -446,8 +444,8 @@ class KafkaST extends MessagingBaseST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        resources().topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
         String brokerPodLog = podLog(CLUSTER_NAME + "-kafka-0", "kafka");
@@ -463,7 +461,7 @@ class KafkaST extends MessagingBaseST {
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        resources().deployKafkaClients(false, CLUSTER_NAME, user).done();
+        testMethodResources().deployKafkaClients(false, CLUSTER_NAME, user).done();
         availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
     }
 
@@ -481,7 +479,7 @@ class KafkaST extends MessagingBaseST {
         listenerTls.setAuth(new KafkaListenerAuthenticationScramSha512());
 
         // Use a Kafka with plain listener disabled
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -489,11 +487,11 @@ class KafkaST extends MessagingBaseST {
                         .endListeners()
                     .endKafka()
                 .endSpec().build()).done();
-        resources().topic(CLUSTER_NAME, topicName).done();
-        KafkaUser user = resources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
+        testMethodResources().topic(CLUSTER_NAME, topicName).done();
+        KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        resources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, user).done();
         availabilityTest(messagesCount, 180000, CLUSTER_NAME, true, topicName, user);
     }
 
@@ -503,7 +501,7 @@ class KafkaST extends MessagingBaseST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 1)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editKafka()
                     .withResources(new ResourceRequirementsBuilder()
@@ -597,7 +595,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testForTopicOperator() throws InterruptedException {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         //Creating topics for testing
         KUBE_CLIENT.create(TOPIC_CM);
@@ -650,10 +648,10 @@ class KafkaST extends MessagingBaseST {
     @Tag(REGRESSION)
     void testTopicWithoutLabels() {
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         // Creating topic without any label
-        resources().topic(CLUSTER_NAME, "topic-without-labels")
+        testMethodResources().topic(CLUSTER_NAME, "topic-without-labels")
             .editMetadata()
                 .withLabels(null)
             .endMetadata()
@@ -723,8 +721,8 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     @Tag(REGRESSION)
-    void testRackAware() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
+    void testRackAware() {
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewRack()
@@ -759,7 +757,7 @@ class KafkaST extends MessagingBaseST {
     @Tag(REGRESSION)
     void testManualTriggeringRollingUpdate() {
         String coPodName = KUBE_CLIENT.listResourcesByLabel("pod", "name=strimzi-cluster-operator").get(0);
-        resources().kafkaEphemeral(CLUSTER_NAME, 1).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
 
         // rolling update for kafka
         operationID = startTimeMeasuring(Operation.ROLLING_UPDATE);
@@ -807,7 +805,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testNodePort() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -826,7 +824,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testNodePortTls() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -839,7 +837,7 @@ class KafkaST extends MessagingBaseST {
             .done();
 
         String userName = "alice";
-        resources().tlsUser(CLUSTER_NAME, userName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
@@ -850,7 +848,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testLoadBalancer() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -869,7 +867,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testLoadBalancerTls() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -882,7 +880,7 @@ class KafkaST extends MessagingBaseST {
             .done();
 
         String userName = "alice";
-        resources().tlsUser(CLUSTER_NAME, userName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
@@ -1072,8 +1070,8 @@ class KafkaST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createResources();
-        resources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
-        resources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
+        testMethodResources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
+        testMethodResources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, ENVIRONMENT.getKubernetesApiUrl(), NAMESPACE).done();
     }
 
     @AfterEach
@@ -1093,9 +1091,9 @@ class KafkaST extends MessagingBaseST {
         testClassResources.clusterOperator(NAMESPACE).done();
     }
 
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
+    @Override
+    void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 }

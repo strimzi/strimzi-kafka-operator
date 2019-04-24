@@ -7,8 +7,6 @@ package io.strimzi.systemtest;
 import io.strimzi.api.kafka.model.KafkaUser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -30,7 +28,7 @@ class UserST extends AbstractST {
         LOGGER.info("Running testUpdateUser in namespace {}", NAMESPACE);
         String kafkaUser = "test-user";
 
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -44,7 +42,7 @@ class UserST extends AbstractST {
                 .endKafka()
             .endSpec().build()).done();
 
-        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
+        KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         KUBE_CLIENT.waitForResourceCreation("secret", kafkaUser);
 
         String kafkaUserSecret = KUBE_CLIENT.getResourceAsJson("secret", kafkaUser);
@@ -62,7 +60,7 @@ class UserST extends AbstractST {
 
         kafkaUser = "new-" + kafkaUser;
 
-        resources().user(user)
+        testMethodResources().user(user)
             .editMetadata()
                 .withResourceVersion(null)
                 .withName(kafkaUser)
@@ -89,15 +87,9 @@ class UserST extends AbstractST {
         createResources();
     }
 
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
-    }
-
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating testMethodResources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
@@ -106,9 +98,9 @@ class UserST extends AbstractST {
         testClassResources.clusterOperator(NAMESPACE).done();
     }
 
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
+    @Override
+    void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 }

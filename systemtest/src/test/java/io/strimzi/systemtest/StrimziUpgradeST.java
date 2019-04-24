@@ -15,7 +15,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -260,11 +259,12 @@ public class StrimziUpgradeST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating testMethodResources before the test class");
         createNamespace(NAMESPACE);
     }
-    @AfterAll
-    void teardownEnvironment() {
+
+    @Override
+    void tearDownEnvironmentAfterEach() {
         deleteNamespaces();
     }
 

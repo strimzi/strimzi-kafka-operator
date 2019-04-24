@@ -6,7 +6,6 @@ package io.strimzi.systemtest;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -59,7 +58,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating testMethodResources before the test class");
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE));
         createTestClassResources();
 
@@ -81,12 +80,6 @@ class MultipleNamespaceST extends AbstractNamespaceST {
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec().done();
-    }
-
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
     }
 
     @Override

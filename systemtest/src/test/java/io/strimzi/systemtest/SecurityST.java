@@ -13,8 +13,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -58,7 +56,7 @@ class SecurityST extends AbstractST {
     @Test
     void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
-        resources().kafkaEphemeral(CLUSTER_NAME, 2)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 2)
                 .editSpec().editZookeeper().withReplicas(2).endZookeeper().endSpec().done();
         String commandForKafkaBootstrap = "echo -n | openssl s_client -connect my-cluster-kafka-bootstrap:9093 -showcerts" +
                 " -CAfile /opt/kafka/cluster-ca-certs/ca.crt" +
@@ -166,7 +164,7 @@ class SecurityST extends AbstractST {
     void testAutoRenewCaCertsTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String userName = "alice";
-        resources().tlsUser(CLUSTER_NAME, userName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
@@ -217,7 +215,7 @@ class SecurityST extends AbstractST {
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
-        resources().tlsUser(CLUSTER_NAME, bobUserName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS, () -> {
             return CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null;
         },
@@ -234,7 +232,7 @@ class SecurityST extends AbstractST {
     void testAutoReplaceCaKeysTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
-        resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, aliceUserName).done();
         waitFor("Alic's secret to exist", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
@@ -293,7 +291,7 @@ class SecurityST extends AbstractST {
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
-        resources().tlsUser(CLUSTER_NAME, bobUserName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("Bob's secret to exist", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
@@ -303,7 +301,7 @@ class SecurityST extends AbstractST {
 
     private void createClusterWithExternalRoute() {
         LOGGER.info("Creating a cluster");
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                     .editKafka()
                         .editListeners()
@@ -339,7 +337,7 @@ class SecurityST extends AbstractST {
         // 2. Now create a cluster
         createClusterWithExternalRoute();
         String userName = "alice";
-        resources().tlsUser(CLUSTER_NAME, userName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
         // Check if user exists
         waitTillSecretExists(userName);
 
@@ -429,15 +427,9 @@ class SecurityST extends AbstractST {
         createResources();
     }
 
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
-    }
-
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating testMethodResources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
@@ -446,9 +438,10 @@ class SecurityST extends AbstractST {
         testClassResources.clusterOperator(NAMESPACE).done();
     }
 
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
+    @Override
+    void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
+
 }

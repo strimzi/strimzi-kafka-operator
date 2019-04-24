@@ -43,8 +43,6 @@ public interface Constants {
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String IMAGE_PULL_POLICY = "Always";
 
-    String NOTEARDOWN = "NOTEARDOWN";
-
     /**
      * Default value which allows execution of tests with any tags
      */

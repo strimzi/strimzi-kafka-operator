@@ -51,6 +51,7 @@ import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -120,7 +121,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
 
     public static final String TEST_LOG_DIR = ENVIRONMENT.getTestLogDir();
 
-    Resources resources;
+    Resources testMethodResources;
     static Resources testClassResources;
     static String operationID;
     Random rng = new Random();
@@ -445,7 +446,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
 
     protected void createResources() {
         LOGGER.info("Creating resources before the test");
-        resources = new Resources(namespacedClient());
+        testMethodResources = new Resources(namespacedClient());
     }
 
     protected static void createTestClassResources() {
@@ -453,13 +454,13 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
         testClassResources = new Resources(namespacedClient());
     }
 
-    protected void deleteResources() throws Exception {
-        resources.deleteResources();
-        resources = null;
+    protected void deleteTestMethodResources() throws Exception {
+        testMethodResources.deleteResources();
+        testMethodResources = null;
     }
 
-    Resources resources() {
-        return resources;
+    Resources testMethodResources() {
+        return testMethodResources;
     }
 
     String startTimeMeasuring(Operation operation) {
@@ -690,12 +691,31 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
         }
     }
 
+    void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+    }
+
+    void tearDownEnvironmentAfterAll() {
+        testClassResources.deleteResources();
+    }
+
     @AfterEach
-    void recreateEnvironmentAfterFailure(ExtensionContext context) {
-        if (context.getExecutionException().isPresent()) {
-            LOGGER.info("Test execution contains exception, going to recreate test environment");
-            recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
-            LOGGER.info("Env recreated.");
+    void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
+        if (ENVIRONMENT.getNoteardown().isEmpty()) {
+            if (context.getExecutionException().isPresent()) {
+                LOGGER.info("Test execution contains exception, going to recreate test environment");
+                recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
+                LOGGER.info("Env recreated.");
+            }
+            tearDownEnvironmentAfterEach();
+        }
+    }
+
+    @AfterAll
+    void teardownEnvironmentClass() {
+        if (ENVIRONMENT.getNoteardown().isEmpty()) {
+            tearDownEnvironmentAfterAll();
+            teardownEnvForOperator();
         }
     }
 }

@@ -12,8 +12,6 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -44,11 +42,11 @@ class RollingUpdateST extends AbstractST {
         String firstZkPodName = KafkaResources.zookeeperPodName(CLUSTER_NAME, 0);
         String logZkPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstZkPodName + "'";
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        LOGGER.info("Update resources for pods");
+        LOGGER.info("Update testMethodResources for pods");
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                 .editZookeeper()
                 .withResources(new ResourceRequirementsBuilder()
@@ -96,11 +94,11 @@ class RollingUpdateST extends AbstractST {
         String firstKafkaPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
         String logKafkaPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstKafkaPodName + "'";
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        LOGGER.info("Update resources for pods");
+        LOGGER.info("Update testMethodResources for pods");
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                 .editKafka()
                 .withResources(new ResourceRequirementsBuilder()
@@ -168,15 +166,9 @@ class RollingUpdateST extends AbstractST {
         createResources();
     }
 
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
-    }
-
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating testMethodResources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
@@ -185,9 +177,9 @@ class RollingUpdateST extends AbstractST {
         testClassResources.clusterOperator(NAMESPACE, Long.toString(CO_OPERATION_TIMEOUT)).done();
     }
 
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
+    @Override
+    void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 }

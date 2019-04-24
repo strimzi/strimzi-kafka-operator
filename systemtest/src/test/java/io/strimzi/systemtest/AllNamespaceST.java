@@ -7,7 +7,6 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -111,7 +110,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @BeforeAll
     void setupEnvironment(TestInfo testInfo) {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating testMethodResources before the test class");
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
         createTestClassResources();
 
@@ -134,8 +133,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         KUBE_CLIENT.namespace(previousNamespace);
     }
 
-    @AfterAll
-    void teardownEnvironment() {
+    @Override
+    void tearDownEnvironmentAfterAll() {
         thirdNamespaceResources.deleteResources();
         testClassResources.deleteResources();
         teardownEnvForOperator();

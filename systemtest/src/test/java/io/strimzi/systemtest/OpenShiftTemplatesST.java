@@ -25,7 +25,6 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -203,7 +202,7 @@ public class OpenShiftTemplatesST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating testMethodResources before the test class");
         createNamespace(NAMESPACE);
         createCustomResources("../examples/templates/cluster-operator",
                 "../examples/templates/topic-operator",
@@ -214,8 +213,8 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "src/rbac/role-edit-kafka.yaml");
     }
 
-    @AfterAll
-    void teardownEnvironment() {
+    @Override
+    void tearDownEnvironmentAfterAll() {
         deleteCustomResources();
         deleteNamespaces();
     }
