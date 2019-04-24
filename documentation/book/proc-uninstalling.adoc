@@ -9,10 +9,12 @@ This procedure describes how to uninstall {ProductName} and remove resources rel
 
 .Prerequisites
 
-In order to perform this procedure, you need to identify resources specific to a deployment, such as:
+In order to perform this procedure, identify resources created specifically for a deployment and referenced from the {ProductName} resource.
 
-* Secrets (Custom CAs and certificates, Kafka Connect secrets, and other secrets)
-* Logging `ConfigMaps`
+Resources might include:
+
+* Secrets (Custom CAs and certificates, Kafka Connect secrets, and other Kafka secrets)
+* Logging `ConfigMaps` (of type `external`)
 
 These are resources:
 
