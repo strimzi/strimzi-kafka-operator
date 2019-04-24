@@ -17,6 +17,9 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
@@ -1166,6 +1169,141 @@ class KafkaST extends MessagingBaseST {
             LOGGER.info("Pod {} is ready", name);
         }
         waitForZkRollUp();
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBODDeleteClaimsTrueFalse() {
+        int diskCountPerReplica = 2;
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+
+        List<SingleVolumeStorage> volumes = new ArrayList<>();
+        volumes.add(new PersistentClaimStorageBuilder()
+                .withId(0)
+                .withDeleteClaim(true)
+                .withSize(diskSizeGi + "Gi").build());
+
+        volumes.add(new PersistentClaimStorageBuilder()
+                .withId(1)
+                .withDeleteClaim(false)
+                .withSize(diskSizeGi + "Gi").build());
+
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        // kafka cluster already deployed
+        verifyVolumeNamesAndLabels(2, 2, 10);
+        LOGGER.info("Deleting cluster");
+        KUBE_CLIENT.deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
+        verifyPVCDeletion(2, volumes);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBODDeleteClaimsTrue() {
+        int diskCountPerReplica = 2;
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+
+        List<SingleVolumeStorage> volumes = new ArrayList<>();
+        for (int i = 0; i < diskCountPerReplica; i++) {
+            volumes.add(new PersistentClaimStorageBuilder()
+                    .withId(i)
+                    .withDeleteClaim(true)
+                    .withSize(diskSizeGi + "Gi").build());
+        }
+
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        // kafka cluster already deployed
+
+        verifyVolumeNamesAndLabels(2, 2, 10);
+        LOGGER.info("Deleting cluster");
+        KUBE_CLIENT.deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
+        verifyPVCDeletion(2, volumes);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBODDeleteClaimsFalse() {
+        int diskCountPerReplica = 2;
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+
+        List<SingleVolumeStorage> volumes = new ArrayList<>();
+        for (int i = 0; i < diskCountPerReplica; i++) {
+            volumes.add(new PersistentClaimStorageBuilder()
+                    .withId(i)
+                    .withDeleteClaim(false)
+                    .withSize(diskSizeGi + "Gi").build());
+        }
+
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        // kafka cluster already deployed
+        verifyVolumeNamesAndLabels(2, 2, 10);
+        LOGGER.info("Deleting cluster");
+        KUBE_CLIENT.deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
+        verifyPVCDeletion(2, volumes);
+    }
+
+    void verifyPVCDeletion(int kafkaReplicas, List<SingleVolumeStorage> volumes) {
+        ArrayList pvcs = new ArrayList();
+        CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().stream()
+                .forEach(pvc -> pvcs.add(pvc.getMetadata().getName()));
+
+        volumes.forEach(volume -> {
+            for (int i = 0; i < kafkaReplicas; i++) {
+                String volumeName = "data-" + volume.getId() + "-" + CLUSTER_NAME + "-kafka-" + i;
+                LOGGER.info("Verifying volume: " + volumeName);
+                if (((PersistentClaimStorage) volume).isDeleteClaim()) {
+                    assertFalse(pvcs.contains(volumeName));
+                } else {
+                    assertTrue(pvcs.contains(volumeName));
+                }
+
+            }
+        });
+    }
+
+    void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, int diskSizeGi) {
+
+        ArrayList pvcs = new ArrayList();
+
+        CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().stream()
+                .forEach(volume -> {
+                    String volumeName = volume.getMetadata().getName();
+                    pvcs.add(volumeName);
+                    LOGGER.info("Checking labels for volume:" + volumeName);
+                    assertEquals(CLUSTER_NAME, volume.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("Kafka", volume.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals(CLUSTER_NAME.concat("-kafka"), volume.getMetadata().getLabels().get("strimzi.io/name"));
+                    assertEquals(diskSizeGi + "Gi", volume.getSpec().getResources().getRequests().get("storage").getAmount());
+                });
+
+        LOGGER.info("Checking PVC names included in JBOD array");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+            }
+        }
+
+        LOGGER.info("Checking PVC on Kafka pods");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            ArrayList dataSourcesOnPod = new ArrayList();
+            ArrayList pvcsOnPod = new ArrayList();
+
+            LOGGER.info("Getting list of mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.add(CLIENT.inNamespace(NAMESPACE).pods().
+                        withName(CLUSTER_NAME.concat("-kafka-" + i)).get().getSpec().getVolumes().get(j).getName());
+                pvcsOnPod.add(CLIENT.inNamespace(NAMESPACE).pods().withName(CLUSTER_NAME.concat("-kafka-" + i)).get()
+                        .getSpec().getVolumes().get(j).getPersistentVolumeClaim().getClaimName());
+            }
+
+            LOGGER.info("Verifying mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.contains("data-" + j);
+                pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+            }
+        }
     }
 
     @BeforeEach
