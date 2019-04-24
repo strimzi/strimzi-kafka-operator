@@ -88,9 +88,12 @@ objects:
         initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
         timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}
       storage:
-        type: "persistent-claim"
-        size: "${KAFKA_VOLUME_CAPACITY}"
-        deleteClaim: false
+        type: jbod
+        volumes:
+        - id: 0
+          type: "persistent-claim"
+          size: "${KAFKA_VOLUME_CAPACITY}"
+          deleteClaim: false
       config:
         default.replication.factor: ${KAFKA_DEFAULT_REPLICATION_FACTOR}
         offsets.topic.replication.factor: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}

@@ -94,7 +94,7 @@ class ConnectST extends AbstractST {
 
         sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME, 2);
 
-        TestUtils.waitFor("messages in file sink", 1_000, 30_000,
+        TestUtils.waitFor("messages in file sink", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_SEND_RECEIVE_MSG,
             () -> KUBE_CLIENT.execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out().equals("0\n1\n"));
     }
 
@@ -275,29 +275,6 @@ class ConnectST extends AbstractST {
 
     @AfterAll
     void teardownEnvironment() {
-        LOGGER.info("Collecting logs for pods in namespace {}", NAMESPACE);
-        try {
-            CLIENT.pods().inNamespace(NAMESPACE).list().getItems().forEach(pod -> {
-                String podName = pod.getMetadata().getName();
-                LOGGER.info("POD NAME: {}", podName);
-                pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
-                    LOGGER.info("POD STATUS: {}", containerStatus.getName());
-                    String log = CLIENT.pods().inNamespace(NAMESPACE).withName(podName).inContainer(containerStatus.getName()).getLog();
-                    // Write logs from containers to files
-                    if (podName.contains("strimzi") || podName.contains("kafka-0") || podName.contains("zookeeper-0")) {
-                        LOGGER.info("POD: {}\n{}", podName, log);
-                    }
-                });
-            });
-
-            LOGGER.info("Collecting events in namespace {}", NAMESPACE);
-            String events = KUBE_CLIENT.getEvents();
-            LOGGER.info("EVENTS: \n{}", events);
-
-        } catch (Exception allExceptions) {
-            LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
-        }
-
         testClassResources.deleteResources();
         teardownEnvForOperator();
     }

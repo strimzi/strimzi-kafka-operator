@@ -5,18 +5,85 @@
 [id='assembly-upgrade-{context}']
 = {ProductName} and Kafka upgrades
 
-Each version of {ProductName} supports a range of versions of Apache Kafka.
-You can upgrade to a higher Kafka version as long as that version is supported by your version of {ProductName}.
+{ProductName} can be upgraded with no cluster downtime. Each version of {ProductName} supports one or more versions of Apache Kafka: you can upgrade to a higher Kafka version as long as it is supported by your version of {ProductName}.
 In some cases, you can also downgrade to a lower supported Kafka version.
 
-When a newer version of {ProductName} is available, it may provide support for newer versions of Kafka. 
-Therefore, you will need to upgrade to the new version of {ProductName} before you can upgrade to a higher supported Kafka version.
-Upgrading the version of {ProductName} is done by upgrading the Cluster Operator deployment to the new version.
+Newer versions of {ProductName} may support newer versions of Kafka, but you need to upgrade {ProductName} _before_ you can upgrade to a higher supported Kafka version.
+
+.Procedure outline
+
+In summary, upgrading {ProductName} is a two-stage process. To upgrade brokers and clients without downtime, you _must_ complete the upgrade procedures in the following order:
+
+. First, update your Cluster Operator to the latest {ProductName} version.
+** xref:assembly-upgrade-cluster-operator-{context}[]
+
+. Second, upgrade all Kafka brokers and client applications to the latest Kafka version.
+** xref:assembly-upgrading-kafka-versions-{context}[]
 
 ifdef::StrimziUpgrades[]
-include::proc-upgrading-the-cluster-operator-0-10-0-to-0-11-0.adoc[leveloffset=+1]
+== Kafka versions
+
+The Kafka message format version and inter-broker protocol version are subject to change. As a result, the upgrade process involves making configuration changes to existing Kafka brokers and client applications (consumers and producers).
+
+The following table shows the differences between the Kafka versions:
+
+include::snip-kafka-versions.adoc[leveloffset=+1]
+
 endif::StrimziUpgrades[]
 
-include::proc-upgrading-the-cluster-operator-0-9-0-to-0-10-0.adoc[leveloffset=+1]
+ifndef::StrimziUpgrades[]
+== Kafka versions
+
+{ProductName} 1.0.0 and 1.1.0 are based on different versions of Apache Kafka:
+
+[options="header"]
+|=======================
+|{ProductName} version |Kafka version
+|1.0.0                 |2.0.0
+|1.1.0                 |2.1.1
+|=======================
+
+Kafka's log message format version and inter-broker protocol version specify the log format version appended to messages and the version of protocol used in a cluster. As a result, the upgrade process involves making configuration changes to existing Kafka brokers and code changes to client applications (consumers and producers) to ensure the correct versions are used. 
+
+The following table shows the differences between the Kafka versions:
+
+[options="header"]
+|=======================
+|Kafka version |Interbroker protocol version  |Log message format version | Zookeeper version
+|2.0.0         |2.0                           |2.0                        | 3.4.13
+|2.1.1         |2.1                           |2.1                        | 3.4.13
+|=======================
+
+Although Kafka 2.0.0 and 2.1.1 use the same version of Zookeeper, it is recommended that you update your Zookeeper cluster to use the newest Zookeeper binaries before proceeding with the main {ProductName} 1.1.0 upgrade.
+endif::StrimziUpgrades[]
+
+.Message format version
+
+When a producer sends a message to a Kafka broker, the message is encoded using a specific format. 
+The format can change between Kafka releases, so messages include a version identifying which version of the format they were encoded with. You can configure a Kafka broker to convert messages from newer format versions to a given older format version before the broker appends the message to the log.
+
+In Kafka, there are two different methods for setting the message format version:
+
+* The `log.message.format.version` property is set on Kafka brokers.
+
+* The `message.format.version` property is set on topics.
+
+The default value of `message.format.version` for a  topic is defined by the `log.message.format.version` that is set on the Kafka broker. You can manually set the `message.format.version` of a topic by modifying its topic configuration.
+
+The upgrade tasks in this section assume that the message format version is defined by the `log.message.format.version`.
+
+ifndef::StrimziUpgrades[]
+== Upgrade prerequisites
+
+Before you begin the upgrade process, make sure that:
+
+* {ProductName} is installed. For instructions, see xref:getting-started-{context}[].
+
+* You have read the link:https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html-single/amq_streams_1.1.0_on_openshift_container_platform_release_notes/index[{ProductName} 1.1.0 on Red Hat Enterprise Linux Release Notes].
+endif::StrimziUpgrades[]
+
+include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-upgrading-kafka-versions.adoc[leveloffset=+1]
+
+include::assembly-downgrading-kafka-versions.adoc[leveloffset=+1]

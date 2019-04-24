@@ -156,22 +156,6 @@ class LogSettingST extends AbstractST {
     @Test
     @Order(8)
     void testGcLoggingSetEnabled() {
-        EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
-        entityOperatorJvmOptions.setGcLoggingEnabled(true);
-
-        JvmOptions jvmOptions = new JvmOptions();
-        jvmOptions.setGcLoggingEnabled(true);
-
-        replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getKafka().setJvmOptions(jvmOptions);
-            k.getSpec().getKafka().setJvmOptions(jvmOptions);
-            k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(entityOperatorJvmOptions);
-            k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(entityOperatorJvmOptions);
-        });
-
-        replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
-        replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
-
         assertTrue(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is enabled");
         assertTrue(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is enabled");
 
@@ -185,17 +169,36 @@ class LogSettingST extends AbstractST {
     @Test
     @Order(9)
     void testGcLoggingSetDisabled() {
-        String connectName = CLUSTER_NAME + "-connect";
-        String mmName = CLUSTER_NAME + "-mirror-maker";
+        String connectName = kafkaConnectName(CLUSTER_NAME);
+        String mmName = kafkaMirrorMakerName(CLUSTER_NAME);
+        String eoName = entityOperatorDeploymentName(CLUSTER_NAME);
+        String kafkaName = kafkaClusterName(CLUSTER_NAME);
+        String zkName = zookeeperClusterName(CLUSTER_NAME);
         Map<String, String> connectPods = StUtils.depSnapshot(CLIENT, NAMESPACE, connectName);
         Map<String, String> mmPods = StUtils.depSnapshot(CLIENT, NAMESPACE, mmName);
+        Map<String, String> eoPods = StUtils.depSnapshot(CLIENT, NAMESPACE, eoName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaName);
+        Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zkName);
 
         JvmOptions jvmOptions = new JvmOptions();
         jvmOptions.setGcLoggingEnabled(false);
 
+        EntityOperatorJvmOptions entityOperatorJvmOptions = new EntityOperatorJvmOptions();
+        entityOperatorJvmOptions.setGcLoggingEnabled(false);
+
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setJvmOptions(jvmOptions);
+            k.getSpec().getZookeeper().setJvmOptions(jvmOptions);
+            k.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(entityOperatorJvmOptions);
+            k.getSpec().getEntityOperator().getUserOperator().setJvmOptions(entityOperatorJvmOptions);
+        });
+
         replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
 
+        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaName, kafkaPods);
+        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkName, zkPods);
+        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoName, eoPods);
         StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, connectName, connectPods);
         StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, mmName, mmPods);
 
@@ -272,61 +275,76 @@ class LogSettingST extends AbstractST {
 
         operationID = startDeploymentMeasuring();
 
-        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3)
+        testClassResources.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
                         .withLoggers(KAFKA_LOGGERS)
                     .endInlineLogging()
-                    .withJvmOptions(null)
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(true)
+                    .endJvmOptions()
                 .endKafka()
                 .editZookeeper()
                     .withNewInlineLogging()
                         .withLoggers(ZOOKEEPER_LOGGERS)
                     .endInlineLogging()
-                .withJvmOptions(null)
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(true)
+                    .endJvmOptions()
                 .endZookeeper()
                 .editEntityOperator()
                     .editOrNewUserOperator()
                         .withNewInlineLogging()
                             .withLoggers(OPERATORS_LOGGERS)
                         .endInlineLogging()
-                        .withJvmOptions(null)
+                        .withNewJvmOptions()
+                            .withGcLoggingEnabled(true)
+                        .endJvmOptions()
                     .endUserOperator()
                     .editOrNewTopicOperator()
                         .withNewInlineLogging()
                             .withLoggers(OPERATORS_LOGGERS)
                         .endInlineLogging()
-                        .withJvmOptions(null)
+                        .withNewJvmOptions()
+                            .withGcLoggingEnabled(true)
+                        .endJvmOptions()
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec()
             .done();
 
-        testClassResources.kafkaEphemeral(GC_LOGGING_SET_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .withJvmOptions(null)
-                .endKafka()
-                .editZookeeper()
-                    .withJvmOptions(null)
-                .endZookeeper()
-                .editOrNewEntityOperator()
-                    .editOrNewTopicOperator()
-                        .withJvmOptions(null)
-                    .endTopicOperator()
-                    .editOrNewUserOperator()
-                        .withJvmOptions(null)
-                    .endUserOperator()
-                .endEntityOperator()
-            .endSpec().done();
+        testClassResources.kafkaEphemeral(GC_LOGGING_SET_NAME, 3, 1)
+                .editSpec()
+                    .editKafka()
+                        .withNewJvmOptions()
+                        .endJvmOptions()
+                    .endKafka()
+                    .editZookeeper()
+                        .withNewJvmOptions()
+                        .endJvmOptions()
+                    .endZookeeper()
+                    .editEntityOperator()
+                        .editTopicOperator()
+                            .withNewJvmOptions()
+                            .endJvmOptions()
+                        .endTopicOperator()
+                        .editUserOperator()
+                            .withNewJvmOptions()
+                            .endJvmOptions()
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .done();
 
         testClassResources.kafkaConnect(CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
                 .endInlineLogging()
-                .withJvmOptions(null)
+                .withNewJvmOptions()
+                    .withGcLoggingEnabled(true)
+                .endJvmOptions()
             .endSpec().done();
 
         testClassResources.kafkaMirrorMaker(CLUSTER_NAME, CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
@@ -334,7 +352,9 @@ class LogSettingST extends AbstractST {
                 .withNewInlineLogging()
                   .withLoggers(MIRROR_MAKER_LOGGERS)
                 .endInlineLogging()
-                .withJvmOptions(null)
+                .withNewJvmOptions()
+                    .withGcLoggingEnabled(true)
+                .endJvmOptions()
             .endSpec()
             .done();
     }
@@ -342,7 +362,6 @@ class LogSettingST extends AbstractST {
     @AfterAll
     void deleteClassResources() {
         TimeMeasuringSystem.stopOperation(operationID);
-        testClassResources.deleteResources();
         teardownEnvForOperator();
     }
 

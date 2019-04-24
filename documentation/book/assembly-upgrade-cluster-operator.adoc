@@ -1,0 +1,16 @@
+// This assembly is included in the following assemblies:
+//
+// master.adoc
+
+[id='assembly-upgrade-cluster-operator-{context}']
+= Upgrading the Cluster Operator
+
+Supported paths to upgrade your Cluster Operator deployment to use a new version of {ProductName} are outlined in this section.
+
+The availability of Kafka clusters managed by the Cluster Operator is not affected by the upgrade operation.
+
+include::proc-upgrading-the-cluster-operator-0-9-0-to-0-10-0.adoc[leveloffset=+1]
+
+ifdef::StrimziUpgrades[]
+include::proc-upgrading-the-cluster-operator-0-10-0-to-0-11-0.adoc[leveloffset=+1]
+endif::StrimziUpgrades[]

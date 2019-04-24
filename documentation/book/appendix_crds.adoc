@@ -162,8 +162,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`]
 |tls       1.2+<.<|Configures TLS listener on port 9093.
 |xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
-|external  1.2+<.<|Configures external listener on port 9094. The type depends on the value of the `external.type` property within the given object, which must be one of [route, loadbalancer, nodeport].
-|xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
+|external  1.2+<.<|Configures external listener on port 9094. The type depends on the value of the `external.type` property within the given object, which must be one of [route, loadbalancer, nodeport, ingress].
+|xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`]
 |====
 
 [id='type-KafkaListenerPlain-{context}']
@@ -186,7 +186,7 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 [id='type-KafkaListenerAuthenticationTls-{context}']
 ### `KafkaListenerAuthenticationTls` schema reference
 
-Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationTls` from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`].
@@ -201,7 +201,7 @@ It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [id='type-KafkaListenerAuthenticationScramSha512-{context}']
 ### `KafkaListenerAuthenticationScramSha512` schema reference
 
-Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerAuthenticationScramSha512` from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`].
@@ -236,7 +236,7 @@ Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalRoute` from xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalRoute` from xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
 It must have the value `route` for the type `KafkaListenerExternalRoute`.
 [options="header"]
 |====
@@ -245,12 +245,12 @@ It must have the value `route` for the type `KafkaListenerExternalRoute`.
 |string
 |authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
-|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
-|xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
 |====
 
 [id='type-RouteListenerOverride-{context}']
@@ -308,7 +308,7 @@ Used in: xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalLoadBalancer` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalLoadBalancer` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
 It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBalancer`.
 [options="header"]
 |====
@@ -317,12 +317,12 @@ It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBal
 |string
 |authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
-|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
-|xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
 |tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
 |====
@@ -378,7 +378,7 @@ Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerO
 Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalNodePort` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalNodePort` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
 It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 [options="header"]
 |====
@@ -387,12 +387,12 @@ It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
 |string
 |authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
 |networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
-|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
-|xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
 |tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
 |boolean
 |====
@@ -444,6 +444,82 @@ Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`
 |integer
 |nodePort        1.2+<.<|Node port for the broker service.
 |integer
+|====
+
+[id='type-KafkaListenerExternalIngress-{context}']
+### `KafkaListenerExternalIngress` schema reference
+
+Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaListenerExternalIngress` from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`].
+It must have the value `ingress` for the type `KafkaListenerExternalIngress`.
+[options="header"]
+|====
+|Field                      |Description
+|type                1.2+<.<|Must be `ingress`.
+|string
+|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
+|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`]
+|configuration       1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
+|xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
+|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[networking/v1 networkpolicypeer].
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer] array
+|====
+
+[id='type-IngressListenerConfiguration-{context}']
+### `IngressListenerConfiguration` schema reference
+
+Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`]
+
+
+[options="header"]
+|====
+|Field             |Description
+|bootstrap  1.2+<.<|External bootstrap ingress configuration.
+|xref:type-IngressListenerBootstrapConfiguration-{context}[`IngressListenerBootstrapConfiguration`]
+|brokers    1.2+<.<|External broker ingress configuration.
+|xref:type-IngressListenerBrokerConfiguration-{context}[`IngressListenerBrokerConfiguration`] array
+|====
+
+[id='type-IngressListenerBootstrapConfiguration-{context}']
+### `IngressListenerBootstrapConfiguration` schema reference
+
+Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
+
+
+[options="header"]
+|====
+|Field                  |Description
+|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|string
+|dnsAnnotations  1.2+<.<|Annotations which will be added to the Ingress resource. You can use this field to instrument DNS providers such as External DNS.
+|map
+|host            1.2+<.<|Host for the bootstrap route. This field will be used in the Ingress resource.
+|string
+|====
+
+[id='type-IngressListenerBrokerConfiguration-{context}']
+### `IngressListenerBrokerConfiguration` schema reference
+
+Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
+
+
+[options="header"]
+|====
+|Field                  |Description
+|broker          1.2+<.<|Id of the kafka broker (broker identifier).
+|integer
+|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
+|string
+|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
+|integer
+|host            1.2+<.<|Host for the broker ingress. This field will be used in the Ingress resource.
+|string
+|dnsAnnotations  1.2+<.<|Annotations which will be added to the Ingress resources for individual brokers. You can use this field to instrument DNS providers such as External DNS.
+|map
 |====
 
 [id='type-KafkaAuthorizationSimple-{context}']
@@ -597,9 +673,13 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |brokersService            1.2+<.<|Template for Kafka broker `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|externalBootstrapIngress  1.2+<.<|Template for Kafka external bootstrap `Ingress`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapRoute    1.2+<.<|Template for Kafka external bootstrap `Route`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapService  1.2+<.<|Template for Kafka external bootstrap `Service`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodIngress             1.2+<.<|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodRoute               1.2+<.<|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]

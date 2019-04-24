@@ -29,6 +29,7 @@ import java.util.Map;
         @JsonSubTypes.Type(name = KafkaListenerExternalRoute.TYPE_ROUTE, value = KafkaListenerExternalRoute.class),
         @JsonSubTypes.Type(name = KafkaListenerExternalLoadBalancer.TYPE_LOADBALANCER, value = KafkaListenerExternalLoadBalancer.class),
         @JsonSubTypes.Type(name = KafkaListenerExternalNodePort.TYPE_NODEPORT, value = KafkaListenerExternalNodePort.class),
+        @JsonSubTypes.Type(name = KafkaListenerExternalIngress.TYPE_INGRESS, value = KafkaListenerExternalIngress.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

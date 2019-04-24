@@ -2,41 +2,51 @@
 //
 // assembly-upgrading-kafka-versions.adoc
 
-[id='proc-upgrading-brokers-newer-kafka-0-9-0-to-0-10-0-{context}']
+[id='proc-upgrading-brokers-newer-kafka-{context}']
 
-= Upgrading brokers to a newer Kafka version
+= Upgrading Kafka brokers and client applications
 
-This procedure describes how to upgrade a {ProductName} Kafka cluster from one version of Kafka to a higher version; for example, from {KafkaVersionLower} to {KafkaVersionHigher}.
+This procedure describes how you can upgrade a {ProductName} Kafka cluster to a higher version of Kafka, such as upgrading from version {KafkaVersionLower} to {KafkaVersionHigher}.
 
 .Prerequisites
 
+For the `Kafka` resource to be upgraded, check:
+
 * The Cluster Operator, which supports both versions of Kafka, is up and running.
-* A `Kafka` resource to be upgraded.
-* You have checked that your `Kafka.spec.kafka.config` contains no options that are not supported in the version of Kafka that you are upgrading to.
-* Determine whether the new Kafka version has a different log message format version than the previous version. See the following table for help.
-
-ifdef::StrimziUpgrades[]
-include::snip-kafka-versions.adoc[leveloffset=+1]
-endif::StrimziUpgrades[]
-
-ifndef::StrimziUpgrades[]
-[options="header"]
-|=======================
-|Kafka version |Interbroker protocol version  |Log message format version | Zookeeper version
-|2.0.0         |2.0                           |2.0                        | 3.4.13
-|2.1.1         |2.1                           |2.1                        | 3.4.13
-|=======================
-endif::StrimziUpgrades[]
+* The `Kafka.spec.kafka.config` does not contain options that are not supported in the version of Kafka that you are upgrading to.
+* Whether the `log.message.format.version` for the current Kafka version needs to be updated for the new version.
++
+xref:assembly-upgrade-{context}[Consult the Kafka versions table].
 
 .Procedure
 
-. If the log message format version of the previous Kafka version is the same as that of the new Kafka version, proceed to the next step. Otherwise, ensure that the `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the previous version.
+. Update the Kafka cluster configuration in an editor, as required:
++
+ifdef::Kubernetes[]
+On {KubernetesName}, use:
++
+[source,shell,subs=+quotes]
+----
+kubectl edit kafka _my-cluster_
+----
+endif::Kubernetes[]
+
++
+On {OpenShiftName}, use:
++
+[source,shell,subs=+quotes]
+----
+oc edit kafka _my-cluster_
+----
+
+.. If the `log.message.format.version` of the current Kafka version is the same as that of the new Kafka version, proceed to the next step.
++
+Otherwise, ensure that `Kafka.spec.kafka.config` has the `log.message.format.version` configured to the default for the current version.
 +
 For example, if upgrading from Kafka {KafkaVersionLower}:
 +
 [source,yaml,subs=attributes+]
 ----
-apiVersion: v1alpha1
 kind: Kafka
 spec:
   # ...
@@ -47,12 +57,11 @@ spec:
       # ...
 ----
 +
-NOTE: You must format the value of `log.message.format.version` as a string to prevent it from being interpreted as a number.
+If the `log.message.format.version` is unset, set it to the current version.
 +
-If the `log.message.format.version` is unset, set it and then wait for the resulting rolling restart of the Kafka cluster to complete.
+NOTE: The value of `log.message.format.version` must be a string to prevent it from being interpreted as a floating point number.
 
-. Change the `Kafka.spec.kafka.version` to specify the new version, but leave the `log.message.format.version` as the previous version.
-If the image to be used is different from the image for the given version of Kafka configured in the Cluster Operator's `STRIMZI_KAFKA_IMAGES` then configure the `Kafka.spec.kafka.image` as well.
+.. Change the `Kafka.spec.kafka.version` to specify the new version (leaving the `log.message.format.version` as the current version).
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
 +
@@ -69,35 +78,80 @@ spec:
       # ...
 ----
 <1> This is changed to the new version
-<2> This remains at the previous version
+<2> This remains at the current version
 
-. Wait for the Cluster Operator to upgrade the cluster.
-If the old and new versions of Kafka have different interbroker protocol versions, look in the Cluster Operator logs for an `INFO` level message in the following format:
+.. If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
 +
-[source,subs="+quotes"]
-----
-Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed
-----
-Alternatively, if the old and new versions of Kafka have the same interbroker protocol version, look in the Cluster Operator logs for an `INFO` level message  in the following format:
+See xref:con-versions-and-images-str[]
+
+. Save and exit the editor, then wait for rolling updates to complete.
 +
-[source,subs="+quotes"]
+Check the update in the logs or by watching the pod state transitions:
++
+ifdef::Kubernetes[]
+On {KubernetesName}, use:
++
+[source,shell,subs=+quotes]
 ----
-Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed
+kubectl logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version upgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
 ----
 +
-For example, using `grep`:
+[source,shell,subs=+quotes]
+----
+kubectl get po -w
+----
 +
-[source,shell,subs="+quotes"]
+endif::Kubernetes[]
+On {OpenShiftName}, use:
++
+[source,shell,subs=+quotes]
 ----
 oc logs -f _<cluster-operator-pod-name>_ | grep -E "Kafka version upgrade from [0-9.]+ to [0-9.]+, phase ([0-9]+) of \1 completed"
 ----
-
-. Upgrade all your client applications to use the new version of the client libraries.
 +
-WARNING: You cannot downgrade after completing this step. If, for whatever reason, you need to revert the update at this point, follow the procedure xref:proc-downgrading-brokers-older-kafka-{context}[]. 
+[source,shell,subs=+quotes]
+----
+oc get po -w
+----
++
+====
+If the current and new versions of Kafka have different interbroker protocol versions, check the Cluster Operator logs for an `INFO` level message:
 
-. If the log message format versions, as identified in step 1, are the same proceed to the next step. 
+[source,shell,subs=+quotes]
+----
+Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 2 of 2 completed
+----
+Alternatively, if the current and new versions of Kafka have the same interbroker protocol version, check for:
+
+[source,shell,subs=+quotes]
+----
+Reconciliation #_<num>_(watch) Kafka(_<namespace>_/_<name>_): Kafka version upgrade from _<from-version>_ to _<to-version>_, phase 1 of 1 completed
+----
+====
++
+The rolling updates:
++
+* Ensure each pod is using the broker binaries for the new version of Kafka
+* Configure the brokers to send messages using the interbroker protocol of the new version of Kafka
++
+NOTE: Clients are still using the old version, so brokers will convert messages to the old version before sending them to the clients. To minimize this additional load, updates the clients as quickly as possible.
+
+. Depending on your chosen strategy for upgrading clients, upgrade all client applications to use the new version of the client binaries.
++
+See xref:con-strategies-for-upgrading-clients-str[]
++
+WARNING: You cannot downgrade after completing this step. If you need to revert the update at this point, follow the procedure xref:proc-downgrading-brokers-older-kafka-{context}[].
+
++
+If required, set the version property for Kafka Connect and Mirror Maker as the new version of Kafka:
++
+.. For Kafka Connect, update `KafkaConnect.spec.version`
+.. For MIrror Maker, update `KafkaMirrorMaker.spec.version`
+
+. If the `log.message.format.version` identified in step 1 is the same as the new version proceed to the next step.
++
 Otherwise change the `log.message.format.version` in `Kafka.spec.kafka.config` to the default version for the new version of Kafka now being used.
++
 For example, if upgrading to {KafkaVersionHigher}:
 +
 [source,yaml,subs=attributes+]
@@ -112,10 +166,11 @@ spec:
       log.message.format.version: "{LogMsgVersHigher}"
       # ...
 ----
-+
 
 . Wait for the Cluster Operator to update the cluster.
++
+The Kafka cluster and clients are now using the new Kafka version.
 
 .Additional resources
 
-* See xref:proc-downgrading-brokers-older-kafka-str[] for the procedure to downgrade a {ProductName} Kafka cluster from one version to a lower version, for example {KafkaVersionHigher} to {KafkaVersionLower}.
+* See xref:proc-downgrading-brokers-older-kafka-str[] for the procedure to downgrade a {ProductName} Kafka cluster from one version to a lower version.

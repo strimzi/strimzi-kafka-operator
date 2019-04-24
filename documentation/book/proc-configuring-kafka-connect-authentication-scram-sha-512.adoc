@@ -10,11 +10,11 @@
 * An {ProductPlatformName} cluster
 * A running Cluster Operator
 * Username of the user which should be used for authentication
+* If they exist, the name of the `Secret` with the password used for authentication and the key under which the password is stored in the `Secret`
 
 .Procedure
 
-. Find out the name of the `Secret` with the password which should be used for authentication and the key under which the password is stored in the `Secret`.
-If such a `Secret` does not exist yet, prepare a file with the password and create the `Secret`.
+. (Optional) If they do not already exist, prepare a file with the password used in authentication and create the `Secret`.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl create`:

@@ -159,8 +159,6 @@ public class JbodStorageTest {
         });
         createAsync.await();
 
-        Set<String> expectedPvcs = expectedPvcs();
-
         // trying to add a new volume to the JBOD storage
         volumes.add(new PersistentClaimStorageBuilder()
                 .withId(2)
@@ -174,6 +172,8 @@ public class JbodStorageTest {
                     .endKafka()
                 .endSpec()
                 .build();
+
+        Set<String> expectedPvcs = expectedPvcs(changedKafka);
 
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
@@ -200,8 +200,6 @@ public class JbodStorageTest {
         });
         createAsync.await();
 
-        Set<String> expectedPvcs = expectedPvcs();
-
         // trying to remove a volume from the JBOD storage
         volumes.remove(0);
 
@@ -212,6 +210,8 @@ public class JbodStorageTest {
                     .endKafka()
                 .endSpec()
                 .build();
+
+        Set<String> expectedPvcs = expectedPvcs(changedKafka);
 
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
@@ -238,8 +238,6 @@ public class JbodStorageTest {
         });
         createAsync.await();
 
-        Set<String> expectedPvcs = expectedPvcs();
-
         // trying to update id for a volume from in the JBOD storage
         volumes.get(0).setId(3);
 
@@ -250,6 +248,8 @@ public class JbodStorageTest {
                     .endKafka()
                 .endSpec()
                 .build();
+
+        Set<String> expectedPvcs = expectedPvcs(changedKafka);
 
         Crds.kafkaOperation(mockClient).inNamespace(NAMESPACE).withName(NAME).patch(changedKafka);
 
@@ -263,9 +263,9 @@ public class JbodStorageTest {
         });
     }
 
-    private Set<String> expectedPvcs() {
+    private Set<String> expectedPvcs(Kafka kafka) {
         Set<String> expectedPvcs = new HashSet<>();
-        for (int i = 0; i < this.kafka.getSpec().getKafka().getReplicas(); i++) {
+        for (int i = 0; i < kafka.getSpec().getKafka().getReplicas(); i++) {
             int podId = i;
             for (SingleVolumeStorage volume : this.volumes) {
                 if (volume instanceof PersistentClaimStorage) {

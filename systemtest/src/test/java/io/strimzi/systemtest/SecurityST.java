@@ -59,10 +59,6 @@ class SecurityST extends AbstractST {
     public static final String STRIMZI_IO_FORCE_RENEW = "strimzi.io/force-renew";
     public static final String STRIMZI_IO_FORCE_REPLACE = "strimzi.io/force-replace";
 
-    private static final long TIMEOUT_FOR_GET_SECRETS = 60_000;
-    private static final long TIMEOUT_FOR_SEND_RECEIVE_MSG = 30_000;
-    private static final long TIMEOUT_FOR_CLUSTER_STABLE = 1_200_000;
-
     @Test
     void testCertificates() {
         LOGGER.info("Running testCertificates {}", CLUSTER_NAME);
@@ -175,10 +171,10 @@ class SecurityST extends AbstractST {
         createClusterWithExternalRoute();
         String userName = "alice";
         resources().tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("", 1_000, TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
+        waitFor("", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
@@ -221,19 +217,19 @@ class SecurityST extends AbstractST {
                     initialCaCerts.get(secretName), value);
         }
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
         resources().tlsUser(CLUSTER_NAME, bobUserName).done();
-        waitFor("", 1_000, 60_000, () -> {
+        waitFor("", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS, () -> {
             return CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null;
         },
             () -> {
                 LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems());
             });
 
-        waitForClusterAvailability(bobUserName);
+        waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
     }
 
     @Test
@@ -243,11 +239,11 @@ class SecurityST extends AbstractST {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
         resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
-        waitFor("Alic's secret to exist", 1_000, 60_000,
+        waitFor("Alic's secret to exist", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(aliceUserName);
+        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
 
         // Get all pods, and their resource versions
         Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
@@ -297,16 +293,16 @@ class SecurityST extends AbstractST {
                     initialCaKeys.get(secretName), value);
         }
 
-        waitForClusterAvailability(aliceUserName);
+        waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
         resources().tlsUser(CLUSTER_NAME, bobUserName).done();
-        waitFor("Bob's secret to exist", 1_000, 60_000,
+        waitFor("Bob's secret to exist", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
-        waitForClusterAvailability(bobUserName);
+        waitForClusterAvailabilityTls(bobUserName, NAMESPACE);
     }
 
     private void createClusterWithExternalRoute() {
@@ -335,45 +331,6 @@ class SecurityST extends AbstractST {
                 .done();
     }
 
-    private void createClusterWithExternalLoadbalancer() {
-        LOGGER.info("Creating a cluster");
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
-                .editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .withNewKafkaListenerExternalLoadBalancer()
-                            .endKafkaListenerExternalLoadBalancer()
-                        .endListeners()
-                        .withConfig(singletonMap("default.replication.factor", 3))
-                        .withNewPersistentClaimStorage()
-                            .withSize("2Gi")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                    .endKafka()
-                    .editZookeeper()
-                        .withReplicas(3)
-                        .withNewPersistentClaimStorage()
-                            .withSize("2Gi")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                    .endZookeeper()
-                .endSpec()
-                .done();
-    }
-
-    @Test
-    @OpenShiftOnly
-    void testLoadbalancer() throws Exception {
-        createClusterWithExternalLoadbalancer();
-        String userName = "alice";
-        resources().tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
-            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
-            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
-
-        waitForClusterAvailability(userName);
-    }
-
     @Test
     @OpenShiftOnly
     void testAutoRenewCaCertsTriggerByExpiredCertificate() throws Exception {
@@ -390,7 +347,7 @@ class SecurityST extends AbstractST {
         // Check if user exists
         waitTillSecretExists(userName);
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Wait until the certificates have been replaced
         waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(CLUSTER_NAME));
@@ -398,7 +355,7 @@ class SecurityST extends AbstractST {
         // Wait until the pods are all up and ready
         waitForClusterStability();
 
-        waitForClusterAvailability(userName);
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
     }
 
     private void waitForClusterStability() {
@@ -410,7 +367,7 @@ class SecurityST extends AbstractST {
         zkPods[0] = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
         kafkaPods[0] = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
         eoPods[0] = StUtils.depSnapshot(CLIENT, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
-        TestUtils.waitFor("Cluster stable and ready", 1_000, TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+        TestUtils.waitFor("Cluster stable and ready", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Map<String, String> zkSnapshot = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
             Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
             Map<String, String> eoSnapshot = StUtils.depSnapshot(CLIENT, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
@@ -441,7 +398,7 @@ class SecurityST extends AbstractST {
     }
 
     private void waitForCertToChange(String originalCert, String secretName) {
-        waitFor("Cert to be replaced", 1_000, TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+        waitFor("Cert to be replaced", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Secret secret = CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).get();
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
                 String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
@@ -479,7 +436,7 @@ class SecurityST extends AbstractST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
     @BeforeAll

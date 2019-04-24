@@ -21,9 +21,12 @@ spec:
       transaction.state.log.min.isr: 2
       log.message.format.version: "2.2"
     storage:
-      type: persistent-claim
-      size: 100Gi
-      deleteClaim: false
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
     metrics:
       # Inspired by config from Kafka 2.0.0 example rules:
       # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-2_0_0.yml

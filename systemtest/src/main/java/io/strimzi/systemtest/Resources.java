@@ -57,6 +57,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.systemtest.utils.StUtils;
@@ -66,7 +67,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -79,29 +79,19 @@ import static io.strimzi.test.TestUtils.changeOrgAndTag;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
-public class Resources extends AbstractResources {
+public class Resources extends AbstractResources implements Constants {
 
     private static final Environment ENVIRONMENT = Environment.getInstance();
 
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
-    private static final long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(3).toMillis();
-    public static final long POLL_INTERVAL_FOR_RESOURCE_READINESS = Duration.ofSeconds(1).toMillis();
-    /* Timeout for deployment config is bigger than the timeout for default resource readiness because of creating a new image
-    during the deployment process.*/
-    private static final long TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS = Duration.ofMinutes(7).toMillis();
-    private static final long TIMEOUT_FOR_RESOURCE_CREATION = Duration.ofMinutes(5).toMillis();
-    public static final long TIMEOUT_FOR_RESOURCE_READINESS = Duration.ofMinutes(7).toMillis();
     private static final String KAFKA_VERSION = ENVIRONMENT.getStKafkaVersionEnv();
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
-    public static final String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
-    public static final String STRIMZI_DEFAULT_LOG_LEVEL = "DEBUG";
-    public static final String KAFKA_CLIENTS = "kafka-clients";
 
-    public static final String DEPLOYMENT = "Deployment";
-    public static final String SERVICE = "Service";
-    public static final String INGRESS = "Ingress";
-    public static final String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
+    private static final String DEPLOYMENT = "Deployment";
+    private static final String SERVICE = "Service";
+    private static final String INGRESS = "Ingress";
+    private static final String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
 
     Resources(NamespacedKubernetesClient client) {
         super(client);
@@ -238,6 +228,19 @@ public class Resources extends AbstractResources {
 
     DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
         return kafka(defaultKafka(name, kafkaReplicas, zookeeperReplicas).build());
+    }
+
+    DoneableKafka kafkaJBOD(String name, int kafkaReplicas, List<SingleVolumeStorage> volumes) {
+        return kafka(defaultKafka(name, kafkaReplicas).
+                editSpec()
+                    .editKafka()
+                        .withNewJbodStorage().withVolumes(volumes).endJbodStorage()
+                    .endKafka()
+                    .editZookeeper().
+                        withReplicas(1)
+                    .endZookeeper()
+                .endSpec()
+                .build());
     }
 
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {
@@ -660,7 +663,7 @@ public class Resources extends AbstractResources {
                     envVar.setValueFrom(null);
                     break;
                 case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
-                    envVar.setValue("30000");
+                    envVar.setValue(ENVIRONMENT.getStrimziFullReconciliationInterval());
                     break;
                 case "STRIMZI_OPERATION_TIMEOUT_MS":
                     envVar.setValue(operationTimeout);

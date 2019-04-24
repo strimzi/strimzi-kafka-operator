@@ -33,6 +33,10 @@ include::ref-storage-persistent.adoc[leveloffset=+1]
 
 include::ref-storage-jbod.adoc[leveloffset=+1]
 
+include::proc-adding-volumes-to-jbod-storage.adoc[leveloffset=+1]
+
+include::proc-removing-volumes-from-jbod-storage.adoc[leveloffset=+1]
+
 .Additional resources
 
 * For more information about ephemeral storage, see xref:type-EphemeralStorage-reference[ephemeral storage schema reference].

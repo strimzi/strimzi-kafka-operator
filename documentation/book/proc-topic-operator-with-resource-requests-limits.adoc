@@ -5,13 +5,27 @@
 [id='proc-topic-operator-with-resource-requests-limits-{context}']
 = Configuring the Topic Operator with resource requests and limits
 
+You can allocate resources, such as CPU and memory, to the Topic Operator and set a limit on the amount of resources it can consume.
+
 .Prerequisites
 
-* A running Cluster Operator
+* The Cluster Operator is running.
 
 .Procedure
 
-. Edit the `Kafka` resource specifying in the `Kafka.spec.entityOperator.topicOperator.resources` property the resource requests and limits you want the Topic Operator to have.
+. Update the Kafka cluster configuration in an editor, as required:
++
+ifdef::Kubernetes[]
+On {KubernetesName}, use:
+[source,shell,subs=+quotes]
+kubectl edit kafka my-cluster
++
+endif::Kubernetes[]
+On {OpenShiftName}, use:
+[source,shell,subs=+quotes]
+oc edit kafka my-cluster
+
+. In the `spec.entityOperator.topicOperator.resources` property in the `Kafka` resource, set the resource requests and limits for the Topic Operator.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -19,30 +33,30 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   # kafka and zookeeper sections...
-  topicOperator:
-    resources:
-      request:
-        cpu: "1"
-        memory: 500Mi
-      limit:
-        cpu: "1"
-        memory: 500Mi
+  entityOperator:
+    topicOperator:
+      resources:
+        request:
+          cpu: "1"
+          memory: 500Mi
+        limit:
+          cpu: "1"
+          memory: 500Mi
 ----
 
-. Create or update the `Kafka` resource.
+. Apply the new configuration to create or update the resource.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName}, use `kubectl apply`:
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+kubectl apply -f _kafka.yaml_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName}, use `oc apply`:
 +
 [source,shell,subs=+quotes]
-oc apply -f _your-file_
+oc apply -f _kafka.yaml_
 
 .Additional resources
 
-* For more information about the schema of the resources object, see xref:type-ResourceRequirements-reference[].
-//* For more information about the resource requirements of the Topic Operator, see xref:topic-operator-resource-requirements-str[].
+* For more information about the schema of the `resources` object, see xref:type-ResourceRequirements-reference[].

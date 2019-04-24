@@ -32,7 +32,7 @@ storage:
 
 The ids cannot be changed once the JBOD volumes are created.
 
-NOTE: Adding and removing volumes from a JBOD configuration is not currently supported.
+Users can add or remove volumes from the JBOD configuration.
 
 == JBOD and Persistent Volume Claims
 
@@ -41,3 +41,10 @@ When persistent storage is used to declare JBOD volumes, the naming scheme of th
 `data-_id_-_cluster-name_-kafka-_idx_`::
 
 Where `_id_` is the ID of the volume used for storing data for Kafka broker pod `_idx_`.
+
+== Log directories
+
+The JBOD volumes will be used by the Kafka brokers as log directories mounted into the following path:
+
+`/var/lib/kafka/data-_id_/kafka-log_idx_`::
+Where `_id_` is the ID of the volume used for storing data for Kafka broker pod `_idx_`. For example `/var/lib/kafka/data-0/kafka-log0`.

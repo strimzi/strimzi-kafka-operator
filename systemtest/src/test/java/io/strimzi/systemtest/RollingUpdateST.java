@@ -37,10 +37,6 @@ class RollingUpdateST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
     static final String NAMESPACE = "rolling-update-cluster-test";
-    static final String CLUSTER_NAME = "my-cluster";
-    private static final int CO_OPERATION_TIMEOUT = 60000;
-    private static final int CO_OPERATION_TIMEOUT_WAIT = CO_OPERATION_TIMEOUT + 20000;
-    private static final int CO_OPERATION_TIMEOUT_POLL = 2000;
     private static final String RECONCILIATION_PATTERN = "'Triggering periodic reconciliation for namespace " + NAMESPACE + "'";
 
     @Test
@@ -178,7 +174,7 @@ class RollingUpdateST extends AbstractST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
     @BeforeAll
@@ -189,7 +185,7 @@ class RollingUpdateST extends AbstractST {
         createTestClassResources();
         applyRoleBindings(NAMESPACE);
         // 050-Deployment
-        testClassResources.clusterOperator(NAMESPACE, Integer.toString(CO_OPERATION_TIMEOUT)).done();
+        testClassResources.clusterOperator(NAMESPACE, Long.toString(CO_OPERATION_TIMEOUT)).done();
     }
 
     @AfterAll

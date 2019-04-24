@@ -26,13 +26,15 @@ public class StorageDiffTest {
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
                 .build();
 
-        assertFalse(new StorageDiff(jbod, jbod).changesType());
-        assertTrue(new StorageDiff(jbod, jbod).isEmpty());
-        assertFalse(new StorageDiff(jbod, jbod).changesSize());
+        StorageDiff diff = new StorageDiff(jbod, jbod);
+        assertFalse(diff.changesType());
+        assertTrue(diff.isEmpty());
+        assertFalse(diff.changesSize());
 
-        assertFalse(new StorageDiff(jbod, jbod2).changesType());
-        assertFalse(new StorageDiff(jbod, jbod2).isEmpty());
-        assertTrue(new StorageDiff(jbod, jbod2).changesSize());
+        diff = new StorageDiff(jbod, jbod2);
+        assertFalse(diff.changesType());
+        assertFalse(diff.isEmpty());
+        assertTrue(diff.changesSize());
     }
 
     @Test
@@ -69,12 +71,94 @@ public class StorageDiffTest {
 
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
 
-        assertTrue(new StorageDiff(jbod, ephemeral).changesType());
-        assertTrue(new StorageDiff(persistent, ephemeral).changesType());
-        assertTrue(new StorageDiff(jbod, persistent).changesType());
+        StorageDiff diffJbodEphemeral = new StorageDiff(jbod, ephemeral);
+        StorageDiff diffPersistentEphemeral = new StorageDiff(persistent, ephemeral);
+        StorageDiff fiddJbodPersistent = new StorageDiff(jbod, persistent);
 
-        assertFalse(new StorageDiff(jbod, ephemeral).isEmpty());
-        assertFalse(new StorageDiff(persistent, ephemeral).isEmpty());
-        assertFalse(new StorageDiff(jbod, persistent).isEmpty());
+        assertTrue(diffJbodEphemeral.changesType());
+        assertTrue(diffPersistentEphemeral.changesType());
+        assertTrue(fiddJbodPersistent.changesType());
+
+        assertFalse(diffJbodEphemeral.isEmpty());
+        assertFalse(diffPersistentEphemeral.isEmpty());
+        assertFalse(fiddJbodPersistent.isEmpty());
+    }
+
+    @Test
+    public void testJbodDiffWithNewVolume()    {
+        Storage jbod = new JbodStorageBuilder()
+                .withVolumes(new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("1000Gi").build())
+                .build();
+
+        Storage jbod2 = new JbodStorageBuilder().withVolumes(
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("1000Gi").build(),
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
+                .build();
+
+        Storage jbod3 = new JbodStorageBuilder().withVolumes(
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(false).withId(0).withSize("100Gi").build(),
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
+                .build();
+
+        Storage jbod4 = new JbodStorageBuilder()
+                .withVolumes(new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(2).withSize("1000Gi").build())
+                .build();
+
+        Storage jbod5 = new JbodStorageBuilder().withVolumes(
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
+                .build();
+
+        Storage jbod6 = new JbodStorageBuilder().withVolumes(
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("1000Gi").build(),
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(true).withId(2).withSize("5000Gi").build())
+                .build();
+
+        // Volume added
+        StorageDiff diff = new StorageDiff(jbod, jbod2);
+        assertFalse(diff.changesType());
+        assertTrue(diff.isEmpty());
+        assertFalse(diff.changesSize());
+
+        // Volume removed
+        diff = new StorageDiff(jbod2, jbod);
+        assertFalse(diff.changesType());
+        assertTrue(diff.isEmpty());
+        assertFalse(diff.changesSize());
+
+        // Volume added with changes
+        diff = new StorageDiff(jbod, jbod3);
+        assertFalse(diff.changesType());
+        assertFalse(diff.isEmpty());
+        assertTrue(diff.changesSize());
+
+        // Volume removed from the beginning
+        diff = new StorageDiff(jbod3, jbod5);
+        assertFalse(diff.changesType());
+        assertTrue(diff.isEmpty());
+        assertFalse(diff.changesSize());
+
+        // Volume added to the beginning
+        diff = new StorageDiff(jbod5, jbod3);
+        assertFalse(diff.changesType());
+        assertTrue(diff.isEmpty());
+        assertFalse(diff.changesSize());
+
+        // Volume replaced with another ID and another volume which is kept changed
+        diff = new StorageDiff(jbod3, jbod6);
+        assertFalse(diff.changesType());
+        assertFalse(diff.isEmpty());
+        assertTrue(diff.changesSize());
+
+        // Volume replaced with another ID in single volume broker
+        diff = new StorageDiff(jbod, jbod4);
+        assertFalse(diff.changesType());
+        assertTrue(diff.isEmpty());
+        assertFalse(diff.changesSize());
+
+        // Volume replaced with another ID without chenging the volumes which are kept
+        diff = new StorageDiff(jbod2, jbod6);
+        assertFalse(diff.changesType());
+        assertTrue(diff.isEmpty());
+        assertFalse(diff.changesSize());
     }
 }

@@ -42,16 +42,6 @@ spec:
         type: "route"
         authentication:
           type: "tls"
-        networkPolicyPeers:
-        - namespaceSelector:
-            matchLabels:
-              kafka-enabled: "true"
-          podSelector:
-            matchLabels:
-              app: "kafka-consumer"
-        - podSelector:
-            matchLabels:
-              app: "kafka-producer"
         overrides:
           bootstrap:
             address: "my-bootstrap-host"
@@ -69,6 +59,16 @@ spec:
             advertisedHost: "my-broker-2"
             advertisedPort: 10002
             host: "my-broker-2"
+        networkPolicyPeers:
+        - namespaceSelector:
+            matchLabels:
+              kafka-enabled: "true"
+          podSelector:
+            matchLabels:
+              app: "kafka-consumer"
+        - podSelector:
+            matchLabels:
+              app: "kafka-producer"
     authorization:
       type: "simple"
       superUsers:

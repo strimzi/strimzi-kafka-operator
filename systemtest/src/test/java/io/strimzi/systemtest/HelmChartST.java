@@ -45,7 +45,7 @@ class HelmChartST extends AbstractST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
     @BeforeAll

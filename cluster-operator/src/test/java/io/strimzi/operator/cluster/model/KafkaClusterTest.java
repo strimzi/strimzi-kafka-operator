@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
@@ -42,6 +43,8 @@ import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
+import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
+import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfigurationBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
@@ -75,6 +78,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @SuppressWarnings({
         "checkstyle:ClassDataAbstractionCoupling",
@@ -1602,6 +1606,20 @@ public class KafkaClusterTest {
         }
     }
 
+    @Test(expected = InvalidResourceException.class)
+    public void testGeneratePersistentVolumeClaimsJbodWithoutVolumes() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withStorage(new JbodStorageBuilder().withVolumes(Collections.EMPTY_LIST)
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+    }
+
     @Test
     public void testGeneratePersistentVolumeClaimsEphemeral()    {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
@@ -1679,5 +1697,157 @@ public class KafkaClusterTest {
                 .build();
         kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS, jbod);
         assertEquals(jbod, kc.getStorage());
+    }
+
+    @Test
+    public void testExternalIngress() {
+        IngressListenerBrokerConfiguration broker0 = new IngressListenerBrokerConfigurationBuilder()
+                .withHost("my-broker-kafka-0.com")
+                .withBroker(0)
+                .build();
+
+        IngressListenerBrokerConfiguration broker1 = new IngressListenerBrokerConfigurationBuilder()
+                .withHost("my-broker-kafka-1.com")
+                .withBroker(1)
+                .build();
+
+        IngressListenerBrokerConfiguration broker2 = new IngressListenerBrokerConfigurationBuilder()
+                .withHost("my-broker-kafka-2.com")
+                .withBroker(2)
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .withNewConfiguration()
+                                    .withNewBootstrap()
+                                        .withHost("my-kafka-bootstrap.com")
+                                        .withDnsAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
+                                    .endBootstrap()
+                                    .withBrokers(broker0, broker1, broker2)
+                                .endConfiguration()
+                            .endKafkaListenerExternalIngress()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        assertTrue(kc.isExposedWithIngress());
+
+        Set<String> addresses = new HashSet<>();
+        addresses.add("my-broker-kafka-0.com");
+        addresses.add("my-broker-kafka-1.com");
+        addresses.add("my-broker-kafka-2.com");
+        kc.setExternalAddresses(addresses);
+
+        // Check StatefulSet changes
+        StatefulSet ss = kc.generateStatefulSet(true, null);
+
+        List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "ingress")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "true")));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses))));
+        assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_AUTHENTICATION, KafkaListenerAuthenticationTls.TYPE_TLS)));
+
+        List<ContainerPort> ports = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
+        assertTrue(ports.contains(kc.createContainerPort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, "TCP")));
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapService();
+        assertEquals(KafkaCluster.externalBootstrapServiceName(cluster), ext.getMetadata().getName());
+        assertEquals("ClusterIP", ext.getSpec().getType());
+        assertEquals(kc.getSelectorLabels(), ext.getSpec().getSelector());
+        assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), ext.getSpec().getPorts());
+        checkOwnerReference(kc.createOwnerReference(), ext);
+
+        // Check per pod services
+        for (int i = 0; i < replicas; i++)  {
+            Service srv = kc.generateExternalService(i);
+            assertEquals(KafkaCluster.externalServiceName(cluster, i), srv.getMetadata().getName());
+            assertEquals("ClusterIP", srv.getSpec().getType());
+            assertEquals(KafkaCluster.kafkaPodName(cluster, i), srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL));
+            assertEquals(Collections.singletonList(kc.createServicePort(KafkaCluster.EXTERNAL_PORT_NAME, KafkaCluster.EXTERNAL_PORT, KafkaCluster.EXTERNAL_PORT, "TCP")), srv.getSpec().getPorts());
+            checkOwnerReference(kc.createOwnerReference(), srv);
+        }
+
+        // Check bootstrap ingress
+        Ingress bing = kc.generateExternalBootstrapIngress();
+        assertEquals(KafkaCluster.serviceName(cluster), bing.getMetadata().getName());
+        assertEquals(1, bing.getSpec().getTls().size());
+        assertEquals(1, bing.getSpec().getTls().get(0).getHosts().size());
+        assertEquals("my-kafka-bootstrap.com", bing.getSpec().getTls().get(0).getHosts().get(0));
+        assertEquals(1, bing.getSpec().getRules().size());
+        assertEquals("my-kafka-bootstrap.com", bing.getSpec().getRules().get(0).getHost());
+        assertEquals(1, bing.getSpec().getRules().get(0).getHttp().getPaths().size());
+        assertEquals("/", bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath());
+        assertEquals(KafkaCluster.externalBootstrapServiceName(cluster), bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName());
+        assertEquals(new IntOrString(KafkaCluster.EXTERNAL_PORT), bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort());
+        checkOwnerReference(kc.createOwnerReference(), bing);
+
+        // Check per pod router
+        for (int i = 0; i < replicas; i++)  {
+            Ingress ing = kc.generateExternalIngress(i);
+            assertEquals(KafkaCluster.externalServiceName(cluster, i), ing.getMetadata().getName());
+            assertEquals(1, ing.getSpec().getTls().size());
+            assertEquals(1, ing.getSpec().getTls().get(0).getHosts().size());
+            assertTrue(addresses.contains(ing.getSpec().getTls().get(0).getHosts().get(0)));
+            assertEquals(1, ing.getSpec().getRules().size());
+            assertTrue(addresses.contains(ing.getSpec().getRules().get(0).getHost()));
+            assertEquals(1, ing.getSpec().getRules().get(0).getHttp().getPaths().size());
+            assertEquals("/", ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath());
+            assertEquals(KafkaCluster.externalServiceName(cluster, i), ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName());
+            assertEquals(new IntOrString(KafkaCluster.EXTERNAL_PORT), ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort());
+            checkOwnerReference(kc.createOwnerReference(), ing);
+        }
+    }
+
+    @Test
+    public void testExternalIngressMissingConfiguration() {
+        IngressListenerBrokerConfiguration broker0 = new IngressListenerBrokerConfigurationBuilder()
+                .withBroker(0)
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalIngress()
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .withNewConfiguration()
+                                    .withBrokers(broker0)
+                                .endConfiguration()
+                            .endKafkaListenerExternalIngress()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        try {
+            kc.generateExternalBootstrapIngress();
+            fail("Expected exception was not thrown");
+        } catch (InvalidResourceException e)    {
+            // pass
+        }
+
+        // Check per pod router
+        for (int i = 0; i < replicas; i++)  {
+            try {
+                kc.generateExternalIngress(i);
+                fail("Expected exception was not thrown");
+            } catch (InvalidResourceException e)    {
+                // pass
+            }
+        }
     }
 }

@@ -52,7 +52,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         LOGGER.info("Creating topic {} in namespace {}", topic, topicNamespace);
         KUBE_CLIENT.namespace(topicNamespace);
         KUBE_CLIENT.create(new File(TOPIC_EXAMPLES_DIR));
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", 5000, 120000, () -> {
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_TOPIC_CREATION, () -> {
             KUBE_CLIENT.namespace(clusterNamespace);
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics2.contains(topic);
@@ -76,7 +76,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @AfterEach
     void deleteSecondNamespaceResources() throws Exception {
         secondNamespaceResources.deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, SECOND_NAMESPACE);
+        waitForDeletion(TIMEOUT_TEARDOWN, SECOND_NAMESPACE);
         KUBE_CLIENT.namespace(CO_NAMESPACE);
     }
 }

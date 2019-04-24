@@ -17,6 +17,9 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
@@ -38,7 +41,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -88,13 +90,6 @@ class KafkaST extends MessagingBaseST {
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
     private static final Pattern ZK_SERVER_STATE = Pattern.compile("zk_server_state\\s+(leader|follower)");
-
-    private static final long POLL_INTERVAL_FOR_CREATION = 1_000;
-    private static final long TIMEOUT_FOR_MIRROR_MAKER_CREATION = 120_000;
-    private static final long TIMEOUT_FOR_TOPIC_CREATION = 60_000;
-    private static final long TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION = 450_000;
-    private static final long WAIT_FOR_ROLLING_UPDATE_INTERVAL = Duration.ofSeconds(5).toMillis();
-    private static final long WAIT_FOR_ROLLING_UPDATE_TIMEOUT = Duration.ofMinutes(5).toMillis();
 
     @Test
     @Tag(FLAKY)
@@ -390,7 +385,7 @@ class KafkaST extends MessagingBaseST {
 
         resources().deployKafkaClients(CLUSTER_NAME).done();
 
-        availabilityTest(messagesCount, 60000, CLUSTER_NAME, false, topicName, null);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
     }
 
     /**
@@ -423,7 +418,7 @@ class KafkaST extends MessagingBaseST {
         waitTillSecretExists(kafkaUser);
 
         resources().deployKafkaClients(true, CLUSTER_NAME, user).done();
-        availabilityTest(messagesCount, 60000, CLUSTER_NAME, true, topicName, user);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
     }
 
     /**
@@ -467,7 +462,7 @@ class KafkaST extends MessagingBaseST {
         }
 
         resources().deployKafkaClients(false, CLUSTER_NAME, user).done();
-        availabilityTest(messagesCount, 60000, CLUSTER_NAME, false, topicName, user);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
     }
 
     /**
@@ -604,7 +599,7 @@ class KafkaST extends MessagingBaseST {
 
         //Creating topics for testing
         KUBE_CLIENT.create(TOPIC_CM);
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_TOPIC_CREATION, () -> {
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
         });
@@ -643,7 +638,7 @@ class KafkaST extends MessagingBaseST {
         KUBE_CLIENT.waitForResourceDeletion("kafkatopic", "my-topic");
 
         //Checking all topics were deleted
-        Thread.sleep(10000L);
+        Thread.sleep(TIMEOUT_TEARDOWN);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         assertThat(topics, not(hasItems("topic-from-cli")));
@@ -742,7 +737,7 @@ class KafkaST extends MessagingBaseST {
         KUBE_CLIENT.waitForPod(kafkaPodName);
 
         String rackId = KUBE_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
-        assertEquals("zone", rackId);
+        assertEquals("zone", rackId.trim());
 
         String brokerRack = KUBE_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
         assertTrue(brokerRack.contains("broker.rack=zone"));
@@ -771,21 +766,21 @@ class KafkaST extends MessagingBaseST {
         resources().deployKafkaClients(CLUSTER_NAME).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, 60000, kafkaSourceName);
-        availabilityTest(messagesCount, 60000, kafkaTargetName);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaSourceName);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaTargetName);
 
         // Deploy Mirror Maker
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
+        waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
             !KUBE_CLIENT.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        int sent = sendMessages(messagesCount, 20000, kafkaSourceName, false, topicSourceName, null);
-        int receivedSource = receiveMessages(messagesCount, 60000, kafkaSourceName, false, topicSourceName, null);
-        int receivedTarget = receiveMessages(messagesCount, 60000, kafkaTargetName, false, topicSourceName, null);
+        int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, false, topicSourceName, null);
+        int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaSourceName, false, topicSourceName, null);
+        int receivedTarget = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaTargetName, false, topicSourceName, null);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -856,8 +851,8 @@ class KafkaST extends MessagingBaseST {
         resources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, 60000, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, 60000, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group", 1, true)
@@ -877,13 +872,13 @@ class KafkaST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join the group
-        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
+        waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
             !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        int sent = sendMessages(messagesCount, 20000, kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedSource = receiveMessages(messagesCount, 60000, kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedTarget = receiveMessages(messagesCount, 60000, kafkaClusterTargetName, true, topicSourceName, userTarget);
+        int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedTarget = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, true, topicSourceName, userTarget);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -955,8 +950,8 @@ class KafkaST extends MessagingBaseST {
         resources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, 60000, kafkaSourceName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, 60000, kafkaTargetName, true, "my-topic-test-2", userTarget);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with TLS and ScramSha512
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, true)
@@ -986,13 +981,13 @@ class KafkaST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", POLL_INTERVAL_FOR_CREATION, TIMEOUT_FOR_MIRROR_MAKER_CREATION, () ->
+        waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
             !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
         );
 
-        int sent = sendMessages(messagesCount, 20000, kafkaSourceName, true, topicName, userSource);
-        int receivedSource = receiveMessages(messagesCount, 60000, kafkaSourceName, true, topicName, userSource);
-        int receivedTarget = receiveMessages(messagesCount, 60000, kafkaTargetName, true, topicName, userTarget);
+        int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, true, topicName, userSource);
+        int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaSourceName, true, topicName, userSource);
+        int receivedTarget = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaTargetName, true, topicName, userTarget);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -1050,7 +1045,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testNodePort() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        resources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -1060,9 +1055,6 @@ class KafkaST extends MessagingBaseST {
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
-                .editZookeeper()
-                    .withReplicas(1)
-                .endZookeeper()
             .endSpec()
             .done();
 
@@ -1072,7 +1064,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testNodePortTls() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        resources().kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -1081,9 +1073,49 @@ class KafkaST extends MessagingBaseST {
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
-                .editZookeeper()
-                    .withReplicas(1)
-                .endZookeeper()
+            .endSpec()
+            .done();
+
+        String userName = "alice";
+        resources().tlsUser(CLUSTER_NAME, userName).done();
+        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
+            () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
+            () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
+
+        waitForClusterAvailabilityTls(userName, NAMESPACE);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testLoadBalancer() throws Exception {
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
+            .endSpec()
+            .done();
+
+        waitForClusterAvailability(NAMESPACE);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testLoadBalancerTls() throws Exception {
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
+                .endKafka()
             .endSpec()
             .done();
 
@@ -1139,6 +1171,141 @@ class KafkaST extends MessagingBaseST {
         waitForZkRollUp();
     }
 
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBODDeleteClaimsTrueFalse() {
+        int diskCountPerReplica = 2;
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+
+        List<SingleVolumeStorage> volumes = new ArrayList<>();
+        volumes.add(new PersistentClaimStorageBuilder()
+                .withId(0)
+                .withDeleteClaim(true)
+                .withSize(diskSizeGi + "Gi").build());
+
+        volumes.add(new PersistentClaimStorageBuilder()
+                .withId(1)
+                .withDeleteClaim(false)
+                .withSize(diskSizeGi + "Gi").build());
+
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        // kafka cluster already deployed
+        verifyVolumeNamesAndLabels(2, 2, 10);
+        LOGGER.info("Deleting cluster");
+        KUBE_CLIENT.deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
+        verifyPVCDeletion(2, volumes);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBODDeleteClaimsTrue() {
+        int diskCountPerReplica = 2;
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+
+        List<SingleVolumeStorage> volumes = new ArrayList<>();
+        for (int i = 0; i < diskCountPerReplica; i++) {
+            volumes.add(new PersistentClaimStorageBuilder()
+                    .withId(i)
+                    .withDeleteClaim(true)
+                    .withSize(diskSizeGi + "Gi").build());
+        }
+
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        // kafka cluster already deployed
+
+        verifyVolumeNamesAndLabels(2, 2, 10);
+        LOGGER.info("Deleting cluster");
+        KUBE_CLIENT.deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
+        verifyPVCDeletion(2, volumes);
+    }
+
+    @Test
+    @Tag(REGRESSION)
+    void testKafkaJBODDeleteClaimsFalse() {
+        int diskCountPerReplica = 2;
+        int kafkaReplicas = 2;
+        int diskSizeGi = 10;
+
+        List<SingleVolumeStorage> volumes = new ArrayList<>();
+        for (int i = 0; i < diskCountPerReplica; i++) {
+            volumes.add(new PersistentClaimStorageBuilder()
+                    .withId(i)
+                    .withDeleteClaim(false)
+                    .withSize(diskSizeGi + "Gi").build());
+        }
+
+        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        // kafka cluster already deployed
+        verifyVolumeNamesAndLabels(2, 2, 10);
+        LOGGER.info("Deleting cluster");
+        KUBE_CLIENT.deleteByName("kafka", CLUSTER_NAME).waitForResourceDeletion("pod", kafkaPodName(CLUSTER_NAME, 0));
+        verifyPVCDeletion(2, volumes);
+    }
+
+    void verifyPVCDeletion(int kafkaReplicas, List<SingleVolumeStorage> volumes) {
+        ArrayList pvcs = new ArrayList();
+        CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().stream()
+                .forEach(pvc -> pvcs.add(pvc.getMetadata().getName()));
+
+        volumes.forEach(volume -> {
+            for (int i = 0; i < kafkaReplicas; i++) {
+                String volumeName = "data-" + volume.getId() + "-" + CLUSTER_NAME + "-kafka-" + i;
+                LOGGER.info("Verifying volume: " + volumeName);
+                if (((PersistentClaimStorage) volume).isDeleteClaim()) {
+                    assertFalse(pvcs.contains(volumeName));
+                } else {
+                    assertTrue(pvcs.contains(volumeName));
+                }
+
+            }
+        });
+    }
+
+    void verifyVolumeNamesAndLabels(int kafkaReplicas, int diskCountPerReplica, int diskSizeGi) {
+
+        ArrayList pvcs = new ArrayList();
+
+        CLIENT.inNamespace(NAMESPACE).persistentVolumeClaims().list().getItems().stream()
+                .forEach(volume -> {
+                    String volumeName = volume.getMetadata().getName();
+                    pvcs.add(volumeName);
+                    LOGGER.info("Checking labels for volume:" + volumeName);
+                    assertEquals(CLUSTER_NAME, volume.getMetadata().getLabels().get("strimzi.io/cluster"));
+                    assertEquals("Kafka", volume.getMetadata().getLabels().get("strimzi.io/kind"));
+                    assertEquals(CLUSTER_NAME.concat("-kafka"), volume.getMetadata().getLabels().get("strimzi.io/name"));
+                    assertEquals(diskSizeGi + "Gi", volume.getSpec().getResources().getRequests().get("storage").getAmount());
+                });
+
+        LOGGER.info("Checking PVC names included in JBOD array");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                pvcs.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+            }
+        }
+
+        LOGGER.info("Checking PVC on Kafka pods");
+        for (int i = 0; i < kafkaReplicas; i++) {
+            ArrayList dataSourcesOnPod = new ArrayList();
+            ArrayList pvcsOnPod = new ArrayList();
+
+            LOGGER.info("Getting list of mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.add(CLIENT.inNamespace(NAMESPACE).pods().
+                        withName(CLUSTER_NAME.concat("-kafka-" + i)).get().getSpec().getVolumes().get(j).getName());
+                pvcsOnPod.add(CLIENT.inNamespace(NAMESPACE).pods().withName(CLUSTER_NAME.concat("-kafka-" + i)).get()
+                        .getSpec().getVolumes().get(j).getPersistentVolumeClaim().getClaimName());
+            }
+
+            LOGGER.info("Verifying mounted data sources and PVCs on Kafka pod " + i);
+            for (int j = 0; j < diskCountPerReplica; j++) {
+                dataSourcesOnPod.contains("data-" + j);
+                pvcsOnPod.contains("data-" + j + "-" + CLUSTER_NAME + "-kafka-" + i);
+            }
+        }
+    }
+
     @BeforeEach
     void createTestResources() throws Exception {
         createResources();
@@ -1149,7 +1316,7 @@ class KafkaST extends MessagingBaseST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteResources();
-        waitForDeletion(TEARDOWN_GLOBAL_WAIT, NAMESPACE);
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
     @BeforeAll

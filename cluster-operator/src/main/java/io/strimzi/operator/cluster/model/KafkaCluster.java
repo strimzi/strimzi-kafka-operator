@@ -23,6 +23,14 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPath;
+import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPathBuilder;
+import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.api.model.extensions.IngressBuilder;
+import io.fabric8.kubernetes.api.model.extensions.IngressRule;
+import io.fabric8.kubernetes.api.model.extensions.IngressRuleBuilder;
+import io.fabric8.kubernetes.api.model.extensions.IngressTLS;
+import io.fabric8.kubernetes.api.model.extensions.IngressTLSBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
@@ -48,6 +56,9 @@ import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.listener.ExternalListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
+import io.strimzi.api.kafka.model.listener.IngressListenerConfiguration;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerOverride;
@@ -165,6 +176,10 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templateExternalBootstrapRouteAnnotations;
     protected Map<String, String> templatePerPodRouteLabels;
     protected Map<String, String> templatePerPodRouteAnnotations;
+    protected Map<String, String> templateExternalBootstrapIngressLabels;
+    protected Map<String, String> templateExternalBootstrapIngressAnnotations;
+    protected Map<String, String> templatePerPodIngressLabels;
+    protected Map<String, String> templatePerPodIngressAnnotations;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -280,6 +295,7 @@ public class KafkaCluster extends AbstractModel {
         return fromCrd(kafkaAssembly, versions, null);
     }
 
+    @SuppressWarnings("checkstyle:MethodLength")
     public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage) {
         KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
                 kafkaAssembly.getMetadata().getName(),
@@ -335,7 +351,8 @@ public class KafkaCluster extends AbstractModel {
             StorageDiff diff = new StorageDiff(oldStorage, newStorage);
 
             if (!diff.isEmpty()) {
-                log.warn("Changing Kafka storage is not possible. The changes will be ignored.");
+                log.warn("Only following changes to Kafka storage are allowed: changing the deleteClaim flag, adding volumes to Jbod storage or removing volumes from Jbod storage.");
+                log.warn("Your desired Kafka storage configuration contains changes which are not allowed. As a result, all storage changes will be ignored. Use DEBUG level logging for more information about the detected changes.");
                 result.setStorage(oldStorage);
             } else {
                 result.setStorage(newStorage);
@@ -419,6 +436,16 @@ public class KafkaCluster extends AbstractModel {
             if (template.getPerPodRoute() != null && template.getPerPodRoute().getMetadata() != null)  {
                 result.templatePerPodRouteLabels = template.getPerPodRoute().getMetadata().getLabels();
                 result.templatePerPodRouteAnnotations = template.getPerPodRoute().getMetadata().getAnnotations();
+            }
+
+            if (template.getExternalBootstrapIngress() != null && template.getExternalBootstrapIngress().getMetadata() != null)  {
+                result.templateExternalBootstrapIngressLabels = template.getExternalBootstrapIngress().getMetadata().getLabels();
+                result.templateExternalBootstrapIngressAnnotations = template.getExternalBootstrapIngress().getMetadata().getAnnotations();
+            }
+
+            if (template.getPerPodIngress() != null && template.getPerPodIngress().getMetadata() != null)  {
+                result.templatePerPodIngressLabels = template.getPerPodIngress().getMetadata().getLabels();
+                result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
@@ -670,6 +697,146 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return null;
+    }
+
+    /**
+     * Generates ingress for pod. This ingress is used for exposing it externally using Nginx Ingress.
+     *
+     * @param pod   Number of the pod for which this ingress should be generated
+     * @return The generated Ingress
+     */
+    public Ingress generateExternalIngress(int pod) {
+        if (isExposedWithIngress()) {
+            KafkaListenerExternalIngress listener = (KafkaListenerExternalIngress) listeners.getExternal();
+            Map<String, String> dnsAnnotations = null;
+            String host = null;
+
+            if (listener.getConfiguration() != null && listener.getConfiguration().getBrokers() != null) {
+                host = listener.getConfiguration().getBrokers().stream()
+                        .filter(broker -> broker != null && broker.getBroker() == pod
+                                && broker.getHost() != null)
+                        .map(IngressListenerBrokerConfiguration::getHost)
+                        .findAny()
+                        .orElseThrow(() -> new InvalidResourceException("Hostname for broker with id " + pod + " is required for exposing Kafka cluster using Ingress"));
+
+                dnsAnnotations = listener.getConfiguration().getBrokers().stream()
+                        .filter(broker -> broker != null && broker.getBroker() == pod
+                                && broker.getHost() != null)
+                        .map(IngressListenerBrokerConfiguration::getDnsAnnotations)
+                        .findAny()
+                        .orElse(null);
+            }
+
+            String perPodServiceName = externalServiceName(cluster, pod);
+
+            HTTPIngressPath path = new HTTPIngressPathBuilder()
+                    .withPath("/")
+                    .withNewBackend()
+                        .withNewServicePort(EXTERNAL_PORT)
+                        .withServiceName(perPodServiceName)
+                    .endBackend()
+                    .build();
+
+            IngressRule rule = new IngressRuleBuilder()
+                    .withHost(host)
+                    .withNewHttp()
+                        .withPaths(path)
+                    .endHttp()
+                    .build();
+
+            IngressTLS tls = new IngressTLSBuilder()
+                    .withHosts(host)
+                    .build();
+
+            Ingress ingress = new IngressBuilder()
+                    .withNewMetadata()
+                        .withName(perPodServiceName)
+                        .withLabels(getLabelsWithName(perPodServiceName, templatePerPodIngressLabels))
+                        .withAnnotations(mergeAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, dnsAnnotations))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRules(rule)
+                        .withTls(tls)
+                    .endSpec()
+                    .build();
+
+            return ingress;
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates a bootstrap ingress which can be used to bootstrap clients outside of Kubernetes.
+     * @return The generated Ingress
+     */
+    public Ingress generateExternalBootstrapIngress() {
+        if (isExposedWithIngress()) {
+            KafkaListenerExternalIngress listener = (KafkaListenerExternalIngress) listeners.getExternal();
+            Map<String, String> dnsAnnotations;
+            String host;
+
+            if (listener.getConfiguration() != null && listener.getConfiguration().getBootstrap() != null && listener.getConfiguration().getBootstrap().getHost() != null) {
+                host = listener.getConfiguration().getBootstrap().getHost();
+                dnsAnnotations = listener.getConfiguration().getBootstrap().getDnsAnnotations();
+            } else {
+                throw new InvalidResourceException("Boostrap hostname is required for exposing Kafka cluster using Ingress");
+            }
+
+            HTTPIngressPath path = new HTTPIngressPathBuilder()
+                    .withPath("/")
+                    .withNewBackend()
+                        .withNewServicePort(EXTERNAL_PORT)
+                        .withServiceName(externalBootstrapServiceName(cluster))
+                    .endBackend()
+                    .build();
+
+            IngressRule rule = new IngressRuleBuilder()
+                    .withHost(host)
+                    .withNewHttp()
+                        .withPaths(path)
+                    .endHttp()
+                    .build();
+
+            IngressTLS tls = new IngressTLSBuilder()
+                    .withHosts(host)
+                    .build();
+
+            Ingress ingress = new IngressBuilder()
+                    .withNewMetadata()
+                        .withName(serviceName)
+                        .withLabels(getLabelsWithName(serviceName, templateExternalBootstrapIngressLabels))
+                        .withAnnotations(mergeAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRules(rule)
+                        .withTls(tls)
+                    .endSpec()
+                    .build();
+
+            return ingress;
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates the annotations needed to configure the Ingress as TLS passthrough
+     *
+     * @return  Map with the annotations
+     */
+    private Map<String, String> generateInternalIngressAnnotations() {
+        Map<String, String> internalAnnotations = new HashMap<>(4);
+        internalAnnotations.put("kubernetes.io/ingress.class", "nginx");
+        internalAnnotations.put("ingress.kubernetes.io/ssl-passthrough", "true");
+        internalAnnotations.put("nginx.ingress.kubernetes.io/ssl-passthrough", "true");
+        internalAnnotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
+
+        return internalAnnotations;
     }
 
     /**
@@ -1279,6 +1446,15 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
+     * Returns true when the Kafka cluster is exposed to the outside of Kubernetes using Ingress
+     *
+     * @return
+     */
+    public boolean isExposedWithIngress()  {
+        return isExposed() && listeners.getExternal() instanceof KafkaListenerExternalIngress;
+    }
+
+    /**
      * Returns the list broker overrides for external listeners
      *
      * @return
@@ -1303,6 +1479,12 @@ public class KafkaCluster extends AbstractModel {
 
             if (overrides != null && overrides.getBrokers() != null) {
                 brokerOverride.addAll(overrides.getBrokers());
+            }
+        } else if (isExposedWithIngress()) {
+            IngressListenerConfiguration configuration = ((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration();
+
+            if (configuration != null && configuration.getBrokers() != null) {
+                brokerOverride.addAll(configuration.getBrokers());
             }
         }
 
@@ -1334,6 +1516,12 @@ public class KafkaCluster extends AbstractModel {
 
             if (overrides != null) {
                 bootstrapOverride = overrides.getBootstrap();
+            }
+        } else if (isExposedWithIngress()) {
+            IngressListenerConfiguration configuration = ((KafkaListenerExternalIngress) listeners.getExternal()).getConfiguration();
+
+            if (configuration != null) {
+                bootstrapOverride = configuration.getBootstrap();
             }
         }
 
@@ -1413,13 +1601,16 @@ public class KafkaCluster extends AbstractModel {
      * @return
      */
     public boolean isExposedWithTls() {
-        if (isExposed() && listeners.getExternal() instanceof KafkaListenerExternalRoute) {
-            return true;
-        } else if (isExposed()) {
-            if (listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer) {
-                return ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).isTls();
-            } else if (listeners.getExternal() instanceof KafkaListenerExternalNodePort) {
-                return ((KafkaListenerExternalNodePort) listeners.getExternal()).isTls();
+        if (isExposed()) {
+            if (listeners.getExternal() instanceof KafkaListenerExternalRoute
+                || listeners.getExternal() instanceof KafkaListenerExternalIngress) {
+                return true;
+            } else {
+                if (listeners.getExternal() instanceof KafkaListenerExternalLoadBalancer) {
+                    return ((KafkaListenerExternalLoadBalancer) listeners.getExternal()).isTls();
+                } else if (listeners.getExternal() instanceof KafkaListenerExternalNodePort) {
+                    return ((KafkaListenerExternalNodePort) listeners.getExternal()).isTls();
+                }
             }
         }
 

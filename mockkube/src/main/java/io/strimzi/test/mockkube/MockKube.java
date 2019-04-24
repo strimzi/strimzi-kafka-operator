@@ -390,8 +390,10 @@ public class MockKube {
                                         .build();
                                 //podDb.put(podName,
                                 //        pod);
-                                mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(podName).create(pod);
-                                addPodRestarter(mockPods, resourceName, podNum, podName);
+                                if (mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(podName).get() == null) {
+                                    mockPods.inNamespace(argument.getMetadata().getNamespace()).withName(podName).create(pod);
+                                    addPodRestarter(mockPods, resourceName, podNum, podName);
+                                }
 
                                 if (value.getSpec().getVolumeClaimTemplates().size() > 0) {
 
@@ -439,6 +441,11 @@ public class MockKube {
                         when(resource.isReady()).thenAnswer(i -> {
                             LOGGER.debug("{} {} is ready", resourceType, resourceName);
                             return true;
+                        });
+                        when(c.delete()).thenAnswer(i -> {
+                            LOGGER.info("delete {} {}", resourceType, resourceName);
+                            StatefulSet removed = ssDb.remove(resourceName);
+                            return removed != null;
                         });
                     }
 

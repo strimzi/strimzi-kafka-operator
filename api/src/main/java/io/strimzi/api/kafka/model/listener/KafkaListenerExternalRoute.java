@@ -24,7 +24,7 @@ import java.util.List;
         builderPackage = "io.fabric8.kubernetes.api.builder"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"type", "authentication"})
+@JsonPropertyOrder({"type", "authentication", "overrides"})
 @EqualsAndHashCode
 public class KafkaListenerExternalRoute extends KafkaListenerExternal {
     private static final long serialVersionUID = 1L;
