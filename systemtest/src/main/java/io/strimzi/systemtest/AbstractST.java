@@ -719,7 +719,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
      */
     void waitForClusterAvailabilityTls(String userName, String namespace) throws Exception {
         int messageCount = 50;
-        String topicName = "test-topic";
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
         KafkaClient testClient = new KafkaClient();
         try {
@@ -743,7 +743,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
      */
     void waitForClusterAvailability(String namespace) throws Exception {
         int messageCount = 50;
-        String topicName = "test-topic";
+        String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
 
         KafkaClient testClient = new KafkaClient();
         try {

@@ -118,7 +118,7 @@ class KafkaClientProperties {
      */
     private static Properties sharedClientProperties(String namespace, String clusterName, String userName) {
         Properties properties = new Properties();
-        // For turn of hostname verification
+        // For turn off hostname verification
         properties.setProperty("ssl.endpoint.identification.algorithm", "");
 
         try {
