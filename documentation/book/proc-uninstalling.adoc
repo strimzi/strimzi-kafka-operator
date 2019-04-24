@@ -16,10 +16,7 @@ Such resources include:
 * Secrets (Custom CAs and certificates, Kafka Connect secrets, and other Kafka secrets)
 * Logging `ConfigMaps` (of type `external`)
 
-These are resources:
-
-* Referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `KafkaMirrorMaker` configuration
-* Consumed by the operators
+These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `KafkaMirrorMaker` configuration.
 
 .Procedure
 
