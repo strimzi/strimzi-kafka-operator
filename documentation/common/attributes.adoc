@@ -12,6 +12,7 @@
 :toc: left
 :linkattrs:
 :toclevels: 3
+:cmdcli: kubectl
 
 // Name and version placeholders
 :ProductLongName: Strimzi
