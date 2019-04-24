@@ -935,7 +935,7 @@ class KafkaST extends MessagingBaseST {
                 .withDeleteClaim(false)
                 .withSize(diskSizeGi + "Gi").build());
 
-        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(2, 2, 10);
         LOGGER.info("Deleting cluster");
@@ -958,7 +958,7 @@ class KafkaST extends MessagingBaseST {
                     .withSize(diskSizeGi + "Gi").build());
         }
 
-        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
         // kafka cluster already deployed
 
         verifyVolumeNamesAndLabels(2, 2, 10);
@@ -982,7 +982,7 @@ class KafkaST extends MessagingBaseST {
                     .withSize(diskSizeGi + "Gi").build());
         }
 
-        resources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
+        testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, volumes).done();
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(2, 2, 10);
         LOGGER.info("Deleting cluster");
