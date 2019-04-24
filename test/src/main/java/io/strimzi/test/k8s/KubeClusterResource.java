@@ -24,7 +24,16 @@ public class KubeClusterResource {
     private KubeClient client;
     private HelmClient helmClient;
 
-    public KubeClusterResource() {
+    private static KubeClusterResource instance;
+
+    public static synchronized KubeClusterResource getInstance() {
+        if (instance == null) {
+            instance = new KubeClusterResource();
+        }
+        return instance;
+    }
+
+    private KubeClusterResource() {
         bootstrap = true;
     }
 

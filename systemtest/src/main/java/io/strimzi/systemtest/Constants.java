@@ -42,4 +42,28 @@ public interface Constants {
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String IMAGE_PULL_POLICY = "Always";
+
+    String NOTEARDOWN = "NOTEARDOWN";
+
+    /**
+     * Default value which allows execution of tests with any tags
+     */
+    String DEFAULT_TAG = "all";
+
+    /**
+     * Tag for acceptance tests, which are triggered for each push/pr/merge on travis-ci
+     */
+    String ACCEPTANCE = "acceptance";
+    /**
+     * Tag for regression tests which are stable.
+     */
+    String REGRESSION = "regression";
+    /**
+     * Tag for tests, which results are not 100% reliable on all testing environments.
+     */
+    String FLAKY = "flaky";
+    /**
+     * Tag for tests, which are failing only on CCI VMs
+     */
+    String CCI_FLAKY = "cci_flaky";
 }

@@ -8,8 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -36,7 +34,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaCertificateSecr
 import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
@@ -46,7 +44,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
 class SecurityST extends AbstractST {
 

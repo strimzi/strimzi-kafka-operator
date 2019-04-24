@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -13,13 +12,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 
-@ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
 class HelmChartST extends AbstractST {
 

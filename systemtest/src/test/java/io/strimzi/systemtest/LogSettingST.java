@@ -11,14 +11,12 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Order;
@@ -28,13 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
 @TestMethodOrder(OrderAnnotation.class)
 class LogSettingST extends AbstractST {

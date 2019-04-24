@@ -5,7 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -14,15 +13,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
-@ExtendWith(StrimziExtension.class)
 class UserST extends AbstractST {
 
     public static final String NAMESPACE = "user-cluster-test";

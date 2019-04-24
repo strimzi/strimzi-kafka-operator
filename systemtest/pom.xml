@@ -162,10 +162,31 @@
 
     <profiles>
         <profile>
-            <id>systemtests</id>
+            <id>acceptance</id>
             <properties>
                 <skipTests>false</skipTests>
-                <junitTags>acceptance,regression</junitTags>
+                <groups>acceptance &amp; !regression</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>regression</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>acceptance &amp; regression</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>all</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>acceptance &amp; regression &amp; flaky &amp; cci_flaky</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>flaky</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>flaky &amp; cci_flaky</groups>
             </properties>
         </profile>
     </profiles>

@@ -195,7 +195,7 @@ public class StrimziExtension implements ExecutionCondition {
             }
 
             if (clusterResource == null) {
-                clusterResource = new KubeClusterResource();
+                clusterResource = KubeClusterResource.getInstance();
                 clusterResource.before();
             }
         }
