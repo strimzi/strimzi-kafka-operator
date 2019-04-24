@@ -84,7 +84,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
     protected final ServiceAccountOperator serviceAccountOperations;
     protected final ImagePullPolicy imagePullPolicy;
-    protected final Set<LocalObjectReference> imagePullSecrets;
+    protected final List<LocalObjectReference> imagePullSecrets;
     protected final KafkaVersion.Lookup versions;
     private final String kind;
 

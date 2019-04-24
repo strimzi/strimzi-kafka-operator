@@ -141,7 +141,7 @@ public class KafkaConnectAssemblyOperatorTest {
             context.assertEquals(connect.getName(), dc.getMetadata().getName());
             Map annotations = new HashMap();
             annotations.put("strimzi.io/logging", LOGGING_CONFIG);
-            context.assertEquals(connect.generateDeployment(annotations, true, null), dc, "Deployments are not equal");
+            context.assertEquals(connect.generateDeployment(annotations, true, null, null), dc, "Deployments are not equal");
 
             // Verify PodDisruptionBudget
             List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
@@ -170,7 +170,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(clusterCm, VERSIONS);
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null));
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null, null));
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -241,7 +241,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null));
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null, null));
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -313,7 +313,7 @@ public class KafkaConnectAssemblyOperatorTest {
             context.assertEquals(compareTo.getName(), dc.getMetadata().getName());
             Map<String, String> annotations = new HashMap();
             annotations.put("strimzi.io/logging", loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
-            context.assertEquals(compareTo.generateDeployment(annotations, true, null), dc, "Deployments are not equal");
+            context.assertEquals(compareTo.generateDeployment(annotations, true, null, null), dc, "Deployments are not equal");
 
             // Verify PodDisruptionBudget
             List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
@@ -350,7 +350,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null));
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null, null));
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -407,7 +407,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null));
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null, null));
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -456,7 +456,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockConnectOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
         when(mockServiceOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateService());
-        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null));
+        when(mockDcOps.get(clusterCmNamespace, connect.getName())).thenReturn(connect.generateDeployment(new HashMap<String, String>(), true, null, null));
 
         when(mockServiceOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -505,12 +505,12 @@ public class KafkaConnectAssemblyOperatorTest {
         // providing the list of ALL Deployments for all the Kafka Connect clusters
         Labels newLabels = Labels.forKind(KafkaConnect.RESOURCE_KIND);
         when(mockDcOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null)));
+                asList(KafkaConnectCluster.fromCrd(bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
 
         // providing the list Deployments for already "existing" Kafka Connect clusters
         Labels barLabels = Labels.forCluster("bar");
         when(mockDcOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null))
+                asList(KafkaConnectCluster.fromCrd(bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))
         );
 
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());

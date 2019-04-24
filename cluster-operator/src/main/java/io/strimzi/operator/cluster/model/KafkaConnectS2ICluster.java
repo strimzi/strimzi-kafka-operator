@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
@@ -29,6 +30,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.operator.common.model.Labels;
 
+import java.util.List;
 import java.util.Map;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
@@ -66,7 +68,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      *
      * @return      Source ImageStream resource definition
      */
-    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
+    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy,
+                                                     List<LocalObjectReference> imagePullSecrets) {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
@@ -126,7 +129,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                             .withTolerations(getTolerations())
                             .withAffinity(getMergedAffinity())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                            .withImagePullSecrets(templateImagePullSecrets)
+                            .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(templateSecurityContext)
                         .endSpec()
                     .endTemplate()

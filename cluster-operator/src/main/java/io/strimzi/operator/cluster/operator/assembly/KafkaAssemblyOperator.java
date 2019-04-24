@@ -981,7 +981,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkStatefulSet() {
-            StatefulSet zkSs = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy);
+            StatefulSet zkSs = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSs.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSs));
         }
@@ -1565,7 +1565,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaStatefulSet() {
             kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
-            StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy);
+            StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             PodTemplateSpec template = kafkaSs.getSpec().getTemplate();
             Annotations.annotations(template).put(
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION,
@@ -1867,7 +1867,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     topicOperator.getLogging() instanceof ExternalLogging ?
                                             configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
                                             null);
-                            this.toDeployment = topicOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy);
+                            this.toDeployment = topicOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
                             this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             Annotations.annotations(this.toDeployment.getSpec().getTemplate()).put(
                                     ANNO_STRIMZI_IO_LOGGING,
@@ -1981,7 +1981,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             annotations.put(ANNO_STRIMZI_IO_LOGGING, configAnnotation);
 
                             this.entityOperator = entityOperator;
-                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy);
+                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
                             this.topicOperatorMetricsAndLogsConfigMap = topicOperatorLogAndMetricsConfigMap;
                             this.userOperatorMetricsAndLogsConfigMap = userOperatorLogAndMetricsConfigMap;
                         }

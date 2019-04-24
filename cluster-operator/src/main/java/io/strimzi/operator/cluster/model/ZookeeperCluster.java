@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
@@ -368,7 +369,7 @@ public class ZookeeperCluster extends AbstractModel {
         return createHeadlessService(getServicePortList());
     }
 
-    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
+    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
 
         return createStatefulSet(
                 Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
@@ -377,6 +378,7 @@ public class ZookeeperCluster extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
+                imagePullSecrets,
                 isOpenShift);
     }
 

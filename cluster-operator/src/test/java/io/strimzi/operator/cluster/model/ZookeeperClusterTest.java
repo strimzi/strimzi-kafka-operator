@@ -165,7 +165,7 @@ public class ZookeeperClusterTest {
     @Test
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         checkStatefulSet(ss);
         checkOwnerReference(zc.createOwnerReference(), ss);
     }
@@ -251,7 +251,7 @@ public class ZookeeperClusterTest {
 
     @Test
     public void withAffinity() throws IOException {
-        resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true, null).getSpec().getTemplate().getSpec().getAffinity());
+        resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
@@ -341,7 +341,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check StatefulSet
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertTrue(ss.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()));
         assertTrue(ss.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()));
 
@@ -381,7 +381,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
         Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
         assertNotNull(lifecycle);
@@ -396,7 +396,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertEquals(Long.valueOf(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
         Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
         assertNotNull(lifecycle);
@@ -423,7 +423,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertEquals(2, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
         assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
         assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
@@ -436,7 +436,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertEquals(0, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
     }
 
@@ -529,7 +529,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertNotNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
         assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
         assertEquals(Long.valueOf(456), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
@@ -543,7 +543,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = zc.generateStatefulSet(true, null);
+        StatefulSet ss = zc.generateStatefulSet(true, null, null);
         assertNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
     }
 
@@ -585,11 +585,11 @@ public class ZookeeperClusterTest {
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
         ZookeeperCluster kc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.ALWAYS);
+        StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null);
         assertEquals(ImagePullPolicy.ALWAYS.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.ALWAYS.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
 
-        sts = zc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT);
+        sts = zc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT, null);
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
     }
@@ -676,7 +676,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
         // Check Storage annotation on STS
-        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
@@ -704,7 +704,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
         // Check Storage annotation on STS
-        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
@@ -732,7 +732,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
         // Check Storage annotation on STS
-        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();

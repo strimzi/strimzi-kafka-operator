@@ -132,7 +132,7 @@ public class KafkaUpdateTest {
                                       Consumer<Integer> reconcileExceptions, Consumer<Integer> rollExceptions) {
         KafkaSetOperator kso = mock(KafkaSetOperator.class);
 
-        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false, null);
+        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false, null, null);
 
         when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaSs));
 

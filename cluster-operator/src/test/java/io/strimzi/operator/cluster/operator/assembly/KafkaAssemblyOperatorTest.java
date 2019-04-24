@@ -830,27 +830,27 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock StatefulSet get
         when(mockKsOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(
-                originalKafkaCluster.generateStatefulSet(openShift, null)
+                originalKafkaCluster.generateStatefulSet(openShift, null, null)
         );
         when(mockZsOps.get(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(
-                originalZookeeperCluster.generateStatefulSet(openShift, null)
+                originalZookeeperCluster.generateStatefulSet(openShift, null, null)
         );
         // Mock Deployment get
         if (originalTopicOperator != null) {
             when(mockDepOps.get(clusterNamespace, TopicOperator.topicOperatorName(clusterName))).thenReturn(
-                    originalTopicOperator.generateDeployment(true, null)
+                    originalTopicOperator.generateDeployment(true, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, TopicOperator.topicOperatorName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalTopicOperator.generateDeployment(true, null))
+                    Future.succeededFuture(originalTopicOperator.generateDeployment(true, null, null))
             );
         }
 
         if (originalEntityOperator != null) {
             when(mockDepOps.get(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP, null)
+                    originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP, null))
+                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null))
             );
         }
 
@@ -945,13 +945,13 @@ public class KafkaAssemblyOperatorTest {
             // rolling restart
             Set<String> expectedRollingRestarts = set();
             if (KafkaSetOperator.needsRollingUpdate(
-                    new StatefulSetDiff(originalKafkaCluster.generateStatefulSet(openShift, null),
-                    updatedKafkaCluster.generateStatefulSet(openShift, null)))) {
+                    new StatefulSetDiff(originalKafkaCluster.generateStatefulSet(openShift, null, null),
+                    updatedKafkaCluster.generateStatefulSet(openShift, null, null)))) {
                 expectedRollingRestarts.add(originalKafkaCluster.getName());
             }
             if (ZookeeperSetOperator.needsRollingUpdate(
-                    new StatefulSetDiff(originalZookeeperCluster.generateStatefulSet(openShift, null),
-                            updatedZookeeperCluster.generateStatefulSet(openShift, null)))) {
+                    new StatefulSetDiff(originalZookeeperCluster.generateStatefulSet(openShift, null, null),
+                            updatedZookeeperCluster.generateStatefulSet(openShift, null, null)))) {
                 expectedRollingRestarts.add(originalZookeeperCluster.getName());
             }
 
@@ -1007,7 +1007,7 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift, null))
+                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
 
         when(mockSecretOps.get(eq(clusterCmNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
@@ -1019,7 +1019,7 @@ public class KafkaAssemblyOperatorTest {
         Labels barLabels = Labels.forCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(bar, VERSIONS);
         when(mockKsOps.list(eq(clusterCmNamespace), eq(barLabels))).thenReturn(
-                asList(barCluster.generateStatefulSet(openShift, null))
+                asList(barCluster.generateStatefulSet(openShift, null, null))
         );
         when(mockSecretOps.list(eq(clusterCmNamespace), eq(barLabels))).thenAnswer(
             invocation -> new ArrayList<>(asList(
@@ -1091,14 +1091,14 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq("*"), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift, null))
+                asList(KafkaCluster.fromCrd(bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(bar, VERSIONS);
         when(mockKsOps.list(eq("*"), eq(barLabels))).thenReturn(
-                asList(barCluster.generateStatefulSet(openShift, null))
+                asList(barCluster.generateStatefulSet(openShift, null, null))
         );
         when(mockSecretOps.list(eq("*"), eq(barLabels))).thenAnswer(
             invocation -> new ArrayList<>(asList(

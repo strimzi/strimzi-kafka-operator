@@ -198,7 +198,7 @@ public class KafkaClusterTest {
     @Test
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
         checkStatefulSet(ss, kafkaAssembly, true);
         checkOwnerReference(kc.createOwnerReference(), ss);
     }
@@ -215,7 +215,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        StatefulSet ss = kc.generateStatefulSet(false, null);
+        StatefulSet ss = kc.generateStatefulSet(false, null, null);
         assertEquals(selector, ss.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector().getMatchLabels());
     }
 
@@ -230,7 +230,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-        StatefulSet ss = kc.generateStatefulSet(false, null);
+        StatefulSet ss = kc.generateStatefulSet(false, null, null);
         assertEquals(null, ss.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector());
     }
 
@@ -244,7 +244,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(editKafkaAssembly, VERSIONS);
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
         checkStatefulSet(ss, editKafkaAssembly, true);
     }
 
@@ -259,7 +259,7 @@ public class KafkaClusterTest {
                             .endKafka()
                         .endSpec().build();
         KafkaCluster kc = KafkaCluster.fromCrd(editKafkaAssembly, VERSIONS);
-        StatefulSet ss = kc.generateStatefulSet(false, null);
+        StatefulSet ss = kc.generateStatefulSet(false, null, null);
         checkStatefulSet(ss, editKafkaAssembly, false);
     }
 
@@ -389,25 +389,25 @@ public class KafkaClusterTest {
     @Test
     public void withAffinityWithoutRack() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
-            kc -> kc.generateStatefulSet(true, null).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
     public void withRackWithoutAffinity() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
-            kc -> kc.generateStatefulSet(true, null).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
     public void withRackAndAffinity() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
-            kc -> kc.generateStatefulSet(true, null).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @Test
     public void withTolerations() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
-            kc -> kc.generateStatefulSet(true, null).getSpec().getTemplate().getSpec().getTolerations());
+            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test
@@ -444,7 +444,7 @@ public class KafkaClusterTest {
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "route")));
@@ -573,7 +573,7 @@ public class KafkaClusterTest {
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "loadbalancer")));
@@ -626,7 +626,7 @@ public class KafkaClusterTest {
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "loadbalancer")));
@@ -658,7 +658,7 @@ public class KafkaClusterTest {
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
@@ -720,7 +720,7 @@ public class KafkaClusterTest {
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
@@ -776,7 +776,7 @@ public class KafkaClusterTest {
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "nodeport")));
@@ -1034,7 +1034,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check StatefulSet
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertTrue(ss.getMetadata().getLabels().entrySet().containsAll(ssLabels.entrySet()));
         assertTrue(ss.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()));
 
@@ -1181,7 +1181,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
         Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
         assertNotNull(lifecycle);
@@ -1196,7 +1196,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertEquals(Long.valueOf(30), ss.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds());
         Lifecycle lifecycle = ss.getSpec().getTemplate().getSpec().getContainers().get(1).getLifecycle();
         assertNotNull(lifecycle);
@@ -1285,7 +1285,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertEquals(2, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
         assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
         assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
@@ -1298,7 +1298,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertEquals(0, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
     }
 
@@ -1318,7 +1318,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertNotNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
         assertEquals(Long.valueOf(123), ss.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup());
         assertEquals(Long.valueOf(456), ss.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup());
@@ -1332,7 +1332,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertNull(ss.getSpec().getTemplate().getSpec().getSecurityContext());
     }
 
@@ -1374,12 +1374,12 @@ public class KafkaClusterTest {
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, ImagePullPolicy.ALWAYS);
+        StatefulSet sts = kc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null);
         assertEquals(ImagePullPolicy.ALWAYS.toString(), sts.getSpec().getTemplate().getSpec().getInitContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.ALWAYS.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.ALWAYS.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
 
-        sts = kc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT);
+        sts = kc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT, null);
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getInitContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), sts.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
@@ -1519,7 +1519,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
@@ -1548,7 +1548,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
@@ -1580,7 +1580,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
@@ -1633,7 +1633,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
@@ -1748,7 +1748,7 @@ public class KafkaClusterTest {
         kc.setExternalAddresses(addresses);
 
         // Check StatefulSet changes
-        StatefulSet ss = kc.generateStatefulSet(true, null);
+        StatefulSet ss = kc.generateStatefulSet(true, null, null);
 
         List<EnvVar> envs = ss.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "ingress")));

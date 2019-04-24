@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +54,7 @@ public class ClusterOperatorConfig {
     private final boolean createClusterRoles;
     private final KafkaVersion.Lookup versions;
     private final ImagePullPolicy imagePullPolicy;
-    private final Set<LocalObjectReference> imagePullSecrets;
+    private final List<LocalObjectReference> imagePullSecrets;
 
     /**
      * Constructor
@@ -66,7 +67,7 @@ public class ClusterOperatorConfig {
      * @param imagePullPolicy Image pull policy configured by the user
      * @param imagePullSecrets Set of secrets for pulling container images from secured repositories
      */
-    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy, Set<LocalObjectReference> imagePullSecrets) {
+    public ClusterOperatorConfig(Set<String> namespaces, long reconciliationIntervalMs, long operationTimeoutMs, boolean createClusterRoles, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -158,10 +159,10 @@ public class ClusterOperatorConfig {
         }
 
         String imagePullSecretList = map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS);
-        Set<LocalObjectReference> imagePullSecrets = null;
+        List<LocalObjectReference> imagePullSecrets = null;
         if (imagePullSecretList != null && !imagePullSecretList.isEmpty()) {
             if (imagePullSecretList.matches("(\\s?[a-z0-9.-]+\\s?,)*\\s?[a-z0-9.-]+\\s?")) {
-                imagePullSecrets = Arrays.stream(imagePullSecretList.trim().split("\\s*,+\\s*")).map(secret -> new LocalObjectReferenceBuilder().withName(secret).build()).collect(Collectors.toSet());
+                imagePullSecrets = Arrays.stream(imagePullSecretList.trim().split("\\s*,+\\s*")).map(secret -> new LocalObjectReferenceBuilder().withName(secret).build()).collect(Collectors.toList());
             } else {
                 throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS
                         + " is not a valid list of secret names");
@@ -214,7 +215,7 @@ public class ClusterOperatorConfig {
     /**
      * @return Retuns list of configured ImagePullSecrets. Null if no secrets were configured.
      */
-    public Set<LocalObjectReference> getImagePullSecrets() {
+    public List<LocalObjectReference> getImagePullSecrets() {
         return imagePullSecrets;
     }
 

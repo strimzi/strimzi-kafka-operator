@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -173,7 +174,7 @@ public class EntityOperator extends AbstractModel {
         return null;
     }
 
-    public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy) {
+    public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
 
         if (!isDeployed()) {
             log.warn("Topic and/or User Operators not declared: Entity Operator will not be deployed");
@@ -191,7 +192,8 @@ public class EntityOperator extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
-                getVolumes(isOpenShift)
+                getVolumes(isOpenShift),
+                imagePullSecrets
         );
     }
 

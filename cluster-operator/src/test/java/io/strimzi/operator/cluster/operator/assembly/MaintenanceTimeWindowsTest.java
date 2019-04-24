@@ -447,7 +447,7 @@ public class MaintenanceTimeWindowsTest {
 
         this.init(maintenanceTimeWindows);
 
-        StatefulSet zkSS = ZookeeperCluster.fromCrd(this.kafka, VERSIONS).generateStatefulSet(false, null);
+        StatefulSet zkSS = ZookeeperCluster.fromCrd(this.kafka, VERSIONS).generateStatefulSet(false, null, null);
         zkSS.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0");
         this.mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(NAME)).create(zkSS);
 
@@ -475,7 +475,7 @@ public class MaintenanceTimeWindowsTest {
 
         this.init(maintenanceTimeWindows);
 
-        StatefulSet kafkaSS = KafkaCluster.fromCrd(this.kafka, VERSIONS).generateStatefulSet(false, null);
+        StatefulSet kafkaSS = KafkaCluster.fromCrd(this.kafka, VERSIONS).generateStatefulSet(false, null, null);
         kafkaSS.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0");
         kafkaSS.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0");
         this.mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(NAME)).create(kafkaSS);
@@ -511,7 +511,7 @@ public class MaintenanceTimeWindowsTest {
         this.init(maintenanceTimeWindows);
 
         EntityOperator eo = EntityOperator.fromCrd(this.kafka, VERSIONS);
-        Deployment eoDep = eo.generateDeployment(false, Collections.EMPTY_MAP, null);
+        Deployment eoDep = eo.generateDeployment(false, Collections.EMPTY_MAP, null, null);
         eoDep.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0");
         this.mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(EntityOperator.entityOperatorName(NAME)).create(eoDep);
 
@@ -542,7 +542,7 @@ public class MaintenanceTimeWindowsTest {
         this.initWithTopicOperator(maintenanceTimeWindows);
 
         TopicOperator to = TopicOperator.fromCrd(this.kafka, VERSIONS);
-        Deployment toDep = to.generateDeployment(false, null);
+        Deployment toDep = to.generateDeployment(false, null, null);
         toDep.getSpec().getTemplate().getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0");
         this.mockClient.extensions().deployments().inNamespace(NAMESPACE).withName(TopicOperator.topicOperatorName(NAME)).create(toDep);
 
