@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,9 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -257,6 +260,57 @@ public class EntityOperatorTest {
         Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsFromCo() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        List<LocalObjectReference> secrets = new ArrayList<>(2);
+        secrets.add(secret1);
+        secrets.add(secret2);
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
+
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, secrets);
+        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsFromBoth() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                .withNewEntityOperator()
+                .withTopicOperator(entityTopicOperatorSpec)
+                .withUserOperator(entityUserOperatorSpec)
+                .withNewTemplate()
+                .withNewPod()
+                .withImagePullSecrets(secret2)
+                .endPod()
+                .endTemplate()
+                .endEntityOperator()
+                .endSpec()
+                .build();
+        EntityOperator eo = EntityOperator.fromCrd(resource, VERSIONS);
+
+        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, singletonList(secret1));
+        assertEquals(1, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertFalse(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
     }
 

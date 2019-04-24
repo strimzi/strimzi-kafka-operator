@@ -40,8 +40,10 @@ import java.util.Map;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -497,6 +499,45 @@ public class KafkaMirrorMakerClusterTest {
         Deployment dep = mmc.generateDeployment(emptyMap(), true, null, null);
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsFromCo() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        List<LocalObjectReference> secrets = new ArrayList<>(2);
+        secrets.add(secret1);
+        secrets.add(secret2);
+
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(this.resource, VERSIONS);
+
+        Deployment dep = mmc.generateDeployment(emptyMap(), true, null, secrets);
+        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsFromBoth() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withImagePullSecrets(secret2)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+
+        Deployment dep = mmc.generateDeployment(emptyMap(), true, null, singletonList(secret1));
+        assertEquals(1, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertFalse(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
     }
 

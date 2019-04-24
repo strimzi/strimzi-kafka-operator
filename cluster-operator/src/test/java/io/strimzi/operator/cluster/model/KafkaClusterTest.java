@@ -60,6 +60,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,8 +74,10 @@ import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -1288,6 +1291,50 @@ public class KafkaClusterTest {
         StatefulSet ss = kc.generateStatefulSet(true, null, null);
         assertEquals(2, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
         assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsFromCO() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        List<LocalObjectReference> secrets = new ArrayList<>(2);
+        secrets.add(secret1);
+        secrets.add(secret2);
+
+        Kafka kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap());
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = kc.generateStatefulSet(true, null, secrets);
+        assertEquals(2, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsFromBoth() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                                .withNewPod()
+                                .withImagePullSecrets(secret2)
+                                .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        StatefulSet ss = kc.generateStatefulSet(true, null, singletonList(secret1));
+        assertEquals(1, ss.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertFalse(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
         assertTrue(ss.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
     }
 

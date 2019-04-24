@@ -94,6 +94,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param assemblyType Assembly type
      * @param certManager Certificate manager
      * @param resourceOperator For operating on the desired resource
+     * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, ResourceType assemblyType,

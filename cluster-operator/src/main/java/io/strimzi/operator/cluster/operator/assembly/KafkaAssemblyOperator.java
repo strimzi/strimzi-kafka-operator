@@ -124,6 +124,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     /**
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
+     * @param certManager Certificate manager
+     * @param supplier Supplies the operators for different resources
+     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                  CertManager certManager,

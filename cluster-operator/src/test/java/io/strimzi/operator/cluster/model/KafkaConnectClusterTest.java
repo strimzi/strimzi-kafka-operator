@@ -49,8 +49,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -669,6 +671,45 @@ public class KafkaConnectClusterTest {
         Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
         assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsCO() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        List<LocalObjectReference> secrets = new ArrayList<>(2);
+        secrets.add(secret1);
+        secrets.add(secret2);
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(this.resource, VERSIONS);
+
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, secrets);
+        assertEquals(2, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
+        assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
+    }
+
+    @Test
+    public void testImagePullSecretsBoth() {
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withImagePullSecrets(secret2)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, singletonList(secret1));
+        assertEquals(1, dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size());
+        assertFalse(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1));
         assertTrue(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2));
     }
 
