@@ -7,7 +7,7 @@
 
 TLS support is configured in the `tls` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
 The `tls` property contains a list of secrets with key names under which the certificates are stored.
-The certificates should be stored in X509 format.
+The certificates must be stored in X509 format.
 
 .An example showing TLS configuration with multiple certificates
 [source,yaml,subs=attributes+]

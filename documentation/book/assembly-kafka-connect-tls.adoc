@@ -11,8 +11,8 @@
 
 = Connecting to Kafka brokers using TLS
 
-By default, Kafka Connect will try to connect to Kafka brokers using a plain text connection.
-If you would prefer to use TLS additional configuration will be necessary.
+By default, Kafka Connect tries to connect to Kafka brokers using a plain text connection.
+If you prefer to use TLS, additional configuration is required.
 
 include::ref-kafka-connect-tls.adoc[leveloffset=+1]
 

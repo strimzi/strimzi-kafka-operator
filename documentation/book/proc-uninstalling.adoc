@@ -1,0 +1,32 @@
+// This module is included in the following assemblies:
+//
+// master.adoc
+
+[id='uninstalling-{context}']
+= Uninstalling {ProductName}
+
+This procedure describes how to uninstall {ProductName} and remove resources related to the deployment.
+
+.Prerequisites
+
+In order to perform this procedure, identify resources created specifically for a deployment and referenced from the {ProductName} resource.
+
+Such resources include:
+
+* Secrets (Custom CAs and certificates, Kafka Connect secrets, and other Kafka secrets)
+* Logging `ConfigMaps` (of type `external`)
+
+These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `KafkaMirrorMaker` configuration.
+
+.Procedure
+
+. Delete the cluster operator `Deployment`, related `CustomResourceDefinitions`, and `RBAC` resources:
++
+[options="nowrap",subs="+quotes,attributes"]
+----
+{cmdcli} delete -f install/cluster-operator
+----
++
+WARNING: Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaConnectS2I`, or `KafkaMirrorMaker`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
+
+. Delete the resources you identified in the prerequisites.

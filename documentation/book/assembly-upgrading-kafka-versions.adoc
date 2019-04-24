@@ -5,14 +5,28 @@
 
 [id='assembly-upgrading-kafka-versions-{context}']
 
-= Upgrading and downgrading Kafka versions
+= Kafka upgrade
+
+After you have upgraded your Cluster Operator, you can upgrade your brokers to a higher supported version of Kafka.
+
+Kafka upgrades are performed using the Cluster Operator. How the Cluster Operator performs an upgrade depends on the differences between versions of:
+
+* Interbroker protocol
+* Log message format
+* ZooKeeper
+
+When the versions are the same for the current and target Kafka version, as is typically the case for a patch level upgrade, the Cluster Operator can upgrade through a single rolling update of the Kafka brokers.
+
+When one or more of these versions differ, the Cluster Operator requires two or three rolling updates of the Kafka brokers to perform the upgrade.
+
+
+
+.Additional resources
+
+* xref:assembly-upgrade-cluster-operator-str[]
 
 include::con-versions-and-images.adoc[leveloffset=+1]
 
-include::con-kafka-upgrades-using-cluster-operator.adoc[leveloffset=+1]
+include::con-strategies-for-upgrading-clients.adoc[leveloffset=+1]
 
 include::proc-upgrading-brokers-newer-kafka.adoc[leveloffset=+1]
-
-include::con-kafka-downgrades-using-cluster-operator.adoc[leveloffset=+1]
-
-include::proc-downgrading-brokers-older-kafka.adoc[leveloffset=+1]

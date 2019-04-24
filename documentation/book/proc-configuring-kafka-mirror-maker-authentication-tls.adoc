@@ -9,14 +9,14 @@
 
 * An {ProductPlatformName} cluster
 * A running Cluster Operator with a `tls` listener with `tls` authentication enabled
+* If they exist, the name of the `Secret` with the public and private keys used for TLS Client Authentication, and the keys under which they are stored in the `Secret`
 
 .Procedure
 
 As the Kafka Mirror Maker connects to two Kafka clusters (source and target), you can choose to configure TLS client authentication for one or both the clusters.
 The following steps describe how to configure TLS client authentication on the consumer side for connecting to the source Kafka cluster:
 
-. Find out the name of the `Secret` with the public and private keys which should be used for TLS Client Authentication and the keys under which they are stored in the `Secret`.
-If such a `Secret` does not exist yet, prepare the keys in a file and create the `Secret`.
+. (Optional) If they do not already exist, prepare the keys used for authentication in a file and create the `Secret`.
 +
 ifdef::Kubernetes[]
 On {KubernetesName} this can be done using `kubectl create`:

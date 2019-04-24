@@ -163,6 +163,13 @@ public class OrderedProperties {
         return obj instanceof OrderedProperties && pairs.equals(((OrderedProperties) obj).pairs);
     }
 
+    @Override
+    public String toString() {
+        return "OrderedProperties{" +
+                "pairs=" + pairs +
+                '}';
+    }
+
     /**
      * Read values into a Map&lt;String, String&gt; from a Properties compatible format.
      * An instance of this class is not thread-safe; the result of invoking any of the

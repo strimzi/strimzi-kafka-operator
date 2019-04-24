@@ -3,59 +3,85 @@
 // assembly-upgrade.adoc
 
 [id='proc-upgrading-the-cluster-operator-0-10-0-to-0-11-0-{context}']
-= Upgrading the Cluster Operator from 0.10.0 to 0.11.0
+= Upgrading the Cluster Operator from {ProductLongName} 0.10.0 to 0.11.0
 
-This procedure will describe how to upgrade a Cluster Operator deployment from version 0.10.0 to version 0.11.0.
-The availability of Kafka clusters managed by the Cluster Operator is not affected by the upgrade operation.
+This procedure describes how to upgrade a Cluster Operator deployment from version 0.10.0 to version 0.11.0.
 
-.Prerequisites 
+.Prerequisites
 
-* An existing version 0.10.0 Cluster Operator deployment to be upgraded.
+* An existing version 0.10.0 Cluster Operator deployment.
 
 .Procedure
 
 . Backup the existing Cluster Operator resources.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} use `kubectl get`:
+On {KubernetesName}, use:
 +
 ----
 kubectl get all -l app=strimzi -o yaml > strimzi-backup.yaml
 ----
 +
 endif::Kubernetes[]
-On {OpenShiftName} use `oc get`:
+On {OpenShiftName}, use:
 +
 ----
 oc get all -l app=strimzi -o yaml > strimzi-backup.yaml
 ----
 
-. Update the Cluster Operator. 
-You will need to modify the installation files according to the namespace the Cluster Operator is running in.
+. Update the Cluster Operator.
++
+Modify the installation files according to the namespace the Cluster Operator is running in.
 +
 include::frag-cluster-operator-namespace-sed.adoc[]
 +
 If you modified one or more environment variables in your existing Cluster Operator `Deployment`, edit
 `install/cluster-operator/050-Deployment-cluster-operator.yaml` to reflect the changes that you made.
++
+The configuration you are applying must be compatible with the configuration running.
 
-. When you have an updated configuration you can deploy it along with the rest of the install resources.
+. When you have an updated configuration, deploy it along with the rest of the install resources.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} use `kubectl apply`:
+On {KubernetesName}, use:
 +
 ----
 kubectl apply -f install/cluster-operator
 ----
 +
 endif::Kubernetes[]
-On {OpenShiftName} use `oc apply`:
+On {OpenShiftName}, use:
 +
 ----
 oc apply -f install/cluster-operator
 ----
 +
-Wait for the associated rolling updates to complete.
+Wait for the rolling updates to complete.
 
-. Update existing resources to cope with deprecated custom resource properties.
+. Check the version of the Cluster Operator to ensure the upgrade was successful.
++
+ifdef::Kubernetes[]
+On {KubernetesName}:
++
+----
+kubectl get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
+----
++
+endif::Kubernetes[]
+On {OpenShiftName}
++
+----
+oc get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
+----
++
+The image tag shows the Strimzi version followed by the Kafka version. For example, `0.11.0-kafka-{KafkaVersionLower}`.
+
+. Update existing resources to handle deprecated custom resource properties.
 +
 * If you have `Kafka` resources that specify `Kafka.spec.topicOperator`, rewrite them to use `Kafka.spec.entityOperator.topicOperator` instead.
+
+You now have an updated Cluster Operator, but the version of Kafka running in the cluster it manages is unchanged.
+
+.What to do next
+
+Following the Cluster Operator upgrade, you can perform a xref:assembly-upgrading-kafka-versions-str[].

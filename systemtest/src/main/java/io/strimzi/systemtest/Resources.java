@@ -57,6 +57,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.systemtest.utils.StUtils;
@@ -227,6 +228,19 @@ public class Resources extends AbstractResources implements Constants {
 
     DoneableKafka kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
         return kafka(defaultKafka(name, kafkaReplicas, zookeeperReplicas).build());
+    }
+
+    DoneableKafka kafkaJBOD(String name, int kafkaReplicas, List<SingleVolumeStorage> volumes) {
+        return kafka(defaultKafka(name, kafkaReplicas).
+                editSpec()
+                    .editKafka()
+                        .withNewJbodStorage().withVolumes(volumes).endJbodStorage()
+                    .endKafka()
+                    .editZookeeper().
+                        withReplicas(1)
+                    .endZookeeper()
+                .endSpec()
+                .build());
     }
 
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas) {

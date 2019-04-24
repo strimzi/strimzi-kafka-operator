@@ -11,12 +11,12 @@
 
 = Bootstrap servers
 
-Kafka Connect cluster always works together with a Kafka cluster.
-The Kafka cluster is specified in the form of a list of bootstrap servers.
-On {ProductPlatformName}, the list must ideally contain the Kafka cluster bootstrap service which is named `_cluster-name_-kafka-bootstrap` and a port of 9092 for plain traffic or 9093 for encrypted traffic.
+A Kafka Connect cluster always works in combination with a Kafka cluster.
+A Kafka cluster is specified as a list of bootstrap servers.
+On {ProductPlatformName}, the list must ideally contain the Kafka cluster bootstrap service named `_cluster-name_-kafka-bootstrap`, and a port of 9092 for plain traffic or 9093 for encrypted traffic.
 
-The list of bootstrap servers can be configured in the `bootstrapServers` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`. The servers should be a comma-separated list containing one or more Kafka brokers or a service pointing to Kafka brokers specified as a `_hostname_:_port_` pairs.
+The list of bootstrap servers is configured in the `bootstrapServers` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`. The servers must be defined as a comma-separated list specifying one or more Kafka brokers, or a service pointing to Kafka brokers specified as a `_hostname_:_port_` pairs.
 
-When using Kafka Connect with a Kafka cluster not managed by {ProductName}, you can specify the bootstrap servers list according to the configuration of a given cluster.
+When using Kafka Connect with a Kafka cluster not managed by {ProductName}, you can specify the bootstrap servers list according to the configuration of the cluster.
 
 include::proc-configuring-kafka-connect-bootstrap-servers.adoc[leveloffset=+1]

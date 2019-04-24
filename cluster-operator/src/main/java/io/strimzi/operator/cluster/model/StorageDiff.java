@@ -6,12 +6,17 @@ package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.strimzi.api.kafka.model.JbodStorage;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.operator.resource.AbstractResourceDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
@@ -19,43 +24,71 @@ public class StorageDiff extends AbstractResourceDiff {
     private static final Logger log = LogManager.getLogger(StorageDiff.class.getName());
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-        "^(/deleteClaim"
-        + "|/volumes/[0-9]+/deleteClaim)$");
+            "^(/deleteClaim|/)$");
 
     private final boolean isEmpty;
     private final boolean changesType;
     private final boolean changesSize;
 
     public StorageDiff(Storage current, Storage desired) {
-        JsonNode source = patchMapper().valueToTree(current);
-        JsonNode target = patchMapper().valueToTree(desired);
-        JsonNode diff = JsonDiff.asJson(source, target);
+        this(current, desired, "");
+    }
 
-        int num = 0;
-
+    public StorageDiff(Storage current, Storage desired, String volumeDesc) {
         boolean changesType = false;
         boolean changesSize = false;
+        boolean isEmpty = true;
 
-        for (JsonNode d : diff) {
-            String pathValue = d.get("path").asText();
+        if (current instanceof JbodStorage && desired instanceof JbodStorage) {
+            Set<Integer> volumeIds = new HashSet<>();
 
-            if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                log.debug("Ignoring Storage diff {}", d);
-                continue;
+            volumeIds.addAll(((JbodStorage) current).getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet()));
+            volumeIds.addAll(((JbodStorage) desired).getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet()));
+
+            for (Integer volumeId : volumeIds)  {
+                SingleVolumeStorage currentVolume = ((JbodStorage) current).getVolumes().stream()
+                        .filter(volume -> volume != null && volumeId.equals(volume.getId()))
+                        .findAny().orElse(null);
+                SingleVolumeStorage desiredVolume = ((JbodStorage) desired).getVolumes().stream()
+                        .filter(volume -> volume != null && volumeId.equals(volume.getId()))
+                        .findAny().orElse(null);
+
+                StorageDiff diff = new StorageDiff(currentVolume, desiredVolume, "(volume ID: " + volumeId + ") ");
+
+                changesType |= diff.changesType();
+                changesSize |= diff.changesSize();
+                isEmpty &= diff.isEmpty();
+            }
+        } else {
+            JsonNode source = patchMapper().valueToTree(current == null ? "{}" : current);
+            JsonNode target = patchMapper().valueToTree(desired == null ? "{}" : desired);
+            JsonNode diff = JsonDiff.asJson(source, target);
+
+            int num = 0;
+
+            for (JsonNode d : diff) {
+                String pathValue = d.get("path").asText();
+
+                if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
+                    log.debug("Ignoring Storage {}diff {}", volumeDesc, d);
+                    continue;
+                }
+
+                if (log.isDebugEnabled()) {
+                    log.debug("Storage {}differs: {}", volumeDesc, d);
+                    log.debug("Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
+                    log.debug("Desired Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(target, pathValue));
+                }
+
+                num++;
+                changesType |= pathValue.endsWith("/type");
+                changesSize |= pathValue.endsWith("/size");
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("Storage differs: {}", d);
-                log.debug("Current Storage path {} has value {}", pathValue, lookupPath(source, pathValue));
-                log.debug("Desired Storage path {} has value {}", pathValue, lookupPath(target, pathValue));
-            }
-
-            num++;
-            changesType |= pathValue.endsWith("/type");
-            changesSize |= pathValue.endsWith("/size");
+            isEmpty = num == 0;
         }
 
-        this.isEmpty = num == 0;
+        this.isEmpty = isEmpty;
         this.changesType = changesType;
         this.changesSize = changesSize;
     }

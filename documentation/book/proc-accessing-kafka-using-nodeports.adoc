@@ -3,7 +3,7 @@
 // assembly-configuring-kafka-listeners.adoc
 
 [id='proc-accessing-kafka-using-nodeports-{context}']
-= Accessing Kafka using node ports routes
+= Accessing Kafka using node ports
 
 .Prerequisites
 
