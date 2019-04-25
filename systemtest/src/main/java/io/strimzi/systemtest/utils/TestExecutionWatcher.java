@@ -18,8 +18,8 @@ import static io.strimzi.systemtest.AbstractST.TEST_LOG_DIR;
 import static io.strimzi.test.BaseITST.CLIENT;
 import static io.strimzi.test.BaseITST.KUBE_CLIENT;
 
-public class TestWatcher implements AfterTestExecutionCallback {
-    private static final Logger LOGGER = LogManager.getLogger(TestWatcher.class);
+public class TestExecutionWatcher implements AfterTestExecutionCallback {
+    private static final Logger LOGGER = LogManager.getLogger(TestExecutionWatcher.class);
 
     @Override
     public void afterTestExecution(ExtensionContext extensionContext) {

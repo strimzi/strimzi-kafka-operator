@@ -31,7 +31,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.utils.TestWatcher;
+import io.strimzi.systemtest.utils.TestExecutionWatcher;
 import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.test.timemeasuring.Operation;
@@ -87,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
-@ExtendWith(TestWatcher.class)
+@ExtendWith(TestExecutionWatcher.class)
 public abstract class AbstractST extends BaseITST implements TestSeparator, Constants {
 
     static {
