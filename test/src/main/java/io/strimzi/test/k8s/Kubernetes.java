@@ -20,9 +20,6 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.batch.DoneableJob;
-import io.fabric8.kubernetes.api.model.batch.Job;
-import io.fabric8.kubernetes.api.model.batch.JobList;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
@@ -32,7 +29,6 @@ import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
@@ -50,6 +46,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+
 public class Kubernetes {
 
     private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
@@ -65,8 +62,16 @@ public class Kubernetes {
         return client;
     }
 
+    public String namespace(String futureNamespace) {
+        return NamespaceHolder.setNamespaceToHolder(futureNamespace);
+    }
+
     public String getNamespace() {
         return NamespaceHolder.getNamespaceFromHolder() != null ? NamespaceHolder.getNamespaceFromHolder() : defaultNamespace;
+    }
+
+    public Namespace getNamespace(String namespace) {
+        return client.namespaces().withName(namespace).get();
     }
 
     public void createNamespace(String name) {
@@ -77,6 +82,14 @@ public class Kubernetes {
     public void deleteNamespace(String name) {
         client.namespaces().withName(name).delete();
     }
+
+    /**
+     * Gets namespace status
+     */
+    public boolean getNamespaceStatus(String namespaceName) {
+        return client.namespaces().withName(namespaceName).isReady();
+    }
+
 
     public void deleteConfigMap(String configMapName) {
         client.configMaps().inNamespace(getNamespace()).withName(configMapName).delete();
@@ -90,40 +103,7 @@ public class Kubernetes {
         return client.configMaps().inNamespace(getNamespace()).withName(configMapName).isReady();
     }
 
-
-    public String execInPod(String podName, String containerName, String... command) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        LOGGER.info("Running command on pod {}: {}", podName, command);
-        CompletableFuture<String> data = new CompletableFuture<>();
-        try (ExecWatch execWatch = client.pods().inNamespace(getNamespace())
-                .withName(podName)
-                .inContainer(containerName)
-                .readingInput(null)
-                .writingOutput(baos)
-                .usingListener(new ExecListener() {
-                    @Override
-                    public void onOpen(Response response) {
-                        LOGGER.info("Reading data...");
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable, Response response) {
-                        data.completeExceptionally(throwable);
-                    }
-
-                    @Override
-                    public void onClose(int i, String s) {
-                        data.complete(baos.toString());
-                    }
-                }).exec(command)) {
-            return data.get(1, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            LOGGER.warn("Exception running command {} on pod: {}", command, e.getMessage());
-            return "";
-        }
-    }
-
-    public String execInPodContainer(String podName, String container, String... command) {
+    public String execInPod(String podName, String container, String... command) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
         CompletableFuture<String> data = new CompletableFuture<>();
@@ -315,20 +295,6 @@ public class Kubernetes {
 
     public void deleteService(Service service) {
         client.services().inNamespace(getNamespace()).delete(service);
-    }
-
-    public Job createJob(Job job) {
-        return client.extensions().jobs().inNamespace(getNamespace()).create(job);
-    }
-
-    public Job getJob(String jobName) {
-        return client.extensions().jobs().inNamespace(getNamespace()).withName(jobName).get();
-    }
-
-    public MixedOperation<Job, JobList, DoneableJob, ScalableResource<Job, DoneableJob>> listJobs() {
-//    public MixedOperation<Job, JobList, DoneableJob, ScalableResource<Job, DoneableJob>> listJobs() {
-//        return cmdClient.extensions().jobs().inNamespace(getNamespace());
-        return client.extensions().jobs(); //TODO need namespace here
     }
 
     public String logs(String podName) {

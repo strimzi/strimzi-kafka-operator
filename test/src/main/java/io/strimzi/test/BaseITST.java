@@ -33,7 +33,7 @@ public class BaseITST {
     private static final Logger LOGGER = LogManager.getLogger(BaseITST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
 
-    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
+    public static final KubeClusterResource CLUSTER = KubeClusterResource.getKubeClusterResource();
 
     public static final KubeClient<?> KUBE_CMD_CLIENT = CLUSTER.cmdClient();
     public static final Kubernetes KUBE_CLIENT = CLUSTER.client();
@@ -97,12 +97,12 @@ public class BaseITST {
 
             LOGGER.info("Creating namespace: {}", namespace);
             deploymentNamespaces.add(namespace);
-            KUBE_CMD_CLIENT.createNamespace(namespace);
+            KUBE_CLIENT.createNamespace(namespace);
             KUBE_CMD_CLIENT.waitForResourceCreation("Namespace", namespace);
         }
         clusterOperatorNamespace = useNamespace;
         LOGGER.info("Using namespace {}", useNamespace);
-        KUBE_CMD_CLIENT.namespace(useNamespace);
+        KUBE_CLIENT.namespace(useNamespace);
     }
 
     /**
@@ -121,7 +121,7 @@ public class BaseITST {
         Collections.reverse(deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting namespace: {}", namespace);
-            KUBE_CMD_CLIENT.deleteNamespace(namespace);
+            KUBE_CLIENT.deleteNamespace(namespace);
             KUBE_CMD_CLIENT.waitForResourceDeletion("Namespace", namespace);
         }
         deploymentNamespaces.clear();

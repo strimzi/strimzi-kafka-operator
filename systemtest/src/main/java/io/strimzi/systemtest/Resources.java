@@ -20,7 +20,6 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.extensions.DoneableIngress;
 import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPath;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
@@ -206,10 +205,6 @@ public class Resources extends AbstractResources {
 
     private Ingress deleteLater(Ingress resource) {
         return deleteLater(ingress(), resource);
-    }
-
-    Job deleteLater(Job resource) {
-        return deleteLater(KUBE_CLIENT.listJobs(), resource);
     }
 
     void deleteResources() {
@@ -493,10 +488,6 @@ public class Resources extends AbstractResources {
      */
     private void waitForStatefulSet(String name, int expectedPods) {
         StUtils.waitForAllStatefulSetPodsReady(name, expectedPods);
-    }
-
-    private void waitForDeploymentConfig(String namespace, String name) {
-        StUtils.waitForDeploymentConfigReady(namespace, name);
     }
 
     private void waitForDeletion(Kafka kafka) {

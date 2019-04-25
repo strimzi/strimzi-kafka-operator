@@ -94,7 +94,7 @@ class ConnectST extends AbstractST {
         KUBE_CLIENT.execInPod(kafkaConnectPodName, kafkaConnectName(KAFKA_CLUSTER_NAME), "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
-        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME, 2);
+        sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, kafkaConnectName(KAFKA_CLUSTER_NAME), TEST_TOPIC_NAME, 2);
 
         TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
             () -> KUBE_CLIENT.execInPod(kafkaConnectPodName, kafkaConnectName(KAFKA_CLUSTER_NAME), "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").equals("0\n1\n"));
@@ -126,9 +126,9 @@ class ConnectST extends AbstractST {
             .endSpec().done();
 
         String podName = StUtils.getPodNameByPrefix(kafkaConnectName(KAFKA_CLUSTER_NAME));
-        assertResources(NAMESPACE, podName, "connect-tests-connect",
+        assertResources(NAMESPACE, podName, kafkaConnectName(KAFKA_CLUSTER_NAME),
                 "400M", "2", "300M", "1");
-        assertExpectedJavaOpts(podName,
+        assertExpectedJavaOpts(podName, kafkaConnectName(KAFKA_CLUSTER_NAME),
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
     }
 

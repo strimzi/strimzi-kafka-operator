@@ -559,12 +559,12 @@ class KafkaST extends MessagingBaseST {
 
         assertResources(KUBE_CMD_CLIENT.namespace(), kafkaPodName(CLUSTER_NAME, 0), "kafka",
                 "1536Mi", "1", "1Gi", "500m");
-        assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0),
+        assertExpectedJavaOpts(kafkaPodName(CLUSTER_NAME, 0), "kafka",
                 "-Xmx1g", "-Xms512m", "-server", "-XX:+UseG1GC");
 
         assertResources(KUBE_CMD_CLIENT.namespace(), zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
                 "1G", "500m", "500M", "250m");
-        assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0),
+        assertExpectedJavaOpts(zookeeperPodName(CLUSTER_NAME, 0), "zookeeper",
                 "-Xmx1G", "-Xms512M", "-server", "-XX:+UseG1GC");
 
         Optional<Pod> pod = KUBE_CLIENT.listPods()
@@ -737,7 +737,7 @@ class KafkaST extends MessagingBaseST {
         String rackId = KUBE_CLIENT.execInPod(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id");
         assertEquals("zone", rackId.trim());
 
-        String brokerRack = KUBE_CMD_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
+        String brokerRack = KUBE_CLIENT.execInPod(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack");
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
         String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(kafkaPodName).get().getMetadata().getUid();
@@ -748,7 +748,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testManualTriggeringRollingUpdate() {
-        String coPodName = KUBE_CMD_CLIENT.listResourcesByLabel("pod", "name=strimzi-cluster-operator").get(0);
+        String coPodName = KUBE_CLIENT.listPods("name", "strimzi-cluster-operator").get(0).getMetadata().getName();
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1).done();
 
         // rolling update for kafka

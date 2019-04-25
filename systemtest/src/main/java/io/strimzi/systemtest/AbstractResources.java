@@ -50,7 +50,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 
 abstract class AbstractResources {
 
-    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
+    public static final KubeClusterResource CLUSTER = KubeClusterResource.getKubeClusterResource();
     public static final Kubernetes KUBE_CLIENT = CLUSTER.client();
 
     MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafka() {

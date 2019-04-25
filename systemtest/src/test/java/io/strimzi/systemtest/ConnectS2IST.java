@@ -45,7 +45,7 @@ class ConnectS2IST extends AbstractST {
         // Start a new image build using the plugins directory
         KUBE_CMD_CLIENT.exec("oc", "start-build", CONNECT_DEPLOYMENT_NAME, "--from-dir", dir.getAbsolutePath());
 
-        KUBE_CMD_CLIENT.waitForDeploymentConfig(CONNECT_DEPLOYMENT_NAME);
+        StUtils.waitForDeploymentConfigReady(CONNECT_DEPLOYMENT_NAME);
 
         String connectS2IPodName = KUBE_CLIENT.listPods("type", "kafka-connect-s2i").get(0).getMetadata().getName();
         String plugins = KUBE_CLIENT.execInPod(connectS2IPodName, kafkaConnectName(CONNECT_CLUSTER_NAME), "curl", "-X", "GET", "http://localhost:8083/connector-plugins");

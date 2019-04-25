@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class KafkaClientProperties {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaClientProperties.class);
-    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
+    public static final KubeClusterResource CLUSTER = KubeClusterResource.getKubeClusterResource();
     public static final Kubernetes KUBE_CLIENT = CLUSTER.client();
 
     /**

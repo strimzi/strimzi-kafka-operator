@@ -36,7 +36,7 @@ import java.util.zip.ZipInputStream;
 public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
-    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
+    public static final KubeClusterResource CLUSTER = KubeClusterResource.getKubeClusterResource();
     public static final Kubernetes KUBE_CLIENT = CLUSTER.client();
 
     private StUtils() { }
@@ -258,13 +258,13 @@ public class StUtils {
             () -> KUBE_CLIENT.getDeploymentStatus(name));
         LOGGER.info("Deployment {} is ready", name);
         LOGGER.info("Waiting for Pods of Deployment {} to be ready", name);
-        waitForPodsReady(KUBE_CLIENT.getStatefulSetSelectors(name), expectPods, true);
+        waitForPodsReady(KUBE_CLIENT.getDeploymentSelectors(name), expectPods, true);
     }
 
     /**
      * Wait until the deployment config is ready
      */
-    public static void waitForDeploymentConfigReady(String namespace, String name) {
+    public static void waitForDeploymentConfigReady(String name) {
         LOGGER.info("Waiting for Deployment Config {}", name);
         TestUtils.waitFor("deployment config " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KUBE_CLIENT.getDeploymentConfigStatus(name));
@@ -329,6 +329,13 @@ public class StUtils {
 
         TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KUBE_CLIENT.getPod(name) == null);
+    }
+
+    public static void waitForNamespaceDeletion(String name) {
+        LOGGER.info("Waiting when Namespace {} will be deleted", name);
+
+        TestUtils.waitFor("namespace " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> !KUBE_CLIENT.getNamespaceStatus(name));
     }
 
     public static void waitForKafkaTopicDeletion(String topicName) {
