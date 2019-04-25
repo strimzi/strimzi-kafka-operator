@@ -31,6 +31,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.systemtest.utils.TestExecutionWatcher;
 import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.test.timemeasuring.Operation;
@@ -51,13 +52,12 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -76,7 +76,6 @@ import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
-import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static java.util.Arrays.asList;
 
@@ -88,6 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
+@ExtendWith(TestExecutionWatcher.class)
 public abstract class AbstractST extends BaseITST implements TestSeparator, Constants {
 
     static {
@@ -455,7 +455,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
     }
 
     protected void deleteResources() throws Exception {
-        collectLogs();
         resources.deleteResources();
         resources = null;
     }
@@ -506,74 +505,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
 
     String clusterCaCertSecretName(String cluster) {
         return cluster + "-cluster-ca-cert";
-    }
-
-    void collectLogs() {
-        // Get current date to create a unique folder
-        String currentDate = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-        String logDir = !testName.isEmpty() ?
-                TEST_LOG_DIR + testClass + "." + testName + "_" + currentDate
-                : TEST_LOG_DIR + currentDate;
-
-        LogCollector logCollector = new LogCollector(CLIENT.inNamespace(KUBE_CLIENT.namespace()), new File(logDir));
-        logCollector.collectEvents();
-        logCollector.collectConfigMaps();
-        logCollector.collectLogsFromPods();
-    }
-
-    private class LogCollector {
-        NamespacedKubernetesClient client;
-        String namespace;
-        File logDir;
-        File configMapDir;
-        File eventsDir;
-
-        private LogCollector(NamespacedKubernetesClient client, File logDir) {
-            this.client = client;
-            this.namespace = client.getNamespace();
-            this.logDir = logDir;
-            this.eventsDir = new File(logDir + "/events");
-            this.configMapDir = new File(logDir + "/configMaps");
-            logDir.mkdirs();
-
-            if (!eventsDir.exists()) {
-                eventsDir.mkdirs();
-            }
-            if (!configMapDir.exists()) {
-                configMapDir.mkdirs();
-            }
-        }
-
-        private void collectLogsFromPods() {
-            LOGGER.info("Collecting logs for pods in namespace {}", namespace);
-
-            try {
-                client.pods().inNamespace(namespace).list().getItems().forEach(pod -> {
-                    String podName = pod.getMetadata().getName();
-                    pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
-                        String log = client.pods().inNamespace(namespace).withName(podName).inContainer(containerStatus.getName()).getLog();
-                        // Write logs from containers to files
-                        writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
-                    });
-                });
-            } catch (Exception allExceptions) {
-                LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
-            }
-        }
-
-        private void collectEvents() {
-            LOGGER.info("Collecting events in namespace {}", namespace);
-            String events = KUBE_CLIENT.getEvents();
-            // Write events to file
-            writeFile(eventsDir + "/" + "events-in-namespace" + KUBE_CLIENT.namespace() + ".log", events);
-        }
-
-        private void collectConfigMaps() {
-            LOGGER.info("Collecting configmaps in namespace {}", namespace);
-            client.configMaps().inNamespace(namespace).list().getItems().forEach(configMap -> {
-                writeFile(configMapDir + "/" + configMap.getMetadata().getName() + "-" + namespace + ".log", configMap.toString());
-            });
-        }
     }
 
     void waitTillSecretExists(String secretName) {
