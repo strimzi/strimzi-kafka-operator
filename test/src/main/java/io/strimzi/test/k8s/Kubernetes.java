@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Node;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
@@ -144,6 +145,10 @@ public class Kubernetes {
 
     public List<Pod> listPods(String key, String value) {
         return listPods(Collections.singletonMap(key, value));
+    }
+
+    public List<PersistentVolumeClaim> listPersistentVolumeClaims() {
+        return client.persistentVolumeClaims().inNamespace(getNamespace()).list().getItems();
     }
 
     public List<Pod> listPods() {
