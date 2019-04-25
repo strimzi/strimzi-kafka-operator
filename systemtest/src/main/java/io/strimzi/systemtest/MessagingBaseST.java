@@ -46,7 +46,7 @@ public class MessagingBaseST extends AbstractST {
 
     @BeforeAll
     public void setUpClientBase() throws MalformedURLException {
-        String clientUrl = ENVIRONMENT.getKubernetesDomain().equals(Environment.KUBERNETES_DOMAIN_DEFAULT) ?  new URL(ENVIRONMENT.getKubernetesApiUrl()).getHost() + Environment.KUBERNETES_DOMAIN_DEFAULT : ENVIRONMENT.getKubernetesDomain();
+        String clientUrl = ENVIRONMENT.getKubernetesDomain().equals(Environment.KUBERNETES_DOMAIN_DEFAULT) ?  new URL(CONFIG.getMasterUrl()).getHost() + Environment.KUBERNETES_DOMAIN_DEFAULT : ENVIRONMENT.getKubernetesDomain();
         cliApiClient = new MsgCliApiClient(new URL("http://" + KAFKA_CLIENTS + "." + clientUrl + ":80"));
     }
 
