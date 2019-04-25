@@ -5,13 +5,7 @@
 [id='proc-upgrading-the-cluster-operator-{context}']
 = Upgrading the Cluster Operator from {ProductLongName} {ProductVersionUpgradingFrom} to {ProductVersionUpgradingTo}
 
-ifdef::StrimziUpgrades[]
-This procedure describes how to upgrade a Cluster Operator deployment from version 0.9.x to version {ProductVersionUpgradingTo}.
-endif::StrimziUpgrades[]
-
-ifndef::StrimziUpgrades[]
 This procedure describes how to upgrade a Cluster Operator deployment from version {ProductVersionUpgradingFrom} to version {ProductVersionUpgradingTo}.
-endif::StrimziUpgrades[]
 
 .Prerequisites
 
@@ -159,7 +153,7 @@ On {OpenShiftName}, use:
 oc get po my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the Strimzi version followed by the Kafka version: `{ProductVersionUpgradingTo}-kafka-{KafkaVersionLower}`.
+The image tag shows the Strimzi version followed by the Kafka version. For example, `{ProductVersionUpgradingTo}-kafka-{KafkaVersionLower}`.
 
 . Update existing resources to handle deprecated custom resource properties.
 +

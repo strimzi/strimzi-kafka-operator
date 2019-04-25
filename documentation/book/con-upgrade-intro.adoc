@@ -1,0 +1,19 @@
+// Module included in the following assemblies:
+//
+// assembly-security.adoc
+
+[id='con-upgrade-intro-{context}']
+Newer versions of {ProductName} may support newer versions of Kafka, but you need to upgrade {ProductName} _before_ you can upgrade to a higher supported Kafka version.
+
+{ProductName} can be upgraded with no cluster downtime. Each version of {ProductName} supports one or more versions of Apache Kafka: you can upgrade to a higher Kafka version as long as it is supported by your version of {ProductName}.
+In some cases, you can also downgrade to a lower supported Kafka version.
+
+.Upgrade process outline
+
+Upgrading {ProductName} is a two-stage process. To upgrade brokers and clients without downtime, you _must_ complete the upgrade procedures in the following order:
+
+. Update your Cluster Operator to the latest {ProductName} version.
+** xref:assembly-upgrade-cluster-operator-{context}[]
+
+. Upgrade all Kafka brokers and client applications to the latest Kafka version.
+** xref:assembly-upgrading-kafka-versions-{context}[]

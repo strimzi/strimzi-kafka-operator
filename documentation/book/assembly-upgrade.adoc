@@ -5,47 +5,7 @@
 [id='assembly-upgrade-{context}']
 = {ProductName} and Kafka upgrades
 
-{ProductName} can be upgraded with no cluster downtime. Each version of {ProductName} supports one or more versions of Apache Kafka: you can upgrade to a higher Kafka version as long as it is supported by your version of {ProductName}.
-In some cases, you can also downgrade to a lower supported Kafka version.
-
-Newer versions of {ProductName} may support newer versions of Kafka, but you need to upgrade {ProductName} _before_ you can upgrade to a higher supported Kafka version.
-
-.Procedure outline
-
-In summary, upgrading {ProductName} is a two-stage process. To upgrade brokers and clients without downtime, you _must_ complete the upgrade procedures in the following order:
-
-. First, update your Cluster Operator to the latest {ProductName} version.
-** xref:assembly-upgrade-cluster-operator-{context}[]
-
-. Second, upgrade all Kafka brokers and client applications to the latest Kafka version.
-** xref:assembly-upgrading-kafka-versions-{context}[]
-
-
-
-.Message format version
-
-When a producer sends a message to a Kafka broker, the message is encoded using a specific format.
-The format can change between Kafka releases, so messages include a version identifying which version of the format they were encoded with. You can configure a Kafka broker to convert messages from newer format versions to a given older format version before the broker appends the message to the log.
-
-In Kafka, there are two different methods for setting the message format version:
-
-* The `log.message.format.version` property is set on Kafka brokers.
-
-* The `message.format.version` property is set on topics.
-
-The default value of `message.format.version` for a  topic is defined by the `log.message.format.version` that is set on the Kafka broker. You can manually set the `message.format.version` of a topic by modifying its topic configuration.
-
-The upgrade tasks in this section assume that the message format version is defined by the `log.message.format.version`.
-
-ifndef::StrimziUpgrades[]
-== Upgrade prerequisites
-
-Before you begin the upgrade process, make sure that:
-
-* {ProductName} is installed. For instructions, see xref:getting-started-{context}[].
-
-* You have read the link:https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html-single/amq_streams_1.1.0_on_openshift_container_platform_release_notes/index[{ProductName} 1.1.0 on Red Hat Enterprise Linux Release Notes].
-endif::StrimziUpgrades[]
+include::con-upgrade-intro.adoc[]
 
 include::ref-kafka-versions.adoc[leveloffset=+1]
 

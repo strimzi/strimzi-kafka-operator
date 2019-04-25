@@ -8,9 +8,7 @@
 
 This procedure describes how you can downgrade a {ProductName} Kafka cluster to a lower (previous) version of Kafka, such as downgrading from {KafkaVersionHigher} to {KafkaVersionLower}.
 
-NOTE: Downgrading is *not possible* if the new version has ever used a `log.message.format.version` that is not supported by the previous version, including when the default value for `log.message.format.version` is used.
-
-For example, this resource can be downgraded to Kafka version {KafkaVersionLower} because the `log.message.format.version` has not been changed:
+Downgrading is *not possible* if the new version has ever used a `log.message.format.version` that is not supported by the previous version, including when the default value for `log.message.format.version` is used. For example, this resource can be downgraded to Kafka version {KafkaVersionLower} because the `log.message.format.version` has not been changed:
 
 [source,yaml,subs=attributes+]
 ----

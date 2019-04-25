@@ -5,7 +5,7 @@
 
 [id='assembly-upgrading-kafka-versions-{context}']
 
-= Kafka upgrade
+= Upgrading Kafka
 
 After you have upgraded your Cluster Operator, you can upgrade your brokers to a higher supported version of Kafka.
 
