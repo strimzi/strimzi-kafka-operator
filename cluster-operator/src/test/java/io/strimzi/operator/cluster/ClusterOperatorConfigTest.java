@@ -180,7 +180,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testImagePullSecrets() {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
-        envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "secret1, secret2 , secret3 ");
+        envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "secret1,  secret2 ,  secret3    ");
         assertEquals(3, ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size());
         assertTrue(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret1").build()));
         assertTrue(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret2").build()));

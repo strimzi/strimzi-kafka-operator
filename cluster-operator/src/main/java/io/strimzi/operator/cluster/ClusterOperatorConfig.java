@@ -93,7 +93,7 @@ public class ClusterOperatorConfig {
         } else {
             if (namespacesList.trim().equals(AbstractWatchableResourceOperator.ANY_NAMESPACE)) {
                 namespaces = Collections.singleton(AbstractWatchableResourceOperator.ANY_NAMESPACE);
-            } else if (namespacesList.matches("(\\s?[a-z0-9.-]+\\s?,)*\\s?[a-z0-9.-]+\\s?")) {
+            } else if (namespacesList.matches("(\\s*[a-z0-9.-]+\\s*,)*\\s*[a-z0-9.-]+\\s*")) {
                 namespaces = new HashSet(asList(namespacesList.trim().split("\\s*,+\\s*")));
             } else {
                 throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_NAMESPACE
@@ -161,7 +161,7 @@ public class ClusterOperatorConfig {
         String imagePullSecretList = map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS);
         List<LocalObjectReference> imagePullSecrets = null;
         if (imagePullSecretList != null && !imagePullSecretList.isEmpty()) {
-            if (imagePullSecretList.matches("(\\s?[a-z0-9.-]+\\s?,)*\\s?[a-z0-9.-]+\\s?")) {
+            if (imagePullSecretList.matches("(\\s*[a-z0-9.-]+\\s*,)*\\s*[a-z0-9.-]+\\s*")) {
                 imagePullSecrets = Arrays.stream(imagePullSecretList.trim().split("\\s*,+\\s*")).map(secret -> new LocalObjectReferenceBuilder().withName(secret).build()).collect(Collectors.toList());
             } else {
                 throw new InvalidConfigurationException(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS
