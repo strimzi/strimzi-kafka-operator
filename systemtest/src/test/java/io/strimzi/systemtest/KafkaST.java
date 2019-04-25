@@ -88,7 +88,7 @@ class KafkaST extends MessagingBaseST {
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName));
         StUtils.waitForAllStatefulSetPodsReady(zookeeperClusterName(clusterName), 3);
         StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(clusterName), 3);
-        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(clusterName));
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName(clusterName), 1);
 
         //Testing docker images
         testDockerImagesForKafkaCluster(clusterName, 3, 3, false);
@@ -734,7 +734,7 @@ class KafkaST extends MessagingBaseST {
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
         StUtils.waitForPod(kafkaPodName);
 
-        String rackId = KUBE_CMD_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
+        String rackId = KUBE_CLIENT.execInPod(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id");
         assertEquals("zone", rackId.trim());
 
         String brokerRack = KUBE_CMD_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();

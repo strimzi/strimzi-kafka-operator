@@ -148,7 +148,7 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Scaling up to {}", scaleTo);
         replaceKafkaConnectResource(KAFKA_CLUSTER_NAME, c -> c.getSpec().setReplicas(initialReplicas + 1));
-        StUtils.waitForDeploymentReady(kafkaConnectName(KAFKA_CLUSTER_NAME));
+        StUtils.waitForDeploymentReady(kafkaConnectName(KAFKA_CLUSTER_NAME), initialReplicas + 1);
         connectPods = KUBE_CLIENT.listPods("strimzi.io/kind", "KafkaConnect").stream()
                 .map(pod -> pod.getMetadata().getName())
                 .collect(Collectors.toList());
@@ -211,7 +211,7 @@ class ConnectST extends AbstractST {
             c.getSpec().getReadinessProbe().setTimeoutSeconds(6);
         });
 
-        StUtils.waitForDeploymentReady(kafkaConnectName(KAFKA_CLUSTER_NAME));
+        StUtils.waitForDeploymentReady(kafkaConnectName(KAFKA_CLUSTER_NAME), 1);
         for (String connectPod : connectPods) {
             StUtils.waitForPodDeletion(connectPod);
         }

@@ -45,7 +45,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
         KUBE_CMD_CLIENT.namespace(SECOND_NAMESPACE);
-        StUtils.waitForDeploymentReady(CLUSTER_NAME + "-mirror-maker");
+        StUtils.waitForDeploymentReady(CLUSTER_NAME + "-mirror-maker", 1);
     }
 
     void deployNewTopic(String topicNamespace, String clusterNamespace, String topic) {

@@ -63,7 +63,7 @@ public class StrimziUpgradeST extends AbstractST {
             copyModifyApply(coDir);
 
             LOGGER.info("Waiting for CO deployment");
-            StUtils.waitForDeploymentReady("strimzi-cluster-operator");
+            StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
 
             // Deploy a Kafka cluster
             kafkaEphemeralYaml = new File(dir, "strimzi-" + fromVersion + "/examples/kafka/kafka-ephemeral.yaml");
@@ -128,7 +128,7 @@ public class StrimziUpgradeST extends AbstractST {
                 LOGGER.info("Updating");
                 copyModifyApply(new File("../install/cluster-operator"));
                 LOGGER.info("Waiting for CO redeployment");
-                StUtils.waitForDeploymentReady("strimzi-cluster-operator");
+                StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
                 waitForRollingUpdate(images);
             } else {
                 url = urlTo;
@@ -136,7 +136,7 @@ public class StrimziUpgradeST extends AbstractST {
                 coDir = new File(dir, "strimzi-" + toVersion + "/install/cluster-operator/");
                 copyModifyApply(coDir);
                 LOGGER.info("Waiting for CO deployment");
-                StUtils.waitForDeploymentReady("strimzi-cluster-operator");
+                StUtils.waitForDeploymentReady("strimzi-cluster-operator", 1);
                 waitForRollingUpdate(images);
             }
 
@@ -184,7 +184,7 @@ public class StrimziUpgradeST extends AbstractST {
         LOGGER.info("Waiting for Kafka StatefulSet");
         StUtils.waitForAllStatefulSetPodsReady("my-cluster-kafka", 3);
         LOGGER.info("Waiting for EO Deployment");
-        StUtils.waitForDeploymentReady("my-cluster-entity-operator");
+        StUtils.waitForDeploymentReady("my-cluster-entity-operator", 1);
     }
 
     private void waitForRollingUpdate(String images) {

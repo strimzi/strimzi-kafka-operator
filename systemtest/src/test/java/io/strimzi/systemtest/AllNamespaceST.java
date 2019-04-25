@@ -74,7 +74,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         // Deploy Kafka Connect in other namespace than CO
         secondNamespaceResources.kafkaConnect(CLUSTER_NAME, 1).done();
         // Check that Kafka Connect was deployed
-        StUtils.waitForDeploymentReady(kafkaConnectName(CLUSTER_NAME));
+        StUtils.waitForDeploymentReady(kafkaConnectName(CLUSTER_NAME), 1);
         KUBE_CMD_CLIENT.namespace(previousNamespace);
     }
 

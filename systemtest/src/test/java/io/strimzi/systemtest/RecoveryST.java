@@ -39,7 +39,7 @@ class RecoveryST extends AbstractST {
         StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName);
 
         LOGGER.info("Waiting for recovery {}", entityOperatorDeploymentName);
-        StUtils.waitForDeploymentReady(entityOperatorDeploymentName);
+        StUtils.waitForDeploymentReady(entityOperatorDeploymentName, 1);
 
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log

@@ -252,11 +252,13 @@ public class StUtils {
     /**
      * Wait until the deployment is ready
      */
-    public static void waitForDeploymentReady(String name) {
+    public static void waitForDeploymentReady(String name, int expectPods) {
         LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> KUBE_CLIENT.getDeploymentStatus(name));
         LOGGER.info("Deployment {} is ready", name);
+        LOGGER.info("Waiting for Pods of Deployment {} to be ready", name);
+        waitForPodsReady(KUBE_CLIENT.getStatefulSetSelectors(name), expectPods, true);
     }
 
     /**
