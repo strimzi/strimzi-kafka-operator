@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
+import io.strimzi.api.kafka.model.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -96,7 +97,7 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertNotNull(kafka);
         assertEquals(1, kafka.getSpec().getKafka().getReplicas());
         assertEquals(1, kafka.getSpec().getZookeeper().getReplicas());
-        assertEquals("persistent-claim", kafka.getSpec().getKafka().getStorage().getType());
+        assertEquals("jbod", kafka.getSpec().getKafka().getStorage().getType());
         assertEquals("persistent-claim", kafka.getSpec().getZookeeper().getStorage().getType());
     }
 
@@ -160,7 +161,7 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertEquals("2", kafka.getSpec().getKafka().getConfig().get("default.replication.factor"));
         assertEquals("5", kafka.getSpec().getKafka().getConfig().get("offsets.topic.replication.factor"));
         assertEquals("5", kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"));
-        assertEquals("2Gi", ((PersistentClaimStorage) kafka.getSpec().getKafka().getStorage()).getSize());
+        assertEquals("2Gi", ((PersistentClaimStorage) ((JbodStorage) kafka.getSpec().getKafka().getStorage()).getVolumes().get(0)).getSize());
         assertEquals("2Gi", ((PersistentClaimStorage) kafka.getSpec().getZookeeper().getStorage()).getSize());
     }
 
