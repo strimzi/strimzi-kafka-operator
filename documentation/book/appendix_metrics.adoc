@@ -149,7 +149,7 @@ To define Prometheus jobs that will scrape the metrics data, you must apply the 
 Download this file using the following command:
 
 [source,shell,subs=+quotes]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/strimzi-service-monitor.yaml
+curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/strimzi-service-monitor.yaml
 
 Currently, the Prometheus Operator only supports jobs that include an `endpoints` role for service discovery.
 To use another role, edit the `additionalScrapeConfigs` property in the `prometheus.yaml` configuration file.
@@ -157,7 +157,7 @@ This takes the name of the `Secret` and the name of the property in a given `Sec
 To create this `Secret` resource, use the following command:
 
 [source,shell,subs=+quotes]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/additional-properties/prometheus-additional.yaml
+curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/additional-properties/prometheus-additional.yaml
 oc create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
 
 The provided `prometheus-rules.yaml` file creates a `PrometheusRule` with sample alerting rules. Download and update the resource file as follows:
@@ -208,14 +208,14 @@ To define Prometheus jobs that will scrape the metrics data, you must apply the 
 Download it by using the following command:
 
 [source,shell,subs=+quotes]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/strimzi-service-monitor.yaml
+curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/strimzi-service-monitor.yaml
 
 Currently, the Prometheus Operator only supports jobs that include an `endpoints` role for service discovery. To use another role, edit the `additionalScrapeConfigs` property in the `prometheus.yaml` configuration file. This takes the name of the `Secret` and the name of the property in a given `Secret` in which additional configuration is stored.
 
 To create this `Secret` resource, use the following command:
 
 [source,shell,subs=+quotes]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/additional-properties/prometheus-additional.yaml
+curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/additional-properties/prometheus-additional.yaml
 kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml
 
 The provided `prometheus-rules.yaml` file creates a `PrometheusRule` with sample alerting rules. Download and update the resource file as follows:
@@ -285,7 +285,7 @@ image::grafana_login.png[Grafana login]
 +
 image::grafana_home.png[Grafana home]
 
-. Fill in the information about the Prometheus data source, specifying a name and "Prometheus" as type. In the URL field, the connection string to the Prometheus server (that is, `http://prometheus:9090`) should be specified. After "Add" is clicked, Grafana will test the connection to the data source.
+. Fill in the information about the Prometheus data source, specifying a name and "Prometheus" as type. In the URL field, the connection string to the Prometheus server (that is, `http://prometheus-operated:9090`) should be specified. After "Add" is clicked, Grafana will test the connection to the data source.
 +
 image::grafana_prometheus_data_source.png[Add Prometheus data source]
 
@@ -354,13 +354,13 @@ Before deploying the Alertmanager it is needed to update the following parameter
 Download `alert-manager.yaml` using the following command:
 
 [source,shell,subs=+quotes]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml
+curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml
 
 To configure the Alertmanager hook for sending alerts, you must create a `Secret` resource with the appropriate configuration.
 Download the `alertmanager.yaml` file and create a `Secret` from it:
 
 [source,shell,subs=+quotes]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
+curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
 oc create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
 
 Run the following commands to deploy the Alertmanager:
@@ -374,13 +374,13 @@ ifdef::Kubernetes[]
 Download `alert-manager.yaml` by a command.
 
 [source,shell,subs=+quotes]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml
+curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/install/alert-manager.yaml
 
 To configure Alert Manager hook for sending alerts we need to create a `Secret` resource with configuration.
 Download the `alertmanager.yaml` file and create a `Secret` from it.
 
 [source,shell,subs=+quotes]
-curl -s https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
+curl -O https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/{GithubVersion}/metrics/examples/prometheus/alertmanager-config/alertmanager.yaml
 kubectl create secret generic alertmanager-alertmanager --from-file=alertmanager.yaml
 
 To deploy the Alertmanager the following commands should be executed:
