@@ -83,10 +83,19 @@ public class ClusterOperatorConfig {
      * @param map   map from which loading configuration parameters
      * @return  Cluster Operator configuration instance
      */
-    @SuppressWarnings("checkstyle:NPathComplexity")
     public static ClusterOperatorConfig fromMap(Map<String, String> map) {
+        Set<String> namespaces = parseNamespaceList(map.get(ClusterOperatorConfig.STRIMZI_NAMESPACE));
+        long reconciliationInterval = parseReconciliationInerval(map.get(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS));
+        long operationTimeout = parseOperationTimeout(map.get(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS));
+        boolean createClusterRoles = parseCreateClusterRoles(map.get(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES));
+        ImagePullPolicy imagePullPolicy = parseImagePullPolicy(map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY));
+        KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_S2I_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES));
+        List<LocalObjectReference> imagePullSecrets = parseImagePullSecrets(map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS));
 
-        String namespacesList = map.get(ClusterOperatorConfig.STRIMZI_NAMESPACE);
+        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup, imagePullPolicy, imagePullSecrets);
+    }
+
+    private static Set<String> parseNamespaceList(String namespacesList)   {
         Set<String> namespaces;
         if (namespacesList == null || namespacesList.isEmpty()) {
             namespaces = Collections.singleton(AbstractWatchableResourceOperator.ANY_NAMESPACE);
@@ -102,28 +111,44 @@ public class ClusterOperatorConfig {
             }
         }
 
+        return namespaces;
+    }
+
+    private static long parseReconciliationInerval(String reconciliationIntervalEnvVar) {
         long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
-        String reconciliationIntervalEnvVar = map.get(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
+
         if (reconciliationIntervalEnvVar != null) {
             reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
         }
 
+        return reconciliationInterval;
+    }
+
+    private static long parseOperationTimeout(String operationTimeoutEnvVar) {
         long operationTimeout = DEFAULT_OPERATION_TIMEOUT_MS;
-        String operationTimeoutEnvVar = map.get(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS);
+
         if (operationTimeoutEnvVar != null) {
             operationTimeout = Long.parseLong(operationTimeoutEnvVar);
         }
 
+        return operationTimeout;
+    }
+
+    private static boolean parseCreateClusterRoles(String createClusterRolesEnvVar) {
         boolean createClusterRoles = DEFAULT_CREATE_CLUSTER_ROLES;
-        String createClusterRolesEnvVar = map.get(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES);
+
         if (createClusterRolesEnvVar != null) {
             createClusterRoles = Boolean.parseBoolean(createClusterRolesEnvVar);
         }
 
+        return createClusterRoles;
+    }
+
+    private static ImagePullPolicy parseImagePullPolicy(String imagePullPolicyEnvVar) {
         ImagePullPolicy imagePullPolicy = null;
-        String imagePullPolicyEnvVar = map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY);
+
         if (imagePullPolicyEnvVar != null) {
-            switch (imagePullPolicyEnvVar.trim().toLowerCase(Locale.ENGLISH))  {
+            switch (imagePullPolicyEnvVar.trim().toLowerCase(Locale.ENGLISH)) {
                 case "always":
                     imagePullPolicy = ImagePullPolicy.ALWAYS;
                     break;
@@ -140,11 +165,16 @@ public class ClusterOperatorConfig {
             }
         }
 
+        return imagePullPolicy;
+    }
+
+    private static KafkaVersion.Lookup parseKafkaVersions(String kafkaImages, String connectImages, String connectS2IImages, String mirrorMakerImages) {
         KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
-                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_IMAGES)),
-                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_CONNECT_IMAGES)),
-                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_CONNECT_S2I_IMAGES)),
-                ModelUtils.parseImageMap(map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES)));
+                ModelUtils.parseImageMap(kafkaImages),
+                ModelUtils.parseImageMap(connectImages),
+                ModelUtils.parseImageMap(connectS2IImages),
+                ModelUtils.parseImageMap(mirrorMakerImages));
+
         for (String version : lookup.supportedVersions()) {
             if (lookup.kafkaImage(null, version) == null) {
                 LOGGER.warn("{} does not provide an image for version {}", STRIMZI_KAFKA_IMAGES, version);
@@ -158,8 +188,12 @@ public class ClusterOperatorConfig {
             }
         }
 
-        String imagePullSecretList = map.get(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS);
+        return lookup;
+    }
+
+    private static List<LocalObjectReference> parseImagePullSecrets(String imagePullSecretList) {
         List<LocalObjectReference> imagePullSecrets = null;
+
         if (imagePullSecretList != null && !imagePullSecretList.isEmpty()) {
             if (imagePullSecretList.matches("(\\s*[a-z0-9.-]+\\s*,)*\\s*[a-z0-9.-]+\\s*")) {
                 imagePullSecrets = Arrays.stream(imagePullSecretList.trim().split("\\s*,+\\s*")).map(secret -> new LocalObjectReferenceBuilder().withName(secret).build()).collect(Collectors.toList());
@@ -169,9 +203,8 @@ public class ClusterOperatorConfig {
             }
         }
 
-        return new ClusterOperatorConfig(namespaces, reconciliationInterval, operationTimeout, createClusterRoles, lookup, imagePullPolicy, imagePullSecrets);
+        return imagePullSecrets;
     }
-
 
     /**
      * @return  namespaces in which the operator runs and creates resources
