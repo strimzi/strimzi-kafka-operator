@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -112,7 +113,7 @@ public class JbodStorageTest {
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(this.vertx, this.mockClient, pfa, 60_000L);
 
-        this.kao = new KafkaAssemblyOperator(this.vertx, pfa, 2_000, new MockCertManager(), ros, VERSIONS, null);
+        this.kao = new KafkaAssemblyOperator(this.vertx, pfa, new MockCertManager(), ros, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
     }
 
     @Test

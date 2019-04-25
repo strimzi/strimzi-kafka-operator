@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.InvalidConfigurationException;
@@ -19,6 +20,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ClusterOperatorConfigTest {
 
@@ -47,7 +49,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testReconciliationInterval() {
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), null);
+        ClusterOperatorConfig config = new ClusterOperatorConfig(singleton("namespace"), 60_000, 30_000, false, new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), null, null);
 
         assertEquals(singleton("namespace"), config.getNamespaces());
         assertEquals(60_000, config.getReconciliationIntervalMs());
@@ -173,5 +175,29 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Sometimes");
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars);
+    }
+
+    @Test
+    public void testImagePullSecrets() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "secret1,  secret2 ,  secret3    ");
+        assertEquals(3, ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size());
+        assertTrue(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret1").build()));
+        assertTrue(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret2").build()));
+        assertTrue(ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().contains(new LocalObjectReferenceBuilder().withName("secret3").build()));
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testImagePullSecretsInvalidCharacter() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "secret1, secret2 , secret_3 ");
+        ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size();
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testImagePullSecretsUpperCaseCharacter() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "Secret");
+        ClusterOperatorConfig.fromMap(envVars).getImagePullSecrets().size();
     }
 }

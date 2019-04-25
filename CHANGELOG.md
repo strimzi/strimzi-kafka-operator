@@ -8,6 +8,7 @@
 * Add support for unprivileged users to install the operator with Helm
 * Support for Kafka 2.2.0
 * Support off-cluster access using Kubernetes Nginx Ingress
+* Add ability to configure Image Pull Secrets for all pods in Cluster Operator
 
 ## 0.11.0
 

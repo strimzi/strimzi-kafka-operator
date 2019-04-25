@@ -13,24 +13,16 @@ import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.CertManager;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ResourceType;
-import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -51,39 +43,22 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
     public static final String ANNO_STRIMZI_IO_LOGGING = Annotations.STRIMZI_DOMAIN + "/logging";
 
     private final DeploymentOperator deploymentOperations;
-    private final ConfigMapOperator configMapOperations;
-    private final ServiceOperator serviceOperations;
-    private final ClusterRoleBindingOperator clusterRoleBindingOperations;
-    private final ServiceAccountOperator serviceAccountOperations;
     private final KafkaVersion.Lookup versions;
 
     /**
-     * @param vertx                      The Vertx instance
-     * @param pfa                        Platform features availability properties
-     * @param mirrorMakerOperator        For operating on MirrorMakers
-     * @param networkPolicyOperator      For operating on NetworkPolicies
-     * @param configMapOperations        For operating on ConfigMaps
-     * @param secretOperations           For operating on Secrets
+     * @param vertx                     The Vertx instance
+     * @param pfa                       Platform features availability properties
+     * @param certManager               Certificate manager
+     * @param supplier                  Supplies the operators for different resources
+     * @param config                    ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaMirrorMakerAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                             CertManager certManager,
-                                            CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> mirrorMakerOperator,
-                                            SecretOperator secretOperations,
-                                            ConfigMapOperator configMapOperations,
-                                            NetworkPolicyOperator networkPolicyOperator,
-                                            DeploymentOperator deploymentOperations,
-                                            ServiceOperator serviceOperations,
-                                            PodDisruptionBudgetOperator podDisruptionBudgetOperator,
                                             ResourceOperatorSupplier supplier,
-                                            KafkaVersion.Lookup versions,
-                                            ImagePullPolicy imagePullPolicy) {
-        super(vertx, pfa, ResourceType.MIRRORMAKER, certManager, mirrorMakerOperator, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, imagePullPolicy);
-        this.deploymentOperations = deploymentOperations;
-        this.configMapOperations = configMapOperations;
-        this.serviceOperations = serviceOperations;
-        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
-        this.serviceAccountOperations = supplier.serviceAccountOperator;
-        this.versions = versions;
+                                            ClusterOperatorConfig config) {
+        super(vertx, pfa, ResourceType.MIRRORMAKER, certManager, supplier.mirrorMakerOperator, supplier, config);
+        this.deploymentOperations = supplier.deploymentOperations;
+        this.versions = config.versions();
     }
 
     @Override
@@ -114,7 +89,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(scale -> serviceOperations.reconcile(namespace, mirror.getServiceName(), mirror.generateService()))
                 .compose(i -> configMapOperations.reconcile(namespace, mirror.getAncillaryConfigName(), logAndMetricsConfigMap))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
-                .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy)))
+                .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(namespace, mirror.getName(), mirror.getReplicas()).map((Void) null));
     }
 

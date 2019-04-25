@@ -807,6 +807,7 @@ public abstract class AbstractModel {
             Affinity affinity,
             List<Container> initContainers,
             List<Container> containers,
+            List<LocalObjectReference> imagePullSecrets,
             boolean isOpenShift) {
 
         PodSecurityContext securityContext = templateSecurityContext;
@@ -847,7 +848,7 @@ public abstract class AbstractModel {
                             .withVolumes(volumes)
                             .withTolerations(getTolerations())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                            .withImagePullSecrets(templateImagePullSecrets)
+                            .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(securityContext)
                         .endSpec()
                     .endTemplate()
@@ -865,7 +866,8 @@ public abstract class AbstractModel {
             Affinity affinity,
             List<Container> initContainers,
             List<Container> containers,
-            List<Volume> volumes) {
+            List<Volume> volumes,
+            List<LocalObjectReference> imagePullSecrets) {
 
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
@@ -892,7 +894,7 @@ public abstract class AbstractModel {
                             .withVolumes(volumes)
                             .withTolerations(getTolerations())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                            .withImagePullSecrets(templateImagePullSecrets)
+                            .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
                             .withSecurityContext(templateSecurityContext)
                         .endSpec()
                     .endTemplate()

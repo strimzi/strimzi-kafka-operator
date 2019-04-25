@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -852,7 +853,7 @@ public class KafkaCluster extends AbstractModel {
      * @param isOpenShift True iff this operator is operating within OpenShift.
      * @return The generate StatefulSet
      */
-    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
+    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         HashMap<String, String> annotations = new HashMap<>(2);
         annotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
         annotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
@@ -864,6 +865,7 @@ public class KafkaCluster extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
+                imagePullSecrets,
                 isOpenShift);
     }
 

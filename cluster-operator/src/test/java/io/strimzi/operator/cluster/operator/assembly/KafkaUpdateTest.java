@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -131,7 +132,7 @@ public class KafkaUpdateTest {
                                       Consumer<Integer> reconcileExceptions, Consumer<Integer> rollExceptions) {
         KafkaSetOperator kso = mock(KafkaSetOperator.class);
 
-        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false, null);
+        StatefulSet kafkaSs = initialSs != null ? initialSs : KafkaCluster.fromCrd(initialKafka, lookup).generateStatefulSet(false, null, null);
 
         when(kso.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kafkaSs));
 
@@ -150,12 +151,12 @@ public class KafkaUpdateTest {
             return Future.succeededFuture();
         });
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), 1L,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9),
                 new MockCertManager(),
                 new ResourceOperatorSupplier(null, null, null,
-                        kso, null, null, null, null,
-                        null, null, null, null, null, null, null, null),
-                lookup, null);
+                        kso, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null, null, null),
+                ResourceUtils.dummyClusterOperatorConfig(lookup, 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 
         Async async = context.async();

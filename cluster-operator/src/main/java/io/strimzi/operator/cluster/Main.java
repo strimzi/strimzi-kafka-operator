@@ -7,36 +7,14 @@ package io.strimzi.operator.cluster;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRole;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectS2IList;
-import io.strimzi.api.kafka.KafkaMirrorMakerList;
-import io.strimzi.api.kafka.model.DoneableKafkaConnect;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
-import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.operator.cluster.model.ImagePullPolicy;
-import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
-import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -96,38 +74,24 @@ public class Main {
 
     static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
         printEnvInfo();
-        ServiceOperator serviceOperations = new ServiceOperator(vertx, client);
-        ConfigMapOperator configMapOperations = new ConfigMapOperator(vertx, client);
-        DeploymentOperator deploymentOperations = new DeploymentOperator(vertx, client);
-        SecretOperator secretOperations = new SecretOperator(vertx, client);
-        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> kco =
-                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class);
-        CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> kmmo =
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
-        NetworkPolicyOperator networkPolicyOperator = new NetworkPolicyOperator(vertx, client);
-        PodDisruptionBudgetOperator podDisruptionBudgetOperator = new PodDisruptionBudgetOperator(vertx, client);
+
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.getOperationTimeoutMs());
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa,
-                config.getOperationTimeoutMs(), certManager, resourceOperatorSupplier,
-                config.versions(), config.getImagePullPolicy());
+                certManager, resourceOperatorSupplier, config);
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
-                certManager, kco, configMapOperations, deploymentOperations, serviceOperations, secretOperations,
-                networkPolicyOperator, podDisruptionBudgetOperator, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
+                certManager, resourceOperatorSupplier, config);
 
         KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
         if (pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages()) {
-            kafkaConnectS2IClusterOperations = createS2iOperator(vertx, client, pfa, serviceOperations,
-                    configMapOperations, secretOperations, certManager, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
+            kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
         } else {
             log.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
         }
 
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
-                new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, kmmo, secretOperations,
-                        configMapOperations, networkPolicyOperator, deploymentOperations, serviceOperations,
-                        podDisruptionBudgetOperator, resourceOperatorSupplier, config.versions(), config.getImagePullPolicy());
+                new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, resourceOperatorSupplier, config);
 
         List<Future> futures = new ArrayList<>();
         for (String namespace : config.getNamespaces()) {
@@ -152,29 +116,6 @@ public class Main {
                 });
         }
         return CompositeFuture.join(futures);
-    }
-
-    private static KafkaConnectS2IAssemblyOperator createS2iOperator(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ServiceOperator serviceOperations, ConfigMapOperator configMapOperations, SecretOperator secretOperations, OpenSslCertManager certManager, ResourceOperatorSupplier resourceOperatorSupplier, KafkaVersion.Lookup versions, ImagePullPolicy imagePullPolicy) {
-        ImageStreamOperator imagesStreamOperations;
-        BuildConfigOperator buildConfigOperations;
-        DeploymentConfigOperator deploymentConfigOperations;
-        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> kafkaConnectS2iCrdOperator;
-        NetworkPolicyOperator networkPolicyOperator;
-        PodDisruptionBudgetOperator podDisruptionBudgetOperator;
-        KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations;
-        OpenShiftClient osClient = client.adapt(OpenShiftClient.class);
-        imagesStreamOperations = new ImageStreamOperator(vertx, osClient);
-        buildConfigOperations = new BuildConfigOperator(vertx, osClient);
-        deploymentConfigOperations = new DeploymentConfigOperator(vertx, osClient);
-        kafkaConnectS2iCrdOperator = new CrdOperator<>(vertx, osClient, KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class);
-        networkPolicyOperator = new NetworkPolicyOperator(vertx, client);
-        podDisruptionBudgetOperator = new PodDisruptionBudgetOperator(vertx, client);
-        kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, pfa,
-                certManager,
-                kafkaConnectS2iCrdOperator,
-                 configMapOperations, deploymentConfigOperations,
-                serviceOperations, imagesStreamOperations, buildConfigOperations, secretOperations, networkPolicyOperator, podDisruptionBudgetOperator, resourceOperatorSupplier, versions, imagePullPolicy);
-        return kafkaConnectS2IClusterOperations;
     }
 
     private static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {

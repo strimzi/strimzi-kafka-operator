@@ -161,7 +161,7 @@ public class TopicOperatorTest {
     @Test
     public void testGenerateDeployment() {
 
-        Deployment dep = tc.generateDeployment(true, null);
+        Deployment dep = tc.generateDeployment(true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -212,7 +212,7 @@ public class TopicOperatorTest {
 
     @Test
     public void withAffinity() throws IOException {
-        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, null).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     private void assertLoggingConfig(Deployment dep) {
@@ -227,11 +227,11 @@ public class TopicOperatorTest {
 
     @Test
     public void testImagePullPolicy() {
-        Deployment dep = tc.generateDeployment(true, ImagePullPolicy.ALWAYS);
+        Deployment dep = tc.generateDeployment(true, ImagePullPolicy.ALWAYS, null);
         assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.ALWAYS.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
 
-        dep = tc.generateDeployment(true, ImagePullPolicy.IFNOTPRESENT);
+        dep = tc.generateDeployment(true, ImagePullPolicy.IFNOTPRESENT, null);
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy());
         assertEquals(ImagePullPolicy.IFNOTPRESENT.toString(), dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy());
     }

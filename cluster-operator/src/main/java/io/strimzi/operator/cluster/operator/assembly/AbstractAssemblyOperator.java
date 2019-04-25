@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -16,7 +17,10 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigParameterException;
@@ -28,9 +32,13 @@ import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -71,7 +79,13 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final CertManager certManager;
     protected final NetworkPolicyOperator networkPolicyOperator;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+    protected final ServiceOperator serviceOperations;
+    protected final ConfigMapOperator configMapOperations;
+    protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
+    protected final ServiceAccountOperator serviceAccountOperations;
     protected final ImagePullPolicy imagePullPolicy;
+    protected final List<LocalObjectReference> imagePullSecrets;
+    protected final KafkaVersion.Lookup versions;
     private final String kind;
 
     /**
@@ -80,28 +94,30 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param assemblyType Assembly type
      * @param certManager Certificate manager
      * @param resourceOperator For operating on the desired resource
-     * @param secretOperations For operating secrets
-     * @param networkPolicyOperator For operating NEtworkPolicies
-     * @param podDisruptionBudgetOperator For operating PodDisruptionBudgets
-     * @param imagePullPolicy The user-configured image pull policy. Null if the user didn't configured it.
+     * @param supplier Supplies the operators for different resources
+     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, ResourceType assemblyType,
                                        CertManager certManager,
                                        AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator,
-                                       SecretOperator secretOperations,
-                                       NetworkPolicyOperator networkPolicyOperator,
-                                       PodDisruptionBudgetOperator podDisruptionBudgetOperator,
-                                       ImagePullPolicy imagePullPolicy) {
+                                       ResourceOperatorSupplier supplier,
+                                       ClusterOperatorConfig config) {
         this.vertx = vertx;
         this.pfa = pfa;
         this.assemblyType = assemblyType;
         this.kind = assemblyType.name;
         this.resourceOperator = resourceOperator;
         this.certManager = certManager;
-        this.secretOperations = secretOperations;
-        this.networkPolicyOperator = networkPolicyOperator;
-        this.podDisruptionBudgetOperator = podDisruptionBudgetOperator;
-        this.imagePullPolicy = imagePullPolicy;
+        this.secretOperations = supplier.secretOperations;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
+        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
+        this.configMapOperations = supplier.configMapOperations;
+        this.serviceOperations = supplier.serviceOperations;
+        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
+        this.serviceAccountOperations = supplier.serviceAccountOperations;
+        this.imagePullPolicy = config.getImagePullPolicy();
+        this.imagePullSecrets = config.getImagePullSecrets();
+        this.versions = config.versions();
     }
 
     /**

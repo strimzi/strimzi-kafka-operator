@@ -120,8 +120,8 @@ public class PartialRollingUpdateTest {
                 .build();
 
         ResourceOperatorSupplier supplier = supplier(bootstrapClient);
-        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 2_000,
-                new MockCertManager(), supplier, VERSIONS, null);
+        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
 
         LOGGER.info("bootstrap reconciliation");
         Async createAsync = context.async();
@@ -167,8 +167,8 @@ public class PartialRollingUpdateTest {
 
         ResourceOperatorSupplier supplier = supplier(mockClient);
 
-        this.kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9), 2_000,
-                new MockCertManager(), supplier, VERSIONS, null);
+        this.kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_9),
+                new MockCertManager(), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
 

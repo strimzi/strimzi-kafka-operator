@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -39,7 +40,6 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
 import io.strimzi.operator.cluster.model.EntityUserOperator;
-import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaUpgrade;
@@ -57,8 +57,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
-import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -66,8 +64,6 @@ import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
-import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -118,46 +114,36 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
     private final ZookeeperSetOperator zkSetOperations;
     private final KafkaSetOperator kafkaSetOperations;
-    private final ServiceOperator serviceOperations;
     private final RouteOperator routeOperations;
     private final PvcOperator pvcOperations;
     private final DeploymentOperator deploymentOperations;
-    private final ConfigMapOperator configMapOperations;
-    private final ServiceAccountOperator serviceAccountOperator;
-    private final RoleBindingOperator roleBindingOperator;
-    private final ClusterRoleBindingOperator clusterRoleBindingOperator;
+    private final RoleBindingOperator roleBindingOperations;
     private final PodOperator podOperations;
     private final IngressOperator ingressOperations;
-
-    private final KafkaVersion.Lookup versions;
 
     /**
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
+     * @param certManager Certificate manager
+     * @param supplier Supplies the operators for different resources
+     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                 long operationTimeoutMs,
                                  CertManager certManager,
                                  ResourceOperatorSupplier supplier,
-                                 KafkaVersion.Lookup versions,
-                                 ImagePullPolicy imagePullPolicy) {
+                                 ClusterOperatorConfig config) {
         super(vertx, pfa, ResourceType.KAFKA, certManager,
-                supplier.kafkaOperator, supplier.secretOperations, supplier.networkPolicyOperator,
-                supplier.podDisruptionBudgetOperator, imagePullPolicy);
-        this.operationTimeoutMs = operationTimeoutMs;
-        this.serviceOperations = supplier.serviceOperations;
+                supplier.kafkaOperator, supplier, config);
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.routeOperations = supplier.routeOperations;
         this.zkSetOperations = supplier.zkSetOperations;
         this.kafkaSetOperations = supplier.kafkaSetOperations;
-        this.configMapOperations = supplier.configMapOperations;
         this.pvcOperations = supplier.pvcOperations;
         this.deploymentOperations = supplier.deploymentOperations;
-        this.serviceAccountOperator = supplier.serviceAccountOperator;
-        this.roleBindingOperator = supplier.roleBindingOperator;
-        this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
+        this.roleBindingOperations = supplier.roleBindingOperations;
         this.podOperations = supplier.podOperations;
         this.ingressOperations = supplier.ingressOperations;
-        this.versions = versions;
+
     }
 
     @Override
@@ -938,7 +924,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zookeeperServiceAccount() {
-            return withVoid(serviceAccountOperator.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(namespace,
                     ZookeeperCluster.containerServiceAccountName(zkCluster.getCluster()),
                     zkCluster.generateServiceAccount()));
         }
@@ -998,7 +984,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkStatefulSet() {
-            StatefulSet zkSs = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy);
+            StatefulSet zkSs = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSs.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSs));
         }
@@ -1117,14 +1103,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaInitServiceAccount() {
-            return withVoid(serviceAccountOperator.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(namespace,
                     KafkaCluster.initContainerServiceAccountName(kafkaCluster.getCluster()),
                     kafkaCluster.generateServiceAccount()));
         }
 
         Future<ReconciliationState> kafkaInitClusterRoleBinding() {
             KubernetesClusterRoleBinding desired = kafkaCluster.generateClusterRoleBinding(namespace);
-            Future<ReconcileResult<KubernetesClusterRoleBinding>> fut = clusterRoleBindingOperator.reconcile(
+            Future<ReconcileResult<KubernetesClusterRoleBinding>> fut = clusterRoleBindingOperations.reconcile(
                     KafkaCluster.initContainerClusterRoleBindingName(namespace, name), desired);
 
             Future replacementFut = Future.future();
@@ -1582,7 +1568,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaStatefulSet() {
             kafkaCluster.setExternalAddresses(kafkaExternalAddresses);
-            StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy);
+            StatefulSet kafkaSs = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             PodTemplateSpec template = kafkaSs.getSpec().getTemplate();
             Annotations.annotations(template).put(
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION,
@@ -1884,7 +1870,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     topicOperator.getLogging() instanceof ExternalLogging ?
                                             configMapOperations.get(kafkaAssembly.getMetadata().getNamespace(), ((ExternalLogging) topicOperator.getLogging()).getName()) :
                                             null);
-                            this.toDeployment = topicOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy);
+                            this.toDeployment = topicOperator.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
                             this.toMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             Annotations.annotations(this.toDeployment.getSpec().getTemplate()).put(
                                     ANNO_STRIMZI_IO_LOGGING,
@@ -1911,7 +1897,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> topicOperatorServiceAccount() {
-            return withVoid(serviceAccountOperator.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(namespace,
                     TopicOperator.topicOperatorServiceAccountName(name),
                     toDeployment != null ? topicOperator.generateServiceAccount() : null));
         }
@@ -1925,9 +1911,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     watchedNamespace = topicOperator.getWatchedNamespace();
                 }
 
-                return withVoid(roleBindingOperator.reconcile(watchedNamespace, TopicOperator.roleBindingName(name), topicOperator.generateRoleBinding(namespace, watchedNamespace)));
+                return withVoid(roleBindingOperations.reconcile(watchedNamespace, TopicOperator.roleBindingName(name), topicOperator.generateRoleBinding(namespace, watchedNamespace)));
             } else {
-                return withVoid(roleBindingOperator.reconcile(namespace, TopicOperator.roleBindingName(name), null));
+                return withVoid(roleBindingOperations.reconcile(namespace, TopicOperator.roleBindingName(name), null));
             }
         }
 
@@ -1998,7 +1984,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             annotations.put(ANNO_STRIMZI_IO_LOGGING, configAnnotation);
 
                             this.entityOperator = entityOperator;
-                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy);
+                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
                             this.topicOperatorMetricsAndLogsConfigMap = topicOperatorLogAndMetricsConfigMap;
                             this.userOperatorMetricsAndLogsConfigMap = userOperatorLogAndMetricsConfigMap;
                         }
@@ -2020,7 +2006,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorServiceAccount() {
-            return withVoid(serviceAccountOperator.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(namespace,
                     EntityOperator.entityOperatorServiceAccountName(name),
                     eoDeployment != null ? entityOperator.generateServiceAccount() : null));
         }
@@ -2034,12 +2020,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     watchedNamespace = entityOperator.getTopicOperator().getWatchedNamespace();
                 }
 
-                return withVoid(roleBindingOperator.reconcile(
+                return withVoid(roleBindingOperations.reconcile(
                         watchedNamespace,
                         EntityTopicOperator.roleBindingName(name),
                         entityOperator.getTopicOperator().generateRoleBinding(namespace, watchedNamespace)));
             } else  {
-                return withVoid(roleBindingOperator.reconcile(namespace, EntityTopicOperator.roleBindingName(name), null));
+                return withVoid(roleBindingOperations.reconcile(namespace, EntityTopicOperator.roleBindingName(name), null));
             }
         }
 
@@ -2056,18 +2042,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
 
                 if (!namespace.equals(watchedNamespace)) {
-                    watchedNamespaceFuture = roleBindingOperator.reconcile(watchedNamespace, EntityUserOperator.roleBindingName(name), entityOperator.getUserOperator().generateRoleBinding(namespace, watchedNamespace));
+                    watchedNamespaceFuture = roleBindingOperations.reconcile(watchedNamespace, EntityUserOperator.roleBindingName(name), entityOperator.getUserOperator().generateRoleBinding(namespace, watchedNamespace));
                 } else {
                     watchedNamespaceFuture = Future.succeededFuture();
                 }
 
                 // Create role binding for the the UI runs in (it needs to access the CA etc.)
-                ownNamespaceFuture = roleBindingOperator.reconcile(namespace, EntityUserOperator.roleBindingName(name), entityOperator.getUserOperator().generateRoleBinding(namespace, namespace));
+                ownNamespaceFuture = roleBindingOperations.reconcile(namespace, EntityUserOperator.roleBindingName(name), entityOperator.getUserOperator().generateRoleBinding(namespace, namespace));
 
 
                 return withVoid(CompositeFuture.join(ownNamespaceFuture, watchedNamespaceFuture));
             } else {
-                return withVoid(roleBindingOperator.reconcile(namespace, EntityUserOperator.roleBindingName(name), null));
+                return withVoid(roleBindingOperations.reconcile(namespace, EntityUserOperator.roleBindingName(name), null));
             }
         }
 

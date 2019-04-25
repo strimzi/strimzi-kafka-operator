@@ -8,6 +8,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -246,7 +247,7 @@ public class TopicOperator extends AbstractModel {
         return result;
     }
 
-    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy) {
+    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")
                 .build();
@@ -258,7 +259,8 @@ public class TopicOperator extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
-                getVolumes(isOpenShift)
+                getVolumes(isOpenShift),
+                imagePullSecrets
         );
     }
 

@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -246,9 +247,10 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private KafkaAssemblyOperator createCluster(TestContext context) {
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         ResourceOperatorSupplier supplier = supplierWithMocks();
-        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion), 2_000,
-                new MockCertManager(), supplier, VERSIONS, null);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), supplier, config);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
