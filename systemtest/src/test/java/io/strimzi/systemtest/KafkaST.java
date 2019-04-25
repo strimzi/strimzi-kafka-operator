@@ -269,7 +269,7 @@ class KafkaST extends MessagingBaseST {
         kafkaConfig.put("default.replication.factor", "1");
 
         Map<String, Object> zookeeperConfig = new HashMap<>();
-        zookeeperConfig.put("timeTick", "2000");
+        zookeeperConfig.put("tickTime", "2000");
         zookeeperConfig.put("initLimit", "5");
         zookeeperConfig.put("syncLimit", "2");
 
@@ -324,7 +324,7 @@ class KafkaST extends MessagingBaseST {
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = KUBE_CLIENT.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
-                    hasItem("autopurge.purgeInterval=1\ntimeTick=2000\ninitLimit=5\nsyncLimit=2\n")));
+                    hasItem("autopurge.purgeInterval=1\ntickTime=2000\ninitLimit=5\nsyncLimit=2\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
@@ -341,7 +341,7 @@ class KafkaST extends MessagingBaseST {
             zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(31);
             zookeeperClusterSpec.getLivenessProbe().setTimeoutSeconds(11);
             zookeeperClusterSpec.getReadinessProbe().setTimeoutSeconds(11);
-            zookeeperClusterSpec.setConfig(TestUtils.fromJson("{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
+            zookeeperClusterSpec.setConfig(TestUtils.fromJson("{\"tickTime\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
         });
 
         for (int i = 0; i < expectedZKPods; i++) {
@@ -365,7 +365,7 @@ class KafkaST extends MessagingBaseST {
         for (int i = 0; i < expectedZKPods; i++) {
             String zkPodJson = KUBE_CLIENT.getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
             assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
-                    hasItem("autopurge.purgeInterval=1\ntimeTick=2100\ninitLimit=6\nsyncLimit=3\n")));
+                    hasItem("autopurge.purgeInterval=1\ntickTime=2100\ninitLimit=6\nsyncLimit=3\n")));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
         }
