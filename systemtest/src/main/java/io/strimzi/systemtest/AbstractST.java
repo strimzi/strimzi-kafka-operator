@@ -455,8 +455,10 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
     }
 
     protected void deleteTestMethodResources() throws Exception {
-        testMethodResources.deleteResources();
-        testMethodResources = null;
+        if (testMethodResources != null) {
+            testMethodResources.deleteResources();
+            testMethodResources = null;
+        }
     }
 
     Resources testMethodResources() {
