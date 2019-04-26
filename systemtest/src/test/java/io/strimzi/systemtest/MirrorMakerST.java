@@ -62,7 +62,7 @@ public class MirrorMakerST extends MessagingBaseST {
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
         waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
-                !KUBE_CLIENT.searchInLog("deploy", "my-cluster-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
+                !KUBE_CLIENT.searchInLog("deploy", "my-cluster-mirror-maker", 0,  "\"Successfully joined group\"").isEmpty()
         );
 
         int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, false, topicSourceName, null);
@@ -156,11 +156,11 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join the group
         waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
-                !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
+                !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", 0,  "\"Successfully joined group\"").isEmpty()
         );
+//        TimeMeasuringSystem.stopOperation(operationID);
 
         int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
         int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
@@ -267,7 +267,7 @@ public class MirrorMakerST extends MessagingBaseST {
         TimeMeasuringSystem.stopOperation(operationID);
         // Wait when Mirror Maker will join group
         waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
-                !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID),  "\"Successfully joined group\"").isEmpty()
+                !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", 0,  "\"Successfully joined group\"").isEmpty()
         );
 
         int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, true, topicName, userSource);
