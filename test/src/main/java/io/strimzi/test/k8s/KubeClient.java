@@ -54,11 +54,11 @@ public class KubeClient {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClient.class);
     protected final KubernetesClient client;
-    protected String defaultNamespace;
+    protected String namespace;
 
-    public KubeClient(KubernetesClient client, String defaultNamespace) {
+    public KubeClient(KubernetesClient client, String namespace) {
         this.client = client;
-        this.defaultNamespace = defaultNamespace;
+        this.namespace = namespace;
     }
 
     public KubernetesClient getClient() {
@@ -70,7 +70,7 @@ public class KubeClient {
     }
 
     public String getNamespace() {
-        return NamespaceHolder.getNamespaceFromHolder() != null ? NamespaceHolder.getNamespaceFromHolder() : defaultNamespace;
+        return namespace;
     }
 
     public Namespace getNamespace(String namespace) {
