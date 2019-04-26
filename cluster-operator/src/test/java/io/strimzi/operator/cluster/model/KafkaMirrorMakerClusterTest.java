@@ -13,11 +13,11 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
+import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -577,25 +578,27 @@ public class KafkaMirrorMakerClusterTest {
 
     @Test
     public void testResources() {
-        Map<String, Quantity> requests = new HashMap<>(2);
-        requests.put("cpu", new Quantity("250m"));
-        requests.put("memory", new Quantity("512Mi"));
+        CpuMemory requests = new CpuMemory();
+        requests.setMilliCpu("250");
+        requests.setMemory("512Mi");
 
-        Map<String, Quantity> limits = new HashMap<>(2);
-        limits.put("cpu", new Quantity("500m"));
-        limits.put("memory", new Quantity("1024Mi"));
+        CpuMemory limits = new CpuMemory();
+        limits.setMilliCpu("500");
+        limits.setMemory("1Gi");
 
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
-                    .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                    .withResources(new Resources(limits, requests))
                 .endSpec()
                 .build();
         KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
 
         Deployment dep = mmc.generateDeployment(Collections.EMPTY_MAP, true, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        assertEquals(limits, cont.getResources().getLimits());
-        assertEquals(requests, cont.getResources().getRequests());
+        assertEquals(new Quantity(limits.getMemory()), cont.getResources().getLimits().get("memory"));
+        assertEquals(new Quantity(limits.getMilliCpu()), cont.getResources().getLimits().get("cpu"));
+        assertEquals(new Quantity(requests.getMemory()), cont.getResources().getRequests().get("memory"));
+        assertEquals(new Quantity(requests.getMilliCpu()), cont.getResources().getRequests().get("cpu"));
     }
 
     @Test
@@ -607,9 +610,9 @@ public class KafkaMirrorMakerClusterTest {
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
                     .withNewJvmOptions()
-                        .withNewXms("512m")
-                        .withNewXmx("1024m")
-                        .withNewServer(true)
+                        .withXms("512m")
+                        .withXmx("1024m")
+                        .withServer(true)
                         .withXx(xx)
                     .endJvmOptions()
                 .endSpec()

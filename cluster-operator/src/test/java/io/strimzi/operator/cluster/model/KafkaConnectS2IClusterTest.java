@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
@@ -29,10 +28,12 @@ import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
+import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
@@ -834,25 +835,27 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testResources() {
-        Map<String, Quantity> requests = new HashMap<>(2);
-        requests.put("cpu", new Quantity("250m"));
-        requests.put("memory", new Quantity("512Mi"));
+        CpuMemory requests = new CpuMemory();
+        requests.setMilliCpu("250");
+        requests.setMemory("512Mi");
 
-        Map<String, Quantity> limits = new HashMap<>(2);
-        limits.put("cpu", new Quantity("500m"));
-        limits.put("memory", new Quantity("1024Mi"));
+        CpuMemory limits = new CpuMemory();
+        limits.setMilliCpu("500");
+        limits.setMemory("1Gi");
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                    .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                    .withResources(new Resources(limits, requests))
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         DeploymentConfig dep = kc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        assertEquals(limits, cont.getResources().getLimits());
-        assertEquals(requests, cont.getResources().getRequests());
+        assertEquals(new Quantity(limits.getMemory()), cont.getResources().getLimits().get("memory"));
+        assertEquals(new Quantity(limits.getMilliCpu()), cont.getResources().getLimits().get("cpu"));
+        assertEquals(new Quantity(requests.getMemory()), cont.getResources().getRequests().get("memory"));
+        assertEquals(new Quantity(requests.getMilliCpu()), cont.getResources().getRequests().get("cpu"));
     }
 
     @Test
@@ -864,9 +867,9 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
                     .withNewJvmOptions()
-                        .withNewXms("512m")
-                        .withNewXmx("1024m")
-                        .withNewServer(true)
+                        .withXms("512m")
+                        .withXmx("1024m")
+                        .withServer(true)
                         .withXx(xx)
                     .endJvmOptions()
                 .endSpec()
