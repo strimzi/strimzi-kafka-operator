@@ -417,6 +417,7 @@ spec:
                   enum:
                   - tls
                   - scram-sha-512
+                  - plain
                 username:
                   type: string
               required:

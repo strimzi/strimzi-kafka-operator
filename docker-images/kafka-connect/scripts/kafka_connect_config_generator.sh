@@ -2,9 +2,11 @@
 
 SECURITY_PROTOCOL=PLAINTEXT
 
-if [ -n "$KAFKA_CONNECT_TRUSTED_CERTS" ]; then
+if [ "$KAFKA_CONNECT_TLS" = "true" ]; then
     SECURITY_PROTOCOL="SSL"
-    TLS_CONFIGURATION=$(cat <<EOF
+
+    if [ -n "$KAFKA_CONNECT_TRUSTED_CERTS" ]; then
+        TLS_CONFIGURATION=$(cat <<EOF
 # TLS / SSL
 ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 ssl.truststore.password=${CERTS_STORE_PASSWORD}
@@ -17,6 +19,7 @@ consumer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 consumer.ssl.truststore.password=${CERTS_STORE_PASSWORD}
 EOF
 )
+    fi
 
     if [ -n "$KAFKA_CONNECT_TLS_AUTH_CERT" ] && [ -n "$KAFKA_CONNECT_TLS_AUTH_KEY" ]; then
         TLS_AUTH_CONFIGURATION=$(cat <<EOF
@@ -42,19 +45,27 @@ if [ -n "$KAFKA_CONNECT_SASL_USERNAME" ] && [ -n "$KAFKA_CONNECT_SASL_PASSWORD_F
     else
         SECURITY_PROTOCOL="SASL_PLAINTEXT"
     fi
-
+    
     PASSWORD=$(cat /opt/kafka/connect-password/$KAFKA_CONNECT_SASL_PASSWORD_FILE)
-    SASL_MECHANISM="SCRAM-SHA-512"
+
+    if [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xplain" ]; then
+        SASL_MECHANISM="PLAIN"
+        JAAS_SECURITY_MODULE="plain.PlainLoginModule"
+    elif [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xscram-sha-512" ]; then
+        SASL_MECHANISM="SCRAM-SHA-512"
+        JAAS_SECURITY_MODULE="scram.ScramLoginModule"
+    fi
+
 
     SASL_AUTH_CONFIGURATION=$(cat <<EOF
 sasl.mechanism=${SASL_MECHANISM}
-sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
+sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
 
 producer.sasl.mechanism=${SASL_MECHANISM}
-producer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
+producer.sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
 
 consumer.sasl.mechanism=${SASL_MECHANISM}
-consumer.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
+consumer.sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_CONNECT_SASL_USERNAME}" password="${PASSWORD}";
 
 EOF
 )
