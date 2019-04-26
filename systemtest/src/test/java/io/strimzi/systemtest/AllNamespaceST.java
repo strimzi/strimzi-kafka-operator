@@ -112,7 +112,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @BeforeAll
     void setupEnvironment(TestInfo testInfo) {
-        LOGGER.info("Creating testMethodResources before the test class");
+        LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
         createTestClassResources();
 

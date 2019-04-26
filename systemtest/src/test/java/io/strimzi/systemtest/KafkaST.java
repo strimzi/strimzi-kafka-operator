@@ -1054,7 +1054,7 @@ class KafkaST extends MessagingBaseST {
 
     @BeforeEach
     void createTestResources() throws Exception {
-        createResources();
+        createTestMethodResources();
         testMethodResources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
         testMethodResources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, ENVIRONMENT.getKubernetesApiUrl(), NAMESPACE).done();
     }

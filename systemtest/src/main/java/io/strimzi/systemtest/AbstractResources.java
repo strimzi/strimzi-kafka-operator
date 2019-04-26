@@ -63,7 +63,7 @@ abstract class AbstractResources {
         return customResourcesWithCascading(Kafka.class, KafkaList.class, DoneableKafka.class);
     }
 
-    // This logic is necessary only for the deletion of testMethodResources with `cascading: true`
+    // This logic is necessary only for the deletion of resources with `cascading: true`
     <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResourcesWithCascading(Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
         return new CustomResourceOperationsImpl<T, L, D>(((DefaultKubernetesClient) client()).getHttpClient(), client().getConfiguration(), Crds.kafka().getSpec().getGroup(), Crds.kafka().getSpec().getVersion(), "kafkas", true, client().getNamespace(), null, true, null, null, false, resourceType, listClass, doneClass);
     }

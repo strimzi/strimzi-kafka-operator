@@ -444,7 +444,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
         return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
     }
 
-    protected void createResources() {
+    protected void createTestMethodResources() {
         LOGGER.info("Creating resources before the test");
         testMethodResources = new Resources(namespacedClient());
     }

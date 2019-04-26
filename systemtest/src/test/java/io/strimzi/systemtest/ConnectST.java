@@ -82,7 +82,7 @@ class ConnectST extends AbstractST {
             .endSpec().done();
         testMethodResources().topic(KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME).done();
 
-        String connectorConfig = getFileAsString("../systemtest/src/test/testMethodResources/file/sink/connector.json");
+        String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");
         String kafkaConnectPodName = KUBE_CLIENT.listResourcesByLabel("pod", "type=kafka-connect").get(0);
         KUBE_CLIENT.execInPod(kafkaConnectPodName, "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
@@ -236,12 +236,12 @@ class ConnectST extends AbstractST {
 
     @BeforeEach
     void createTestResources() {
-        createResources();
+        createTestMethodResources();
     }
 
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating testMethodResources before the test class");
+        LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(NAMESPACE);
         createTestClassResources();
 

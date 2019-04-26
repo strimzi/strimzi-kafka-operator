@@ -261,7 +261,7 @@ class LogSettingST extends AbstractST {
 
     @BeforeAll
     void createClassResources() {
-        LOGGER.info("Create testMethodResources for the tests");
+        LOGGER.info("Create resources for the tests");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();

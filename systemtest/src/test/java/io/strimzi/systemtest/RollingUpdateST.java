@@ -44,7 +44,7 @@ class RollingUpdateST extends AbstractST {
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        LOGGER.info("Update testMethodResources for pods");
+        LOGGER.info("Update resources for pods");
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -96,7 +96,7 @@ class RollingUpdateST extends AbstractST {
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
-        LOGGER.info("Update testMethodResources for pods");
+        LOGGER.info("Update resources for pods");
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
@@ -163,12 +163,12 @@ class RollingUpdateST extends AbstractST {
 
     @BeforeEach
     void createTestResources() {
-        createResources();
+        createTestMethodResources();
     }
 
     @BeforeAll
     void setupEnvironment() {
-        LOGGER.info("Creating testMethodResources before the test class");
+        LOGGER.info("Creating resources before the test class");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
