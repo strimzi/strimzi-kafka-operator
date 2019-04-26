@@ -49,11 +49,8 @@ if [ -n "$KAFKA_CONNECT_SASL_USERNAME" ] && [ -n "$KAFKA_CONNECT_SASL_PASSWORD_F
     PASSWORD=$(cat /opt/kafka/connect-password/$KAFKA_CONNECT_SASL_PASSWORD_FILE)
 
     if [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xplain" ]; then
-        # SSL encryption should always be used if SASL mechanism is PLAIN
-        SECURITY_PROTOCOL="SASL_SSL"
         SASL_MECHANISM="PLAIN"
         JAAS_SECURITY_MODULE="plain.PlainLoginModule"
-
     elif [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xscram-sha-512" ]; then
         SASL_MECHANISM="SCRAM-SHA-512"
         JAAS_SECURITY_MODULE="scram.ScramLoginModule"
