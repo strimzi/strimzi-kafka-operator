@@ -204,6 +204,7 @@ public class KafkaConnectClusterTest {
         assertEquals("RollingUpdate", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal());
         assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal());
+        assertNull(AbstractModel.containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS));
         checkOwnerReference(kc.createOwnerReference(), dep);
     }
 
@@ -245,6 +246,8 @@ public class KafkaConnectClusterTest {
 
         assertEquals("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS));
+        assertEquals("true",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS));
     }
 
     @Test
@@ -278,6 +281,8 @@ public class KafkaConnectClusterTest {
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT));
         assertEquals("user-secret/user.key",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY));
+        assertEquals("true",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS));
     }
 
     @Test
@@ -332,6 +337,39 @@ public class KafkaConnectClusterTest {
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE));
         assertEquals("user1",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME));
+        assertEquals("scram-sha-512", 
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithPlainAuth() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                .withNewKafkaConnectAuthenticationPlain()
+                    .withUsername("user1")
+                    .withNewPasswordSecret()
+                        .withSecretName("user1-secret")
+                        .withPassword("password")
+                    .endPasswordSecret()
+                .endKafkaConnectAuthenticationPlain()
+            .endSpec()
+            .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+
+        assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertEquals(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "user1-secret",
+                containers.get(0).getVolumeMounts().get(1).getMountPath());
+
+        assertEquals("user1-secret/password",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE));
+        assertEquals("user1",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_USERNAME));
+        assertEquals("plain", 
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_SASL_MECHANISM));
     }
 
     @Test

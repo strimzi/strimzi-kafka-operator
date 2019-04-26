@@ -217,6 +217,7 @@ public class KafkaConnectS2IClusterTest {
         assertEquals("Rolling", dep.getSpec().getStrategy().getType());
         assertEquals(new Integer(1), dep.getSpec().getStrategy().getRollingParams().getMaxSurge().getIntVal());
         assertEquals(new Integer(0), dep.getSpec().getStrategy().getRollingParams().getMaxUnavailable().getIntVal());
+        assertNull(AbstractModel.containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS));
         checkOwnerReference(kc.createOwnerReference(), dep);
     }
 
@@ -329,6 +330,8 @@ public class KafkaConnectS2IClusterTest {
 
         assertEquals("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS));
+        assertEquals("true",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS));
     }
 
     @Test
@@ -362,6 +365,8 @@ public class KafkaConnectS2IClusterTest {
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT));
         assertEquals("user-secret/user.key",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY));
+        assertEquals("true",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS));
     }
 
     @Test
