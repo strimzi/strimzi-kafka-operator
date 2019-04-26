@@ -6,6 +6,7 @@ package io.strimzi.test.k8s;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Doneable;
+import io.fabric8.kubernetes.api.model.DoneablePod;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -28,6 +29,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -104,6 +106,10 @@ public class Kubernetes {
         return client.configMaps().inNamespace(getNamespace()).withName(configMapName).isReady();
     }
 
+    public List<ConfigMap> listConfigMaps() {
+        return client.configMaps().inNamespace(getNamespace()).list().getItems();
+    }
+
     public String execInPod(String podName, String container, String... command) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
@@ -160,6 +166,13 @@ public class Kubernetes {
      */
     public Pod getPod(String name) {
         return client.pods().inNamespace(getNamespace()).withName(name).get();
+    }
+
+    /**
+     * Gets pod
+     */
+    public PodResource<Pod, DoneablePod> getPodResource(String name) {
+        return client.pods().inNamespace(getNamespace()).withName(name);
     }
 
     /**
