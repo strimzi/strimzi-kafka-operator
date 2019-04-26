@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 @ExtendWith(StrimziExtension.class)
@@ -59,11 +58,9 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy Mirror Maker
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
 
+        // Wait when Mirror Maker will join the group
+        Thread.sleep(10000);
         TimeMeasuringSystem.stopOperation(operationID);
-        // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
-                !KUBE_CLIENT.searchInLog("deploy", "my-cluster-mirror-maker", 0,  "\"Successfully joined group\"").isEmpty()
-        );
 
         int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, false, topicSourceName, null);
         int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaSourceName, false, topicSourceName, null);
@@ -157,10 +154,8 @@ public class MirrorMakerST extends MessagingBaseST {
                 .done();
 
         // Wait when Mirror Maker will join the group
-        waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
-                !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", 0,  "\"Successfully joined group\"").isEmpty()
-        );
-//        TimeMeasuringSystem.stopOperation(operationID);
+        Thread.sleep(10000);
+        TimeMeasuringSystem.stopOperation(operationID);
 
         int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
         int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
@@ -264,11 +259,9 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy topic
         resources().topic(kafkaSourceName, topicName).done();
 
+        // Wait when Mirror Maker will join the group
+        Thread.sleep(10000);
         TimeMeasuringSystem.stopOperation(operationID);
-        // Wait when Mirror Maker will join group
-        waitFor("Mirror Maker will join group", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_MIRROR_JOIN_TO_GROUP, () ->
-                !KUBE_CLIENT.searchInLog("deploy", CLUSTER_NAME + "-mirror-maker", 0,  "\"Successfully joined group\"").isEmpty()
-        );
 
         int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, true, topicName, userSource);
         int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaSourceName, true, topicName, userSource);
