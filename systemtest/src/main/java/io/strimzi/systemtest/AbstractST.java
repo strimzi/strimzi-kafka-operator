@@ -249,10 +249,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    static String getValueFromJson(String json, String jsonPath) {
-        return JsonPath.parse(json).read(jsonPath).toString();
-    }
-
     /**
      * Translate key/value pairs fromatted like properties into a Map
      * @param keyValuePairs Pairs in key=value format; pairs are separated by newlines
@@ -302,18 +298,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
         kubeClient().execInPod(podName, containerName, "/bin/bash", "-c", command);
-    }
-
-    public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
-        LOGGER.info("Consuming messages");
-        String output = kubeClient().execInPod(kafkaPodName(clusterName, kafkaPodID), "kafka", "/bin/bash", "-c",
-                "bin/kafka-verifiable-consumer.sh --broker-list " +
-                        KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --group-id " + groupID + " & sleep "
-                        + timeout + "; kill %1");
-        output = "[" + output.replaceAll("\n", ",") + "]";
-        LOGGER.info("Output for kafka-verifiable-consumer.sh {}", output);
-        return output;
-
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
@@ -461,28 +445,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return TimeMeasuringSystem.startOperation(operation);
     }
 
-    String podNameWithLabels(Map<String, String> labels) {
-        List<Pod> pods = kubeClient().listPods();
-        if (pods.size() != 1) {
-            fail("There are " + pods.size() +  " pods with labels " + labels);
-        }
-        return pods.get(0).getMetadata().getName();
-    }
-
-    String saslConfigs(KafkaUser kafkaUser) {
-        Secret secret = kubeClient().getSecret(kafkaUser.getMetadata().getName());
-
-        String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
-        if (password == null) {
-            LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), toYamlString(secret));
-            throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");
-        }
-        return "sasl.mechanism=SCRAM-SHA-512\n" +
-                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
-                "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
-                "password=\"" + password + "\";\n";
-    }
-
     String clusterCaCertSecretName(String cluster) {
         return cluster + "-cluster-ca-cert";
     }
@@ -507,7 +469,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     /**
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
      * @param time timeout in miliseconds
-     * @param namespace namespace where we expect no pods or only CO pod
      * @throws Exception exception
      */
     void waitForDeletion(long time, String namespace) throws Exception {

@@ -36,10 +36,6 @@ public class MessagingBaseST extends AbstractST {
     private int sent = 0;
     private int received = 0;
 
-    public JsonObject getResponse() {
-        return response;
-    }
-
     public void setResponse(JsonObject response) {
         this.response = response;
     }

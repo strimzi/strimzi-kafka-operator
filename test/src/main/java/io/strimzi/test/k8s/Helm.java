@@ -24,10 +24,10 @@ public class Helm implements HelmClient {
     // TODO: configurable?
     private static final String INSTALL_TIMEOUT_SECONDS = "60";
 
-    private KubeClient<?> kubeClient;
+    private KubeCmdClient<?> kubeClient;
     private boolean initialized;
 
-    public Helm(KubeClient<?> kubeClient) {
+    public Helm(KubeCmdClient<?> kubeClient) {
         this.kubeClient = kubeClient;
         this.initialized = false;
     }

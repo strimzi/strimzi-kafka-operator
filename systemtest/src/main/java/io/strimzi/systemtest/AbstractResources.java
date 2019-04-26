@@ -45,17 +45,17 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.test.k8s.Kubernetes;
+import io.strimzi.test.k8s.KubeClient;
 
 abstract class AbstractResources {
 
-    private final Kubernetes client;
+    private final KubeClient client;
 
-    AbstractResources(Kubernetes client) {
+    AbstractResources(KubeClient client) {
         this.client = client;
     }
 
-    Kubernetes client() {
+    KubeClient client() {
         return client;
     }
 

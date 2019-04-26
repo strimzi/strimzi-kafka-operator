@@ -4,9 +4,9 @@
  */
 package io.strimzi.test;
 
-import io.strimzi.test.k8s.Kubernetes;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.KubeCmdClient;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -46,15 +46,15 @@ public class BaseITST {
         return namespace;
     }
 
-    public static KubeClient<?> cmdKubeClient() {
+    public static KubeCmdClient<?> cmdKubeClient() {
         return CLUSTER.cmdClient().namespace(namespace);
     }
 
-    public static Kubernetes kubeClient() {
+    public static KubeClient kubeClient() {
         return CLUSTER.client().namespace(namespace);
     }
 
-    public static Kubernetes kubeClient(String inNamespace) {
+    public static KubeClient kubeClient(String inNamespace) {
         return CLUSTER.client().namespace(inNamespace);
     }
 
@@ -95,7 +95,7 @@ public class BaseITST {
         TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
 
         while (!clusterOperatorConfigs.empty()) {
-            cmdKubeClient().clientWithAdmin().deleteContent(clusterOperatorConfigs.pop());
+            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).deleteContent(clusterOperatorConfigs.pop());
         }
         TimeMeasuringSystem.stopOperation(Operation.CO_DELETION);
     }
@@ -158,7 +158,7 @@ public class BaseITST {
         for (String resource : resources) {
             LOGGER.info("Creating resources {}", resource);
             deploymentResources.add(resource);
-            cmdKubeClient().clientWithAdmin().create(resource);
+            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).create(resource);
         }
     }
 

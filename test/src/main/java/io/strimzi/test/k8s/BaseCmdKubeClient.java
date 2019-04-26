@@ -30,9 +30,9 @@ import java.util.stream.Collectors;
 import static java.lang.String.join;
 import static java.util.Arrays.asList;
 
-public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements KubeClient<K> {
+public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implements KubeCmdClient<K> {
 
-    private static final Logger LOGGER = LogManager.getLogger(BaseKubeClient.class);
+    private static final Logger LOGGER = LogManager.getLogger(BaseCmdKubeClient.class);
 
     private static final String CREATE = "create";
     private static final String APPLY = "apply";

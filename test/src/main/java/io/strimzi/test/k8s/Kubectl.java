@@ -5,9 +5,9 @@
 package io.strimzi.test.k8s;
 
 /**
- * A {@link KubeClient} wrapping {@code kubectl}.
+ * A {@link KubeCmdClient} wrapping {@code kubectl}.
  */
-public class Kubectl extends BaseKubeClient<Kubectl> {
+public class Kubectl extends BaseCmdKubeClient<Kubectl> {
 
     public static final String KUBECTL = "kubectl";
 

@@ -60,6 +60,7 @@ import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.Kubernetes;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -96,7 +97,7 @@ public class Resources extends AbstractResources {
 
     private List<Runnable> resources = new ArrayList<>();
 
-    Resources(Kubernetes client) {
+    Resources(KubeClient client) {
         super(client);
     }
 
@@ -453,38 +454,33 @@ public class Resources extends AbstractResources {
     private Kafka waitFor(Kafka kafka) {
         String name = kafka.getMetadata().getName();
         LOGGER.info("Waiting for Kafka {}", name);
-        String namespace = kafka.getMetadata().getNamespace();
         waitForStatefulSet(KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
         waitForStatefulSet(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
-        StUtils.waitForDeploymentReady(namespace, KafkaResources.entityOperatorDeploymentName(name));
+        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
         return kafka;
     }
 
     private KafkaConnect waitFor(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting for Kafka Connect {}", kafkaConnect.getMetadata().getName());
-        String namespace = kafkaConnect.getMetadata().getNamespace();
-        StUtils.waitForDeploymentReady(namespace, kafkaConnect.getMetadata().getName() + "-connect");
+        StUtils.waitForDeploymentReady(kafkaConnect.getMetadata().getName() + "-connect");
         return kafkaConnect;
     }
 
     private KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
-        String namespace = kafkaConnectS2I.getMetadata().getNamespace();
-        StUtils.waitForDeploymentReady(namespace, kafkaConnectS2I.getMetadata().getName() + "-connect");
+        StUtils.waitForDeploymentReady(kafkaConnectS2I.getMetadata().getName() + "-connect");
         return kafkaConnectS2I;
     }
 
     private KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
-        String namespace = kafkaMirrorMaker.getMetadata().getNamespace();
-        StUtils.waitForDeploymentReady(namespace, kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker");
+        StUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker");
         return kafkaMirrorMaker;
     }
 
     private Deployment waitFor(Deployment deployment) {
         LOGGER.info("Waiting for deployment {}", deployment.getMetadata().getName());
-        String namespace = client().getNamespace();
-        StUtils.waitForDeploymentReady(namespace, deployment.getMetadata().getName());
+        StUtils.waitForDeploymentReady(deployment.getMetadata().getName());
         return deployment;
     }
 
@@ -500,28 +496,26 @@ public class Resources extends AbstractResources {
         String namespace = kafka.getMetadata().getNamespace();
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
-            waitForPodDeletion(namespace, kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
+            waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
-            waitForPodDeletion(namespace, kafka.getMetadata().getName() + "-kafka-" + podIndex));
+            waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
     }
 
     private void waitForDeletion(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect {}", kafkaConnect.getMetadata().getName());
-        String namespace = kafkaConnect.getMetadata().getNamespace();
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnect.getMetadata().getName() + "-connect-"))
-                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
-        String namespace = kafkaConnectS2I.getMetadata().getNamespace();
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnectS2I.getMetadata().getName() + "-connect-"))
-                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
@@ -530,19 +524,18 @@ public class Resources extends AbstractResources {
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
-                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(Deployment deployment) {
         LOGGER.info("Waiting when all the pods are terminated for Deployment {}", deployment.getMetadata().getName());
-        String namespace = deployment.getMetadata().getNamespace();
 
         client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(deployment.getMetadata().getName()))
-                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
-    private void waitForPodDeletion(String namespace, String name) {
+    private void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
         TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
@@ -814,10 +807,6 @@ public class Resources extends AbstractResources {
 
     DoneableDeployment deployKafkaClients(String clusterName) {
         return deployKafkaClients(false, clusterName, null);
-    }
-
-    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName) {
-        return deployKafkaClients(tlsListener, clusterName, null);
     }
 
     DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, KafkaUser... kafkaUsers) {

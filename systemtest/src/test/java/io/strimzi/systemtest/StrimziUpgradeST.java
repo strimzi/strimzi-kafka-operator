@@ -223,9 +223,9 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     private void makeSnapshots() {
-        zkPods = StUtils.ssSnapshot(NAMESPACE, zkSsName);
-        kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaSsName);
-        eoPods = StUtils.depSnapshot(NAMESPACE, eoDepName);
+        zkPods = StUtils.ssSnapshot(zkSsName);
+        kafkaPods = StUtils.ssSnapshot(kafkaSsName);
+        eoPods = StUtils.depSnapshot(eoDepName);
     }
 
     private Kafka getKafka(String resourceName) {

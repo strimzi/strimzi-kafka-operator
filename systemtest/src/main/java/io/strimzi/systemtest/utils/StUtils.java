@@ -52,20 +52,20 @@ public class StUtils {
     }
 
     /** Returns a map of pod name to resource version for the pods currently in the given statefulset */
-    public static Map<String, String> ssSnapshot(String namespace, String name) {
+    public static Map<String, String> ssSnapshot(String name) {
         StatefulSet statefulSet = kubeClient().getStatefulSet(name);
         LabelSelector selector = statefulSet.getSpec().getSelector();
         return podSnapshot(selector);
     }
 
     /** Returns a map of pod name to resource version for the pods currently in the given deployment */
-    public static Map<String, String> depSnapshot(String namespace, String name) {
+    public static Map<String, String> depSnapshot(String name) {
         Deployment deployment = kubeClient().getDeployment(name);
         LabelSelector selector = deployment.getSpec().getSelector();
         return podSnapshot(selector);
     }
 
-    public static boolean ssHasRolled(String namespace, String name, Map<String, String> snapshot) {
+    public static boolean ssHasRolled(String name, Map<String, String> snapshot) {
         boolean log = true;
         if (log) {
             LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
@@ -112,7 +112,7 @@ public class StUtils {
         return true;
     }
 
-    public static boolean depHasRolled(String namespace, String name, Map<String, String> snapshot) {
+    public static boolean depHasRolled(String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
         Map<String, String> map = podSnapshot(kubeClient().getDeployment(name).getSpec().getSelector());
         LOGGER.debug("Current  snapshot: {}", new TreeMap(map));
@@ -131,26 +131,26 @@ public class StUtils {
         return waitTillSsHasRolled(client, namespace, name, snapshot, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT);
     }
 
-    public static Map<String, String> waitTillSsHasRolled(String namespace, String name, int expectedPods, Map<String, String> snapshot) {
+    public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
         TestUtils.waitFor("SS roll of " + name,
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, timeout, () -> {
                 try {
-                    return ssHasRolled(namespace, name, snapshot);
+                    return ssHasRolled(name, snapshot);
                 } catch (Exception e) {
                     e.printStackTrace();
                     return false;
                 }
             });
         StUtils.waitForAllStatefulSetPodsReady(name, expectedPods);
-        return ssSnapshot(namespace, name);
+        return ssSnapshot(name);
     }
 
-    public static Map<String, String> waitTillDepHasRolled(String namespace, String name, int expectedPods, Map<String, String> snapshot) {
-        long timeLeft = TestUtils.waitFor("Deployment roll of " + name,
-                Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(namespace, name, snapshot));
-        StUtils.waitForDeploymentReady(namespace, name);
+    public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+        TestUtils.waitFor("Deployment roll of " + name,
+                Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(name, snapshot));
+        StUtils.waitForDeploymentReady(name);
         StUtils.waitForPodsReady(kubeClient().getDeployment(name).getSpec().getSelector(), expectedPods, true);
-        return depSnapshot(namespace, name);
+        return depSnapshot(name);
     }
 
     public static File downloadAndUnzip(String url) throws IOException {
@@ -240,7 +240,7 @@ public class StUtils {
     /**
      * Wait until the deployment is ready
      */
-    public static void waitForDeploymentReady(String namespace, String name) {
+    public static void waitForDeploymentReady(String name) {
         LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name));

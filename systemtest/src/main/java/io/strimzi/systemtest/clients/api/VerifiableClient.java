@@ -16,7 +16,6 @@ import java.util.ArrayList;
 public class VerifiableClient {
     private static final Logger LOGGER = LogManager.getLogger(VerifiableClient.class);
     protected ArrayList<ClientArgument> allowedArguments = new ArrayList<>();
-    private ClientType clientType;
     private JsonArray messages = new JsonArray();
     private ArrayList<String> arguments = new ArrayList<>();
     private String executable;
@@ -27,7 +26,6 @@ public class VerifiableClient {
      * @param clientType type of kafka client
      */
     public VerifiableClient(ClientType clientType) {
-        this.clientType = clientType;
         this.setAllowedArguments(clientType);
         this.executable = ClientType.getCommand(clientType);
     }

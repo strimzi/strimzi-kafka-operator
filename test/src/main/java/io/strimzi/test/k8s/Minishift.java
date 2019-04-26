@@ -40,12 +40,12 @@ public class Minishift implements KubeCluster {
     }
 
     @Override
-    public KubeClient defaultCmdClient() {
+    public KubeCmdClient defaultCmdClient() {
         return new Oc();
     }
 
-    public Kubernetes defaultClient() {
-        return new Kubernetes(new DefaultOpenShiftClient(CONFIG), "myproject");
+    public KubeClient defaultClient() {
+        return new KubeClient(new DefaultOpenShiftClient(CONFIG), "myproject");
     }
 
     public String toString() {

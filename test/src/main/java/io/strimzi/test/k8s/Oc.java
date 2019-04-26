@@ -14,9 +14,9 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * A {@link KubeClient} implementation wrapping {@code oc}.
+ * A {@link KubeCmdClient} implementation wrapping {@code oc}.
  */
-public class Oc extends BaseKubeClient<Oc> {
+public class Oc extends BaseCmdKubeClient<Oc> {
 
     private static final Logger LOGGER = LogManager.getLogger(Oc.class);
 

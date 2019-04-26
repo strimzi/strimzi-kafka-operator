@@ -14,10 +14,12 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
@@ -553,9 +555,9 @@ class KafkaST extends MessagingBaseST {
         String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
-        Map<String, String> zkPods = StUtils.ssSnapshot(NAMESPACE, zkSsName);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaSsName);
-        Map<String, String> eoPods = StUtils.depSnapshot(NAMESPACE, eoDepName);
+        Map<String, String> zkPods = StUtils.ssSnapshot(zkSsName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
+        Map<String, String> eoPods = StUtils.depSnapshot(eoDepName);
 
         assertResources(cmdKubeClient().namespace(), kafkaPodName(CLUSTER_NAME, 0), "kafka",
                 "1536Mi", "1", "1Gi", "500m");
@@ -582,9 +584,9 @@ class KafkaST extends MessagingBaseST {
 
         // Checking no rolling update after last CO reconciliation
         LOGGER.info("Checking no rolling update for Kafka cluster");
-        assertFalse(StUtils.ssHasRolled(NAMESPACE, zkSsName, zkPods));
-        assertFalse(StUtils.ssHasRolled(NAMESPACE, kafkaSsName, kafkaPods));
-        assertFalse(StUtils.depHasRolled(NAMESPACE, eoDepName, eoPods));
+        assertFalse(StUtils.ssHasRolled(zkSsName, zkPods));
+        assertFalse(StUtils.ssHasRolled(kafkaSsName, kafkaPods));
+        assertFalse(StUtils.depHasRolled(eoDepName, eoPods));
         TimeMeasuringSystem.stopOperation(operationID);
     }
 
@@ -765,8 +767,8 @@ class KafkaST extends MessagingBaseST {
 
         // wait when annotation will be removed
         waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-            () -> getAnnotationsForSS(NAMESPACE, kafkaClusterName(CLUSTER_NAME)) == null
-                || !getAnnotationsForSS(NAMESPACE, kafkaClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
+            () -> getAnnotationsForSS(kafkaClusterName(CLUSTER_NAME)) == null
+                || !getAnnotationsForSS(kafkaClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
         String coLog = kubeClient().logs(coPodName);
@@ -786,8 +788,8 @@ class KafkaST extends MessagingBaseST {
 
         // wait when annotation will be removed
         waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
-            () -> getAnnotationsForSS(NAMESPACE, zookeeperClusterName(CLUSTER_NAME)) == null
-                || !getAnnotationsForSS(NAMESPACE, zookeeperClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
+            () -> getAnnotationsForSS(zookeeperClusterName(CLUSTER_NAME)) == null
+                || !getAnnotationsForSS(zookeeperClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
 
         // check rolling update messages in CO log
         coLog = kubeClient().logs(coPodName);
@@ -876,7 +878,7 @@ class KafkaST extends MessagingBaseST {
         waitForClusterAvailabilityTls(userName, NAMESPACE);
     }
 
-    private Map<String, String> getAnnotationsForSS(String namespace, String ssName) {
+    private Map<String, String> getAnnotationsForSS(String ssName) {
         return kubeClient().getStatefulSet(ssName).getMetadata().getAnnotations();
     }
 
@@ -884,9 +886,9 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Waiting for cluster stability");
         Map<String, String>[] zkPods = new Map[1];
         AtomicInteger count = new AtomicInteger();
-        zkPods[0] = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+        zkPods[0] = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION, () -> {
-            Map<String, String> zkSnapshot = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
+            Map<String, String> zkSnapshot = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             if (!zkSameAsLast) {
                 LOGGER.info("ZK Cluster not stable");

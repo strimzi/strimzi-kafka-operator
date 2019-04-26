@@ -176,8 +176,8 @@ class SecurityST extends AbstractST {
         waitForClusterAvailabilityTls(userName, NAMESPACE);
 
         // Get all pods, and their resource versions
-        Map<String, String> zkPods = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> zkPods = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaCerts = new HashMap<>();
@@ -197,14 +197,14 @@ class SecurityST extends AbstractST {
             kubeClient().patchSecret(secretName, annotated);
         }
 
-        Map<String, String> eoPod = StUtils.depSnapshot(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        Map<String, String> eoPod = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Wait for zk to rolling restart ...");
-        StUtils.waitTillSsHasRolled(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
+        StUtils.waitTillSsHasRolled(zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         LOGGER.info("Wait for kafka to rolling restart ...");
-        StUtils.waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         LOGGER.info("Wait for EO to rolling restart ...");
-        eoPod = StUtils.waitTillDepHasRolled(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
@@ -245,9 +245,9 @@ class SecurityST extends AbstractST {
         waitForClusterAvailabilityTls(aliceUserName, NAMESPACE);
 
         // Get all pods, and their resource versions
-        Map<String, String> zkPods = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
-        Map<String, String> eoPod = StUtils.depSnapshot(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+        Map<String, String> zkPods = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        Map<String, String> eoPod = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaKeys = new HashMap<>();
@@ -268,18 +268,18 @@ class SecurityST extends AbstractST {
         }
 
         LOGGER.info("Wait for zk to rolling restart (1)...");
-        zkPods = StUtils.waitTillSsHasRolled(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
+        zkPods = StUtils.waitTillSsHasRolled(zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         LOGGER.info("Wait for kafka to rolling restart (1)...");
-        kafkaPods = StUtils.waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         LOGGER.info("Wait for EO to rolling restart (1)...");
-        eoPod = StUtils.waitTillDepHasRolled(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
+        eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
 
         LOGGER.info("Wait for zk to rolling restart (2)...");
-        zkPods = StUtils.waitTillSsHasRolled(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
+        zkPods = StUtils.waitTillSsHasRolled(zookeeperStatefulSetName(CLUSTER_NAME), 3, zkPods);
         LOGGER.info("Wait for kafka to rolling restart (2)...");
-        kafkaPods = StUtils.waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         LOGGER.info("Wait for EO to rolling restart (2)...");
-        eoPod = StUtils.waitTillDepHasRolled(NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 3, eoPod);
+        eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 3, eoPod);
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
@@ -363,13 +363,13 @@ class SecurityST extends AbstractST {
         Map<String, String>[] kafkaPods = new Map[1];
         Map<String, String>[] eoPods = new Map[1];
         AtomicInteger count = new AtomicInteger();
-        zkPods[0] = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        kafkaPods[0] = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
-        eoPods[0] = StUtils.depSnapshot(NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
+        zkPods[0] = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
+        kafkaPods[0] = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+        eoPods[0] = StUtils.depSnapshot(entityOperatorDeploymentName(CLUSTER_NAME));
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> zkSnapshot = StUtils.ssSnapshot(NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-            Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
-            Map<String, String> eoSnapshot = StUtils.depSnapshot(NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
+            Map<String, String> zkSnapshot = StUtils.ssSnapshot(zookeeperStatefulSetName(CLUSTER_NAME));
+            Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(kafkaStatefulSetName(CLUSTER_NAME));
+            Map<String, String> eoSnapshot = StUtils.depSnapshot(entityOperatorDeploymentName(CLUSTER_NAME));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);

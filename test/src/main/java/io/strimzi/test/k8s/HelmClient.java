@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public interface HelmClient {
-    static HelmClient findClient(KubeClient<?> kubeClient) {
+    static HelmClient findClient(KubeCmdClient<?> kubeClient) {
         HelmClient client = new Helm(kubeClient);
         if (!client.clientAvailable()) {
             throw new RuntimeException("No helm client found on $PATH. $PATH=" + System.getenv("PATH"));
