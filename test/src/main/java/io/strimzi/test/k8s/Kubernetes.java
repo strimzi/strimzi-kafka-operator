@@ -63,8 +63,8 @@ public class Kubernetes {
         return client;
     }
 
-    public String namespace(String futureNamespace) {
-        return NamespaceHolder.setNamespaceToHolder(futureNamespace);
+    public Kubernetes namespace(String futureNamespace) {
+        return new Kubernetes(this.client, futureNamespace);
     }
 
     public String getNamespace() {

@@ -36,13 +36,13 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(REGRESSION)
     void testTopicOperatorWatchingOtherNamespace() {
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
-        String previousNamespce = KUBE_CMD_CLIENT.namespace(THIRD_NAMESPACE);
+        String previousNamespce = setNamespace(THIRD_NAMESPACE);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, TOPIC_NAME);
         deleteNewTopic(SECOND_NAMESPACE, TOPIC_NAME);
-        KUBE_CMD_CLIENT.namespace(previousNamespce);
+        setNamespace(previousNamespce);
     }
 
     /**
@@ -68,14 +68,14 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(REGRESSION)
     void testDeployKafkaConnectInOtherNamespaceThanCO() {
-        String previousNamespace = KUBE_CMD_CLIENT.namespace(SECOND_NAMESPACE);
+        String previousNamespace = setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
         secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME, 3).done();
         // Deploy Kafka Connect in other namespace than CO
         secondNamespaceResources.kafkaConnect(CLUSTER_NAME, 1).done();
         // Check that Kafka Connect was deployed
         StUtils.waitForDeploymentReady(kafkaConnectName(CLUSTER_NAME), 1);
-        KUBE_CMD_CLIENT.namespace(previousNamespace);
+        setNamespace(previousNamespace);
     }
 
     @Test
@@ -84,11 +84,11 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
         secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        String previousNamespace = KUBE_CMD_CLIENT.namespace(SECOND_NAMESPACE);
+        String previousNamespace = setNamespace(SECOND_NAMESPACE);
         // Check that UO created a secret for new user
-        KUBE_CMD_CLIENT.waitForResourceCreation("Secret", USER_NAME);
+        cmdKubeClient().waitForResourceCreation("Secret", USER_NAME);
 
-        KUBE_CMD_CLIENT.namespace(previousNamespace);
+        setNamespace(previousNamespace);
     }
 
     private void deployTestSpecificResources() {
@@ -129,12 +129,12 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Deploying CO to watch all namespaces");
         testClassResources.clusterOperator("*").done();
 
-        String previousNamespace = KUBE_CMD_CLIENT.namespace(THIRD_NAMESPACE);
-        thirdNamespaceResources = new Resources();
+        String previousNamespace = setNamespace(THIRD_NAMESPACE);
+        thirdNamespaceResources = new Resources(kubeClient());
 
         deployTestSpecificResources();
 
-        KUBE_CMD_CLIENT.namespace(previousNamespace);
+        setNamespace(previousNamespace);
     }
 
     @Override

@@ -22,14 +22,18 @@ public class Oc extends BaseKubeClient<Oc> {
 
     private static final String OC = "oc";
 
-    public Oc() {
+    Oc() {
 
+    }
+
+    private Oc(String futureNamespace) {
+        namespace = futureNamespace;
     }
 
     @Override
     protected Context adminContext() {
         String previous = Exec.exec(Oc.OC, "whoami").out().trim();
-        String admin = System.getenv().getOrDefault("TEST_CLUSTER_ADMIN", "developer");
+        String admin = System.getenv().getOrDefault("TEST_CLUSTER_ADMIN", "system:admin");
         LOGGER.trace("Switching from login {} to {}", previous, admin);
         Exec.exec(Oc.OC, "login", "-u", admin);
         return new Context() {
@@ -49,6 +53,16 @@ public class Oc extends BaseKubeClient<Oc> {
     @Override
     public String defaultNamespace() {
         return "myproject";
+    }
+
+    @Override
+    public Oc namespace(String namespace) {
+        return new Oc(namespace);
+    }
+
+    @Override
+    public String namespace() {
+        return namespace;
     }
 
     @Override
@@ -88,6 +102,11 @@ public class Oc extends BaseKubeClient<Oc> {
      * An {@code Oc} which uses the admin context.
      */
     private class AdminOc extends Oc {
+
+        @Override
+        public String namespace() {
+            return Oc.this.namespace();
+        }
 
         @Override
         protected Context defaultContext() {

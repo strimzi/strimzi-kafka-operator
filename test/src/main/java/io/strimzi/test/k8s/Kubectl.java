@@ -11,6 +11,25 @@ public class Kubectl extends BaseKubeClient<Kubectl> {
 
     public static final String KUBECTL = "kubectl";
 
+    Kubectl() {
+
+    }
+
+    Kubectl(String futureNamespace) {
+        namespace = futureNamespace;
+    }
+
+    @Override
+    public Kubectl namespace(String namespace) {
+        return new Kubectl(namespace);
+    }
+
+    @Override
+    public String namespace() {
+        return namespace;
+    }
+
+
     @Override
     public String defaultNamespace() {
         return "default";

@@ -215,12 +215,12 @@ class LogSettingST extends AbstractST {
         boolean result = false;
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
             LOGGER.info("Check log level setting since {} seconds. Logger: {} Expected: {}", since, entry.getKey(), entry.getValue());
-            String configMap = KUBE_CMD_CLIENT.get("configMap", configMapName);
+            String configMap = cmdKubeClient().get("configMap", configMapName);
             String loggerConfig = String.format("%s=%s", entry.getKey(), entry.getValue());
             result = configMap.contains(loggerConfig);
 
             if (result) {
-                String log = KUBE_CMD_CLIENT.searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
+                String log = cmdKubeClient().searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
                 result = log.isEmpty();
             }
         }
@@ -230,7 +230,7 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName, String containerName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        List<Container> containers = KUBE_CLIENT.getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers();
+        List<Container> containers = kubeClient().getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers();
         Container container = getContainerByName(containerName, containers);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
@@ -238,14 +238,14 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        Container container = KUBE_CLIENT.getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = kubeClient().getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
 
     private Boolean checkGcLoggingStatefulSets(String statefulSetName) {
         LOGGER.info("Checking stateful set: {}", statefulSetName);
-        Container container = KUBE_CLIENT.getStatefulSet(statefulSetName).getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = kubeClient().getStatefulSet(statefulSetName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }

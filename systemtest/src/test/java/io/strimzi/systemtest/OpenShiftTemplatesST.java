@@ -53,18 +53,18 @@ public class OpenShiftTemplatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
 
     public static final String NAMESPACE = "template-test";
-    private Oc oc = (Oc) KUBE_CMD_CLIENT;
+    private Oc oc = (Oc) cmdKubeClient();
 
     public Kafka getKafka(String clusterName) {
-        return KUBE_CLIENT.getClient().customResources(Crds.kafka(), Kafka.class, KafkaList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return kubeClient().getClient().customResources(Crds.kafka(), Kafka.class, KafkaList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     public KafkaConnect getKafkaConnect(String clusterName) {
-        return KUBE_CLIENT.getClient().customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return kubeClient().getClient().customResources(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     public KafkaConnectS2I getKafkaConnectS2I(String clusterName) {
-        return KUBE_CLIENT.getClient().customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class).inNamespace(NAMESPACE).withName(clusterName).get();
+        return kubeClient().getClient().customResources(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class).inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     @Test
@@ -190,7 +190,7 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "TOPIC_PARTITIONS", "10",
                 "TOPIC_REPLICAS", "2"));
 
-        KafkaTopic topic = KUBE_CLIENT.getClient().customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
+        KafkaTopic topic = kubeClient().getClient().customResources(Crds.topic(), KafkaTopic.class, KafkaTopicList.class, DoneableKafkaTopic.class).inNamespace(NAMESPACE).withName(topicName).get();
         assertNotNull(topic);
         assertNotNull(topic.getSpec());
         assertNull(topic.getSpec().getTopicName());

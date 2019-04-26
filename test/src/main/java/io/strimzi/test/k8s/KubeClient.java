@@ -24,7 +24,7 @@ public interface KubeClient<K extends KubeClient<K>> {
     /** Deletes the resources by resource name. */
     K deleteByName(String resourceType, String resourceName);
 
-    String namespace(String namespace);
+    KubeClient<K> namespace(String namespace);
 
     /** Returns namespace for cluster */
     String namespace();

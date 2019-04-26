@@ -42,7 +42,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
     public static final String STATEFUL_SET = "statefulset";
     public static final String SERVICE = "service";
     public static final String CM = "cm";
-    private String defaultNamespace = defaultNamespace();
+    String namespace = defaultNamespace();
 
     protected abstract String cmd();
 
@@ -61,15 +61,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     private static final Context NOOP = new Context();
 
-    @Override
-    public String namespace(String namespace) {
-        return NamespaceHolder.setNamespaceToHolder(namespace);
-    }
-
-    @Override
-    public String namespace() {
-        return NamespaceHolder.getNamespaceFromHolder() != null ? NamespaceHolder.getNamespaceFromHolder() : defaultNamespace;
-    }
 
     @Override
     public abstract K clientWithAdmin();
@@ -90,7 +81,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         List<String> result = new ArrayList<>();
         result.add(cmd());
         result.add("--namespace");
-        result.add(namespace());
+        result.add(namespace);
         result.addAll(rest);
         return result;
     }

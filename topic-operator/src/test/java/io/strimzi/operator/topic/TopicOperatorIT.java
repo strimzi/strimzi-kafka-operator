@@ -109,7 +109,7 @@ public class TopicOperatorIT extends BaseITST {
     public static void setupKubeCluster() {
         CLUSTER.cmdClient().clientWithAdmin()
                 .createNamespace(NAMESPACE);
-        oldNamespace = CLUSTER.cmdClient().namespace(NAMESPACE);
+        oldNamespace = setNamespace(NAMESPACE);
         CLUSTER.cmdClient().clientWithAdmin()
                 .create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .create(TestUtils.CRD_TOPIC)
@@ -153,7 +153,7 @@ public class TopicOperatorIT extends BaseITST {
         p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.brokerList());
         adminClient = AdminClient.create(p);
 
-        kubeClient = KUBE_CLIENT.getClient();
+        kubeClient = BaseITST.kubeClient().getClient();
         Crds.registerCustomKinds();
         LOGGER.info("Using namespace {}", NAMESPACE);
         startTopicOperator(context);

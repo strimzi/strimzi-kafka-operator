@@ -14,8 +14,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.systemtest.Resources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.Kubernetes;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,11 +31,11 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static io.strimzi.test.BaseITST.kubeClient;
+
 public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
-    public static final KubeClusterResource CLUSTER = KubeClusterResource.getKubeClusterResource();
-    public static final Kubernetes KUBE_CLIENT = CLUSTER.client();
 
     private StUtils() { }
 
@@ -45,8 +43,8 @@ public class StUtils {
      * Returns a map of resource name to resource version for all the pods in the given {@code namespace}
      * matching the given {@code selector}.
      */
-    private static Map<String, String> podSnapshot(String namespace, LabelSelector selector) {
-        List<Pod> pods = KUBE_CLIENT.listPods(selector);
+    private static Map<String, String> podSnapshot(LabelSelector selector) {
+        List<Pod> pods = kubeClient().listPods(selector);
         return pods.stream()
                 .collect(
                         Collectors.toMap(pod -> pod.getMetadata().getName(),
@@ -55,16 +53,16 @@ public class StUtils {
 
     /** Returns a map of pod name to resource version for the pods currently in the given statefulset */
     public static Map<String, String> ssSnapshot(String namespace, String name) {
-        StatefulSet statefulSet = KUBE_CLIENT.getStatefulSet(name);
+        StatefulSet statefulSet = kubeClient().getStatefulSet(name);
         LabelSelector selector = statefulSet.getSpec().getSelector();
-        return podSnapshot(namespace, selector);
+        return podSnapshot(selector);
     }
 
     /** Returns a map of pod name to resource version for the pods currently in the given deployment */
     public static Map<String, String> depSnapshot(String namespace, String name) {
-        Deployment deployment = KUBE_CLIENT.getDeployment(name);
+        Deployment deployment = kubeClient().getDeployment(name);
         LabelSelector selector = deployment.getSpec().getSelector();
-        return podSnapshot(namespace, selector);
+        return podSnapshot(selector);
     }
 
     public static boolean ssHasRolled(String namespace, String name, Map<String, String> snapshot) {
@@ -75,7 +73,7 @@ public class StUtils {
         LabelSelector selector = null;
         int times = 60;
         do {
-            selector = KUBE_CLIENT.getStatefulSetSelectors(name);
+            selector = kubeClient().getStatefulSetSelectors(name);
             if (selector == null) {
                 if (times-- == 0) {
                     throw new RuntimeException("Retry failed");
@@ -88,7 +86,7 @@ public class StUtils {
             }
         } while (selector == null);
 
-        Map<String, String> map = podSnapshot(namespace, selector);
+        Map<String, String> map = podSnapshot(selector);
         if (log) {
             LOGGER.debug("Current snapshot: {}", new TreeMap(map));
         }
@@ -116,7 +114,7 @@ public class StUtils {
 
     public static boolean depHasRolled(String namespace, String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
-        Map<String, String> map = podSnapshot(namespace, KUBE_CLIENT.getDeployment(name).getSpec().getSelector());
+        Map<String, String> map = podSnapshot(kubeClient().getDeployment(name).getSpec().getSelector());
         LOGGER.debug("Current  snapshot: {}", new TreeMap(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
@@ -151,7 +149,7 @@ public class StUtils {
         long timeLeft = TestUtils.waitFor("Deployment roll of " + name,
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(namespace, name, snapshot));
         StUtils.waitForDeploymentReady(namespace, name);
-        StUtils.waitForPodsReady(KUBE_CLIENT.getDeployment(name).getSpec().getSelector(), expectedPods, true);
+        StUtils.waitForPodsReady(kubeClient().getDeployment(name).getSpec().getSelector(), expectedPods, true);
         return depSnapshot(namespace, name);
     }
 
@@ -185,15 +183,15 @@ public class StUtils {
     public static void waitForAllStatefulSetPodsReady(String name, int expectPods) {
         LOGGER.info("Waiting for StatefulSet {} to be ready", name);
         TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KUBE_CLIENT.getStatefulSetStatus(name));
+            () -> kubeClient().getStatefulSetStatus(name));
         LOGGER.info("StatefulSet {} is ready", name);
         LOGGER.info("Waiting for Pods of StatefulSet {} to be ready", name);
-        waitForPodsReady(KUBE_CLIENT.getStatefulSetSelectors(name), expectPods, true);
+        waitForPodsReady(kubeClient().getStatefulSetSelectors(name), expectPods, true);
     }
 
     public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers) {
         TestUtils.waitFor("All pods matching " + selector + "to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
-            List<Pod> pods = KUBE_CLIENT.listPods(selector);
+            List<Pod> pods = kubeClient().listPods(selector);
             if (pods.isEmpty()) {
                 LOGGER.debug("Not ready (no pods matching {})", selector);
                 return false;
@@ -225,7 +223,7 @@ public class StUtils {
 
     public static void waitForPodUpdate(String podName, Date startTime) {
         TestUtils.waitFor(podName + " update", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
-                startTime.before(KUBE_CLIENT.getCreationTimestampForPod(podName))
+                startTime.before(kubeClient().getCreationTimestampForPod(podName))
         );
     }
 
@@ -235,7 +233,7 @@ public class StUtils {
     public static void waitForDeploymentDeletion(String name) {
         LOGGER.info("Waiting for Deployment deletion {}", name);
         TestUtils.waitFor("deployment is deleted" + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !KUBE_CLIENT.getDeploymentStatus(name));
+            () -> !kubeClient().getDeploymentStatus(name));
         LOGGER.info("Deployment {} was deleted", name);
     }
 
@@ -245,7 +243,7 @@ public class StUtils {
     public static void waitForDeploymentReady(String namespace, String name) {
         LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KUBE_CLIENT.getDeploymentStatus(name));
+            () -> kubeClient().getDeploymentStatus(name));
         LOGGER.info("Deployment {} is ready", name);
     }
 
@@ -254,11 +252,11 @@ public class StUtils {
      */
     public static void waitForDeploymentReady(String name, int expectPods) {
         LOGGER.info("Waiting for Deployment {}", name);
-        TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KUBE_CLIENT.getDeploymentStatus(name));
+        TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getDeploymentStatus(name));
         LOGGER.info("Deployment {} is ready", name);
         LOGGER.info("Waiting for Pods of Deployment {} to be ready", name);
-        waitForPodsReady(KUBE_CLIENT.getDeploymentSelectors(name), expectPods, true);
+        waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true);
     }
 
     /**
@@ -266,8 +264,8 @@ public class StUtils {
      */
     public static void waitForDeploymentConfigReady(String name) {
         LOGGER.info("Waiting for Deployment Config {}", name);
-        TestUtils.waitFor("deployment config " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KUBE_CLIENT.getDeploymentConfigStatus(name));
+        TestUtils.waitFor("deployment config " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+            () -> kubeClient().getDeploymentConfigStatus(name));
         LOGGER.info("Deployment Config {} is ready", name);
     }
 
@@ -277,7 +275,7 @@ public class StUtils {
     public static void waitForStatefulSetDeletion(String name) {
         LOGGER.info("Waiting for StatefulSet deletion {}", name);
         TestUtils.waitFor("StatefulSet is deleted" + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !KUBE_CLIENT.getStatefulSetStatus(name));
+            () -> !kubeClient().getStatefulSetStatus(name));
         LOGGER.info("StatefulSet {} was deleted", name);
     }
 
@@ -287,25 +285,25 @@ public class StUtils {
     public static void waitForConfigMapDeletion(String name) {
         LOGGER.info("Waiting for config map deletion {}", name);
         TestUtils.waitFor("Config map " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !KUBE_CLIENT.getConfigMapStatus(name));
+            () -> !kubeClient().getConfigMapStatus(name));
         LOGGER.info("Config map {} was deleted", name);
     }
 
     public static void waitForSecretReady(String secretName) {
         TestUtils.waitFor("Expected secret exists", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
-            return KUBE_CLIENT.getSecret(secretName) != null;
+            return kubeClient().getSecret(secretName) != null;
         });
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
         LOGGER.info("Waiting for Kafka user deletion {}", userName);
         TestUtils.waitFor("Waits for Kafka user deletion " + userName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
-                Crds.kafkaUserOperation(KUBE_CLIENT.getClient()).inNamespace(KUBE_CLIENT.getNamespace()).withName(userName).get() == null
+                Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get() == null
         );
     }
 
     public static String getPodNameByPrefix(String prefix) {
-        return KUBE_CLIENT.listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
+        return kubeClient().listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
                 .findFirst().get().getMetadata().getName();
     }
 
@@ -314,7 +312,7 @@ public class StUtils {
 
         TestUtils.waitFor("pod " + name + " will be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> {
-                List<ContainerStatus> statuses =  KUBE_CLIENT.getPod(name).getStatus().getContainerStatuses();
+                List<ContainerStatus> statuses =  kubeClient().getPod(name).getStatus().getContainerStatuses();
                 for (ContainerStatus containerStatus : statuses) {
                     if (!containerStatus.getReady()) {
                         return false;
@@ -328,20 +326,20 @@ public class StUtils {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
         TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> KUBE_CLIENT.getPod(name) == null);
+            () -> kubeClient().getPod(name) == null);
     }
 
     public static void waitForNamespaceDeletion(String name) {
         LOGGER.info("Waiting when Namespace {} will be deleted", name);
 
         TestUtils.waitFor("namespace " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> !KUBE_CLIENT.getNamespaceStatus(name));
+            () -> !kubeClient().getNamespaceStatus(name));
     }
 
     public static void waitForKafkaTopicDeletion(String topicName) {
         LOGGER.info("Waiting for Kafka topic deletion {}", topicName);
         TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
-            Crds.topicOperation(KUBE_CLIENT.getClient()).inNamespace(KUBE_CLIENT.getNamespace()).withName(topicName).get() == null
+            Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get() == null
         );
     }
 }

@@ -34,9 +34,29 @@ public class BaseITST {
     protected static final String CLUSTER_NAME = "my-cluster";
 
     public static final KubeClusterResource CLUSTER = KubeClusterResource.getKubeClusterResource();
+    private static String namespace = CLUSTER.defaultNamespace();
 
-    public static final KubeClient<?> KUBE_CMD_CLIENT = CLUSTER.cmdClient();
-    public static final Kubernetes KUBE_CLIENT = CLUSTER.client();
+    public static String setNamespace(String futureNamespace) {
+        String previousNamespace = namespace;
+        namespace = futureNamespace;
+        return previousNamespace;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public static KubeClient<?> cmdKubeClient() {
+        return CLUSTER.cmdClient().namespace(namespace);
+    }
+
+    public static Kubernetes kubeClient() {
+        return CLUSTER.client().namespace(namespace);
+    }
+
+    public static Kubernetes kubeClient(String inNamespace) {
+        return CLUSTER.client().namespace(inNamespace);
+    }
 
     private static final String DEFAULT_NAMESPACE = CLUSTER.cmdClient().defaultNamespace();
 
@@ -62,7 +82,7 @@ public class BaseITST {
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
             LOGGER.info("Applying configuration file: {}", entry.getKey());
             clusterOperatorConfigs.push(entry.getValue());
-            KUBE_CMD_CLIENT.clientWithAdmin().applyContent(entry.getValue());
+            cmdKubeClient().clientWithAdmin().namespace(getNamespace()).applyContent(entry.getValue());
         }
         TimeMeasuringSystem.stopOperation(Operation.CO_CREATION);
     }
@@ -75,7 +95,7 @@ public class BaseITST {
         TimeMeasuringSystem.startOperation(Operation.CO_DELETION);
 
         while (!clusterOperatorConfigs.empty()) {
-            KUBE_CMD_CLIENT.clientWithAdmin().deleteContent(clusterOperatorConfigs.pop());
+            cmdKubeClient().clientWithAdmin().deleteContent(clusterOperatorConfigs.pop());
         }
         TimeMeasuringSystem.stopOperation(Operation.CO_DELETION);
     }
@@ -97,12 +117,12 @@ public class BaseITST {
 
             LOGGER.info("Creating namespace: {}", namespace);
             deploymentNamespaces.add(namespace);
-            KUBE_CLIENT.createNamespace(namespace);
-            KUBE_CMD_CLIENT.waitForResourceCreation("Namespace", namespace);
+            kubeClient().createNamespace(namespace);
+            cmdKubeClient().waitForResourceCreation("Namespace", namespace);
         }
         clusterOperatorNamespace = useNamespace;
         LOGGER.info("Using namespace {}", useNamespace);
-        KUBE_CLIENT.namespace(useNamespace);
+        setNamespace(useNamespace);
     }
 
     /**
@@ -121,12 +141,12 @@ public class BaseITST {
         Collections.reverse(deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting namespace: {}", namespace);
-            KUBE_CLIENT.deleteNamespace(namespace);
-            KUBE_CMD_CLIENT.waitForResourceDeletion("Namespace", namespace);
+            kubeClient().deleteNamespace(namespace);
+            cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
         deploymentNamespaces.clear();
         LOGGER.info("Using namespace {}", CLUSTER.defaultNamespace());
-        KUBE_CMD_CLIENT.namespace(CLUSTER.defaultNamespace());
+        cmdKubeClient().namespace(CLUSTER.defaultNamespace());
     }
 
     /**
@@ -138,7 +158,7 @@ public class BaseITST {
         for (String resource : resources) {
             LOGGER.info("Creating resources {}", resource);
             deploymentResources.add(resource);
-            KUBE_CMD_CLIENT.clientWithAdmin().create(resource);
+            cmdKubeClient().clientWithAdmin().create(resource);
         }
     }
 
@@ -149,7 +169,7 @@ public class BaseITST {
         Collections.reverse(deploymentResources);
         for (String resource : deploymentResources) {
             LOGGER.info("Deleting resources {}", resource);
-            KUBE_CMD_CLIENT.delete(resource);
+            cmdKubeClient().delete(resource);
         }
         deploymentResources.clear();
     }
@@ -160,7 +180,7 @@ public class BaseITST {
     protected void deleteCustomResources(String... resources) {
         for (String resource : resources) {
             LOGGER.info("Deleting resources {}", resource);
-            KUBE_CMD_CLIENT.delete(resource);
+            cmdKubeClient().delete(resource);
             deploymentResources.remove(resource);
         }
     }
