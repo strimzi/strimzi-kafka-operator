@@ -197,11 +197,11 @@ class LogSettingST extends AbstractST {
         replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
 
-        StUtils.waitTillSsHasRolled(NAMESPACE, kafkaName, 3, kafkaPods);
-        StUtils.waitTillSsHasRolled(NAMESPACE, zkName, 1, zkPods);
-        StUtils.waitTillDepHasRolled(NAMESPACE, eoName, 1, eoPods);
-        StUtils.waitTillDepHasRolled(NAMESPACE, connectName, 1, connectPods);
-        StUtils.waitTillDepHasRolled(NAMESPACE, mmName, 1, mmPods);
+        StUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
+        StUtils.waitTillSsHasRolled(zkName, 1, zkPods);
+        StUtils.waitTillDepHasRolled(eoName, 1, eoPods);
+        StUtils.waitTillDepHasRolled(connectName, 1, connectPods);
+        StUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
         assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is disabled");
         assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is disabled");

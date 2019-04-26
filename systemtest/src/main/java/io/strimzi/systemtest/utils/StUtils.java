@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Resources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
@@ -33,7 +34,7 @@ import java.util.zip.ZipInputStream;
 
 import static io.strimzi.test.BaseITST.kubeClient;
 
-public class StUtils {
+public class StUtils implements Constants {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
 

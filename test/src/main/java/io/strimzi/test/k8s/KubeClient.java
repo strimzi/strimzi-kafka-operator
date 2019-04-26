@@ -153,6 +153,13 @@ public class KubeClient {
         return listPods(Collections.singletonMap(key, value));
     }
 
+    public List<String> listPodNames(String key, String value) {
+        return listPods(Collections.singletonMap(key, value)).stream()
+                .map(pod -> pod.getMetadata().getName())
+                .collect(Collectors.toList());
+    }
+
+
     public List<PersistentVolumeClaim> listPersistentVolumeClaims() {
         return client.persistentVolumeClaims().inNamespace(getNamespace()).list().getItems();
     }

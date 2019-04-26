@@ -76,7 +76,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
         secondNamespaceResources.deleteResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN, SECOND_NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
         setNamespace(CO_NAMESPACE);
     }
 }

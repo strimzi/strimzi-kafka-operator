@@ -91,13 +91,13 @@ public class StrimziUpgradeST extends AbstractST {
                     switch (procedure) {
                         case "set log message format version to 2.0": {
                             replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", "2.0"));
-                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
+                            StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
                             makeSnapshots();
                             break;
                         }
                         case "set log message format version to 2.1": {
                             replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().getConfig().put("log.message.format.version", "2.1"));
-                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
+                            StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
                             makeSnapshots();
                             break;
                         }
@@ -108,13 +108,13 @@ public class StrimziUpgradeST extends AbstractST {
                         }
                         case "set Kafka version to 2.1.0": {
                             replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion("2.1.0"));
-                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
+                            StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
                             makeSnapshots();
                             break;
                         }
                         case "set Kafka version to 2.1.1": {
                             replaceKafka(CLUSTER_NAME, k -> k.getSpec().getKafka().setVersion("2.1.1"));
-                            StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
+                            StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
                             makeSnapshots();
                             break;
                         }
@@ -198,19 +198,19 @@ public class StrimziUpgradeST extends AbstractST {
         String uOImage = imagesArray[3];
 
         LOGGER.info("Waiting for ZK SS roll");
-        StUtils.waitTillSsHasRolled(NAMESPACE, zkSsName, 3, zkPods);
+        StUtils.waitTillSsHasRolled(zkSsName, 3, zkPods);
         LOGGER.info("Checking ZK pods using new image");
         waitTillAllPodsUseImage(kubeClient().getStatefulSet(zkSsName).getSpec().getSelector().getMatchLabels(),
                 zkImage);
 
         LOGGER.info("Waiting for Kafka SS roll");
-        StUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
+        StUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
         LOGGER.info("Checking Kafka pods using new image");
         waitTillAllPodsUseImage(kubeClient().getStatefulSet(kafkaSsName).getSpec().getSelector().getMatchLabels(),
                 kafkaImage);
         LOGGER.info("Waiting for EO Dep roll");
         // Check the TO and UO also got upgraded
-        StUtils.waitTillDepHasRolled(NAMESPACE, eoDepName, 1, eoPods);
+        StUtils.waitTillDepHasRolled(eoDepName, 1, eoPods);
         LOGGER.info("Checking EO pod using new image");
         waitTillAllContainersUseImage(
                 kubeClient().getDeployment(eoDepName).getSpec().getSelector().getMatchLabels(),
