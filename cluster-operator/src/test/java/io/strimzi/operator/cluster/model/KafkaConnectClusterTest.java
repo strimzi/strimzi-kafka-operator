@@ -355,7 +355,7 @@ public class KafkaConnectClusterTest {
             .endSpec()
             .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kc.generateDeployment(emptyMap(), true, null);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
 
         assertEquals("user1-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
 
