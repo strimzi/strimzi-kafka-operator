@@ -2,9 +2,11 @@
 
 SECURITY_PROTOCOL=PLAINTEXT
 
-if [ -n "$KAFKA_CONNECT_TRUSTED_CERTS" ]; then
+if [ "$KAFKA_CONNECT_TLS" = "true" ]; then
     SECURITY_PROTOCOL="SSL"
-    TLS_CONFIGURATION=$(cat <<EOF
+
+    if [ -n "$KAFKA_CONNECT_TRUSTED_CERTS" ]; then
+        TLS_CONFIGURATION=$(cat <<EOF
 # TLS / SSL
 ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 ssl.truststore.password=${CERTS_STORE_PASSWORD}
@@ -17,6 +19,7 @@ consumer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12
 consumer.ssl.truststore.password=${CERTS_STORE_PASSWORD}
 EOF
 )
+    fi
 
     if [ -n "$KAFKA_CONNECT_TLS_AUTH_CERT" ] && [ -n "$KAFKA_CONNECT_TLS_AUTH_KEY" ]; then
         TLS_AUTH_CONFIGURATION=$(cat <<EOF

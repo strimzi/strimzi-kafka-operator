@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.KafkaConnectAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.KafkaConnectAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.KafkaConnectTls;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
@@ -71,6 +72,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_CONFIGURATION = "KAFKA_CONNECT_CONFIGURATION";
     protected static final String ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED = "KAFKA_CONNECT_METRICS_ENABLED";
     protected static final String ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS = "KAFKA_CONNECT_BOOTSTRAP_SERVERS";
+    protected static final String ENV_VAR_KAFKA_CONNECT_TLS = "KAFKA_CONNECT_TLS";
     protected static final String ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS = "KAFKA_CONNECT_TRUSTED_CERTS";
     protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT = "KAFKA_CONNECT_TLS_AUTH_CERT";
     protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY = "KAFKA_CONNECT_TLS_AUTH_KEY";
@@ -82,7 +84,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.EMPTY_LIST;
     protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.EMPTY_LIST;
 
-    private List<CertSecretSource> trustedCertificates;
+    private KafkaConnectTls tls;
     private CertAndKeySecretSource tlsAuthCertAndKey;
     private PasswordSecretSource passwordSecret;
     private String username;
@@ -176,9 +178,7 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setTolerations(spec.getTolerations());
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
-        if (spec.getTls() != null) {
-            kafkaConnect.setTrustedCertificates(spec.getTls().getTrustedCertificates());
-        }
+        kafkaConnect.setTls(spec.getTls());
 
         if (spec.getAuthentication() != null)   {
             if (spec.getAuthentication() instanceof KafkaConnectAuthenticationTls) {
@@ -269,14 +269,20 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(1);
         volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
-        if (trustedCertificates != null && trustedCertificates.size() > 0) {
-            for (CertSecretSource certSecretSource: trustedCertificates) {
-                // skipping if a volume with same Secret name was already added
-                if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeList.add(createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
+
+        if (tls != null) {
+            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+
+            if (trustedCertificates != null && trustedCertificates.size() > 0) {
+                for (CertSecretSource certSecretSource : trustedCertificates) {
+                    // skipping if a volume with same Secret name was already added
+                    if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
+                        volumeList.add(createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
+                    }
                 }
             }
         }
+
         if (tlsAuthCertAndKey != null) {
             // skipping if a volume with same Secret name was already added
             if (!volumeList.stream().anyMatch(v -> v.getName().equals(tlsAuthCertAndKey.getSecretName()))) {
@@ -337,15 +343,21 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(1);
         volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        if (trustedCertificates != null && trustedCertificates.size() > 0) {
-            for (CertSecretSource certSecretSource: trustedCertificates) {
-                // skipping if a volume mount with same Secret name was already added
-                if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeMountList.add(createVolumeMount(certSecretSource.getSecretName(),
-                            TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
+
+        if (tls != null) {
+            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+
+            if (trustedCertificates != null && trustedCertificates.size() > 0) {
+                for (CertSecretSource certSecretSource : trustedCertificates) {
+                    // skipping if a volume mount with same Secret name was already added
+                    if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
+                        volumeMountList.add(createVolumeMount(certSecretSource.getSecretName(),
+                                TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
+                    }
                 }
             }
         }
+
         if (tlsAuthCertAndKey != null) {
             // skipping if a volume mount with same Secret name was already added
             if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(tlsAuthCertAndKey.getSecretName()))) {
@@ -436,24 +448,32 @@ public class KafkaConnectCluster extends AbstractModel {
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
-        if (trustedCertificates != null && trustedCertificates.size() > 0) {
-            StringBuilder sb = new StringBuilder();
-            boolean separator = false;
-            for (CertSecretSource certSecretSource: trustedCertificates) {
-                if (separator) {
-                    sb.append(";");
+
+        if (tls != null) {
+            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS, "true"));
+
+            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+
+            if (trustedCertificates != null && trustedCertificates.size() > 0) {
+                StringBuilder sb = new StringBuilder();
+                boolean separator = false;
+                for (CertSecretSource certSecretSource : trustedCertificates) {
+                    if (separator) {
+                        sb.append(";");
+                    }
+                    sb.append(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
+                    separator = true;
                 }
-                sb.append(certSecretSource.getSecretName() + "/" + certSecretSource.getCertificate());
-                separator = true;
+                varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, sb.toString()));
             }
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, sb.toString()));
         }
+
         if (tlsAuthCertAndKey != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT,
                     String.format("%s/%s", tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getCertificate())));
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY,
                     String.format("%s/%s", tlsAuthCertAndKey.getSecretName(), tlsAuthCertAndKey.getKey())));
-        } else if (passwordSecret != null)  {
+        } else if (passwordSecret != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_USERNAME, username));
             varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_SASL_PASSWORD_FILE,
                     String.format("%s/%s", passwordSecret.getSecretName(), passwordSecret.getPassword())));
@@ -515,11 +535,12 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * Set the trusted certificates with the certificate to trust
-     * @param trustedCertificates trusted certificates list
+     * Set the tls configuration with the certificate to trust
+     *
+     * @param tls trusted certificates list
      */
-    protected void setTrustedCertificates(List<CertSecretSource> trustedCertificates) {
-        this.trustedCertificates = trustedCertificates;
+    protected void setTls(KafkaConnectTls tls) {
+        this.tls = tls;
     }
 
     /**
