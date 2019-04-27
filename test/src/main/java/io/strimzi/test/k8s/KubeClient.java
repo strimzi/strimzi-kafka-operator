@@ -190,11 +190,11 @@ public class KubeClient {
     }
 
     public Date getCreationTimestampForPod(String podName) {
-        DateFormat df = new SimpleDateFormat("yyyyMMdd'T'kkmmss'Z'");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'kk:mm:ss'Z'");
         Pod pod = getPod(podName);
         Date parsedDate = null;
         try {
-            df.parse(pod.getMetadata().getCreationTimestamp());
+            parsedDate = df.parse(pod.getMetadata().getCreationTimestamp());
         } catch (ParseException e) {
             e.printStackTrace();
         }

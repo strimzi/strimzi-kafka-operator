@@ -34,7 +34,7 @@ public class OpenShift implements KubeCluster {
                     // In this case it is still coming up, so wait for rather than saying it's not up
                     TestUtils.waitFor("oc cluster up", 1_000, 60_000, () -> {
                         try {
-                            Exec.exec(OC, "cluster", "status");
+                            Exec.exec(OC, "status");
                             LOGGER.trace("oc cluster is up");
                             return true;
                         } catch (KubeClusterException e2) {

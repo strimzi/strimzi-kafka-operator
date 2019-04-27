@@ -50,6 +50,10 @@ public class BaseITST {
         return CLUSTER.cmdClient().namespace(namespace);
     }
 
+    public static KubeCmdClient<?> cmdKubeClient(String inNamespace) {
+        return CLUSTER.cmdClient().namespace(inNamespace);
+    }
+
     public static KubeClient kubeClient() {
         return CLUSTER.client().namespace(namespace);
     }

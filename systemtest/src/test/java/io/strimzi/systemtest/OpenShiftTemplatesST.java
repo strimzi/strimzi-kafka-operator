@@ -53,7 +53,7 @@ public class OpenShiftTemplatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
 
     public static final String NAMESPACE = "template-test";
-    private Oc oc = (Oc) cmdKubeClient();
+    private Oc oc = (Oc) cmdKubeClient(NAMESPACE);
 
     public Kafka getKafka(String clusterName) {
         return kubeClient().getClient().customResources(Crds.kafka(), Kafka.class, KafkaList.class, DoneableKafka.class).inNamespace(NAMESPACE).withName(clusterName).get();
