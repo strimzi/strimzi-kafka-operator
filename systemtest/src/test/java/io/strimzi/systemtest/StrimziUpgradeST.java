@@ -15,7 +15,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
@@ -257,9 +257,9 @@ public class StrimziUpgradeST extends AbstractST {
         });
     }
 
-    @BeforeAll
+    @BeforeEach
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating namespace: {}", NAMESPACE);
         createNamespace(NAMESPACE);
     }
 
