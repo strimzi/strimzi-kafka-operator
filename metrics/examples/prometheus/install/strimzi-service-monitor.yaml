@@ -1,0 +1,122 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kafka-service-monitor
+  labels:
+    app: strimzi
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/kind: Kafka
+  endpoints:
+  #### job_name: kubernetes-cadvisor
+  # configured in additional secret
+
+  #### job_name: kube-state-metrics
+  - port: metrics
+    honorLabels: true
+    interval: 10s
+    scrapeTimeout: 10s
+    path: /metrics
+    scheme: http
+    namespaceSelector:
+      any: true
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_endpoints_name]
+      separator: ;
+      regex: prometheus-kube-state-metrics
+      replacement: $1
+      action: keep
+    - separator: ;
+      regex: __meta_kubernetes_service_label_(.+)
+      replacement: $1
+      action: labelmap
+    - sourceLabels: [__meta_kubernetes_namespace]
+      separator: ;
+      regex: (.*)
+      targetLabel: namespace
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_namespace]
+      separator: ;
+      regex: (.*)
+      targetLabel: kubernetes_namespace
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_service_name]
+      separator: ;
+      regex: (.*)
+      targetLabel: kubernetes_name
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      separator: ;
+      regex: (.*)
+      targetLabel: node_name
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_pod_host_ip]
+      separator: ;
+      regex: (.*)
+      targetLabel: node_ip
+      replacement: $1
+      action: replace
+
+  #### job_name: node-exporter
+  - port: metrics
+    honorLabels: true
+    interval: 10s
+    scrapeTimeout: 10s
+    path: /metrics
+    scheme: http
+    namespaceSelector:
+      any: true
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_endpoints_name]
+      separator: ;
+      regex: prometheus-node-exporter
+      replacement: $1
+      action: keep
+    - separator: ;
+      regex: __meta_kubernetes_service_label_(.+)
+      replacement: $1
+      action: labelmap
+    - sourceLabels: [__meta_kubernetes_namespace]
+      separator: ;
+      regex: (.*)
+      targetLabel: namespace
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_namespace]
+      separator: ;
+      regex: (.*)
+      targetLabel: kubernetes_namespace
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_service_name]
+      separator: ;
+      regex: (.*)
+      targetLabel: kubernetes_name
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      separator: ;
+      regex: (.*)
+      targetLabel: node_name
+      replacement: $1
+      action: replace
+    - sourceLabels: [__meta_kubernetes_pod_host_ip]
+      separator: ;
+      regex: (.*)
+      targetLabel: node_ip
+      replacement: $1
+      action: replace
+
+  #### job_name: kubernetes-services
+  # configured in additional secret
+
+  #### job_name: kubernetes-pods
+  # configured in additional secret
+
+  #### job_name: kubernetes-nodes-kubelet
+  # configured in additional secret

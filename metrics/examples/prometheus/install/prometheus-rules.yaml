@@ -1,0 +1,77 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+    app: strimzi
+  name: prometheus-k8s-rules
+spec:
+  groups:
+  - name: kafka
+    rules:
+    - alert: KafkaRunningOutOfSpace
+      expr: kubelet_volume_stats_available_bytes{kubernetes_pod_name=~"([a-z]+-)+kafka-[0-9]+"} < 5368709120
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka is running out of free disk space'
+        description: 'There are only {{ $value }} bytes available at {{ $labels.persistentvolumeclaim }} PVC'
+    - alert: UnderReplicatedPartitions
+      expr: kafka_server_replicamanager_underreplicatedpartitions > 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka under replicated partitions'
+        description: 'There are {{ $value }} under replicated partitions on {{ $labels.kubernetes_pod_name }}'
+    - alert: AbnormalControllerState
+      expr: sum(kafka_controller_kafkacontroller_activecontrollercount) != 1
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka abnormal controller state'
+        description: 'There are {{ $value }} active controllers in the cluster'
+    - alert: UnderMinIsrPartitionCount
+      expr: kafka_server_replicamanager_underminisrpartitioncount > 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka under min ISR partitions'
+        description: 'There are {{ $value }} partitions under the min ISR on {{ $labels.kubernetes_pod_name }}'
+    - alert: OfflineLogDirectoryCount
+      expr: kafka_log_logmanager_offlinelogdirectorycount > 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka offline log directories'
+        description: 'There are {{ $value }} offline log directoris on {{ $labels.kubernetes_pod_name }}'
+  - name: zookeeper
+    rules:
+    - alert: AvgRequestLatency
+      expr: zookeeper_avgrequestlatency > 10
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Zookeeper average request latency'
+        description: 'The average request latency is {{ $value }} on {{ $labels.kubernetes_pod_name }}'
+    - alert: OutstandingRequests
+      expr: zookeeper_outstandingrequests > 10
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Zookeeper outstanding requests'
+        description: 'There are {{ $value }} outstanding requests on {{ $labels.kubernetes_pod_name }}'
+    - alert: ZookeeperRunningOutOfSpace
+      expr: kubelet_volume_stats_available_bytes{kubernetes_pod_name=~"([a-z]+-)+zookeeper-[0-9]+"} < 5368709120
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Zookeeper is running out of free disk space'
+        description: 'There are only {{ $value }} bytes available at {{ $labels.persistentvolumeclaim }} PVC'
