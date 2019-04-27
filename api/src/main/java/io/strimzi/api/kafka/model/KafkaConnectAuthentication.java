@@ -33,7 +33,7 @@ public abstract class KafkaConnectAuthentication implements UnknownPropertyPrese
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
-            "Currently the only supported types are `tls`, `scram-sha-512` and `plain`. " +
+            "Currently the only supported types are `tls`, `scram-sha-512`, and `plain`. " +
             "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
             "`plain` type uses SASL PLAIN Authentication. " +
             "`tls` type uses TLS Client Authentication. " +

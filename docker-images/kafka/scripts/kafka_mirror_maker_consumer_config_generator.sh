@@ -2,15 +2,18 @@
 
 SECURITY_PROTOCOL=PLAINTEXT
 
-if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" ]; then
+if [ "$KAFKA_MIRRORMAKER_TLS_CONSUMER" = "true" ]; then
     SECURITY_PROTOCOL="SSL"
-    TLS_CONFIGURATION=$(cat <<EOF
+
+    if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" ]; then
+        TLS_CONFIGURATION=$(cat <<EOF
 # TLS / SSL
 ssl.truststore.location=/tmp/kafka/consumer.truststore.p12
 ssl.truststore.password=${CERTS_STORE_PASSWORD}
 ssl.truststore.type=PKCS12
 EOF
 )
+    fi
 
     if [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_CONSUMER" ] && [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_CONSUMER" ]; then
         TLS_AUTH_CONFIGURATION=$(cat <<EOF
@@ -30,11 +33,18 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_USERNAME_CONSUMER" ] && [ -n "$KAFKA_MIRRORMAKE
     fi
 
     PASSWORD=$(cat /opt/kafka/consumer-password/$KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_CONSUMER)
-    SASL_MECHANISM="SCRAM-SHA-512"
+
+    if [ "x$KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER" = "xplain" ]; then
+        SASL_MECHANISM="PLAIN"
+        JAAS_SECURITY_MODULE="plain.PlainLoginModule"
+    elif [ "x$KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER" = "xscram-sha-512" ]; then
+        SASL_MECHANISM="SCRAM-SHA-512"
+        JAAS_SECURITY_MODULE="scram.ScramLoginModule"
+    fi
 
     SASL_AUTH_CONFIGURATION=$(cat <<EOF
 sasl.mechanism=${SASL_MECHANISM}
-sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_MIRRORMAKER_SASL_USERNAME_CONSUMER}" password="${PASSWORD}";
+sasl.jaas.config=org.apache.kafka.common.security.${JAAS_SECURITY_MODULE} required username="${KAFKA_MIRRORMAKER_SASL_USERNAME_CONSUMER}" password="${PASSWORD}";
 EOF
 )
 fi

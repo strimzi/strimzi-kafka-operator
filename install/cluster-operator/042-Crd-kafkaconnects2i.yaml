@@ -531,8 +531,6 @@ spec:
                     required:
                     - certificate
                     - secretName
-              required:
-              - trustedCertificates
             tolerations:
               type: array
               items:

@@ -233,6 +233,8 @@ public class KafkaMirrorMakerClusterTest {
         assertEquals(KafkaMirrorMakerCluster.TLS_CERTS_VOLUME_MOUNT_PRODUCER + "my-another-secret-p",
                 containers.get(0).getVolumeMounts().get(2).getMountPath());
 
+        assertEquals("true",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_TLS_PRODUCER));
         assertEquals("my-secret-p/cert.crt;my-secret-p/new-cert.crt;my-another-secret-p/another-cert.crt",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_TRUSTED_CERTS_PRODUCER));
 
@@ -244,6 +246,8 @@ public class KafkaMirrorMakerClusterTest {
         assertEquals(KafkaMirrorMakerCluster.TLS_CERTS_VOLUME_MOUNT_CONSUMER + "my-another-secret-c",
                 containers.get(0).getVolumeMounts().get(4).getMountPath());
 
+        assertEquals("true",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_TLS_CONSUMER));
         assertEquals("my-secret-c/cert.crt;my-secret-c/new-cert.crt;my-another-secret-c/another-cert.crt",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER));
     }
@@ -380,6 +384,8 @@ public class KafkaMirrorMakerClusterTest {
         assertEquals(KafkaMirrorMakerCluster.PASSWORD_VOLUME_MOUNT_PRODUCER + "producer-secret",
                 containers.get(0).getVolumeMounts().get(1).getMountPath());
 
+        assertEquals("scram-sha-512",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER));
         assertEquals("producer-secret/password",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_PRODUCER));
         assertEquals("producer",
@@ -391,6 +397,63 @@ public class KafkaMirrorMakerClusterTest {
         assertEquals(KafkaMirrorMakerCluster.PASSWORD_VOLUME_MOUNT_CONSUMER + "consumer-secret",
                 containers.get(0).getVolumeMounts().get(2).getMountPath());
 
+        assertEquals("scram-sha-512",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER));
+        assertEquals("consumer-secret/password",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_CONSUMER));
+        assertEquals("consumer",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_USERNAME_CONSUMER));
+    }
+
+    @Test
+    public void testGenerateDeploymentWithPlain() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .editOrNewProducer()
+                        .withNewKafkaMirrorMakerAuthenticationPlain()
+                            .withUsername("producer")
+                            .withNewPasswordSecret()
+                                .withSecretName("producer-secret")
+                                .withPassword("password")
+                            .endPasswordSecret()
+                        .endKafkaMirrorMakerAuthenticationPlain()
+                    .endProducer()
+                    .editOrNewConsumer()
+                        .withNewKafkaMirrorMakerAuthenticationPlain()
+                            .withUsername("consumer")
+                            .withNewPasswordSecret()
+                                .withSecretName("consumer-secret")
+                                .withPassword("password")
+                            .endPasswordSecret()
+                        .endKafkaMirrorMakerAuthenticationPlain()
+                    .endConsumer()
+                .endSpec()
+                .build();
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
+        Deployment dep = mmc.generateDeployment(emptyMap(), true, null, null);
+
+        assertEquals("producer-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(1).getName());
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertEquals(KafkaMirrorMakerCluster.PASSWORD_VOLUME_MOUNT_PRODUCER + "producer-secret",
+                containers.get(0).getVolumeMounts().get(1).getMountPath());
+
+        assertEquals("plain",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER));
+        assertEquals("producer-secret/password",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_PRODUCER));
+        assertEquals("producer",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_USERNAME_PRODUCER));
+
+        assertEquals("consumer-secret", dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName());
+
+
+        assertEquals(KafkaMirrorMakerCluster.PASSWORD_VOLUME_MOUNT_CONSUMER + "consumer-secret",
+                containers.get(0).getVolumeMounts().get(2).getMountPath());
+
+        assertEquals("plain",
+                AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER));
         assertEquals("consumer-secret/password",
                 AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_CONSUMER));
         assertEquals("consumer",

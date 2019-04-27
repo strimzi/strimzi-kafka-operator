@@ -23,6 +23,7 @@ import java.util.Map;
 @JsonSubTypes({
         @JsonSubTypes.Type(name = KafkaMirrorMakerAuthenticationTls.TYPE_TLS, value = KafkaMirrorMakerAuthenticationTls.class),
         @JsonSubTypes.Type(name = KafkaMirrorMakerAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaMirrorMakerAuthenticationScramSha512.class),
+        @JsonSubTypes.Type(name = KafkaMirrorMakerAuthenticationPlain.TYPE_PLAIN, value = KafkaMirrorMakerAuthenticationPlain.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
@@ -32,8 +33,9 @@ public abstract class KafkaMirrorMakerAuthentication implements UnknownPropertyP
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
-            "Currently the only supported types are `tls` and `scram-sha-512`. " +
+            "Currently the only supported types are `tls`, `scram-sha-512`, and `plain`. " +
             "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
+            "`plain` type uses SASL PLAIN Authentication. " +
             "The `tls` type uses TLS Client Authentication. " +
             "The `tls` type is supported only over TLS connections.")
     public abstract String getType();

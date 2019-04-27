@@ -92,6 +92,7 @@ spec:
                       enum:
                       - tls
                       - scram-sha-512
+                      - plain
                     username:
                       type: string
                   required:
@@ -113,8 +114,6 @@ spec:
                         required:
                         - certificate
                         - secretName
-                  required:
-                  - trustedCertificates
               required:
               - groupId
               - bootstrapServers
@@ -154,6 +153,7 @@ spec:
                       enum:
                       - tls
                       - scram-sha-512
+                      - plain
                     username:
                       type: string
                   required:
@@ -175,8 +175,6 @@ spec:
                         required:
                         - certificate
                         - secretName
-                  required:
-                  - trustedCertificates
               required:
               - bootstrapServers
             resources:

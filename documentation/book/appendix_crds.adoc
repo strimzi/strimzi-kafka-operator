@@ -1114,7 +1114,7 @@ It must have the value `scram-sha-512` for the type `KafkaConnectAuthenticationS
 [id='type-PasswordSecretSource-{context}']
 ### `PasswordSecretSource` schema reference
 
-Used in: xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
+Used in: xref:type-KafkaConnectAuthenticationPlain-{context}[`KafkaConnectAuthenticationPlain`], xref:type-KafkaConnectAuthenticationScramSha512-{context}[`KafkaConnectAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
 
 
 [options="header"]
@@ -1566,8 +1566,8 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |string
 |bootstrapServers  1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
 |string
-|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
+|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
 |config            1.2+<.<|The mirror maker consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
 |map
 |tls               1.2+<.<|TLS configuration for connecting to the cluster.
@@ -1580,7 +1580,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationTls` from xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationTls` from xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`].
 It must have the value `tls` for the type `KafkaMirrorMakerAuthenticationTls`.
 [options="header"]
 |====
@@ -1597,7 +1597,7 @@ It must have the value `tls` for the type `KafkaMirrorMakerAuthenticationTls`.
 Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
 
 
-The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationScramSha512` from xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`].
+The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationScramSha512` from xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`].
 It must have the value `scram-sha-512` for the type `KafkaMirrorMakerAuthenticationScramSha512`.
 [options="header"]
 |====
@@ -1605,6 +1605,25 @@ It must have the value `scram-sha-512` for the type `KafkaMirrorMakerAuthenticat
 |passwordSecret  1.2+<.<|Reference to the `Secret` which holds the password.
 |xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
 |type            1.2+<.<|Must be `scram-sha-512`.
+|string
+|username        1.2+<.<|Username used for the authentication.
+|string
+|====
+
+[id='type-KafkaMirrorMakerAuthenticationPlain-{context}']
+### `KafkaMirrorMakerAuthenticationPlain` schema reference
+
+Used in: xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`], xref:type-KafkaMirrorMakerProducerSpec-{context}[`KafkaMirrorMakerProducerSpec`]
+
+
+The `type` property is a discriminator that distinguishes the use of the type `KafkaMirrorMakerAuthenticationPlain` from xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`].
+It must have the value `plain` for the type `KafkaMirrorMakerAuthenticationPlain`.
+[options="header"]
+|====
+|Field                  |Description
+|passwordSecret  1.2+<.<|Reference to the `Secret` which holds the password.
+|xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
+|type            1.2+<.<|Must be `plain`.
 |string
 |username        1.2+<.<|Username used for the authentication.
 |string
@@ -1634,8 +1653,8 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |Field                    |Description
 |bootstrapServers  1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
 |string
-|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`]
+|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|xref:type-KafkaMirrorMakerAuthenticationTls-{context}[`KafkaMirrorMakerAuthenticationTls`], xref:type-KafkaMirrorMakerAuthenticationScramSha512-{context}[`KafkaMirrorMakerAuthenticationScramSha512`], xref:type-KafkaMirrorMakerAuthenticationPlain-{context}[`KafkaMirrorMakerAuthenticationPlain`]
 |config            1.2+<.<|The mirror maker producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
 |map
 |tls               1.2+<.<|TLS configuration for connecting to the cluster.
