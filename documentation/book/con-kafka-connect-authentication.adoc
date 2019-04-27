@@ -49,7 +49,7 @@ This authentication mechanism requires a username and password.
 * Specify the username in the `username` property.
 * In the `passwordSecret` property, specify a link to a `Secret` containing the password. The `secretName` property contains the name of the `Secret` and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
 
-WARNING: Do not specify the actual password in the `password` field.
+IMPORTANT: Do not specify the actual password in the `password` field.
 
 .An example SASL based SCRAM-SHA-512 client authentication configuration
 [source,yaml,subs=attributes+]
@@ -74,10 +74,13 @@ spec:
 To configure Kafka Connect to use SASL based PLAIN authentication, set the `type` property to `plain`.
 This authentication mechanism requires a username and password.
 
+WARNING: SASL PLAIN mechanism transfers the username and password in cleartext over the network.
+It should not be used without TLS encryption.
+
 * Specify the username in the `username` property.
 * In the `passwordSecret` property, specify a link to a `Secret` containing the password. The `secretName` property contains the name of such a `Secret` and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
 
-WARNING: Do not specify the actual password in the `password` field.
+IMPORTANT: Do not specify the actual password in the `password` field.
 
 .An example showing SASL based PLAIN client authentication configuration
 [source,yaml,subs=attributes+]
