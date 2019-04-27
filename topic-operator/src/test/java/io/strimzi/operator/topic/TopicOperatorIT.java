@@ -107,10 +107,10 @@ public class TopicOperatorIT extends BaseITST {
 
     @BeforeClass
     public static void setupKubeCluster() {
-        CLUSTER.cmdClient().clientWithAdmin()
+        cmdKubeClient()
                 .createNamespace(NAMESPACE);
         oldNamespace = setNamespace(NAMESPACE);
-        CLUSTER.cmdClient().clientWithAdmin()
+        cmdKubeClient()
                 .create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .create(TestUtils.CRD_TOPIC)
                 .create("src/test/resources/TopicOperatorIT-rbac.yaml");
@@ -118,12 +118,12 @@ public class TopicOperatorIT extends BaseITST {
 
     @AfterClass
     public static void teardownKubeCluster() {
-        CLUSTER.cmdClient().clientWithAdmin()
+        cmdKubeClient()
                 .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
                 .delete(TestUtils.CRD_TOPIC)
                 .delete("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .deleteNamespace(NAMESPACE);
-        CLUSTER.cmdClient().clientWithAdmin().namespace(oldNamespace);
+        cmdKubeClient().namespace(oldNamespace);
     }
 
     @Before
