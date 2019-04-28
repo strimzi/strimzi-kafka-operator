@@ -46,10 +46,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 
@@ -113,37 +111,20 @@ public class KubeClient {
         return client.configMaps().inNamespace(getNamespace()).list().getItems();
     }
 
+
     public String execInPod(String podName, String container, String... command) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
-        CompletableFuture<String> data = new CompletableFuture<>();
+        CountDownLatch execLatch = new CountDownLatch(1);
 
-        try (ExecWatch execWatch = client.pods().inNamespace(getNamespace())
+        try {ExecWatch execWatch = client.pods().inNamespace(getNamespace())
                 .withName(podName).inContainer(container)
                 .readingInput(null)
                 .writingOutput(baos)
-                .usingListener(new ExecListener() {
-                    @Override
-                    public void onOpen(Response response) {
-                        LOGGER.info("Reading data...");
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable, Response response) {
-                        data.completeExceptionally(throwable);
-                    }
-
-                    @Override
-                    public void onClose(int i, String s) {
-                        try {
-                            data.complete(baos.toString("UTF-8"));
-                        } catch (UnsupportedEncodingException e) {
-                            LOGGER.warn("Encoding exception with message {}", e.getMessage());
-                        }
-                    }
-                }).exec(command)) {
-            return data.get(1, TimeUnit.MINUTES);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                .usingListener(new SimpleListener(execLatch)).exec(command);
+            execLatch.await(1, TimeUnit.MINUTES);
+            return baos.toString("UTF-8");
+        } catch (UnsupportedEncodingException | InterruptedException e) {
             LOGGER.warn("Exception running command {} on pod: {}", command, e.getMessage());
         }
         return "";
@@ -359,5 +340,31 @@ public class KubeClient {
 
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
         return client.customResources(crd, resourceType, listClass, doneClass); //TODO namespace here
+    }
+
+    private static class SimpleListener implements ExecListener {
+        CountDownLatch execLatch;
+        SimpleListener(CountDownLatch execLatch) {
+            this.execLatch = execLatch;
+            execLatch.countDown();
+        }
+
+        @Override
+        public void onOpen(Response response) {
+            LOGGER.info("The shell will remain open for 10 seconds.");
+            execLatch.countDown();
+        }
+
+        @Override
+        public void onFailure(Throwable t, Response response) {
+            LOGGER.info("shell barfed with code {} and message {}", response.code(), response.message());
+            execLatch.countDown();
+        }
+
+        @Override
+        public void onClose(int code, String reason) {
+            LOGGER.info("The shell will now close with error code {} by reason {}", code, reason);
+            execLatch.countDown();
+        }
     }
 }
