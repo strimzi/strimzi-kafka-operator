@@ -38,6 +38,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -117,20 +118,34 @@ public class KubeClient {
         LOGGER.info("Running command on pod {}: {}", podName, command);
         CompletableFuture<String> data = new CompletableFuture<>();
 
-
-
         try (ExecWatch execWatch = client.pods().inNamespace(getNamespace())
                 .withName(podName).inContainer(container)
                 .readingInput(null)
                 .writingOutput(baos)
-                .usingListener(new SimpleListener())
-                .exec(command)) {
+                .usingListener(new ExecListener() {
+                    @Override
+                    public void onOpen(Response response) {
+                        LOGGER.info("Reading data...");
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable, Response response) {
+                        data.completeExceptionally(throwable);
+                    }
+
+                    @Override
+                    public void onClose(int i, String s) {
+                        try {
+                            data.complete(baos.toString("UTF-8"));
+                        } catch (UnsupportedEncodingException e) {
+                            LOGGER.warn("Encoding exception with message {}", e.getMessage());
+                        }
+                    }
+                }).exec(command)) {
             return data.get(1, TimeUnit.MINUTES);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LOGGER.warn("Exception running command {} on pod: {}", command, e.getMessage());
         }
-
-        //TODO add exec watch getOutput()
         return "";
     }
 
@@ -344,23 +359,5 @@ public class KubeClient {
 
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
         return client.customResources(crd, resourceType, listClass, doneClass); //TODO namespace here
-    }
-
-    private static class SimpleListener implements ExecListener {
-
-        @Override
-        public void onOpen(Response response) {
-            LOGGER.info("The shell will remain open for 10 seconds.");
-        }
-
-        @Override
-        public void onFailure(Throwable t, Response response) {
-            LOGGER.info("shell barfed with code {} and message {}", response.code(), response.message());
-        }
-
-        @Override
-        public void onClose(int code, String reason) {
-            LOGGER.info("The shell will now close with error code {} by reason {}", code, reason);
-        }
     }
 }
