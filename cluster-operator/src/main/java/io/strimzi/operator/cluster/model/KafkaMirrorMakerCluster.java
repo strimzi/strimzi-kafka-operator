@@ -167,8 +167,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                     else if (client instanceof KafkaMirrorMakerProducerSpec)
                         kafkaMirrorMakerCluster.setProducerUsernameAndPassword(auth.getType(), auth.getUsername(), auth.getPasswordSecret());
                 } else {
-                    log.warn("SCRAM-SHA-512 authentication selected, but no username and password configured.");
-                    throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but no username and password configured.");
+                    log.warn("PLAIN authentication selected, but no username and password configured.");
+                    throw new InvalidResourceException("PLAIN authentication selected, but no username and password configured.");
                 }
             }
         }
