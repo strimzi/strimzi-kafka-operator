@@ -117,7 +117,8 @@ public class KubeClient {
         LOGGER.info("Running command on pod {}: {}", podName, command);
         CountDownLatch execLatch = new CountDownLatch(1);
 
-        try {ExecWatch execWatch = client.pods().inNamespace(getNamespace())
+        try {
+            ExecWatch execWatch = client.pods().inNamespace(getNamespace())
                 .withName(podName).inContainer(container)
                 .readingInput(null)
                 .writingOutput(baos)
