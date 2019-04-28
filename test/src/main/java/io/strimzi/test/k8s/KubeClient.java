@@ -46,7 +46,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 
@@ -114,31 +116,22 @@ public class KubeClient {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LOGGER.info("Running command on pod {}: {}", podName, command);
         CompletableFuture<String> data = new CompletableFuture<>();
+
+
+
         try (ExecWatch execWatch = client.pods().inNamespace(getNamespace())
                 .withName(podName).inContainer(container)
                 .readingInput(null)
                 .writingOutput(baos)
-                .usingListener(new ExecListener() {
-                    @Override
-                    public void onOpen(Response response) {
-                        LOGGER.info("Reading data...");
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable, Response response) {
-                        data.completeExceptionally(throwable);
-                    }
-
-                    @Override
-                    public void onClose(int i, String s) {
-                        data.complete(baos.toString());
-                    }
-                }).exec(command)) {
+                .usingListener(new SimpleListener())
+                .exec(command)) {
             return data.get(1, TimeUnit.MINUTES);
-        } catch (Exception e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LOGGER.warn("Exception running command {} on pod: {}", command, e.getMessage());
-            return "";
         }
+
+        //TODO add exec watch getOutput()
+        return "";
     }
 
     public List<Pod> listPods(LabelSelector selector) {
@@ -351,5 +344,23 @@ public class KubeClient {
 
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {
         return client.customResources(crd, resourceType, listClass, doneClass); //TODO namespace here
+    }
+
+    private static class SimpleListener implements ExecListener {
+
+        @Override
+        public void onOpen(Response response) {
+            LOGGER.info("The shell will remain open for 10 seconds.");
+        }
+
+        @Override
+        public void onFailure(Throwable t, Response response) {
+            LOGGER.info("shell barfed with code {} and message {}", response.code(), response.message());
+        }
+
+        @Override
+        public void onClose(int code, String reason) {
+            LOGGER.info("The shell will now close with error code {} by reason {}", code, reason);
+        }
     }
 }

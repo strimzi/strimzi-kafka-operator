@@ -40,8 +40,10 @@ public class KubeClusterResource {
     }
 
     public static KubeClusterResource getKubeClusterResource() {
-        if (kubeClusterResource == null) {
-            kubeClusterResource = new KubeClusterResource();
+        synchronized (KubeClusterResource.class) {
+            if (kubeClusterResource == null) {
+                kubeClusterResource = new KubeClusterResource();
+            }
         }
         return kubeClusterResource;
     }

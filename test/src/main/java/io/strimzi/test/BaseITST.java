@@ -150,7 +150,7 @@ public class BaseITST {
         }
         deploymentNamespaces.clear();
         LOGGER.info("Using namespace {}", CLUSTER.defaultNamespace());
-        cmdKubeClient().namespace(CLUSTER.defaultNamespace());
+        setNamespace(CLUSTER.defaultNamespace());
     }
 
     /**
