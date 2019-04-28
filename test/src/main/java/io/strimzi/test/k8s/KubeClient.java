@@ -27,7 +27,6 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
-import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -118,12 +117,16 @@ public class KubeClient {
         CountDownLatch execLatch = new CountDownLatch(1);
 
         try {
-            ExecWatch execWatch = client.pods().inNamespace(getNamespace())
+            client.pods().inNamespace(getNamespace())
                 .withName(podName).inContainer(container)
                 .readingInput(null)
                 .writingOutput(baos)
-                .usingListener(new SimpleListener(execLatch)).exec(command);
-            execLatch.await(1, TimeUnit.MINUTES);
+                .usingListener(new SimpleListener(execLatch))
+                .exec(command);
+            boolean wait = execLatch.await(1, TimeUnit.MINUTES);
+            if (wait) {
+                LOGGER.info("Await for command execution was finished");
+            }
             return baos.toString("UTF-8");
         } catch (UnsupportedEncodingException | InterruptedException e) {
             LOGGER.warn("Exception running command {} on pod: {}", command, e.getMessage());
