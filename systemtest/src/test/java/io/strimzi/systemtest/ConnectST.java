@@ -90,7 +90,7 @@ class ConnectST extends AbstractST {
 
         String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");
         String kafkaConnectPodName = kubeClient().listPods("type", "kafka-connect").get(0).getMetadata().getName();
-        kubeClient().execInPod(kafkaConnectPodName, kafkaConnectName(KAFKA_CLUSTER_NAME), "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
+        cmdKubeClient().execInPod(kafkaConnectPodName, kafkaConnectName(KAFKA_CLUSTER_NAME), "/bin/bash", "-c", "curl -X POST -H \"Content-Type: application/json\" --data "
                 + "'" + connectorConfig + "'" + " http://localhost:8083/connectors");
 
         sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, kafkaConnectName(KAFKA_CLUSTER_NAME), TEST_TOPIC_NAME, 2);
