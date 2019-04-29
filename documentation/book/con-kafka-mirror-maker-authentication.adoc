@@ -10,8 +10,8 @@ The `authentication` property specifies the type of the authentication method wh
 The currently supported authentication types are:
 
 * TLS client authentication
-* SASL based authentication using the SCRAM-SHA-512 mechanism
-* SASL based authentication using the PLAIN mechanism
+* SASL-based authentication using the SCRAM-SHA-512 mechanism
+* SASL-based authentication using the PLAIN mechanism
 
 You can use different authentication mechanisms for the Kafka Mirror Maker producer and consumer.
 
@@ -55,7 +55,7 @@ spec:
 == SCRAM-SHA-512 authentication
 
 To configure Kafka Mirror Maker to use SCRAM-SHA-512 authentication, set the `type` property to `scram-sha-512`.
-The broker listener to which clients are connecting must also be configured to use SCRAM-SHA-512 SASL authentication.
+The broker listener to which clients will connect must also be configured to use SCRAM-SHA-512 SASL authentication.
 This authentication mechanism requires a username and password.
 
 * Specify the username in the `username` property.
@@ -93,11 +93,11 @@ spec:
 == PLAIN authentication
 
 To configure Kafka Mirror Maker to use PLAIN authentication, set the `type` property to `plain`.
-The broker listener to which clients are connecting must also be configured to use SASL PLAIN authentication.
+The broker listener to which clients will connect must also be configured to use SASL PLAIN authentication.
 This authentication mechanism requires a username and password.
 
-WARNING: SASL PLAIN mechanism transfers the username and password in cleartext over the network.
-It should be used only with TLS encryption.
+WARNING: The SASL PLAIN mechanism involves transferring the username and password across the network in cleartext.
+Only use SASL PLAIN authentication if TLS encryption is enabled.
 
 * Specify the username in the `username` property.
 * In the `passwordSecret` property, specify a link to a `Secret` containing the password.
