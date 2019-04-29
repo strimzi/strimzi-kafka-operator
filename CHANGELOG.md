@@ -9,6 +9,7 @@
 * Support for Kafka 2.2.0
 * Support off-cluster access using Kubernetes Nginx Ingress
 * Add ability to configure Image Pull Secrets for all pods in Cluster Operator
+* Support for SASL PLAIN mechanism in Kafka Connect and Mirror Maker (for use with non-Strimzi Kafka cluster) 
 
 ## 0.11.0
 
