@@ -44,7 +44,7 @@ public class StUtils {
         return pods.stream()
                 .collect(
                         Collectors.toMap(pod -> pod.getMetadata().getName(),
-                            pod -> pod.getMetadata().getResourceVersion()));
+                            pod -> pod.getMetadata().getUid()));
     }
 
     /** Returns a map of pod name to resource version for the pods currently in the given statefulset */
@@ -216,7 +216,7 @@ public class StUtils {
     public static void waitForDeploymentReady(KubernetesClient client, String namespace, String name) {
         LOGGER.info("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client.extensions().deployments().inNamespace(namespace).withName(name).isReady());
+            () -> client.apps().deployments().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment {} is ready", name);
     }
 }
