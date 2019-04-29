@@ -3,9 +3,9 @@ entries:
   strimzi-kafka-operator:
   - apiVersion: v1
     appVersion: 0.11.3
-    created: 2019-04-27T14:46:09.201845+02:00
+    created: 2019-04-29T21:15:08.617707+02:00
     description: 'Strimzi: Kafka as a Service'
-    digest: c4bad0b50513983b86f60a7e580155f0d04a61ddb6d7a4e4e5239294218eb1f2
+    digest: 03086beb8771c0fe95fd6ef8003ea68dd79f81e66937456c3957d2dd79aa15b8
     home: http://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
@@ -276,4 +276,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: 2019-04-27T14:46:09.199353+02:00
+generated: 2019-04-29T21:15:08.615995+02:00
