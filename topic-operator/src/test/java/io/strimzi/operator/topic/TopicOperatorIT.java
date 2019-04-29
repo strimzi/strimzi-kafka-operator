@@ -439,6 +439,7 @@ public class TopicOperatorIT extends BaseITST {
                 assertEquals(expectedMessage, event.getMessage());
                 assertEquals(expectedType.name, event.getType());
                 assertNotNull(event.getInvolvedObject());
+                assertNotNull(event.getLastTimestamp());
                 assertEquals("KafkaTopic", event.getInvolvedObject().getKind());
                 assertEquals(kafkaTopic.getMetadata().getName(), event.getInvolvedObject().getName());
                 return true;
