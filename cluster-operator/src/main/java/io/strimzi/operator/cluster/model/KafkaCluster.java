@@ -60,6 +60,7 @@ import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
 import io.strimzi.api.kafka.model.listener.IngressListenerConfiguration;
 import io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.LoadBalancerListenerOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerOverride;
@@ -567,10 +568,19 @@ public class KafkaCluster extends AbstractModel {
             ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT,
                 nodePort, "TCP"));
 
+            Map<String, String> dnsAnnotations = Collections.EMPTY_MAP;
+            if (isExposedWithLoadBalancer())    {
+                KafkaListenerExternalLoadBalancer externalLb = (KafkaListenerExternalLoadBalancer) listeners.getExternal();
+
+                if (externalLb.getOverrides() != null && externalLb.getOverrides().getBootstrap() != null) {
+                    dnsAnnotations = externalLb.getOverrides().getBootstrap().getDnsAnnotations();
+                }
+            }
+
             return createService(externalBootstrapServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(externalBootstrapServiceName, templateExternalBootstrapServiceLabels),
                 getSelectorLabels(),
-                mergeAnnotations(Collections.EMPTY_MAP, templateExternalBootstrapServiceAnnotations));
+                mergeAnnotations(dnsAnnotations, templateExternalBootstrapServiceAnnotations));
         }
 
         return null;
@@ -599,11 +609,24 @@ public class KafkaCluster extends AbstractModel {
             }
             ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, nodePort, "TCP"));
 
+            Map<String, String> dnsAnnotations = Collections.EMPTY_MAP;
+            if (isExposedWithLoadBalancer())    {
+                KafkaListenerExternalLoadBalancer externalLb = (KafkaListenerExternalLoadBalancer) listeners.getExternal();
+
+                if (externalLb.getOverrides() != null && externalLb.getOverrides().getBrokers() != null) {
+                    dnsAnnotations = externalLb.getOverrides().getBrokers().stream()
+                            .filter(broker -> broker != null && broker.getBroker() == pod)
+                            .map(LoadBalancerListenerBrokerOverride::getDnsAnnotations)
+                            .findAny()
+                            .orElse(Collections.EMPTY_MAP);
+                }
+            }
+
             Labels selector = Labels.fromMap(getSelectorLabels()).withStatefulSetPod(kafkaPodName(cluster, pod));
 
             return createService(perPodServiceName, getExternalServiceType(), ports,
                 getLabelsWithName(perPodServiceName, templatePerPodServiceLabels), selector.toMap(),
-                mergeAnnotations(Collections.EMPTY_MAP, templatePerPodServiceAnnotations));
+                mergeAnnotations(dnsAnnotations, templatePerPodServiceAnnotations));
         }
 
         return null;
@@ -721,8 +744,7 @@ public class KafkaCluster extends AbstractModel {
                         .orElseThrow(() -> new InvalidResourceException("Hostname for broker with id " + pod + " is required for exposing Kafka cluster using Ingress"));
 
                 dnsAnnotations = listener.getConfiguration().getBrokers().stream()
-                        .filter(broker -> broker != null && broker.getBroker() == pod
-                                && broker.getHost() != null)
+                        .filter(broker -> broker != null && broker.getBroker() == pod)
                         .map(IngressListenerBrokerConfiguration::getDnsAnnotations)
                         .findAny()
                         .orElse(null);

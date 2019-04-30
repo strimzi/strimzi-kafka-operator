@@ -350,9 +350,11 @@ Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerO
 
 [options="header"]
 |====
-|Field           |Description
-|address  1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
+|Field                  |Description
+|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
 |string
+|dnsAnnotations  1.2+<.<|Annotations which will be added to the Service resource. You can use this field to instrument DNS providers such as External DNS.
+|map
 |====
 
 [id='type-LoadBalancerListenerBrokerOverride-{context}']
@@ -370,6 +372,8 @@ Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerO
 |string
 |advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
 |integer
+|dnsAnnotations  1.2+<.<|Annotations which will be added to the Service resources for individual brokers. You can use this field to instrument DNS providers such as External DNS.
+|map
 |====
 
 [id='type-KafkaListenerExternalNodePort-{context}']
