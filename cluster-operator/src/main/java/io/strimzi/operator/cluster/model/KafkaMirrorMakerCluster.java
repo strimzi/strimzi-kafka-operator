@@ -184,46 +184,47 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
         kafkaMirrorMakerCluster.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
+        if (spec != null) {
+            kafkaMirrorMakerCluster.setResources(spec.getResources());
 
-        kafkaMirrorMakerCluster.setResources(spec.getResources());
+            kafkaMirrorMakerCluster.setWhitelist(spec.getWhitelist());
+            kafkaMirrorMakerCluster.setProducer(spec.getProducer());
+            kafkaMirrorMakerCluster.setConsumer(spec.getConsumer());
 
-        kafkaMirrorMakerCluster.setWhitelist(spec.getWhitelist());
-        kafkaMirrorMakerCluster.setProducer(spec.getProducer());
-        kafkaMirrorMakerCluster.setConsumer(spec.getConsumer());
+            String image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
+            if (image == null) {
+                throw new InvalidResourceException("Version " + spec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
+            }
+            kafkaMirrorMakerCluster.setImage(image);
 
-        String image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
-        if (image == null) {
-            throw new InvalidResourceException("Version " + spec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
-        }
-        kafkaMirrorMakerCluster.setImage(image);
+            kafkaMirrorMakerCluster.setLogging(spec.getLogging());
+            kafkaMirrorMakerCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
+            kafkaMirrorMakerCluster.setJvmOptions(spec.getJvmOptions());
 
-        kafkaMirrorMakerCluster.setLogging(spec.getLogging());
-        kafkaMirrorMakerCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
-        kafkaMirrorMakerCluster.setJvmOptions(spec.getJvmOptions());
-
-        Map<String, Object> metrics = spec.getMetrics();
-        if (metrics != null) {
-            kafkaMirrorMakerCluster.setMetricsEnabled(true);
-            kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
-        }
-
-        setClientAuth(kafkaMirrorMakerCluster, spec.getConsumer());
-        setClientAuth(kafkaMirrorMakerCluster, spec.getProducer());
-
-        if (spec.getTemplate() != null) {
-            KafkaMirrorMakerTemplate template = spec.getTemplate();
-
-            if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
-                kafkaMirrorMakerCluster.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
-                kafkaMirrorMakerCluster.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+            Map<String, Object> metrics = spec.getMetrics();
+            if (metrics != null) {
+                kafkaMirrorMakerCluster.setMetricsEnabled(true);
+                kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
             }
 
-            ModelUtils.parsePodTemplate(kafkaMirrorMakerCluster, template.getPod());
-            ModelUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
-        }
+            setClientAuth(kafkaMirrorMakerCluster, spec.getConsumer());
+            setClientAuth(kafkaMirrorMakerCluster, spec.getProducer());
 
-        kafkaMirrorMakerCluster.setUserAffinity(affinity(spec));
-        kafkaMirrorMakerCluster.setTolerations(tolerations(spec));
+            if (spec.getTemplate() != null) {
+                KafkaMirrorMakerTemplate template = spec.getTemplate();
+
+                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null) {
+                    kafkaMirrorMakerCluster.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                    kafkaMirrorMakerCluster.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+                }
+
+                ModelUtils.parsePodTemplate(kafkaMirrorMakerCluster, template.getPod());
+                ModelUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
+            }
+
+            kafkaMirrorMakerCluster.setUserAffinity(affinity(spec));
+            kafkaMirrorMakerCluster.setTolerations(tolerations(spec));
+        }
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
         return kafkaMirrorMakerCluster;
