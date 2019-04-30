@@ -253,6 +253,11 @@ public class ZookeeperClusterTest {
     }
 
     @Test
+    public void withOldAffinity() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
     public void withAffinity() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }

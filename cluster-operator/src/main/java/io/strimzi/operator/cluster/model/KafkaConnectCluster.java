@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -17,6 +18,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -175,8 +177,8 @@ public class KafkaConnectCluster extends AbstractModel {
             kafkaConnect.setMetricsEnabled(true);
             kafkaConnect.setMetricsConfig(metrics.entrySet());
         }
-        kafkaConnect.setUserAffinity(spec.getAffinity());
-        kafkaConnect.setTolerations(spec.getTolerations());
+        kafkaConnect.setUserAffinity(affinity(spec));
+        kafkaConnect.setTolerations(tolerations(spec));
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
         kafkaConnect.setTls(spec.getTls());
@@ -245,6 +247,32 @@ public class KafkaConnectCluster extends AbstractModel {
         }
 
         return kafkaConnect;
+    }
+
+    private static <C extends KafkaConnectCluster> List<Toleration> tolerations(KafkaConnectSpec spec) {
+        if (spec.getTemplate() != null
+                && spec.getTemplate().getPod() != null
+                && spec.getTemplate().getPod().getTolerations() != null) {
+            if (spec.getTolerations() != null) {
+                log.warn("Tolerations given on both spec.tolerations and spec.template.deployment.tolerations; latter takes precedence");
+            }
+            return spec.getTemplate().getPod().getTolerations();
+        } else {
+            return spec.getTolerations();
+        }
+    }
+
+    private static <C extends KafkaConnectCluster> Affinity affinity(KafkaConnectSpec spec) {
+        if (spec.getTemplate() != null
+                && spec.getTemplate().getPod() != null
+                && spec.getTemplate().getPod().getAffinity() != null) {
+            if (spec.getAffinity() != null) {
+                log.warn("Affinity given on both spec.affinity and spec.template.deployment.affinity; latter takes precedence");
+            }
+            return spec.getTemplate().getPod().getAffinity();
+        } else {
+            return spec.getAffinity();
+        }
     }
 
     public Service generateService() {

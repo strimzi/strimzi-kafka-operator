@@ -394,6 +394,12 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void withOldAffinityWithoutRack() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml",
+            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
     public void withAffinityWithoutRack() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
             kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
@@ -406,9 +412,21 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void withRackAndOldAffinity() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml",
+            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
     public void withRackAndAffinity() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
             kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withOldTolerations() throws IOException {
+        resourceTester.assertDesiredResource("-SS.yaml",
+            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test

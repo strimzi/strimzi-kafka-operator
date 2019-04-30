@@ -6,8 +6,10 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -40,6 +42,8 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private List<LocalObjectReference> imagePullSecrets;
     private PodSecurityContext securityContext;
     private int terminationGracePeriodSeconds = 30;
+    private Affinity affinity;
+    private List<Toleration> tolerations;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata which should be applied to the resource.")
@@ -88,6 +92,28 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     public void setTerminationGracePeriodSeconds(int terminationGracePeriodSeconds) {
         this.terminationGracePeriodSeconds = terminationGracePeriodSeconds;
+    }
+
+    @Description("The pod's affinity")
+    @KubeLink(group = "core", version = "v1", kind = "affinity")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Affinity getAffinity() {
+        return affinity;
+    }
+
+    public void setAffinity(Affinity affinity) {
+        this.affinity = affinity;
+    }
+
+    @Description("The pod's tolerations")
+    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<Toleration> getTolerations() {
+        return tolerations;
+    }
+
+    public void setTolerations(List<Toleration> tolerations) {
+        this.tolerations = tolerations;
     }
 
     @Override

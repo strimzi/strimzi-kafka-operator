@@ -147,6 +147,11 @@ public class EntityOperatorTest {
     public ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd);
 
     @Test
+    public void withOldAffinity() throws IOException {
+        helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
     public void withAffinity() throws IOException {
         helper.assertDesiredResource("-Deployment.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }

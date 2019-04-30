@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -12,6 +13,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -28,6 +30,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerClientSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.operator.common.model.Labels;
@@ -179,35 +182,36 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 kafkaMirrorMaker.getMetadata().getName(),
                 Labels.fromResource(kafkaMirrorMaker).withKind(kafkaMirrorMaker.getKind()));
 
-        kafkaMirrorMakerCluster.setReplicas(kafkaMirrorMaker.getSpec() != null && kafkaMirrorMaker.getSpec().getReplicas() > 0 ? kafkaMirrorMaker.getSpec().getReplicas() : DEFAULT_REPLICAS);
+        KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
+        kafkaMirrorMakerCluster.setReplicas(spec != null && spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
 
-        kafkaMirrorMakerCluster.setResources(kafkaMirrorMaker.getSpec().getResources());
+        kafkaMirrorMakerCluster.setResources(spec.getResources());
 
-        kafkaMirrorMakerCluster.setWhitelist(kafkaMirrorMaker.getSpec().getWhitelist());
-        kafkaMirrorMakerCluster.setProducer(kafkaMirrorMaker.getSpec().getProducer());
-        kafkaMirrorMakerCluster.setConsumer(kafkaMirrorMaker.getSpec().getConsumer());
+        kafkaMirrorMakerCluster.setWhitelist(spec.getWhitelist());
+        kafkaMirrorMakerCluster.setProducer(spec.getProducer());
+        kafkaMirrorMakerCluster.setConsumer(spec.getConsumer());
 
-        String image = versions.kafkaMirrorMakerImage(kafkaMirrorMaker.getSpec().getImage(), kafkaMirrorMaker.getSpec().getVersion());
+        String image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
         if (image == null) {
-            throw new InvalidResourceException("Version " + kafkaMirrorMaker.getSpec().getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
+            throw new InvalidResourceException("Version " + spec.getVersion() + " is not supported. Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
         }
         kafkaMirrorMakerCluster.setImage(image);
 
-        kafkaMirrorMakerCluster.setLogging(kafkaMirrorMaker.getSpec().getLogging());
-        kafkaMirrorMakerCluster.setGcLoggingEnabled(kafkaMirrorMaker.getSpec().getJvmOptions() == null ? true : kafkaMirrorMaker.getSpec().getJvmOptions().isGcLoggingEnabled());
-        kafkaMirrorMakerCluster.setJvmOptions(kafkaMirrorMaker.getSpec().getJvmOptions());
+        kafkaMirrorMakerCluster.setLogging(spec.getLogging());
+        kafkaMirrorMakerCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
+        kafkaMirrorMakerCluster.setJvmOptions(spec.getJvmOptions());
 
-        Map<String, Object> metrics = kafkaMirrorMaker.getSpec().getMetrics();
+        Map<String, Object> metrics = spec.getMetrics();
         if (metrics != null) {
             kafkaMirrorMakerCluster.setMetricsEnabled(true);
             kafkaMirrorMakerCluster.setMetricsConfig(metrics.entrySet());
         }
 
-        setClientAuth(kafkaMirrorMakerCluster, kafkaMirrorMaker.getSpec().getConsumer());
-        setClientAuth(kafkaMirrorMakerCluster, kafkaMirrorMaker.getSpec().getProducer());
+        setClientAuth(kafkaMirrorMakerCluster, spec.getConsumer());
+        setClientAuth(kafkaMirrorMakerCluster, spec.getProducer());
 
-        if (kafkaMirrorMaker.getSpec().getTemplate() != null) {
-            KafkaMirrorMakerTemplate template = kafkaMirrorMaker.getSpec().getTemplate();
+        if (spec.getTemplate() != null) {
+            KafkaMirrorMakerTemplate template = spec.getTemplate();
 
             if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
                 kafkaMirrorMakerCluster.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
@@ -218,8 +222,37 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
         }
 
+        kafkaMirrorMakerCluster.setUserAffinity(affinity(spec));
+        kafkaMirrorMakerCluster.setTolerations(tolerations(spec));
+
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
         return kafkaMirrorMakerCluster;
+    }
+
+    static List<Toleration> tolerations(KafkaMirrorMakerSpec spec) {
+        if (spec.getTemplate() != null
+                && spec.getTemplate().getPod() != null
+                && spec.getTemplate().getPod().getTolerations() != null) {
+            if (spec.getTolerations() != null) {
+                log.warn("Tolerations given on both spec.tolerations and spec.template.deployment.tolerations; latter takes precedence");
+            }
+            return spec.getTemplate().getPod().getTolerations();
+        } else {
+            return spec.getTolerations();
+        }
+    }
+
+    static Affinity affinity(KafkaMirrorMakerSpec spec) {
+        if (spec.getTemplate() != null
+                && spec.getTemplate().getPod() != null
+                && spec.getTemplate().getPod().getAffinity() != null) {
+            if (spec.getAffinity() != null) {
+                log.warn("Affinity given on both spec.affinity and spec.template.deployment.affinity; latter takes precedence");
+            }
+            return spec.getTemplate().getPod().getAffinity();
+        } else {
+            return spec.getAffinity();
+        }
     }
 
     public Service generateService() {

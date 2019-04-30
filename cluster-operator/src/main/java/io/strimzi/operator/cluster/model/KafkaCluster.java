@@ -21,9 +21,11 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPath;
 import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPathBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
@@ -38,7 +40,6 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBindingBuilder;
@@ -55,20 +56,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.listener.ExternalListenerBootstrapOverride;
-import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
-import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
-import io.strimzi.api.kafka.model.listener.IngressListenerConfiguration;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
-import io.strimzi.api.kafka.model.listener.LoadBalancerListenerOverride;
-import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
-import io.strimzi.api.kafka.model.listener.NodePortListenerOverride;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
-import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRoute;
-import io.strimzi.api.kafka.model.listener.KafkaListeners;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
@@ -76,6 +63,20 @@ import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
+import io.strimzi.api.kafka.model.listener.ExternalListenerBootstrapOverride;
+import io.strimzi.api.kafka.model.listener.ExternalListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
+import io.strimzi.api.kafka.model.listener.IngressListenerConfiguration;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalIngress;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalLoadBalancer;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalNodePort;
+import io.strimzi.api.kafka.model.listener.KafkaListenerExternalRoute;
+import io.strimzi.api.kafka.model.listener.KafkaListeners;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.NodePortListenerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerOverride;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
@@ -365,11 +366,11 @@ public class KafkaCluster extends AbstractModel {
 
         result.setDataVolumesClaimsAndMountPaths(result.getStorage());
 
-        result.setUserAffinity(kafkaClusterSpec.getAffinity());
+        result.setUserAffinity(affinity(kafkaClusterSpec));
 
         result.setResources(kafkaClusterSpec.getResources());
 
-        result.setTolerations(kafkaClusterSpec.getTolerations());
+        result.setTolerations(tolerations(kafkaClusterSpec));
 
         TlsSidecar tlsSidecar = kafkaClusterSpec.getTlsSidecar();
         if (tlsSidecar == null) {
@@ -455,6 +456,32 @@ public class KafkaCluster extends AbstractModel {
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
+    }
+
+    static List<Toleration> tolerations(KafkaClusterSpec kafkaClusterSpec) {
+        if (kafkaClusterSpec.getTemplate() != null
+                && kafkaClusterSpec.getTemplate().getPod() != null
+                && kafkaClusterSpec.getTemplate().getPod().getTolerations() != null) {
+            if (kafkaClusterSpec.getTolerations() != null) {
+                log.warn("Tolerations given on both spec.kafka.tolerations and spec.kafka.template.statefulset.tolerations; latter takes precedence");
+            }
+            return kafkaClusterSpec.getTemplate().getPod().getTolerations();
+        } else {
+            return kafkaClusterSpec.getTolerations();
+        }
+    }
+
+    static Affinity affinity(KafkaClusterSpec kafkaClusterSpec) {
+        if (kafkaClusterSpec.getTemplate() != null
+                && kafkaClusterSpec.getTemplate().getPod() != null
+                && kafkaClusterSpec.getTemplate().getPod().getAffinity() != null) {
+            if (kafkaClusterSpec.getAffinity() != null) {
+                log.warn("Affinity given on both spec.kafka.affinity and spec.kafka.template.statefulset.affinity; latter takes precedence");
+            }
+            return kafkaClusterSpec.getTemplate().getPod().getAffinity();
+        } else {
+            return kafkaClusterSpec.getAffinity();
+        }
     }
 
     /**
