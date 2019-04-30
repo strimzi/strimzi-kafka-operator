@@ -29,7 +29,7 @@ On {KubernetesName}, use:
 kubectl edit kafka _my-cluster_
 ----
 endif::Kubernetes[]
-+
+
 On {OpenShiftName}, use:
 +
 [source,shell,subs=+quotes]
@@ -83,7 +83,7 @@ kubectl logs -f $(oc get po -o _<cluster-operator-pod-name>_ | grep cluster-oper
 kubectl get po -w
 ----
 endif::Kubernetes[]
-+
+
 On {OpenShiftName}, use:
 +
 [source,shell,subs=+quotes]
