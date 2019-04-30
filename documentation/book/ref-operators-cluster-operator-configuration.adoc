@@ -89,6 +89,6 @@ Changing the policy will result in a rolling update of all your Kafka, Kafka Con
 
 `STRIMZI_IMAGE_PULL_SECRETS`:: Optional.
 A comma-separated list of `Secret` names.
-The secrets referenced here should contain the credentials to the container registries where the container images should be pulled from.
-The secrets will be used in the `imagePullSecrets` field for all `Pods` created by the Cluster Operator.
-Changing this list will result in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.
+The secrets referenced here contain the credentials to the container registries where the container images are pulled from.
+The secrets are used in the `imagePullSecrets` field for all `Pods` created by the Cluster Operator.
+Changing this list results in a rolling update of all your Kafka, Kafka Connect, and Kafka Mirror Maker clusters.
