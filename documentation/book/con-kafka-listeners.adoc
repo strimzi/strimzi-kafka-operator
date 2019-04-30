@@ -193,43 +193,6 @@ listeners:
 # ...
 ----
 
-Optionally, you can use the `dnsAnnotations` property in the `configuration` section to add additional annotations to the Ingress resources.
-These annotations can be used to instrument any DNS tooling such as {KubernetesExternalDNS}.
-
-.Example of an external listener of type `ingress` using {KubernetesExternalDNS} annotations
-[source,yaml,subs="attributes+"]
-----
-# ...
-listeners:
-  external:
-    type: ingress
-    authentication:
-      type: tls
-    configuration:
-      bootstrap:
-        dnsAnnotations:
-          external-dns.alpha.kubernetes.io/hostname: bootstrap.myingress.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-        host: bootstrap.myingress.com
-      brokers:
-      - broker: 0
-        dnsAnnotations:
-          external-dns.alpha.kubernetes.io/hostname: broker-0.myingress.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-        host: broker-0.myingress.com
-      - broker: 1
-        dnsAnnotations:
-          external-dns.alpha.kubernetes.io/hostname: broker-1.myingress.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-        host: broker-1.myingress.com
-      - broker: 2
-        dnsAnnotations:
-          external-dns.alpha.kubernetes.io/hostname: broker-2.myingress.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-        host: broker-2.myingress.com
-# ...
-----
-
 For more information on using `Ingress` to access Kafka, see xref:proc-accessing-kafka-using-ingress-{context}[].
 endif::Kubernetes[]
 
@@ -282,6 +245,83 @@ listeners:
         address: example.hostname
 # ...
 ----
+
+=== Customizing DNS names of external listeners
+
+On `loadbalancer`
+ifdef::Kubernetes[and `ingress`]
+listeners, you you can use the `dnsAnnotations` property to add additional annotations to the
+ifdef::Kubernetes[ingress resources or]
+load balancer services.
+These annotations can be used to instrument DNS tooling such as {KubernetesExternalDNS} which will automatically assign DNS names to the
+ifdef::Kubernetes[ingress resources or]
+services.
+
+.Example of an external listener of type `loadbalancer` using {KubernetesExternalDNS} annotations
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: loadbalancer
+    authentication:
+      type: tls
+    overrides:
+      bootstrap:
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-bootstrap.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      brokers:
+      - broker: 0
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-0.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      - broker: 1
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-1.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+      - broker: 2
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: kafka-broker-2.mydomain.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+# ...
+----
+
+ifdef::Kubernetes[]
+.Example of an external listener of type `ingress` using {KubernetesExternalDNS} annotations
+[source,yaml,subs="attributes+"]
+----
+# ...
+listeners:
+  external:
+    type: ingress
+    authentication:
+      type: tls
+    configuration:
+      bootstrap:
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: bootstrap.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: bootstrap.myingress.com
+      brokers:
+      - broker: 0
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: broker-0.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: broker-0.myingress.com
+      - broker: 1
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: broker-1.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: broker-1.myingress.com
+      - broker: 2
+        dnsAnnotations:
+          external-dns.alpha.kubernetes.io/hostname: broker-2.myingress.com.
+          external-dns.alpha.kubernetes.io/ttl: "60"
+        host: broker-2.myingress.com
+# ...
+----
+endif::Kubernetes[]
 
 == Listener authentication
 
