@@ -8,11 +8,11 @@
 
 Affinity can be configured using the `affinity` property in following resources:
 
-* `Kafka.spec.kafka`
-* `Kafka.spec.zookeeper`
-* `Kafka.spec.entityOperator`
-* `KafkaConnect.spec`
-* `KafkaConnectS2I.spec`
+* `Kafka.spec.kafka.template.pod`
+* `Kafka.spec.zookeeper.template.pod`
+* `Kafka.spec.entityOperator.template.pod`
+* `KafkaConnect.spec.template.pod`
+* `KafkaConnectS2I.spec.template.pod`
 
 The affinity configuration can include different types of affinity:
 

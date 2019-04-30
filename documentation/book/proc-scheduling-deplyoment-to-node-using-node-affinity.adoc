@@ -36,15 +36,17 @@ kind: Kafka
 spec:
   kafka:
     # ...
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-            - matchExpressions:
-              - key: node-type
-                operator: In
-                values:
-                - fast-network
+    template:
+      pod:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                  - key: node-type
+                    operator: In
+                    values:
+                    - fast-network
     # ...
   zookeeper:
     # ...
