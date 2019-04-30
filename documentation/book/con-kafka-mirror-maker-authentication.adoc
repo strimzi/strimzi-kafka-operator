@@ -96,7 +96,7 @@ To configure Kafka Mirror Maker to use PLAIN authentication, set the `type` prop
 The broker listener to which clients will connect must also be configured to use SASL PLAIN authentication.
 This authentication mechanism requires a username and password.
 
-WARNING: The SASL PLAIN mechanism involves transferring the username and password across the network in cleartext.
+WARNING: The SASL PLAIN mechanism will transfer the username and password across the network in cleartext.
 Only use SASL PLAIN authentication if TLS encryption is enabled.
 
 * Specify the username in the `username` property.

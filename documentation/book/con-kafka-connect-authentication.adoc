@@ -74,7 +74,7 @@ spec:
 To configure Kafka Connect to use SASL-based PLAIN authentication, set the `type` property to `plain`.
 This authentication mechanism requires a username and password.
 
-WARNING: The SASL PLAIN mechanism involves transferring the username and password across the network in cleartext.
+WARNING: The SASL PLAIN mechanism will transfer the username and password across the network in cleartext.
 Only use SASL PLAIN authentication if TLS encryption is enabled.
 
 * Specify the username in the `username` property.
