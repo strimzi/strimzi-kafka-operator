@@ -46,6 +46,10 @@ import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfiguration;
 import io.strimzi.api.kafka.model.listener.IngressListenerBrokerConfigurationBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverride;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBootstrapOverrideBuilder;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverride;
+import io.strimzi.api.kafka.model.listener.LoadBalancerListenerBrokerOverrideBuilder;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBootstrapOverride;
 import io.strimzi.api.kafka.model.listener.NodePortListenerBrokerOverride;
 import io.strimzi.api.kafka.model.listener.RouteListenerBrokerOverride;
@@ -635,6 +639,47 @@ public class KafkaClusterTest {
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ENABLED, "loadbalancer")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_TLS, "false")));
         assertTrue(envs.contains(kc.buildEnvVar(KafkaCluster.ENV_VAR_KAFKA_EXTERNAL_ADDRESSES, String.join(" ", addresses))));
+    }
+
+    @Test
+    public void testExternalLoadBalancersWithDnsAnnotations() {
+        LoadBalancerListenerBootstrapOverride bootstrapOverride = new LoadBalancerListenerBootstrapOverrideBuilder()
+                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
+                .build();
+
+        LoadBalancerListenerBrokerOverride brokerOverride0 = new LoadBalancerListenerBrokerOverrideBuilder()
+                .withBroker(0)
+                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."))
+                .build();
+
+        LoadBalancerListenerBrokerOverride brokerOverride2 = new LoadBalancerListenerBrokerOverrideBuilder()
+                .withBroker(2)
+                .withDnsAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .withNewKafkaListenerExternalLoadBalancer()
+                                .withNewOverrides()
+                                    .withBootstrap(bootstrapOverride)
+                                    .withBrokers(brokerOverride0, brokerOverride2)
+                                .endOverrides()
+                            .endKafkaListenerExternalLoadBalancer()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check annotations
+        assertEquals(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."), kc.generateExternalBootstrapService().getMetadata().getAnnotations());
+        assertEquals(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."), kc.generateExternalService(0).getMetadata().getAnnotations());
+        assertTrue(kc.generateExternalService(1).getMetadata().getAnnotations().isEmpty());
+        assertEquals(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."), kc.generateExternalService(2).getMetadata().getAnnotations());
+
     }
 
     @Test
