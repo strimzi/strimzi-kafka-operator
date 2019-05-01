@@ -8,19 +8,7 @@
 
 . Edit the YAML file to specify the loggers and their level for the required components. For example:
 +
-[source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-spec:
-  kafka:
-    # ...
-    logging:
-      type: inline
-      loggers:
-       _logger.name_: "INFO"
-    # ...
-----
+include::snip-external-logging.adoc[]
 +
 In the above example, the log level is set to INFO.
 You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information about the log levels, see link:https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
