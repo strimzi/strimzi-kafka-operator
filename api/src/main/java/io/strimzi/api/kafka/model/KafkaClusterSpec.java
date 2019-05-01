@@ -220,7 +220,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.metrics = metrics;
     }
 
-    @Description("Pod affinity rules.")
+    @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.affinity")
@@ -234,7 +234,7 @@ public class KafkaClusterSpec implements UnknownPropertyPreserving, Serializable
         this.affinity = affinity;
     }
 
-    @Description("Pod's tolerations.")
+    @Description("The pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "tolerations")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.tolerations")

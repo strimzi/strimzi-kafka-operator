@@ -94,7 +94,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.terminationGracePeriodSeconds = terminationGracePeriodSeconds;
     }
 
-    @Description("The pod's affinity")
+    @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Affinity getAffinity() {
@@ -105,7 +105,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.affinity = affinity;
     }
 
-    @Description("The pod's tolerations")
+    @Description("The pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "tolerations")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<Toleration> getTolerations() {

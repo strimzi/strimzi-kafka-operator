@@ -148,7 +148,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
         this.jvmOptions = jvmOptions;
     }
 
-    @Description("The affinity on the deployment's pod template.")
+    @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @DeprecatedProperty(movedToPath = "spec.template.pod.affinity")
@@ -162,7 +162,7 @@ public class KafkaMirrorMakerSpec implements UnknownPropertyPreserving, Serializ
         this.affinity = affinity;
     }
 
-    @Description("The tolerations on the deployment's pod template.")
+    @Description("The pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "tolerations")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations")
