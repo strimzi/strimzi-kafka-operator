@@ -23,6 +23,8 @@ NOTE: You might need to increase the grace period for very large Kafka clusters,
 |Defines a list of references to {ProductPlatformName} Secrets that can be used for pulling container images from private repositories.
 For more information about how to create a Secret with the credentials, see {K8sPullingImagesFromPrivateRegistries}.
 
+NOTE: When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used. The `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.
+
 |`securityContext`
 |Configures pod-level security attributes for containers running as part of a given Pod.
 For more information about configuring SecurityContext, see {K8sConfigureSecurityContext}.

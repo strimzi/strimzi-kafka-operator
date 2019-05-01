@@ -89,7 +89,7 @@
 :DockerTopicOperator: strimzi/operator:{DockerTag}
 :DockerUserOperator: strimzi/operator:{DockerTag}
 :DockerEntityOperatorStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerImageUser: kafka:kafka
+:DockerImageUser: 1001
 
 // API Versions
 :KafkaApiVersion: kafka.strimzi.io/v1beta1

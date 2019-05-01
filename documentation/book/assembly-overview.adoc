@@ -17,6 +17,10 @@ Cluster Operator:: Responsible for deploying and managing Apache Kafka clusters 
 Topic Operator:: Responsible for managing Kafka topics within a Kafka cluster running within {ProductPlatformName} cluster.
 User Operator:: Responsible for managing Kafka users within a Kafka cluster running within {ProductPlatformName} cluster.
 
+.Operators within the {ProductName} architecture
+
+image:operators.png[Operators]
+
 This guide describes how to install and use {ProductLongName}.
 
 include::ref-key-features.adoc[leveloffset=+1]
