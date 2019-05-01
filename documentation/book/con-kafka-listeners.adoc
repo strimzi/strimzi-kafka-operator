@@ -250,10 +250,10 @@ listeners:
 
 On `loadbalancer`
 ifdef::Kubernetes[and `ingress`]
-listeners, you you can use the `dnsAnnotations` property to add additional annotations to the
+listeners, you can use the `dnsAnnotations` property to add additional annotations to the
 ifdef::Kubernetes[ingress resources or]
 load balancer services.
-These annotations can be used to instrument DNS tooling such as {KubernetesExternalDNS} which will automatically assign DNS names to the
+You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the
 ifdef::Kubernetes[ingress resources or]
 services.
 
