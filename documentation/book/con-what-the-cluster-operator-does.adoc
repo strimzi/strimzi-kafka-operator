@@ -13,7 +13,7 @@ On {OpenShiftName} such a cluster can be deployed using the Source2Image feature
 
 .Example architecture for the Cluster Operator
 
-image:cluster_operator.png[Cluster Operator]
+image:cluster-operator.png[Cluster Operator]
 
 When the Cluster Operator is up, it starts to _watch_ for certain {ProductPlatformName} resources containing the desired Kafka, Kafka Connect, or Kafka Mirror Maker cluster configuration.
 By default, it watches only in the same namespace or project where it is installed.
