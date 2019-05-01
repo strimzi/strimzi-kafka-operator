@@ -568,7 +568,7 @@ public class KafkaCluster extends AbstractModel {
             ports = Collections.singletonList(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT,
                 nodePort, "TCP"));
 
-            Map<String, String> dnsAnnotations = Collections.EMPTY_MAP;
+            Map<String, String> dnsAnnotations = Collections.emptyMap();
             if (isExposedWithLoadBalancer())    {
                 KafkaListenerExternalLoadBalancer externalLb = (KafkaListenerExternalLoadBalancer) listeners.getExternal();
 
@@ -609,7 +609,7 @@ public class KafkaCluster extends AbstractModel {
             }
             ports.add(createServicePort(EXTERNAL_PORT_NAME, EXTERNAL_PORT, EXTERNAL_PORT, nodePort, "TCP"));
 
-            Map<String, String> dnsAnnotations = Collections.EMPTY_MAP;
+            Map<String, String> dnsAnnotations = Collections.emptyMap();
             if (isExposedWithLoadBalancer())    {
                 KafkaListenerExternalLoadBalancer externalLb = (KafkaListenerExternalLoadBalancer) listeners.getExternal();
 
@@ -618,7 +618,7 @@ public class KafkaCluster extends AbstractModel {
                             .filter(broker -> broker != null && broker.getBroker() == pod)
                             .map(LoadBalancerListenerBrokerOverride::getDnsAnnotations)
                             .findAny()
-                            .orElse(Collections.EMPTY_MAP);
+                            .orElse(Collections.emptyMap());
                 }
             }
 
