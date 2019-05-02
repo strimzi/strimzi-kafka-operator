@@ -247,6 +247,8 @@ class KafkaST extends MessagingBaseST {
 
         // scale down
         LOGGER.info("Scaling down");
+        // Get zk-3 uid before deletion
+        String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newZkPodNames.get(3)).get().getMetadata().getUid();
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
@@ -258,7 +260,6 @@ class KafkaST extends MessagingBaseST {
         waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
-        String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newZkPodNames.get(3)).get().getMetadata().getUid();
         assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         uid = CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
