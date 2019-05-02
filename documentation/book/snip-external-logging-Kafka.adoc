@@ -1,0 +1,37 @@
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: {kind}
+spec:
+  kafka:
+    # ...
+    logging:
+      type: inline
+      loggers:
+        _logger.name_: "INFO"
+    # ...
+  zookeeper:
+    # ...
+    logging:
+      type: inline
+      loggers:
+        _logger.name_: "INFO"
+    # ...
+  entityOperator:
+    # ...
+    topicOperator:
+      # ...
+      logging:
+        type: inline
+        loggers:
+          _logger.name_: "INFO"
+    # ...
+    # ...
+    userOperator:
+      # ...
+      logging:
+        type: inline
+        loggers:
+          _logger.name_: "INFO"
+    # ...
+----
