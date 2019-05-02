@@ -159,7 +159,8 @@ class KafkaST extends MessagingBaseST {
         }
 
         //Test that the new pod does not have errors or failures in events
-        List<Event> events = getEvents("Pod", newPodName);
+        String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newPodName).get().getMetadata().getUid();
+        List<Event> events = getEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         waitForClusterAvailability(NAMESPACE);
         //Test that CO doesn't have any exceptions in log
@@ -182,9 +183,11 @@ class KafkaST extends MessagingBaseST {
                 "Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh");
 
         //Test that the new broker has event 'Killing'
-        assertThat(getEvents("Pod", newPodName), hasAllOfReasons(Killing));
+        uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newPodName).get().getMetadata().getUid();
+        assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", kafkaClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
+        uid = CLIENT.apps().statefulSets().withName(kafkaClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
+        assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
@@ -255,9 +258,11 @@ class KafkaST extends MessagingBaseST {
         waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
-        assertThat(getEvents("Pod", newZkPodNames.get(3)), hasAllOfReasons(Killing));
+        String uid = CLIENT.pods().withName(newZkPodNames.get(3)).get().getMetadata().getUid();
+        assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        assertThat(getEvents("StatefulSet", zookeeperClusterName(CLUSTER_NAME)), hasAllOfReasons(SuccessfulDelete));
+        uid = CLIENT.apps().statefulSets().withName(zookeeperClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
+        assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
         TimeMeasuringSystem.stopOperation(operationID);
         //Test that CO doesn't have any exceptions in log
@@ -726,7 +731,7 @@ class KafkaST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testRackAware() throws Exception {
-        resources().kafkaEphemeral(CLUSTER_NAME, 1)
+        resources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewRack()
@@ -751,7 +756,8 @@ class KafkaST extends MessagingBaseST {
         String brokerRack = KUBE_CLIENT.execInPodContainer(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
-        List<Event> events = getEvents("Pod", kafkaPodName);
+        String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(kafkaPodName).get().getMetadata().getUid();
+        List<Event> events = getEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         waitForClusterAvailability(NAMESPACE);
     }
@@ -1167,7 +1173,8 @@ class KafkaST extends MessagingBaseST {
         for (String name : newZkPodNames) {
             //Test that second pod does not have errors or failures in events
             LOGGER.info("Checking logs fro pod {}", name);
-            List<Event> eventsForSecondPod = getEvents("Pod", name);
+            String uid = CLIENT.pods().withName(name).get().getMetadata().getUid();
+            List<Event> eventsForSecondPod = getEvents(uid);
             assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         }
     }

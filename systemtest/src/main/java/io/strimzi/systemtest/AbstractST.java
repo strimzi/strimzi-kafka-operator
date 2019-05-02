@@ -296,10 +296,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
         return "$.spec.containers[*].env[?(@.name=='" + envVar + "')].value";
     }
 
-    List<Event> getEvents(String resourceType, String resourceName) {
+    List<Event> getEvents(String resourceUid) {
         return CLIENT.events().inNamespace(KUBE_CLIENT.namespace()).list().getItems().stream()
-                .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
-                .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
+                .filter(event -> event.getInvolvedObject().getUid().equals(resourceUid))
                 .collect(Collectors.toList());
     }
 
