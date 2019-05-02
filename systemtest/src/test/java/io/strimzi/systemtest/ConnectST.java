@@ -149,7 +149,7 @@ class ConnectST extends AbstractST {
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {
             KUBE_CLIENT.waitForPod(pod);
-            String uid = CLIENT.pods().withName(pod).get().getMetadata().getUid();
+            String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(pod).get().getMetadata().getUid();
             List<Event> events = getEvents(uid);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
@@ -163,7 +163,7 @@ class ConnectST extends AbstractST {
         connectPods = KUBE_CLIENT.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
         assertEquals(initialReplicas, connectPods.size());
         for (String pod : connectPods) {
-            String uid = CLIENT.pods().withName(pod).get().getMetadata().getUid();
+            String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(pod).get().getMetadata().getUid();
             List<Event> events = getEvents(uid);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));

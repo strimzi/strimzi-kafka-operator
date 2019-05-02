@@ -186,7 +186,7 @@ class KafkaST extends MessagingBaseST {
         uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newPodName).get().getMetadata().getUid();
         assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        uid = CLIENT.apps().statefulSets().withName(kafkaClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
+        uid = CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
         assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
@@ -258,10 +258,10 @@ class KafkaST extends MessagingBaseST {
         waitForZkMntr(ZK_SERVER_STATE, 0, 1, 2);
 
         //Test that the second pod has event 'Killing'
-        String uid = CLIENT.pods().withName(newZkPodNames.get(3)).get().getMetadata().getUid();
+        String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newZkPodNames.get(3)).get().getMetadata().getUid();
         assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        uid = CLIENT.apps().statefulSets().withName(zookeeperClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
+        uid = CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
         assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
         TimeMeasuringSystem.stopOperation(operationID);
@@ -1173,7 +1173,7 @@ class KafkaST extends MessagingBaseST {
         for (String name : newZkPodNames) {
             //Test that second pod does not have errors or failures in events
             LOGGER.info("Checking logs fro pod {}", name);
-            String uid = CLIENT.pods().withName(name).get().getMetadata().getUid();
+            String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(name).get().getMetadata().getUid();
             List<Event> eventsForSecondPod = getEvents(uid);
             assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         }
