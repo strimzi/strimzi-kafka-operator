@@ -53,17 +53,12 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.k8s.Events.Created;
-import static io.strimzi.systemtest.k8s.Events.Failed;
-import static io.strimzi.systemtest.k8s.Events.FailedSync;
-import static io.strimzi.systemtest.k8s.Events.FailedValidation;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.SuccessfulDelete;
-import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
-import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
@@ -126,9 +121,18 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     @Tag(REGRESSION)
-    void testKafkaAndZookeeperScaleUpScaleDown() {
+    void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+            .editSpec()
+                .editKafka()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
+                .endKafka()
+            .endSpec().done();
 
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed
@@ -157,7 +161,7 @@ class KafkaST extends MessagingBaseST {
         //Test that the new pod does not have errors or failures in events
         List<Event> events = getEvents("Pod", newPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+        waitForClusterAvailability(NAMESPACE);
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
@@ -721,13 +725,18 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     @Tag(REGRESSION)
-    void testRackAware() {
+    void testRackAware() throws Exception {
         resources().kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editKafka()
                     .withNewRack()
                         .withTopologyKey("rack-key")
                     .endRack()
+                    .editListeners()
+                        .withNewKafkaListenerExternalLoadBalancer()
+                            .withTls(false)
+                        .endKafkaListenerExternalLoadBalancer()
+                    .endListeners()
                 .endKafka()
             .endSpec().done();
 
@@ -744,7 +753,7 @@ class KafkaST extends MessagingBaseST {
 
         List<Event> events = getEvents("Pod", kafkaPodName);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
+        waitForClusterAvailability(NAMESPACE);
     }
 
     @Test
