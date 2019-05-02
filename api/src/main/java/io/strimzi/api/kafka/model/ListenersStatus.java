@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -29,6 +30,17 @@ public class ListenersStatus implements UnknownPropertyPreserving, Serializable 
     private ListenerStatus external;
     private Map<String, Object> additionalProperties;
 
+    public ListenersStatus() {
+    }
+
+    public ListenersStatus(ListenerStatus plain, ListenerStatus tls, ListenerStatus external, Map<String, Object> additionalProperties) {
+        this.plain = plain;
+        this.tls = tls;
+        this.external = external;
+        this.additionalProperties = additionalProperties;
+    }
+
+    @Description("")
     public ListenerStatus getPlain() {
         return plain;
     }
@@ -37,6 +49,7 @@ public class ListenersStatus implements UnknownPropertyPreserving, Serializable 
         this.plain = plain;
     }
 
+    @Description("")
     public ListenerStatus getTls() {
         return tls;
     }
@@ -45,6 +58,7 @@ public class ListenersStatus implements UnknownPropertyPreserving, Serializable 
         this.tls = tls;
     }
 
+    @Description("")
     public ListenerStatus getExternal() {
         return external;
     }

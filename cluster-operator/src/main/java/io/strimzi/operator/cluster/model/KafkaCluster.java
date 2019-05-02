@@ -264,6 +264,16 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
+     * Generates the name of the service used as bootstrap service for internal clients
+     *
+     * @param cluster Name of the cluster
+     * @return
+     */
+    public static String internalBootstrapServiceName(String cluster) {
+        return KafkaResources.bootstrapServiceName(cluster);
+    }
+
+    /**
      * Generates the name of the service for exposing individual pods
      *
      * @param cluster Name of the cluster
@@ -955,6 +965,18 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return portList;
+    }
+
+    public int getClientPort() {
+        return this.CLIENT_PORT;
+    }
+
+    public int getClientTlsPort() {
+        return this.CLIENT_TLS_PORT;
+    }
+
+    public int getExternalPort() {
+        return this.EXTERNAL_PORT;
     }
 
     /**

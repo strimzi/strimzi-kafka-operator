@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -28,6 +29,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
     private String lastTransitionTime;
     private Map<String, Object> additionalProperties;
 
+    @Description("")
     public String getStatus() {
         return status;
     }
@@ -36,6 +38,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.status = status;
     }
 
+    @Description("")
     public String getReason() {
         return reason;
     }
@@ -44,6 +47,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.reason = reason;
     }
 
+    @Description("")
     public String getType() {
         return type;
     }
@@ -52,6 +56,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.type = type;
     }
 
+    @Description("")
     public String getLastTransitionTime() {
         return lastTransitionTime;
     }
@@ -64,6 +69,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.additionalProperties = additionalProperties;
     }
 
+    @Description("")
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();

@@ -29,6 +29,7 @@ import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.ListenersStatus;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -59,6 +60,9 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -66,6 +70,7 @@ import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -125,6 +130,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final PodOperator podOperations;
     private final IngressOperator ingressOperations;
     private final StorageClassOperator storageClassOperator;
+    private final ConfigMapOperator configMapOperations;
+    private final ServiceAccountOperator serviceAccountOperator;
+    private final RoleBindingOperator roleBindingOperator;
+    private final ClusterRoleBindingOperator clusterRoleBindingOperator;
+    private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
+    private final KafkaVersion.Lookup versions;
 
     /**
      * @param vertx The Vertx instance
@@ -149,6 +160,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.podOperations = supplier.podOperations;
         this.ingressOperations = supplier.ingressOperations;
         this.storageClassOperator = supplier.storageClassOperations;
+        this.serviceAccountOperator = supplier.serviceAccountOperator;
+        this.roleBindingOperator = supplier.roleBindingOperator;
+        this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
+        this.crdOperator = supplier.kafkaOperator;
+        this.versions = versions;
     }
 
     @Override
@@ -213,6 +229,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaScaleUp())
                 .compose(state -> state.kafkaServiceEndpointReady())
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
+
+                .compose(state -> state.kafkaUpdateStatusListeners())
+
                 .compose(state -> state.kafkaPersistentClaimDeletion())
 
                 .compose(state -> state.getTopicOperatorDescription())
@@ -286,7 +305,48 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.reconciliation = reconciliation;
             this.kafkaAssembly = kafkaAssembly;
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
-            this.name = kafkaAssembly.getMetadata().getName();
+            This.name = kafkaAssembly.getMetadata().getName();
+        }
+
+        /*
+        * TODO - Don't include fields with null values in the status
+        *      - Block until endpoints are ready
+        * */
+        Future<ReconciliationState> kafkaUpdateStatusListeners() {
+
+            Future<ReconciliationState> result = Future.future();
+            //vertx.executeBlocking(fut -> {
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
+                future -> {
+                    try {
+                        String internalBootstrapHost = null;
+                        String externalBootstrapHost = null;
+
+                        if (serviceOperations.get(namespace, kafkaCluster.internalBootstrapServiceName(name)) != null) {
+                            internalBootstrapHost = serviceOperations.get(namespace, kafkaCluster.internalBootstrapServiceName(name)).getSpec().getClusterIP();
+                        }
+                        if (serviceOperations.get(namespace, kafkaCluster.externalBootstrapServiceName(name)) != null) {
+                            externalBootstrapHost = serviceOperations.get(namespace, kafkaCluster.externalBootstrapServiceName(name)).getSpec().getClusterIP();
+                        }
+                        ListenersStatus ls = new ListenersStatus(
+                                new ListenerStatus(internalBootstrapHost, kafkaCluster.getClientPort(), null),
+                                new ListenerStatus(internalBootstrapHost, kafkaCluster.getClientTlsPort(), null),
+                                new ListenerStatus(externalBootstrapHost, kafkaCluster.getExternalPort(), null), null
+                        );
+
+                        Kafka k1 = crdOperator.get(namespace, name);
+                        log.info("TEST1: {} ", k1.toString());
+                        Kafka k2 = new KafkaBuilder(k1).withNewStatus().withListeners(ls).endStatus().build();
+                        log.info("=============================================");
+                        log.info("TEST2: {} ", k2.toString());
+                        crdOperator.updateStatus(k2);
+                    } catch (Throwable e) {
+                        future.fail(e);
+                    }
+                }, true,
+                result.completer()
+            );
+            return result;
         }
 
         /**
