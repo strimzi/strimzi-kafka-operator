@@ -4,12 +4,14 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -130,8 +132,9 @@ public class EntityOperator extends AbstractModel {
                     Labels.fromResource(kafkaAssembly).withKind(kafkaAssembly.getKind()));
 
             result.setOwnerReference(kafkaAssembly);
-            result.setUserAffinity(entityOperatorSpec.getAffinity());
-            result.setTolerations(entityOperatorSpec.getTolerations());
+
+            result.setUserAffinity(affinity(entityOperatorSpec));
+            result.setTolerations(tolerations(entityOperatorSpec));
             result.setTlsSidecar(entityOperatorSpec.getTlsSidecar());
             result.setTopicOperator(EntityTopicOperator.fromCrd(kafkaAssembly));
             result.setUserOperator(EntityUserOperator.fromCrd(kafkaAssembly));
@@ -167,6 +170,32 @@ public class EntityOperator extends AbstractModel {
             result.tlsSidecarImage = tlsSidecarImage;
         }
         return result;
+    }
+
+    static List<Toleration> tolerations(EntityOperatorSpec entityOperatorSpec) {
+        if (entityOperatorSpec.getTemplate() != null
+                && entityOperatorSpec.getTemplate().getPod() != null
+                && entityOperatorSpec.getTemplate().getPod().getTolerations() != null) {
+            if (entityOperatorSpec.getTolerations() != null) {
+                log.warn("Tolerations given on both spec.tolerations and spec.template.deployment.tolerations; latter takes precedence");
+            }
+            return entityOperatorSpec.getTemplate().getPod().getTolerations();
+        } else {
+            return entityOperatorSpec.getTolerations();
+        }
+    }
+
+    static Affinity affinity(EntityOperatorSpec entityOperatorSpec) {
+        if (entityOperatorSpec.getTemplate() != null
+                && entityOperatorSpec.getTemplate().getPod() != null
+                && entityOperatorSpec.getTemplate().getPod().getAffinity() != null) {
+            if (entityOperatorSpec.getAffinity() != null) {
+                log.warn("Affinity given on both spec.affinity and spec.template.deployment.affinity; latter takes precedence");
+            }
+            return entityOperatorSpec.getTemplate().getPod().getAffinity();
+        } else {
+            return entityOperatorSpec.getAffinity();
+        }
     }
 
     @Override

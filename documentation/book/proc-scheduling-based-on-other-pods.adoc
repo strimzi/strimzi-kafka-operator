@@ -24,17 +24,19 @@ kind: Kafka
 spec:
   kafka:
     # ...
-    affinity:
-      podAntiAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-                - key: application
-                  operator: In
-                  values:
-                    - postgresql
-                    - mongodb
-            topologyKey: "kubernetes.io/hostname"
+    template:
+      pod:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: application
+                      operator: In
+                      values:
+                        - postgresql
+                        - mongodb
+                topologyKey: "kubernetes.io/hostname"
     # ...
   zookeeper:
     # ...

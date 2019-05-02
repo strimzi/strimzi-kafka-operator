@@ -209,11 +209,22 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
+    public void withOldAffinity() throws IOException {
+        resourceTester
+                .assertDesiredResource("-Deployment.yaml", kcc -> kcc.generateDeployment(new HashMap<String, String>(), true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
     public void withAffinity() throws IOException {
         resourceTester
             .assertDesiredResource("-Deployment.yaml", kcc -> kcc.generateDeployment(new HashMap<String, String>(), true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
+    @Test
+    public void withOldTolerations() throws IOException {
+        resourceTester
+                .assertDesiredResource("-Deployment.yaml", kcc -> kcc.generateDeployment(new HashMap<String, String>(), true, null, null).getSpec().getTemplate().getSpec().getTolerations());
+    }
     @Test
     public void withTolerations() throws IOException {
         resourceTester

@@ -293,9 +293,21 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @Test
-    public void withAffinity() throws IOException {
+    public void withOldAffinity() throws IOException {
         resourceTester
             .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withAffinity() throws IOException {
+        resourceTester
+                .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void withOldTolerations() throws IOException {
+        resourceTester
+                .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test

@@ -10,16 +10,14 @@ The Entity Operator can be configured using the `entityOperator` property in `Ka
 The `entityOperator` property supports several sub-properties:
 
 * `tlsSidecar`
-* `affinity`
-* `tolerations`
 * `topicOperator`
 * `userOperator`
+* `template`
 
 The `tlsSidecar` property can be used to configure the TLS sidecar container which is used to communicate with Zookeeper.
 For more details about configuring the TLS sidecar, see xref:assembly-tls-sidecar-{context}[].
 
-The `affinity` and `tolerations` properties can be used to configure how {ProductPlatformName} schedules the Entity Operator pod.
-For more details about pod scheduling, see xref:assembly-scheduling-{context}[].
+The `template` property can be used to configure details of the Entity Operator pod, such as labels, annotations, affinity, tolerations and so on.
 
 The `topicOperator` property contains the configuration of the Topic Operator.
 When this option is missing, the Entity Operator is deployed without the Topic Operator.

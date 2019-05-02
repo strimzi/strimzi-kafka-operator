@@ -63,6 +63,10 @@ public class TestLogger extends AbstractLogger {
         Assert.assertTrue("Expected message was not logged", getLoggedMessages().stream().anyMatch(test));
     }
 
+    public void assertNotLogged(Predicate<LoggedMessage> test) {
+        Assert.assertTrue("Unexpected message was logged", getLoggedMessages().stream().noneMatch(test));
+    }
+
     @Override
     public Level getLevel() {
         return Level.TRACE;

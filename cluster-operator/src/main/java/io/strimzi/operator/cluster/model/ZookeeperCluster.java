@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -16,6 +17,7 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -226,9 +228,9 @@ public class ZookeeperCluster extends AbstractModel {
 
         zk.setJvmOptions(zookeeperClusterSpec.getJvmOptions());
 
-        zk.setUserAffinity(zookeeperClusterSpec.getAffinity());
+        zk.setUserAffinity(affinity(zookeeperClusterSpec));
 
-        zk.setTolerations(zookeeperClusterSpec.getTolerations());
+        zk.setTolerations(tolerations(zookeeperClusterSpec));
 
         TlsSidecar tlsSidecar = zookeeperClusterSpec.getTlsSidecar();
         if (tlsSidecar == null) {
@@ -268,6 +270,32 @@ public class ZookeeperCluster extends AbstractModel {
         }
 
         return zk;
+    }
+
+    static List<Toleration> tolerations(ZookeeperClusterSpec zookeeperClusterSpec) {
+        if (zookeeperClusterSpec.getTemplate() != null
+                && zookeeperClusterSpec.getTemplate().getPod() != null
+                && zookeeperClusterSpec.getTemplate().getPod().getTolerations() != null) {
+            if (zookeeperClusterSpec.getAffinity() != null) {
+                log.warn("Tolerations given on both spec.zookeeper.tolerations and spec.zookeeper.template.statefulset.tolerations; latter takes precedence");
+            }
+            return zookeeperClusterSpec.getTemplate().getPod().getTolerations();
+        } else {
+            return zookeeperClusterSpec.getTolerations();
+        }
+    }
+
+    static Affinity affinity(ZookeeperClusterSpec zookeeperClusterSpec) {
+        if (zookeeperClusterSpec.getTemplate() != null
+                && zookeeperClusterSpec.getTemplate().getPod() != null
+                && zookeeperClusterSpec.getTemplate().getPod().getAffinity() != null) {
+            if (zookeeperClusterSpec.getAffinity() != null) {
+                log.warn("Affinity given on both spec.zookeeper.affinity and spec.zookeeper.template.statefulset.affinity; latter takes precedence");
+            }
+            return zookeeperClusterSpec.getTemplate().getPod().getAffinity();
+        } else {
+            return zookeeperClusterSpec.getAffinity();
+        }
     }
 
     public Service generateService() {
