@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -42,10 +43,12 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 public class KafkaStatus implements UnknownPropertyPreserving, Serializable {
 
+    private boolean ready;
     private ListenersStatus listeners;
     private List<Condition> conditions;
     private Map<String, Object> additionalProperties;
 
+    @Description("")
     public ListenersStatus getListeners() {
         return listeners;
     }
@@ -54,6 +57,7 @@ public class KafkaStatus implements UnknownPropertyPreserving, Serializable {
         this.listeners = listeners;
     }
 
+    @Description("")
     public List<Condition> getConditions() {
         return conditions;
     }

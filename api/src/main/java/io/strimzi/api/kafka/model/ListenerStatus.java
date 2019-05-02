@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -28,6 +29,16 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
     private int port;
     private Map<String, Object> additionalProperties;
 
+    public ListenerStatus() {
+    }
+
+    public ListenerStatus(String host, int port, Map<String, Object> additionalProperties) {
+        this.host = host;
+        this.port = port;
+        this.additionalProperties = additionalProperties;
+    }
+
+    @Description("")
     public String getHost() {
         return host;
     }
@@ -36,6 +47,7 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
         this.host = host;
     }
 
+    @Description("")
     public int getPort() {
         return port;
     }

@@ -56,7 +56,13 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.ResourceType;
+<<<<<<< HEAD
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
+=======
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
+>>>>>>> WIP: listeners status for Kafka CR
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -117,9 +123,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final RouteOperator routeOperations;
     private final PvcOperator pvcOperations;
     private final DeploymentOperator deploymentOperations;
+<<<<<<< HEAD
     private final RoleBindingOperator roleBindingOperations;
     private final PodOperator podOperations;
     private final IngressOperator ingressOperations;
+=======
+    private final ConfigMapOperator configMapOperations;
+    private final ServiceAccountOperator serviceAccountOperator;
+    private final RoleBindingOperator roleBindingOperator;
+    private final ClusterRoleBindingOperator clusterRoleBindingOperator;
+    private final CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOperator;
+
+    private final KafkaVersion.Lookup versions;
+>>>>>>> WIP: listeners status for Kafka CR
 
     /**
      * @param vertx The Vertx instance
@@ -140,10 +156,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.kafkaSetOperations = supplier.kafkaSetOperations;
         this.pvcOperations = supplier.pvcOperations;
         this.deploymentOperations = supplier.deploymentOperations;
+<<<<<<< HEAD
         this.roleBindingOperations = supplier.roleBindingOperations;
         this.podOperations = supplier.podOperations;
         this.ingressOperations = supplier.ingressOperations;
 
+=======
+        this.serviceAccountOperator = supplier.serviceAccountOperator;
+        this.roleBindingOperator = supplier.roleBindingOperator;
+        this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
+        this.crdOperator = supplier.kafkaOperator;
+        this.versions = versions;
+>>>>>>> WIP: listeners status for Kafka CR
     }
 
     @Override
@@ -208,6 +232,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaScaleUp())
                 .compose(state -> state.kafkaServiceEndpointReady())
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
+
+                .compose(state -> state.kafkaUpdateStatusListeners())
+
                 .compose(state -> state.kafkaPersistentClaimDeletion())
 
                 .compose(state -> state.getTopicOperatorDescription())
@@ -279,7 +306,48 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.reconciliation = reconciliation;
             this.kafkaAssembly = kafkaAssembly;
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
-            this.name = kafkaAssembly.getMetadata().getName();
+            This.name = kafkaAssembly.getMetadata().getName();
+        }
+
+        /*
+        * TODO - Don't include fields with null values in the status
+        *      - Block until endpoints are ready
+        * */
+        Future<ReconciliationState> kafkaUpdateStatusListeners() {
+
+            Future<ReconciliationState> result = Future.future();
+            //vertx.executeBlocking(fut -> {
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
+                future -> {
+                    try {
+                        String internalBootstrapHost = null;
+                        String externalBootstrapHost = null;
+
+                        if (serviceOperations.get(namespace, kafkaCluster.internalBootstrapServiceName(name)) != null) {
+                            internalBootstrapHost = serviceOperations.get(namespace, kafkaCluster.internalBootstrapServiceName(name)).getSpec().getClusterIP();
+                        }
+                        if (serviceOperations.get(namespace, kafkaCluster.externalBootstrapServiceName(name)) != null) {
+                            externalBootstrapHost = serviceOperations.get(namespace, kafkaCluster.externalBootstrapServiceName(name)).getSpec().getClusterIP();
+                        }
+                        ListenersStatus ls = new ListenersStatus(
+                                new ListenerStatus(internalBootstrapHost, kafkaCluster.getClientPort(), null),
+                                new ListenerStatus(internalBootstrapHost, kafkaCluster.getClientTlsPort(), null),
+                                new ListenerStatus(externalBootstrapHost, kafkaCluster.getExternalPort(), null), null
+                        );
+
+                        Kafka k1 = crdOperator.get(namespace, name);
+                        log.info("TEST1: {} ", k1.toString());
+                        Kafka k2 = new KafkaBuilder(k1).withNewStatus().withListeners(ls).endStatus().build();
+                        log.info("=============================================");
+                        log.info("TEST2: {} ", k2.toString());
+                        crdOperator.updateStatus(k2);
+                    } catch (Throwable e) {
+                        future.fail(e);
+                    }
+                }, true,
+                result.completer()
+            );
+            return result;
         }
 
         /**

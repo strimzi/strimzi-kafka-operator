@@ -64,6 +64,7 @@ public class CrdOperator<C extends KubernetesClient,
                     baseUrl + "apis/kafka.strimzi.io/v1beta1/namespaces/" + resource.getMetadata().getNamespace()
                     + "/kafkas/" + resource.getMetadata().getName() + "/status").build();
             String method = request.method();
+            log.info("Making {} request {}", method, request);
             log.debug("Making {} request {}", method, request);
             Response response = client.newCall(request).execute();
             try {
@@ -90,6 +91,6 @@ public class CrdOperator<C extends KubernetesClient,
 
         Kafka myproject = crdOp.get("myproject", "my-cluster");
 
-        crdOp.updateStatus(new KafkaBuilder(myproject).withNewStatus().withState("foo").endStatus().build());
+        crdOp.updateStatus(new KafkaBuilder(myproject).withNewStatus().withConditions().addNewCondition().withStatus("test").endCondition().endStatus().build());
     }
 }
