@@ -406,12 +406,6 @@ public class TopicOperatorIT extends BaseITST {
     private void waitFor(TestContext context, BooleanSupplier ready, long timeout, String message) {
         Async async = context.async();
         Util.waitFor(vertx, message, 3_000, timeout, ready).setHandler(ar -> {
-            if (ar.succeeded()) {
-                async.complete();
-            } else {
-                context.fail(ar.cause());
-            }
-        }).setHandler(ar -> {
             if (ar.failed()) {
                 context.fail(ar.cause());
             }
