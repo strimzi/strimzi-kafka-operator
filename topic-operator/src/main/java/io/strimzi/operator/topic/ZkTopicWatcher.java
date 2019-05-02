@@ -6,6 +6,8 @@ package io.strimzi.operator.topic;
 
 import io.vertx.core.Handler;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * ZooKeeper watcher for child znodes of {@code /brokers/topics},
  * calling {@link TopicOperator#onTopicPartitionsChanged(TopicName, Handler)}
@@ -15,15 +17,18 @@ public class ZkTopicWatcher extends ZkWatcher {
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
+    private final AtomicInteger notification = new AtomicInteger();
+
     ZkTopicWatcher(TopicOperator topicOperator) {
         super(topicOperator, TOPICS_ZNODE);
     }
 
     @Override
     protected void notifyOperator(String child) {
-        log.debug("Partitions change for topic {}", child);
+        int notification = this.notification.getAndIncrement();
+        log.info("Partitions change {}: topic {}", notification, child);
         topicOperator.onTopicPartitionsChanged(new TopicName(child), ar -> {
-            log.info("Reconciliation result due to topic partitions change: {}", ar);
+            log.info("Reconciliation result due to topic partitions change {} on topic {}: {}", notification, child, ar);
         });
     }
 }

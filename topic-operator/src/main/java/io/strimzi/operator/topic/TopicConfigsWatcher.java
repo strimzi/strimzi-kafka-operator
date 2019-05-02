@@ -6,6 +6,8 @@ package io.strimzi.operator.topic;
 
 import io.vertx.core.Handler;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * ZooKeeper watcher for child znodes of {@code /configs/topics},
  * calling {@link TopicOperator#onTopicConfigChanged(TopicName, Handler)}
@@ -15,15 +17,18 @@ class TopicConfigsWatcher extends ZkWatcher {
 
     private static final String CONFIGS_ZNODE = "/config/topics";
 
+    private AtomicInteger notification = new AtomicInteger();
+
     TopicConfigsWatcher(TopicOperator topicOperator) {
         super(topicOperator, CONFIGS_ZNODE);
     }
 
     @Override
     protected void notifyOperator(String child) {
-        log.debug("Config change for topic {}", child);
+        int notification = this.notification.getAndIncrement();
+        log.info("Config change {}: topic {}", notification, child);
         topicOperator.onTopicConfigChanged(new TopicName(child), ar2 -> {
-            log.info("Reconciliation result due to topic config change: {}", ar2);
+            log.info("Reconciliation result due to topic config change {} on topic {}: {}", notification, child, ar2);
         });
     }
 }
