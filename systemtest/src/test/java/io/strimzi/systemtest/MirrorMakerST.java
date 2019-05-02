@@ -58,8 +58,6 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy Mirror Maker
         resources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
 
-        // Wait when Mirror Maker will join the group
-        Thread.sleep(10000);
         TimeMeasuringSystem.stopOperation(operationID);
 
         int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, false, topicSourceName, null);
@@ -153,8 +151,6 @@ public class MirrorMakerST extends MessagingBaseST {
                 .endSpec()
                 .done();
 
-        // Wait when Mirror Maker will join the group
-        Thread.sleep(10000);
         TimeMeasuringSystem.stopOperation(operationID);
 
         int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
@@ -259,8 +255,6 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy topic
         resources().topic(kafkaSourceName, topicName).done();
 
-        // Wait when Mirror Maker will join the group
-        Thread.sleep(10000);
         TimeMeasuringSystem.stopOperation(operationID);
 
         int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, true, topicName, userSource);

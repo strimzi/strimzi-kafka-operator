@@ -62,6 +62,8 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -417,9 +419,11 @@ public class Resources extends AbstractResources implements Constants {
                 .withNewConsumer()
                     .withBootstrapServers(tlsListener ? sourceBootstrapServer + "-kafka-bootstrap:9093" : sourceBootstrapServer + "-kafka-bootstrap:9092")
                     .withGroupId(groupId)
+                    .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                 .endConsumer()
                 .withNewProducer()
                     .withBootstrapServers(tlsListener ? targetBootstrapServer + "-kafka-bootstrap:9093" : targetBootstrapServer + "-kafka-bootstrap:9092")
+                    .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
                 .endProducer()
                 .withResources(new ResourceRequirementsBuilder()
                         .addToRequests("memory", new Quantity("1G")).build())
