@@ -27,6 +27,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
@@ -41,8 +43,8 @@ public class TopicOperator {
     private final Labels labels;
     private final String namespace;
     private TopicStore topicStore;
-    private final InFlight inFlight;
     private final Config config;
+    private final ConcurrentHashMap<TopicName, Integer> inflight = new ConcurrentHashMap<>();
 
     enum EventType {
         INFO("Info"),
@@ -344,9 +346,53 @@ public class TopicOperator {
         this.vertx = vertx;
         this.labels = labels;
         this.topicStore = topicStore;
-        this.inFlight = new InFlight(vertx);
         this.namespace = namespace;
         this.config = config;
+    }
+
+    /**
+     * Run the given {@code action} on the context thread,
+     * immediately if there are currently no other actions with the given {@code key},
+     * or when the other actions with the given {@code key} have completed.
+     * When the given {@code action} is complete it must complete its argument future,
+     * which will complete the given {@code resultHandler}.
+     */
+    public void acquireLock(TopicName key, Handler<Future<Void>> action, Handler<AsyncResult<Void>> resultHandler) {
+        String lockName = key.toString();
+        int timeoutMs = 30 * 1_000;
+        BiFunction<TopicName, Integer, Integer> decrement = (topicName, waiters) -> {
+            if (waiters != null) {
+                return waiters == 1 ? null : waiters - 1;
+            } else {
+                LOGGER.error("Assertion failure. topic {}, action {}", lockName, action);
+                return null;
+            }
+        };
+        LOGGER.debug("Queuing action {} on topic {}", action, lockName);
+        inflight.compute(key, (topicName, waiters) -> waiters == null ? 1 : waiters + 1);
+        vertx.sharedData().getLockWithTimeout(lockName, timeoutMs, ar -> {
+            if (ar.succeeded()) {
+                Future<Void> f = Future.future();
+                f.setHandler(ar2 -> {
+                    LOGGER.debug("Executing handler for action {} on topic {}", action, lockName);
+                    try {
+                        resultHandler.handle(ar2);
+                    } finally {
+                        ar.result().release();
+                        inflight.compute(key, decrement);
+                    }
+                });
+                LOGGER.debug("Executing action {} on topic {}", action, lockName);
+                action.handle(f);
+            } else {
+                try {
+                    resultHandler.handle(Future.failedFuture("Failed to acquire lock for topic " + lockName + " after " + timeoutMs + "ms. Not executing action " + action));
+                } finally {
+                    inflight.compute(key, decrement);
+                }
+            }
+
+        });
     }
 
     /**
@@ -588,7 +634,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnTopicChange(topicName, null, fut.completer());
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        acquireLock(topicName, action, resultHandler);
 
     }
 
@@ -609,7 +655,7 @@ public class TopicOperator {
                 });
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        acquireLock(topicName, action, resultHandler);
     }
 
     /**
@@ -659,7 +705,7 @@ public class TopicOperator {
                 });
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        acquireLock(topicName, action, resultHandler);
     }
 
     /**
@@ -731,7 +777,7 @@ public class TopicOperator {
                 kafka.topicMetadata(topicName, handler);
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        acquireLock(topicName, action, resultHandler);
     }
 
     /** Called when a resource is added in k8s */
@@ -749,7 +795,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnResourceChange(addedTopic, k8sTopic, false, fut);
             }
         };
-        inFlight.enqueue(new TopicName(addedTopic), action, resultHandler);
+        acquireLock(new TopicName(addedTopic), action, resultHandler);
     }
 
     abstract class Reconciliation implements Handler<Future<Void>> {
@@ -780,7 +826,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnResourceChange(modifiedTopic, k8sTopic, true, fut);
             }
         };
-        inFlight.enqueue(new TopicName(modifiedTopic), action, resultHandler);
+        acquireLock(new TopicName(modifiedTopic), action, resultHandler);
     }
 
     private void reconcileOnResourceChange(KafkaTopic topicResource, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
@@ -813,7 +859,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnResourceChange(deletedTopic, null, false, fut);
             }
         };
-        inFlight.enqueue(new TopicName(deletedTopic), action, resultHandler);
+        acquireLock(new TopicName(deletedTopic), action, resultHandler);
     }
 
     private class UpdateInTopicStore implements Handler<Void> {
@@ -905,8 +951,8 @@ public class TopicOperator {
     }
 
     public boolean isWorkInflight() {
-        LOGGER.debug("Inflight: {}", inFlight.toString());
-        return inFlight.size() > 0;
+        LOGGER.debug("Outstanding: {}", inflight);
+        return inflight.size() > 0;
     }
 
     /**
@@ -1103,7 +1149,7 @@ public class TopicOperator {
                 }
             }
         };
-        inFlight.enqueue(topicName, action, result);
+        acquireLock(topicName, action, result);
         result.setHandler(ar -> {
             if (ar.succeeded()) {
                 topicFuture.complete();
@@ -1155,7 +1201,7 @@ public class TopicOperator {
                 }
             }
         };
-        inFlight.enqueue(topicName, action, result);
+        acquireLock(topicName, action, result);
         return result;
     }
 
