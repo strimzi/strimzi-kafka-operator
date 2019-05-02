@@ -41,7 +41,7 @@ public class TopicOperator {
     private final Labels labels;
     private final String namespace;
     private TopicStore topicStore;
-    private final InFlight<TopicName> inFlight;
+    private final InFlight inFlight;
     private final Config config;
 
     enum EventType {
@@ -344,7 +344,7 @@ public class TopicOperator {
         this.vertx = vertx;
         this.labels = labels;
         this.topicStore = topicStore;
-        this.inFlight = new InFlight<>(vertx);
+        this.inFlight = new InFlight(vertx);
         this.namespace = namespace;
         this.config = config;
     }

@@ -25,9 +25,9 @@ public class InFlightTest {
     @Test
     public void testSingleTask(TestContext context) {
         Async async = context.async();
-        InFlight<String> inflight = new InFlight(vertx);
+        InFlight inflight = new InFlight(vertx);
 
-        inflight.enqueue("test", fut -> fut.complete(), ignored -> async.complete());
+        inflight.enqueue(new TopicName("test"), fut -> fut.complete(), ignored -> async.complete());
     }
 
     @Test
@@ -35,8 +35,8 @@ public class InFlightTest {
         Async bothEnqueued = context.async();
         Async firstCompleted = context.async();
         Async secondCompleted = context.async();
-        InFlight<String> inflight = new InFlight(vertx);
-        inflight.enqueue("test", fut -> {
+        InFlight inflight = new InFlight(vertx);
+        inflight.enqueue(new TopicName("test"), fut -> {
             LOGGER.debug("1st task waiting for both to enqueue");
             bothEnqueued.await();
             LOGGER.debug("1st task completing");
@@ -46,7 +46,7 @@ public class InFlightTest {
                 firstCompleted.complete();
             });
 
-        inflight.enqueue("test", fut -> {
+        inflight.enqueue(new TopicName("test"), fut -> {
             LOGGER.debug("2nd task waiting for both to enqueue");
             bothEnqueued.await();
             LOGGER.debug("2nd task completing");
@@ -78,8 +78,8 @@ public class InFlightTest {
         Async bothEnqueued = context.async();
         Async firstCompleted = context.async();
         Async secondCompleted = context.async();
-        InFlight<String> inflight = new InFlight(vertx);
-        inflight.enqueue("test", fut -> {
+        InFlight inflight = new InFlight(vertx);
+        inflight.enqueue(new TopicName("test"), fut -> {
             LOGGER.debug("1st task waiting for both to enqueue");
             bothEnqueued.await();
             LOGGER.debug("1st task failing");
@@ -91,7 +91,7 @@ public class InFlightTest {
                 context.assertEquals("Oops!", v.cause().getMessage());
             });
 
-        inflight.enqueue("test", fut -> {
+        inflight.enqueue(new TopicName("test"), fut -> {
             LOGGER.debug("2nd task waiting for both to enqueue");
             bothEnqueued.await();
             LOGGER.debug("2nd task completing");

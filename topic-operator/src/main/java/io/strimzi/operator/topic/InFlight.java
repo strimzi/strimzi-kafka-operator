@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 
 /**
  * Inflight tracks the current reconciliation jobs being done, and prevents
@@ -36,58 +37,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * enough realize, when reconciling the KafkaTopic creation that the Kafka
  * and TopicStore state is already correct, and so the reconciliation is a noop.
  */
-class InFlight<T> {
+class InFlight {
 
     private final static Logger LOGGER = LogManager.getLogger(InFlight.class);
 
     private final Vertx vertx;
 
-    private final ConcurrentHashMap<T, InflightHandler> map = new ConcurrentHashMap<>();
-
-    class InflightHandler implements Handler<AsyncResult<Void>> {
-
-        private final Handler<AsyncResult<Void>> h1;
-        private final Handler<AsyncResult<Void>> h2;
-        private final String fur;
-        private Handler<AsyncResult<Void>> h3;
-        private final Future<Void> fut;
-
-        public InflightHandler(T key, String fur, Handler<AsyncResult<Void>> h1) {
-            this.fur = fur;
-            this.h1 = h1;
-            this.h2 = x -> {
-                // remove from map if fut is the current key
-                map.compute(key, (k2, v) -> {
-                    if (v == this) {
-                        LOGGER.debug("Removing finished action {}", this);
-                        return null;
-                    } else {
-                        return v;
-                    }
-                });
-            };
-            Future<Void> fut = Future.future();
-            this.fut = fut;
-            fut.setHandler(this);
-        }
-
-        @Override
-        public void handle(AsyncResult<Void> event) {
-            h1.handle(event);
-            h2.handle(event);
-            if (h3 != null) {
-                h3.handle(event);
-            }
-        }
-
-        public void setHandler(Handler<AsyncResult<Void>> h3) {
-            this.h3 = h3;
-        }
-
-        public String toString() {
-            return fur;
-        }
-    }
+    private final ConcurrentHashMap<TopicName, Integer> map = new ConcurrentHashMap<>();
 
     public InFlight(Vertx vertx) {
         this.vertx = vertx;
@@ -104,23 +60,41 @@ class InFlight<T> {
      * When the given {@code action} is complete it must complete its argument future,
      * which will complete the given {@code resultHandler}.
      */
-    public void enqueue(T key, Handler<Future<Void>> action, Handler<AsyncResult<Void>> resultHandler) {
-        InflightHandler fut = new InflightHandler(key, action.toString(), resultHandler);
-        LOGGER.debug("resultHandler:{}, action:{}, fut:{}", resultHandler, action, fut);
-        map.compute(key, (k, current) -> {
-            if (current == null) {
-                LOGGER.debug("Queueing {} for immediate execution", action);
-                vertx.runOnContext(ignored -> action.handle(fut.fut));
-                return fut;
+    public void enqueue(TopicName key, Handler<Future<Void>> action, Handler<AsyncResult<Void>> resultHandler) {
+        String lockName = key.toString();
+        int timeoutMs = 30 * 1_000;
+        BiFunction<TopicName, Integer, Integer> decrement = (topicName, waiters) -> {
+            if (waiters != null) {
+                return waiters == 1 ? null : waiters - 1;
             } else {
-                LOGGER.debug("Queueing {} for deferred execution after {}", action, current);
-                current.setHandler(ar -> {
-                    LOGGER.debug("Executing {} after now {} has finished", action, current);
-                    vertx.runOnContext(ar2 ->
-                            action.handle(fut.fut));
-                });
-                return fut;
+                LOGGER.error("Assertion failure. topic {}, action {}", lockName, action);
+                return null;
             }
+        };
+        LOGGER.debug("Queuing action {} on topic {}", action, lockName);
+        map.compute(key, (topicName, waiters) -> waiters == null ? 1 : waiters + 1);
+        vertx.sharedData().getLockWithTimeout(lockName, timeoutMs, ar -> {
+            if (ar.succeeded()) {
+                Future<Void> f = Future.future();
+                f.setHandler(ar2 -> {
+                    LOGGER.debug("Executing handler for action {} on topic {}", action, lockName);
+                    try {
+                        resultHandler.handle(ar2);
+                    } finally {
+                        ar.result().release();
+                        map.compute(key, decrement);
+                    }
+                });
+                LOGGER.debug("Executing action {} on topic {}", action, lockName);
+                action.handle(f);
+            } else {
+                try {
+                    resultHandler.handle(Future.failedFuture("Failed to acquire lock for topic " + lockName + " after " + timeoutMs + "ms. Not executing action " + action));
+                } finally {
+                    map.compute(key, decrement);
+                }
+            }
+
         });
     }
 
