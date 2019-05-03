@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-security.adoc
+// assembly-upgrade.adoc
 
 [id='con-upgrade-intro-{context}']
 = Upgrade process
