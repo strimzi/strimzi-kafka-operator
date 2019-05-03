@@ -270,7 +270,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         rules.add(zookeeperClusteringIngressRule);
 
-        // Clients port - needs ot be access from outside the Zookeeper cluster as well
+        // Clients port - needs to be accessed from outside the Zookeeper cluster as well
         NetworkPolicyIngressRule clientsIngressRule = new NetworkPolicyIngressRuleBuilder()
                 .withPorts(clientsPort)
                 .withFrom()
