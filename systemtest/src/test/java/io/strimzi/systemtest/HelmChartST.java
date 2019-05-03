@@ -47,7 +47,7 @@ class HelmChartST extends AbstractST {
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
     @Override

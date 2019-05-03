@@ -165,7 +165,7 @@ class SecurityST extends AbstractST {
         createClusterWithExternalRoute();
         String userName = "alice";
         testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
+        waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS, () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
         waitForClusterAvailabilityTls(userName, NAMESPACE);
@@ -216,7 +216,7 @@ class SecurityST extends AbstractST {
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
         testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
-        waitFor("", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS, () -> {
+        waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS, () -> {
             return CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null;
         },
             () -> {
@@ -233,7 +233,7 @@ class SecurityST extends AbstractST {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
         testMethodResources().tlsUser(CLUSTER_NAME, aliceUserName).done();
-        waitFor("Alic's secret to exist", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
+        waitFor("Alic's secret to exist", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(aliceUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
@@ -292,7 +292,7 @@ class SecurityST extends AbstractST {
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
         testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
-        waitFor("Bob's secret to exist", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
+        waitFor("Bob's secret to exist", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName(bobUserName).get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
@@ -361,7 +361,7 @@ class SecurityST extends AbstractST {
         zkPods[0] = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
         kafkaPods[0] = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
         eoPods[0] = StUtils.depSnapshot(CLIENT, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
-        TestUtils.waitFor("Cluster stable and ready", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+        TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Map<String, String> zkSnapshot = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
             Map<String, String> kafkaSnaptop = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaStatefulSetName(CLUSTER_NAME));
             Map<String, String> eoSnapshot = StUtils.depSnapshot(CLIENT, NAMESPACE, entityOperatorDeploymentName(CLUSTER_NAME));
@@ -392,7 +392,7 @@ class SecurityST extends AbstractST {
     }
 
     private void waitForCertToChange(String originalCert, String secretName) {
-        waitFor("Cert to be replaced", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+        waitFor("Cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Secret secret = CLIENT.secrets().inNamespace(NAMESPACE).withName(secretName).get();
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
                 String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
@@ -441,7 +441,7 @@ class SecurityST extends AbstractST {
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
 }

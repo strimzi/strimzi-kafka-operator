@@ -81,7 +81,7 @@ import static io.strimzi.test.TestUtils.changeOrgAndTag;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
-public class Resources extends AbstractResources implements Constants {
+public class Resources extends AbstractResources {
 
     private static final Environment ENVIRONMENT = Environment.getInstance();
 
@@ -309,7 +309,7 @@ public class Resources extends AbstractResources implements Constants {
 
     DoneableKafka kafka(Kafka kafka) {
         return new DoneableKafka(kafka, k -> {
-            TestUtils.waitFor("Kafka creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_READINESS,
+            TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
                 () -> {
                     try {
                         kafka().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -347,7 +347,7 @@ public class Resources extends AbstractResources implements Constants {
 
     private DoneableKafkaConnect kafkaConnect(KafkaConnect kafkaConnect) {
         return new DoneableKafkaConnect(kafkaConnect, kC -> {
-            TestUtils.waitFor("KafkaConnect creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         kafkaConnect().inNamespace(client().getNamespace()).createOrReplace(kC);
@@ -388,7 +388,7 @@ public class Resources extends AbstractResources implements Constants {
 
     private DoneableKafkaConnectS2I kafkaConnectS2I(KafkaConnectS2I kafkaConnectS2I) {
         return new DoneableKafkaConnectS2I(kafkaConnectS2I, kCS2I -> {
-            TestUtils.waitFor("KafkaConnectS2I creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_READINESS,
+            TestUtils.waitFor("KafkaConnectS2I creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
                 () -> {
                     try {
                         kafkaConnectS2I().inNamespace(client().getNamespace()).createOrReplace(kCS2I);
@@ -435,7 +435,7 @@ public class Resources extends AbstractResources implements Constants {
 
     private DoneableKafkaMirrorMaker kafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker) {
         return new DoneableKafkaMirrorMaker(kafkaMirrorMaker, k -> {
-            TestUtils.waitFor("Kafka Mirror Maker creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("Kafka Mirror Maker creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         kafkaMirrorMaker().inNamespace(client().getNamespace()).createOrReplace(k);
@@ -512,7 +512,7 @@ public class Resources extends AbstractResources implements Constants {
 
     private void waitForDeploymentConfig(String namespace, String name) {
         LOGGER.info("Waiting for Deployment Config {}", name);
-        TestUtils.waitFor("deployment config " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS,
+        TestUtils.waitFor("deployment config " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS,
             () -> client().adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment Config {} is ready", name);
     }
@@ -567,7 +567,7 @@ public class Resources extends AbstractResources implements Constants {
     private void waitForPodDeletion(String namespace, String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        TestUtils.waitFor("statefulset " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client().pods().inNamespace(namespace).withName(name).get() == null);
     }
 
@@ -687,7 +687,7 @@ public class Resources extends AbstractResources implements Constants {
                 .withApiVersion("apps/v1")
                 .editSpec()
                     .withNewSelector()
-                        .addToMatchLabels("name", STRIMZI_DEPLOYMENT_NAME)
+                        .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
                     .endSelector()
                     .editTemplate()
                         .editSpec()
@@ -701,7 +701,7 @@ public class Resources extends AbstractResources implements Constants {
 
     DoneableDeployment createNewDeployment(Deployment deployment) {
         return new DoneableDeployment(deployment, co -> {
-            TestUtils.waitFor("Deployment creation", POLL_INTERVAL_FOR_RESOURCE_CREATION, TIMEOUT_FOR_RESOURCE_CREATION,
+            TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
                         client.apps().deployments().createOrReplace(co);
@@ -845,16 +845,16 @@ public class Resources extends AbstractResources implements Constants {
     DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, KafkaUser... kafkaUsers) {
         Deployment kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
-                .withName(clusterName + "-" + KAFKA_CLIENTS)
+                .withName(clusterName + "-" + Constants.KAFKA_CLIENTS)
             .endMetadata()
             .withNewSpec()
                 .withNewSelector()
-                .addToMatchLabels("app", KAFKA_CLIENTS)
+                .addToMatchLabels("app", Constants.KAFKA_CLIENTS)
                 .endSelector()
                 .withReplicas(1)
                 .withNewTemplate()
                     .withNewMetadata()
-                        .addToLabels("app", KAFKA_CLIENTS)
+                        .addToLabels("app", Constants.KAFKA_CLIENTS)
                     .endMetadata()
                     .withSpec(createClientSpec(tlsListener, kafkaUsers))
                 .endTemplate()
@@ -924,7 +924,7 @@ public class Resources extends AbstractResources implements Constants {
     private PodSpec createClientSpec(boolean tlsListener, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
-                .withName(KAFKA_CLIENTS)
+                .withName(Constants.KAFKA_CLIENTS)
                 .withImage(changeOrgAndTag("strimzi/test-client:latest-kafka-" + KAFKA_VERSION))
                 .addNewPort()
                     .withContainerPort(4242)
