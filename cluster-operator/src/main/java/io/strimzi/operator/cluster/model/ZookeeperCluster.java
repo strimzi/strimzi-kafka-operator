@@ -243,24 +243,17 @@ public class ZookeeperCluster extends AbstractModel {
         return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
     }
 
-    public NetworkPolicy generateNetworkPolicy(boolean coInAllNamespaces) {
+    public NetworkPolicy generateNetworkPolicy() {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
-        NetworkPolicyPort port1 = new NetworkPolicyPort();
-        port1.setPort(new IntOrString(CLIENT_PORT));
+        NetworkPolicyPort clientsPort = new NetworkPolicyPort();
+        clientsPort.setPort(new IntOrString(CLIENT_PORT));
 
-        NetworkPolicyPort port2 = new NetworkPolicyPort();
-        port2.setPort(new IntOrString(CLUSTERING_PORT));
+        NetworkPolicyPort clusteringPort = new NetworkPolicyPort();
+        clusteringPort.setPort(new IntOrString(CLUSTERING_PORT));
 
-        NetworkPolicyPort port3 = new NetworkPolicyPort();
-        port3.setPort(new IntOrString(LEADER_ELECTION_PORT));
-
-        NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector = new LabelSelector();
-        Map<String, String> expressions = new HashMap<>();
-        expressions.put(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster));
-        labelSelector.setMatchLabels(expressions);
-        kafkaClusterPeer.setPodSelector(labelSelector);
+        NetworkPolicyPort leaderElectionPort = new NetworkPolicyPort();
+        leaderElectionPort.setPort(new IntOrString(LEADER_ELECTION_PORT));
 
         NetworkPolicyPeer zookeeperClusterPeer = new NetworkPolicyPeer();
         LabelSelector labelSelector2 = new LabelSelector();
@@ -269,31 +262,21 @@ public class ZookeeperCluster extends AbstractModel {
         labelSelector2.setMatchLabels(expressions2);
         zookeeperClusterPeer.setPodSelector(labelSelector2);
 
-        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector3 = new LabelSelector();
-        Map<String, String> expressions3 = new HashMap<>();
-        expressions3.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
-        labelSelector3.setMatchLabels(expressions3);
-        entityOperatorPeer.setPodSelector(labelSelector3);
-
-        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector4 = new LabelSelector();
-        Map<String, String> expressions4 = new HashMap<>();
-        expressions4.put(Labels.STRIMZI_KIND_LABEL, "cluster-operator");
-        labelSelector4.setMatchLabels(expressions4);
-        clusterOperatorPeer.setPodSelector(labelSelector4);
-
-        if (coInAllNamespaces) {
-            // This is a hack because we have no guarantee that the CO namespace has some particular labels
-            clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
-        }
-
-        NetworkPolicyIngressRule networkPolicyIngressRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(port1, port2, port3)
-                .withFrom(kafkaClusterPeer, zookeeperClusterPeer, entityOperatorPeer, clusterOperatorPeer)
+        // Zookeeper only ports - 2888 & 3888 which need to be accessed by the Zookeeper cluster members only
+        NetworkPolicyIngressRule zookeeperClusteringIngressRule = new NetworkPolicyIngressRuleBuilder()
+                .withPorts(clusteringPort, leaderElectionPort)
+                .withFrom(zookeeperClusterPeer)
                 .build();
 
-        rules.add(networkPolicyIngressRule);
+        rules.add(zookeeperClusteringIngressRule);
+
+        // Clients port - needs to be accessed from outside the Zookeeper cluster as well
+        NetworkPolicyIngressRule clientsIngressRule = new NetworkPolicyIngressRuleBuilder()
+                .withPorts(clientsPort)
+                .withFrom()
+                .build();
+
+        rules.add(clientsIngressRule);
 
         if (isMetricsEnabled) {
             NetworkPolicyPort metricsPort = new NetworkPolicyPort();
@@ -309,14 +292,14 @@ public class ZookeeperCluster extends AbstractModel {
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()
-                    .withName(policyName(cluster))
-                    .withNamespace(namespace)
-                    .withLabels(labels.toMap())
-                    .withOwnerReferences(createOwnerReference())
+                .withName(policyName(cluster))
+                .withNamespace(namespace)
+                .withLabels(labels.toMap())
+                .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
-                    .withPodSelector(labelSelector2)
-                    .withIngress(rules)
+                .withPodSelector(labelSelector2)
+                .withIngress(rules)
                 .endSpec()
                 .build();
 
