@@ -114,6 +114,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
+        long kafkaRollingUpdateTimeout = 600000;
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -123,6 +124,7 @@ class KafkaST extends MessagingBaseST {
                             .withTls(false)
                         .endKafkaListenerExternalLoadBalancer()
                     .endListeners()
+                    .withConfig(singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec().done();
 
@@ -139,8 +141,11 @@ class KafkaST extends MessagingBaseST {
         final String newPodName = kafkaPodName(CLUSTER_NAME,  newPodId);
         final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
+        // Create snapshot of current cluster
+        String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaSsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas + 1));
-        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
+        kafkaPods = StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods, kafkaRollingUpdateTimeout);
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
         // (execute bash because we want the env vars expanded in the pod)
@@ -160,11 +165,11 @@ class KafkaST extends MessagingBaseST {
 
         // scale down
         LOGGER.info("Scaling down");
+        // Get kafka new pod uid before deletion
+        uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newPodName).get().getMetadata().getUid();
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
-        replaceKafkaResource(CLUSTER_NAME, k -> {
-            k.getSpec().getKafka().setReplicas(initialReplicas);
-        });
-        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
+        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods, kafkaRollingUpdateTimeout);
 
         final int finalReplicas = CLIENT.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
@@ -174,7 +179,6 @@ class KafkaST extends MessagingBaseST {
                 "Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh");
 
         //Test that the new broker has event 'Killing'
-        uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newPodName).get().getMetadata().getUid();
         assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
         uid = CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
@@ -182,6 +186,7 @@ class KafkaST extends MessagingBaseST {
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
+        waitForClusterAvailability(NAMESPACE);
     }
 
     @Test

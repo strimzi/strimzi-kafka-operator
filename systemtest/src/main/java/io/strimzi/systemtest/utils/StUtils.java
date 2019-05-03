@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
-import io.strimzi.systemtest.Resources;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class StUtils {
+public class StUtils implements Constants {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
 
@@ -123,10 +123,13 @@ public class StUtils {
         }
     }
 
-
     public static Map<String, String> waitTillSsHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
+        return waitTillSsHasRolled(client, namespace, name, snapshot, WAIT_FOR_ROLLING_UPDATE_TIMEOUT);
+    }
+
+    public static Map<String, String> waitTillSsHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot, long timeout) {
         TestUtils.waitFor("SS roll of " + name,
-            1_000, 450_000, () -> {
+                WAIT_FOR_ROLLING_UPDATE_INTERVAL, timeout, () -> {
                 try {
                     return ssHasRolled(client, namespace, name, snapshot);
                 } catch (Exception e) {
@@ -140,9 +143,9 @@ public class StUtils {
 
     public static Map<String, String> waitTillDepHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
         long timeLeft = TestUtils.waitFor("Deployment roll of " + name,
-            1_000, 300_000, () -> depHasRolled(client, namespace, name, snapshot));
+                WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(client, namespace, name, snapshot));
         StUtils.waitForDeploymentReady(client, namespace, name);
-        StUtils.waitForPodsReady(client, namespace, client.extensions().deployments().inNamespace(namespace).withName(name).get().getSpec().getSelector(), true);
+        StUtils.waitForPodsReady(client, namespace, client.apps().deployments().inNamespace(namespace).withName(name).get().getSpec().getSelector(), true);
         return depSnapshot(client, namespace, name);
     }
 
@@ -175,7 +178,7 @@ public class StUtils {
      */
     public static void waitForAllStatefulSetPodsReady(KubernetesClient client, String namespace, String name) {
         LOGGER.info("Waiting for StatefulSet {} to be ready", name);
-        TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("statefulset " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client.apps().statefulSets().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("StatefulSet {} is ready", name);
         LOGGER.info("Waiting for Pods of StatefulSet {} to be ready", name);
@@ -183,7 +186,7 @@ public class StUtils {
     }
 
     public static void waitForPodsReady(KubernetesClient client, String namespace, LabelSelector selector, boolean containers) {
-        TestUtils.waitFor("All pods matching " + selector + "to be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
+        TestUtils.waitFor("All pods matching " + selector + "to be ready", POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             List<Pod> pods = client.pods().inNamespace(namespace).withLabelSelector(selector).list().getItems();
             if (pods.isEmpty()) {
                 LOGGER.debug("Not ready (no pods matching {})", selector);
@@ -215,7 +218,7 @@ public class StUtils {
      */
     public static void waitForDeploymentReady(KubernetesClient client, String namespace, String name) {
         LOGGER.info("Waiting for Deployment {}", name);
-        TestUtils.waitFor("deployment " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("deployment " + name, POLL_INTERVAL_FOR_RESOURCE_READINESS, TIMEOUT_FOR_RESOURCE_READINESS,
             () -> client.apps().deployments().inNamespace(namespace).withName(name).isReady());
         LOGGER.info("Deployment {} is ready", name);
     }

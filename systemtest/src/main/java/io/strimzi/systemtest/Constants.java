@@ -18,7 +18,7 @@ public interface Constants {
     long POLL_INTERVAL_FOR_RESOURCE_CREATION = Duration.ofSeconds(3).toMillis();
     long POLL_INTERVAL_FOR_RESOURCE_READINESS = Duration.ofSeconds(1).toMillis();
     long WAIT_FOR_ROLLING_UPDATE_INTERVAL = Duration.ofSeconds(5).toMillis();
-    long WAIT_FOR_ROLLING_UPDATE_TIMEOUT = Duration.ofMinutes(5).toMillis();
+    long WAIT_FOR_ROLLING_UPDATE_TIMEOUT = Duration.ofMinutes(7).toMillis();
 
     long TIMEOUT_FOR_SEND_RECEIVE_MSG = Duration.ofSeconds(30).toMillis();
     long TIMEOUT_AVAILABILITY_TEST = Duration.ofMinutes(1).toMillis();
