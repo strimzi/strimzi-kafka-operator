@@ -46,6 +46,10 @@ public class PlatformFeaturesAvailabilityTest {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_8);
         assertFalse(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
         pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_11);
+        assertFalse(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
+        pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_11);
+        assertTrue(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
+        pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_12);
         assertTrue(pfa.isNamespaceAndPodSelectorNetworkPolicySupported());
     }
 

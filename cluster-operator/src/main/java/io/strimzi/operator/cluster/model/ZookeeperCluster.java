@@ -315,14 +315,14 @@ public class ZookeeperCluster extends AbstractModel {
     public NetworkPolicy generateNetworkPolicy(boolean coInAllNamespaces) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
-        NetworkPolicyPort port1 = new NetworkPolicyPort();
-        port1.setPort(new IntOrString(CLIENT_PORT));
+        NetworkPolicyPort clientsPort = new NetworkPolicyPort();
+        clientsPort.setPort(new IntOrString(CLIENT_PORT));
 
-        NetworkPolicyPort port2 = new NetworkPolicyPort();
-        port2.setPort(new IntOrString(CLUSTERING_PORT));
+        NetworkPolicyPort clusteringPort = new NetworkPolicyPort();
+        clusteringPort.setPort(new IntOrString(CLUSTERING_PORT));
 
-        NetworkPolicyPort port3 = new NetworkPolicyPort();
-        port3.setPort(new IntOrString(LEADER_ELECTION_PORT));
+        NetworkPolicyPort leaderElectionPort = new NetworkPolicyPort();
+        leaderElectionPort.setPort(new IntOrString(LEADER_ELECTION_PORT));
 
         NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
         LabelSelector labelSelector = new LabelSelector();
@@ -351,18 +351,34 @@ public class ZookeeperCluster extends AbstractModel {
         expressions4.put(Labels.STRIMZI_KIND_LABEL, "cluster-operator");
         labelSelector4.setMatchLabels(expressions4);
         clusterOperatorPeer.setPodSelector(labelSelector4);
+        clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
+
+        // Zookeeper only ports - 2888 & 3888 which need to be accessed by the Zookeeper cluster members only
+        NetworkPolicyIngressRule zookeeperClusteringIngressRule = new NetworkPolicyIngressRuleBuilder()
+                .withPorts(clusteringPort, leaderElectionPort)
+                .withFrom(zookeeperClusterPeer)
+                .build();
+
+        rules.add(zookeeperClusteringIngressRule);
+
+        // Clients port - needs ot be access from outside the Zookeeper cluster as well
+        NetworkPolicyIngressRule clientsIngressRule = new NetworkPolicyIngressRuleBuilder()
+                .withPorts(clientsPort)
+                .withFrom()
+                .build();
 
         if (coInAllNamespaces) {
             // This is a hack because we have no guarantee that the CO namespace has some particular labels
-            clusterOperatorPeer.setNamespaceSelector(new LabelSelector());
+            List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
+            clientsPortPeers.add(kafkaClusterPeer);
+            clientsPortPeers.add(zookeeperClusterPeer);
+            clientsPortPeers.add(entityOperatorPeer);
+            clientsPortPeers.add(clusterOperatorPeer);
+
+            clientsIngressRule.setFrom(clientsPortPeers);
         }
 
-        NetworkPolicyIngressRule networkPolicyIngressRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(port1, port2, port3)
-                .withFrom(kafkaClusterPeer, zookeeperClusterPeer, entityOperatorPeer, clusterOperatorPeer)
-                .build();
-
-        rules.add(networkPolicyIngressRule);
+        rules.add(clientsIngressRule);
 
         if (isMetricsEnabled) {
             NetworkPolicyPort metricsPort = new NetworkPolicyPort();
