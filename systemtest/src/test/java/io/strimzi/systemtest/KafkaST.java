@@ -30,6 +30,7 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -112,7 +113,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    void testKafkaAndZookeeperScaleUpScaleDown() {
+    void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -128,7 +129,6 @@ class KafkaST extends MessagingBaseST {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed
         LOGGER.info("Running kafkaScaleUpScaleDown {}", CLUSTER_NAME);
-        //kubeClient.waitForStatefulSet(kafkaStatefulSetName(clusterName), 3);
 
         final int initialReplicas = CLIENT.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(3, initialReplicas);
@@ -711,7 +711,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
-    void testRackAware() {
+    void testRackAware() throws Exception {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
@@ -1056,12 +1056,12 @@ class KafkaST extends MessagingBaseST {
     void createTestResources() throws Exception {
         createTestMethodResources();
         testMethodResources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
-        testMethodResources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, ENVIRONMENT.getKubernetesApiUrl(), NAMESPACE).done();
+        testMethodResources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
     }
 
     @AfterEach
     void deleteTestResources() throws Exception {
-        deleteResources();
+        deleteTestMethodResources();
         waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
