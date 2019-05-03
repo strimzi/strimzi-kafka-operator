@@ -312,7 +312,7 @@ public class ZookeeperCluster extends AbstractModel {
         return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
     }
 
-    public NetworkPolicy generateNetworkPolicy(boolean coInAllNamespaces) {
+    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
         NetworkPolicyPort clientsPort = new NetworkPolicyPort();
@@ -367,7 +367,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .withFrom()
                 .build();
 
-        if (coInAllNamespaces) {
+        if (namespaceAndPodSelectorNetworkPolicySupported) {
             // This is a hack because we have no guarantee that the CO namespace has some particular labels
             List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
             clientsPortPeers.add(kafkaClusterPeer);
