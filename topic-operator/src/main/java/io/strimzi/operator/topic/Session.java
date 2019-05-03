@@ -18,6 +18,7 @@ import io.vertx.core.http.HttpServer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -81,7 +82,7 @@ public class Session extends AbstractVerticle {
                 @Override
                 public void handle(Long inflightTimerId) {
                     if (!topicOperator.isWorkInflight()) {
-                        LOGGER.error("Inflight work has finished");
+                        LOGGER.debug("Inflight work has finished");
                         f.complete();
                     } else if (System.currentTimeMillis() > deadline) {
                         LOGGER.error("Timeout waiting for inflight work to finish");
@@ -102,16 +103,20 @@ public class Session extends AbstractVerticle {
                     if (zkResult.failed()) {
                         LOGGER.warn("Error disconnecting from zookeeper: {}", String.valueOf(zkResult.cause()));
                     }
-                    LOGGER.debug("Closing AdminClient {}", adminClient);
-                    adminClient.close(deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
-
-                    HttpServer healthServer = this.healthServer;
-                    if (healthServer != null) {
-                        healthServer.close();
+                    long timeoutMs = Math.max(1, deadline - System.currentTimeMillis());
+                    LOGGER.debug("Closing AdminClient {} with timeout {}ms", adminClient, timeoutMs);
+                    try {
+                        adminClient.close(timeoutMs, TimeUnit.MILLISECONDS);
+                        HttpServer healthServer = this.healthServer;
+                        if (healthServer != null) {
+                            healthServer.close();
+                        }
+                    } catch (TimeoutException e) {
+                        LOGGER.warn("Timeout while closing AdminClient with timeout {}ms", e, timeoutMs);
+                    } finally {
+                        LOGGER.info("Stopped");
+                        blockingResult.complete();
                     }
-
-                    LOGGER.info("Stopped");
-                    blockingResult.complete();
                 });
                 return Future.succeededFuture();
             });
