@@ -39,10 +39,6 @@ public class Environment {
      */
     public static final String KUBERNETES_DOMAIN_ENV = "KUBERNETES_DOMAIN";
     /**
-     * URL of the kubernetes cluster. It's used for specify URL endpoint of testing clients.
-     */
-    public static final String KUBERNETES_API_URL_ENV = "KUBERNETES_API_URL";
-    /**
      * CO reconciliation interval.
      */
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
@@ -53,7 +49,6 @@ public class Environment {
     public static final String ST_KAFKA_VERSION_DEFAULT = "2.2.0";
     public static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     public static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
-    public static final String KUBERNETES_API_URL_DEFAULT = "https://127.0.0.1:8443";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT = "30000";
     public static final int INGRESS_DEFAULT_PORT = 4242;
 
@@ -63,7 +58,6 @@ public class Environment {
     private final String stKafkVersion = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     private final String strimziLogLevel = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
     private final String kubernetesDomain = System.getenv().getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
-    private final String kubernetesApiUrl = System.getenv().getOrDefault(KUBERNETES_API_URL_ENV, KUBERNETES_API_URL_DEFAULT);
     private final String strimziFullReconciliationIntervalMs = System.getenv().getOrDefault(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT);
 
     private Environment() {
@@ -75,7 +69,6 @@ public class Environment {
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, stKafkVersion);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, strimziLogLevel);
         LOGGER.info(debugFormat, KUBERNETES_DOMAIN_ENV, kubernetesDomain);
-        LOGGER.info(debugFormat, KUBERNETES_API_URL_ENV, kubernetesApiUrl);
     }
 
     public static synchronized Environment getInstance() {
@@ -107,10 +100,6 @@ public class Environment {
 
     public String getKubernetesDomain() {
         return kubernetesDomain;
-    }
-
-    public String getKubernetesApiUrl() {
-        return kubernetesApiUrl;
     }
 
     public String getStrimziFullReconciliationInterval() {
