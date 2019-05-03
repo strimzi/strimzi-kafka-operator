@@ -12,14 +12,11 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
 
@@ -31,10 +28,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
 public class StrimziUpgradeST extends AbstractST {
 
@@ -261,13 +257,14 @@ public class StrimziUpgradeST extends AbstractST {
         });
     }
 
-    @BeforeAll
+    @BeforeEach
     void setupEnvironment() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Creating namespace: {}", NAMESPACE);
         createNamespace(NAMESPACE);
     }
-    @AfterAll
-    void teardownEnvironment() {
+
+    @Override
+    void tearDownEnvironmentAfterEach() {
         deleteNamespaces();
     }
 

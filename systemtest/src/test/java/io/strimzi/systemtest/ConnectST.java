@@ -9,22 +9,19 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Failed;
 import static io.strimzi.systemtest.k8s.Events.FailedSync;
@@ -35,8 +32,6 @@ import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
-import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static io.strimzi.test.TestUtils.getFileAsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -44,7 +39,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
-@ExtendWith(StrimziExtension.class)
+@Tag(REGRESSION)
 class ConnectST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);
@@ -62,7 +57,7 @@ class ConnectST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     void testDeployUndeploy() {
-        resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
+        testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
         String podName = KUBE_CLIENT.list("Pod").stream().filter(n -> n.startsWith(kafkaConnectName(KAFKA_CLUSTER_NAME))).findFirst().get();
@@ -77,7 +72,7 @@ class ConnectST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testKafkaConnectWithFileSinkPlugin() {
-        resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
+        testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
             .endMetadata()
@@ -85,7 +80,7 @@ class ConnectST extends AbstractST {
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
             .endSpec().done();
-        resources().topic(KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME).done();
+        testMethodResources().topic(KAFKA_CLUSTER_NAME, TEST_TOPIC_NAME).done();
 
         String connectorConfig = getFileAsString("../systemtest/src/test/resources/file/sink/connector.json");
         String kafkaConnectPodName = KUBE_CLIENT.listResourcesByLabel("pod", "type=kafka-connect").get(0);
@@ -104,7 +99,7 @@ class ConnectST extends AbstractST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
+        testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToLabels("type", "kafka-connect")
             .endMetadata()
@@ -134,7 +129,7 @@ class ConnectST extends AbstractST {
     @Tag(REGRESSION)
     void testKafkaConnectScaleUpScaleDown() {
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", NAMESPACE);
-        resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
+        testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1).done();
 
         // kafka cluster Connect already deployed
         List<String> connectPods = KUBE_CLIENT.listResourcesByLabel("pod", "strimzi.io/kind=KafkaConnect");
@@ -173,7 +168,7 @@ class ConnectST extends AbstractST {
     @Test
     @Tag(REGRESSION)
     void testForUpdateValuesInConnectCM() {
-        resources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
+        testMethodResources().kafkaConnect(KAFKA_CLUSTER_NAME, 1)
             .editSpec()
                 .withNewReadinessProbe()
                     .withInitialDelaySeconds(15)
@@ -241,12 +236,7 @@ class ConnectST extends AbstractST {
 
     @BeforeEach
     void createTestResources() {
-        createResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
+        createTestMethodResources();
     }
 
     @BeforeAll
@@ -273,12 +263,6 @@ class ConnectST extends AbstractST {
                     .withConfig(kafkaConfig)
                 .endKafka()
             .endSpec().done();
-    }
-
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
     }
 
     @Override

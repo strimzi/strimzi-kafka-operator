@@ -7,7 +7,6 @@ package io.strimzi.systemtest;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.File;
@@ -73,8 +72,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
         KUBE_CLIENT.namespace(CO_NAMESPACE);
     }
 
-    @AfterEach
-    void deleteSecondNamespaceResources() throws Exception {
+    @Override
+    void tearDownEnvironmentAfterEach() throws Exception {
         secondNamespaceResources.deleteResources();
         waitForDeletion(TIMEOUT_TEARDOWN, SECOND_NAMESPACE);
         KUBE_CLIENT.namespace(CO_NAMESPACE);

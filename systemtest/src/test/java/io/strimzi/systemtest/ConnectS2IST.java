@@ -5,27 +5,23 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
-@ExtendWith(StrimziExtension.class)
+@Tag(REGRESSION)
 class ConnectS2IST extends AbstractST {
 
     public static final String NAMESPACE = "connect-s2i-cluster-test";
@@ -58,12 +54,7 @@ class ConnectS2IST extends AbstractST {
 
     @BeforeEach
     void createTestResources() {
-        createResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
+        createTestMethodResources();
     }
 
     @BeforeAll
@@ -76,12 +67,6 @@ class ConnectS2IST extends AbstractST {
         // 050-Deployment
         testClassResources.clusterOperator(NAMESPACE).done();
         deployTestSpecificResources();
-    }
-
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
     }
 
     void deployTestSpecificResources() {

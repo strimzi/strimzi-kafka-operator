@@ -4,22 +4,17 @@
  */
 package io.strimzi.systemtest;
 
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 
-@ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
 class HelmChartST extends AbstractST {
 
@@ -31,21 +26,15 @@ class HelmChartST extends AbstractST {
 
     @Test
     void testDeployKafkaClusterViaHelmChart() {
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
-        resources().topic(CLUSTER_NAME, TOPIC_NAME).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME).done();
         KUBE_CLIENT.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 3);
         KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
     }
 
     @BeforeEach
     void createTestResources() {
-        createResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
+        createTestMethodResources();
     }
 
     @BeforeAll
@@ -55,8 +44,14 @@ class HelmChartST extends AbstractST {
         deployClusterOperatorViaHelmChart();
     }
 
-    @AfterAll
-    void teardownEnvironment() {
+    @Override
+    void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
+    }
+
+    @Override
+    void tearDownEnvironmentAfterAll() {
         deleteClusterOperatorViaHelmChart();
         deleteNamespaces();
     }

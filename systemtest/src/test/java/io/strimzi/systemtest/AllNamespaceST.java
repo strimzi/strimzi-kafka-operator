@@ -5,25 +5,22 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
-@ExtendWith(StrimziExtension.class)
+@Tag(REGRESSION)
 class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
@@ -138,8 +135,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         KUBE_CLIENT.namespace(previousNamespace);
     }
 
-    @AfterAll
-    void teardownEnvironment() {
+    @Override
+    void tearDownEnvironmentAfterAll() {
         thirdNamespaceResources.deleteResources();
         testClassResources.deleteResources();
         teardownEnvForOperator();

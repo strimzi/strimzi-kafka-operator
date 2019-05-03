@@ -59,7 +59,7 @@
         <maven.failsafe.version>2.22.1</maven.failsafe.version>
         <maven.assembly.version>3.1.0</maven.assembly.version>
         <maven.shade.version>3.1.0</maven.shade.version>
-        <maven.javadoc.version>3.0.1</maven.javadoc.version>
+        <maven.javadoc.version>3.1.0</maven.javadoc.version>
         <maven.source.version>3.0.1</maven.source.version>
         <maven.dependency.version>3.1.1</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>

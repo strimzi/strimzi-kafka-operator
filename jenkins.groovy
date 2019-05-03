@@ -69,8 +69,8 @@ def buildStrimzi() {
     sh "make docker_tag"
 }
 
-def runSystemTests(String workspace, String tags, String testCases) {
-    sh "mvn -f ${workspace}/systemtest/pom.xml -P systemtests verify -DjunitTags=${tags} -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
+def runSystemTests(String workspace, String testCases, String testProfile) {
+    sh "mvn -f ${workspace}/systemtest/pom.xml -P ${testProfile} verify -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
 }
 
 def postAction(String artifactDir, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl, String workspace, String address) {

@@ -8,29 +8,24 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
-@ExtendWith(StrimziExtension.class)
 @Tag(REGRESSION)
 class RollingUpdateST extends AbstractST {
 
@@ -47,11 +42,11 @@ class RollingUpdateST extends AbstractST {
         String firstZkPodName = KafkaResources.zookeeperPodName(CLUSTER_NAME, 0);
         String logZkPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstZkPodName + "'";
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         LOGGER.info("Update resources for pods");
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                 .editZookeeper()
                 .withResources(new ResourceRequirementsBuilder()
@@ -99,11 +94,11 @@ class RollingUpdateST extends AbstractST {
         String firstKafkaPodName = KafkaResources.kafkaPodName(CLUSTER_NAME, 0);
         String logKafkaPattern = "'Exceeded timeout of .* while waiting for Pods resource " + firstKafkaPodName + "'";
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3).done();
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
 
         LOGGER.info("Update resources for pods");
 
-        resources().kafkaEphemeral(CLUSTER_NAME, 3)
+        testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
                 .editSpec()
                 .editKafka()
                 .withResources(new ResourceRequirementsBuilder()
@@ -168,13 +163,7 @@ class RollingUpdateST extends AbstractST {
 
     @BeforeEach
     void createTestResources() {
-        createResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
+        createTestMethodResources();
     }
 
     @BeforeAll
@@ -188,9 +177,9 @@ class RollingUpdateST extends AbstractST {
         testClassResources.clusterOperator(NAMESPACE, Long.toString(CO_OPERATION_TIMEOUT)).done();
     }
 
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
+    @Override
+    void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 }

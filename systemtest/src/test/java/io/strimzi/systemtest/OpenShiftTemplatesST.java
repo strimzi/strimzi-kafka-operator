@@ -19,41 +19,38 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.extensions.StrimziExtension;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 
 /**
  * Basic tests for the OpenShift templates.
  * This only tests that the template create the appropriate resource,
  * not that the created resource is processed by operator(s) in the appropriate way.
  */
-@ExtendWith(StrimziExtension.class)
 @OpenShiftOnly
+@Tag(REGRESSION)
 public class OpenShiftTemplatesST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenShiftTemplatesST.class);
 
     public static final String NAMESPACE = "template-test";
 
-    public static KubeClusterResource cluster = new KubeClusterResource();
+    public static KubeClusterResource cluster = KubeClusterResource.getInstance();
     private Oc oc = (Oc) KUBE_CLIENT;
 
     private Kafka getKafkaWithName(String clusterName) {
@@ -69,7 +66,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testStrimziEphemeral() {
         String clusterName = "foo";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -86,7 +82,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testStrimziPersistent() {
         String clusterName = "bar";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
@@ -102,7 +97,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testStrimziEphemeralWithCustomParameters() {
         String clusterName = "test-ephemeral-with-custom-parameters";
         oc.newApp("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
@@ -132,7 +126,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testStrimziPersistentWithCustomParameters() {
         String clusterName = "test-persistent-with-custom-parameters";
         oc.newApp("strimzi-persistent", map("CLUSTER_NAME", clusterName,
@@ -166,7 +159,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testConnect() {
         String clusterName = "test-connect";
         oc.newApp("strimzi-connect", map("CLUSTER_NAME", clusterName,
@@ -178,7 +170,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testS2i() {
         String clusterName = "test-s2i";
         oc.newApp("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
@@ -190,7 +181,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    @Tag(REGRESSION)
     void testTopicOperator() {
         String topicName = "test-topic-topic";
         oc.newApp("strimzi-topic", map(
@@ -219,10 +209,15 @@ public class OpenShiftTemplatesST extends AbstractST {
                 "src/rbac/role-edit-kafka.yaml");
     }
 
-    @AfterAll
-    void teardownEnvironment() {
+    @Override
+    void tearDownEnvironmentAfterAll() {
         deleteCustomResources();
         deleteNamespaces();
+    }
+
+    @Override
+    void tearDownEnvironmentAfterEach() {
+
     }
 
     @Override

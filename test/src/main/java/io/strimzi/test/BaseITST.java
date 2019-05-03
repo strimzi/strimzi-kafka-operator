@@ -34,7 +34,7 @@ public class BaseITST {
     private static final Logger LOGGER = LogManager.getLogger(BaseITST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
 
-    public static final KubeClusterResource CLUSTER = new KubeClusterResource();
+    public static final KubeClusterResource CLUSTER = KubeClusterResource.getInstance();
 
     public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
     public static final DefaultKubernetesClient CLIENT = new DefaultKubernetesClient(CONFIG);

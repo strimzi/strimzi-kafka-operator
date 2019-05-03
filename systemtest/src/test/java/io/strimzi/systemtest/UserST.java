@@ -5,36 +5,31 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
-@ExtendWith(StrimziExtension.class)
+@Tag(REGRESSION)
 class UserST extends AbstractST {
 
     public static final String NAMESPACE = "user-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
 
     @Test
-    @Tag(REGRESSION)
     void testUpdateUser() {
         LOGGER.info("Running testUpdateUser in namespace {}", NAMESPACE);
         String kafkaUser = "test-user";
 
-        resources().kafka(resources().defaultKafka(CLUSTER_NAME, 3)
+        testMethodResources().kafka(testMethodResources().defaultKafka(CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .editListeners()
@@ -48,7 +43,7 @@ class UserST extends AbstractST {
                 .endKafka()
             .endSpec().build()).done();
 
-        KafkaUser user = resources().tlsUser(CLUSTER_NAME, kafkaUser).done();
+        KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         KUBE_CLIENT.waitForResourceCreation("secret", kafkaUser);
 
         String kafkaUserSecret = KUBE_CLIENT.getResourceAsJson("secret", kafkaUser);
@@ -66,7 +61,7 @@ class UserST extends AbstractST {
 
         kafkaUser = "new-" + kafkaUser;
 
-        resources().user(user)
+        testMethodResources().user(user)
             .editMetadata()
                 .withResourceVersion(null)
                 .withName(kafkaUser)
@@ -90,13 +85,7 @@ class UserST extends AbstractST {
 
     @BeforeEach
     void createTestResources() {
-        createResources();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
+        createTestMethodResources();
     }
 
     @BeforeAll
@@ -110,9 +99,9 @@ class UserST extends AbstractST {
         testClassResources.clusterOperator(NAMESPACE).done();
     }
 
-    @AfterAll
-    void teardownEnvironment() {
-        testClassResources.deleteResources();
-        teardownEnvForOperator();
+    @Override
+    void tearDownEnvironmentAfterEach() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 }

@@ -1,20 +1,14 @@
 #!/usr/bin/env bash
 
 TESTCASE=${1:-.*ST}
-JUNIT_TAGS=${2:-acceptance}
-TEST_PROFILE=${3:-systemtests}
+TEST_PROFILE=${3:-acceptance}
 
 function run_test() {
     TESTCASE=$1
-    JUNIT_TAGS=$2
-    PROFILE=${3:-systemtests}
+    PROFILE=${2:-systemtests}
 
     if [[ -n "${TESTCASE}" ]]; then
         EXTRA_TEST_ARGS="-Dit.test=${TESTCASE}"
-    fi
-
-    if [[ -n "${JUNIT_TAGS}" ]]; then
-        EXTRA_TEST_ARGS="${EXTRA_TEST_ARGS} -DjunitTags=${JUNIT_TAGS}"
     fi
 
     echo "Extra args for tests: ${EXTRA_TEST_ARGS}"
@@ -27,7 +21,7 @@ echo "Running tests with profile: ${TEST_PROFILE}, tests: ${TESTCASE}"
 failure=0
 
 #run tests
-run_test ${TESTCASE} ${JUNIT_TAGS} ${TEST_PROFILE} || failure=$(($failure + 1))
+run_test ${TESTCASE} ${TEST_PROFILE} || failure=$(($failure + 1))
 
 if [[ ${failure} -gt 0 ]]; then
     echo "Systemtests failed"
