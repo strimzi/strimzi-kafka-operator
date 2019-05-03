@@ -114,6 +114,7 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
+        long kafkaRollingUpdateTimeout = 600000;
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -144,7 +145,7 @@ class KafkaST extends MessagingBaseST {
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaSsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas + 1));
-        kafkaPods = StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods, 600000);
+        kafkaPods = StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods, kafkaRollingUpdateTimeout);
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
         // (execute bash because we want the env vars expanded in the pod)
@@ -168,7 +169,7 @@ class KafkaST extends MessagingBaseST {
         uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newPodName).get().getMetadata().getUid();
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods, 600000);
+        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods, kafkaRollingUpdateTimeout);
 
         final int finalReplicas = CLIENT.apps().statefulSets().inNamespace(KUBE_CLIENT.namespace()).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
