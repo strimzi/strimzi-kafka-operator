@@ -130,7 +130,11 @@ public class PlatformFeaturesAvailability {
     }
 
     public boolean isNamespaceAndPodSelectorNetworkPolicySupported() {
-        return this.kubernetesVersion.compareTo(KubernetesVersion.V1_11) >= 0;
+        if (isOpenshift()) {
+            return this.kubernetesVersion.compareTo(KubernetesVersion.V1_12) >= 0;
+        } else {
+            return this.kubernetesVersion.compareTo(KubernetesVersion.V1_11) >= 0;
+        }
     }
 
     public KubernetesVersion getKubernetesVersion() {
