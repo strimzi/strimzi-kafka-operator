@@ -90,6 +90,13 @@ public class BaseITST {
     protected void createNamespaces(String useNamespace, List<String> namespaces) {
         bindingsNamespaces = namespaces;
         for (String namespace: namespaces) {
+
+            if (CLIENT.namespaces().withName(namespace).get() != null) {
+                LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
+                CLIENT.namespaces().withName(namespace).delete();
+                KUBE_CLIENT.waitForResourceDeletion("Namespace", namespace);
+            }
+
             LOGGER.info("Creating namespace: {}", namespace);
             deploymentNamespaces.add(namespace);
             KUBE_CLIENT.createNamespace(namespace);
