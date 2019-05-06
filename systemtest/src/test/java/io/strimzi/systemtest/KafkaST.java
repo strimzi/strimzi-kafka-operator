@@ -30,7 +30,6 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -1062,12 +1061,6 @@ class KafkaST extends MessagingBaseST {
         createTestMethodResources();
         testMethodResources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
         testMethodResources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
-    }
-
-    @AfterEach
-    void deleteTestResources() throws Exception {
-        deleteTestMethodResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
     @BeforeAll
