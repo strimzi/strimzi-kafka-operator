@@ -76,7 +76,7 @@ spec:
 ----
 
 When the user is created by the User Operator, the User Operator will create a new secret with the same name as the `KafkaUser` resource.
-The secret will contain the generated password in the `password` key.
+The secret will contain the generated password in the `password` key that is encoded with base64, for using it you must decode it.
 
 .An example of the `Secret` with user credentials
 [source,yaml,subs="attributes+"]
@@ -91,6 +91,11 @@ metadata:
 type: Opaque
 data:
   password: # Generated password
+----
+
+For decode the generated password:
+----
+echo "Generated password" | base64 --decode
 ----
 
 == Authorization
