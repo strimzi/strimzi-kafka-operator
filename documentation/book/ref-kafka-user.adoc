@@ -76,7 +76,7 @@ spec:
 ----
 
 When the user is created by the User Operator, the User Operator will create a new secret with the same name as the `KafkaUser` resource.
-The secret will contain the generated password in the `password` key.
+The secret contains the generated password in the `password` key, which is encoded with base64. In order to use the password it must be decoded.
 
 .An example of the `Secret` with user credentials
 [source,yaml,subs="attributes+"]
@@ -90,7 +90,12 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  password: # Generated password
+  password: Z2VuZXJhdGVkcGFzc3dvcmQ= # Generated password
+----
+
+For decode the generated password:
+----
+echo "Z2VuZXJhdGVkcGFzc3dvcmQ=" | base64 --decode
 ----
 
 == Authorization
