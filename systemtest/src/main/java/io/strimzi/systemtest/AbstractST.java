@@ -540,6 +540,10 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
 
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
+
+        // Collect pods again after proper removal
+        pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
+                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
         long podCount = pods.size();
 
         StringBuilder nonTerminated = new StringBuilder();
