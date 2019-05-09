@@ -41,6 +41,7 @@ public interface Constants {
 
     String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
+    String STRIMZI_BRIDGE_DEPLOYMENT_NAME = "strimzi-kafka-bridge";
     String IMAGE_PULL_POLICY = "Always";
 
     /**
@@ -64,4 +65,8 @@ public interface Constants {
      * Tag for tests, which are failing only on CCI VMs
      */
     String CCI_FLAKY = "cci_flaky";
+    /**
+     * Tag for strimzi bridge tests.
+     */
+    String BRIDGE = "bridge";
 }

@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
@@ -32,6 +33,7 @@ import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -51,6 +53,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
+import static io.strimzi.systemtest.Resources.getSystemtestsServiceResource;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
@@ -500,7 +503,7 @@ class KafkaST extends MessagingBaseST {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         testMethodResources().topic(CLUSTER_NAME, topicName).done();
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME).done();
+        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
 
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
     }
@@ -533,7 +536,7 @@ class KafkaST extends MessagingBaseST {
         KafkaUser user = testMethodResources().tlsUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
     }
 
@@ -575,7 +578,7 @@ class KafkaST extends MessagingBaseST {
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
-        testMethodResources().deployKafkaClients(false, CLUSTER_NAME, user).done();
+        testMethodResources().deployKafkaClients(false, CLUSTER_NAME, NAMESPACE, user).done();
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
     }
 
@@ -604,7 +607,7 @@ class KafkaST extends MessagingBaseST {
         KafkaUser user = testMethodResources().scramShaUser(CLUSTER_NAME, kafkaUser).done();
         waitTillSecretExists(kafkaUser);
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, user).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, user).done();
         availabilityTest(messagesCount, 180000, CLUSTER_NAME, true, topicName, user);
     }
 
@@ -1159,8 +1162,15 @@ class KafkaST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
-        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
-        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
+        Service service = getSystemtestsServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT);
+        testMethodResources.createServiceResource(service, NAMESPACE).done();
+        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
+    }
+
+    @AfterEach
+    void deleteTestResources() throws Exception {
+        deleteTestMethodResources();
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 
     @BeforeAll

@@ -6,6 +6,7 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Resources.getSystemtestsServiceResource;
 
 @Tag(REGRESSION)
 public class MirrorMakerST extends MessagingBaseST {
@@ -54,7 +56,7 @@ public class MirrorMakerST extends MessagingBaseST {
         // Deploy Topic
         testMethodResources().topic(kafkaSourceName, topicSourceName).done();
 
-        testMethodResources().deployKafkaClients(CLUSTER_NAME).done();
+        testMethodResources().deployKafkaClients(CLUSTER_NAME, NAMESPACE).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaSourceName);
@@ -153,7 +155,7 @@ public class MirrorMakerST extends MessagingBaseST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaClusterTargetName));
 
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
@@ -247,7 +249,7 @@ public class MirrorMakerST extends MessagingBaseST {
         certSecretTarget.setSecretName(clusterCaCertSecretName(kafkaTargetName));
 
         // Deploy client
-        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
+        testMethodResources().deployKafkaClients(true, CLUSTER_NAME, NAMESPACE, userSource, userTarget).done();
 
         // Check brokers availability
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaSourceName, true, "my-topic-test-1", userSource);
@@ -292,8 +294,9 @@ public class MirrorMakerST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
-        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
-        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
+        Service service = getSystemtestsServiceResource(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT);
+        testMethodResources.createServiceResource(service, NAMESPACE).done();
+        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.KAFKA_CLIENTS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
     }
 
     @AfterEach

@@ -61,7 +61,8 @@ public class Environment {
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT = "30000";
-    static final int INGRESS_DEFAULT_PORT = 4242;
+    public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
+    public static final int HTTP_BRIDGE_DEFAULT_PORT = 8080;
 
     public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
     public static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
