@@ -70,7 +70,7 @@ def buildStrimzi() {
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile) {
-    sh "mvn -f ${workspace}/systemtest/pom.xml -P ${testProfile} verify -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false"
+    sh "mvn -f ${workspace}/systemtest/pom.xml -P ${testProfile} verify -Dit.test=${testCases} -Djava.net.preferIPv4Stack=true -DtrimStackTrace=false -Dfailsafe.rerunFailingTestsCount=2"
 }
 
 def postAction(String artifactDir, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl, String workspace, String address) {
