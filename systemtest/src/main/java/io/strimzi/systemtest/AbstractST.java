@@ -533,15 +533,21 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
      * @throws Exception exception
      */
     void waitForDeletion(long time, String namespace) throws Exception {
+        List<Pod> pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
+            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
+        // Delete pods in case of kubernetes keep them up
+        pods.forEach(p -> CLIENT.pods().inNamespace(namespace).delete(p));
+
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
-        long podCount = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
-            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).count();
+
+        // Collect pods again after proper removal
+        pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
+            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
+        long podCount = pods.size();
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
-                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             pods.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );
