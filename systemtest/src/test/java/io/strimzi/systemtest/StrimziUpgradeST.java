@@ -245,7 +245,7 @@ public class StrimziUpgradeST extends AbstractST {
     }
 
     private void waitTillAllContainersUseImage(Map<String, String> matchLabels, int container, String image) {
-        TestUtils.waitFor("All pods matching " + matchLabels + " to have image " + image, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("All pods matching " + matchLabels + " to have image " + image, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             List<Pod> pods1 = CLIENT.pods().inNamespace(NAMESPACE).withLabels(matchLabels).list().getItems();
             for (Pod pod : pods1) {
                 if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {

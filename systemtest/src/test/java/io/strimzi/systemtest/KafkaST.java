@@ -386,7 +386,7 @@ class KafkaST extends MessagingBaseST {
 
         testMethodResources().deployKafkaClients(CLUSTER_NAME).done();
 
-        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, null);
     }
 
     /**
@@ -418,7 +418,7 @@ class KafkaST extends MessagingBaseST {
         waitTillSecretExists(kafkaUser);
 
         testMethodResources().deployKafkaClients(true, CLUSTER_NAME, user).done();
-        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, true, topicName, user);
     }
 
     /**
@@ -461,7 +461,7 @@ class KafkaST extends MessagingBaseST {
         }
 
         testMethodResources().deployKafkaClients(false, CLUSTER_NAME, user).done();
-        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, CLUSTER_NAME, false, topicName, user);
     }
 
     /**
@@ -578,7 +578,7 @@ class KafkaST extends MessagingBaseST {
         assertResources(KUBE_CLIENT.namespace(), pod.get().getMetadata().getName(), "user-operator",
                 "512M", "300m", "256M", "300m");
 
-        TestUtils.waitFor("Wait till reconciliation timeout", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Wait till reconciliation timeout", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> !KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", TimeMeasuringSystem.getCurrentDuration(testClass, testName, operationID), "\"Assembly reconciled\"").isEmpty());
 
         // Checking no rolling update after last CO reconciliation
@@ -595,7 +595,7 @@ class KafkaST extends MessagingBaseST {
 
         //Creating topics for testing
         KUBE_CLIENT.create(TOPIC_CM);
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_TOPIC_CREATION, () -> {
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
         });
@@ -634,7 +634,7 @@ class KafkaST extends MessagingBaseST {
         KUBE_CLIENT.waitForResourceDeletion("kafkatopic", "my-topic");
 
         //Checking all topics were deleted
-        Thread.sleep(TIMEOUT_TEARDOWN);
+        Thread.sleep(Constants.TIMEOUT_TEARDOWN);
         List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems("my-topic")));
         assertThat(topics, not(hasItems("topic-from-cli")));
@@ -765,7 +765,7 @@ class KafkaST extends MessagingBaseST {
                 .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
 
         // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
             () -> getAnnotationsForSS(NAMESPACE, kafkaClusterName(CLUSTER_NAME)) == null
                 || !getAnnotationsForSS(NAMESPACE, kafkaClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
 
@@ -786,7 +786,7 @@ class KafkaST extends MessagingBaseST {
                 .get().getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
 
         // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
             () -> getAnnotationsForSS(NAMESPACE, zookeeperClusterName(CLUSTER_NAME)) == null
                 || !getAnnotationsForSS(NAMESPACE, zookeeperClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
 
@@ -829,7 +829,7 @@ class KafkaST extends MessagingBaseST {
 
         String userName = "alice";
         testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
+        waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
@@ -870,7 +870,7 @@ class KafkaST extends MessagingBaseST {
 
         String userName = "alice";
         testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
-        waitFor("Wait for secrets became available", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_GET_SECRETS,
+        waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> CLIENT.secrets().inNamespace(NAMESPACE).withName("alice").get() != null,
             () -> LOGGER.error("Couldn't find user secret {}", CLIENT.secrets().inNamespace(NAMESPACE).list().getItems()));
 
@@ -886,7 +886,7 @@ class KafkaST extends MessagingBaseST {
         Map<String, String>[] zkPods = new Map[1];
         AtomicInteger count = new AtomicInteger();
         zkPods[0] = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
-        TestUtils.waitFor("Cluster stable and ready", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION, () -> {
+        TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_ZK_CLUSTER_STABILIZATION, () -> {
             Map<String, String> zkSnapshot = StUtils.ssSnapshot(CLIENT, NAMESPACE, zookeeperStatefulSetName(CLUSTER_NAME));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             if (!zkSameAsLast) {
@@ -1059,8 +1059,8 @@ class KafkaST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
-        testMethodResources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
-        testMethodResources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
+        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
+        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
     }
 
     @BeforeAll
@@ -1077,6 +1077,6 @@ class KafkaST extends MessagingBaseST {
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
     }
 }

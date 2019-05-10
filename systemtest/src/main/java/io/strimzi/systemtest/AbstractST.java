@@ -89,7 +89,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 @ExtendWith(TestExecutionWatcher.class)
-public abstract class AbstractST extends BaseITST implements TestSeparator, Constants {
+public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     static {
         Crds.registerCustomKinds();
@@ -216,7 +216,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
 
     String getBrokerApiVersions(String podName) {
         AtomicReference<String> versions = new AtomicReference<>();
-        waitFor("kafka-broker-api-versions.sh success", GET_BROKER_API_INTERVAL, GET_BROKER_API_TIMEOUT, () -> {
+        waitFor("kafka-broker-api-versions.sh success", Constants.GET_BROKER_API_INTERVAL, Constants.GET_BROKER_API_TIMEOUT, () -> {
             try {
                 String output = KUBE_CLIENT.execInPod(podName,
                         "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
@@ -510,7 +510,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
     }
 
     void waitTillSecretExists(String secretName) {
-        waitFor("secret " + secretName + " exists", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+        waitFor("secret " + secretName + " exists", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> namespacedClient().secrets().withName(secretName).get() != null);
         try {
             Thread.sleep(60000L);
@@ -522,7 +522,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
     void waitForPodDeletion(String namespace, String podName) {
         LOGGER.info("Waiting when Pod {} will be deleted", podName);
 
-        TestUtils.waitFor("statefulset " + podName, GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+        TestUtils.waitFor("statefulset " + podName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> CLIENT.pods().inNamespace(namespace).withName(podName).get() == null);
     }
 
@@ -623,7 +623,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator, Cons
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
                 entry("imageRepositoryOverride", dockerOrg),
                 entry("imageTagOverride", dockerTag),
-                entry("image.pullPolicy", IMAGE_PULL_POLICY),
+                entry("image.pullPolicy", Constants.IMAGE_PULL_POLICY),
                 entry("resources.requests.memory", REQUESTS_MEMORY),
                 entry("resources.requests.cpu", REQUESTS_CPU),
                 entry("resources.limits.memory", LIMITS_MEMORY),

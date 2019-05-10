@@ -50,17 +50,17 @@ public class MirrorMakerST extends MessagingBaseST {
         testMethodResources().deployKafkaClients(CLUSTER_NAME).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaSourceName);
-        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaTargetName);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaSourceName);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaTargetName);
 
         // Deploy Mirror Maker
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
 
         TimeMeasuringSystem.stopOperation(operationID);
 
-        int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, false, topicSourceName, null);
-        int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaSourceName, false, topicSourceName, null);
-        int receivedTarget = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaTargetName, false, topicSourceName, null);
+        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaSourceName, false, topicSourceName, null);
+        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaSourceName, false, topicSourceName, null);
+        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaTargetName, false, topicSourceName, null);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -130,8 +130,8 @@ public class MirrorMakerST extends MessagingBaseST {
         testMethodResources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaClusterTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
@@ -151,9 +151,9 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(operationID);
 
-        int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
-        int receivedTarget = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, true, topicSourceName, userTarget);
+        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterSourceName, true, topicSourceName, userSource);
+        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaClusterTargetName, true, topicSourceName, userTarget);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -224,8 +224,8 @@ public class MirrorMakerST extends MessagingBaseST {
         testMethodResources().deployKafkaClients(true, CLUSTER_NAME, userSource, userTarget).done();
 
         // Check brokers availability
-        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaSourceName, true, "my-topic-test-1", userSource);
-        availabilityTest(messagesCount, TIMEOUT_AVAILABILITY_TEST, kafkaTargetName, true, "my-topic-test-2", userTarget);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaSourceName, true, "my-topic-test-1", userSource);
+        availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaTargetName, true, "my-topic-test-2", userTarget);
 
         // Deploy Mirror Maker with TLS and ScramSha512
         testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, true)
@@ -255,9 +255,9 @@ public class MirrorMakerST extends MessagingBaseST {
 
         TimeMeasuringSystem.stopOperation(operationID);
 
-        int sent = sendMessages(messagesCount, TIMEOUT_SEND_MESSAGES, kafkaSourceName, true, topicName, userSource);
-        int receivedSource = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaSourceName, true, topicName, userSource);
-        int receivedTarget = receiveMessages(messagesCount, TIMEOUT_RECV_MESSAGES, kafkaTargetName, true, topicName, userTarget);
+        int sent = sendMessages(messagesCount, Constants.TIMEOUT_SEND_MESSAGES, kafkaSourceName, true, topicName, userSource);
+        int receivedSource = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaSourceName, true, topicName, userSource);
+        int receivedTarget = receiveMessages(messagesCount, Constants.TIMEOUT_RECV_MESSAGES, kafkaTargetName, true, topicName, userTarget);
 
         assertSentAndReceivedMessages(sent, receivedSource);
         assertSentAndReceivedMessages(sent, receivedTarget);
@@ -266,14 +266,14 @@ public class MirrorMakerST extends MessagingBaseST {
     @BeforeEach
     void createTestResources() throws Exception {
         createTestMethodResources();
-        testMethodResources.createServiceResource(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
-        testMethodResources.createIngress(Resources.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
+        testMethodResources.createServiceResource(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, NAMESPACE).done();
+        testMethodResources.createIngress(Constants.KAFKA_CLIENTS, Environment.INGRESS_DEFAULT_PORT, CONFIG.getMasterUrl(), NAMESPACE).done();
     }
 
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
     }
 
     @BeforeAll

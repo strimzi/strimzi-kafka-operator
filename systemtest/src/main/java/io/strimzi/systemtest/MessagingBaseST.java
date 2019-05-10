@@ -47,7 +47,7 @@ public class MessagingBaseST extends AbstractST {
     @BeforeAll
     public void setUpClientBase() throws MalformedURLException {
         String clientUrl = ENVIRONMENT.getKubernetesDomain().equals(Environment.KUBERNETES_DOMAIN_DEFAULT) ?  new URL(CONFIG.getMasterUrl()).getHost() + Environment.KUBERNETES_DOMAIN_DEFAULT : ENVIRONMENT.getKubernetesDomain();
-        cliApiClient = new MsgCliApiClient(new URL("http://" + KAFKA_CLIENTS + "." + clientUrl + ":80"));
+        cliApiClient = new MsgCliApiClient(new URL("http://" + Constants.KAFKA_CLIENTS + "." + clientUrl + ":80"));
     }
 
     /**
@@ -180,7 +180,7 @@ public class MessagingBaseST extends AbstractST {
      * @param timeout timeout
      */
     private void waitTillProcessFinish(String processUuid, String description, long timeout) {
-        TestUtils.waitFor("Wait till " + description + " finished", GLOBAL_POLL_INTERVAL, timeout, () -> {
+        TestUtils.waitFor("Wait till " + description + " finished", Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
             JsonObject out;
             try {
                 out = cliApiClient.getClientInfo(processUuid);
