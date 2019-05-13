@@ -27,6 +27,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
+        "livenessProbe", "readinessProbe",
         "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
 public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serializable {
@@ -43,6 +44,8 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     private String image;
     private long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
     private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
+    private Probe livenessProbe;
+    private Probe readinessProbe;
     private ResourceRequirements resources;
     private Logging logging;
     private EntityOperatorJvmOptions jvmOptions;
@@ -94,6 +97,26 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     @Description("Resource constraints (limits and requests).")
     public void setResources(ResourceRequirements resources) {
         this.resources = resources;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod liveness checking.")
+    public Probe getLivenessProbe() {
+        return livenessProbe;
+    }
+
+    public void setLivenessProbe(Probe livenessProbe) {
+        this.livenessProbe = livenessProbe;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("Pod readiness checking.")
+    public Probe getReadinessProbe() {
+        return readinessProbe;
+    }
+
+    public void setReadinessProbe(Probe readinessProbe) {
+        this.readinessProbe = readinessProbe;
     }
 
     @Description("Logging configuration")

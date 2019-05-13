@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.operator.cluster.ResourceUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,6 +42,17 @@ public class EntityUserOperatorTest {
     {
         userOperatorLogging.setLoggers(Collections.singletonMap("user-operator.root.logger", "OFF"));
     }
+    private final Probe livenessProbe = new Probe();
+    {
+        livenessProbe.setInitialDelaySeconds(15);
+        livenessProbe.setTimeoutSeconds(20);
+    }
+
+    private final Probe readinessProbe = new Probe();
+    {
+        readinessProbe.setInitialDelaySeconds(15);
+        livenessProbe.setInitialDelaySeconds(20);
+    }
 
     private final String uoWatchedNamespace = "my-user-namespace";
     private final String uoImage = "my-user-operator-image";
@@ -52,6 +64,8 @@ public class EntityUserOperatorTest {
             .withImage(uoImage)
             .withReconciliationIntervalSeconds(uoReconciliationInterval)
             .withZookeeperSessionTimeoutSeconds(uoZookeeperSessionTimeout)
+            .withLivenessProbe(livenessProbe)
+            .withReadinessProbe(readinessProbe)
             .withLogging(userOperatorLogging)
             .build();
 
@@ -94,10 +108,10 @@ public class EntityUserOperatorTest {
         assertEquals(namespace, entityUserOperator.namespace);
         assertEquals(cluster, entityUserOperator.cluster);
         assertEquals(uoImage, entityUserOperator.image);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.readinessInitialDelay);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.readinessTimeout);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.livenessInitialDelay);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.livenessTimeout);
+        assertEquals(readinessProbe.getInitialDelaySeconds(), entityUserOperator.readinessInitialDelay);
+        assertEquals(readinessProbe.getTimeoutSeconds(), entityUserOperator.readinessTimeout);
+        assertEquals(livenessProbe.getInitialDelaySeconds(), entityUserOperator.livenessInitialDelay);
+        assertEquals(livenessProbe.getTimeoutSeconds(), entityUserOperator.livenessTimeout);
         assertEquals(uoWatchedNamespace, entityUserOperator.getWatchedNamespace());
         assertEquals(uoReconciliationInterval * 1000, entityUserOperator.getReconciliationIntervalMs());
         assertEquals(uoZookeeperSessionTimeout * 1000, entityUserOperator.getZookeeperSessionTimeoutMs());
@@ -125,6 +139,10 @@ public class EntityUserOperatorTest {
         assertEquals("strimzi/operator:latest", entityUserOperator.getImage());
         assertEquals(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, entityUserOperator.getReconciliationIntervalMs());
         assertEquals(EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, entityUserOperator.getZookeeperSessionTimeoutMs());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.readinessInitialDelay);
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.readinessTimeout);
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.livenessInitialDelay);
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.livenessTimeout);
         assertEquals(EntityUserOperator.defaultZookeeperConnect(cluster), entityUserOperator.getZookeeperConnect());
         assertNull(entityUserOperator.getLogging());
     }
@@ -159,10 +177,10 @@ public class EntityUserOperatorTest {
         assertEquals(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME, container.getName());
         assertEquals(entityUserOperator.getImage(), container.getImage());
         assertEquals(getExpectedEnvVars(), container.getEnv());
-        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), container.getLivenessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT), container.getLivenessProbe().getTimeoutSeconds());
-        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY), container.getReadinessProbe().getInitialDelaySeconds());
-        assertEquals(new Integer(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT), container.getReadinessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(livenessProbe.getInitialDelaySeconds()), container.getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(livenessProbe.getTimeoutSeconds()), container.getLivenessProbe().getTimeoutSeconds());
+        assertEquals(new Integer(readinessProbe.getInitialDelaySeconds()), container.getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(readinessProbe.getTimeoutSeconds()), container.getReadinessProbe().getTimeoutSeconds());
         assertEquals(1, container.getPorts().size());
         assertEquals(new Integer(EntityUserOperator.HEALTHCHECK_PORT), container.getPorts().get(0).getContainerPort());
         assertEquals(EntityUserOperator.HEALTHCHECK_PORT_NAME, container.getPorts().get(0).getName());
