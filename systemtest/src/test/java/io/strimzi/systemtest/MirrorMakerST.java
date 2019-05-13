@@ -31,7 +31,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(REGRESSION)
 public class MirrorMakerST extends MessagingBaseST {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
+    private static final Logger LOGGER = LogManager.getLogger(MirrorMakerST.class);
 
     public static final String NAMESPACE = "mm-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
