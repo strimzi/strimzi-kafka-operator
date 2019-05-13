@@ -39,28 +39,55 @@ public class BaseITST {
 
     public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
 
+    /**
+     * Sets the namespace value for Kubernetes clients
+     * @param futureNamespace Namespace which should be used in Kubernetes clients
+     * @return Previous namespace which was used in Kubernetes clients
+     */
     public static String setNamespace(String futureNamespace) {
         String previousNamespace = namespace;
         namespace = futureNamespace;
         return previousNamespace;
     }
 
+    /**
+     * Gets namespace which is used in Kubernetes clients at the moment
+     * @return Used namespace
+     */
     public String getNamespace() {
         return namespace;
     }
 
+    /**
+     * Provides appropriate CMD client for running cluster
+     * @return CMD client
+     */
     public static KubeCmdClient<?> cmdKubeClient() {
         return CLUSTER.cmdClient().namespace(namespace);
     }
 
+    /**
+     * Provides appropriate CMD client with expected namespace for running cluster
+     * @param inNamespace Namespace will be used as a current namespace for client
+     * @return CMD client with expected namespace in configuration
+     */
     public static KubeCmdClient<?> cmdKubeClient(String inNamespace) {
         return CLUSTER.cmdClient().namespace(inNamespace);
     }
 
+    /**
+     * Provides appropriate Kubernetes client for running cluster
+     * @return Kubernetes client
+     */
     public static KubeClient kubeClient() {
         return CLUSTER.client().namespace(namespace);
     }
 
+    /**
+     * Provides appropriate Kubernetes client with expected namespace for running cluster
+     * @param inNamespace Namespace will be used as a current namespace for client
+     * @return Kubernetes client with expected namespace in configuration
+     */
     public static KubeClient kubeClient(String inNamespace) {
         return CLUSTER.client().namespace(inNamespace);
     }
