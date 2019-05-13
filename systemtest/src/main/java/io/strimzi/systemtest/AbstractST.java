@@ -479,7 +479,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         // Collect pods again after proper removal
         pods = kubeClient().listPods().stream().filter(
-                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
+            p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
         long podCount = pods.size();
 
         StringBuilder nonTerminated = new StringBuilder();
