@@ -24,9 +24,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -182,6 +179,6 @@ class RollingUpdateST extends AbstractST {
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 }

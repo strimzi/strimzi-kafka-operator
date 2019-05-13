@@ -52,7 +52,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         LOGGER.info("Creating topic {} in namespace {}", topic, topicNamespace);
         setNamespace(topicNamespace);
         cmdKubeClient().create(new File(TOPIC_EXAMPLES_DIR));
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_TOPIC_CREATION, () -> {
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
             setNamespace(clusterNamespace);
             List<String> topics2 = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics2.contains(topic);

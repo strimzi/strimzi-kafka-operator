@@ -14,8 +14,6 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.PasswordSecretSource;
-import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
@@ -24,9 +22,9 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerPlain;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.test.k8s.Oc;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -144,7 +142,7 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaSsName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas + 1));
         StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
 
@@ -156,7 +154,7 @@ class KafkaST extends MessagingBaseST {
         }
 
         //Test that the new pod does not have errors or failures in events
-        String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newPodName).get().getMetadata().getUid();
+        String uid = kubeClient().getPodUid(newPodName);
         List<Event> events = getEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         waitForClusterAvailability(NAMESPACE);
@@ -167,10 +165,10 @@ class KafkaST extends MessagingBaseST {
         // scale down
         LOGGER.info("Scaling down");
         // Get kafka new pod uid before deletion
-        uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newPodName).get().getMetadata().getUid();
+        uid = kubeClient().getPodUid(newPodName);
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaSsName, kafkaPods, kafkaRollingUpdateTimeout);
+        StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods, kafkaRollingUpdateTimeout);
 
         final int finalReplicas = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
@@ -182,7 +180,7 @@ class KafkaST extends MessagingBaseST {
         //Test that the new broker has event 'Killing'
         assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        uid = CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
+        uid = kubeClient().getPodUid(kafkaClusterName(CLUSTER_NAME));
         assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
@@ -243,7 +241,7 @@ class KafkaST extends MessagingBaseST {
         // scale down
         LOGGER.info("Scaling down");
         // Get zk-3 uid before deletion
-        String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(newZkPodNames.get(3)).get().getMetadata().getUid();
+        String uid = kubeClient().getPodUid(newZkPodNames.get(3));
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
@@ -257,7 +255,7 @@ class KafkaST extends MessagingBaseST {
         //Test that the second pod has event 'Killing'
         assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        uid = CLIENT.apps().statefulSets().inNamespace(NAMESPACE).withName(zookeeperClusterName(CLUSTER_NAME)).get().getMetadata().getUid();
+        uid = kubeClient().getPodUid(zookeeperClusterName(CLUSTER_NAME));
         assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         // Stop measuring
         TimeMeasuringSystem.stopOperation(operationID);
@@ -596,7 +594,7 @@ class KafkaST extends MessagingBaseST {
 
         //Creating topics for testing
         cmdKubeClient().create(TOPIC_CM);
-        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", GLOBAL_POLL_INTERVAL, TIMEOUT_FOR_TOPIC_CREATION, () -> {
+        TestUtils.waitFor("wait for 'my-topic' to be created in Kafka", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_TOPIC_CREATION, () -> {
             List<String> topics = listTopicsUsingPodCLI(CLUSTER_NAME, 0);
             return topics.contains("my-topic");
         });
@@ -742,7 +740,7 @@ class KafkaST extends MessagingBaseST {
         String brokerRack = kubeClient().execInPod(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack");
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
-        String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(kafkaPodName).get().getMetadata().getUid();
+        String uid = kubeClient().getPodUid(kafkaPodName);
         List<Event> events = getEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         waitForClusterAvailability(NAMESPACE);
@@ -829,7 +827,7 @@ class KafkaST extends MessagingBaseST {
             .done();
 
         String userName = "alice";
-        resources().tlsUser(CLUSTER_NAME, userName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
@@ -870,7 +868,7 @@ class KafkaST extends MessagingBaseST {
             .done();
 
         String userName = "alice";
-        resources().tlsUser(CLUSTER_NAME, userName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, userName).done();
         waitFor("Wait for secrets became available", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> kubeClient().getSecret("alice") != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
@@ -908,7 +906,7 @@ class KafkaST extends MessagingBaseST {
         for (String name : newZkPodNames) {
             //Test that second pod does not have errors or failures in events
             LOGGER.info("Checking logs fro pod {}", name);
-            String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(name).get().getMetadata().getUid();
+            String uid = kubeClient().getPodUid(name);
             List<Event> eventsForSecondPod = getEvents(uid);
             assertThat(eventsForSecondPod, hasAllOfReasons(Scheduled, Pulled, Created, Started));
         }
@@ -1077,6 +1075,6 @@ class KafkaST extends MessagingBaseST {
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 }

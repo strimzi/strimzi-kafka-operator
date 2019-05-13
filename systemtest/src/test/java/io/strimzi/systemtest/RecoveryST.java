@@ -5,7 +5,6 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -16,12 +15,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.BaseCmdKubeClient.CM;
 import static io.strimzi.test.k8s.BaseCmdKubeClient.SERVICE;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.BaseKubeClient.CM;
-import static io.strimzi.test.k8s.BaseKubeClient.SERVICE;
 
 @Tag(REGRESSION)
 class RecoveryST extends AbstractST {

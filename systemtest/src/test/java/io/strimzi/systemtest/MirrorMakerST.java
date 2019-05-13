@@ -299,7 +299,7 @@ public class MirrorMakerST extends MessagingBaseST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 
     @BeforeAll

@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,9 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
@@ -110,6 +108,6 @@ class UserST extends AbstractST {
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 }

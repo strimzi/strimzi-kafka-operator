@@ -6,7 +6,6 @@ package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;

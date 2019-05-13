@@ -4,6 +4,7 @@
  */
 package io.strimzi.test;
 
+import io.fabric8.kubernetes.client.Config;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.KubeCmdClient;
@@ -35,6 +36,8 @@ public class BaseITST {
 
     public static final KubeClusterResource CLUSTER = KubeClusterResource.getKubeClusterResource();
     private static String namespace = CLUSTER.defaultNamespace();
+
+    public static final Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
 
     public static String setNamespace(String futureNamespace) {
         String previousNamespace = namespace;
@@ -113,10 +116,10 @@ public class BaseITST {
         bindingsNamespaces = namespaces;
         for (String namespace: namespaces) {
 
-            if (CLIENT.namespaces().withName(namespace).get() != null) {
+            if (kubeClient().getNamespace(namespace) != null) {
                 LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
-                CLIENT.namespaces().withName(namespace).delete();
-                KUBE_CLIENT.waitForResourceDeletion("Namespace", namespace);
+                kubeClient().deleteNamespace(namespace);
+                cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
             }
 
             LOGGER.info("Creating namespace: {}", namespace);

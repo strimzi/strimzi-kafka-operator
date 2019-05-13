@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorJvmOptions;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -19,19 +18,15 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
-import static io.strimzi.test.k8s.BaseCmdKubeClient.STATEFUL_SET;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
+import static io.strimzi.test.k8s.BaseCmdKubeClient.STATEFUL_SET;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;

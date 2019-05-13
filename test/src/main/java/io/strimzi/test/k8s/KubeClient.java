@@ -176,6 +176,13 @@ public class KubeClient {
     }
 
     /**
+     * Gets pod Uid
+     */
+    public String getPodUid(String name) {
+        return client.pods().inNamespace(getNamespace()).withName(name).get().getMetadata().getUid();
+    }
+
+    /**
      * Deletes pod
      */
     public Boolean deletePod(Pod pod) {
@@ -321,6 +328,10 @@ public class KubeClient {
 
     public String logs(String podName, String containerName) {
         return client.pods().inNamespace(getNamespace()).withName(podName).inContainer(containerName).getLog();
+    }
+
+    public List<Event> listEvents() {
+        return client.events().inNamespace(getNamespace()).list().getItems();
     }
 
     public List<Event> listEvents(String resourceType, String resourceName) {

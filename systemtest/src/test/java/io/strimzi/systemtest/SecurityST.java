@@ -7,11 +7,8 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.OpenShiftOnly;
-import io.strimzi.test.extensions.StrimziExtension;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
@@ -38,8 +35,6 @@ import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
-import static io.strimzi.test.extensions.StrimziExtension.FLAKY;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -237,7 +232,7 @@ class SecurityST extends AbstractST {
     void testAutoReplaceCaKeysTriggeredByAnno() throws Exception {
         createClusterWithExternalRoute();
         String aliceUserName = "alice";
-        resources().tlsUser(CLUSTER_NAME, aliceUserName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, aliceUserName).done();
         waitFor("Alic's secret to exist", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> kubeClient().getSecret(aliceUserName) != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
@@ -296,7 +291,7 @@ class SecurityST extends AbstractST {
 
         // Finally check a new client (signed by new client key) can consume
         String bobUserName = "bob";
-        resources().tlsUser(CLUSTER_NAME, bobUserName).done();
+        testMethodResources().tlsUser(CLUSTER_NAME, bobUserName).done();
         waitFor("Bob's secret to exist", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_GET_SECRETS,
             () -> kubeClient().getSecret(bobUserName) != null,
             () -> LOGGER.error("Couldn't find user secret {}", kubeClient().listSecrets()));
@@ -446,7 +441,7 @@ class SecurityST extends AbstractST {
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 
 }

@@ -12,8 +12,6 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Resources;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -128,11 +126,11 @@ public class StUtils implements Constants {
         }
     }
 
-    public static Map<String, String> waitTillSsHasRolled(KubernetesClient client, String namespace, String name, Map<String, String> snapshot) {
-        return waitTillSsHasRolled(client, namespace, name, snapshot, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT);
+    public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+        return waitTillSsHasRolled(name, expectedPods, snapshot, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT);
     }
 
-    public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
+    public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot, long timeout) {
         TestUtils.waitFor("SS roll of " + name,
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, timeout, () -> {
                 try {
@@ -223,7 +221,7 @@ public class StUtils implements Constants {
     }
 
     public static void waitForPodUpdate(String podName, Date startTime) {
-        TestUtils.waitFor(podName + " update", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+        TestUtils.waitFor(podName + " update", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                 startTime.before(kubeClient().getCreationTimestampForPod(podName))
         );
     }
@@ -233,7 +231,7 @@ public class StUtils implements Constants {
      */
     public static void waitForDeploymentDeletion(String name) {
         LOGGER.info("Waiting for Deployment deletion {}", name);
-        TestUtils.waitFor("deployment is deleted" + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("deployment is deleted" + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getDeploymentStatus(name));
         LOGGER.info("Deployment {} was deleted", name);
     }
@@ -275,7 +273,7 @@ public class StUtils implements Constants {
      */
     public static void waitForStatefulSetDeletion(String name) {
         LOGGER.info("Waiting for StatefulSet deletion {}", name);
-        TestUtils.waitFor("StatefulSet is deleted" + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("StatefulSet is deleted" + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getStatefulSetStatus(name));
         LOGGER.info("StatefulSet {} was deleted", name);
     }
@@ -285,20 +283,20 @@ public class StUtils implements Constants {
      */
     public static void waitForConfigMapDeletion(String name) {
         LOGGER.info("Waiting for config map deletion {}", name);
-        TestUtils.waitFor("Config map " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("Config map " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getConfigMapStatus(name));
         LOGGER.info("Config map {} was deleted", name);
     }
 
     public static void waitForSecretReady(String secretName) {
-        TestUtils.waitFor("Expected secret exists", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
+        TestUtils.waitFor("Expected secret exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () -> {
             return kubeClient().getSecret(secretName) != null;
         });
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
         LOGGER.info("Waiting for Kafka user deletion {}", userName);
-        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+        TestUtils.waitFor("Waits for Kafka user deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
                 Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get() == null
         );
     }
@@ -311,7 +309,7 @@ public class StUtils implements Constants {
     public static void waitForPod(String name) {
         LOGGER.info("Waiting when Pod {} will be ready", name);
 
-        TestUtils.waitFor("pod " + name + " will be ready", Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("pod " + name + " will be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> {
                 List<ContainerStatus> statuses =  kubeClient().getPod(name).getStatus().getContainerStatuses();
                 for (ContainerStatus containerStatus : statuses) {
@@ -326,20 +324,20 @@ public class StUtils implements Constants {
     public static void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
-        TestUtils.waitFor("statefulset " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getPod(name) == null);
     }
 
     public static void waitForNamespaceDeletion(String name) {
         LOGGER.info("Waiting when Namespace {} will be deleted", name);
 
-        TestUtils.waitFor("namespace " + name, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("namespace " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> !kubeClient().getNamespaceStatus(name));
     }
 
     public static void waitForKafkaTopicDeletion(String topicName) {
         LOGGER.info("Waiting for Kafka topic deletion {}", topicName);
-        TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Resources.POLL_INTERVAL_FOR_RESOURCE_READINESS, Resources.TIMEOUT_FOR_RESOURCE_READINESS, () ->
+        TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
             Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get() == null
         );
     }

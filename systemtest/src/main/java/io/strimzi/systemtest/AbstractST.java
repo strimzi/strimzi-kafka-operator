@@ -8,6 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -281,12 +282,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     List<Event> getEvents(String resourceUid) {
-        return CLIENT.events().inNamespace(KUBE_CLIENT.namespace()).list().getItems().stream()
+        return kubeClient().listEvents().stream()
                 .filter(event -> event.getInvolvedObject().getUid().equals(resourceUid))
                 .collect(Collectors.toList());
     }
 
-    public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
+    public void sendMessages(String podName, String clusterName, String containerName, String topic, int messagesCount) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
                 KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
@@ -459,7 +460,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         LOGGER.info("Waiting when Pod {} will be deleted", podName);
 
         TestUtils.waitFor("statefulset " + podName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> CLIENT.pods().inNamespace(namespace).withName(podName).get() == null);
+            () -> kubeClient().getPod(podName) == null);
     }
 
     /**
@@ -467,11 +468,11 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @param time timeout in miliseconds
      * @throws Exception exception
      */
-    void waitForDeletion(long time, String namespace) throws Exception {
-        List<Pod> pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
+    void waitForDeletion(long time) throws Exception {
+        List<Pod> pods = kubeClient().listPods().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
         // Delete pods in case of kubernetes keep them up
-        pods.forEach(p -> CLIENT.pods().inNamespace(namespace).delete(p));
+        pods.forEach(p -> kubeClient().deletePod(p));
 
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
@@ -483,8 +484,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         StringBuilder nonTerminated = new StringBuilder();
         if (podCount > 0) {
-            List<Pod> pods = kubeClient().listPods().stream().filter(
-                p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
             pods.forEach(
                 p -> nonTerminated.append("\n").append(p.getMetadata().getName()).append(" - ").append(p.getStatus().getPhase())
             );

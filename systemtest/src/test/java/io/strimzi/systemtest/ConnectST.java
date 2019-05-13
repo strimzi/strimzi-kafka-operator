@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.extensions.StrimziExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,9 +35,6 @@ import static io.strimzi.systemtest.k8s.Events.Unhealthy;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.systemtest.matchers.Matchers.hasNoneOfReasons;
 import static io.strimzi.test.TestUtils.getFileAsString;
-import static io.strimzi.test.TestUtils.getFileAsString;
-import static io.strimzi.test.extensions.StrimziExtension.ACCEPTANCE;
-import static io.strimzi.test.extensions.StrimziExtension.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -150,7 +146,7 @@ class ConnectST extends AbstractST {
         assertEquals(scaleTo, connectPods.size());
         for (String pod : connectPods) {
             StUtils.waitForPod(pod);
-            String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(pod).get().getMetadata().getUid();
+            String uid = kubeClient().getPodUid(pod);
             List<Event> events = getEvents(uid);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
@@ -164,7 +160,7 @@ class ConnectST extends AbstractST {
         connectPods = kubeClient().listPodNames("strimzi.io/kind", "KafkaConnect");
         assertEquals(initialReplicas, connectPods.size());
         for (String pod : connectPods) {
-            String uid = CLIENT.pods().inNamespace(NAMESPACE).withName(pod).get().getMetadata().getUid();
+            String uid = kubeClient().getPodUid(pod);
             List<Event> events = getEvents(uid);
             assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
             assertThat(events, hasNoneOfReasons(Failed, Unhealthy, FailedSync, FailedValidation));
