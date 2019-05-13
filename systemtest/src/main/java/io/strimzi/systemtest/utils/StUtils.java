@@ -32,7 +32,7 @@ import java.util.zip.ZipInputStream;
 
 import static io.strimzi.test.BaseITST.kubeClient;
 
-public class StUtils implements Constants {
+public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
 
@@ -180,11 +180,11 @@ public class StUtils implements Constants {
      * Wait until the SS is ready and all of its Pods are also ready
      */
     public static void waitForAllStatefulSetPodsReady(String name, int expectPods) {
-        LOGGER.info("Waiting for StatefulSet {} to be ready", name);
+        LOGGER.debug("Waiting for StatefulSet {} to be ready", name);
         TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getStatefulSetStatus(name));
-        LOGGER.info("StatefulSet {} is ready", name);
-        LOGGER.info("Waiting for Pods of StatefulSet {} to be ready", name);
+        LOGGER.debug("StatefulSet {} is ready", name);
+        LOGGER.debug("Waiting for Pods of StatefulSet {} to be ready", name);
         waitForPodsReady(kubeClient().getStatefulSetSelectors(name), expectPods, true);
     }
 
@@ -250,11 +250,11 @@ public class StUtils implements Constants {
      * Wait until the deployment is ready
      */
     public static void waitForDeploymentReady(String name, int expectPods) {
-        LOGGER.info("Waiting for Deployment {}", name);
+        LOGGER.debug("Waiting for Deployment {}", name);
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name));
-        LOGGER.info("Deployment {} is ready", name);
-        LOGGER.info("Waiting for Pods of Deployment {} to be ready", name);
+        LOGGER.debug("Deployment {} is ready", name);
+        LOGGER.debug("Waiting for Pods of Deployment {} to be ready", name);
         waitForPodsReady(kubeClient().getDeploymentSelectors(name), expectPods, true);
     }
 
