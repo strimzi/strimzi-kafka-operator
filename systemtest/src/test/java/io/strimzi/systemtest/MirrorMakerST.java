@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
@@ -21,6 +23,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static io.strimzi.systemtest.Constants.REGRESSION;
 
 @Tag(REGRESSION)
@@ -35,6 +40,8 @@ public class MirrorMakerST extends MessagingBaseST {
     @Test
     @Tag(REGRESSION)
     void testMirrorMaker() throws Exception {
+        Map<String, String> jvmOptionsXX = new HashMap<>();
+        jvmOptionsXX.put("UseG1GC", "true");
         operationID = startTimeMeasuring(Operation.MM_DEPLOYMENT);
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
         String kafkaSourceName = CLUSTER_NAME + "-source";
@@ -54,7 +61,26 @@ public class MirrorMakerST extends MessagingBaseST {
         availabilityTest(messagesCount, Constants.TIMEOUT_AVAILABILITY_TEST, kafkaTargetName);
 
         // Deploy Mirror Maker
-        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).done();
+        testMethodResources().kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group" + rng.nextInt(Integer.MAX_VALUE), 1, false).
+                editSpec()
+                .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("400M"))
+                        .addToLimits("cpu", new Quantity("2"))
+                        .addToRequests("memory", new Quantity("300M"))
+                        .addToRequests("cpu", new Quantity("1"))
+                        .build())
+                .withNewJvmOptions()
+                    .withXmx("200m")
+                    .withXms("200m")
+                    .withServer(true)
+                    .withXx(jvmOptionsXX)
+                .endJvmOptions()
+                .endSpec().done();
+        String podName = KUBE_CLIENT.list("Pod").stream().filter(n -> n.startsWith(kafkaMirrorMakerName(CLUSTER_NAME))).findFirst().get();
+        assertResources(NAMESPACE, podName, CLUSTER_NAME.concat("-mirror-maker"),
+                "400M", "2", "300M", "1");
+        assertExpectedJavaOpts(podName,
+                "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
         TimeMeasuringSystem.stopOperation(operationID);
 
