@@ -68,11 +68,7 @@ public class EntityUserOperator extends AbstractModel {
         super(namespace, cluster, labels);
         this.name = userOperatorName(cluster);
         this.readinessPath = "/";
-        this.readinessTimeout = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
         this.livenessPath = "/";
-        this.livenessTimeout = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
 
         // create a default configuration
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
@@ -197,6 +193,22 @@ public class EntityUserOperator extends AbstractModel {
                 result.setLogging(userOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? true : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(userOperatorSpec.getResources());
+                if (userOperatorSpec.getReadinessProbe() != null) {
+                    result.setReadinessInitialDelay(userOperatorSpec.getReadinessProbe().getInitialDelaySeconds());
+                    result.setReadinessTimeout(userOperatorSpec.getReadinessProbe().getTimeoutSeconds());
+                } else {
+                    result.setReadinessInitialDelay(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY);
+                    result.setReadinessTimeout(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT);
+                }
+                if (userOperatorSpec.getLivenessProbe() != null) {
+                    result.setLivenessInitialDelay(userOperatorSpec.getLivenessProbe().getInitialDelaySeconds());
+                    result.setLivenessTimeout(userOperatorSpec.getLivenessProbe().getTimeoutSeconds());
+                } else {
+                    result.setLivenessInitialDelay(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY);
+                    result.setLivenessTimeout(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT);
+                }
+
+
                 if (kafkaAssembly.getSpec().getClientsCa() != null) {
                     result.setClientsCaValidityDays(kafkaAssembly.getSpec().getClientsCa().getValidityDays());
                     result.setClientsCaRenewalDays(kafkaAssembly.getSpec().getClientsCa().getRenewalDays());

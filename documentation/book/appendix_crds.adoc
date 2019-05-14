@@ -559,7 +559,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [id='type-Probe-{context}']
 ### `Probe` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -862,6 +862,10 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |jvmOptions                      1.2+<.<|JVM Options for pods.
 |xref:type-EntityOperatorJvmOptions-{context}[`EntityOperatorJvmOptions`]
+|livenessProbe                   1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe                  1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
 |====
 
 [id='type-EntityOperatorJvmOptions-{context}']
@@ -921,6 +925,10 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
 |integer
+|livenessProbe                   1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe                  1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
 |resources                       1.2+<.<|Resource constraints (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
@@ -948,6 +956,10 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session.
 |integer
+|livenessProbe                   1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe                  1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
 |resources                       1.2+<.<|Resource constraints (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
