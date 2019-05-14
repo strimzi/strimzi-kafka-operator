@@ -2049,6 +2049,24 @@ spec:
                   properties:
                     gcLoggingEnabled:
                       type: boolean
+                livenessProbe:
+                  type: object
+                  properties:
+                    initialDelaySeconds:
+                      type: integer
+                      minimum: 0
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 0
+                readinessProbe:
+                  type: object
+                  properties:
+                    initialDelaySeconds:
+                      type: integer
+                      minimum: 0
+                    timeoutSeconds:
+                      type: integer
+                      minimum: 0
             entityOperator:
               type: object
               properties:
@@ -2065,6 +2083,24 @@ spec:
                     zookeeperSessionTimeoutSeconds:
                       type: integer
                       minimum: 0
+                    livenessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
+                    readinessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     resources:
                       type: object
                       properties:
@@ -2107,6 +2143,24 @@ spec:
                     zookeeperSessionTimeoutSeconds:
                       type: integer
                       minimum: 0
+                    livenessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
+                    readinessProbe:
+                      type: object
+                      properties:
+                        initialDelaySeconds:
+                          type: integer
+                          minimum: 0
+                        timeoutSeconds:
+                          type: integer
+                          minimum: 0
                     resources:
                       type: object
                       properties:

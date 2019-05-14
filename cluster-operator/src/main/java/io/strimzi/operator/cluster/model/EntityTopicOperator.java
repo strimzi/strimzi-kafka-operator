@@ -68,11 +68,7 @@ public class EntityTopicOperator extends AbstractModel {
         super(namespace, cluster, labels);
         this.name = topicOperatorName(cluster);
         this.readinessPath = "/";
-        this.readinessTimeout = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
         this.livenessPath = "/";
-        this.livenessTimeout = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY;
 
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
@@ -210,6 +206,20 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setLogging(topicOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? true : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(topicOperatorSpec.getResources());
+                if (topicOperatorSpec.getReadinessProbe() != null) {
+                    result.setReadinessInitialDelay(topicOperatorSpec.getReadinessProbe().getInitialDelaySeconds());
+                    result.setReadinessTimeout(topicOperatorSpec.getReadinessProbe().getTimeoutSeconds());
+                } else {
+                    result.setReadinessInitialDelay(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY);
+                    result.setReadinessTimeout(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT);
+                }
+                if (topicOperatorSpec.getLivenessProbe() != null) {
+                    result.setLivenessInitialDelay(topicOperatorSpec.getLivenessProbe().getInitialDelaySeconds());
+                    result.setLivenessTimeout(topicOperatorSpec.getLivenessProbe().getTimeoutSeconds());
+                } else {
+                    result.setLivenessInitialDelay(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY);
+                    result.setLivenessTimeout(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT);
+                }
             }
         }
         return result;
