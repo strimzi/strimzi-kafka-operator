@@ -229,6 +229,13 @@ public class KubeClient {
         return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).isReady();
     }
 
+    /**
+     * Gets stateful set Uid
+     */
+    public String getStatefulUid(String statefulSetName) {
+        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).get().getMetadata().getUid();
+    }
+
     public void deleteStatefulSet(String statefulSetName) {
         client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).delete();
     }

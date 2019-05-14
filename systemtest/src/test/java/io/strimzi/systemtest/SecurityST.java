@@ -274,7 +274,7 @@ class SecurityST extends AbstractST {
         LOGGER.info("Wait for kafka to rolling restart (2)...");
         kafkaPods = StUtils.waitTillSsHasRolled(kafkaStatefulSetName(CLUSTER_NAME), 3, kafkaPods);
         LOGGER.info("Wait for EO to rolling restart (2)...");
-        eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 3, eoPod);
+        eoPod = StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
