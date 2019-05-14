@@ -119,7 +119,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     Random rng = new Random();
 
     protected HelmClient helmClient() {
-        return CLUSTER.helmClient();
+        return CLUSTER.helmClient().namespace(getNamespace());
     }
 
     static String kafkaClusterName(String clusterName) {

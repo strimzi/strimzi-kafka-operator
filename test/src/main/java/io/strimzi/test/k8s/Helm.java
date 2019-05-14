@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 
-public class Helm implements HelmClient {
+public class Helm<H extends Helm<H>> implements HelmClient<H> {
     private static final Logger LOGGER = LogManager.getLogger(Helm.class);
 
     private static final String HELM_CMD = "helm";
@@ -26,10 +26,21 @@ public class Helm implements HelmClient {
 
     private KubeCmdClient<?> kubeClient;
     private boolean initialized;
+    private String namespace;
 
     public Helm(KubeCmdClient<?> kubeClient) {
         this.kubeClient = kubeClient;
+        this.namespace = kubeClient.namespace();
         this.initialized = false;
+    }
+
+    public Helm(String namespace) {
+        this.namespace = namespace;
+    }
+
+    @Override
+    public HelmClient namespace(String namespace) {
+        return new Helm(namespace);
     }
 
     @Override
@@ -75,7 +86,7 @@ public class Helm implements HelmClient {
 
     private List<String> namespace(List<String> args) {
         args.add("--namespace");
-        args.add(this.kubeClient.namespace());
+        args.add(namespace);
         return args;
     }
 

@@ -714,7 +714,7 @@ public class Resources extends AbstractResources {
 
     private DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String clientNamespace) {
         LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
-        client().createOrReplaceKubernetesRoleBinding(roleBinding);
+        client().namespace(clientNamespace).createOrReplaceKubernetesRoleBinding(roleBinding);
         deleteLater(roleBinding);
         return new DoneableKubernetesRoleBinding(roleBinding);
     }

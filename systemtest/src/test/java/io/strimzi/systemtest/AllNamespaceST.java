@@ -80,13 +80,12 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Test
     @Tag(REGRESSION)
     void testUOWatchingOtherNamespace() {
+        String previousNamespace = setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
         secondNamespaceResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
 
-        String previousNamespace = setNamespace(SECOND_NAMESPACE);
         // Check that UO created a secret for new user
         cmdKubeClient().waitForResourceCreation("Secret", USER_NAME);
-
         setNamespace(previousNamespace);
     }
 

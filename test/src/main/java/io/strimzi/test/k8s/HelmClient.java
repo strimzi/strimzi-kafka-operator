@@ -7,7 +7,7 @@ package io.strimzi.test.k8s;
 import java.nio.file.Path;
 import java.util.Map;
 
-public interface HelmClient {
+public interface HelmClient<H extends HelmClient<H>> {
     static HelmClient findClient(KubeCmdClient<?> kubeClient) {
         HelmClient client = new Helm(kubeClient);
         if (!client.clientAvailable()) {
@@ -18,6 +18,9 @@ public interface HelmClient {
 
     /** Initialize the Helm Tiller server on the cluster */
     HelmClient init();
+
+    /** Sets namespace for client */
+    HelmClient namespace(String namespace);
 
     /** Install a chart given its local path, release name, and values to override */
     HelmClient install(Path chart, String releaseName, Map<String, String> valueOverrides);

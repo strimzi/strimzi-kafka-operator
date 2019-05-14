@@ -27,12 +27,12 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     void checkKafkaInDiffNamespaceThanCO() {
         String kafkaName = kafkaClusterName(CLUSTER_NAME + "-second");
-
+        String previousNamespace = setNamespace(SECOND_NAMESPACE);
         secondNamespaceResources.kafkaEphemeral(CLUSTER_NAME + "-second", 3).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", kafkaName, SECOND_NAMESPACE);
-        setNamespace(SECOND_NAMESPACE);
         StUtils.waitForAllStatefulSetPodsReady(kafkaName, 3);
+        setNamespace(previousNamespace);
     }
 
     void checkMirrorMakerForKafkaInDifNamespaceThanCO() {
@@ -40,12 +40,13 @@ public abstract class AbstractNamespaceST extends AbstractST {
         String kafkaSourceName = kafkaClusterName(CLUSTER_NAME);
         String kafkaTargetName = kafkaClusterName(kafkaName);
 
+        String previousNamespace = setNamespace(SECOND_NAMESPACE);
         secondNamespaceResources.kafkaEphemeral(kafkaName, 3).done();
         secondNamespaceResources.kafkaMirrorMaker(CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).done();
 
         LOGGER.info("Waiting for creation {} in namespace {}", CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
-        setNamespace(SECOND_NAMESPACE);
         StUtils.waitForDeploymentReady(CLUSTER_NAME + "-mirror-maker", 1);
+        setNamespace(previousNamespace);
     }
 
     void deployNewTopic(String topicNamespace, String clusterNamespace, String topic) {
@@ -69,12 +70,13 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @BeforeEach
     void createSecondNamespaceResources() {
         setNamespace(SECOND_NAMESPACE);
-        secondNamespaceResources = new Resources(kubeClient());
+        secondNamespaceResources = new Resources(kubeClient(SECOND_NAMESPACE));
         setNamespace(CO_NAMESPACE);
     }
 
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
+        setNamespace(SECOND_NAMESPACE);
         secondNamespaceResources.deleteResources();
         waitForDeletion(Constants.TIMEOUT_TEARDOWN);
         setNamespace(CO_NAMESPACE);
