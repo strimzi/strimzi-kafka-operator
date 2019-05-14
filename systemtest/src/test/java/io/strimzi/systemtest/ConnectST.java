@@ -92,7 +92,7 @@ class ConnectST extends AbstractST {
         sendMessages(kafkaConnectPodName, KAFKA_CLUSTER_NAME, kafkaConnectName(KAFKA_CLUSTER_NAME), TEST_TOPIC_NAME, 2);
 
         TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> kubeClient().execInPod(kafkaConnectPodName, kafkaConnectName(KAFKA_CLUSTER_NAME), "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").equals("0\n1\n"));
+            () -> cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat /tmp/test-file-sink.txt").out().equals("0\n1\n"));
     }
 
     @Test

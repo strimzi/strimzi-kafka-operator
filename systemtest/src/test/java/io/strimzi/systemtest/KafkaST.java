@@ -734,10 +734,10 @@ class KafkaST extends MessagingBaseST {
         String kafkaPodName = kafkaPodName(CLUSTER_NAME, 0);
         StUtils.waitForPod(kafkaPodName);
 
-        String rackId = kubeClient().execInPod(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /opt/kafka/init/rack.id");
+        String rackId = cmdKubeClient().execInPod(kafkaPodName, "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out();
         assertEquals("zone", rackId.trim());
 
-        String brokerRack = kubeClient().execInPod(kafkaPodName, "kafka", "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack");
+        String brokerRack = cmdKubeClient().execInPod(kafkaPodName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out();
         assertTrue(brokerRack.contains("broker.rack=zone"));
 
         String uid = kubeClient().getPodUid(kafkaPodName);
