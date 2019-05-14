@@ -23,6 +23,9 @@ make docu_check
 if [ "${MAIN_BUILD}" = "TRUE" ] ; then
   make findbugs
 fi
+
+make crd_install
+make helm_install
 make docker_build
 
 if [ ! -e  documentation/book/appendix_crds.adoc ] ; then
