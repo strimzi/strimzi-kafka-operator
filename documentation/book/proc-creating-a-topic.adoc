@@ -30,7 +30,7 @@ spec:
   replicas: 2
 ----
 +
-NOTE: It is recommended to use a topic name that is a valid {ProductPlatformName} resource name. Doing this means that it is not necessary to set the `KafkaTopic.spec.topicName` property. In any case the `KafkaTopic.spec.topicName` cannot be changed after creation.
+NOTE: It is recommended that the topic name given is a valid {ProductPlatformName} resource name, as it is then not necessary to set the `KafkaTopic.spec.topicName` property. The `KafkaTopic.spec.topicName` _cannot_ be changed after creation.
 +
 NOTE: The `KafkaTopic.spec.partitions` cannot be decreased.
 

@@ -46,8 +46,8 @@ On {KubernetesName}, use:
 ----
 kubectl edit kafka _my-cluster_
 ----
-endif::Kubernetes[]
 +
+endif::Kubernetes[]
 On {OpenShiftName}, use:
 +
 [source,shell,subs=+quotes]

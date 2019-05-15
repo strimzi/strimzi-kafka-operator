@@ -1,0 +1,12 @@
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    logging:
+      type: external
+      name: customConfigMap
+    # ...
+----
