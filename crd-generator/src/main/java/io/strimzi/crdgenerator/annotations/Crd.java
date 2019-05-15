@@ -112,16 +112,7 @@ public @interface Crd {
             Status[] status();
 
             @interface Status {
-                String name();
             }
-
-//            Scale scale();
-//
-//            @interface Scale {
-//                String specReplicasPath();
-//                String statusReplicasPath();
-//                String labelSelectorPath();
-//            }
         }
 
         /**

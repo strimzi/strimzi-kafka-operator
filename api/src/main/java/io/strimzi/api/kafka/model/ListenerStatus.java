@@ -38,7 +38,7 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
         this.additionalProperties = additionalProperties;
     }
 
-    @Description("")
+    @Description("The hostname of Kakfa bootstrap service")
     public String getHost() {
         return host;
     }
@@ -47,7 +47,7 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
         this.host = host;
     }
 
-    @Description("")
+    @Description("The port of the Kafka bootstrap service")
     public int getPort() {
         return port;
     }

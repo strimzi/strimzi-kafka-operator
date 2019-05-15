@@ -33,14 +33,7 @@ public class ListenersStatus implements UnknownPropertyPreserving, Serializable 
     public ListenersStatus() {
     }
 
-    public ListenersStatus(ListenerStatus plain, ListenerStatus tls, ListenerStatus external, Map<String, Object> additionalProperties) {
-        this.plain = plain;
-        this.tls = tls;
-        this.external = external;
-        this.additionalProperties = additionalProperties;
-    }
-
-    @Description("")
+    @Description("The Kafka boostrap address for unencrypted listeners")
     public ListenerStatus getPlain() {
         return plain;
     }
@@ -49,7 +42,7 @@ public class ListenersStatus implements UnknownPropertyPreserving, Serializable 
         this.plain = plain;
     }
 
-    @Description("")
+    @Description("The Kafka bootstrap address for tls encrypted listeners")
     public ListenerStatus getTls() {
         return tls;
     }
@@ -58,7 +51,7 @@ public class ListenersStatus implements UnknownPropertyPreserving, Serializable 
         this.tls = tls;
     }
 
-    @Description("")
+    @Description("The Kafka bootstrap address for external listeners")
     public ListenerStatus getExternal() {
         return external;
     }
