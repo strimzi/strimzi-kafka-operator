@@ -1,6 +1,8 @@
 FROM centos:7
 
-RUN yum -y install stunnel net-tools && yum clean all -y
+RUN yum -y update \
+    && yum -y install stunnel net-tools \
+    && yum clean all -y
 
 # set Stunnel home folder
 ENV STUNNEL_HOME=/opt/stunnel
