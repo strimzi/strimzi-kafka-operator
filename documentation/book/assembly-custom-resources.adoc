@@ -1,0 +1,24 @@
+// Module included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='assembly-custom-resources-{context}']
+= Custom resources
+Custom Resource Definitions (CRDs) extend the Kubernetes API, providing definitions to create and add custom resources to an {ProductPlatformName} cluster. Custom resources are created as instances of CRDs.
+
+For {Productname}, CRDs introduce custom resources specific to {Productname} to an {ProductPlatformName} cluster, such as Kafka, Kafka Connect, Kafka Mirror Maker, and users and topics.  CRDs provide configuration instructions, defining the schemas used to instantiate and manage the resources specific to {Productname}. CRDs also allow {Productname} resources to benefit from native {ProductPlatformName} features like CLI accessibility and configuration validation.
+
+CRDs require a one-time installation to a cluster. Depending on the cluster setup, installation typically requires cluster admin privileges.
+
+NOTE: `ClusterRoles` and `ClusterRoleBindings` to manage the CRDs are applied on installation to provide access for the Cluster Operator.
+
+CRDs and custom resources are defined as YAML files. Separate CRD files contain specifications for creating specific custom resources for {Productname}.
+
+Custom resources are instantiated and validated using the specifications defined in a CRD.
+
+WARNING: When CRDs are deleted, custom resources of that type are also deleted.
+
+.Additional resources
+* {K8sCRDs}
+
+include::con-custom-resources-example.adoc[leveloffset=+1]

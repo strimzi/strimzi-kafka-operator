@@ -17,6 +17,10 @@ This chapter describes how to configure different aspects of the supported deplo
 * Kafka Connect clusters with _Source2Image_ support
 * Kafka Mirror Maker
 
+
+
+include::assembly-custom-resources.adoc[leveloffset=+1]
+
 include::assembly-deployment-configuration-kafka.adoc[leveloffset=+1]
 
 include::assembly-deployment-configuration-kafka-connect.adoc[leveloffset=+1]

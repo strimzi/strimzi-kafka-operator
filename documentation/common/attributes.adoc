@@ -59,6 +59,7 @@
 :K8sNetworkPolicyPeerAPI: link:https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer API reference^]
 :K8sPodDisruptionBudgets: link:https://kubernetes.io/docs/concepts/workloads/pods/disruptions/[Disruptions^]
 :K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Disruptions^]
+:K8sCRDs: link:https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/[Extend the Kubernetes API with CustomResourceDefinitions]
 :NginxIngressController: link:https://github.com/kubernetes/ingress-nginx[NGINX Ingress Controller for Kubernetes^]
 :NginxIngressControllerTLSPassthrough: link:https://kubernetes.github.io/ingress-nginx/user-guide/tls/#ssl-passthrough[TLS passthrough documentation]
 :KubernetesExternalDNS: link:https://github.com/kubernetes-incubator/external-dns[External DNS^]
@@ -97,6 +98,7 @@
 :KafkaConnectS2IApiVersion: kafka.strimzi.io/v1beta1
 :KafkaTopicApiVersion: kafka.strimzi.io/v1beta1
 :KafkaUserApiVersion: kafka.strimzi.io/v1beta1
+:ApiVersion: v1beta1
 
 // Section enablers
 :Kubernetes:
