@@ -2,8 +2,9 @@
  * Copyright 2017-2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.test.k8s;
+package io.strimzi.test.executor;
 
+import io.strimzi.test.k8s.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -288,7 +289,7 @@ public class Exec {
      * @param cmd command
      * @return true.false
      */
-    static boolean isExecutableOnPath(String cmd) {
+    public static boolean isExecutableOnPath(String cmd) {
         for (String dir : PATH_SPLITTER.split(System.getenv("PATH"))) {
             if (new File(dir, cmd).canExecute()) {
                 return true;

@@ -31,7 +31,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(REGRESSION)
 public class MirrorMakerST extends MessagingBaseST {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
+    private static final Logger LOGGER = LogManager.getLogger(MirrorMakerST.class);
 
     public static final String NAMESPACE = "mm-cluster-test";
     private static final String TOPIC_NAME = "test-topic";
@@ -76,10 +76,10 @@ public class MirrorMakerST extends MessagingBaseST {
                     .withXx(jvmOptionsXX)
                 .endJvmOptions()
                 .endSpec().done();
-        String podName = KUBE_CLIENT.list("Pod").stream().filter(n -> n.startsWith(kafkaMirrorMakerName(CLUSTER_NAME))).findFirst().get();
+        String podName = kubeClient().listPods().stream().filter(n -> n.getMetadata().getName().startsWith(kafkaMirrorMakerName(CLUSTER_NAME))).findFirst().get().getMetadata().getName();
         assertResources(NAMESPACE, podName, CLUSTER_NAME.concat("-mirror-maker"),
                 "400M", "2", "300M", "1");
-        assertExpectedJavaOpts(podName,
+        assertExpectedJavaOpts(podName, kafkaMirrorMakerName(CLUSTER_NAME),
                 "-Xmx200m", "-Xms200m", "-server", "-XX:+UseG1GC");
 
         TimeMeasuringSystem.stopOperation(operationID);
@@ -299,7 +299,7 @@ public class MirrorMakerST extends MessagingBaseST {
     @AfterEach
     void deleteTestResources() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 
     @BeforeAll

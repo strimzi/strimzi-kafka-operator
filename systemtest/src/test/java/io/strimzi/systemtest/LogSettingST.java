@@ -14,11 +14,11 @@ import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.Order;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
+import static io.strimzi.test.k8s.BaseCmdKubeClient.STATEFUL_SET;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -170,11 +170,11 @@ class LogSettingST extends AbstractST {
         String eoName = entityOperatorDeploymentName(CLUSTER_NAME);
         String kafkaName = kafkaClusterName(CLUSTER_NAME);
         String zkName = zookeeperClusterName(CLUSTER_NAME);
-        Map<String, String> connectPods = StUtils.depSnapshot(CLIENT, NAMESPACE, connectName);
-        Map<String, String> mmPods = StUtils.depSnapshot(CLIENT, NAMESPACE, mmName);
-        Map<String, String> eoPods = StUtils.depSnapshot(CLIENT, NAMESPACE, eoName);
-        Map<String, String> kafkaPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, kafkaName);
-        Map<String, String> zkPods = StUtils.ssSnapshot(CLIENT, NAMESPACE, zkName);
+        Map<String, String> connectPods = StUtils.depSnapshot(connectName);
+        Map<String, String> mmPods = StUtils.depSnapshot(mmName);
+        Map<String, String> eoPods = StUtils.depSnapshot(eoName);
+        Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaName);
+        Map<String, String> zkPods = StUtils.ssSnapshot(zkName);
 
         JvmOptions jvmOptions = new JvmOptions();
         jvmOptions.setGcLoggingEnabled(false);
@@ -192,11 +192,11 @@ class LogSettingST extends AbstractST {
         replaceKafkaConnectResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
         replaceMirrorMakerResource(CLUSTER_NAME, k -> k.getSpec().setJvmOptions(jvmOptions));
 
-        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, kafkaName, kafkaPods);
-        StUtils.waitTillSsHasRolled(CLIENT, NAMESPACE, zkName, zkPods);
-        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, eoName, eoPods);
-        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, connectName, connectPods);
-        StUtils.waitTillDepHasRolled(CLIENT, NAMESPACE, mmName, mmPods);
+        StUtils.waitTillSsHasRolled(kafkaName, 3, kafkaPods);
+        StUtils.waitTillSsHasRolled(zkName, 1, zkPods);
+        StUtils.waitTillDepHasRolled(eoName, 1, eoPods);
+        StUtils.waitTillDepHasRolled(connectName, 1, connectPods);
+        StUtils.waitTillDepHasRolled(mmName, 1, mmPods);
 
         assertFalse(checkGcLoggingStatefulSets(kafkaClusterName(CLUSTER_NAME)), "Kafka GC logging is disabled");
         assertFalse(checkGcLoggingStatefulSets(zookeeperClusterName(CLUSTER_NAME)), "Zookeeper GC logging is disabled");
@@ -212,12 +212,12 @@ class LogSettingST extends AbstractST {
         boolean result = false;
         for (Map.Entry<String, String> entry : loggers.entrySet()) {
             LOGGER.info("Check log level setting since {} seconds. Logger: {} Expected: {}", since, entry.getKey(), entry.getValue());
-            String configMap = KUBE_CLIENT.get("configMap", configMapName);
+            String configMap = cmdKubeClient().get("configMap", configMapName);
             String loggerConfig = String.format("%s=%s", entry.getKey(), entry.getValue());
             result = configMap.contains(loggerConfig);
 
             if (result) {
-                String log = KUBE_CLIENT.searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
+                String log = cmdKubeClient().searchInLog(STATEFUL_SET, kafkaClusterName(CLUSTER_NAME), since, ERROR);
                 result = log.isEmpty();
             }
         }
@@ -227,7 +227,7 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName, String containerName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        List<Container> containers = CLIENT.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers();
+        List<Container> containers = kubeClient().getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers();
         Container container = getContainerByName(containerName, containers);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
@@ -235,14 +235,14 @@ class LogSettingST extends AbstractST {
 
     private Boolean checkGcLoggingDeployments(String deploymentName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        Container container = CLIENT.inNamespace(NAMESPACE).apps().deployments().withName(deploymentName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = kubeClient().getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
 
     private Boolean checkGcLoggingStatefulSets(String statefulSetName) {
         LOGGER.info("Checking stateful set: {}", statefulSetName);
-        Container container = CLIENT.inNamespace(NAMESPACE).apps().statefulSets().withName(statefulSetName).get().getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = kubeClient().getStatefulSet(statefulSetName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }

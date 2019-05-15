@@ -10,17 +10,16 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
-import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.extensions.DoneableIngress;
 import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPath;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
@@ -35,7 +34,6 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.DoneableKafka;
@@ -57,11 +55,12 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
-import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
@@ -95,11 +94,11 @@ public class Resources extends AbstractResources {
     private static final String INGRESS = "Ingress";
     private static final String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
 
-    Resources(NamespacedKubernetesClient client) {
+    private List<Runnable> resources = new ArrayList<>();
+
+    Resources(KubeClient client) {
         super(client);
     }
-
-    private List<Runnable> resources = new ArrayList<>();
 
     private <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?, ?> x, T resource) {
         LOGGER.info("Scheduled deletion of {} {}", resource.getKind(), resource.getMetadata().getName());
@@ -136,7 +135,7 @@ public class Resources extends AbstractResources {
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
-                    client.apps().deployments().delete((Deployment) resource);
+                    client().deleteDeployment((Deployment) resource);
                     waitForDeletion((Deployment) resource);
                 });
                 break;
@@ -144,23 +143,22 @@ public class Resources extends AbstractResources {
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
-                    client.rbac().kubernetesClusterRoleBindings().delete((KubernetesClusterRoleBinding) resource);
+                    client().deleteKubernetesClusterRoleBinding((KubernetesClusterRoleBinding) resource);
                 });
                 break;
             case SERVICE:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
-                    client.services().delete((Service) resource);
+                    client().deleteService((Service) resource);
                 });
                 break;
             case INGRESS:
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
                     x.delete(resource);
-                    client.extensions().ingresses().delete((Ingress) resource);
+                    client().deleteIngress((Ingress) resource);
                 });
-                break;
             default :
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
@@ -212,10 +210,6 @@ public class Resources extends AbstractResources {
 
     private Ingress deleteLater(Ingress resource) {
         return deleteLater(ingress(), resource);
-    }
-
-    Job deleteLater(Job resource) {
-        return deleteLater(client().batch().jobs(), resource);
     }
 
     void deleteResources() {
@@ -459,62 +453,41 @@ public class Resources extends AbstractResources {
     private Kafka waitFor(Kafka kafka) {
         String name = kafka.getMetadata().getName();
         LOGGER.info("Waiting for Kafka {}", name);
-        String namespace = kafka.getMetadata().getNamespace();
-        waitForStatefulSet(namespace, KafkaResources.zookeeperStatefulSetName(name));
-        waitForStatefulSet(namespace, KafkaResources.kafkaStatefulSetName(name));
-        waitForDeployment(namespace, KafkaResources.entityOperatorDeploymentName(name));
+        waitForStatefulSet(KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
+        waitForStatefulSet(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
+        StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
         return kafka;
     }
 
     private KafkaConnect waitFor(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting for Kafka Connect {}", kafkaConnect.getMetadata().getName());
-        String namespace = kafkaConnect.getMetadata().getNamespace();
-        waitForDeployment(namespace, kafkaConnect.getMetadata().getName() + "-connect");
+        StUtils.waitForDeploymentReady(kafkaConnect.getMetadata().getName() + "-connect");
         return kafkaConnect;
     }
 
     private KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
-        String namespace = kafkaConnectS2I.getMetadata().getNamespace();
-        waitForDeploymentConfig(namespace, kafkaConnectS2I.getMetadata().getName() + "-connect");
+        StUtils.waitForDeploymentReady(kafkaConnectS2I.getMetadata().getName() + "-connect");
         return kafkaConnectS2I;
     }
 
     private KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
-        String namespace = kafkaMirrorMaker.getMetadata().getNamespace();
-        waitForDeployment(namespace, kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker");
+        StUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker");
         return kafkaMirrorMaker;
     }
 
     private Deployment waitFor(Deployment deployment) {
         LOGGER.info("Waiting for deployment {}", deployment.getMetadata().getName());
-        String namespace = client.getNamespace();
-        waitForDeployment(namespace, deployment.getMetadata().getName());
+        StUtils.waitForDeploymentReady(deployment.getMetadata().getName());
         return deployment;
     }
 
     /**
      * Wait until the SS is ready and all of its Pods are also ready
      */
-    private void waitForStatefulSet(String namespace, String name) {
-        StUtils.waitForAllStatefulSetPodsReady(client(), namespace, name);
-    }
-
-    /**
-     * Wait until the deployment is ready
-     */
-    private void waitForDeployment(String namespace, String name) {
-        LOGGER.info("Waiting for Deployment {} in namespace {}", name, namespace);
-        StUtils.waitForDeploymentReady(client(), namespace, name);
-        LOGGER.info("Deployment {} is ready", name);
-    }
-
-    private void waitForDeploymentConfig(String namespace, String name) {
-        LOGGER.info("Waiting for Deployment Config {}", name);
-        TestUtils.waitFor("deployment config " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_DEPLOYMENT_CONFIG_READINESS,
-            () -> client().adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespace).withName(name).isReady());
-        LOGGER.info("Deployment Config {} is ready", name);
+    private void waitForStatefulSet(String name, int expectedPods) {
+        StUtils.waitForAllStatefulSetPodsReady(name, expectedPods);
     }
 
     private void waitForDeletion(Kafka kafka) {
@@ -522,53 +495,50 @@ public class Resources extends AbstractResources {
         String namespace = kafka.getMetadata().getNamespace();
 
         IntStream.rangeClosed(0, kafka.getSpec().getZookeeper().getReplicas() - 1).forEach(podIndex ->
-            waitForPodDeletion(namespace, kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
+            waitForPodDeletion(kafka.getMetadata().getName() + "-zookeeper-" + podIndex));
 
         IntStream.rangeClosed(0, kafka.getSpec().getKafka().getReplicas() - 1).forEach(podIndex ->
-            waitForPodDeletion(namespace, kafka.getMetadata().getName() + "-kafka-" + podIndex));
+            waitForPodDeletion(kafka.getMetadata().getName() + "-kafka-" + podIndex));
     }
 
     private void waitForDeletion(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect {}", kafkaConnect.getMetadata().getName());
-        String namespace = kafkaConnect.getMetadata().getNamespace();
 
-        client.pods().inNamespace(namespace).list().getItems().stream()
+        client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnect.getMetadata().getName() + "-connect-"))
-                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
-        String namespace = kafkaConnectS2I.getMetadata().getNamespace();
 
-        client.pods().inNamespace(namespace).list().getItems().stream()
+        client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaConnectS2I.getMetadata().getName() + "-connect-"))
-                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting when all the pods are terminated for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
         String namespace = kafkaMirrorMaker.getMetadata().getNamespace();
 
-        client.pods().inNamespace(namespace).list().getItems().stream()
+        client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker-"))
-                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
     private void waitForDeletion(Deployment deployment) {
         LOGGER.info("Waiting when all the pods are terminated for Deployment {}", deployment.getMetadata().getName());
-        String namespace = deployment.getMetadata().getNamespace();
 
-        client.pods().inNamespace(namespace).list().getItems().stream()
+        client().listPods().stream()
                 .filter(p -> p.getMetadata().getName().startsWith(deployment.getMetadata().getName()))
-                .forEach(p -> waitForPodDeletion(namespace, p.getMetadata().getName()));
+                .forEach(p -> waitForPodDeletion(p.getMetadata().getName()));
     }
 
-    private void waitForPodDeletion(String namespace, String name) {
+    private void waitForPodDeletion(String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
         TestUtils.waitFor("statefulset " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> client().pods().inNamespace(namespace).withName(name).get() == null);
+            () -> client().getPod(name) == null);
     }
 
     DoneableKafkaTopic topic(String clusterName, String topicName) {
@@ -704,7 +674,7 @@ public class Resources extends AbstractResources {
             TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, Constants.TIMEOUT_FOR_RESOURCE_CREATION,
                 () -> {
                     try {
-                        client.apps().deployments().createOrReplace(co);
+                        client().createOrReplaceDeployment(co);
                         return true;
                     } catch (KubernetesClientException e) {
                         if (e.getMessage().contains("object is being deleted")) {
@@ -744,7 +714,7 @@ public class Resources extends AbstractResources {
 
     private DoneableKubernetesRoleBinding kubernetesRoleBinding(KubernetesRoleBinding roleBinding, String clientNamespace) {
         LOGGER.info("Apply RoleBinding in namespace {}", clientNamespace);
-        client.inNamespace(clientNamespace).rbac().kubernetesRoleBindings().createOrReplace(roleBinding);
+        client().namespace(clientNamespace).createOrReplaceKubernetesRoleBinding(roleBinding);
         deleteLater(roleBinding);
         return new DoneableKubernetesRoleBinding(roleBinding);
     }
@@ -829,17 +799,13 @@ public class Resources extends AbstractResources {
 
     DoneableKubernetesClusterRoleBinding kubernetesClusterRoleBinding(KubernetesClusterRoleBinding clusterRoleBinding, String clientNamespace) {
         LOGGER.info("Apply ClusterRoleBinding in namespace {}", clientNamespace);
-        client.inNamespace(clientNamespace).rbac().kubernetesClusterRoleBindings().createOrReplace(clusterRoleBinding);
+        client().createOrReplaceKubernetesClusterRoleBinding(clusterRoleBinding);
         deleteLater(clusterRoleBinding);
         return new DoneableKubernetesClusterRoleBinding(clusterRoleBinding);
     }
 
     DoneableDeployment deployKafkaClients(String clusterName) {
         return deployKafkaClients(false, clusterName, null);
-    }
-
-    DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName) {
-        return deployKafkaClients(tlsListener, clusterName, null);
     }
 
     DoneableDeployment deployKafkaClients(boolean tlsListener, String clusterName, KafkaUser... kafkaUsers) {
@@ -884,7 +850,7 @@ public class Resources extends AbstractResources {
     DoneableService createServiceResource(String appName, int port, String clientNamespace) {
         Service service = getSystemtestsServiceResource(appName, port);
         LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
-        client.services().inNamespace(clientNamespace).create(service);
+        client().createService(service);
         deleteLater(service);
         return new DoneableService(service);
     }
@@ -916,7 +882,7 @@ public class Resources extends AbstractResources {
     DoneableIngress createIngress(String appName, int port, String url, String clientNamespace) throws Exception {
         Ingress ingress = getSystemtestIngressResource(appName, port, url);
         LOGGER.info("Creating ingress {} in namespace {}", ingress.getMetadata().getName(), clientNamespace);
-        client.extensions().ingresses().inNamespace(clientNamespace).create(ingress);
+        client().createIngress(ingress);
         deleteLater(ingress);
         return new DoneableIngress(ingress);
     }
@@ -1055,7 +1021,7 @@ public class Resources extends AbstractResources {
     }
 
     String saslConfigs(KafkaUser kafkaUser) {
-        Secret secret = client.secrets().withName(kafkaUser.getMetadata().getName()).get();
+        Secret secret = client().getSecret(kafkaUser.getMetadata().getName());
 
         String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
         if (password.isEmpty()) {

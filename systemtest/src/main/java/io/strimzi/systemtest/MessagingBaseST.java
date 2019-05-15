@@ -5,9 +5,9 @@
 package io.strimzi.systemtest;
 
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.clients.api.MsgCliApiClient;
 import io.strimzi.systemtest.clients.api.ClientArgument;
 import io.strimzi.systemtest.clients.api.ClientArgumentMap;
+import io.strimzi.systemtest.clients.api.MsgCliApiClient;
 import io.strimzi.systemtest.clients.api.VerifiableClient;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
@@ -35,10 +35,6 @@ public class MessagingBaseST extends AbstractST {
     private JsonObject response;
     private int sent = 0;
     private int received = 0;
-
-    public JsonObject getResponse() {
-        return response;
-    }
 
     public void setResponse(JsonObject response) {
         this.response = response;

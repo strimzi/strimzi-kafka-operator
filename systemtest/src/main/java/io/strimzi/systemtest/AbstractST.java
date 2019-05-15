@@ -11,14 +11,12 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.DoneableKafka;
@@ -30,25 +28,15 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.systemtest.utils.TestExecutionWatcher;
 import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
-import io.strimzi.test.timemeasuring.Operation;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
+import io.strimzi.systemtest.utils.TestExecutionWatcher;
 import io.strimzi.test.BaseITST;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterException;
-import io.strimzi.test.k8s.ExecResult;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Properties;
-
+import io.strimzi.test.timemeasuring.Operation;
+import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -57,12 +45,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Base64;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -73,13 +67,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.TestUtils.indent;
-import static io.strimzi.test.TestUtils.toYamlString;
 import static io.strimzi.test.TestUtils.waitFor;
-import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static java.util.Arrays.asList;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -126,12 +118,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     static String operationID;
     Random rng = new Random();
 
-    protected static NamespacedKubernetesClient namespacedClient() {
-        return CLIENT.inNamespace(KUBE_CLIENT.namespace());
-    }
-
     protected HelmClient helmClient() {
-        return CLUSTER.helmClient();
+        return CLUSTER.helmClient().namespace(getNamespace());
     }
 
     static String kafkaClusterName(String clusterName) {
@@ -192,7 +180,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>>
         void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
-        Resource<T, D> namedResource = Crds.operation(CLIENT, crdClass, listClass, doneableClass).inNamespace(KUBE_CLIENT.namespace()).withName(resourceName);
+        Resource<T, D> namedResource = Crds.operation(kubeClient().getClient(), crdClass, listClass, doneableClass).inNamespace(kubeClient().getNamespace()).withName(resourceName);
         T resource = namedResource.get();
         editor.accept(resource);
         namedResource.replace(resource);
@@ -218,7 +206,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         AtomicReference<String> versions = new AtomicReference<>();
         waitFor("kafka-broker-api-versions.sh success", Constants.GET_BROKER_API_INTERVAL, Constants.GET_BROKER_API_TIMEOUT, () -> {
             try {
-                String output = KUBE_CLIENT.execInPod(podName,
+                String output = cmdKubeClient().execInPod(podName,
                         "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092").out();
                 versions.set(output);
                 return true;
@@ -239,7 +227,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
             String zookeeperPort = String.valueOf(2181 * 10 + podIndex);
             waitFor("mntr", pollMs, timeoutMs, () -> {
                 try {
-                    String output = KUBE_CLIENT.execInPod(zookeeperPod,
+                    String output = cmdKubeClient().execInPod(zookeeperPod,
                         "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out();
 
                     if (pattern.matcher(output).find()) {
@@ -253,13 +241,9 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
                     pattern.pattern(),
                     System.lineSeparator(),
-                    indent(KUBE_CLIENT.execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
+                    indent(cmdKubeClient().execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
             );
         }
-    }
-
-    static String getValueFromJson(String json, String jsonPath) {
-        return JsonPath.parse(json).read(jsonPath).toString();
     }
 
     /**
@@ -298,37 +282,25 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     List<Event> getEvents(String resourceUid) {
-        return CLIENT.events().inNamespace(KUBE_CLIENT.namespace()).list().getItems().stream()
+        return kubeClient().listEvents().stream()
                 .filter(event -> event.getInvolvedObject().getUid().equals(resourceUid))
                 .collect(Collectors.toList());
     }
 
-    public void sendMessages(String podName, String clusterName, String topic, int messagesCount) {
+    public void sendMessages(String podName, String clusterName, String containerName, String topic, int messagesCount) {
         LOGGER.info("Sending messages");
         String command = "sh bin/kafka-verifiable-producer.sh --broker-list " +
                 KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --max-messages " + messagesCount + "";
 
         LOGGER.info("Command for kafka-verifiable-producer.sh {}", command);
 
-        KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c", command);
-    }
-
-    public String consumeMessages(String clusterName, String topic, int groupID, int timeout, int kafkaPodID) {
-        LOGGER.info("Consuming messages");
-        String output = KUBE_CLIENT.execInPod(kafkaPodName(clusterName, kafkaPodID), "/bin/bash", "-c",
-                "bin/kafka-verifiable-consumer.sh --broker-list " +
-                        KafkaResources.plainBootstrapAddress(clusterName) + " --topic " + topic + " --group-id " + groupID + " & sleep "
-                        + timeout + "; kill %1").out();
-        output = "[" + output.replaceAll("\n", ",") + "]";
-        LOGGER.info("Output for kafka-verifiable-consumer.sh {}", output);
-        return output;
-
+        cmdKubeClient().execInPod(podName, "/bin/bash", "-c", command);
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = CLIENT.pods().inNamespace(namespace).withName(podName).get();
+        Pod po = kubeClient().getPod(podName);
         assertNotNull(po, "Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-                CLIENT.pods().inNamespace(namespace).list().getItems().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
+                kubeClient().listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()));
 
         Optional optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
         assertTrue(optional.isPresent(), "Not found an expected container " + containerName);
@@ -342,8 +314,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         assertEquals(cpuRequest, requests.get("cpu").getAmount());
     }
 
-    protected void assertExpectedJavaOpts(String podName, String expectedXmx, String expectedXms, String expectedServer, String expectedXx) {
-        List<List<String>> cmdLines = commandLines(podName, "java");
+    protected void assertExpectedJavaOpts(String podName, String containerName, String expectedXmx, String expectedXms, String expectedServer, String expectedXx) {
+        List<List<String>> cmdLines = commandLines(podName, containerName, "java");
         assertEquals(1, cmdLines.size(), "Expected exactly 1 java process to be running");
         List<String> cmd = cmdLines.get(0);
         int toIndex = cmd.indexOf("-jar");
@@ -366,12 +338,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         }
     }
 
-    private List<List<String>> commandLines(String podName, String cmd) {
+    private List<List<String>> commandLines(String podName, String containerName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        ExecResult pr = KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        String output = cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
-        );
-        for (String cmdLine : pr.out().split("\n")) {
+        ).out();
+        for (String cmdLine : output.split("\n")) {
             result.add(asList(cmdLine.split("\0")));
         }
         return result;
@@ -379,21 +351,21 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     void assertNoCoErrorsLogged(long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = KUBE_CLIENT.searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", "strimzi-cluster-operator", sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
     public List<String> listTopicsUsingPodCLI(String clusterName, int zkPodId) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return Arrays.asList(KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --list --zookeeper localhost:" + port).out().split("\\s+"));
     }
 
     public String createTopicUsingPodCLI(String clusterName, int zkPodId, String topic, int replicationFactor, int partitions) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --create " + " --topic " + topic +
                         " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
     }
@@ -401,27 +373,27 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     public String deleteTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --delete --topic " + topic).out();
     }
 
     public List<String>  describeTopicUsingPodCLI(String clusterName, int zkPodId, String topic) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return Arrays.asList(KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --describe --topic " + topic).out().split("\\s+"));
     }
 
     public String updateTopicPartitionsCountUsingPodCLI(String clusterName, int zkPodId, String topic, int partitions) {
         String podName = zookeeperPodName(clusterName, zkPodId);
         int port = 2181 * 10 + zkPodId;
-        return KUBE_CLIENT.execInPod(podName, "/bin/bash", "-c",
+        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
                 "bin/kafka-topics.sh --zookeeper localhost:" + port + " --alter --topic " + topic + " --partitions " + partitions).out();
     }
 
     public Map<String, String> getImagesFromConfig() {
         Map<String, String> images = new HashMap<>();
-        for (Container c : CLIENT.extensions().deployments().inNamespace(KUBE_CLIENT.namespace()).withName("strimzi-cluster-operator").get().getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : kubeClient().getDeployment("strimzi-cluster-operator").getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }
@@ -430,28 +402,28 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     }
 
     public String getContainerImageNameFromPod(String podName) {
-        String clusterOperatorJson = KUBE_CLIENT.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[*].image").toString().replaceAll("[\"\\[\\]\\\\]", "");
+        return kubeClient().getPod(podName).getSpec().getContainers().get(0).getImage();
     }
 
     public String getContainerImageNameFromPod(String podName, String containerName) {
-        String clusterOperatorJson = KUBE_CLIENT.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.containers[?(@.name =='" + containerName + "')].image").toString().replaceAll("[\"\\[\\]\\\\]", "");
+        return kubeClient().getPod(podName).getSpec().getContainers().stream()
+                .filter(c -> c.getName().equals(containerName))
+                .findFirst().get().getImage();
     }
 
     public String  getInitContainerImageName(String podName) {
-        String clusterOperatorJson = KUBE_CLIENT.getResourceAsJson("pod", podName);
-        return JsonPath.parse(clusterOperatorJson).read("$.spec.initContainers[-1].image");
+        return kubeClient().getPod(podName).getSpec().getInitContainers().stream()
+                .findFirst().get().getImage();
     }
 
     protected void createTestMethodResources() {
         LOGGER.info("Creating resources before the test");
-        testMethodResources = new Resources(namespacedClient());
+        testMethodResources = new Resources(kubeClient());
     }
 
     protected static void createTestClassResources() {
         LOGGER.info("Creating test class resources");
-        testClassResources = new Resources(namespacedClient());
+        testClassResources = new Resources(kubeClient());
     }
 
     protected void deleteTestMethodResources() throws Exception {
@@ -470,48 +442,13 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         return TimeMeasuringSystem.startOperation(operation);
     }
 
-    /** Get the log of the pod with the given name */
-    String podLog(String podName) {
-        return namespacedClient().pods().withName(podName).getLog();
-    }
-
-    String podLog(String podName, String containerId) {
-        return namespacedClient().pods().withName(podName).inContainer(containerId).getLog();
-    }
-
-    String userOperatorPodName() {
-        return podNameWithLabels(Collections.singletonMap("strimzi.io/name", CLUSTER_NAME + "-entity-operator"));
-    }
-
-    String podNameWithLabels(Map<String, String> labels) {
-        List<Pod> pods = namespacedClient().pods().withLabels(labels).list().getItems();
-        if (pods.size() != 1) {
-            fail("There are " + pods.size() +  " pods with labels " + labels);
-        }
-        return pods.get(0).getMetadata().getName();
-    }
-
-    String saslConfigs(KafkaUser kafkaUser) {
-        Secret secret = namespacedClient().secrets().withName(kafkaUser.getMetadata().getName()).get();
-
-        String password = new String(Base64.getDecoder().decode(secret.getData().get("password")));
-        if (password == null) {
-            LOGGER.info("Secret {}:\n{}", kafkaUser.getMetadata().getName(), toYamlString(secret));
-            throw new RuntimeException("The Secret " + kafkaUser.getMetadata().getName() + " lacks the 'password' key");
-        }
-        return "sasl.mechanism=SCRAM-SHA-512\n" +
-                "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required \\\n" +
-                "username=\"" + kafkaUser.getMetadata().getName() + "\" \\\n" +
-                "password=\"" + password + "\";\n";
-    }
-
     String clusterCaCertSecretName(String cluster) {
         return cluster + "-cluster-ca-cert";
     }
 
     void waitTillSecretExists(String secretName) {
         waitFor("secret " + secretName + " exists", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> namespacedClient().secrets().withName(secretName).get() != null);
+            () -> kubeClient().getSecret(secretName) != null);
         try {
             Thread.sleep(60000L);
         } catch (InterruptedException e) {
@@ -523,26 +460,25 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         LOGGER.info("Waiting when Pod {} will be deleted", podName);
 
         TestUtils.waitFor("statefulset " + podName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> CLIENT.pods().inNamespace(namespace).withName(podName).get() == null);
+            () -> kubeClient().getPod(podName) == null);
     }
 
     /**
      * Wait till all pods in specific namespace being deleted and recreate testing environment in case of some pods cannot be deleted.
      * @param time timeout in miliseconds
-     * @param namespace namespace where we expect no pods or only CO pod
      * @throws Exception exception
      */
-    void waitForDeletion(long time, String namespace) throws Exception {
-        List<Pod> pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
+    void waitForDeletion(long time) throws Exception {
+        List<Pod> pods = kubeClient().listPods().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
         // Delete pods in case of kubernetes keep them up
-        pods.forEach(p -> CLIENT.pods().inNamespace(namespace).delete(p));
+        pods.forEach(p -> kubeClient().deletePod(p));
 
         LOGGER.info("Wait for {} ms after cleanup to make sure everything is deleted", time);
         Thread.sleep(time);
 
         // Collect pods again after proper removal
-        pods = CLIENT.pods().inNamespace(namespace).list().getItems().stream().filter(
+        pods = kubeClient().listPods().stream().filter(
             p -> !p.getMetadata().getName().startsWith(CLUSTER_OPERATOR_PREFIX)).collect(Collectors.toList());
         long podCount = pods.size();
 
@@ -569,7 +505,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         createNamespaces(coNamespace, bindingsNamespaces);
         applyClusterOperatorInstallFiles();
 
-        testClassResources = new Resources(namespacedClient());
+        testClassResources = new Resources(kubeClient());
 
         applyRoleBindings(coNamespace, bindingsNamespaces);
         // 050-Deployment
@@ -633,12 +569,12 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
         LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
         Path pathToChart = new File(HELM_CHART).toPath();
-        String oldNamespace = KUBE_CLIENT.namespace("kube-system");
+        String oldNamespace = setNamespace("kube-system");
         InputStream helmAccountAsStream = getClass().getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
         String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
-        KUBE_CLIENT.applyContent(helmServiceAccount);
+        cmdKubeClient().applyContent(helmServiceAccount);
         helmClient().init();
-        KUBE_CLIENT.namespace(oldNamespace);
+        setNamespace(oldNamespace);
         helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
     }
 

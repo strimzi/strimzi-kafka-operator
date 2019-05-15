@@ -107,10 +107,10 @@ public class TopicOperatorIT extends BaseITST {
 
     @BeforeClass
     public static void setupKubeCluster() {
-        CLUSTER.client().clientWithAdmin()
+        cmdKubeClient()
                 .createNamespace(NAMESPACE);
-        oldNamespace = CLUSTER.client().namespace(NAMESPACE);
-        CLUSTER.client().clientWithAdmin()
+        oldNamespace = setNamespace(NAMESPACE);
+        cmdKubeClient()
                 .create("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .create(TestUtils.CRD_TOPIC)
                 .create("src/test/resources/TopicOperatorIT-rbac.yaml");
@@ -118,12 +118,12 @@ public class TopicOperatorIT extends BaseITST {
 
     @AfterClass
     public static void teardownKubeCluster() {
-        CLUSTER.client().clientWithAdmin()
+        cmdKubeClient()
                 .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
                 .delete(TestUtils.CRD_TOPIC)
                 .delete("../install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                 .deleteNamespace(NAMESPACE);
-        CLUSTER.client().clientWithAdmin().namespace(oldNamespace);
+        cmdKubeClient().namespace(oldNamespace);
     }
 
     @Before
@@ -153,7 +153,7 @@ public class TopicOperatorIT extends BaseITST {
         p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.brokerList());
         adminClient = AdminClient.create(p);
 
-        kubeClient = CLIENT.inNamespace(NAMESPACE);
+        kubeClient = BaseITST.kubeClient().getClient();
         Crds.registerCustomKinds();
         LOGGER.info("Using namespace {}", NAMESPACE);
         startTopicOperator(context);

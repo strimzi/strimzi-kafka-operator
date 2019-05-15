@@ -5,11 +5,30 @@
 package io.strimzi.test.k8s;
 
 /**
- * A {@link KubeClient} wrapping {@code kubectl}.
+ * A {@link KubeCmdClient} wrapping {@code kubectl}.
  */
-public class Kubectl extends BaseKubeClient<Kubectl> {
+public class Kubectl extends BaseCmdKubeClient<Kubectl> {
 
     public static final String KUBECTL = "kubectl";
+
+    Kubectl() {
+
+    }
+
+    Kubectl(String futureNamespace) {
+        namespace = futureNamespace;
+    }
+
+    @Override
+    public Kubectl namespace(String namespace) {
+        return new Kubectl(namespace);
+    }
+
+    @Override
+    public String namespace() {
+        return namespace;
+    }
+
 
     @Override
     public String defaultNamespace() {

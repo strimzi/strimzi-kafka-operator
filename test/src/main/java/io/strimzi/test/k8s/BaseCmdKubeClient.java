@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.Exec;
+import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,18 +30,19 @@ import java.util.stream.Collectors;
 import static java.lang.String.join;
 import static java.util.Arrays.asList;
 
-public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements KubeClient<K> {
+public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implements KubeCmdClient<K> {
 
-    private static final Logger LOGGER = LogManager.getLogger(BaseKubeClient.class);
+    private static final Logger LOGGER = LogManager.getLogger(BaseCmdKubeClient.class);
 
-    public static final String CREATE = "create";
-    public static final String APPLY = "apply";
-    public static final String DELETE = "delete";
+    private static final String CREATE = "create";
+    private static final String APPLY = "apply";
+    private static final String DELETE = "delete";
+
     public static final String DEPLOYMENT = "deployment";
     public static final String STATEFUL_SET = "statefulset";
     public static final String SERVICE = "service";
     public static final String CM = "cm";
-    private String namespace = defaultNamespace();
+    String namespace = defaultNamespace();
 
     protected abstract String cmd();
 
@@ -58,17 +61,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
 
     private static final Context NOOP = new Context();
 
-    @Override
-    public String namespace(String namespace) {
-        String previous = this.namespace;
-        this.namespace = namespace;
-        return previous;
-    }
-
-    @Override
-    public String namespace() {
-        return namespace;
-    }
 
     @Override
     public abstract K clientWithAdmin();
@@ -81,11 +73,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return defaultContext();
     }
 
-    @Override
-    public boolean clientAvailable() {
-        return Exec.isExecutableOnPath(cmd());
-    }
-
     protected List<String> namespacedCommand(String... rest) {
         return namespacedCommand(asList(rest));
     }
@@ -94,7 +81,7 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         List<String> result = new ArrayList<>();
         result.add(cmd());
         result.add("--namespace");
-        result.add(namespace());
+        result.add(namespace);
         result.addAll(rest);
         return result;
     }
@@ -282,47 +269,6 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
             return replicasNode != null && readyReplicasName != null
                     && replicasNode.asInt() == readyReplicasName.asInt();
         });
-    }
-
-    @Override
-    public K waitForPod(String name) {
-        // wait when all pods are ready
-        return waitFor("pod", name,
-            actualObj -> {
-                JsonNode containerStatuses = actualObj.get("status").get("containerStatuses");
-                if (containerStatuses != null && containerStatuses.isArray()) {
-                    for (final JsonNode objNode : containerStatuses) {
-                        if (!objNode.get("ready").asBoolean()) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-        );
-    }
-
-    @Override
-    public K waitForStatefulSet(String name, int expectPods) {
-        return waitFor("statefulset", name,
-            actualObj -> {
-                int rep = actualObj.get("status").get("replicas").asInt();
-                JsonNode currentReplicas = actualObj.get("status").get("currentReplicas");
-
-                if (currentReplicas != null &&
-                        ((expectPods >= 0 && expectPods == currentReplicas.asInt() && expectPods == rep)
-                        || (expectPods < 0 && rep == currentReplicas.asInt()))) {
-                    LOGGER.debug("Waiting for pods of statefulset {}", name);
-                    if (expectPods >= 0) {
-                        for (int ii = 0; ii < expectPods; ii++) {
-                            waitForPod(name + "-" + ii);
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            });
     }
 
     @Override
