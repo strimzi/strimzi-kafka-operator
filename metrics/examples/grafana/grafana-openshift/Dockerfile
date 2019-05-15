@@ -7,7 +7,8 @@ EXPOSE 3000
 ENV GRAFANA_VERSION="6.0.0"
 
 COPY root /
-RUN yum -y install https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-"$GRAFANA_VERSION"-1.x86_64.rpm \
+RUN yum -y --setopt=tsflag=nodocs update \
+    && yum -y --setopt=tsflag=nodocs install https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-"$GRAFANA_VERSION"-1.x86_64.rpm \
     && yum clean all
 COPY run.sh /usr/share/grafana/
 RUN /usr/bin/fix-permissions /usr/share/grafana \

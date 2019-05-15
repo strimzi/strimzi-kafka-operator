@@ -5,7 +5,9 @@ ARG KAFKA_SHA512
 ARG KAFKA_VERSION
 ARG strimzi_version
 
-RUN yum -y install java-${JAVA_VERSION}-openjdk-headless gettext nmap-ncat openssl && yum clean all -y
+RUN yum -y --setopt=tsflag=nodocs update \
+    && yum -y --setopt=tsflag=nodocs install java-${JAVA_VERSION}-openjdk-headless gettext nmap-ncat openssl \
+    && yum clean all -y
 
 # set Kafka home folder
 ENV KAFKA_HOME=/opt/kafka
