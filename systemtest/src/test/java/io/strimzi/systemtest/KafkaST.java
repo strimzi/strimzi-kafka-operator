@@ -98,6 +98,9 @@ class KafkaST extends MessagingBaseST {
 
         //Wait for kafka deletion
         oc.waitForResourceDeletion("Kafka", clusterName);
+        kubeClient().listPods().stream()
+            .filter(p -> p.getMetadata().getName().startsWith(clusterName))
+            .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
 
         StUtils.waitForStatefulSetDeletion(kafkaClusterName(clusterName));
         StUtils.waitForStatefulSetDeletion(zookeeperClusterName(clusterName));
