@@ -120,7 +120,8 @@ class KafkaST extends MessagingBaseST {
                             .withTls(false)
                         .endKafkaListenerExternalLoadBalancer()
                     .endListeners()
-                    .withConfig(singletonMap("default.replication.factor", 3))
+                    .addToConfig(singletonMap("default.replication.factor", 3))
+                    .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
             .endSpec().done();
 
@@ -133,28 +134,22 @@ class KafkaST extends MessagingBaseST {
         // scale up
         final int scaleTo = initialReplicas + 1;
         final int newPodId = initialReplicas;
-        final int newBrokerId = newPodId;
         final String newPodName = kafkaPodName(CLUSTER_NAME,  newPodId);
-        final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
-        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas + 1));
-        StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
+        replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods, kafkaRollingUpdateTimeout);
 
-        // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
-        // (execute bash because we want the env vars expanded in the pod)
-        String versions = getBrokerApiVersions(newPodName);
-        for (int brokerId = 0; brokerId < scaleTo; brokerId++) {
-            assertTrue(versions.indexOf("(id: " + brokerId + " rack: ") >= 0, versions);
-        }
+        String firstTopicName = "test-topic";
+        testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, scaleTo).done();
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient().getPodUid(newPodName);
         List<Event> events = getEvents(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
-        waitForClusterAvailability(NAMESPACE);
+        waitForClusterAvailability(NAMESPACE, firstTopicName);
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
@@ -169,20 +164,19 @@ class KafkaST extends MessagingBaseST {
 
         final int finalReplicas = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
-        versions = getBrokerApiVersions(firstPodName);
-
-        assertTrue(versions.indexOf("(id: " + newBrokerId + " rack: ") == -1,
-                "Expect the added broker, " + newBrokerId + ",  to no longer be present in output of kafka-broker-api-versions.sh");
 
         //Test that the new broker has event 'Killing'
         assertThat(getEvents(uid), hasAllOfReasons(Killing));
         //Test that stateful set has event 'SuccessfulDelete'
-        uid = kubeClient().getPodUid(kafkaClusterName(CLUSTER_NAME));
+        uid = kubeClient().getSsUid(kafkaClusterName(CLUSTER_NAME));
         assertThat(getEvents(uid), hasAllOfReasons(SuccessfulDelete));
         //Test that CO doesn't have any exceptions in log
         TimeMeasuringSystem.stopOperation(operationID);
         assertNoCoErrorsLogged(TimeMeasuringSystem.getDurationInSecconds(testClass, testName, operationID));
-        waitForClusterAvailability(NAMESPACE);
+
+        String secondTopicName = "test-topic-2";
+        testMethodResources().topic(CLUSTER_NAME, secondTopicName, finalReplicas, finalReplicas).done();
+        waitForClusterAvailability(NAMESPACE, secondTopicName);
     }
 
     @Test

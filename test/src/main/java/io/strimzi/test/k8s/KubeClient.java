@@ -183,6 +183,13 @@ public class KubeClient {
     }
 
     /**
+     * Gets statefulset Uid
+     */
+    public String getSsUid(String name) {
+        return client.apps().statefulSets().inNamespace(getNamespace()).withName(name).get().getMetadata().getUid();
+    }
+
+    /**
      * Deletes pod
      */
     public Boolean deletePod(Pod pod) {
