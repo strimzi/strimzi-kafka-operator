@@ -52,9 +52,12 @@ class LogCollector {
 
                 pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
                     String log = kubeClient.getPodResource(podName).inContainer(containerStatus.getName()).getLog();
-                    LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
-                    LOGGER.info(log);
-                    LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
+
+                    if (podName.contains("connect-tests-connect")){
+                        LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
+                        LOGGER.info(log);
+                        LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
+                    }
 
                     // Write logs from containers to files
                     writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
