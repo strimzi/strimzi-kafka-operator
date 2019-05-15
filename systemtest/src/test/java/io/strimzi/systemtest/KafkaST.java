@@ -96,18 +96,12 @@ class KafkaST extends MessagingBaseST {
         LOGGER.info("Deleting Kafka cluster {} after test", clusterName);
         oc.deleteByName("Kafka", clusterName);
 
-        // Delete all pods created by this test
-        kubeClient().listPods().stream()
-                .filter(p -> p.getMetadata().getName().startsWith(clusterName))
-                .forEach(kubeClient()::deletePod);
+        //Wait for kafka deletion
+        oc.waitForResourceDeletion("Kafka", clusterName);
 
         StUtils.waitForStatefulSetDeletion(kafkaClusterName(clusterName));
         StUtils.waitForStatefulSetDeletion(zookeeperClusterName(clusterName));
         StUtils.waitForDeploymentDeletion(entityOperatorDeploymentName(clusterName));
-
-
-        StUtils.waitForStatefulSetDeletion(kafkaClusterName(clusterName));
-        StUtils.waitForStatefulSetDeletion(zookeeperClusterName(clusterName));
         deleteCustomResources("../examples/templates/cluster-operator");
     }
 
