@@ -89,6 +89,8 @@ pipeline {
         failure {
             echo "Build failed"
             script {
+                sh "sudo ./systemtest/scripts/get_failures.sh"
+                lib.postGithubPrComment("failures.json")
                 lib.sendMail(env.STRIMZI_MAILING_LIST, "failed", env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL)
             }
         }
