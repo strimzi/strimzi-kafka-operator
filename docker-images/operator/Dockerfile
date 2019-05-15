@@ -1,8 +1,8 @@
 FROM centos:7
 ARG JAVA_VERSION=1.8.0
 
-RUN yum -y --setopt=tsflag=nodocs update \
-    && yum -y --setopt=tsflag=nodocs install java-${JAVA_VERSION}-openjdk-headless openssl \
+RUN yum -y update \
+    && yum -y install java-${JAVA_VERSION}-openjdk-headless openssl \
     && yum -y clean all
 
 # Set JAVA_HOME env var
