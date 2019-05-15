@@ -10,7 +10,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.util.Collections;
 
+import static io.strimzi.systemtest.interfaces.TestSeparator.SEPARATOR_CHAR;
 import static io.strimzi.test.BaseITST.cmdKubeClient;
 import static io.strimzi.test.TestUtils.writeFile;
 
@@ -45,8 +47,15 @@ class LogCollector {
         try {
             kubeClient.listPods().forEach(pod -> {
                 String podName = pod.getMetadata().getName();
+
+                LOGGER.info("Pod {} logs: ", podName);
+
                 pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
                     String log = kubeClient.getPodResource(podName).inContainer(containerStatus.getName()).getLog();
+                    LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
+                    LOGGER.info(log);
+                    LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
+
                     // Write logs from containers to files
                     writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
                     // Describe all pods
@@ -62,6 +71,9 @@ class LogCollector {
     void collectEvents() {
         LOGGER.info("Collecting events in namespace {}", namespace);
         String events = cmdKubeClient().getEvents();
+
+        LOGGER.info("Events: {}", events);
+
         // Write events to file
         writeFile(eventsDir + "/" + "events-in-namespace" + kubeClient.getNamespace() + ".log", events);
     }

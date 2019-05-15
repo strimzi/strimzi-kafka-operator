@@ -241,6 +241,10 @@ public class StUtils implements Constants {
      */
     public static void waitForDeploymentReady(String name) {
         LOGGER.info("Waiting for Deployment {}", name);
+
+        //Remove it (Needed just for Travis)
+        LOGGER.info("Client namespace: {}", kubeClient().getNamespace());
+
         TestUtils.waitFor("deployment " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
             () -> kubeClient().getDeploymentStatus(name));
         LOGGER.info("Deployment {} is ready", name);

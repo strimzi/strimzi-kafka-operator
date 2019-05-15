@@ -74,8 +74,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static io.strimzi.test.BaseITST.kubeClient;
 import static io.strimzi.test.TestUtils.changeOrgAndTag;
 import static io.strimzi.test.TestUtils.toYamlString;
 
@@ -461,6 +463,14 @@ public class Resources extends AbstractResources {
 
     private KafkaConnect waitFor(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting for Kafka Connect {}", kafkaConnect.getMetadata().getName());
+
+
+        //Remove it (Needed just for Travis)
+        LOGGER.info("Deployment status {}: {}", kafkaConnect.getMetadata().getName(), kubeClient().getDeploymentStatus(kafkaConnect.getMetadata().getName()));
+        LOGGER.info("List pods: {}", kubeClient().listPods().stream()
+                .map(pod -> pod.getMetadata().getName() + " " + pod.getStatus())
+                .collect(Collectors.toList())
+        );
         StUtils.waitForDeploymentReady(kafkaConnect.getMetadata().getName() + "-connect");
         return kafkaConnect;
     }
