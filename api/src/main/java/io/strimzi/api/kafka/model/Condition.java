@@ -29,7 +29,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
     private String lastTransitionTime;
     private Map<String, Object> additionalProperties;
 
-    @Description("")
+    @Description("The status of the condition, one of True, False, Unknown")
     public String getStatus() {
         return status;
     }
@@ -38,7 +38,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.status = status;
     }
 
-    @Description("")
+    @Description("One-word CamelCase reason for the condition's last transition")
     public String getReason() {
         return reason;
     }
@@ -47,7 +47,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.reason = reason;
     }
 
-    @Description("")
+    @Description("The type of condition")
     public String getType() {
         return type;
     }
@@ -56,7 +56,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.type = type;
     }
 
-    @Description("")
+    @Description("Last time the condition transit from one status to another")
     public String getLastTransitionTime() {
         return lastTransitionTime;
     }
@@ -69,7 +69,6 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.additionalProperties = additionalProperties;
     }
 
-    @Description("")
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();

@@ -51,9 +51,6 @@ import static java.util.Collections.unmodifiableList;
                                 storage = false
                         )
                 },
-                subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status(name = "test")
-                ),
                 additionalPrinterColumns = {
                         @Crd.Spec.AdditionalPrinterColumn(
                                 name = "Authentication",
@@ -102,7 +99,6 @@ public class KafkaUser extends CustomResource implements UnknownPropertyPreservi
     private ObjectMeta metadata;
     private KafkaUserSpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
-    private KafkaUserStatus status;
 
     @Override
     public String getApiVersion() {
@@ -133,14 +129,6 @@ public class KafkaUser extends CustomResource implements UnknownPropertyPreservi
         this.spec = spec;
     }
 
-    @Description("The status of the Kafka user")
-    public KafkaUserStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(KafkaUserStatus status) {
-        this.status = status;
-    }
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : emptyMap();

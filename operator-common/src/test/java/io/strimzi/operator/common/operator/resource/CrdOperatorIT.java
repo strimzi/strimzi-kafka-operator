@@ -82,12 +82,16 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
     public void testFullCycle(TestContext context)    {
     }
 
+    /**
+     * Needs CustomResourceOperationsImpl constructor patch for cascade deletion
+     * https://github.com/fabric8io/kubernetes-client/pull/1325
+     *
+     */
     @Test
     public void statusTest(TestContext context) {
         Async async = context.async();
 
         crdOperator =  new CrdOperator(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class);
-
         Future<ReconcileResult<Kafka>> createFuture = crdOperator.reconcile(namespace, RESOURCE_NAME, getResource());
 
         createFuture.setHandler(create -> {
@@ -103,9 +107,7 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
                     crdOperator.updateStatus(k1);
                     Kafka k2 = crdOperator.get(namespace, RESOURCE_NAME);
                     assertEquals(k1.getStatus().toString(), k2.getStatus().toString());
-                    async.complete();
 
-                    // Will fail until Fabric8 bump to 4.1.2 Remove async.complete()call above after upgraded
                     Future<ReconcileResult<Kafka>> deleteFuture = crdOperator.reconcile(namespace, RESOURCE_NAME, null);
                     deleteFuture.setHandler(delete -> {
                         if (delete.succeeded()) {
@@ -136,16 +138,5 @@ public class CrdOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, 
     @Override
     protected void assertResources(TestContext context, Kafka expected, Kafka actual)   {
         context.assertEquals(expected.getMetadata().getName(), actual.getMetadata().getName());
-        //context.assertEquals(expected.getMetadata().getNamespace(), actual.getMetadata().getNamespace());
-        //context.assertEquals(expected.getMetadata().getLabels(), actual.getMetadata().getLabels());
-        //context.assertEquals(expected.getSubjects().size(), actual.getSubjects().size());
-        ///context.assertEquals(expected.getSubjects().get(0).getKind(), actual.getSubjects().get(0).getKind());
-        //context.assertEquals(expected.getSubjects().get(0).getNamespace(), actual.getSubjects().get(0).getNamespace());
-        //context.assertEquals(expected.getSubjects().get(0).getName(), actual.getSubjects().get(0).getName());
-
-        //context.assertEquals(expected.getRoleRef().getKind(), actual.getRoleRef().getKind());
-        //context.assertEquals(expected.getRoleRef().getApiGroup(), actual.getRoleRef().getApiGroup());
-        //context.assertEquals(expected.getRoleRef().getName(), actual.getRoleRef().getName());
-
     }
 }

@@ -16,24 +16,6 @@ import java.util.Map;
 
 import static java.util.Collections.emptyMap;
 
-/**
- * status:
- *   conditions:
- *   - lastTransitionTime: 2019-04-08T09:13:27Z
- *     status: "False"
- *     type: ZookeeperRollingRestart
- *   - lastTransitionTime: 2019-04-08T09:13:27Z
- *     status: "True"
- *     type: KafkaRollingRestart
- *     reason: "KafkaUpgradePhase1"
- *   - lastTransitionTime: 2019-04-08T09:13:27Z
- *     status: "False"
- *     type: EntityOperatorRestarting
- *   listeners:
- *     plain:
- *       host: foobar
- *       port: 123
- */
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,
@@ -48,7 +30,7 @@ public class KafkaStatus implements UnknownPropertyPreserving, Serializable {
     private List<Condition> conditions;
     private Map<String, Object> additionalProperties;
 
-    @Description("")
+    @Description("Kafka Bootstrap addresses for internal and external listeners")
     public ListenersStatus getListeners() {
         return listeners;
     }
@@ -57,7 +39,7 @@ public class KafkaStatus implements UnknownPropertyPreserving, Serializable {
         this.listeners = listeners;
     }
 
-    @Description("")
+    @Description("List of status conditions")
     public List<Condition> getConditions() {
         return conditions;
     }

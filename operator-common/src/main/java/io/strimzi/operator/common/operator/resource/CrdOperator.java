@@ -8,17 +8,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.OperationSupport;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.vertx.core.Vertx;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -36,6 +32,8 @@ public class CrdOperator<C extends KubernetesClient,
     private final Class<T> cls;
     private final Class<L> listCls;
     private final Class<D> doneableCls;
+    protected final String baseUrl;
+    protected final String plural;
 
     /**
      * Constructor
@@ -44,9 +42,16 @@ public class CrdOperator<C extends KubernetesClient,
      */
     public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, Class<D> doneableCls) {
         super(vertx, client, Crds.kind(cls));
+        this.baseUrl = this.client.getMasterUrl().toString();
         this.cls = cls;
         this.listCls = listCls;
         this.doneableCls = doneableCls;
+
+        if (cls.equals(Kafka.class)) {
+            this.plural = Kafka.RESOURCE_PLURAL;
+        } else {
+            this.plural = null;
+        }
     }
 
     @Override
@@ -55,16 +60,15 @@ public class CrdOperator<C extends KubernetesClient,
     }
 
     public void updateStatus(T resource) {
-        // get resource plural
         try {
-            String baseUrl = this.client.getMasterUrl().toString();
             OkHttpClient client = this.client.adapt(OkHttpClient.class);
             RequestBody postBody = RequestBody.create(OperationSupport.JSON, new ObjectMapper().writeValueAsString(resource));
+
             Request request = new Request.Builder().put(postBody).url(
-                    baseUrl + "apis/kafka.strimzi.io/v1beta1/namespaces/" + resource.getMetadata().getNamespace()
-                    + "/kafkas/" + resource.getMetadata().getName() + "/status").build();
+                    this.baseUrl + "apis/" + resource.getApiVersion() + "/namespaces/" + resource.getMetadata().getNamespace()
+                    + "/" + this.plural + "/" + resource.getMetadata().getName() + "/status").build();
+
             String method = request.method();
-            log.info("Making {} request {}", method, request);
             log.debug("Making {} request {}", method, request);
             Response response = client.newCall(request).execute();
             try {
@@ -83,14 +87,5 @@ public class CrdOperator<C extends KubernetesClient,
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static void main(String[] args) {
-        CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> crdOp = new CrdOperator(Vertx.vertx(), new DefaultKubernetesClient(),
-                Kafka.class, KafkaList.class, DoneableKafka.class);
-
-        Kafka myproject = crdOp.get("myproject", "my-cluster");
-
-        crdOp.updateStatus(new KafkaBuilder(myproject).withNewStatus().withConditions().addNewCondition().withStatus("test").endCondition().endStatus().build());
     }
 }
