@@ -53,7 +53,7 @@ class LogCollector {
                 pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
                     String log = kubeClient.getPodResource(podName).inContainer(containerStatus.getName()).getLog();
 
-                    if (podName.contains("connect-tests-connect")){
+                    if (podName.contains("connect-tests-connect")) {
                         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
                         LOGGER.info(log);
                         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
