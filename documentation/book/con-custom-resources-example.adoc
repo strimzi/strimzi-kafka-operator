@@ -4,7 +4,7 @@
 
 [id='con-custom-resources-example-{context}']
 = {Productname} custom resource example
-Each {Productname}-specific custom resource is defined within the specification of a CRD.
+Each {Productname}-specific custom resource conforms to the schema defined by the CRD for the resource's `kind`.
 
 To understand the relationship between a CRD and a custom resource, let's look at a sample of the CRD for a Kafka topic.
 
@@ -24,6 +24,7 @@ Spec: <2>
   scope: Namespaced
   names:
     # ...
+    singular: kafkatopic
     plural: kafkatopics
     shortNames:
     - kt <3>
@@ -44,9 +45,9 @@ Spec: <2>
               maximum: 32767
       # ...
 ----
-<1> The metadata for the topic custom resource, its name and a label to identify the resource.
-<2> The specification for the topic, including the group (domain) name, the plural name and the supported schema version, which are used in the URL to access the API of the topic. The other names are used to identify the resource in the CLI.
-<3> The shortname can be used in CLI commands, so `get kt` is used instead of `get kafka topic`.
+<1> The metadata for the topic CRD, its name and a label to identify the CRD.
+<2> The specification for this CRD, including the group (domain) name, the plural name and the supported schema version, which are used in the URL to access the API of the topic. The other names are used to identify instance resources in the CLI. For example, `kubectl get kafkatopic my-topic` or `oc get kafkatopics`.
+<3> The shortname can be used in CLI commands. For example, `oc get kt` can be used as an abbreviation instead of `oc get kafka topic`.
 <4> The information presented when using a `get` command on the custom resource.
 <5> openAPIV3Schema validation provides validation for the creation of topic custom resources. For example, a topic requires at least one partition and one replica.
 
@@ -58,20 +59,21 @@ Here is a corresponding example of a `KafkaTopic` custom resource.
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
-kind: KafkaTopic
+kind: KafkaTopic <1>
 metadata:
   name: my-topic
   labels:
     strimzi.io/cluster: my-cluster
-Spec: <1>
+Spec: <2>
   partitions: 1
   replicas: 1
   config:
     retention.ms: 7200000
     segment.bytes: 1073741824
 ----
+<1> The `kind` and `apiVersion` identify the CRD of which the custom resource is an instance.
 <1> The spec shows the number of partitions and replicas for the topic as well as configuration for the retention period for a message to remain in the topic and the segment file size for the log.
 
-Custom resources are applied to a cluster through the platform CLI. When the custom resource is created, it uses the same validation as the built-in resources of the Kubernetes API.
+Custom resources can be applied to a cluster through the platform CLI. When the custom resource is created, it uses the same validation as the built-in resources of the Kubernetes API.
 
 After a KafkaTopic custom resource is created, the Topic Operator is notified and corresponding topics are created in {Productname}.
