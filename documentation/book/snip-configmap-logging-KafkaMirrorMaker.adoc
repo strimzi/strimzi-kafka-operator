@@ -1,0 +1,11 @@
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaMirrorMaker
+spec:
+  # ...
+  logging:
+    type: external
+    name: customConfigMap
+  # ...
+----

@@ -12,20 +12,14 @@
 [id='assembly-logging-{context}']
 = Logging
 
-Logging enables you to diagnose error and performance issues for {ProductName}.
-For the logging, various logger implementations are used.
+This section provides information on loggers and how to configure log levels.
 
-* `log4j` logger for Kafka and Zookeeper
-* `log4j2` logger for Topic Operator, User Operator, and other components
+You can set the log levels by specifying the loggers and their levels directly (inline) or use a custom (external) config map.
 
-This section provides information about setting loggers and describes how to configure log levels.
-
-You can set the log levels by specifying the loggers and their levels directly (inline) or by using a custom (external) config map.
+include::ref-loggers-{kind}.adoc[leveloffset=+1]
 
 include::proc-kafka-inline-logging.adoc[leveloffset=+1]
 
 include::proc-kafka-external-logging.adoc[leveloffset=+1]
 
-include::ref-kafka-logging.adoc[leveloffset=+1]
-
-It is also possible to enable and disable garbage collector (GC) logging, for more information see xref:ref-jvm-options-{context}[]
+Garbage collector (GC) logging can also be enabled (or disabled). For more information on GC, see xref:ref-jvm-options-{context}[]

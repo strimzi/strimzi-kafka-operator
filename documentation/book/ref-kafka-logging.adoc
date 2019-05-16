@@ -2,43 +2,20 @@
 //
 // assembly-logging.adoc
 
-[id='kafka-logging-loggers-{context}']
-= Loggers
+[id='ref-logging-loggers-{context}']
+= Configurable loggers
+Logging allows you to diagnose error and performance issues for {ProductName}.
 
-{ProductName} consists of several components. Each component has its own loggers and is configurable.
-This section provides information about loggers of various components.
+The following logger implementations are used in {ProductName}:
 
-Components and their loggers are listed below.
+* `log4j` logger for Kafka and Zookeeper
+* `log4j2` logger for Topic Operator, User Operator, and other components
 
-* Kafka
-** `kafka.root.logger.level`
-** `log4j.logger.org.I0Itec.zkclient.ZkClient`
-** `log4j.logger.org.apache.zookeeper`
-** `log4j.logger.kafka`
-** `log4j.logger.org.apache.kafka`
-** `log4j.logger.kafka.request.logger`
-** `log4j.logger.kafka.network.Processor`
-** `log4j.logger.kafka.server.KafkaApis`
-** `log4j.logger.kafka.network.RequestChannel$`
-** `log4j.logger.kafka.controller`
-** `log4j.logger.kafka.log.LogCleaner`
-** `log4j.logger.state.change.logger`
-** `log4j.logger.kafka.authorizer.logger`
+{ProductName} components have their own configurable loggers.
 
-* Zookeeper
-** `zookeeper.root.logger`
-
-* Kafka Connect and Kafka Connect with Source2Image support
-** `connect.root.logger.level`
-** `log4j.logger.org.apache.zookeeper`
-** `log4j.logger.org.I0Itec.zkclient`
-** `log4j.logger.org.reflections`
-
-* Kafka Mirror Maker
-** `mirrormaker.root.logger`
-
-* Topic Operator
-** `rootLogger.level`
-
-* User Operator
-** `rootLogger.level`
+* xref:ref-loggers-Kafka-deployment-configuration-kafka[Kafka loggers]
+* xref:ref-loggers-KafkaConnect-deployment-configuration-kafka-connect[Kafka Connect loggers]
+* xref:ref-loggers-KafkaConnectS2I-deployment-configuration-kafka-connect-s2i[Kafka Connect with Source2Image loggers]
+* xref:ref-loggers-KafkaMirrorMaker-deployment-configuration-kafka-mirror-maker[Kafka Mirror Maker loggers]
+* xref:topic-operator-deployment-configuration-kafka[Topic Operator loggers]
+* xref:user-operator-deployment-configuration-kafka[User Operator loggers]
