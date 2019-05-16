@@ -99,11 +99,9 @@ def sendMail(String address, String status, String prID, String prAuthor, String
 
 def postGithubPrComment(def file) {
     echo "Posting github comment"
-    def repository_url = scm.userRemoteConfigs[0].url
-    def repository_name = repository_url.replace("https://github.com/","").replace(".git","")
     echo "Going to run curl command"
     withCredentials([string(credentialsId: 'strimzi-ci-github-token', variable: 'GITHUB_TOKEN')]) {
-        sh "curl -v -H \"Authorization: token ${GITHUB_TOKEN}\" -X POST -H \"Content-type: application/json\" -d \"@${file}\" \"https://api.github.com/repos/${repository_name}/issues/${ghprbPullId}/comments\" > out.log 2> out.err"
+        sh "curl -v -H \"Authorization: token ${GITHUB_TOKEN}\" -X POST -H \"Content-type: application/json\" -d \"@${file}\" \"https://api.github.com/repos/Strimzi/strimzi-kafka-operator/issues/${ghprbPullId}/comments\" > out.log 2> out.err"
         def output=readFile("out.log").trim()
         def output_err=readFile("out.err").trim()
         echo "curl output=$output output_err=$output_err"
