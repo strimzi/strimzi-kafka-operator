@@ -13,13 +13,21 @@ public class PasswordGeneratorTest {
 
     @Test
     public void length() {
-        PasswordGenerator generator = new PasswordGenerator(10, "a");
+        PasswordGenerator generator = new PasswordGenerator(10, "a", "a");
         assertEquals("aaaaaaaaaa", generator.generate());
     }
 
     @Test
     public void alphabet() {
-        PasswordGenerator generator = new PasswordGenerator(10, "ab");
+        PasswordGenerator generator = new PasswordGenerator(10, "ab", "ab");
         assertTrue(generator.generate().matches("[ab]{10}"));
+    }
+
+    @Test
+    public void firstLetterAlphabet() {
+        PasswordGenerator generator = new PasswordGenerator(10, "a", "b");
+        String password = generator.generate();
+        assertEquals("a", password.substring(0, 1));
+        assertEquals("bbbbbbbbb", password.substring(1, 10));
     }
 }
