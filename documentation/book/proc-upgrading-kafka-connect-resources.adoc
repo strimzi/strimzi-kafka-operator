@@ -1,0 +1,60 @@
+// Module included in the following assemblies:
+//
+// assembly-upgrade-resources.adoc
+
+[id='proc-upgrade-kafka-connect-resources-{context}']
+= Upgrading Kafka Connect resources
+
+.Prerequisites
+
+* The Cluster Operator is up and running.
+
+.Procedure
+Execute the following steps for each `KafkaConnect` resource in your deployment.
+
+. Update the `KafkaConnect` resource in an editor.
++
+[source,shell,subs="+quotes,attributes"]
+----
+{cmdcli} edit kafkaconnect _my-connect_
+----
+
+. Replace:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaConnectApiVersionPrev}
+----
++
+with:
++
+[source,shell,subs="attributes"]
+----
+apiVersion:{KafkaConnectApiVersion}
+----
+
+. Move:
++
+[source,shell]
+----
+KafkaConnect.spec.affinity
+----
++
+[source,shell]
+----
+KafkaConnect.spec.tolerations
+----
++
+to:
++
+[source,shell]
+----
+KafkaConnect.spec.template.pod.affinity
+----
++
+[source,shell]
+----
+KafkaConnect.spec.template.pod.tolerations
+----
+
+. Save the file, exit the editor and wait for the updated resource to be reconciled.

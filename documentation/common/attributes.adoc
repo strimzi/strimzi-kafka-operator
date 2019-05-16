@@ -91,12 +91,22 @@
 :DockerEntityOperatorStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerImageUser: 1001
 
-// API Versions
+// API Versions current
 :KafkaApiVersion: kafka.strimzi.io/v1beta1
 :KafkaConnectApiVersion: kafka.strimzi.io/v1beta1
 :KafkaConnectS2IApiVersion: kafka.strimzi.io/v1beta1
 :KafkaTopicApiVersion: kafka.strimzi.io/v1beta1
 :KafkaUserApiVersion: kafka.strimzi.io/v1beta1
+:KafkaMirrorMakerApiVersion: kafka.strimzi.io/v1beta1
+
+
+// API Versions previous
+:KafkaApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaConnectApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaConnectS2IApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaTopicApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaUserApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1alpha1
 
 // Section enablers
 :Kubernetes:

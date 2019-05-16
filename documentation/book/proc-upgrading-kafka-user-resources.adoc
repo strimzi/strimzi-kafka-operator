@@ -1,0 +1,36 @@
+// Module included in the following assemblies:
+//
+// assembly-upgrade-resources.adoc
+
+[id='proc-upgrade-kafka-user-resources-{context}']
+= Upgrading Kafka User resources
+
+.Prerequisites
+
+* The Cluster Operator is up and running.
+
+.Procedure
+Execute the following steps for each `KafkaUser` resource in your deployment.
+
+. Update the `KafkaUser` resource in an editor.
++
+[source,shell,subs="+quotes,attributes"]
+----
+{cmdcli} edit kafkauser _my-user_
+----
+
+. Replace:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaUserApiVersionPrev}
+----
++
+with:
++
+[source,shell,subs="attributes"]
+----
+apiVersion:{KafkaUserApiVersion}
+----
+
+. Save the file, exit the editor and wait for the updated resource to be reconciled.
