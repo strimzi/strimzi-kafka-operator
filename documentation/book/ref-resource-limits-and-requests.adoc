@@ -5,7 +5,7 @@
 [id='ref-resource-limits-and-requests-{context}']
 = Resource limits and requests
 
-Resource limits and requests are configured using the `resources` property in following resources:
+Resource limits and requests are configured using the `resources` property in the following resources:
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.kafka.tlsSidecar`
