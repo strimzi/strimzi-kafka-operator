@@ -6,12 +6,15 @@
 = Specifying inline logging
 .Procedure
 
-. Edit the YAML file to specify the loggers and their level for the required components. For example:
+. Edit the YAML file to specify the loggers and logging level for the required components.
++
+For example, the logging level here is set to INFO:
 +
 include::snip-external-logging-{kind}.adoc[]
 +
-In the above example, the log level is set to INFO.
-You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information about the log levels, see link:https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
+You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
++
+For more information about the log levels, see the link:https://logging.apache.org/log4j/2.x/manual/customloglevels.html[log4j manual^].
 
 . Create or update the Kafka resource in {ProductPlatformName}.
 +

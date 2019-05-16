@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,8 +29,8 @@ class HelmChartST extends AbstractST {
     void testDeployKafkaClusterViaHelmChart() {
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3).done();
         testMethodResources().topic(CLUSTER_NAME, TOPIC_NAME).done();
-        KUBE_CLIENT.waitForStatefulSet(zookeeperClusterName(CLUSTER_NAME), 3);
-        KUBE_CLIENT.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), 3);
+        StUtils.waitForAllStatefulSetPodsReady(zookeeperClusterName(CLUSTER_NAME), 3);
+        StUtils.waitForAllStatefulSetPodsReady(kafkaClusterName(CLUSTER_NAME), 3);
     }
 
     @BeforeEach
@@ -47,7 +48,7 @@ class HelmChartST extends AbstractST {
     @Override
     void tearDownEnvironmentAfterEach() throws Exception {
         deleteTestMethodResources();
-        waitForDeletion(Constants.TIMEOUT_TEARDOWN, NAMESPACE);
+        waitForDeletion(Constants.TIMEOUT_TEARDOWN);
     }
 
     @Override

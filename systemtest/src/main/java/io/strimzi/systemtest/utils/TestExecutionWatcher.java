@@ -15,8 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 import static io.strimzi.systemtest.AbstractST.TEST_LOG_DIR;
-import static io.strimzi.test.BaseITST.CLIENT;
-import static io.strimzi.test.BaseITST.KUBE_CLIENT;
+import static io.strimzi.test.BaseITST.kubeClient;
 
 public class TestExecutionWatcher implements AfterTestExecutionCallback {
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionWatcher.class);
@@ -35,7 +34,7 @@ public class TestExecutionWatcher implements AfterTestExecutionCallback {
                 TEST_LOG_DIR + testClass + "." + testMethod + "_" + currentDate
                 : TEST_LOG_DIR + currentDate;
 
-        LogCollector logCollector = new LogCollector(CLIENT.inNamespace(KUBE_CLIENT.namespace()), new File(logDir));
+        LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
         logCollector.collectEvents();
         logCollector.collectConfigMaps();
         logCollector.collectLogsFromPods();

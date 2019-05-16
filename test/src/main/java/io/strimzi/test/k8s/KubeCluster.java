@@ -29,7 +29,9 @@ public interface KubeCluster {
     /** Attempt to stop a cluster */
     void clusterDown();
 
-    /** Return a default client for this kind of cluster. */
+    /** Return a default CMD cmdClient for this kind of cluster. */
+    KubeCmdClient defaultCmdClient();
+
     KubeClient defaultClient();
 
     /**

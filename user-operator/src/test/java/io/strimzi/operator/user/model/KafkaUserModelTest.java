@@ -31,7 +31,7 @@ public class KafkaUserModelTest {
     private final Secret clientsCaCert = ResourceUtils.createClientsCaCertSecret();
     private final Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
     private final CertManager mockCertManager = new MockCertManager();
-    private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a");
+    private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
         assertEquals(1, resource.getMetadata().getOwnerReferences().size());

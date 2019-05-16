@@ -44,6 +44,7 @@ spec:
 
 When both `topicOperator` and `userOperator` properties are missing, the Entity Operator will be not deployed.
 
+[id='topic-operator-{context}']
 == Topic Operator
 
 Topic Operator deployment can be configured using additional options inside the `topicOperator` object.
@@ -72,12 +73,15 @@ The `image` property can be used to configure the container image which will be 
 For more details about configuring custom container images, see xref:assembly-configuring-container-images-{context}[].
 
 `resources`::
-The `resources` property configures the amount of resources allocated to the Topic Operator
+The `resources` property configures the amount of resources allocated to the Topic Operator.
 For more details about resource request and limit configuration, see xref:assembly-resource-limits-and-requests-{context}[].
 
 `logging`::
-The `logging` property configures the logging of the Topic Operator
-For more details about logging configuration, see xref:assembly-logging-{context}[].
+The `logging` property configures the logging of the Topic Operator.
++
+The Topic Operator has its own configurable logger:
++
+* `rootLogger.level`
 
 .Example of Topic Operator configuration
 [source,yaml,subs=attributes+]
@@ -98,7 +102,7 @@ spec:
       reconciliationIntervalSeconds: 60
     # ...
 ----
-
+[id='user-operator-{context}']
 == User Operator
 
 User Operator deployment can be configured using additional options inside the `userOperator` object.
@@ -126,7 +130,10 @@ For more details about resource request and limit configuration, see xref:assemb
 
 `logging`::
 The `logging` property configures the logging of the User Operator.
-For more details about logging configuration, see xref:assembly-logging-{context}[].
++
+The User Operator has its own configurable logger:
++
+* `rootLogger.level`
 
 .Example of Topic Operator configuration
 [source,yaml,subs=attributes+]

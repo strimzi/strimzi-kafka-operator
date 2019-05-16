@@ -21,8 +21,10 @@ public class KubeClusterResource {
 
     private final boolean bootstrap;
     private KubeCluster cluster;
+    private KubeCmdClient cmdClient;
     private KubeClient client;
     private HelmClient helmClient;
+    private static KubeClusterResource kubeClusterResource;
 
     private static KubeClusterResource instance;
 
@@ -37,40 +39,43 @@ public class KubeClusterResource {
         bootstrap = true;
     }
 
-    public KubeClusterResource(KubeCluster cluster, KubeClient client) {
-        bootstrap = false;
-        this.cluster = cluster;
-        this.client = client;
-    }
-
-    public KubeClusterResource(KubeCluster cluster, KubeClient client, HelmClient helmClient) {
-        bootstrap = false;
-        this.cluster = cluster;
-        this.client = client;
-        this.helmClient = helmClient;
+    public static KubeClusterResource getKubeClusterResource() {
+        synchronized (KubeClusterResource.class) {
+            if (kubeClusterResource == null) {
+                kubeClusterResource = new KubeClusterResource();
+            }
+        }
+        return kubeClusterResource;
     }
 
     /** Gets the namespace in use */
     public String defaultNamespace() {
-        return client().defaultNamespace();
+        return cmdClient().defaultNamespace();
+    }
+
+    public KubeCmdClient cmdClient() {
+        if (cmdClient == null) {
+            this.cmdClient = cluster().defaultCmdClient();
+        }
+        return cmdClient;
     }
 
     public KubeClient client() {
-        if (bootstrap && client == null) {
-            this.client = KubeClient.findClient(cluster());
+        if (client == null) {
+            this.client = cluster().defaultClient();
         }
         return client;
     }
 
     public HelmClient helmClient() {
-        if (bootstrap && helmClient == null) {
-            this.helmClient = HelmClient.findClient(client());
+        if (helmClient == null) {
+            this.helmClient = HelmClient.findClient(cmdClient());
         }
         return helmClient;
     }
 
     public KubeCluster cluster() {
-        if (bootstrap && cluster == null) {
+        if (cluster == null) {
             this.cluster = KubeCluster.bootstrap();
         }
         return cluster;
@@ -81,8 +86,11 @@ public class KubeClusterResource {
             if (cluster == null) {
                 this.cluster = KubeCluster.bootstrap();
             }
+            if (cmdClient == null) {
+                this.cmdClient = cluster.defaultCmdClient();
+            }
             if (client == null) {
-                this.client = KubeClient.findClient(cluster);
+                this.client = cluster.defaultClient();
             }
         }
     }
