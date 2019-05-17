@@ -13,7 +13,7 @@ To understand the relationship between a CRD and a custom resource, let's look a
 ----
 apiVersion: {KafkaApiVersion}
 kind: CustomResourceDefinition
-Metadata: <1>
+metadata: <1>
   name: kafkatopics.kafka.strimzi.io
   labels:
     app: strimzi
