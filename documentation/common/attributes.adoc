@@ -92,6 +92,7 @@
 :DockerImageUser: 1001
 
 // API Versions current
+:ApiVersion: v1beta1
 :KafkaApiVersion: kafka.strimzi.io/v1beta1
 :KafkaConnectApiVersion: kafka.strimzi.io/v1beta1
 :KafkaConnectS2IApiVersion: kafka.strimzi.io/v1beta1
@@ -127,5 +128,5 @@
 :ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
 :ChartRepositoryUrl: http://strimzi.io/charts/
 
-//not used
-:ProductVersion: latest
+//Latest Strimzi version
+:ProductVersion: 0.12.0

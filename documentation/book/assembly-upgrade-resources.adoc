@@ -6,9 +6,9 @@
 = {ProductName} resource upgrades
 For this release of {ProductName}, resources that use the API version `{KafkaApiVersionPrev}` must be updated to use `{KafkaApiVersion}`.
 
-The `{KafkaApiVersionPrev}` API version has been deprecated for this release.
+The `{KafkaApiVersionPrev}` API version is deprecated in release {ProductVersion}.
 
-IMPORTANT: The upgrade of resources _must_ be performed before xref:assembly-upgrade-{context}[], so the Cluster Operator can understand the CRDs.
+IMPORTANT: The upgrade of resources _must_ be performed after xref:assembly-upgrade-{context}[], so the Cluster Operator can understand the resources.
 
 include::proc-upgrading-kafka-resources.adoc[leveloffset=+1]
 include::proc-upgrading-kafka-connect-resources.adoc[leveloffset=+1]

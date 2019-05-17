@@ -7,7 +7,7 @@
 
 .Prerequisites
 
-* The Cluster Operator is up and running.
+* A Cluster Operator supporting the {ApiVersion} API version is up and running.
 
 .Procedure
 Execute the following steps for each `KafkaMirrorMaker` resource in your deployment.
@@ -33,7 +33,7 @@ with:
 apiVersion:{KafkaMirrorMakerApiVersion}
 ----
 
-. Move:
+. If present, move:
 +
 [source,shell]
 ----

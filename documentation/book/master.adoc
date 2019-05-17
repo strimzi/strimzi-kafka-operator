@@ -19,9 +19,9 @@ include::assembly-using-the-user-operator.adoc[leveloffset=+1]
 
 include::assembly-security.adoc[leveloffset=+1]
 
-include::assembly-upgrade-resources.adoc[leveloffset=+1]
-
 include::assembly-upgrade.adoc[leveloffset=+1]
+
+include::assembly-upgrade-resources.adoc[leveloffset=+1]
 
 include::proc-uninstalling.adoc[leveloffset=+1]
 
