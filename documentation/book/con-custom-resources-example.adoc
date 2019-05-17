@@ -30,7 +30,7 @@ spec: <2>
     - kt <3>
   additionalPrinterColumns: <4>
       # ...
-  Validation: <5>
+  validation: <5>
     openAPIV3Schema:
       properties:
         spec:
