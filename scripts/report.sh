@@ -39,18 +39,18 @@ while getopts "$optspec" optchar; do
         -)
             case "${OPTARG}" in
                 cluster=*)
-					cluster=${OPTARG#*=}
+                    cluster=${OPTARG#*=}
                     ;;
                 namespace=*)
                     namespace=${OPTARG#*=}
                     ;;
                 *)
-					usage
+                    usage
                     ;;
             esac;;
         *)
             cluster="my-cluster"
-			namespace="myproject"
+            namespace="myproject"
             ;;
     esac
 done
@@ -81,7 +81,7 @@ get_yamls() {
 			filename=`echo $line | cut -f 2 -d "/"`
 			echo "   "$line
 			eval "$platform get $line -o yaml -n $namespace | sed 's/^\(\s*password\s*:\s*\).*/\1*****/' \
-			| sed 's/^\(\s*password\s*:\s*\).*/\1*****/' | sed 's/^\(\s*.*\.key\s*:\s*\).*/\1*****/' >> $direct/reports/"$1"/"$filename".yaml"
+			| sed 's/^\(\s*.*\.key\s*:\s*\).*/\1*****/' >> $direct/reports/"$1"/"$filename".yaml"
 		fi
 	done <<< $resources;
 }
@@ -95,8 +95,7 @@ mkdir -p $direct/reports/configs
 
 echo "Pods:"
 pods=`eval "$platform get pods -l strimzi.io/cluster=$cluster -o name -n $namespace | cut -d "/" -f 2"`
-for line in $pods; do
-	pod=`echo $line | cut -f 1 -d " "`
+for pod in $pods; do
 	echo "   "$pod
 	if [[ $pod == *"-entity-operator-"* ]]; then
 	  eval "$platform logs $pod -c tls-sidecar -n $namespace >> $direct/reports/podLogs/"$pod"-tls-sidecar.log"
