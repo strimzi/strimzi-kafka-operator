@@ -64,7 +64,7 @@ metadata:
   name: my-topic
   labels:
     strimzi.io/cluster: my-cluster
-Spec: <2>
+spec: <2>
   partitions: 1
   replicas: 1
   config:
