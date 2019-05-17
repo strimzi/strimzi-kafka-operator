@@ -14,7 +14,7 @@ NOTE: Access to manage custom resources is limited to xref:assembly-getting-star
 
 CRDs and custom resources are defined as YAML files.
 
-A CRD defines a new `kind` of resource — such as `kind:kafka` — within a {ProductPlatformName} cluster.
+A CRD defines a new `kind` of resource — such as `kind:kafka` — within an {ProductPlatformName} cluster.
 
 The {ProductPlatformName} API server allows custom resources to be created based on the `kind` and understands from the CRD how to validate and store the custom resource when it is added to the {ProductPlatformName} cluster.
 
