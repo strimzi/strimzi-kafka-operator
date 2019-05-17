@@ -33,6 +33,8 @@ For more information about {OpenShiftName} and setting up {OpenShiftName} cluste
 
 include::con-product-downloads.adoc[leveloffset=+1]
 
+include::assembly-custom-resources.adoc[leveloffset=+1]
+
 include::assembly-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-kafka-cluster.adoc[leveloffset=+1]

@@ -72,7 +72,7 @@ spec: <2>
     segment.bytes: 1073741824
 ----
 <1> The `kind` and `apiVersion` identify the CRD of which the custom resource is an instance.
-<1> The spec shows the number of partitions and replicas for the topic as well as configuration for the retention period for a message to remain in the topic and the segment file size for the log.
+<2> The spec shows the number of partitions and replicas for the topic as well as configuration for the retention period for a message to remain in the topic and the segment file size for the log.
 
 Custom resources can be applied to a cluster through the platform CLI. When the custom resource is created, it uses the same validation as the built-in resources of the Kubernetes API.
 

@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-deployment-configuration.adoc
+// getting-started.adoc
 
 [id='assembly-custom-resources-{context}']
 = Custom resources
@@ -10,15 +10,15 @@ For {ProductName}, CRDs introduce custom resources specific to {ProductName} to 
 
 CRDs require a one-time installation to a cluster. Depending on the cluster setup, installation typically requires cluster admin privileges.
 
-NOTE: `ClusterRoles` and `ClusterRoleBindings` to manage the CRDs are applied on installation to provide access for the Cluster Operator.
+NOTE: Access to manage custom resources is limited to xref:assembly-getting-started-strimzi-admin-{context}[{ProductName} administrators].
 
-CRDs and custom resources are defined as YAML files. 
+CRDs and custom resources are defined as YAML files.
 
 A CRD defines a new `kind` of resource — such as `kind:kafka` — within a {ProductPlatformName} cluster.
 
 The {ProductPlatformName} API server allows custom resources to be created based on the `kind` and understands from the CRD how to validate and store the custom resource when it is added to the {ProductPlatformName} cluster.
 
-WARNING: When CRDs are deleted, custom resources of that type are also deleted.
+WARNING: When CRDs are deleted, custom resources of that type are also deleted. Additionally, the resources created by the custom resource, such as pods and statefulsets are also deleted.
 
 .Additional resources
 * {K8sCRDs}
