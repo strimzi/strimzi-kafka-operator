@@ -17,7 +17,7 @@ metadata: <1>
   name: kafkatopics.kafka.strimzi.io
   labels:
     app: strimzi
-Spec: <2>
+spec: <2>
   group: kafka.strimzi.io
   versions:
     {ApiVersion}
