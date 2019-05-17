@@ -88,6 +88,32 @@ Kafka.spec.entityOperator.template.pod.affinity
 ----
 Kafka.spec.entityOperator.template.pod.tolerations
 ----
++
+For example, move:
++
+[source,shell]
+----
+spec:
+  # ...
+  entityOperator:
+    affinity {}
+    tolerations {}
+----
++
+to:
++
+[source,shell]
+----
+spec:
+  # ...
+  entityOperator:
+    template:
+      pod:
+        affinity {}
+        tolerations {}
+----
+
+
 . If present, move:
 +
 [source,shell]
@@ -111,6 +137,32 @@ Kafka.spec.kafka.template.pod.affinity
 ----
 Kafka.spec.kafka.template.pod.tolerations
 ----
++
+For example, move:
++
+[source,shell]
+----
+spec:
+  # ...
+  kafka:
+    affinity {}
+    tolerations {}
+----
++
+to:
++
+[source,shell]
+----
+spec:
+  # ...
+  kafka:
+    template:
+      pod:
+        affinity {}
+        tolerations {}
+----
+
+
 . If present, move:
 +
 [source,shell]
@@ -134,4 +186,29 @@ Kafka.spec.zookeeper.template.pod.affinity
 ----
 Kafka.spec.zookeeper.template.pod.tolerations
 ----
++
+For example, move:
++
+[source,shell]
+----
+spec:
+  # ...
+  zookeeper:
+    affinity {}
+    tolerations {}
+----
++
+to:
++
+[source,shell]
+----
+spec:
+  # ...
+  zookeeper:
+    template:
+      pod:
+        affinity {}
+        tolerations {}
+----
+
 . Save the file, exit the editor and wait for the updated resource to be reconciled.

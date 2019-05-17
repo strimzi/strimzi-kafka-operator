@@ -56,5 +56,27 @@ KafkaConnect.spec.template.pod.affinity
 ----
 KafkaConnect.spec.template.pod.tolerations
 ----
++
+For example, move:
++
+[source,shell]
+----
+spec:
+  # ...
+  affinity {}
+  tolerations {}
+----
++
+to:
++
+[source,shell]
+----
+spec:
+  # ...
+  template:
+    pod:
+      affinity {}
+      tolerations {}
+----
 
 . Save the file, exit the editor and wait for the updated resource to be reconciled.
