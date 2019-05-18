@@ -210,8 +210,13 @@ public class EntityUserOperator extends AbstractModel {
 
 
                 if (kafkaAssembly.getSpec().getClientsCa() != null) {
-                    result.setClientsCaValidityDays(kafkaAssembly.getSpec().getClientsCa().getValidityDays());
-                    result.setClientsCaRenewalDays(kafkaAssembly.getSpec().getClientsCa().getRenewalDays());
+                    if (kafkaAssembly.getSpec().getClientsCa().getValidityDays() > 0) {
+                        result.setClientsCaValidityDays(kafkaAssembly.getSpec().getClientsCa().getValidityDays());
+                    }
+
+                    if (kafkaAssembly.getSpec().getClientsCa().getRenewalDays() > 0) {
+                        result.setClientsCaRenewalDays(kafkaAssembly.getSpec().getClientsCa().getRenewalDays());
+                    }
                 }
             }
         }
