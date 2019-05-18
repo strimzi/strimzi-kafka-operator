@@ -354,7 +354,7 @@ public class KafkaCluster extends AbstractModel {
             StorageDiff diff = new StorageDiff(oldStorage, newStorage);
 
             if (!diff.isEmpty()) {
-                log.warn("Only following changes to Kafka storage are allowed: changing the deleteClaim flag, adding volumes to Jbod storage or removing volumes from Jbod storage.");
+                log.warn("Only following changes to Kafka storage are allowed: changing the deleteClaim flag, adding volumes to Jbod storage or removing volumes from Jbod storage and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
                 log.warn("Your desired Kafka storage configuration contains changes which are not allowed. As a result, all storage changes will be ignored. Use DEBUG level logging for more information about the detected changes.");
                 result.setStorage(oldStorage);
             } else {

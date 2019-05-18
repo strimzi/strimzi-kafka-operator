@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.JbodStorage;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.operator.resource.AbstractResourceDiff;
@@ -28,7 +29,7 @@ public class StorageDiff extends AbstractResourceDiff {
 
     private final boolean isEmpty;
     private final boolean changesType;
-    private final boolean changesSize;
+    private final boolean shrinkSize;
 
     public StorageDiff(Storage current, Storage desired) {
         this(current, desired, "");
@@ -36,7 +37,7 @@ public class StorageDiff extends AbstractResourceDiff {
 
     public StorageDiff(Storage current, Storage desired, String volumeDesc) {
         boolean changesType = false;
-        boolean changesSize = false;
+        boolean shrinkSize = false;
         boolean isEmpty = true;
 
         if (current instanceof JbodStorage && desired instanceof JbodStorage) {
@@ -56,7 +57,7 @@ public class StorageDiff extends AbstractResourceDiff {
                 StorageDiff diff = new StorageDiff(currentVolume, desiredVolume, "(volume ID: " + volumeId + ") ");
 
                 changesType |= diff.changesType();
-                changesSize |= diff.changesSize();
+                shrinkSize |= diff.shrinkSize();
                 isEmpty &= diff.isEmpty();
             }
         } else {
@@ -74,6 +75,22 @@ public class StorageDiff extends AbstractResourceDiff {
                     continue;
                 }
 
+                // It might be possible to increase the volume size, but never to shrink volumes
+                // When size changes, we need to detect whether it is shrinking or increasing
+                if (pathValue.endsWith("/size") && desired.getType().equals(current.getType()))    {
+                    PersistentClaimStorage persistentCurrent = (PersistentClaimStorage) current;
+                    PersistentClaimStorage persistentDesired = (PersistentClaimStorage) desired;
+
+                    long currentSize = parseMemory(persistentCurrent.getSize());
+                    long desiredSize = parseMemory(persistentDesired.getSize());
+
+                    if (currentSize > desiredSize)  {
+                        shrinkSize = true;
+                    } else {
+                        continue;
+                    }
+                }
+
                 if (log.isDebugEnabled()) {
                     log.debug("Storage {}differs: {}", volumeDesc, d);
                     log.debug("Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
@@ -82,7 +99,6 @@ public class StorageDiff extends AbstractResourceDiff {
 
                 num++;
                 changesType |= pathValue.endsWith("/type");
-                changesSize |= pathValue.endsWith("/size");
             }
 
             isEmpty = num == 0;
@@ -90,7 +106,7 @@ public class StorageDiff extends AbstractResourceDiff {
 
         this.isEmpty = isEmpty;
         this.changesType = changesType;
-        this.changesSize = changesSize;
+        this.shrinkSize = shrinkSize;
     }
 
     /**
@@ -116,7 +132,88 @@ public class StorageDiff extends AbstractResourceDiff {
      *
      * @return true when the size of the volumes changed
      */
-    public boolean changesSize() {
-        return changesSize;
+    public boolean shrinkSize() {
+        return shrinkSize;
+    }
+
+    /**
+     * Parse a K8S-style representation of a disk size, such as {@code 100Gi},
+     * into the equivalent number of bytes represented as a long.
+     *
+     * @param size The String representation of the volume size.
+     * @return The equivalent number of bytes.
+     */
+    public static long parseMemory(String size) {
+        boolean seenE = false;
+        long factor = 1L;
+        int end = size.length();
+        for (int i = 0; i < size.length(); i++) {
+            char ch = size.charAt(i);
+            if (ch == 'e') {
+                seenE = true;
+            } else if (ch < '0' || '9' < ch) {
+                end = i;
+                factor = memoryFactor(size.substring(i));
+                break;
+            }
+        }
+        long result;
+        if (seenE) {
+            result = (long) Double.parseDouble(size);
+        } else {
+            result = Long.parseLong(size.substring(0, end)) * factor;
+        }
+        return result;
+    }
+
+    /**
+     * Returns the factor which can be used to convert different units to bytes.
+     *
+     * @param suffix    The Unit which should be converted
+     * @return          The factor corresponding to the suffix unit
+     */
+    private static long memoryFactor(String suffix) {
+        long factor;
+        switch (suffix) {
+            case "E":
+                factor = 1_000L * 1_000L * 1_000L * 1_000 * 1_000L * 1_000L;
+                break;
+            case "P":
+                factor = 1_000L * 1_000L * 1_000L * 1_000 * 1_000L;
+                break;
+            case "T":
+                factor = 1_000L * 1_000L * 1_000L * 1_000;
+                break;
+            case "G":
+                factor = 1_000L * 1_000L * 1_000L;
+                break;
+            case "M":
+                factor = 1_000L * 1_000L;
+                break;
+            case "K":
+                factor = 1_000L;
+                break;
+            case "Ei":
+                factor = 1_024L * 1_024L * 1_024L * 1_024L * 1_024L * 1_024L;
+                break;
+            case "Pi":
+                factor = 1_024L * 1_024L * 1_024L * 1_024L * 1_024L;
+                break;
+            case "Ti":
+                factor = 1_024L * 1_024L * 1_024L * 1_024L;
+                break;
+            case "Gi":
+                factor = 1_024L * 1_024L * 1_024L;
+                break;
+            case "Mi":
+                factor = 1_024L * 1_024L;
+                break;
+            case "Ki":
+                factor = 1_024L;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid memory suffix: " + suffix);
+        }
+        return factor;
     }
 }
