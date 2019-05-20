@@ -4,9 +4,10 @@
 
 [id='assembly-custom-resources-{context}']
 = Custom resources
-Custom Resource Definitions (CRDs) extend the Kubernetes API, providing definitions to create and add custom resources to an {ProductPlatformName} cluster. Custom resources are created as instances of CRDs.
 
-For {ProductName}, CRDs introduce custom resources specific to {ProductName} to an {ProductPlatformName} cluster, such as Kafka, Kafka Connect, Kafka Mirror Maker, and users and topics.  CRDs provide configuration instructions, defining the schemas used to instantiate and manage the resources specific to {ProductName}. CRDs also allow {ProductName} resources to benefit from native {ProductPlatformName} features like CLI accessibility and configuration validation.
+Custom resource definitions (CRDs) extend the Kubernetes API, providing definitions to create and add custom resources to an {ProductPlatformName} cluster. Custom resources are created as instances of CRDs.
+
+In {ProductName}, CRDs introduce custom resources specific to {ProductName} to an {ProductPlatformName} cluster, such as Kafka, Kafka Connect, Kafka Mirror Maker, and users and topics custom resources.  CRDs provide configuration instructions, defining the schemas used to instantiate and manage the {ProductName}-specific resources. CRDs also allow {ProductName} resources to benefit from native {ProductPlatformName} features like CLI accessibility and configuration validation.
 
 CRDs require a one-time installation to a cluster. Depending on the cluster setup, installation typically requires cluster admin privileges.
 
@@ -14,7 +15,7 @@ NOTE: Access to manage custom resources is limited to xref:assembly-getting-star
 
 CRDs and custom resources are defined as YAML files.
 
-A CRD defines a new `kind` of resource — such as `kind:kafka` — within an {ProductPlatformName} cluster.
+A CRD defines a new `kind` of resource, such as `kind:Kafka`, within an {ProductPlatformName} cluster.
 
 The {ProductPlatformName} API server allows custom resources to be created based on the `kind` and understands from the CRD how to validate and store the custom resource when it is added to the {ProductPlatformName} cluster.
 

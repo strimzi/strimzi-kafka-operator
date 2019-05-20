@@ -3,8 +3,9 @@
 // assembly-custom-resources.adoc
 
 [id='con-custom-resources-example-{context}']
-= {Productname} custom resource example
-Each {Productname}-specific custom resource conforms to the schema defined by the CRD for the resource's `kind`.
+= {ProductName} custom resource example
+
+Each {ProductName}-specific custom resource conforms to the schema defined by the CRD for the resource's `kind`.
 
 To understand the relationship between a CRD and a custom resource, let's look at a sample of the CRD for a Kafka topic.
 
@@ -46,12 +47,12 @@ spec: <2>
       # ...
 ----
 <1> The metadata for the topic CRD, its name and a label to identify the CRD.
-<2> The specification for this CRD, including the group (domain) name, the plural name and the supported schema version, which are used in the URL to access the API of the topic. The other names are used to identify instance resources in the CLI. For example, `kubectl get kafkatopic my-topic` or `oc get kafkatopics`.
-<3> The shortname can be used in CLI commands. For example, `oc get kt` can be used as an abbreviation instead of `oc get kafka topic`.
+<2> The specification for this CRD, including the group (domain) name, the plural name and the supported schema version, which are used in the URL to access the API of the topic. The other names are used to identify instance resources in the CLI. For example, `{cmdcli} get kafkatopic my-topic` or `{cmdcli} get kafkatopics`.
+<3> The shortname can be used in CLI commands. For example, `{cmdcli} get kt` can be used as an abbreviation instead of `cmdcli get kafkatopic`.
 <4> The information presented when using a `get` command on the custom resource.
 <5> openAPIV3Schema validation provides validation for the creation of topic custom resources. For example, a topic requires at least one partition and one replica.
 
-NOTE: You can identify the CRD YAML files supplied with the {Productname} installation files, as the file names contain an index number followed by ‘Crd’.
+NOTE: You can identify the CRD YAML files supplied with the {ProductName} installation files, because the file names contain an index number followed by ‘Crd’.
 
 Here is a corresponding example of a `KafkaTopic` custom resource.
 
@@ -76,4 +77,4 @@ spec: <2>
 
 Custom resources can be applied to a cluster through the platform CLI. When the custom resource is created, it uses the same validation as the built-in resources of the Kubernetes API.
 
-After a KafkaTopic custom resource is created, the Topic Operator is notified and corresponding topics are created in {Productname}.
+After a `KafkaTopic` custom resource is created, the Topic Operator is notified and corresponding Kafka topics are created in {Productname}.
