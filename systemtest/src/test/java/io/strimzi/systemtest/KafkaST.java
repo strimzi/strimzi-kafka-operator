@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -36,7 +37,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -67,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag(REGRESSION)
 class KafkaST extends MessagingBaseST {
@@ -137,7 +138,7 @@ class KafkaST extends MessagingBaseST {
         final String newPodName = kafkaPodName(CLUSTER_NAME,  newPodId);
         LOGGER.info("Scaling up to {}", scaleTo);
         // Create snapshot of current cluster
-        String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        String kafkaSsName = kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
         kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods, kafkaRollingUpdateTimeout);
@@ -255,6 +256,7 @@ class KafkaST extends MessagingBaseST {
     }
 
     @Test
+    @SuppressWarnings("checkstyle:MethodLength")
     void testCustomAndUpdatedValues() {
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
@@ -265,102 +267,223 @@ class KafkaST extends MessagingBaseST {
         zookeeperConfig.put("tickTime", "2000");
         zookeeperConfig.put("initLimit", "5");
         zookeeperConfig.put("syncLimit", "2");
+        zookeeperConfig.put("autopurge.purgeInterval", "1");
+        int initialDelaySeconds = 30;
+        int timeoutSeconds = 10;
+        int updatedInitialDelaySeconds = 31;
+        int updatedTimeoutSeconds = 11;
 
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 2)
             .editSpec()
                 .editKafka()
+                    .withNewTlsSidecar()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endReadinessProbe()
+                        .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endLivenessProbe()
+                    .endTlsSidecar()
                     .withNewReadinessProbe()
-                        .withInitialDelaySeconds(30)
-                        .withTimeoutSeconds(10)
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
                     .endReadinessProbe()
                     .withNewLivenessProbe()
-                        .withInitialDelaySeconds(30)
-                        .withTimeoutSeconds(10)
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
                     .endLivenessProbe()
                     .withConfig(kafkaConfig)
                 .endKafka()
                 .editZookeeper()
-                    .withReplicas(2)
+                    .withNewTlsSidecar()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endReadinessProbe()
+                        .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endLivenessProbe()
+                    .endTlsSidecar()
+                .withReplicas(2)
                     .withNewReadinessProbe()
-                       .withInitialDelaySeconds(30)
-                        .withTimeoutSeconds(10)
+                       .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
                     .endReadinessProbe()
                         .withNewLivenessProbe()
-                        .withInitialDelaySeconds(30)
-                        .withTimeoutSeconds(10)
+                        .withInitialDelaySeconds(initialDelaySeconds)
+                        .withTimeoutSeconds(timeoutSeconds)
                     .endLivenessProbe()
                     .withConfig(zookeeperConfig)
                 .endZookeeper()
-            .endSpec()
+                .editEntityOperator()
+                    .editUserOperator()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endReadinessProbe()
+                            .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endLivenessProbe()
+                    .endUserOperator()
+                    .editTopicOperator()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endReadinessProbe()
+                        .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endLivenessProbe()
+                    .endTopicOperator()
+                    .withNewTlsSidecar()
+                        .withNewReadinessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endReadinessProbe()
+                        .withNewLivenessProbe()
+                            .withInitialDelaySeconds(initialDelaySeconds)
+                            .withTimeoutSeconds(timeoutSeconds)
+                        .endLivenessProbe()
+                    .endTlsSidecar()
+                .endEntityOperator()
+                .endSpec()
             .done();
 
-        int expectedZKPods = 2;
-        int expectedKafkaPods = 2;
-        List<Date> zkPodStartTime = new ArrayList<>();
-        for (int i = 0; i < expectedZKPods; i++) {
-            zkPodStartTime.add(cmdKubeClient().getResourceCreateTimestamp("pod", zookeeperPodName(CLUSTER_NAME, i)));
-        }
-        List<Date> kafkaPodStartTime = new ArrayList<>();
-        for (int i = 0; i < expectedKafkaPods; i++) {
-            kafkaPodStartTime.add(cmdKubeClient().getResourceCreateTimestamp("pod", kafkaPodName(CLUSTER_NAME, i)));
-        }
+        Map<String, String> kafkaSnapshot = StUtils.ssSnapshot(kafkaClusterName(CLUSTER_NAME));
+        Map<String, String> zkSnapshot = StUtils.ssSnapshot(zookeeperClusterName(CLUSTER_NAME));
+        Map<String, String> eoPod = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Verify values before update");
-        for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = cmdKubeClient().getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
-            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("default.replication.factor=1\noffsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1\n")));
-            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
-            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
-        }
-        LOGGER.info("Testing Zookeepers");
-        for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = cmdKubeClient().getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
-            assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
-                    hasItem("autopurge.purgeInterval=1\ntickTime=2000\ninitLimit=5\nsyncLimit=2\n")));
-            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(30)));
-            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
-        }
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", initialDelaySeconds, timeoutSeconds);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
+                "default.replication.factor=1\noffsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1\n");
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
 
+        LOGGER.info("Testing Zookeepers");
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", initialDelaySeconds, timeoutSeconds);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
+                "autopurge.purgeInterval=1\ntickTime=2000\ninitLimit=5\nsyncLimit=2\n");
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
+
+        LOGGER.info("Checking configuration of TO and UO");
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
+
+        LOGGER.info("Updating configuration of Kafka cluster");
         replaceKafkaResource(CLUSTER_NAME, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.getLivenessProbe().setInitialDelaySeconds(31);
-            kafkaClusterSpec.getReadinessProbe().setInitialDelaySeconds(31);
-            kafkaClusterSpec.getLivenessProbe().setTimeoutSeconds(11);
-            kafkaClusterSpec.getReadinessProbe().setTimeoutSeconds(11);
+            kafkaClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kafkaClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kafkaClusterSpec.getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kafkaClusterSpec.getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             kafkaClusterSpec.setConfig(TestUtils.fromJson("{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", Map.class));
+            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kafkaClusterSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kafkaClusterSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             ZookeeperClusterSpec zookeeperClusterSpec = k.getSpec().getZookeeper();
-            zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(31);
-            zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(31);
-            zookeeperClusterSpec.getLivenessProbe().setTimeoutSeconds(11);
-            zookeeperClusterSpec.getReadinessProbe().setTimeoutSeconds(11);
+            zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            zookeeperClusterSpec.getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            zookeeperClusterSpec.getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
             zookeeperClusterSpec.setConfig(TestUtils.fromJson("{\"tickTime\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
+            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            zookeeperClusterSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            zookeeperClusterSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            // Configuring TO and UO to use new values for InitialDelaySeconds and TimeoutSeconds
+            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
+            entityOperatorSpec.getTopicOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getTopicOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getTopicOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getTopicOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getUserOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getUserOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getUserOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getUserOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
         });
 
-        for (int i = 0; i < expectedZKPods; i++) {
-            StUtils.waitForPodUpdate(zookeeperPodName(CLUSTER_NAME, i), zkPodStartTime.get(i));
-            StUtils.waitForPod(zookeeperPodName(CLUSTER_NAME,  i));
-        }
-        for (int i = 0; i < expectedKafkaPods; i++) {
-            StUtils.waitForPodUpdate(kafkaPodName(CLUSTER_NAME, i), kafkaPodStartTime.get(i));
-            StUtils.waitForPod(kafkaPodName(CLUSTER_NAME,  i));
-        }
+        StUtils.waitTillSsHasRolled(kafkaClusterName(CLUSTER_NAME), 2, kafkaSnapshot);
+        StUtils.waitTillSsHasRolled(zookeeperClusterName(CLUSTER_NAME), 2, zkSnapshot);
+        StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
 
         LOGGER.info("Verify values after update");
-        for (int i = 0; i < expectedKafkaPods; i++) {
-            String kafkaPodJson = cmdKubeClient().getResourceAsJson("pod", kafkaPodName(CLUSTER_NAME, i));
-            assertThat(kafkaPodJson, hasJsonPath(globalVariableJsonPathBuilder("KAFKA_CONFIGURATION"),
-                    hasItem("default.replication.factor=2\noffsets.topic.replication.factor=2\ntransaction.state.log.replication.factor=2\n")));
-            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
-            assertThat(kafkaPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
-        }
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
+                "default.replication.factor=2\noffsets.topic.replication.factor=2\ntransaction.state.log.replication.factor=2\n");
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+
         LOGGER.info("Testing Zookeepers");
-        for (int i = 0; i < expectedZKPods; i++) {
-            String zkPodJson = cmdKubeClient().getResourceAsJson("pod", zookeeperPodName(CLUSTER_NAME, i));
-            assertThat(zkPodJson, hasJsonPath(globalVariableJsonPathBuilder("ZOOKEEPER_CONFIGURATION"),
-                    hasItem("autopurge.purgeInterval=1\ntickTime=2100\ninitLimit=6\nsyncLimit=3\n")));
-            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.initialDelaySeconds", hasItem(31)));
-            assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(11)));
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
+                "autopurge.purgeInterval=1\ntickTime=2100\ninitLimit=6\nsyncLimit=3\n");
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+
+        LOGGER.info("Getting entity operator to check configuration of TO and UO");
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+    }
+
+    /**
+     * Verifies readinessProbe and livenessProbe properties in expected container
+     * @param podNamePrefix Prexif of pod name where container is located
+     * @param containerName The container where verifying is expected
+     * @param initialDelaySeconds expected value for property initialDelaySeconds
+     * @param timeoutSeconds expected value for property timeoutSeconds
+     */
+    void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds) {
+        LOGGER.info("Getting pods by prefix {} in pod name", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        if (pods.size() != 0) {
+            LOGGER.info("Testing configuration for container {}", containerName);
+            pods.forEach(pod -> {
+                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
+                    .forEach(container -> {
+                        assertEquals(initialDelaySeconds, container.getLivenessProbe().getInitialDelaySeconds());
+                        assertEquals(initialDelaySeconds, container.getReadinessProbe().getInitialDelaySeconds());
+                        assertEquals(timeoutSeconds, container.getLivenessProbe().getTimeoutSeconds());
+                        assertEquals(timeoutSeconds, container.getReadinessProbe().getTimeoutSeconds());
+                    });
+            });
+        } else {
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
+        }
+    }
+
+    /**
+     * Verifies container configuration by environment key
+     * @param podNamePrefix Name of pod where container is located
+     * @param containerName The container where verifying is expected
+     * @param configKey Expected configuration key
+     * @param config Expected configuration
+     */
+    void checkContainerConfiguration(String podNamePrefix, String containerName, String configKey, String config) {
+        LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+
+        if (pods.size() != 0) {
+            LOGGER.info("Testing configuration for container {}", containerName);
+            pods.forEach(pod -> {
+                pod.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName))
+                    .forEach(container -> {
+                        container.getEnv().stream().filter(
+                            envVar -> envVar.getName().equals(configKey))
+                                .forEach(envVar -> assertEquals(config, envVar.getValue()));
+                    });
+            });
+        } else {
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
         }
     }
 
@@ -542,7 +665,7 @@ class KafkaST extends MessagingBaseST {
 
         // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
         String zkSsName = KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME);
-        String kafkaSsName = KafkaResources.kafkaStatefulSetName(CLUSTER_NAME);
+        String kafkaSsName = kafkaStatefulSetName(CLUSTER_NAME);
         String eoDepName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
         Map<String, String> zkPods = StUtils.ssSnapshot(zkSsName);
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
