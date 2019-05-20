@@ -1,0 +1,27 @@
+// Module included in the following assemblies:
+//
+// assembly-zookeeper-node-configuration.adoc
+
+[id='proc-connnecting-to-zookeeper-{context}']
+= Connecting to Zookeeper from a terminal
+Open a terminal inside a Kafka container to use Kafka CLI tools that require a Zookeeper connection.
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster is available.
+* The Cluster Operator is running.
+
+.Procedure
+
+. Open the terminal using the {ProductPlatformName} console or run the `exec` command from your CLI.
++
+For example:
++
+[source,shell,subs="+quotes,attributes"]
+----
+{cmdcli} exec -ti _my-cluster_-kafka-0 -- bin/kafka-topics.sh --list --zookeeper localhost:2181
+----
++
+Be sure to use `localhost:2181`.
++
+You can now run Kafaka commands to Zookeeper.

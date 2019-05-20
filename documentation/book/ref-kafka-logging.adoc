@@ -1,8 +1,9 @@
+[appendix]
 // Module included in the following assemblies:
 //
 // assembly-logging.adoc
 
-[id='ref-logging-loggers-{context}']
+[id='ref-kafka-logging-{context}']
 = Configurable loggers
 Logging allows you to diagnose error and performance issues for {ProductName}.
 
