@@ -101,29 +101,29 @@ for pod in $pods; do
 	  eval "$platform logs $pod -c tls-sidecar -n $namespace >> $direct/reports/podLogs/"$pod"-tls-sidecar.log"
 	  eval "$platform logs $pod -c topic-operator -n $namespace >> $direct/reports/podLogs/"$pod"-topic-operator.log"
 	  eval "$platform logs $pod -c user-operator -n $namespace >> $direct/reports/podLogs/"$pod"-user-operator.log"
-	  eval "$platform logs $pod -p -c tls-sidecar -n $namespace >> $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log"
-	  eval "$platform logs $pod -p -c topic-operator -n $namespace >> $direct/reports/podLogs/previous-"$pod"-topic-operator.log"
-	  eval "$platform logs $pod -p -c user-operator -n $namespace >> $direct/reports/podLogs/previous-"$pod"-user-operator.log"
+	  eval "$platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log"
+	  eval "$platform logs $pod -p -c topic-operator -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-topic-operator.log"
+	  eval "$platform logs $pod -p -c user-operator -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-user-operator.log"
 	fi
 	if [[ $pod == *"-kafka-"* ]]; then
 	  eval "$platform logs $pod -c tls-sidecar -n $namespace >> $direct/reports/podLogs/"$pod"-tls-sidecar.log"
 	  eval "$platform logs $pod -c kafka -n $namespace >> $direct/reports/podLogs/"$pod"-kafka.log"
-	  eval "$platform logs $pod -p -c tls-sidecar -n $namespace >> $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log"
-	  eval "$platform logs $pod -p -c kafka -n $namespace >> $direct/reports/podLogs/previous-"$pod"-kafka.log"
+	  eval "$platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log"
+	  eval "$platform logs $pod -p -c kafka -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-kafka.log"
 
 	  eval "$platform exec -i $pod -n $namespace -c kafka -- cat /tmp/strimzi.properties >> $direct/reports/configs/"$pod".cfg"
 	fi
 	if [[ $pod == *"-zookeeper-"* ]]; then
 	  eval "$platform logs $pod -c tls-sidecar -n $namespace >> $direct/reports/podLogs/"$pod"-tls-sidecar.log"
 	  eval "$platform logs $pod -c zookeeper -n $namespace >> $direct/reports/podLogs/"$pod"-zookeeper.log"
-	  eval "$platform logs $pod -p -c tls-sidecar -n $namespace >> $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log"
-	  eval "$platform logs $pod -p -c zookeeper -n $namespace >> $direct/reports/podLogs/previous-"$pod"-zookeeper.log"
+	  eval "$platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log"
+	  eval "$platform logs $pod -p -c zookeeper -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-zookeeper.log"
 
 	  eval "$platform exec -i $pod -n $namespace -c zookeeper -- cat /tmp/zookeeper.properties >> $direct/reports/configs/"$pod".cfg"
 	fi
 	if [[ $pod == *"-cluster-operator-"* ]]; then
 	  eval "$platform logs $pod -n $namespace >> $direct/reports/podLogs/"$pod".log"
-	  eval "$platform logs -p $pod -n $namespace >> $direct/reports/podLogs/previous-"$pod".log"
+	  eval "$platform logs -p $pod -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod".log"
 	fi
 done;
 
