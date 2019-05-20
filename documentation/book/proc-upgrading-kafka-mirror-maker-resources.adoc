@@ -1,0 +1,82 @@
+// Module included in the following assemblies:
+//
+// assembly-upgrade-resources.adoc
+
+[id='proc-upgrade-kafka-mirror-maker-resources-{context}']
+= Upgrading Kafka Mirror Maker resources
+
+.Prerequisites
+
+* A Cluster Operator supporting the {ApiVersion} API version is up and running.
+
+.Procedure
+Execute the following steps for each `KafkaMirrorMaker` resource in your deployment.
+
+. Update the `KafkaMirrorMaker` resource in an editor.
++
+[source,shell,subs="+quotes,attributes"]
+----
+{cmdcli} edit kafkamirrormaker _my-connect_
+----
+
+. Replace:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaMirrorMakerApiVersionPrev}
+----
++
+with:
++
+[source,shell,subs="attributes"]
+----
+apiVersion:{KafkaMirrorMakerApiVersion}
+----
+
+. If present, move:
++
+[source,shell]
+----
+KafkaConnectMirrorMaker.spec.affinity
+----
++
+[source,shell]
+----
+KafkaConnectMirrorMaker.spec.tolerations
+----
++
+to:
++
+[source,shell]
+----
+KafkaConnectMirrorMaker.spec.template.pod.affinity
+----
++
+[source,shell]
+----
+KafkaConnectMirrorMaker.spec.template.pod.tolerations
+----
++
+For example, move:
++
+[source,shell]
+----
+spec:
+  # ...
+  affinity {}
+  tolerations {}
+----
++
+to:
++
+[source,shell]
+----
+spec:
+  # ...
+  template:
+    pod:
+      affinity {}
+      tolerations {}
+----
+
+. Save the file, exit the editor and wait for the updated resource to be reconciled.
