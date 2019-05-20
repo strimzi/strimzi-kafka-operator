@@ -547,10 +547,19 @@ public class Resources extends AbstractResources {
     }
 
     DoneableKafkaTopic topic(String clusterName, String topicName) {
-        return topic(defaultTopic(clusterName, topicName).build());
+        return topic(defaultTopic(clusterName, topicName, 1, 1).build());
     }
 
-    private KafkaTopicBuilder defaultTopic(String clusterName, String topicName) {
+    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
+        return topic(defaultTopic(clusterName, topicName, partitions, 1).build());
+    }
+
+    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
+        return topic(defaultTopic(clusterName, topicName, partitions, replicas).build());
+    }
+
+    private KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
+        LOGGER.info("Creating topic: {} with {} partitions and {} replicas", topicName, partitions, replicas);
         return new KafkaTopicBuilder()
                 .withMetadata(
                         new ObjectMetaBuilder()
@@ -559,8 +568,9 @@ public class Resources extends AbstractResources {
                                 .addToLabels("strimzi.io/cluster", clusterName)
                 .build())
                 .withNewSpec()
-                    .withPartitions(1)
-                    .withReplicas(1)
+                    .withPartitions(partitions)
+                    .withReplicas(replicas)
+                    .addToConfig("min.insync.replicas", replicas)
                 .endSpec();
     }
 
