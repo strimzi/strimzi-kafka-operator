@@ -162,6 +162,17 @@ public class KubeClient {
     }
 
     /**
+     * Returns list of pods by prefix in pod name
+     * @param podNamePrefix prefix with which the name should begin
+     * @return List of pods
+     */
+    public List<Pod> listPodsByPrefixInName(String podNamePrefix) {
+        return listPods()
+                .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Gets pod
      */
     public Pod getPod(String name) {

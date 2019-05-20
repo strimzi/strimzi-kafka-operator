@@ -44,7 +44,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
@@ -359,21 +358,21 @@ class KafkaST extends MessagingBaseST {
         Map<String, String> eoPod = StUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
 
         LOGGER.info("Verify values before update");
-        checkReadinesLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", initialDelaySeconds, timeoutSeconds);
         checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
                 "default.replication.factor=1\noffsets.topic.replication.factor=1\ntransaction.state.log.replication.factor=1\n");
-        checkReadinesLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
 
         LOGGER.info("Testing Zookeepers");
-        checkReadinesLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", initialDelaySeconds, timeoutSeconds);
         checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
                 "autopurge.purgeInterval=1\ntickTime=2000\ninitLimit=5\nsyncLimit=2\n");
-        checkReadinesLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
 
         LOGGER.info("Checking configuration of TO and UO");
-        checkReadinesLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds);
-        checkReadinesLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", initialDelaySeconds, timeoutSeconds);
-        checkReadinesLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", initialDelaySeconds, timeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", initialDelaySeconds, timeoutSeconds);
 
         LOGGER.info("Updating configuration of Kafka cluster");
         replaceKafkaResource(CLUSTER_NAME, k -> {
@@ -418,35 +417,33 @@ class KafkaST extends MessagingBaseST {
         StUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPod);
 
         LOGGER.info("Verify values after update");
-        checkReadinesLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds);
         checkContainerConfiguration(kafkaStatefulSetName(CLUSTER_NAME), "kafka", "KAFKA_CONFIGURATION",
                 "default.replication.factor=2\noffsets.topic.replication.factor=2\ntransaction.state.log.replication.factor=2\n");
-        checkReadinesLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(kafkaStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
 
         LOGGER.info("Testing Zookeepers");
-        checkReadinesLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds);
         checkContainerConfiguration(zookeeperStatefulSetName(CLUSTER_NAME), "zookeeper", "ZOOKEEPER_CONFIGURATION",
                 "autopurge.purgeInterval=1\ntickTime=2100\ninitLimit=6\nsyncLimit=3\n");
-        checkReadinesLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(zookeeperStatefulSetName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
 
         LOGGER.info("Getting entity operator to check configuration of TO and UO");
-        checkReadinesLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds);
-        checkReadinesLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds);
-        checkReadinesLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds);
+        checkReadinessLivenessProbe(entityOperatorDeploymentName(CLUSTER_NAME), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds);
     }
 
     /**
      * Verifies readinessProbe and livenessProbe properties in expected container
-     * @param podName Name of pod where container is located
+     * @param podNamePrefix Prexif of pod name where container is located
      * @param containerName The container where verifying is expected
      * @param initialDelaySeconds expected value for property initialDelaySeconds
      * @param timeoutSeconds expected value for property timeoutSeconds
      */
-    void checkReadinesLivenessProbe(String podName, String containerName, int initialDelaySeconds, int timeoutSeconds) {
-        LOGGER.info("Getting pods by name {}", podName);
-        List<Pod> pods = kubeClient().listPods()
-                .stream().filter(p -> p.getMetadata().getName().startsWith(podName))
-                .collect(Collectors.toList());
+    void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds) {
+        LOGGER.info("Getting pods by prefix {} in pod name", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
         if (pods.size() != 0) {
             LOGGER.info("Testing configuration for container {}", containerName);
@@ -460,22 +457,20 @@ class KafkaST extends MessagingBaseST {
                     });
             });
         } else {
-            fail("Pod with name" + podName + " not found");
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
         }
     }
 
     /**
      * Verifies container configuration by environment key
-     * @param podName Name of pod where container is located
+     * @param podNamePrefix Name of pod where container is located
      * @param containerName The container where verifying is expected
      * @param configKey Expected configuration key
      * @param config Expected configuration
      */
-    void checkContainerConfiguration(String podName, String containerName, String configKey, String config) {
-        LOGGER.info("Getting pods by name {}", podName);
-        List<Pod> pods = kubeClient().listPods()
-                .stream().filter(p -> p.getMetadata().getName().startsWith(podName))
-                .collect(Collectors.toList());
+    void checkContainerConfiguration(String podNamePrefix, String containerName, String configKey, String config) {
+        LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
 
         if (pods.size() != 0) {
             LOGGER.info("Testing configuration for container {}", containerName);
@@ -488,7 +483,7 @@ class KafkaST extends MessagingBaseST {
                     });
             });
         } else {
-            fail("Pod with name " + podName + " not found");
+            fail("Pod with prefix " + podNamePrefix + " in name, not found");
         }
     }
 
