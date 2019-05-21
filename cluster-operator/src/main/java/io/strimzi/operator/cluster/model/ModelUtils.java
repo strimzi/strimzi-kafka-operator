@@ -63,7 +63,14 @@ public class ModelUtils {
     }
 
     public static int getRenewalDays(CertificateAuthority certificateAuthority) {
-        return certificateAuthority != null ? certificateAuthority.getRenewalDays() : CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS;
+        int renewalDays = CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS;
+
+        if (certificateAuthority != null
+                && certificateAuthority.getRenewalDays() > 0) {
+            renewalDays = certificateAuthority.getRenewalDays();
+        }
+
+        return renewalDays;
     }
 
     /**
