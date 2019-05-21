@@ -617,8 +617,19 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * @throws Exception
      */
     void waitForClusterAvailability(String namespace) throws Exception {
-        int messageCount = 50;
         String topicName = "test-topic-" + new Random().nextInt(Integer.MAX_VALUE);
+        waitForClusterAvailability(namespace, topicName);
+    }
+
+
+    /**
+     * Wait for cluster availability, check availability of external routes without TLS
+     * @param namespace cluster namespace
+     * @param topicName topic name
+     * @throws Exception
+     */
+    void waitForClusterAvailability(String namespace, String topicName) throws Exception {
+        int messageCount = 50;
 
         KafkaClient testClient = new KafkaClient();
         try {

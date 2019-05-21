@@ -1,0 +1,82 @@
+// Module included in the following assemblies:
+//
+// assembly-upgrade-resources.adoc
+
+[id='proc-upgrade-kafka-connect-s2i-resources-{context}']
+= Upgrading Kafka Connect S2I resources
+
+.Prerequisites
+
+* A Cluster Operator supporting the {ApiVersion} API version is up and running.
+
+.Procedure
+Execute the following steps for each `KafkaConnectS2I` resource in your deployment.
+
+. Update the `KafkaConnectS2I` resource in an editor.
++
+[source,shell,subs="+quotes,attributes"]
+----
+{cmdcli} edit kafkaconnects2i _my-connect_
+----
+
+. Replace:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaConnectS2IApiVersionPrev}
+----
++
+with:
++
+[source,shell,subs="attributes"]
+----
+apiVersion:{KafkaConnectS2IApiVersion}
+----
+
+. If present, move:
++
+[source,shell]
+----
+KafkaConnectS2I.spec.affinity
+----
++
+[source,shell]
+----
+KafkaConnectS2I.spec.tolerations
+----
++
+to:
++
+[source,shell]
+----
+KafkaConnectS2I.spec.template.pod.affinity
+----
++
+[source,shell]
+----
+KafkaConnectS2I.spec.template.pod.tolerations
+----
++
+For example, move:
++
+[source,shell]
+----
+spec:
+  # ...
+  affinity {}
+  tolerations {}
+----
++
+to:
++
+[source,shell]
+----
+spec:
+  # ...
+  template:
+    pod:
+      affinity {}
+      tolerations {}
+----
+
+. Save the file, exit the editor and wait for the updated resource to be reconciled.

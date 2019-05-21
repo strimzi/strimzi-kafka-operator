@@ -9,6 +9,8 @@ In some cases, you can also downgrade to a lower supported Kafka version.
 
 Newer versions of {ProductName} may support newer versions of Kafka, but you need to upgrade {ProductName} _before_ you can upgrade to a higher supported Kafka version.
 
+IMPORTANT: xref:assembly-upgrade-resources-{context}[] _must_ be performed after upgrading {ProductName} and Kafka.
+
 include::con-upgrade-intro.adoc[leveloffset=+1]
 
 include::ref-kafka-versions.adoc[leveloffset=+1]

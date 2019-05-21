@@ -159,6 +159,7 @@ public class Resources extends AbstractResources {
                     x.delete(resource);
                     client().deleteIngress((Ingress) resource);
                 });
+                break;
             default :
                 resources.add(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
@@ -452,42 +453,46 @@ public class Resources extends AbstractResources {
      */
     private Kafka waitFor(Kafka kafka) {
         String name = kafka.getMetadata().getName();
-        LOGGER.info("Waiting for Kafka {}", name);
-        waitForStatefulSet(KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
-        waitForStatefulSet(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
+        String namespace = kafka.getMetadata().getNamespace();
+        LOGGER.info("Waiting for Kafka {} in namespace {}", name, namespace);
+        LOGGER.info("Waiting for Zookeeper pods");
+        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(name), kafka.getSpec().getZookeeper().getReplicas());
+        LOGGER.info("Zookeeper pods are ready");
+        LOGGER.info("Waiting for Kafka pods");
+        StUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(name), kafka.getSpec().getKafka().getReplicas());
+        LOGGER.info("Kafka pod are ready");
+        LOGGER.info("Waiting for Entity Operator pods");
         StUtils.waitForDeploymentReady(KafkaResources.entityOperatorDeploymentName(name));
+        LOGGER.info("Entity Operator pods are ready");
         return kafka;
     }
 
     private KafkaConnect waitFor(KafkaConnect kafkaConnect) {
         LOGGER.info("Waiting for Kafka Connect {}", kafkaConnect.getMetadata().getName());
-        StUtils.waitForDeploymentReady(kafkaConnect.getMetadata().getName() + "-connect");
+        StUtils.waitForDeploymentReady(kafkaConnect.getMetadata().getName() + "-connect", kafkaConnect.getSpec().getReplicas());
+        LOGGER.info("Kafka Connect {} is ready", kafkaConnect.getMetadata().getName());
         return kafkaConnect;
     }
 
     private KafkaConnectS2I waitFor(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting for Kafka Connect S2I {}", kafkaConnectS2I.getMetadata().getName());
-        StUtils.waitForDeploymentReady(kafkaConnectS2I.getMetadata().getName() + "-connect");
+        StUtils.waitForDeploymentReady(kafkaConnectS2I.getMetadata().getName() + "-connect", kafkaConnectS2I.getSpec().getReplicas());
+        LOGGER.info("Kafka Connect S2I {} is ready", kafkaConnectS2I.getMetadata().getName());
         return kafkaConnectS2I;
     }
 
     private KafkaMirrorMaker waitFor(KafkaMirrorMaker kafkaMirrorMaker) {
         LOGGER.info("Waiting for Kafka Mirror Maker {}", kafkaMirrorMaker.getMetadata().getName());
-        StUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker");
+        StUtils.waitForDeploymentReady(kafkaMirrorMaker.getMetadata().getName() + "-mirror-maker", kafkaMirrorMaker.getSpec().getReplicas());
+        LOGGER.info("Kafka Mirror Maker {} is ready", kafkaMirrorMaker.getMetadata().getName());
         return kafkaMirrorMaker;
     }
 
     private Deployment waitFor(Deployment deployment) {
         LOGGER.info("Waiting for deployment {}", deployment.getMetadata().getName());
-        StUtils.waitForDeploymentReady(deployment.getMetadata().getName());
+        StUtils.waitForDeploymentReady(deployment.getMetadata().getName(), deployment.getSpec().getReplicas());
+        LOGGER.info("Deployment {} is ready", deployment.getMetadata().getName());
         return deployment;
-    }
-
-    /**
-     * Wait until the SS is ready and all of its Pods are also ready
-     */
-    private void waitForStatefulSet(String name, int expectedPods) {
-        StUtils.waitForAllStatefulSetPodsReady(name, expectedPods);
     }
 
     private void waitForDeletion(Kafka kafka) {
@@ -542,10 +547,19 @@ public class Resources extends AbstractResources {
     }
 
     DoneableKafkaTopic topic(String clusterName, String topicName) {
-        return topic(defaultTopic(clusterName, topicName).build());
+        return topic(defaultTopic(clusterName, topicName, 1, 1).build());
     }
 
-    private KafkaTopicBuilder defaultTopic(String clusterName, String topicName) {
+    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions) {
+        return topic(defaultTopic(clusterName, topicName, partitions, 1).build());
+    }
+
+    DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
+        return topic(defaultTopic(clusterName, topicName, partitions, replicas).build());
+    }
+
+    private KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
+        LOGGER.info("Creating topic: {} with {} partitions and {} replicas", topicName, partitions, replicas);
         return new KafkaTopicBuilder()
                 .withMetadata(
                         new ObjectMetaBuilder()
@@ -554,8 +568,9 @@ public class Resources extends AbstractResources {
                                 .addToLabels("strimzi.io/cluster", clusterName)
                 .build())
                 .withNewSpec()
-                    .withPartitions(1)
-                    .withReplicas(1)
+                    .withPartitions(partitions)
+                    .withReplicas(replicas)
+                    .addToConfig("min.insync.replicas", replicas)
                 .endSpec();
     }
 

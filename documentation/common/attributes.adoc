@@ -92,13 +92,23 @@
 :DockerEntityOperatorStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerImageUser: 1001
 
-// API Versions
+// API Versions current
+:ApiVersion: v1beta1
 :KafkaApiVersion: kafka.strimzi.io/v1beta1
 :KafkaConnectApiVersion: kafka.strimzi.io/v1beta1
 :KafkaConnectS2IApiVersion: kafka.strimzi.io/v1beta1
 :KafkaTopicApiVersion: kafka.strimzi.io/v1beta1
 :KafkaUserApiVersion: kafka.strimzi.io/v1beta1
+:KafkaMirrorMakerApiVersion: kafka.strimzi.io/v1beta1
 :ApiVersion: v1beta1
+
+// API Versions previous
+:KafkaApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaConnectApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaConnectS2IApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaTopicApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaUserApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1alpha1
 
 // Section enablers
 :Kubernetes:
@@ -119,5 +129,5 @@
 :ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
 :ChartRepositoryUrl: http://strimzi.io/charts/
 
-//not used
-:ProductVersion: latest
+//Latest Strimzi version
+:ProductVersion: 0.12.0
