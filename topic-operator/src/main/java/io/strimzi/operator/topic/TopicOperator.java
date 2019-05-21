@@ -358,7 +358,7 @@ public class TopicOperator {
      * When the given {@code action} is complete it must complete its argument future,
      * which will complete the returned future
      */
-    public <T> Future<T> acquireLock(TopicName key, Handler<Future<T>> action) {
+    public <T> Future<T> executeWithTopicLockHeld(TopicName key, Handler<Future<T>> action) {
         String lockName = key.toString();
         int timeoutMs = 30 * 1_000;
         Future<T> result = Future.future();
@@ -653,7 +653,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnTopicChange(topicName, null, fut.completer());
             }
         };
-        acquireLock(topicName, action).setHandler(resultHandler);
+        executeWithTopicLockHeld(topicName, action).setHandler(resultHandler);
 
     }
 
@@ -674,7 +674,7 @@ public class TopicOperator {
                 });
             }
         };
-        acquireLock(topicName, action).setHandler(resultHandler);
+        executeWithTopicLockHeld(topicName, action).setHandler(resultHandler);
     }
 
     /**
@@ -724,7 +724,7 @@ public class TopicOperator {
                 });
             }
         };
-        acquireLock(topicName, action).setHandler(resultHandler);
+        executeWithTopicLockHeld(topicName, action).setHandler(resultHandler);
     }
 
     /**
@@ -796,7 +796,7 @@ public class TopicOperator {
                 kafka.topicMetadata(topicName, handler);
             }
         };
-        acquireLock(topicName, action).setHandler(resultHandler);
+        executeWithTopicLockHeld(topicName, action).setHandler(resultHandler);
     }
 
     /** Called when a resource is added in k8s */
@@ -814,7 +814,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnResourceChange(addedTopic, k8sTopic, false, fut);
             }
         };
-        acquireLock(new TopicName(addedTopic), action).setHandler(resultHandler);
+        executeWithTopicLockHeld(new TopicName(addedTopic), action).setHandler(resultHandler);
     }
 
     abstract class Reconciliation implements Handler<Future<Void>> {
@@ -845,7 +845,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnResourceChange(modifiedTopic, k8sTopic, true, fut);
             }
         };
-        acquireLock(new TopicName(modifiedTopic), action).setHandler(resultHandler);
+        executeWithTopicLockHeld(new TopicName(modifiedTopic), action).setHandler(resultHandler);
     }
 
     private void reconcileOnResourceChange(KafkaTopic topicResource, Topic k8sTopic,
@@ -876,7 +876,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnResourceChange(deletedTopic, null, false, fut);
             }
         };
-        acquireLock(new TopicName(deletedTopic), action).setHandler(resultHandler);
+        executeWithTopicLockHeld(new TopicName(deletedTopic), action).setHandler(resultHandler);
     }
 
     private class UpdateInTopicStore implements Handler<Void> {
@@ -1062,7 +1062,7 @@ public class TopicOperator {
                 }
                 // anything left in undetermined doesn't exist in topic store nor kube
                 for (TopicName tn : reconcileState.undetermined) {
-                    futs2.add(acquireLock(tn, new Reconciliation("delete-remaining") {
+                    futs2.add(executeWithTopicLockHeld(tn, new Reconciliation("delete-remaining") {
                         @Override
                         public void handle(Future<Void> event) {
                             getKafkaAndReconcile(tn, null, null).setHandler(event.completer());
@@ -1089,7 +1089,7 @@ public class TopicOperator {
         if (topicsFromKafka.size() > 0) {
             List<Future<Void>> futures = new ArrayList<>();
             for (TopicName topicName : topicsFromKafka) {
-                futures.add(acquireLock(topicName, new Reconciliation("reconcile-from-kafka") {
+                futures.add(executeWithTopicLockHeld(topicName, new Reconciliation("reconcile-from-kafka") {
                     @Override
                     public void handle(Future<Void> fut) {
                         getFromTopicStore(topicName).recover(error -> {
@@ -1195,7 +1195,7 @@ public class TopicOperator {
     private Future<Void> reconcileWithKubeTopic(HasMetadata involvedObject, String reconciliationType, ResourceName kubeName, TopicName topicName) {
         Future<Void> result = Future.future();
         LOGGER.debug("{} reconciliation of KafkaTopic {}", reconciliationType, kubeName);
-        acquireLock(topicName, new Reconciliation("reconcile-with-kube") {
+        executeWithTopicLockHeld(topicName, new Reconciliation("reconcile-with-kube") {
             @Override
             public void handle(Future<Void> fut) {
                 CompositeFuture.join(getFromKube(kubeName),
