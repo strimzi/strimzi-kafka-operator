@@ -15,11 +15,13 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.strimzi.api.kafka.model.DoneableKafka;
+import io.strimzi.api.kafka.model.DoneableKafkaBridge;
 import io.strimzi.api.kafka.model.DoneableKafkaConnect;
 import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
 import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.DoneableKafkaTopic;
 import io.strimzi.api.kafka.model.DoneableKafkaUser;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -45,7 +47,8 @@ public class Crds {
         KafkaConnectS2I.class,
         KafkaTopic.class,
         KafkaUser.class,
-        KafkaMirrorMaker.class
+        KafkaMirrorMaker.class,
+        KafkaBridge.class
     };
 
     private Crds() {
@@ -76,6 +79,8 @@ public class Crds {
             version = Kafka.VERSIONS.get(0);
         } else if (cls.equals(KafkaMirrorMaker.class)) {
             version = KafkaMirrorMaker.VERSIONS.get(0);
+        } else if (cls.equals(KafkaBridge.class)) {
+            version = KafkaBridge.VERSIONS.get(0);
         } else {
             throw new RuntimeException();
         }
@@ -134,6 +139,14 @@ public class Crds {
             plural = KafkaMirrorMaker.RESOURCE_PLURAL;
             group = KafkaMirrorMaker.RESOURCE_GROUP;
             if (!KafkaMirrorMaker.VERSIONS.contains(version)) {
+                throw new RuntimeException();
+            }
+        } else if (cls.equals(KafkaBridge.class)) {
+            scope = KafkaBridge.SCOPE;
+            crdApiVersion = KafkaBridge.CRD_API_VERSION;
+            plural = KafkaBridge.RESOURCE_PLURAL;
+            group = KafkaBridge.RESOURCE_GROUP;
+            if (!KafkaBridge.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
         } else {
@@ -207,6 +220,14 @@ public class Crds {
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> mirrorMakerOperation(KubernetesClient client) {
         return client.customResources(mirrorMaker(), KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class);
+    }
+
+    public static CustomResourceDefinition kafkaBridge() {
+        return crd(KafkaBridge.class);
+    }
+
+    public static MixedOperation<KafkaBridge, KafkaBridgeList, DoneableKafkaBridge, Resource<KafkaBridge, DoneableKafkaBridge>> kafkaBridgeOperation(KubernetesClient client) {
+        return client.customResources(kafkaBridge(), KafkaBridge.class, KafkaBridgeList.class, DoneableKafkaBridge.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>>

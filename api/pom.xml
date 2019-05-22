@@ -151,6 +151,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaTopic=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}043-Crd-kafkatopic.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaUser=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}044-Crd-kafkauser.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaBridge=${pom.basedir}${file.separator}..${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>

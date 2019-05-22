@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.common.model;
 
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -16,7 +17,8 @@ public enum ResourceType {
     CONNECT(KafkaConnect.RESOURCE_KIND),
     CONNECT_S2I(KafkaConnectS2I.RESOURCE_KIND),
     USER(KafkaUser.RESOURCE_KIND),
-    MIRRORMAKER(KafkaMirrorMaker.RESOURCE_KIND);
+    MIRRORMAKER(KafkaMirrorMaker.RESOURCE_KIND),
+    KAFKABRIDGE(KafkaBridge.RESOURCE_KIND);
 
     public final String name;
 
@@ -40,6 +42,8 @@ public enum ResourceType {
                 return ResourceType.USER;
             case KafkaMirrorMaker.RESOURCE_KIND:
                 return ResourceType.MIRRORMAKER;
+            case KafkaBridge.RESOURCE_KIND:
+                return ResourceType.KAFKABRIDGE;
         }
         throw new IllegalArgumentException(name);
     }

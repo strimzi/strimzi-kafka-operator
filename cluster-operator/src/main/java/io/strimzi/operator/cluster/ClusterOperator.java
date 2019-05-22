@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
@@ -49,6 +50,7 @@ public class ClusterOperator extends AbstractVerticle {
     private final KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator;
     private final KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator;
     private final KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator;
+    private final KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator;
 
     public ClusterOperator(String namespace,
                            long reconciliationInterval,
@@ -56,7 +58,8 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaAssemblyOperator kafkaAssemblyOperator,
                            KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
                            KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator,
-                           KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator) {
+                           KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator,
+                           KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator) {
         log.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.reconciliationInterval = reconciliationInterval;
@@ -65,6 +68,7 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaConnectAssemblyOperator = kafkaConnectAssemblyOperator;
         this.kafkaConnectS2IAssemblyOperator = kafkaConnectS2IAssemblyOperator;
         this.kafkaMirrorMakerAssemblyOperator = kafkaMirrorMakerAssemblyOperator;
+        this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
     }
 
     Consumer<KubernetesClientException> recreateWatch(AbstractAssemblyOperator op) {
@@ -113,6 +117,14 @@ public class ClusterOperator extends AbstractVerticle {
                     log.info("Started operator for {} kind", "KafkaConnectS2I");
                     watchByKind.put("KafkaS2IConnect", w);
                 }
+                if (kafkaBridgeAssemblyOperator != null) {
+                    return kafkaBridgeAssemblyOperator.createWatch(namespace, recreateWatch(kafkaBridgeAssemblyOperator));
+                } else {
+                    return Future.succeededFuture(null);
+                }
+            }).compose(w -> {
+                log.info("Started operator for {} kind", "KafkaBridge");
+                watchByKind.put("KafkaBridge", w);
                 log.info("Setting up periodic reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation for namespace {}...", namespace);
