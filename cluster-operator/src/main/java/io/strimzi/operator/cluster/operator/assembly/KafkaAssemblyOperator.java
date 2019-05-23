@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.ListenersStatus;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaStatus;
 import io.strimzi.api.kafka.model.ListenerStatus;
 import io.strimzi.api.kafka.model.ListenersStatus;
@@ -256,6 +257,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorSecret())
                 .compose(state -> state.entityOperatorDeployment(this::dateSupplier))
 
+                .compose(state -> state.updateStatus())
+
                 .compose(state -> chainFuture.complete(), chainFuture);
 
         return chainFuture;
@@ -286,6 +289,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean zkAncillaryCmChange;
 
         private KafkaCluster kafkaCluster = null;
+        private KafkaCluster kafkaResources = null;
+
         private Service kafkaService;
         private Service kafkaHeadlessService;
         private ConfigMap kafkaMetricsAndLogsConfigMap;
@@ -294,6 +299,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Set<String> kafkaExternalAddresses = new HashSet<>();
         private Map<Integer, Set<String>> kafkaExternalDnsNames = new HashMap<>();
         private boolean kafkaAncillaryCmChange;
+
+        private String kafkaExternalBootstrapHost = null;
+        private String kafkaExternalBootstrapRoute = null;
+        private Integer kafkaBootstrapPort = null;
 
         /* test */ TopicOperator topicOperator;
         /* test */ Deployment toDeployment = null;
@@ -314,6 +323,54 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.name = kafkaAssembly.getMetadata().getName();
         }
 
+        Future<ReconciliationState> updateStatus() {
+            Future<ReconciliationState> blockingFuture = Future.future();
+
+            vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                future -> {
+                    Kafka resource = crdOperator.get(namespace, name);
+                    KafkaStatus ks = new KafkaStatus();
+                    ListenersStatus ls = new ListenersStatus();
+
+                    String internalBootstrapHost = KafkaResources.bootstrapServiceName(name) + "." + namespace + ".svc";
+                    Service bootstrapService = serviceOperations.get(namespace, KafkaResources.bootstrapServiceName(name));
+                    if (bootstrapService != null) {
+                        ServiceSpec bootstrapSpec = bootstrapService.getSpec();
+
+                        for (ServicePort sp : bootstrapSpec.getPorts()) {
+                            if (sp.getPort() == kafkaCluster.getClientPort()) {
+                                ls.setPlain(new ListenerStatus(internalBootstrapHost, kafkaCluster.getClientPort(), null));
+                            }
+                            if (sp.getPort() == kafkaCluster.getClientTlsPort()) {
+                                ls.setTls(new ListenerStatus(internalBootstrapHost, kafkaCluster.getClientTlsPort(), null));
+                            }
+                        }
+                    }
+
+                    String externalBootstrapHost = this.kafkaExternalBootstrapHost != null ? this.kafkaExternalBootstrapHost : this.kafkaExternalBootstrapRoute;
+                    if (externalBootstrapHost != null) {
+                        ls.setExternal(new ListenerStatus(externalBootstrapHost, kafkaBootstrapPort, null));
+                    }
+
+                    ks.setListeners(ls);
+
+                    // TODO: editOrNewStatus suggestion
+                    Kafka resourceWithNewStatus = new KafkaBuilder(resource).withStatus(ks).build();
+
+                    // TODO: Check if object has changed, updateStatus only if true ( Ask Tom about lombok object comparison )
+                    crdOperator.updateStatus(resourceWithNewStatus);
+
+                    future.complete();
+                }, res -> {
+                    if (res.succeeded()) {
+                        blockingFuture.complete();
+                    } else {
+                        blockingFuture.fail(res.cause());
+                    }
+                });
+
+            return withVoid(blockingFuture);
+        }
         /**
          * Asynchronously reconciles the cluster and clients CA secrets.
          * The cluster CA secret has to have the name determined by {@link AbstractModel#clusterCaCertSecretName(String)}.
@@ -1272,6 +1329,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaExternalBootstrapServiceReady() {
             if (!kafkaCluster.isExposedWithLoadBalancer() && !kafkaCluster.isExposedWithNodePort()) {
+                this.kafkaExternalBootstrapHost = null;
                 return withVoid(Future.succeededFuture());
             }
 
@@ -1309,27 +1367,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
 
                                 this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
+                                this.kafkaExternalBootstrapHost = serviceName + "." + namespace + ".svc";
+                                this.kafkaBootstrapPort = kafkaCluster.getLoadbalancerPort();
 
-                                Kafka resource = crdOperator.get(namespace, name);
-                                KafkaStatus ks = resource.getStatus();
-                                ListenersStatus ls = new ListenersStatus();
-
-                                if (ks == null) {
-                                    ks = new KafkaStatus();
-                                }
-
-                                if (ks.getListeners() != null) {
-                                    ls.setPlain(ks.getListeners().getPlain());
-                                    ls.setTls(ks.getListeners().getTls());
-                                }
-                                String externalBootstrapHost = serviceName + "." + namespace + ".svc";
-                                ls.setExternal(new ListenerStatus(externalBootstrapHost, kafkaCluster.getExternalPort(), null));
-                                ks.setListeners(ls);
-
-                                Kafka resourceWithNewStatus = new KafkaBuilder(resource).withStatus(ks).build();
-                                crdOperator.updateStatus(resourceWithNewStatus);
+                            } else if (kafkaCluster.isExposedWithNodePort()) {
+                                ServiceSpec ss = serviceOperations.get(namespace, serviceName).getSpec();
+                                this.kafkaExternalBootstrapHost = ss.getClusterIP();
+                                this.kafkaBootstrapPort = ss.getPorts().get(0).getNodePort();
                             }
-
                             future.complete();
                         } else {
                             log.warn("{}: No address found for Service {}", reconciliation, serviceName);
@@ -1449,6 +1494,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaBootstrapRouteReady() {
             if (routeOperations == null || !kafkaCluster.isExposedWithRoute()) {
+                kafkaExternalBootstrapRoute = null;
                 return withVoid(Future.succeededFuture());
             }
 
@@ -1469,7 +1515,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (res.succeeded()) {
                             String bootstrapAddress = routeOperations.get(namespace, routeName).getStatus().getIngress().get(0).getHost();
                             this.kafkaExternalBootstrapDnsName.add(bootstrapAddress);
-
+                            this.kafkaExternalBootstrapRoute = bootstrapAddress;
+                            this.kafkaBootstrapPort = kafkaCluster.getRoutePort();
                             if (log.isTraceEnabled()) {
                                 log.trace("{}: Found address {} for Route {}", reconciliation, bootstrapAddress, routeName);
                             }
@@ -1740,62 +1787,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaServiceEndpointReady() {
-            Future<ReconciliationState> fut = withVoid(serviceOperations.endpointReadiness(namespace, kafkaService, 1_000, operationTimeoutMs));
-            Future<ReconciliationState> blockingFuture = Future.future();
-
-            fut.compose(v -> {
-                vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
-                    future -> {
-                        try {
-                            String internalBootstrapHost = null;
-                            Kafka resource =  crdOperator.get(namespace, name);
-                            KafkaStatus ks = resource.getStatus();
-                            ListenersStatus ls = new ListenersStatus();
-
-                            if (ks == null) {
-                                ks = new KafkaStatus();
-                            }
-
-                            Service bootstrapService = serviceOperations.get(namespace, kafkaCluster.internalBootstrapServiceName(name));
-                            if (bootstrapService != null) {
-                                ServiceSpec bootstrapSpec = bootstrapService.getSpec();
-                                internalBootstrapHost = kafkaCluster.internalBootstrapServiceName(name) + "." + namespace + ".svc";
-
-                                for (ServicePort sp : bootstrapSpec.getPorts()) {
-                                    if (sp.getPort() == kafkaCluster.getClientPort()) {
-                                        ls.setPlain(new ListenerStatus(internalBootstrapHost, kafkaCluster.getClientPort(), null));
-                                    }
-                                    if (sp.getPort() == kafkaCluster.getClientTlsPort()) {
-                                        ls.setTls(new ListenerStatus(internalBootstrapHost, kafkaCluster.getClientTlsPort(), null));
-                                    }
-                                }
-                            }
-
-                            if (ks.getListeners() != null) {
-                                ls.setExternal(ks.getListeners().getExternal());
-                            }
-                            ks.setListeners(ls);
-
-                            Kafka resourceWithNewStatus = new KafkaBuilder(resource).withStatus(ks).build();
-                            crdOperator.updateStatus(resourceWithNewStatus);
-
-                            future.complete(this);
-                        } catch (Throwable e) {
-                            future.fail(e);
-                        }
-                    }, true,
-                    res -> {
-                        if (res.succeeded()) {
-                            blockingFuture.complete(res.result());
-                        } else {
-                            blockingFuture.fail(res.cause());
-                        }
-                    }
-                );
-            },
-                blockingFuture);
-
-            return withVoid(blockingFuture);
+            return withVoid(serviceOperations.endpointReadiness(namespace, kafkaService, 1_000, operationTimeoutMs));
         }
 
         Future<ReconciliationState> kafkaHeadlessServiceEndpointReady() {

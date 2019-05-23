@@ -139,6 +139,9 @@ public class KafkaCluster extends AbstractModel {
     protected static final int EXTERNAL_PORT = 9094;
     protected static final String EXTERNAL_PORT_NAME = "external";
 
+    protected static final int ROUTE_PORT = 443;
+    protected static final String ROUTE_PORT_NAME = "route";
+
     protected static final String KAFKA_NAME = "kafka";
     protected static final String CLUSTER_CA_CERTS_VOLUME = "cluster-ca";
     protected static final String BROKER_CERTS_VOLUME = "broker-certs";
@@ -261,16 +264,6 @@ public class KafkaCluster extends AbstractModel {
      */
     public static String externalBootstrapServiceName(String cluster) {
         return KafkaResources.externalBootstrapServiceName(cluster);
-    }
-
-    /**
-     * Generates the name of the service used as bootstrap service for internal clients
-     *
-     * @param cluster Name of the cluster
-     * @return
-     */
-    public static String internalBootstrapServiceName(String cluster) {
-        return KafkaResources.bootstrapServiceName(cluster);
     }
 
     /**
@@ -975,8 +968,12 @@ public class KafkaCluster extends AbstractModel {
         return this.CLIENT_TLS_PORT;
     }
 
-    public int getExternalPort() {
+    public int getLoadbalancerPort() {
         return this.EXTERNAL_PORT;
+    }
+
+    public int getRoutePort() {
+        return this.ROUTE_PORT;
     }
 
     /**

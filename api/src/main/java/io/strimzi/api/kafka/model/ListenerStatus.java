@@ -26,19 +26,19 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
     private String host;
-    private int port;
+    private Integer port;
     private Map<String, Object> additionalProperties;
 
     public ListenerStatus() {
     }
 
-    public ListenerStatus(String host, int port, Map<String, Object> additionalProperties) {
+    public ListenerStatus(String host, Integer port, Map<String, Object> additionalProperties) {
         this.host = host;
         this.port = port;
         this.additionalProperties = additionalProperties;
     }
 
-    @Description("The hostname of Kakfa bootstrap service")
+    @Description("The DNS name or IP address of Kafka bootstrap service")
     public String getHost() {
         return host;
     }
@@ -48,11 +48,11 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
     }
 
     @Description("The port of the Kafka bootstrap service")
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 
-    public void setPort(int port) {
+    public void setPort(Integer port) {
         this.port = port;
     }
 
