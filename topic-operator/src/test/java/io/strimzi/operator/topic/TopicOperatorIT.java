@@ -87,7 +87,6 @@ public class TopicOperatorIT extends BaseITST {
     private KafkaCluster kafkaCluster;
     private volatile AdminClient adminClient;
     private KubernetesClient kubeClient;
-    private volatile ZkTopicsWatcher topicsWatcher;
     private Thread kafkaHook = new Thread() {
         @Override
         public void run() {
@@ -97,8 +96,6 @@ public class TopicOperatorIT extends BaseITST {
         }
     };
     private final long timeout = 30_000L;
-    private volatile TopicConfigsWatcher topicsConfigWatcher;
-    private volatile ZkTopicWatcher topicWatcher;
 
     private volatile String deploymentId;
     private Set<String> preExistingEvents;
@@ -182,9 +179,6 @@ public class TopicOperatorIT extends BaseITST {
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
                 deploymentId = ar.result();
-                topicsConfigWatcher = session.topicConfigsWatcher;
-                topicWatcher = session.topicWatcher;
-                topicsWatcher = session.topicsWatcher;
                 async.complete();
             } else {
                 ar.cause().printStackTrace();
@@ -192,9 +186,6 @@ public class TopicOperatorIT extends BaseITST {
             }
         });
         async.await();
-        waitFor(context, () -> this.topicWatcher.started(), timeout, "Topic watcher not started");
-        waitFor(context, () -> this.topicsConfigWatcher.started(), timeout, "Topic configs watcher not started");
-        waitFor(context, () -> this.topicWatcher.started(), timeout, "Topic watcher not started");
         LOGGER.info("Started Topic Operator");
     }
 
@@ -239,9 +230,6 @@ public class TopicOperatorIT extends BaseITST {
         if (deploymentId != null) {
             vertx.undeploy(deploymentId, ar -> {
                 deploymentId = null;
-                topicsConfigWatcher = null;
-                topicWatcher = null;
-                topicsWatcher = null;
                 if (ar.failed()) {
                     LOGGER.error("Error undeploying session", ar.cause());
                     context.fail("Error undeploying session");

@@ -27,10 +27,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
 
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public class TopicOperator {
 
     private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
@@ -41,8 +44,8 @@ public class TopicOperator {
     private final Labels labels;
     private final String namespace;
     private TopicStore topicStore;
-    private final InFlight<TopicName> inFlight;
     private final Config config;
+    private final ConcurrentHashMap<TopicName, Integer> inflight = new ConcurrentHashMap<>();
 
     enum EventType {
         INFO("Info"),
@@ -344,9 +347,71 @@ public class TopicOperator {
         this.vertx = vertx;
         this.labels = labels;
         this.topicStore = topicStore;
-        this.inFlight = new InFlight<>(vertx);
         this.namespace = namespace;
         this.config = config;
+    }
+
+    /**
+     * Run the given {@code action} on the context thread,
+     * immediately if there are currently no other actions with the given {@code key},
+     * or when the other actions with the given {@code key} have completed.
+     * When the given {@code action} is complete it must complete its argument future,
+     * which will complete the returned future
+     */
+    public <T> Future<T> executeWithTopicLockHeld(TopicName key, Handler<Future<T>> action) {
+        String lockName = key.toString();
+        int timeoutMs = 30 * 1_000;
+        Future<T> result = Future.future();
+        BiFunction<TopicName, Integer, Integer> decrement = (topicName, waiters) -> {
+            if (waiters != null) {
+                if (waiters == 1) {
+                    LOGGER.debug("Removing last waiter {}", action);
+                    return null;
+                } else {
+                    LOGGER.debug("Removing waiter {}, {} waiters left", action, waiters - 1);
+                    return waiters - 1;
+                }
+            } else {
+                LOGGER.error("Assertion failure. topic {}, action {}", lockName, action);
+                return null;
+            }
+        };
+        LOGGER.debug("Queuing action {} on topic {}", action, lockName);
+        inflight.compute(key, (topicName, waiters) -> {
+            if (waiters == null) {
+                LOGGER.debug("Adding first waiter {}", action);
+                return 1;
+            } else {
+                LOGGER.debug("Adding waiter{}: {}", action, waiters + 1);
+                return waiters + 1;
+            }
+        });
+        vertx.sharedData().getLockWithTimeout(lockName, timeoutMs, ar -> {
+            if (ar.succeeded()) {
+                LOGGER.debug("Lock acquired");
+                Future<T> f = Future.future();
+                f.setHandler(ar2 -> {
+                    LOGGER.debug("Executing handler for action {} on topic {}", action, lockName);
+                    try {
+                        result.handle(ar2);
+                    } finally {
+                        ar.result().release();
+                        LOGGER.debug("Lock released");
+                        inflight.compute(key, decrement);
+                    }
+                });
+                LOGGER.debug("Executing action {} on topic {}", action, lockName);
+                action.handle(f);
+            } else {
+                LOGGER.warn("Lock not acquired within {}ms: action {} will not be run", timeoutMs, action);
+                try {
+                    result.handle(Future.failedFuture("Failed to acquire lock for topic " + lockName + " after " + timeoutMs + "ms. Not executing action " + action));
+                } finally {
+                    inflight.compute(key, decrement);
+                }
+            }
+        });
+        return result;
     }
 
     /**
@@ -588,7 +653,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnTopicChange(topicName, null, fut.completer());
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        executeWithTopicLockHeld(topicName, action).setHandler(resultHandler);
 
     }
 
@@ -609,7 +674,7 @@ public class TopicOperator {
                 });
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        executeWithTopicLockHeld(topicName, action).setHandler(resultHandler);
     }
 
     /**
@@ -659,7 +724,7 @@ public class TopicOperator {
                 });
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        executeWithTopicLockHeld(topicName, action).setHandler(resultHandler);
     }
 
     /**
@@ -731,7 +796,7 @@ public class TopicOperator {
                 kafka.topicMetadata(topicName, handler);
             }
         };
-        inFlight.enqueue(topicName, action, resultHandler);
+        executeWithTopicLockHeld(topicName, action).setHandler(resultHandler);
     }
 
     /** Called when a resource is added in k8s */
@@ -749,7 +814,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnResourceChange(addedTopic, k8sTopic, false, fut);
             }
         };
-        inFlight.enqueue(new TopicName(addedTopic), action, resultHandler);
+        executeWithTopicLockHeld(new TopicName(addedTopic), action).setHandler(resultHandler);
     }
 
     abstract class Reconciliation implements Handler<Future<Void>> {
@@ -780,22 +845,20 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnResourceChange(modifiedTopic, k8sTopic, true, fut);
             }
         };
-        inFlight.enqueue(new TopicName(modifiedTopic), action, resultHandler);
+        executeWithTopicLockHeld(new TopicName(modifiedTopic), action).setHandler(resultHandler);
     }
 
-    private void reconcileOnResourceChange(KafkaTopic topicResource, Topic k8sTopic, boolean isModify, Handler<AsyncResult<Void>> handler) {
+    private void reconcileOnResourceChange(KafkaTopic topicResource, Topic k8sTopic,
+                                           boolean isModify, Handler<AsyncResult<Void>> handler) {
         TopicName topicName = new TopicName(topicResource);
-        Future<TopicMetadata> f1 = Future.future();
-        Future<Topic> f2 = Future.future();
-        kafka.topicMetadata(topicName, f1.completer());
-        topicStore.read(topicName, f2.completer());
-        CompositeFuture.all(f1, f2).setHandler(ar -> {
+        CompositeFuture.all(getFromKafka(topicName), getFromTopicStore(topicName)).setHandler(ar -> {
             if (ar.succeeded()) {
-                TopicMetadata topicMetadata = ar.result().resultAt(0);
-                Topic kafkaTopic = TopicSerialization.fromTopicMetadata(topicMetadata);
+                Topic kafkaTopic = ar.result().resultAt(0);
                 Topic privateTopic = ar.result().resultAt(1);
                 if (privateTopic == null && isModify) {
-                    enqueue(new Event(topicResource, "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.", EventType.WARNING, handler));
+                    enqueue(new Event(topicResource,
+                            "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
+                            EventType.WARNING, handler));
                 } else {
                     reconcile(topicResource, k8sTopic, kafkaTopic, privateTopic, handler);
                 }
@@ -813,7 +876,7 @@ public class TopicOperator {
                 TopicOperator.this.reconcileOnResourceChange(deletedTopic, null, false, fut);
             }
         };
-        inFlight.enqueue(new TopicName(deletedTopic), action, resultHandler);
+        executeWithTopicLockHeld(new TopicName(deletedTopic), action).setHandler(resultHandler);
     }
 
     private class UpdateInTopicStore implements Handler<Void> {
@@ -905,8 +968,8 @@ public class TopicOperator {
     }
 
     public boolean isWorkInflight() {
-        LOGGER.debug("Inflight: {}", inFlight.toString());
-        return inFlight.size() > 0;
+        LOGGER.debug("Outstanding: {}", inflight);
+        return inflight.size() > 0;
     }
 
     /**
@@ -920,7 +983,7 @@ public class TopicOperator {
      * @param resource Resource instance to log
      * @return Resource representation as namespace/name for logging purposes
      */
-    static String logTopic(KafkaTopic resource) {
+    static String logTopic(HasMetadata resource) {
         return resource != null ? resource.getMetadata().getNamespace() + "/" + resource.getMetadata().getName() : null;
     }
 
@@ -976,7 +1039,7 @@ public class TopicOperator {
                     LOGGER.trace("Already successfully reconciled {}", topicName);
                 } else if (reconcileState.undetermined.contains(topicName)) {
                     // The topic didn't exist in topicStore, but now we know which KT it corresponds to
-                    futs.add(reconcileWithKubeTopic(reconciliationType, kt, topic).compose(r -> {
+                    futs.add(reconcileWithKubeTopic(kt, reconciliationType, new ResourceName(kt), topic.getTopicName()).compose(r -> {
                         // if success then remove from undetermined add to success
                         reconcileState.undetermined.remove(topicName);
                         reconcileState.succeeded.add(topicName);
@@ -985,7 +1048,7 @@ public class TopicOperator {
                 } else {
                     // Topic exists in kube, but not in Kafka
                     LOGGER.debug("Topic {} exists in Kafka, but not Kubernetes", topicName, logTopic(kt));
-                    futs.add(reconcileWithKubeTopic(reconciliationType, kt, topic).compose(r -> {
+                    futs.add(reconcileWithKubeTopic(kt, reconciliationType, new ResourceName(kt), topic.getTopicName()).compose(r -> {
                         // if success then add to success
                         reconcileState.succeeded.add(topicName);
                         return Future.succeededFuture(Boolean.TRUE);
@@ -999,7 +1062,12 @@ public class TopicOperator {
                 }
                 // anything left in undetermined doesn't exist in topic store nor kube
                 for (TopicName tn : reconcileState.undetermined) {
-                    futs2.add(getKafkaAndReconcile(tn, null, null));
+                    futs2.add(executeWithTopicLockHeld(tn, new Reconciliation("delete-remaining") {
+                        @Override
+                        public void handle(Future<Void> event) {
+                            getKafkaAndReconcile(tn, null, null).setHandler(event.completer());
+                        }
+                    }));
                 }
                 return CompositeFuture.join(futs2);
             });
@@ -1021,24 +1089,30 @@ public class TopicOperator {
         if (topicsFromKafka.size() > 0) {
             List<Future<Void>> futures = new ArrayList<>();
             for (TopicName topicName : topicsFromKafka) {
-                Future<Topic> f = Future.future();
-                topicStore.read(topicName, f.completer());
-                futures.add(f.recover(error -> {
-                    failed.put(topicName,
-                            new OperatorException("Error getting KafkaTopic " + topicName + " during "
-                                    + reconciliationType + " reconciliation", error));
-                    return Future.succeededFuture();
-                }).compose(topic -> {
-                    if (topic == null) {
-                        undetermined.add(topicName);
-                        return Future.succeededFuture();
-                    } else {
-                        LOGGER.debug("Have private topic for topic {} in Kafka", topicName);
-                        return reconcileWithPrivateTopic(reconciliationType, topicName, topic).otherwise(error -> {
-                            failed.put(topicName, error);
-                            return null;
-                        }).map(ignored -> {
-                            succeeded.add(topicName);
+                futures.add(executeWithTopicLockHeld(topicName, new Reconciliation("reconcile-from-kafka") {
+                    @Override
+                    public void handle(Future<Void> fut) {
+                        getFromTopicStore(topicName).recover(error -> {
+                            failed.put(topicName,
+                                    new OperatorException("Error getting KafkaTopic " + topicName + " during "
+                                            + reconciliationType + " reconciliation", error));
+                            return Future.succeededFuture();
+                        }).compose(topic -> {
+                            if (topic == null) {
+                                undetermined.add(topicName);
+                                return Future.succeededFuture();
+                            } else {
+                                LOGGER.debug("Have private topic for topic {} in Kafka", topicName);
+                                return reconcileWithPrivateTopic(reconciliationType, topicName, topic).otherwise(error -> {
+                                    failed.put(topicName, error);
+                                    return null;
+                                }).map(ignored -> {
+                                    succeeded.add(topicName);
+                                    return null;
+                                });
+                            }
+                        }).map(i ->  {
+                            fut.complete();
                             return null;
                         });
                     }
@@ -1070,92 +1144,84 @@ public class TopicOperator {
 
     private Future<Void> getKafkaAndReconcile(TopicName topicName, Topic privateTopic, KafkaTopic kafkaTopicResource) {
         Future<Void> topicFuture = Future.future();
-        Future<Void> result = Future.future();
-        Handler<Future<Void>> action = new Reconciliation("reconcile") {
-            @Override
-            public void handle(Future<Void> fut) {
-                try {
-                    Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
-                    kafka.topicMetadata(topicName, metadataResult -> {
-                        if (metadataResult.succeeded()) {
-                            TopicMetadata kafkaTopicMeta = metadataResult.result();
-                            Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
-                            reconcile(kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic, reconcileResult -> {
-                                if (reconcileResult.succeeded()) {
-                                    LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
-                                    fut.complete();
-                                } else {
-                                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), reconcileResult.cause());
-                                    fut.fail(reconcileResult.cause());
-                                }
-                            });
+        try {
+            Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
+            kafka.topicMetadata(topicName, metadataResult -> {
+                if (metadataResult.succeeded()) {
+                    TopicMetadata kafkaTopicMeta = metadataResult.result();
+                    Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
+                    reconcile(kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic, reconcileResult -> {
+                        if (reconcileResult.succeeded()) {
+                            LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
+                            topicFuture.complete();
                         } else {
-                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), metadataResult.cause());
-                            fut.fail(metadataResult.cause());
+                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), reconcileResult.cause());
+                            topicFuture.fail(reconcileResult.cause());
                         }
                     });
-                } catch (InvalidTopicException e) {
-                    LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(kafkaTopicResource), e.getMessage());
-                    fut.fail(e);
-                } catch (OperatorException e) {
-                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), e);
-                    fut.fail(e);
+                } else {
+                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), metadataResult.cause());
+                    topicFuture.fail(metadataResult.cause());
                 }
-            }
-        };
-        inFlight.enqueue(topicName, action, result);
-        result.setHandler(ar -> {
-            if (ar.succeeded()) {
-                topicFuture.complete();
-            } else {
-                topicFuture.fail(ar.cause());
-            }
-        });
+            });
+        } catch (InvalidTopicException e) {
+            LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(kafkaTopicResource), e.getMessage());
+            topicFuture.fail(e);
+        } catch (OperatorException e) {
+            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), e);
+            topicFuture.fail(e);
+        }
         return topicFuture;
     }
 
-    private Future<Void> reconcileWithKubeTopic(String reconciliationType, KafkaTopic resource, Topic k8sTopic) {
-        LOGGER.debug("{} reconciliation of KafkaTopic {}", reconciliationType, resource.getMetadata().getName());
-        TopicName topicName = k8sTopic.getTopicName();
+    Future<Topic> getFromKube(ResourceName kubeName) {
+        Future<KafkaTopic> f = Future.future();
+        k8s.getFromName(kubeName, f.completer());
+        return f.map(TopicSerialization::fromTopicResource);
+    }
+
+    Future<Topic> getFromKafka(TopicName topicName) {
+        Future<TopicMetadata> f = Future.future();
+        kafka.topicMetadata(topicName, f.completer());
+        return f.map(TopicSerialization::fromTopicMetadata);
+    }
+
+    Future<Topic> getFromTopicStore(TopicName topicName) {
+        Future<Topic> f = Future.future();
+        topicStore.read(topicName, f.completer());
+        return f;
+    }
+
+    private Future<Void> reconcileWithKubeTopic(HasMetadata involvedObject, String reconciliationType, ResourceName kubeName, TopicName topicName) {
         Future<Void> result = Future.future();
-        Handler<Future<Void>> action = new Reconciliation("reconcile") {
+        LOGGER.debug("{} reconciliation of KafkaTopic {}", reconciliationType, kubeName);
+        executeWithTopicLockHeld(topicName, new Reconciliation("reconcile-with-kube") {
             @Override
             public void handle(Future<Void> fut) {
-                try {
-                    Future<Topic> topicResult = Future.future();
-                    Future<TopicMetadata> metadataResult = Future.future();
-                    kafka.topicMetadata(topicName, metadataResult.completer());
-                    topicStore.read(topicName, topicResult.completer());
-                    CompositeFuture.all(topicResult, metadataResult).setHandler(ar -> {
-
+                CompositeFuture.join(getFromKube(kubeName),
+                        getFromKafka(topicName),
+                        getFromTopicStore(topicName))
+                    .setHandler(ar -> {
                         if (ar.succeeded()) {
-                            Topic privateTopic = ar.result().resultAt(0);
-                            TopicMetadata kafkaTopicMeta = ar.result().resultAt(1);
-                            Topic kafkaTopic = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
-                            reconcile(resource, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
+                            Topic k8sTopic = ar.result().resultAt(0);
+                            Topic kafkaTopic = ar.result().resultAt(1);
+                            Topic privateTopic = ar.result().resultAt(2);
+                            reconcile(involvedObject, k8sTopic, kafkaTopic, privateTopic, reconcileResult -> {
                                 if (reconcileResult.succeeded()) {
-                                    LOGGER.info("Success reconciling KafkaTopic {}", logTopic(resource));
+                                    LOGGER.info("Success reconciling KafkaTopic {}", logTopic(involvedObject));
                                     fut.complete();
                                 } else {
-                                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(resource), reconcileResult.cause());
+                                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(involvedObject), reconcileResult.cause());
                                     fut.fail(reconcileResult.cause());
                                 }
                             });
                         } else {
-                            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(resource), ar.cause());
+                            LOGGER.error("Error reconciling KafkaTopic {}", kubeName, ar.cause());
                             fut.fail(ar.cause());
                         }
                     });
-                } catch (InvalidTopicException e) {
-                    LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(resource), e.getMessage());
-                    fut.fail(e);
-                } catch (OperatorException e) {
-                    LOGGER.error("Error reconciling KafkaTopic {}", logTopic(resource), e);
-                    fut.fail(e);
-                }
             }
-        };
-        inFlight.enqueue(topicName, action, result);
+        }).setHandler(result.completer());
         return result;
     }
 
