@@ -81,10 +81,10 @@
 :DockerZookeeper: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerZookeeperStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaImage: strimzi/kafka
-:DockerKafka: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafka: strimzi/kafka:x.y.z-kafka-{DefaultKafkaVersion}
 :DockerKafkaStunnel: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaConnect: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaConnectS2I: strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
+:DockerKafkaConnect: strimzi/kafka:x.y.z-kafka-{DefaultKafkaVersion}
+:DockerKafkaConnectS2I: strimzi/kafka:x.y.z-kafka-{DefaultKafkaVersion}
 :DockerClusterOperator: strimzi/operator:{DockerTag}
 :DockerKafkaInit: strimzi/operator:{DockerTag}
 :DockerTopicOperator: strimzi/operator:{DockerTag}
