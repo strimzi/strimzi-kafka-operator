@@ -75,16 +75,14 @@ resources_to_fetch=(
 
 get_yamls() {
 	mkdir -p $direct/reports/"$1"
-	resources=`eval "$platform get $1 -l strimzi.io/cluster=$cluster -o name -n $namespace"`
+	resources=$($platform get $1 -l strimzi.io/cluster=$cluster -o name -n $namespace)
 	echo "$1"
-	while read -r line; do
-		if ! [ -z $line ]; then
-			filename=`echo $line | cut -f 2 -d "/"`
-			echo "   "$line
-			eval "$platform get $line -o yaml -n $namespace | sed 's/^\(\s*password\s*:\s*\).*/\1*****/' \
-			| sed 's/^\(\s*.*\.key\s*:\s*\).*/\1*****/' >> $direct/reports/"$1"/"$filename".yaml"
-		fi
-	done <<< $resources;
+	for line in $resources; do
+		filename=`echo $line | cut -f 2 -d "/"`
+		echo "   "$line
+		$platform get $line -o yaml -n $namespace | sed 's/^\(\s*password\s*:\s*\).*/\1*****/' \
+		| sed 's/^\(\s*.*\.key\s*:\s*\).*/\1*****/' > $direct/reports/"$1"/"$filename".yaml
+	done;
 }
 
 for res in "${resources_to_fetch[@]}"; do
@@ -95,72 +93,71 @@ mkdir -p $direct/reports/podLogs
 mkdir -p $direct/reports/configs
 
 echo "Pod logs:"
-pods=`eval "$platform get pods -l strimzi.io/cluster=$cluster -o name -n $namespace | cut -d "/" -f 2"`
+pods=$($platform get pods -l strimzi.io/cluster=$cluster -o name -n $namespace | cut -d "/" -f 2)
 for pod in $pods; do
 	echo "   "$pod
 	if [[ $pod == *"-entity-operator-"* ]]; then
-	  eval "$platform logs $pod -c tls-sidecar -n $namespace >> $direct/reports/podLogs/"$pod"-tls-sidecar.log"
-	  eval "$platform logs $pod -c topic-operator -n $namespace >> $direct/reports/podLogs/"$pod"-topic-operator.log"
-	  eval "$platform logs $pod -c user-operator -n $namespace >> $direct/reports/podLogs/"$pod"-user-operator.log"
-	  eval "$platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log"
-	  eval "$platform logs $pod -p -c topic-operator -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-topic-operator.log"
-	  eval "$platform logs $pod -p -c user-operator -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-user-operator.log"
+	  $platform logs $pod -c tls-sidecar -n $namespace > $direct/reports/podLogs/"$pod"-tls-sidecar.log
+	  $platform logs $pod -c topic-operator -n $namespace > $direct/reports/podLogs/"$pod"-topic-operator.log
+	  $platform logs $pod -c user-operator -n $namespace > $direct/reports/podLogs/"$pod"-user-operator.log
+	  $platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log
+	  $platform logs $pod -p -c topic-operator -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-topic-operator.log
+	  $platform logs $pod -p -c user-operator -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-user-operator.log
 	fi
 	if [[ $pod == *"-kafka-"* ]]; then
-	  eval "$platform logs $pod -c tls-sidecar -n $namespace >> $direct/reports/podLogs/"$pod"-tls-sidecar.log"
-	  eval "$platform logs $pod -c kafka -n $namespace >> $direct/reports/podLogs/"$pod"-kafka.log"
-	  eval "$platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log"
-	  eval "$platform logs $pod -p -c kafka -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-kafka.log"
+	  $platform logs $pod -c tls-sidecar -n $namespace > $direct/reports/podLogs/"$pod"-tls-sidecar.log
+	  $platform logs $pod -c kafka -n $namespace > $direct/reports/podLogs/"$pod"-kafka.log
+	  $platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log
+	  $platform logs $pod -p -c kafka -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-kafka.log
 
-	  eval "$platform exec -i $pod -n $namespace -c kafka -- cat /tmp/strimzi.properties >> $direct/reports/configs/"$pod".cfg"
+	  $platform exec -i $pod -n $namespace -c kafka -- cat /tmp/strimzi.properties > $direct/reports/configs/"$pod".cfg
 	fi
 	if [[ $pod == *"-zookeeper-"* ]]; then
-	  eval "$platform logs $pod -c tls-sidecar -n $namespace >> $direct/reports/podLogs/"$pod"-tls-sidecar.log"
-	  eval "$platform logs $pod -c zookeeper -n $namespace >> $direct/reports/podLogs/"$pod"-zookeeper.log"
-	  eval "$platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log"
-	  eval "$platform logs $pod -p -c zookeeper -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod"-zookeeper.log"
+	  $platform logs $pod -c tls-sidecar -n $namespace > $direct/reports/podLogs/"$pod"-tls-sidecar.log
+	  $platform logs $pod -c zookeeper -n $namespace > $direct/reports/podLogs/"$pod"-zookeeper.log
+	  $platform logs $pod -p -c tls-sidecar -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-tls-sidecar.log
+	  $platform logs $pod -p -c zookeeper -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-"$pod"-zookeeper.log
 
-	  eval "$platform exec -i $pod -n $namespace -c zookeeper -- cat /tmp/zookeeper.properties >> $direct/reports/configs/"$pod".cfg"
+	  $platform exec -i $pod -n $namespace -c zookeeper -- cat /tmp/zookeeper.properties > $direct/reports/configs/"$pod".cfg
 	fi
 done;
 
 # getting CO deployment from the pod
-co_pod=`eval "$platform get pod -l strimzi.io/kind=cluster-operator -o name -n $namespace"`
-eval "$platform get pod -l strimzi.io/kind=cluster-operator -o yaml -n $namespace >> $direct/reports/deployments/cluster-operator.yaml"
-eval "$platform logs $co_pod -n $namespace >> $direct/reports/podLogs/cluster-operator.yaml"
-eval "$platform logs $co_pod -p -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-cluster-operator.yaml"
+co_pod=$($platform get pod -l strimzi.io/kind=cluster-operator -o name -n $namespace)
+$platform get pod -l strimzi.io/kind=cluster-operator -o yaml -n $namespace > $direct/reports/deployments/cluster-operator.yaml
+$platform logs $co_pod -n $namespace > $direct/reports/podLogs/cluster-operator.yaml
+$platform logs $co_pod -p -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-cluster-operator.yaml
 
 #Kafka, KafkaConnect, KafkaConnectS2i, KafkaTopic, KafkaUser, KafkaMirrorMaker
 echo "CRs:"
 mkdir -p $direct/reports/crs
-crs=`eval "$platform get crd -o name"`
-while read -r line; do
+crs=$($platform get crd -o name)
+for line in $crs; do
 	cr=`echo $line | cut -d "/" -f 2`
-	resources=`eval "$platform get $cr -o name -n $namespace | cut -d "/" -f 2"`
+	resources=$($platform get $cr -o name -n $namespace | cut -d "/" -f 2)
 	if ! [[ -z "$resources" &&  $cr == *"kafka.strimzi.io" ]]; then
 		echo $cr
-		while read -r line; do
+		for line in $resources; do
 			resource=`echo $line | cut -f 1 -d " "`
-			eval "$platform get $cr $resource -o yaml -n $namespace >> $direct/reports/crs/"$cr"-"$resource".yaml"
+			$platform get $cr $resource -o yaml > $direct/reports/crs/"$cr"-"$resource".yaml
 			echo "   "$resource
-		done <<< $resources;
+		done;
 	fi
-done <<< $crs;
+done;
 
 echo "CRDs:"
 mkdir -p $direct/reports/crds
-crds=`eval "$platform get crd -o name"`
-while read -r line; do
-	#echo $line
+crds=$($platform get crd -o name)
+for line in $crds; do
 	crd=`echo $line | cut -d "/" -f 2`
-	if ! [[ -z $crd && $crd == *"kafka.strimzi.io" ]]; then
-		echo $crd
-		eval "$platform get $crd -o yaml -n $namespace >> $direct/reports/crds/"$crd".yaml"
+	if [[ $crd == *"kafka.strimzi.io" ]]; then
+		echo "   "$crd
+		$platform get crd $crd -o yaml > $direct/reports/crds/"$crd".yaml
 	fi
-done <<< $crds;
+done;
 
 mkdir -p $direct/reports/events
-eval "$platform get event -n $namespace >> $direct/reports/events/events.yaml"
+$platform get event -n $namespace > $direct/reports/events/events.yaml
 
 filename=`date +"%d-%m-%Y_%H-%M-%S"`
 filename=report-"$filename".zip
