@@ -2732,5 +2732,40 @@ spec:
         status:
           type: object
           properties:
-            state:
-              type: string
+            conditions:
+              type: array
+              items:
+                type: object
+                properties:
+                  lastTransitionTime:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+            listeners:
+              type: object
+              properties:
+                plain:
+                  type: object
+                  properties:
+                    host:
+                      type: string
+                    port:
+                      type: integer
+                tls:
+                  type: object
+                  properties:
+                    host:
+                      type: string
+                    port:
+                      type: integer
+                external:
+                  type: object
+                  properties:
+                    host:
+                      type: string
+                    port:
+                      type: integer
