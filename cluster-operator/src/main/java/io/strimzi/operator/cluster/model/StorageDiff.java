@@ -35,6 +35,7 @@ public class StorageDiff extends AbstractResourceDiff {
         this(current, desired, "");
     }
 
+    //@SuppressFBWarnings("unchecked")
     public StorageDiff(Storage current, Storage desired, String volumeDesc) {
         boolean changesType = false;
         boolean shrinkSize = false;
@@ -77,14 +78,14 @@ public class StorageDiff extends AbstractResourceDiff {
 
                 // It might be possible to increase the volume size, but never to shrink volumes
                 // When size changes, we need to detect whether it is shrinking or increasing
-                if (pathValue.endsWith("/size") && desired.getType().equals(current.getType()))    {
+                if (pathValue.endsWith("/size") && desired.getType().equals(current.getType()) && current instanceof PersistentClaimStorage && desired instanceof PersistentClaimStorage)    {
                     PersistentClaimStorage persistentCurrent = (PersistentClaimStorage) current;
                     PersistentClaimStorage persistentDesired = (PersistentClaimStorage) desired;
 
                     long currentSize = parseMemory(persistentCurrent.getSize());
                     long desiredSize = parseMemory(persistentDesired.getSize());
 
-                    if (currentSize > desiredSize)  {
+                    if (currentSize > desiredSize) {
                         shrinkSize = true;
                     } else {
                         continue;
