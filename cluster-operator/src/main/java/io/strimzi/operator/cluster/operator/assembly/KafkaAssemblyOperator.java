@@ -1567,7 +1567,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (res.succeeded())    {
                         PersistentVolumeClaim realPvc = res.result();
 
-                        if (realPvc == null || !"Bound".equals(realPvc.getStatus().getPhase())) {
+                        if (realPvc == null || realPvc.getStatus() == null || !"Bound".equals(realPvc.getStatus().getPhase())) {
                             // This branch handles the following conditions:
                             // * The PVC doesn't exist yet, we should create it
                             // * The PVC is not Bound and we should reconcile it

@@ -395,6 +395,17 @@ public class KafkaAssemblyOperatorTest {
                     return null;
                 });
 
+        when(mockPvcOps.getAsync(eq(clusterCmNamespace), ArgumentMatchers.startsWith("data-")))
+                .thenAnswer(invocation -> {
+                    String pvcName = invocation.getArgument(1);
+                    if (pvcName.contains(zookeeperCluster.getName())) {
+                        return Future.succeededFuture(zkPvcs.get(pvcName));
+                    } else if (pvcName.contains(kafkaCluster.getName())) {
+                        return Future.succeededFuture(kafkaPvcs.get(pvcName));
+                    }
+                    return Future.succeededFuture(null);
+                });
+
         when(mockPvcOps.listAsync(eq(clusterCmNamespace), ArgumentMatchers.any(Labels.class)))
                 .thenAnswer(invocation -> {
                     return Future.succeededFuture(Collections.EMPTY_LIST);
@@ -746,6 +757,17 @@ public class KafkaAssemblyOperatorTest {
                         return kafkaPvcs.get(pvcName);
                     }
                     return null;
+                });
+
+        when(mockPvcOps.getAsync(eq(clusterNamespace), ArgumentMatchers.startsWith("data-")))
+                .thenAnswer(invocation -> {
+                    String pvcName = invocation.getArgument(1);
+                    if (pvcName.contains(originalZookeeperCluster.getName())) {
+                        return Future.succeededFuture(zkPvcs.get(pvcName));
+                    } else if (pvcName.contains(originalKafkaCluster.getName())) {
+                        return Future.succeededFuture(kafkaPvcs.get(pvcName));
+                    }
+                    return Future.succeededFuture(null);
                 });
 
         when(mockPvcOps.listAsync(eq(clusterNamespace), ArgumentMatchers.any(Labels.class)))
