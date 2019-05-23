@@ -70,6 +70,7 @@ resources_to_fetch=(
 	"clusterrolebindings"
 	"networkpolicies"
 	"routes"
+	"pods"
 	)
 
 get_yamls() {
@@ -93,7 +94,7 @@ done
 mkdir -p $direct/reports/podLogs
 mkdir -p $direct/reports/configs
 
-echo "Pods:"
+echo "Pod logs:"
 pods=`eval "$platform get pods -l strimzi.io/cluster=$cluster -o name -n $namespace | cut -d "/" -f 2"`
 for pod in $pods; do
 	echo "   "$pod
@@ -121,20 +122,23 @@ for pod in $pods; do
 
 	  eval "$platform exec -i $pod -n $namespace -c zookeeper -- cat /tmp/zookeeper.properties >> $direct/reports/configs/"$pod".cfg"
 	fi
-	if [[ $pod == *"-cluster-operator-"* ]]; then
-	  eval "$platform logs $pod -n $namespace >> $direct/reports/podLogs/"$pod".log"
-	  eval "$platform logs -p $pod -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-"$pod".log"
-	fi
 done;
 
+# getting CO deployment from the pod
+co_pod=`eval "$platform get pod -l strimzi.io/kind=cluster-operator -o name -n $namespace"`
+eval "$platform get pod -l strimzi.io/kind=cluster-operator -o yaml -n $namespace >> $direct/reports/deployments/cluster-operator.yaml"
+eval "$platform logs $co_pod -n $namespace >> $direct/reports/podLogs/cluster-operator.yaml"
+eval "$platform logs $co_pod -p -n $namespace 2>/dev/null >> $direct/reports/podLogs/previous-cluster-operator.yaml"
+
 #Kafka, KafkaConnect, KafkaConnectS2i, KafkaTopic, KafkaUser, KafkaMirrorMaker
+echo "CRs:"
 mkdir -p $direct/reports/crs
 crs=`eval "$platform get crd -o name"`
 while read -r line; do
 	cr=`echo $line | cut -d "/" -f 2`
-	echo $cr
-	resources=`eval "$platform get $cr -l strimzi.io/cluster=$cluster -o name -n $namespace | cut -d "/" -f 2"`
+	resources=`eval "$platform get $cr -o name -n $namespace | cut -d "/" -f 2"`
 	if ! [[ -z "$resources" &&  $cr == *"kafka.strimzi.io" ]]; then
+		echo $cr
 		while read -r line; do
 			resource=`echo $line | cut -f 1 -d " "`
 			eval "$platform get $cr $resource -o yaml -n $namespace >> $direct/reports/crs/"$cr"-"$resource".yaml"
@@ -143,10 +147,22 @@ while read -r line; do
 	fi
 done <<< $crs;
 
+echo "CRDs:"
+mkdir -p $direct/reports/crds
+crds=`eval "$platform get crd -o name"`
+while read -r line; do
+	#echo $line
+	crd=`echo $line | cut -d "/" -f 2`
+	if ! [[ -z $crd && $crd == *"kafka.strimzi.io" ]]; then
+		echo $crd
+		eval "$platform get $crd -o yaml -n $namespace >> $direct/reports/crds/"$crd".yaml"
+	fi
+done <<< $crds;
+
 mkdir -p $direct/reports/events
 eval "$platform get event -n $namespace >> $direct/reports/events/events.yaml"
 
-filename=`date +"%Y-%m-%d_%H-%M-%S"`
+filename=`date +"%d-%m-%Y_%H-%M-%S"`
 filename=report-"$filename".zip
 zip -qr $filename.zip $direct/reports
 echo "Report file $filename created"
