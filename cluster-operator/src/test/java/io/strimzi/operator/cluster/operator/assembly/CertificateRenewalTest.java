@@ -100,7 +100,7 @@ public class CertificateRenewalTest {
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_9), certManager,
                 new ResourceOperatorSupplier(null, null, null,
                         null, null, secretOps, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null),
+                        null, null, null, null, null, null, null, null, null, null, null),
                 ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 

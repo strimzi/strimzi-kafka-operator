@@ -155,7 +155,7 @@ public class KafkaUpdateTest {
                 new MockCertManager(),
                 new ResourceOperatorSupplier(null, null, null,
                         kso, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, null),
+                        null, null, null, null, null, null, null, null, null, null, null, null),
                 ResourceUtils.dummyClusterOperatorConfig(lookup, 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", ResourceType.KAFKA, NAMESPACE, NAME);
 

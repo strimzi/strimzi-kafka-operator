@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -136,5 +137,112 @@ public class StatefulSetDiffTest {
                 new ResourceRequirementsBuilder()
                         .build(),
                 null).isEmpty());
+    }
+
+    @Test
+    public void testPvcSizeChangeIgnored() {
+        StatefulSet ss1 = new StatefulSetBuilder()
+                .withNewMetadata()
+                .withNamespace("test")
+                .withName("foo")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewTemplate()
+                        .withNewSpec()
+                            .addToVolumes(0, new VolumeBuilder()
+                                    .withConfigMap(new ConfigMapVolumeSourceBuilder().withDefaultMode(1).build())
+                                    .build())
+                        .endSpec()
+                    .endTemplate()
+                    .withVolumeClaimTemplates(new PersistentVolumeClaimBuilder()
+                            .withNewSpec()
+                                .withNewResources()
+                                    .withRequests(singletonMap("storage", new Quantity("100Gi")))
+                                .endResources()
+                            .endSpec()
+                            .build())
+                .endSpec()
+                .build();
+        StatefulSet ss2 = new StatefulSetBuilder()
+                .withNewMetadata()
+                .withNamespace("test")
+                .withName("foo")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewTemplate()
+                        .withNewSpec()
+                            .addToVolumes(0, new VolumeBuilder()
+                                    .withConfigMap(new ConfigMapVolumeSourceBuilder().withDefaultMode(2).build())
+                                    .build())
+                        .endSpec()
+                    .endTemplate()
+                    .withVolumeClaimTemplates(new PersistentVolumeClaimBuilder()
+                            .withNewSpec()
+                            .withNewResources()
+                            .withRequests(singletonMap("storage", new Quantity("110Gi")))
+                            .endResources()
+                            .endSpec()
+                            .build())
+                .endSpec()
+                .build();
+        assertFalse(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates());
+        assertTrue(new StatefulSetDiff(ss1, ss2).changesVolumeSize());
+    }
+
+    @Test
+    public void testNewPvcNotIgnored() {
+        StatefulSet ss1 = new StatefulSetBuilder()
+                .withNewMetadata()
+                .withNamespace("test")
+                .withName("foo")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewTemplate()
+                        .withNewSpec()
+                            .addToVolumes(0, new VolumeBuilder()
+                                    .withConfigMap(new ConfigMapVolumeSourceBuilder().withDefaultMode(1).build())
+                                    .build())
+                        .endSpec()
+                    .endTemplate()
+                    .withVolumeClaimTemplates(new PersistentVolumeClaimBuilder()
+                            .withNewSpec()
+                            .withNewResources()
+                            .withRequests(singletonMap("storage", new Quantity("100Gi")))
+                            .endResources()
+                            .endSpec()
+                            .build())
+                .endSpec()
+                .build();
+        StatefulSet ss2 = new StatefulSetBuilder()
+                .withNewMetadata()
+                .withNamespace("test")
+                .withName("foo")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewTemplate()
+                        .withNewSpec()
+                            .addToVolumes(0, new VolumeBuilder()
+                                    .withConfigMap(new ConfigMapVolumeSourceBuilder().withDefaultMode(2).build())
+                                    .build())
+                        .endSpec()
+                    .endTemplate()
+                    .withVolumeClaimTemplates(new PersistentVolumeClaimBuilder()
+                            .withNewSpec()
+                            .withNewResources()
+                            .withRequests(singletonMap("storage", new Quantity("100Gi")))
+                            .endResources()
+                            .endSpec()
+                            .build(),
+                            new PersistentVolumeClaimBuilder()
+                                    .withNewSpec()
+                                    .withNewResources()
+                                    .withRequests(singletonMap("storage", new Quantity("110Gi")))
+                                    .endResources()
+                                    .endSpec()
+                                    .build())
+                .endSpec()
+                .build();
+        assertTrue(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates());
+        assertFalse(new StatefulSetDiff(ss1, ss2).changesVolumeSize());
     }
 }

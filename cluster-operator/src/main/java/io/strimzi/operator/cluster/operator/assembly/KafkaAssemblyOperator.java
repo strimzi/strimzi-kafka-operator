@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -18,6 +19,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
@@ -64,6 +66,7 @@ import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
+import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -77,6 +80,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -120,6 +124,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final RoleBindingOperator roleBindingOperations;
     private final PodOperator podOperations;
     private final IngressOperator ingressOperations;
+    private final StorageClassOperator storageClassOperator;
 
     /**
      * @param vertx The Vertx instance
@@ -143,6 +148,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.roleBindingOperations = supplier.roleBindingOperations;
         this.podOperations = supplier.podOperations;
         this.ingressOperations = supplier.ingressOperations;
+        this.storageClassOperator = supplier.storageClassOperations;
 
     }
 
@@ -274,6 +280,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap topicOperatorMetricsAndLogsConfigMap = null;
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
         private Secret oldCoSecret;
+
+        private Set<String> fsResizingRestartRequest = new HashSet<>();
 
         ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             this.reconciliation = reconciliation;
@@ -1545,26 +1553,114 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(podDisruptionBudgetOperator.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generatePodDisruptionBudget()));
         }
 
-        Future<ReconciliationState> zkPvcs() {
-            List<PersistentVolumeClaim> pvcs = zkCluster.generatePersistentVolumeClaims();
+        int getPodIndexFromPvcName(String pvcName)  {
+            return Integer.parseInt(pvcName.substring(pvcName.lastIndexOf("-") + 1));
+        }
+
+        Future<ReconciliationState> reconcilePvcs(List<PersistentVolumeClaim> pvcs, AbstractModel cluster) {
             List<Future> futures = new ArrayList<>(pvcs.size());
 
             for (PersistentVolumeClaim pvc : pvcs)  {
-                futures.add(pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc));
+                Future<Void> result = Future.future();
+
+                pvcOperations.getAsync(namespace, pvc.getMetadata().getName()).setHandler(res -> {
+                    if (res.succeeded())    {
+                        PersistentVolumeClaim realPvc = res.result();
+
+                        if (realPvc == null || !"Bound".equals(realPvc.getStatus().getPhase())) {
+                            // This branch handles the following conditions:
+                            // * The PVC doesn't exist yet, we should create it
+                            // * The PVC is not Bound and we should reconcile it
+                            pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc).setHandler(pvcRes -> {
+                                if (pvcRes.succeeded()) {
+                                    result.complete();
+                                } else {
+                                    result.fail(pvcRes.cause());
+                                }
+                            });
+                        } else if (realPvc.getStatus().getConditions().stream().filter(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
+                            // The PVC is Bound but it is already resizing => Nothing to do, we should let it resize
+                            log.debug("{}: The PVC {} is resizing, nothing to do", reconciliation, pvc.getMetadata().getName());
+                            result.complete();
+                        } else if (realPvc.getStatus().getConditions().stream().filter(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
+                            // The PVC is Bound and resized but waiting for FS resizing => We need to restart the pod which is using it
+                            String podName = cluster.getPodName(getPodIndexFromPvcName(pvc.getMetadata().getName()));
+                            fsResizingRestartRequest.add(podName);
+                            log.info("{}: The PVC {} is waiting for file system resizing and the pod {} needs to be restarted.", reconciliation, pvc.getMetadata().getName(), podName);
+                            result.complete();
+                        } else {
+                            // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
+                            Quantity currentSize = realPvc.getStatus().getCapacity().get("storage");
+                            Quantity desiredSize = pvc.getSpec().getResources().getRequests().get("storage");
+
+                            if (!desiredSize.equals(currentSize))   {
+                                // The sizes are different => we should resize (shrinking will be handled in StorageDiff, so we do not need to check that)
+                                String storageClassName = realPvc.getSpec().getStorageClassName();
+
+                                if (storageClassName != null && !storageClassName.isEmpty()) {
+                                    storageClassOperator.getAsync(storageClassName).setHandler(scRes -> {
+                                        if (scRes.succeeded()) {
+                                            StorageClass sc = scRes.result();
+
+                                            if (sc == null) {
+                                                log.warn("{}: Storage Class {} not found. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", reconciliation, storageClassName, pvc.getMetadata().getName());
+                                                result.complete();
+                                            } else if (sc.getAllowVolumeExpansion() == null || !sc.getAllowVolumeExpansion())    {
+                                                // Resizing not suported in SC => do nothing
+                                                log.warn("{}: Storage Class {} does not support resizing of volumes. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", reconciliation, storageClassName, pvc.getMetadata().getName());
+                                                result.complete();
+                                            } else  {
+                                                // Resizing supported by SC => We can reconcile the PVC to have it resized
+                                                log.info("{}: Resizing PVC {} from {} to {}.", reconciliation, pvc.getMetadata().getName(), realPvc.getStatus().getCapacity().get("storage").getAmount(), pvc.getSpec().getResources().getRequests().get("storage").getAmount());
+                                                pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc).setHandler(pvcRes -> {
+                                                    if (pvcRes.succeeded()) {
+                                                        result.complete();
+                                                    } else {
+                                                        result.fail(pvcRes.cause());
+                                                    }
+                                                });
+                                            }
+                                        } else {
+                                            log.error("{}: Storage Class {} not found. PVC {} cannot be resized.", reconciliation, storageClassName, pvc.getMetadata().getName(), res.cause());
+                                            result.fail(scRes.cause());
+                                        }
+                                    });
+                                } else {
+                                    log.warn("{}: PVC {} does not use any Storage Class and cannot be resized. Reconciliation will proceed without reconciling this PVC.", reconciliation, pvc.getMetadata().getName());
+                                    result.complete();
+                                }
+                            } else  {
+                                // size didn't changed, just reconcile
+                                pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc).setHandler(pvcRes -> {
+                                    if (pvcRes.succeeded()) {
+                                        result.complete();
+                                    } else {
+                                        result.fail(pvcRes.cause());
+                                    }
+                                });
+                            }
+                        }
+                    } else {
+                        result.fail(res.cause());
+                    }
+                });
+
+                futures.add(result);
             }
 
             return withVoid(CompositeFuture.all(futures));
         }
 
+        Future<ReconciliationState> zkPvcs() {
+            List<PersistentVolumeClaim> pvcs = zkCluster.generatePersistentVolumeClaims();
+
+            return reconcilePvcs(pvcs, zkCluster);
+        }
+
         Future<ReconciliationState> kafkaPvcs() {
             List<PersistentVolumeClaim> pvcs = kafkaCluster.generatePersistentVolumeClaims(kafkaCluster.getStorage());
-            List<Future> futures = new ArrayList<>(pvcs.size());
 
-            for (PersistentVolumeClaim pvc : pvcs)  {
-                futures.add(pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc));
-            }
-
-            return withVoid(CompositeFuture.all(futures));
+            return reconcilePvcs(pvcs, kafkaCluster);
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
@@ -2124,6 +2220,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             boolean isPodUpToDate = isPodUpToDate(ss, pod);
             boolean isPodCaCertUpToDate = true;
             boolean isCaCertsChanged = false;
+            boolean isFsResizeNeeded = false;
+
             for (Ca ca: cas) {
                 isCaCertsChanged |= ca.certRenewed() || ca.certsRemoved();
                 isPodCaCertUpToDate &= isPodCaCertUpToDate(pod, ca);
@@ -2136,6 +2234,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 isSatisfiedBy = isMaintenanceTimeWindowsSatisfied(dateSupplier);
                 isPodToRestart |= isSatisfiedBy;
             }
+
+            if (fsResizingRestartRequest.contains(pod.getMetadata().getName())) {
+                isFsResizeNeeded = true;
+            }
+            isPodToRestart |= isFsResizeNeeded;
 
             if (log.isDebugEnabled()) {
                 List<String> reasons = new ArrayList<>();
@@ -2155,6 +2258,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 if (!isPodUpToDate) {
                     reasons.add("Pod has old generation");
+                }
+                if (isFsResizeNeeded)   {
+                    reasons.add("file system needs to be resized");
                 }
                 if (!reasons.isEmpty()) {
                     if (isPodToRestart) {

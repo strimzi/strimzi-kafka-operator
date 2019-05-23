@@ -17,7 +17,7 @@ function create_truststore {
 # $5: CA public key to be imported
 # $6: Alias of the certificate
 function create_keystore {
-   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $6 -password pass:$2 -out $1
+   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -chain -CAfile $5 -name $6 -password pass:$2 -out $1
 }
 
 echo "Preparing truststore for replication listener"

@@ -20,4 +20,10 @@ rules:
     - delete
     - patch
     - update
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+   - get
 {{- end -}}
