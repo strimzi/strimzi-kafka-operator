@@ -51,6 +51,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
         + "|/status)$");
 
     private static final Pattern RESOURCE_PATH = Pattern.compile("^/spec/template/spec/(?:initContainers|containers)/[0-9]+/resources/(?:limits|requests)/(memory|cpu)$");
+    private static final Pattern VOLUME_SIZE = Pattern.compile("^/spec/volumeClaimTemplates/[0-9]+/spec/resources/.*$");
 
     private static boolean equalsOrPrefix(String path, String pathValue) {
         return pathValue.equals(path)
@@ -58,6 +59,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
     }
 
     private final boolean changesVolumeClaimTemplate;
+    private final boolean changesVolumeSize;
     private final boolean isEmpty;
     private final boolean changesSpecTemplate;
     private final boolean changesLabels;
@@ -69,6 +71,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
         JsonNode diff = JsonDiff.asJson(source, target);
         int num = 0;
         boolean changesVolumeClaimTemplate = false;
+        boolean changesVolumeSize = false;
         boolean changesSpecTemplate = false;
         boolean changesLabels = false;
         boolean changesSpecReplicas = false;
@@ -98,7 +101,10 @@ public class StatefulSetDiff extends AbstractResourceDiff {
             }
 
             num++;
-            changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue);
+            // Any volume claim template changes apart from size change should trigger rolling update
+            // Size changes should not trigger rolling update. Therefore we need to separate these two in the diff.
+            changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue) && !VOLUME_SIZE.matcher(pathValue).matches();
+            changesVolumeSize |= VOLUME_SIZE.matcher(pathValue).matches();
             // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
             // by k8s
             changesSpecTemplate |= equalsOrPrefix("/spec/template", pathValue);
@@ -110,6 +116,7 @@ public class StatefulSetDiff extends AbstractResourceDiff {
         this.changesSpecReplicas = changesSpecReplicas;
         this.changesSpecTemplate = changesSpecTemplate;
         this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
+        this.changesVolumeSize = changesVolumeSize;
     }
 
     boolean compareMemoryAndCpuResources(JsonNode source, JsonNode target, String pathValue, Matcher resourceMatchers) {
@@ -142,9 +149,14 @@ public class StatefulSetDiff extends AbstractResourceDiff {
         return isEmpty;
     }
 
-    /** Returns true if there's a difference in {@code /spec/volumeClaimTemplates} */
+    /** Returns true if there's a difference in {@code /spec/volumeClaimTemplates} but not to {@code /spec/volumeClaimTemplates/[0-9]+/spec/resources} */
     public boolean changesVolumeClaimTemplates() {
         return changesVolumeClaimTemplate;
+    }
+
+    /** Returns true if there's a difference in {@code /spec/volumeClaimTemplates/[0-9]+/spec/resources} */
+    public boolean changesVolumeSize() {
+        return changesVolumeSize;
     }
 
     /** Returns true if there's a difference in {@code /spec/template/spec} */

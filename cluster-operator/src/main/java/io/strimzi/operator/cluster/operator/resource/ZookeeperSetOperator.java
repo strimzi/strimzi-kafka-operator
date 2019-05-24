@@ -62,6 +62,10 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
             log.debug("Changed volume claim template => needs rolling update");
             return true;
         }
+        if (diff.changesVolumeSize()) {
+            log.debug("Changed size of the volume claim template => no need for rolling update");
+            return false;
+        }
         return false;
     }
 

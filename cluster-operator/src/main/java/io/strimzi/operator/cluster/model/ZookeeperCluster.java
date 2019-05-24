@@ -212,7 +212,7 @@ public class ZookeeperCluster extends AbstractModel {
             StorageDiff diff = new StorageDiff(oldStorage, newStorage);
 
             if (!diff.isEmpty()) {
-                log.warn("Only following changes to Zookeeper storage are allowed: changing the deleteClaim flag.");
+                log.warn("Only the following changes to Zookeeper storage are allowed: changing the deleteClaim flag and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
                 log.warn("Your desired Zookeeper storage configuration contains changes which are not allowed. As a result, all storage changes will be ignored. Use DEBUG level logging for more information about the detected changes.");
                 zk.setStorage(oldStorage);
             } else {

@@ -257,7 +257,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             log.debug("Patching {} {}/{}", resourceKind, namespace, name);
         }
 
-        if (diff.changesVolumeClaimTemplates()) {
+        if (diff.changesVolumeClaimTemplates() || diff.changesVolumeSize()) {
             // When volume claim templates change, we need to delete the STS and re-create it
             return internalReplace(namespace, name, current, desired, false);
         } else {

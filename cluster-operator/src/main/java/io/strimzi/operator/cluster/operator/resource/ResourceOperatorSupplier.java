@@ -38,6 +38,7 @@ import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.Vertx;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
@@ -64,6 +65,7 @@ public class ResourceOperatorSupplier {
     public final ImageStreamOperator imagesStreamOperations;
     public final BuildConfigOperator buildConfigOperations;
     public final DeploymentConfigOperator deploymentConfigOperations;
+    public final StorageClassOperator storageClassOperations;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client, new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
@@ -94,7 +96,8 @@ public class ResourceOperatorSupplier {
                 new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, DoneableKafka.class),
                 new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, DoneableKafkaConnect.class),
                 pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages() ? new CrdOperator<>(vertx, client.adapt(OpenShiftClient.class), KafkaConnectS2I.class, KafkaConnectS2IList.class, DoneableKafkaConnectS2I.class) : null,
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class));
+                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, DoneableKafkaMirrorMaker.class),
+                new StorageClassOperator(vertx, client));
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -118,7 +121,8 @@ public class ResourceOperatorSupplier {
                                     CrdOperator<KubernetesClient, Kafka, KafkaList, DoneableKafka> kafkaOperator,
                                     CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList, DoneableKafkaConnect> connectOperator,
                                     CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I> connectS2IOperator,
-                                    CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> mirrorMakerOperator) {
+                                    CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker> mirrorMakerOperator,
+                                    StorageClassOperator storageClassOperator) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
@@ -141,5 +145,6 @@ public class ResourceOperatorSupplier {
         this.connectOperator = connectOperator;
         this.connectS2IOperator = connectS2IOperator;
         this.mirrorMakerOperator = mirrorMakerOperator;
+        this.storageClassOperations = storageClassOperator;
     }
 }
