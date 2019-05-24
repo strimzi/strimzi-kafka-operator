@@ -491,7 +491,7 @@ public class VolumeResizingTest {
 
         public Future<ReconciliationState> resizeVolumes(Reconciliation reconciliation, Kafka kafkaAssembly, List<PersistentVolumeClaim> pvcs, KafkaCluster kafkaCluster) {
             ReconciliationState rs = createReconciliationState(reconciliation, kafkaAssembly);
-            return rs.reconcilePvcs(pvcs, kafkaCluster);
+            return rs.maybeResizeReconcilePvcs(pvcs, kafkaCluster);
         }
     }
 }
