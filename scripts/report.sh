@@ -71,12 +71,12 @@ resources_to_fetch=(
 	"pods"
 	)
 
-unclustered_resources_to_fetch=(
+nonnamespaced_resources_to_fetch=(
 	"clusterroles"
 	"clusterrolebindings"
 	)
 
-get_clustered_yamls() {
+get_namespaced_yamls() {
 	mkdir -p $direct/reports/"$1"
 	resources=$($platform get $1 -l strimzi.io/cluster=$cluster -o name -n $namespace)
 	echo "$1"
@@ -89,23 +89,23 @@ get_clustered_yamls() {
 }
 
 for res in "${resources_to_fetch[@]}"; do
-	get_clustered_yamls "$res"
+	get_namespaced_yamls "$res"
 done;
 
-get_unclustered_yamls() {
+get_nonnamespaced_yamls() {
 	mkdir -p $direct/reports/"$1"
 	resources=$($platform get $1 -l app=strimzi -o name -n $namespace)
 	echo "$1"
 	for line in $resources; do
 		filename=`echo $line | cut -f 2 -d "/"`
 		echo "   "$line
-		$platform get $line -o yaml -n $namespace | sed 's/^\(\s*password\s*:\s*\).*/\1*****/' \
+		$platform get $line -o yaml | sed 's/^\(\s*password\s*:\s*\).*/\1*****/' \
 		| sed 's/^\(\s*.*\.key\s*:\s*\).*/\1*****/' > $direct/reports/"$1"/"$filename".yaml
 	done;
 }
 
-for res in "${unclustered_resources_to_fetch[@]}"; do
-	get_unclustered_yamls "$res"
+for res in "${nonnamespaced_resources_to_fetch[@]}"; do
+	get_nonnamespaced_yamls "$res"
 done;
 
 mkdir -p $direct/reports/podLogs
