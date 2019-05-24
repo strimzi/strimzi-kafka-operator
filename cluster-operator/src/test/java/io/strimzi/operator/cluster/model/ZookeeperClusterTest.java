@@ -191,8 +191,14 @@ public class ZookeeperClusterTest {
         assertEquals(image + "-zk", containers.get(0).getImage());
         assertEquals(new Integer(healthTimeout), containers.get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(10), containers.get(0).getLivenessProbe().getFailureThreshold());
+        assertEquals(new Integer(4), containers.get(0).getLivenessProbe().getSuccessThreshold());
+        assertEquals(new Integer(33), containers.get(0).getLivenessProbe().getPeriodSeconds());
         assertEquals(new Integer(healthTimeout), containers.get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(10), containers.get(0).getReadinessProbe().getFailureThreshold());
+        assertEquals(new Integer(4), containers.get(0).getReadinessProbe().getSuccessThreshold());
+        assertEquals(new Integer(33), containers.get(0).getReadinessProbe().getPeriodSeconds());
         OrderedProperties expectedConfig = new OrderedProperties()
                 .addPair("autopurge.purgeInterval", "1")
                 .addPair("tickTime", "2000")

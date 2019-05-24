@@ -287,8 +287,14 @@ public class KafkaClusterTest {
         assertEquals(image, containers.get(0).getImage());
         assertEquals(new Integer(healthTimeout), containers.get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(10), containers.get(0).getLivenessProbe().getFailureThreshold());
+        assertEquals(new Integer(4), containers.get(0).getLivenessProbe().getSuccessThreshold());
+        assertEquals(new Integer(33), containers.get(0).getLivenessProbe().getPeriodSeconds());
         assertEquals(new Integer(healthTimeout), containers.get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(10), containers.get(0).getReadinessProbe().getFailureThreshold());
+        assertEquals(new Integer(4), containers.get(0).getReadinessProbe().getSuccessThreshold());
+        assertEquals(new Integer(33), containers.get(0).getReadinessProbe().getPeriodSeconds());
         assertEquals("foo=bar" + LINE_SEPARATOR, AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
         assertEquals(KafkaCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
         assertEquals(kc.dataVolumeMountPaths.stream().map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(",")),

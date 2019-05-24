@@ -107,6 +107,9 @@ public class ResourceUtils {
         Probe probe = new ProbeBuilder()
                 .withInitialDelaySeconds(healthDelay)
                 .withTimeoutSeconds(healthTimeout)
+                .withFailureThreshold(10)
+                .withSuccessThreshold(4)
+                .withPeriodSeconds(33)
                 .build();
 
         ObjectMetaBuilder meta = new ObjectMetaBuilder();
@@ -338,6 +341,9 @@ public class ResourceUtils {
         Probe livenessProbe = new Probe();
         livenessProbe.setInitialDelaySeconds(healthDelay);
         livenessProbe.setTimeoutSeconds(healthTimeout);
+        livenessProbe.setSuccessThreshold(4);
+        livenessProbe.setFailureThreshold(10);
+        livenessProbe.setPeriodSeconds(33);
         kafkaClusterSpec.setLivenessProbe(livenessProbe);
         kafkaClusterSpec.setReadinessProbe(livenessProbe);
         if (metricsCm != null) {
