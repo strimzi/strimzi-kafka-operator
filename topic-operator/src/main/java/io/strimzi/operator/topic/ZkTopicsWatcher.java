@@ -15,8 +15,8 @@ import java.util.Set;
 
 /**
  * ZooKeeper watcher for child znodes of {@code /brokers/topics},
- * calling {@link TopicOperator#onTopicCreated(TopicName, io.vertx.core.Handler)} for new children and
- * {@link TopicOperator#onTopicDeleted(TopicName, io.vertx.core.Handler)} for deleted children.
+ * calling {@link TopicOperator#onTopicCreated(LogContext, TopicName, io.vertx.core.Handler)} for new children and
+ * {@link TopicOperator#onTopicDeleted(LogContext, TopicName, io.vertx.core.Handler)} for deleted children.
  */
 class ZkTopicsWatcher {
 
@@ -81,11 +81,12 @@ class ZkTopicsWatcher {
                 for (String topicName : deleted) {
                     tcw.removeChild(topicName);
                     tw.removeChild(topicName);
-                    topicOperator.onTopicDeleted(new TopicName(topicName), ar -> {
+                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "-" + topicName);
+                    topicOperator.onTopicDeleted(logContext, new TopicName(topicName), ar -> {
                         if (ar.succeeded()) {
-                            LOGGER.debug("Success responding to deletion of topic {}", topicName);
+                            LOGGER.debug("{}: Success responding to deletion of topic {}", logContext, topicName);
                         } else {
-                            LOGGER.warn("Error responding to deletion of topic {}", topicName, ar.cause());
+                            LOGGER.warn("{}: Error responding to deletion of topic {}", logContext, topicName, ar.cause());
                         }
                     });
                 }
@@ -96,11 +97,12 @@ class ZkTopicsWatcher {
                 for (String topicName : created) {
                     tcw.addChild(topicName);
                     tw.addChild(topicName);
-                    topicOperator.onTopicCreated(new TopicName(topicName), ar -> {
+                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "+" + topicName);
+                    topicOperator.onTopicCreated(logContext, new TopicName(topicName), ar -> {
                         if (ar.succeeded()) {
-                            LOGGER.debug("Success responding to creation of topic {}", topicName);
+                            LOGGER.debug("{}: Success responding to creation of topic {}", logContext, topicName);
                         } else {
-                            LOGGER.warn("Error responding to creation of topic {}", topicName, ar.cause());
+                            LOGGER.warn("{}: Error responding to creation of topic {}", logContext, topicName, ar.cause());
                         }
                     });
                 }

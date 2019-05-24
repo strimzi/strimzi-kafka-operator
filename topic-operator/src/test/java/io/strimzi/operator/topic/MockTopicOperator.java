@@ -91,43 +91,43 @@ class MockTopicOperator extends TopicOperator {
     }
 
     @Override
-    public void onTopicCreated(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+    public void onTopicCreated(LogContext logContext, TopicName topicName, Handler<AsyncResult<Void>> handler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, topicName));
         handler.handle(topicCreatedResult);
     }
 
     @Override
-    public void onTopicDeleted(TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
+    public void onTopicDeleted(LogContext logContext, TopicName topicName, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.DELETE, topicName));
         resultHandler.handle(topicDeletedResult);
     }
 
     @Override
-    public void onTopicConfigChanged(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+    public void onTopicConfigChanged(LogContext logContext, TopicName topicName, Handler<AsyncResult<Void>> handler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY_CONFIG, topicName));
         handler.handle(topicModifiedResult);
     }
 
     @Override
-    public void onTopicPartitionsChanged(TopicName topicName, Handler<AsyncResult<Void>> handler) {
+    public void onTopicPartitionsChanged(LogContext logContext, TopicName topicName, Handler<AsyncResult<Void>> handler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY_PARTITIONS, topicName));
         handler.handle(topicModifiedResult);
     }
 
     @Override
-    public void onResourceAdded(KafkaTopic resource, Handler<AsyncResult<Void>> resultHandler) {
+    public void onResourceAdded(LogContext logContext, KafkaTopic resource, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.CREATE, resource));
         resultHandler.handle(resourceAddedResult);
     }
 
     @Override
-    public void onResourceModified(KafkaTopic resource, Handler<AsyncResult<Void>> resultHandler) {
+    public void onResourceModified(LogContext logContext, KafkaTopic resource, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.MODIFY, resource));
         resultHandler.handle(resourceModifiedResult);
     }
 
     @Override
-    public void onResourceDeleted(KafkaTopic resource, Handler<AsyncResult<Void>> resultHandler) {
+    public void onResourceDeleted(LogContext logContext, KafkaTopic resource, Handler<AsyncResult<Void>> resultHandler) {
         mockOperatorEvents.add(new MockOperatorEvent(MockOperatorEvent.Type.DELETE, resource));
         resultHandler.handle(resourceDeletedResult);
     }
