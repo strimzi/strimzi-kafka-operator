@@ -9,6 +9,7 @@ Open a terminal inside a Kafka container to use Kafka CLI tools that require a Z
 .Prerequisites
 
 * An {ProductPlatformName} cluster is available.
+* A kafka cluster is running.
 * The Cluster Operator is running.
 
 .Procedure
@@ -24,4 +25,4 @@ For example:
 +
 Be sure to use `localhost:2181`.
 +
-You can now run Kafaka commands to Zookeeper.
+You can now run Kafka commands to Zookeeper.
