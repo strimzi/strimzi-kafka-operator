@@ -1,9 +1,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimCondition;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimConditionBuilder;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimStatus;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimStatusBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.storage.StorageClass;
@@ -26,7 +24,6 @@ import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -34,14 +31,11 @@ import org.mockito.ArgumentMatchers;
 
 import java.io.StringReader;
 import java.util.List;
-import java.util.Map;
 
 import static io.strimzi.test.TestUtils.map;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -75,9 +69,8 @@ public class VolumeResizingTest {
         vertx.close();
     }
 
-    @Test
-    public void testNoExistingVolumes()  {
-        Kafka kafka = new KafkaBuilder()
+    public Kafka getKafkaCrd()  {
+        return new KafkaBuilder()
                 .withNewMetadata()
                     .withName(clusterName)
                     .withNamespace(namespace)
@@ -103,7 +96,11 @@ public class VolumeResizingTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
+    }
 
+    @Test
+    public void testNoExistingVolumes()  {
+        Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -149,33 +146,7 @@ public class VolumeResizingTest {
 
     @Test
     public void testNotBoundVolumes()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                .withName(clusterName)
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withNewKafka()
-                .withReplicas(3)
-                .withNewListeners()
-                .withNewPlain()
-                .endPlain()
-                .endListeners()
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withReplicas(3)
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endZookeeper()
-                .endSpec()
-                .build();
-
+        Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -222,33 +193,7 @@ public class VolumeResizingTest {
 
     @Test
     public void testVolumesBoundExpandableStorageClass()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                .withName(clusterName)
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withNewKafka()
-                .withReplicas(3)
-                .withNewListeners()
-                .withNewPlain()
-                .endPlain()
-                .endListeners()
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withReplicas(3)
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endZookeeper()
-                .endSpec()
-                .build();
-
+        Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -304,33 +249,7 @@ public class VolumeResizingTest {
 
     @Test
     public void testVolumesBoundNonExpandableStorageClass()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                .withName(clusterName)
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withNewKafka()
-                .withReplicas(3)
-                .withNewListeners()
-                .withNewPlain()
-                .endPlain()
-                .endListeners()
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withReplicas(3)
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endZookeeper()
-                .endSpec()
-                .build();
-
+        Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -386,33 +305,7 @@ public class VolumeResizingTest {
 
     @Test
     public void testVolumesResizing()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                .withName(clusterName)
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withNewKafka()
-                .withReplicas(3)
-                .withNewListeners()
-                .withNewPlain()
-                .endPlain()
-                .endListeners()
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withReplicas(3)
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endZookeeper()
-                .endSpec()
-                .build();
-
+        Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -471,33 +364,7 @@ public class VolumeResizingTest {
 
     @Test
     public void testVolumesWaitingForRestart()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                .withName(clusterName)
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withNewKafka()
-                .withReplicas(3)
-                .withNewListeners()
-                .withNewPlain()
-                .endPlain()
-                .endListeners()
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withReplicas(3)
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endZookeeper()
-                .endSpec()
-                .build();
-
+        Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -562,33 +429,7 @@ public class VolumeResizingTest {
 
     @Test
     public void testVolumesResized()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                .withName(clusterName)
-                .withNamespace(namespace)
-                .endMetadata()
-                .withNewSpec()
-                .withNewKafka()
-                .withReplicas(3)
-                .withNewListeners()
-                .withNewPlain()
-                .endPlain()
-                .endListeners()
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withReplicas(3)
-                .withNewPersistentClaimStorage()
-                .withStorageClass("mysc")
-                .withSize("20Gi")
-                .endPersistentClaimStorage()
-                .endZookeeper()
-                .endSpec()
-                .build();
-
+        Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
