@@ -109,7 +109,7 @@ public class KafkaBridgeClusterTest {
     public void testDefaultValues() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(ResourceUtils.createEmptyKafkaBridgeCluster(namespace, cluster), VERSIONS);
 
-        //assertEquals("strimzi/kafka-connect:latest-kafka-2.0.0", kbc.image);
+        assertEquals("strimzi/kafka-bridge:latest", kbc.image);
         assertEquals(KafkaBridgeCluster.DEFAULT_REPLICAS, kbc.replicas);
         assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY, kbc.readinessInitialDelay);
         assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kbc.readinessTimeout);

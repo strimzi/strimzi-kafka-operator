@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "replicas", "bootstrapServers", "authentication",
         "tls", "http", "image", "resources", "jvmOptions",
-        "logging", "metrics", "template"})
+        "logging", "metrics", "livenessProbe", "readinessProbe", "template"})
 @EqualsAndHashCode
 public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -38,12 +38,14 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     private KafkaBridgeAuthentication authentication;
     private KafkaBridgeTls tls;
-    private Http http;
+    private KafkaBridgeHttpConfig http;
     private String image;
     private ResourceRequirements resources;
     private JvmOptions jvmOptions;
     private Logging logging;
     private Map<String, Object> metrics;
+    private Probe livenessProbe;
+    private Probe readinessProbe;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
     private KafkaBridgeTemplate template;
 
@@ -69,7 +71,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("The Prometheus JMX Exporter configuration. " +
+    @Description("**Currently not supported** The Prometheus JMX Exporter configuration. " +
             "See {JMXExporter} for details of the structure of this configuration.")
     public Map<String, Object> getMetrics() {
         return metrics;
@@ -79,7 +81,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.metrics = metrics;
     }
 
-    @Description("Logging configuration for Mirror Maker.")
+    @Description("**Currently not supported** Logging configuration for Mirror Maker.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging;
@@ -90,7 +92,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("JVM Options for pods")
+    @Description("**Currently not supported** JVM Options for pods")
     public JvmOptions getJvmOptions() {
         return jvmOptions;
     }
@@ -101,7 +103,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Resource constraints (limits and requests).")
+    @Description("**Currently not supported** Resource constraints (limits and requests).")
     public ResourceRequirements getResources() {
         return resources;
     }
@@ -120,7 +122,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.additionalProperties.put(name, value);
     }
 
-    @Description("Configures Kafka Bridge authentication.")
+    @Description("**Currently not supported** Configures Kafka Bridge authentication.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaBridgeAuthentication getAuthentication() {
         return authentication;
@@ -130,7 +132,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.authentication = logging;
     }
 
-    @Description("TLS configuration for connecting to the cluster.")
+    @Description("**Currently not supported** TLS configuration for connecting to the cluster.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaBridgeTls getTls() {
         return tls;
@@ -140,13 +142,13 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.tls = kafkaBridgeTls;
     }
 
-    @Description("The HTTP properties.")
+    @Description("The HTTP related configuration.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public Http getHttp() {
+    public KafkaBridgeHttpConfig getHttp() {
         return http;
     }
 
-    public void setReplicas(Http http) {
+    public void setHttp(KafkaBridgeHttpConfig http) {
         this.http = http;
     }
 
@@ -169,5 +171,25 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     public void setTemplate(KafkaBridgeTemplate template) {
         this.template = template;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("**Currently not supported** Pod liveness checking.")
+    public Probe getLivenessProbe() {
+        return livenessProbe;
+    }
+
+    public void setLivenessProbe(Probe livenessProbe) {
+        this.livenessProbe = livenessProbe;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @Description("**Currently not supported** Pod readiness checking.")
+    public Probe getReadinessProbe() {
+        return readinessProbe;
+    }
+
+    public void setReadinessProbe(Probe readinessProbe) {
+        this.readinessProbe = readinessProbe;
     }
 }

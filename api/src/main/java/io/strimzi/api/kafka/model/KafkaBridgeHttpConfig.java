@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A representation of the configurable aspect of a HTTP.
+ * A representation of the HTTP configuration.
  */
 @Buildable(
         editableEnabled = false,
@@ -24,17 +24,17 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class Http implements UnknownPropertyPreserving, Serializable {
+public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private int port = 8080;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    public Http() {
+    public KafkaBridgeHttpConfig() {
     }
 
-    public Http(int port) {
+    public KafkaBridgeHttpConfig(int port) {
         this.port = port;
     }
 

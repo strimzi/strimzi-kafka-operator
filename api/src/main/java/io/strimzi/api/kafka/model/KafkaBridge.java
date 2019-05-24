@@ -39,13 +39,8 @@ import static java.util.Collections.unmodifiableList;
                 ),
                 group = KafkaBridge.RESOURCE_GROUP,
                 scope = KafkaBridge.SCOPE,
-                version = KafkaBridge.V1BETA1,
+                version = KafkaBridge.V1ALPHA1,
                 versions = {
-                        @Crd.Spec.Version(
-                                name = KafkaBridge.V1BETA1,
-                                served = true,
-                                storage = true
-                        ),
                         @Crd.Spec.Version(
                                 name = KafkaBridge.V1ALPHA1,
                                 served = true,
@@ -85,14 +80,13 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
 
     public static final String SCOPE = "Namespaced";
     public static final String V1ALPHA1 = "v1alpha1";
-    public static final String V1BETA1 = "v1beta1";
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaBridge";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
     public static final String RESOURCE_PLURAL = "kafkabridges";
     public static final String RESOURCE_SINGULAR = "kafkabridge";
-    public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
+    public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1alpha1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kb";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);

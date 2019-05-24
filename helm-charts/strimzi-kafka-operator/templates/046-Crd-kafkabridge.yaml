@@ -12,13 +12,10 @@ metadata:
 spec:
   group: kafka.strimzi.io
   versions:
-  - name: v1beta1
-    served: true
-    storage: true
   - name: v1alpha1
     served: true
     storage: false
-  version: v1beta1
+  version: v1alpha1
   scope: Namespaced
   names:
     kind: KafkaBridge
@@ -143,6 +140,24 @@ spec:
               - type
             metrics:
               type: object
+            livenessProbe:
+              type: object
+              properties:
+                initialDelaySeconds:
+                  type: integer
+                  minimum: 0
+                timeoutSeconds:
+                  type: integer
+                  minimum: 0
+            readinessProbe:
+              type: object
+              properties:
+                initialDelaySeconds:
+                  type: integer
+                  minimum: 0
+                timeoutSeconds:
+                  type: integer
+                  minimum: 0
             template:
               type: object
               properties:

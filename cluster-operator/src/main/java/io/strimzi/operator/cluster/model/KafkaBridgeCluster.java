@@ -21,7 +21,7 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.Http;
+import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationPlain;
 import io.strimzi.api.kafka.model.KafkaBridgeAuthenticationScramSha512;
@@ -75,7 +75,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     private PasswordSecretSource passwordSecret;
     private String username;
     private String saslMechanism;
-    private Http http;
+    private KafkaBridgeHttpConfig http;
 
     /**
      * Constructor
@@ -87,7 +87,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected KafkaBridgeCluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         this.name = kafkaBridgeClusterName(cluster);
-        this.serviceName = serviceName(cluster);
+        this.serviceName = name + "-service";
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
@@ -189,7 +189,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
         }
 
-        kafkaBridgeCluster.setHttp(spec.getHttp());
+        kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
         kafkaBridgeCluster.setOwnerReference(kafkaBridge);
 
         return kafkaBridgeCluster;
@@ -244,10 +244,8 @@ public class KafkaBridgeCluster extends AbstractModel {
         } else if (passwordSecret != null)  {
             volumeList.add(createSecretVolume(passwordSecret.getSecretName(), passwordSecret.getSecretName(), isOpenShift));
         }
-
         return volumeList;
     }
-
 
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(1);
@@ -376,10 +374,10 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     /**
      * Set the HTTP configuration
-     * @param http HTTP configuration
+     * @param kafkaBridgeHttpConfig HTTP configuration
      */
-    protected void setHttp(Http http) {
-        this.http = http;
+    protected void setKafkaBridgeHttpConfig(KafkaBridgeHttpConfig kafkaBridgeHttpConfig) {
+        this.http = kafkaBridgeHttpConfig;
     }
 
     /**
