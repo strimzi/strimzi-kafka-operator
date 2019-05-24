@@ -281,7 +281,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
         private Secret oldCoSecret;
 
-        private Set<String> fsResizingRestartRequest = new HashSet<>();
+        /* test */ Set<String> fsResizingRestartRequest = new HashSet<>();
 
         ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             this.reconciliation = reconciliation;
