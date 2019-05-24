@@ -35,6 +35,8 @@ include::assembly-zookeeper-replicas.adoc[leveloffset=+1]
 
 include::assembly-zookeeper-node-configuration.adoc[leveloffset=+1]
 
+include::assembly-zookeeper-connection.adoc[leveloffset=+1]
+
 include::assembly-kafka-entity-operator.adoc[leveloffset=+1]
 
 include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
