@@ -65,15 +65,18 @@ resources_to_fetch=(
 	"services"
 	"poddisruptionbudgets"
 	"roles"
-	"clusterroles"
 	"rolebindings"
-	"clusterrolebindings"
 	"networkpolicies"
 	"routes"
 	"pods"
 	)
 
-get_yamls() {
+unclustered_resources_to_fetch=(
+	"clusterroles"
+	"clusterrolebindings"
+	)
+
+get_clustered_yamls() {
 	mkdir -p $direct/reports/"$1"
 	resources=$($platform get $1 -l strimzi.io/cluster=$cluster -o name -n $namespace)
 	echo "$1"
@@ -86,8 +89,24 @@ get_yamls() {
 }
 
 for res in "${resources_to_fetch[@]}"; do
-	get_yamls "$res"
-done
+	get_clustered_yamls "$res"
+done;
+
+get_unclustered_yamls() {
+	mkdir -p $direct/reports/"$1"
+	resources=$($platform get $1 -l app=strimzi -o name -n $namespace)
+	echo "$1"
+	for line in $resources; do
+		filename=`echo $line | cut -f 2 -d "/"`
+		echo "   "$line
+		$platform get $line -o yaml -n $namespace | sed 's/^\(\s*password\s*:\s*\).*/\1*****/' \
+		| sed 's/^\(\s*.*\.key\s*:\s*\).*/\1*****/' > $direct/reports/"$1"/"$filename".yaml
+	done;
+}
+
+for res in "${unclustered_resources_to_fetch[@]}"; do
+	get_unclustered_yamls "$res"
+done;
 
 mkdir -p $direct/reports/podLogs
 mkdir -p $direct/reports/configs
@@ -157,9 +176,9 @@ for line in $crds; do
 done;
 
 mkdir -p $direct/reports/events
-$platform get event -n $namespace > $direct/reports/events/events.yaml
+$platform get event -n $namespace > /$direct/reports/events/events.yaml
 
 filename=`date +"%d-%m-%Y_%H-%M-%S"`
-filename=report-"$filename".zip
-zip -qr $filename.zip $direct/reports
-echo "Report file $filename created"
+filename=report-"$filename"
+zip -qr $filename.zip /$direct/reports/
+echo "Report file $filename.zip created"
