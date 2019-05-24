@@ -28,16 +28,18 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilde
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.api.kafka.model.storage.EphemeralStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.model.Labels;
@@ -76,9 +78,10 @@ public class ZookeeperCluster extends AbstractModel {
     // Zookeeper configuration
     private TlsSidecar tlsSidecar;
 
-    // Configuration defaults
-    private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
+            .withTimeoutSeconds(5)
+            .withInitialDelaySeconds(15)
+            .build();
     private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
 
     // Zookeeper configuration keys (EnvVariables)
@@ -145,11 +148,9 @@ public class ZookeeperCluster extends AbstractModel {
         this.image = null;
         this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
-        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/opt/kafka/zookeeper_healthcheck.sh";
-        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/zookeeper";
@@ -189,12 +190,10 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setImage(image);
 
         if (zookeeperClusterSpec.getReadinessProbe() != null) {
-            zk.setReadinessInitialDelay(zookeeperClusterSpec.getReadinessProbe().getInitialDelaySeconds());
-            zk.setReadinessTimeout(zookeeperClusterSpec.getReadinessProbe().getTimeoutSeconds());
+            zk.setReadinessProbe(zookeeperClusterSpec.getReadinessProbe());
         }
         if (zookeeperClusterSpec.getLivenessProbe() != null) {
-            zk.setLivenessInitialDelay(zookeeperClusterSpec.getLivenessProbe().getInitialDelaySeconds());
-            zk.setLivenessTimeout(zookeeperClusterSpec.getLivenessProbe().getTimeoutSeconds());
+            zk.setLivenessProbe(zookeeperClusterSpec.getLivenessProbe());
         }
 
         Logging logging = zookeeperClusterSpec.getLogging();
@@ -468,8 +467,8 @@ public class ZookeeperCluster extends AbstractModel {
                 .withEnv(getEnvVars())
                 .withVolumeMounts(getVolumeMounts())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ModelUtils.createExecProbe(Collections.singletonList(livenessPath), livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(ModelUtils.createExecProbe(Collections.singletonList(readinessPath), readinessInitialDelay, readinessTimeout))
+                .withLivenessProbe(ModelUtils.createExecProbe(Collections.singletonList(livenessPath), livenessProbeOptions))
+                .withReadinessProbe(ModelUtils.createExecProbe(Collections.singletonList(readinessPath), readinessProbeOptions))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build();

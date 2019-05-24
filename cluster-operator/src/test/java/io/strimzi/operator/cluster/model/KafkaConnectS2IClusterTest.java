@@ -141,10 +141,10 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", kc.image);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_REPLICAS, kc.replicas);
         assertEquals("strimzi/kafka-connect-s2i:latest-kafka-2.0.0", kc.sourceImageBaseName + ":" + kc.sourceImageTag);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessInitialDelay);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessTimeout);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessInitialDelay);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.livenessTimeout);
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.livenessProbeOptions.getTimeoutSeconds());
         assertEquals(defaultConfiguration, kc.getConfiguration().asOrderedProperties());
         assertFalse(kc.isInsecureSourceRepository());
     }
@@ -154,10 +154,10 @@ public class KafkaConnectS2IClusterTest {
         assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", kc.image);
         assertEquals(replicas, kc.replicas);
         assertEquals(image, kc.sourceImageBaseName + ":" + kc.sourceImageTag);
-        assertEquals(healthDelay, kc.readinessInitialDelay);
-        assertEquals(healthTimeout, kc.readinessTimeout);
-        assertEquals(healthDelay, kc.livenessInitialDelay);
-        assertEquals(healthTimeout, kc.livenessTimeout);
+        assertEquals(healthDelay, kc.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(healthTimeout, kc.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(healthDelay, kc.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(healthTimeout, kc.livenessProbeOptions.getTimeoutSeconds());
         assertEquals(expectedConfiguration, kc.getConfiguration().asOrderedProperties());
         assertEquals(bootstrapServers, kc.bootstrapServers);
         assertFalse(kc.isInsecureSourceRepository());

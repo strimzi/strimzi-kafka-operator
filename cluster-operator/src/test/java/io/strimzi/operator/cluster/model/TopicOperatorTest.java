@@ -142,10 +142,10 @@ public class TopicOperatorTest {
         Assert.assertEquals(cluster, tc.cluster);
         assertEquals(tcImage, tc.image);
         assertEquals(TopicOperatorSpec.DEFAULT_REPLICAS, tc.replicas);
-        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, tc.readinessInitialDelay);
-        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, tc.readinessTimeout);
-        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, tc.livenessInitialDelay);
-        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, tc.livenessTimeout);
+        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, tc.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, tc.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, tc.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(TopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, tc.livenessProbeOptions.getTimeoutSeconds());
         assertEquals(tcImage, tc.getImage());
         assertEquals(tcWatchedNamespace, tc.getWatchedNamespace());
         Assert.assertEquals(tcReconciliationInterval * 1000, tc.getReconciliationIntervalMs());

@@ -44,12 +44,18 @@ public class EntityTopicOperatorTest {
     {
         livenessProbe.setInitialDelaySeconds(15);
         livenessProbe.setTimeoutSeconds(20);
+        livenessProbe.setFailureThreshold(12);
+        livenessProbe.setSuccessThreshold(5);
+        livenessProbe.setPeriodSeconds(180);
     }
 
     private final Probe readinessProbe = new Probe();
     {
         readinessProbe.setInitialDelaySeconds(15);
-        livenessProbe.setInitialDelaySeconds(20);
+        readinessProbe.setInitialDelaySeconds(20);
+        readinessProbe.setFailureThreshold(12);
+        readinessProbe.setSuccessThreshold(5);
+        readinessProbe.setPeriodSeconds(180);
     }
 
     private final String toWatchedNamespace = "my-topic-namespace";
@@ -106,10 +112,16 @@ public class EntityTopicOperatorTest {
         assertEquals(namespace, entityTopicOperator.namespace);
         assertEquals(cluster, entityTopicOperator.cluster);
         assertEquals(toImage, entityTopicOperator.image);
-        assertEquals(readinessProbe.getInitialDelaySeconds(), entityTopicOperator.readinessInitialDelay);
-        assertEquals(readinessProbe.getTimeoutSeconds(), entityTopicOperator.readinessTimeout);
-        assertEquals(livenessProbe.getInitialDelaySeconds(), entityTopicOperator.livenessInitialDelay);
-        assertEquals(livenessProbe.getTimeoutSeconds(), entityTopicOperator.livenessTimeout);
+        assertEquals(readinessProbe.getInitialDelaySeconds(), entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(readinessProbe.getTimeoutSeconds(), entityTopicOperator.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(readinessProbe.getSuccessThreshold(), entityTopicOperator.readinessProbeOptions.getSuccessThreshold());
+        assertEquals(readinessProbe.getFailureThreshold(), entityTopicOperator.readinessProbeOptions.getFailureThreshold());
+        assertEquals(readinessProbe.getPeriodSeconds(), entityTopicOperator.readinessProbeOptions.getPeriodSeconds());
+        assertEquals(livenessProbe.getInitialDelaySeconds(), entityTopicOperator.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(livenessProbe.getTimeoutSeconds(), entityTopicOperator.livenessProbeOptions.getTimeoutSeconds());
+        assertEquals(livenessProbe.getSuccessThreshold(), entityTopicOperator.livenessProbeOptions.getSuccessThreshold());
+        assertEquals(livenessProbe.getFailureThreshold(), entityTopicOperator.livenessProbeOptions.getFailureThreshold());
+        assertEquals(livenessProbe.getPeriodSeconds(), entityTopicOperator.livenessProbeOptions.getPeriodSeconds());
         assertEquals(toWatchedNamespace, entityTopicOperator.getWatchedNamespace());
         assertEquals(toReconciliationInterval * 1000, entityTopicOperator.getReconciliationIntervalMs());
         assertEquals(toZookeeperSessionTimeout * 1000, entityTopicOperator.getZookeeperSessionTimeoutMs());
@@ -144,10 +156,10 @@ public class EntityTopicOperatorTest {
         assertEquals(EntityTopicOperator.defaultZookeeperConnect(cluster), entityTopicOperator.getZookeeperConnect());
         assertEquals(EntityTopicOperator.defaultBootstrapServers(cluster), entityTopicOperator.getKafkaBootstrapServers());
         assertEquals(ModelUtils.defaultResourceLabels(cluster), entityTopicOperator.getResourceLabels());
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityTopicOperator.readinessInitialDelay);
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityTopicOperator.readinessTimeout);
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityTopicOperator.livenessInitialDelay);
-        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityTopicOperator.livenessTimeout);
+        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityTopicOperator.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityTopicOperator.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityTopicOperator.livenessProbeOptions.getTimeoutSeconds());
         assertNull(entityTopicOperator.getLogging());
     }
 

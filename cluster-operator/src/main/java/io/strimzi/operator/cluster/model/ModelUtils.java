@@ -39,6 +39,12 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 public class ModelUtils {
+
+    public static final io.strimzi.api.kafka.model.Probe DEFAULT_TLS_SIDECAR_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
+            .withInitialDelaySeconds(TlsSidecar.DEFAULT_HEALTHCHECK_DELAY)
+            .withTimeoutSeconds(TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT)
+            .build();
+
     private ModelUtils() {}
 
     protected static final Logger log = LogManager.getLogger(ModelUtils.class.getName());
@@ -136,35 +142,65 @@ public class ModelUtils {
         return result;
     }
 
-    static Probe createExecProbe(List<String> command, int initialDelay, int timeout) {
-        Probe probe = new ProbeBuilder().withNewExec()
+    protected static ProbeBuilder newProbeBuilder(io.strimzi.api.kafka.model.Probe userProbe) {
+        return new ProbeBuilder()
+                .withInitialDelaySeconds(userProbe.getInitialDelaySeconds())
+                .withTimeoutSeconds(userProbe.getTimeoutSeconds())
+                .withPeriodSeconds(userProbe.getPeriodSeconds())
+                .withSuccessThreshold(userProbe.getSuccessThreshold())
+                .withFailureThreshold(userProbe.getFailureThreshold());
+    }
+
+
+    protected static Probe createTcpSocketProbe(int port, io.strimzi.api.kafka.model.Probe userProbe) {
+        Probe probe = ModelUtils.newProbeBuilder(userProbe)
+                .withNewTcpSocket()
+                .withNewPort()
+                .withIntVal(port)
+                .endPort()
+                .endTcpSocket()
+                .build();
+        log.trace("Created TCP socket probe {}", probe);
+        return probe;
+    }
+
+    protected static Probe createHttpProbe(String path, String port, io.strimzi.api.kafka.model.Probe userProbe) {
+        Probe probe = ModelUtils.newProbeBuilder(userProbe).withNewHttpGet()
+                .withPath(path)
+                .withNewPort(port)
+                .endHttpGet()
+                .build();
+        log.trace("Created http probe {}", probe);
+        return probe;
+    }
+
+    static Probe createExecProbe(List<String> command, io.strimzi.api.kafka.model.Probe userProbe) {
+        Probe probe = newProbeBuilder(userProbe).withNewExec()
                 .withCommand(command)
                 .endExec()
-                .withInitialDelaySeconds(initialDelay)
-                .withTimeoutSeconds(timeout)
                 .build();
         AbstractModel.log.trace("Created exec probe {}", probe);
         return probe;
     }
 
     static Probe tlsSidecarReadinessProbe(TlsSidecar tlsSidecar) {
-        int tlsSidecarReadinessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
-        int tlsSidecarReadinessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
+        io.strimzi.api.kafka.model.Probe tlsSidecarReadinessProbe;
         if (tlsSidecar != null && tlsSidecar.getReadinessProbe() != null) {
-            tlsSidecarReadinessInitialDelay = tlsSidecar.getReadinessProbe().getInitialDelaySeconds();
-            tlsSidecarReadinessTimeout = tlsSidecar.getReadinessProbe().getTimeoutSeconds();
+            tlsSidecarReadinessProbe = tlsSidecar.getReadinessProbe();
+        } else {
+            tlsSidecarReadinessProbe = DEFAULT_TLS_SIDECAR_PROBE;
         }
-        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarReadinessInitialDelay, tlsSidecarReadinessTimeout);
+        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarReadinessProbe);
     }
 
     static Probe tlsSidecarLivenessProbe(TlsSidecar tlsSidecar) {
-        int tlsSidecarLivenessInitialDelay = TlsSidecar.DEFAULT_HEALTHCHECK_DELAY;
-        int tlsSidecarLivenessTimeout = TlsSidecar.DEFAULT_HEALTHCHECK_TIMEOUT;
+        io.strimzi.api.kafka.model.Probe tlsSidecarLivenessProbe;
         if (tlsSidecar != null && tlsSidecar.getLivenessProbe() != null) {
-            tlsSidecarLivenessInitialDelay = tlsSidecar.getLivenessProbe().getInitialDelaySeconds();
-            tlsSidecarLivenessTimeout = tlsSidecar.getLivenessProbe().getTimeoutSeconds();
+            tlsSidecarLivenessProbe = tlsSidecar.getLivenessProbe();
+        } else {
+            tlsSidecarLivenessProbe = DEFAULT_TLS_SIDECAR_PROBE;
         }
-        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessInitialDelay, tlsSidecarLivenessTimeout);
+        return createExecProbe(Arrays.asList("/opt/stunnel/stunnel_healthcheck.sh", "2181"), tlsSidecarLivenessProbe);
     }
 
     public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
@@ -293,4 +329,5 @@ public class ModelUtils {
             throw new RuntimeException(e);
         }
     }
+
 }

@@ -18,11 +18,14 @@ import io.fabric8.kubernetes.api.model.rbac.KubernetesSubjectBuilder;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -48,6 +51,9 @@ public class EntityTopicOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
+            .withInitialDelaySeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY)
+            .withTimeoutSeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).build();
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     private String kafkaBootstrapServers;
@@ -68,7 +74,9 @@ public class EntityTopicOperator extends AbstractModel {
         super(namespace, cluster, labels);
         this.name = topicOperatorName(cluster);
         this.readinessPath = "/";
+        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";
+        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
 
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
@@ -207,18 +215,10 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? true : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setResources(topicOperatorSpec.getResources());
                 if (topicOperatorSpec.getReadinessProbe() != null) {
-                    result.setReadinessInitialDelay(topicOperatorSpec.getReadinessProbe().getInitialDelaySeconds());
-                    result.setReadinessTimeout(topicOperatorSpec.getReadinessProbe().getTimeoutSeconds());
-                } else {
-                    result.setReadinessInitialDelay(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY);
-                    result.setReadinessTimeout(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT);
+                    result.setReadinessProbe(topicOperatorSpec.getReadinessProbe());
                 }
                 if (topicOperatorSpec.getLivenessProbe() != null) {
-                    result.setLivenessInitialDelay(topicOperatorSpec.getLivenessProbe().getInitialDelaySeconds());
-                    result.setLivenessTimeout(topicOperatorSpec.getLivenessProbe().getTimeoutSeconds());
-                } else {
-                    result.setLivenessInitialDelay(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY);
-                    result.setLivenessTimeout(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT);
+                    result.setLivenessProbe(topicOperatorSpec.getLivenessProbe());
                 }
             }
         }
@@ -234,8 +234,8 @@ public class EntityTopicOperator extends AbstractModel {
                 .withArgs("/opt/strimzi/bin/topic_operator_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
-                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout))
+                .withLivenessProbe(createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessProbeOptions))
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))

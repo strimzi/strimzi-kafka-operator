@@ -46,12 +46,18 @@ public class EntityUserOperatorTest {
     {
         livenessProbe.setInitialDelaySeconds(15);
         livenessProbe.setTimeoutSeconds(20);
+        livenessProbe.setFailureThreshold(12);
+        livenessProbe.setSuccessThreshold(5);
+        livenessProbe.setPeriodSeconds(180);
     }
 
     private final Probe readinessProbe = new Probe();
     {
         readinessProbe.setInitialDelaySeconds(15);
         livenessProbe.setInitialDelaySeconds(20);
+        readinessProbe.setFailureThreshold(12);
+        readinessProbe.setSuccessThreshold(5);
+        readinessProbe.setPeriodSeconds(180);
     }
 
     private final String uoWatchedNamespace = "my-user-namespace";
@@ -108,10 +114,16 @@ public class EntityUserOperatorTest {
         assertEquals(namespace, entityUserOperator.namespace);
         assertEquals(cluster, entityUserOperator.cluster);
         assertEquals(uoImage, entityUserOperator.image);
-        assertEquals(readinessProbe.getInitialDelaySeconds(), entityUserOperator.readinessInitialDelay);
-        assertEquals(readinessProbe.getTimeoutSeconds(), entityUserOperator.readinessTimeout);
-        assertEquals(livenessProbe.getInitialDelaySeconds(), entityUserOperator.livenessInitialDelay);
-        assertEquals(livenessProbe.getTimeoutSeconds(), entityUserOperator.livenessTimeout);
+        assertEquals(readinessProbe.getInitialDelaySeconds(), entityUserOperator.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(readinessProbe.getTimeoutSeconds(), entityUserOperator.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(readinessProbe.getSuccessThreshold(), entityUserOperator.readinessProbeOptions.getSuccessThreshold());
+        assertEquals(readinessProbe.getFailureThreshold(), entityUserOperator.readinessProbeOptions.getFailureThreshold());
+        assertEquals(readinessProbe.getPeriodSeconds(), entityUserOperator.readinessProbeOptions.getPeriodSeconds());
+        assertEquals(livenessProbe.getInitialDelaySeconds(), entityUserOperator.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(livenessProbe.getTimeoutSeconds(), entityUserOperator.livenessProbeOptions.getTimeoutSeconds());
+        assertEquals(livenessProbe.getSuccessThreshold(), entityUserOperator.livenessProbeOptions.getSuccessThreshold());
+        assertEquals(livenessProbe.getFailureThreshold(), entityUserOperator.livenessProbeOptions.getFailureThreshold());
+        assertEquals(livenessProbe.getPeriodSeconds(), entityUserOperator.livenessProbeOptions.getPeriodSeconds());
         assertEquals(uoWatchedNamespace, entityUserOperator.getWatchedNamespace());
         assertEquals(uoReconciliationInterval * 1000, entityUserOperator.getReconciliationIntervalMs());
         assertEquals(uoZookeeperSessionTimeout * 1000, entityUserOperator.getZookeeperSessionTimeoutMs());
@@ -139,10 +151,10 @@ public class EntityUserOperatorTest {
         assertEquals("strimzi/operator:latest", entityUserOperator.getImage());
         assertEquals(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000, entityUserOperator.getReconciliationIntervalMs());
         assertEquals(EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000, entityUserOperator.getZookeeperSessionTimeoutMs());
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.readinessInitialDelay);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.readinessTimeout);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.livenessInitialDelay);
-        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.livenessTimeout);
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY, entityUserOperator.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT, entityUserOperator.livenessProbeOptions.getTimeoutSeconds());
         assertEquals(EntityUserOperator.defaultZookeeperConnect(cluster), entityUserOperator.getZookeeperConnect());
         assertNull(entityUserOperator.getLogging());
     }

@@ -32,6 +32,8 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.operator.common.model.Labels;
 
@@ -52,8 +54,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 3;
-    protected static final int DEFAULT_HEALTHCHECK_DELAY = 60;
-    protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    private static final int DEFAULT_HEALTHCHECK_DELAY = 60;
+    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
     protected static final boolean DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED = false;
 
     // Kafka Mirror Maker configuration keys (EnvVariables)
@@ -109,11 +112,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
-        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/";
-        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";

@@ -7,9 +7,11 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
-import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
-import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.fabric8.kubernetes.api.model.Probe;
+import io.strimzi.api.kafka.model.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
@@ -145,5 +147,13 @@ public class ModelUtilsTest {
         assertEquals(jbod, ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(jbod)));
         assertEquals(ephemeral, ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(ephemeral)));
         assertEquals(persistent, ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(persistent)));
+    }
+
+    @Test
+    public void testCreateTcpSocketProbe()  {
+        Probe probe = ModelUtils.createTcpSocketProbe(1234, new ProbeBuilder().withInitialDelaySeconds(10).withTimeoutSeconds(20).build());
+        assertEquals(new Integer(1234), probe.getTcpSocket().getPort().getIntVal());
+        assertEquals(new Integer(10), probe.getInitialDelaySeconds());
+        assertEquals(new Integer(20), probe.getTimeoutSeconds());
     }
 }
