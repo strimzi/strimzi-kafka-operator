@@ -317,4 +317,36 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         }
         return resource.getMetadata().getUid();
     }
+
+    /**
+     * Asynchronously deletes the resource with the given {@code name} in the given {@code namespace}.
+     *
+     * @param namespace Namespace of the resource which should be deleted
+     * @param name Name of the resource which should be deleted
+     * @param cascading Defines whether the deletion should be cascading or not
+     *
+     * @return A Future with True if the deletion succeeded and False when it failed.
+     */
+    public Future<Void> deleteAsync(String namespace, String name, boolean cascading) {
+        Future<Void> result = Future.future();
+        vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
+            future -> {
+                try {
+                    Boolean deleted = operation().inNamespace(namespace).withName(name).cascading(cascading).delete();
+
+                    if (deleted) {
+                        log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
+                        future.complete();
+                    } else  {
+                        log.error("{} {} in namespace {} has been not been deleted", resourceKind, name, namespace);
+                        future.fail(resourceKind + " " + name + " in namespace " + namespace + " has been not been deleted");
+                    }
+                } catch (Exception e) {
+                    log.debug("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
+                    future.fail(e);
+                }
+            }, true, result.completer()
+        );
+        return result;
+    }
 }

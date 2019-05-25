@@ -30,14 +30,20 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.exceptions.base.MockitoException;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -370,6 +376,150 @@ public class StatefulSetOperatorTest
             assertTrue(ar.succeeded());
             verify(mockERPD).delete();
             async.complete();
+        });
+    }
+
+    @Test
+    public void testCascadingDeleteAsync(TestContext context)   {
+        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+        when(mockERPD.delete()).thenReturn(Boolean.TRUE);
+
+        RollableScalableResource mockRSR = mock(RollableScalableResource.class);
+        ArgumentCaptor<Boolean> cascadingCaptor = ArgumentCaptor.forClass(Boolean.class);
+        when(mockRSR.cascading(cascadingCaptor.capture())).thenReturn(mockERPD);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockRSR);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
+
+        PodOperator podOperator = mock(PodOperator.class);
+        PvcOperator pvcOperator = mock(PvcOperator.class);
+
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        mocker(mockClient, mockCms);
+
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
+                return true;
+            }
+        };
+
+        op.deleteAsync("myns", "mysts", true).setHandler(res -> {
+            if (res.succeeded())    {
+                assertTrue(cascadingCaptor.getValue());
+            } else {
+                fail();
+            }
+        });
+    }
+
+    @Test
+    public void testNonCascadingDeleteAsync(TestContext context)   {
+        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+        when(mockERPD.delete()).thenReturn(Boolean.TRUE);
+
+        RollableScalableResource mockRSR = mock(RollableScalableResource.class);
+        ArgumentCaptor<Boolean> cascadingCaptor = ArgumentCaptor.forClass(Boolean.class);
+        when(mockRSR.cascading(cascadingCaptor.capture())).thenReturn(mockERPD);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockRSR);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
+
+        PodOperator podOperator = mock(PodOperator.class);
+        PvcOperator pvcOperator = mock(PvcOperator.class);
+
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        mocker(mockClient, mockCms);
+
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
+                return true;
+            }
+        };
+
+        op.deleteAsync("myns", "mysts", false).setHandler(res -> {
+            if (res.succeeded())    {
+                assertFalse(cascadingCaptor.getValue());
+            } else {
+                fail();
+            }
+        });
+    }
+
+    @Test
+    public void testDeleteAsyncNotDeleted(TestContext context)   {
+        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+        when(mockERPD.delete()).thenReturn(Boolean.FALSE);
+
+        RollableScalableResource mockRSR = mock(RollableScalableResource.class);
+        when(mockRSR.cascading(anyBoolean())).thenReturn(mockERPD);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockRSR);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
+
+        PodOperator podOperator = mock(PodOperator.class);
+        PvcOperator pvcOperator = mock(PvcOperator.class);
+
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        mocker(mockClient, mockCms);
+
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
+                return true;
+            }
+        };
+
+        op.deleteAsync("myns", "mysts", false).setHandler(res -> {
+            if (res.succeeded())    {
+                fail();
+            }
+        });
+    }
+
+    @Test
+    public void testDeleteAsyncFailing(TestContext context)   {
+        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
+        when(mockERPD.delete()).thenThrow(new MockitoException("Something failed"));
+
+        RollableScalableResource mockRSR = mock(RollableScalableResource.class);
+        when(mockRSR.cascading(anyBoolean())).thenReturn(mockERPD);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockRSR);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
+
+        PodOperator podOperator = mock(PodOperator.class);
+        PvcOperator pvcOperator = mock(PvcOperator.class);
+
+        KubernetesClient mockClient = mock(KubernetesClient.class);
+        mocker(mockClient, mockCms);
+
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+            @Override
+            protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
+                return true;
+            }
+        };
+
+        op.deleteAsync("myns", "mysts", false).setHandler(res -> {
+            if (res.succeeded())    {
+                fail();
+            } else {
+                assertEquals("Something failed", res.cause().getMessage());
+            }
         });
     }
 }

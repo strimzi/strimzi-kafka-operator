@@ -149,7 +149,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.podOperations = supplier.podOperations;
         this.ingressOperations = supplier.ingressOperations;
         this.storageClassOperator = supplier.storageClassOperations;
-
     }
 
     @Override
@@ -1584,7 +1583,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             result.complete();
                         } else {
                             // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
-                            Quantity currentSize = currentPvc.getStatus().getCapacity().get("storage");
+                            //Quantity currentSize = currentPvc.getStatus().getCapacity().get("storage");
+                            Quantity currentSize = currentPvc.getSpec().getResources().getRequests().get("storage");
                             Quantity desiredSize = desiredPvc.getSpec().getResources().getRequests().get("storage");
 
                             if (!desiredSize.equals(currentSize))   {
@@ -1719,7 +1719,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     List<PersistentVolumeClaim> desiredPvcs = zkCluster.generatePersistentVolumeClaims();
                     Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(zkCluster.getSelectorLabels()));
 
-                    maybeCleanPodAndPvc(res.result(), desiredPvcs, existingPvcsFuture).setHandler(resultFuture.completer());
+                    maybeCleanPodAndPvc(zkSetOperations, res.result(), desiredPvcs, existingPvcsFuture).setHandler(resultFuture.completer());
                 } else {
                     resultFuture.fail(res.cause());
                 }
@@ -1749,7 +1749,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, Labels.fromMap(kafkaCluster.getSelectorLabels()));
 
-                    maybeCleanPodAndPvc(sts, desiredPvcs, existingPvcsFuture).setHandler(resultFuture.completer());
+                    maybeCleanPodAndPvc(kafkaSetOperations, sts, desiredPvcs, existingPvcsFuture).setHandler(resultFuture.completer());
                 } else {
                     resultFuture.fail(res.cause());
                 }
@@ -1773,7 +1773,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @param existingPvcsFuture    Future which will return a list of PVCs which actually exist
          * @return
          */
-        Future<Void> maybeCleanPodAndPvc(StatefulSet sts, List<PersistentVolumeClaim> desiredPvcs, Future<List<PersistentVolumeClaim>> existingPvcsFuture)  {
+        /*Future<Void> maybeCleanPodAndPvc(StatefulSet sts, List<PersistentVolumeClaim> desiredPvcs, Future<List<PersistentVolumeClaim>> existingPvcsFuture)  {
             if (sts != null) {
                 log.debug("{}: Considering manual cleaning of Pods for StatefulSet {}", reconciliation, sts.getMetadata().getName());
 
@@ -1814,6 +1814,175 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             return Future.succeededFuture();
+        }*/
+
+        /**
+         * Internal method for checking Pods and PVCs for deletion. It goes through the pods and checks the annotations
+         * to decide whether they should be deleted. For the first pod marked to be deleted, it will gather the existing
+         * and desired PVCs to be able to delete and recreate them.
+         *
+         * This method exits with the first Pod it finds where deletion is required. The deletion is done asynchronously
+         * so if we deleted multiple pods at the same time we would either need to sync the deletions of different pods
+         * to not happen in parallel or have a risk that there will be several pods deleted at the same time (which can
+         * affect availability). If multiple pods are marked for deletion, the next one will be deleted in the next loop.
+         *
+         * @param stsOperator           StatefulSet Operator for managing stateful sets
+         * @param sts                   StatefulSet which owns the pods which should be checked for deletion
+         * @param desiredPvcs           The list of PVCs which should exist
+         * @param existingPvcsFuture    Future which will return a list of PVCs which actually exist
+         * @return
+         */
+        Future<Void> maybeCleanPodAndPvc(StatefulSetOperator stsOperator, StatefulSet sts, List<PersistentVolumeClaim> desiredPvcs, Future<List<PersistentVolumeClaim>> existingPvcsFuture)  {
+            if (sts != null) {
+                log.debug("{}: Considering manual cleaning of Pods for StatefulSet {}", reconciliation, sts.getMetadata().getName());
+
+                String stsName = sts.getMetadata().getName();
+
+                for (int i = 0; i < sts.getSpec().getReplicas(); i++) {
+                    String podName = stsName + "-" + i;
+                    Pod pod = podOperations.get(namespace, podName);
+
+                    if (pod != null) {
+                        if (Annotations.booleanAnnotation(pod, AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC,
+                                false, AbstractScalableResourceOperator.ANNO_OP_STRIMZI_IO_DELETE_POD_AND_PVC)) {
+                            log.debug("{}: Pod and PVCs for {} should be deleted based on annotation", reconciliation, podName);
+
+                            return existingPvcsFuture
+                                    .compose(existingPvcs -> {
+                                        List<PersistentVolumeClaim> deletePvcs;
+
+                                        if (existingPvcs != null) {
+                                            deletePvcs = existingPvcs
+                                                    .stream()
+                                                    .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
+                                                    .collect(Collectors.toList());
+                                        } else {
+                                            deletePvcs = new ArrayList<>();
+                                        }
+
+                                        List<PersistentVolumeClaim> createPvcs = desiredPvcs
+                                                .stream()
+                                                .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
+                                                .collect(Collectors.toList());
+
+                                        return cleanPodAndPvc(stsOperator, sts, podName, deletePvcs, createPvcs);
+                                    });
+                        }
+                    }
+                }
+            }
+
+            return Future.succeededFuture();
+        }
+
+        /**
+         * This is an internal method which actually executes the deletion of the Pod and PVC. This is a non-trivial
+         * since the PVC and the Pod are tightly coupled and one cannot be deleted without the other. Also, the
+         * StatefulSet controller will recreate the deleted Pod and make it hard to recreate the PVCs manually.
+         *
+         * To address these, we:
+         *     1. Delete the STS in non-cascading delete
+         *     2. Delete the Pod
+         *     3. Delete the PVC
+         *     4. Wait for the Pod to be actually deleted
+         *     5. Wait for the PVCs to be actually deleted
+         *     6. Recreate the PVCs
+         *     7. Recreate the STS (which will in turn recreate the Pod)
+         *     5. Wait for Pod readiness
+         *
+         * @param stsOperator       StatefulSet Operator for managing stateful sets
+         * @param sts               The current StatefulSet to which the cleaned pod belongs
+         * @param podName           Name of the pod which should be deleted
+         * @param deletePvcs        The list of PVCs which should be deleted
+         * @param createPvcs        The list of PVCs which should be recreated
+         * @return
+         */
+        Future<Void> cleanPodAndPvc(StatefulSetOperator stsOperator, StatefulSet sts, String podName, List<PersistentVolumeClaim> deletePvcs, List<PersistentVolumeClaim> createPvcs) {
+            long pollingIntervalMs = 1_000;
+            long timeoutMs = operationTimeoutMs;
+
+            // We start by deleting the StatefulSet so that it doesn't interfere with the pod deletion process
+            // The deletion has to be non-cascading so that the other pods are not affected
+            Future<Void> fut = stsOperator.deleteAsync(namespace, sts.getMetadata().getName(), false)
+                    .compose(ignored -> {
+                        // After the StatefulSet is deleted, we can delete the pod which was marked for deletion
+                        return podOperations.reconcile(namespace, podName, null);
+                    })
+                    .compose(ignored -> {
+                        // With the pod deleting, we can delete all the PVCs belonging to this pod
+                        List<Future> deleteResults = new ArrayList<>(deletePvcs.size());
+
+                        for (PersistentVolumeClaim pvc : deletePvcs)    {
+                            String pvcName = pvc.getMetadata().getName();
+                            log.debug("{}: Deleting PVC {} for Pod {} based on {} annotation", reconciliation, pvcName, podName, AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC);
+                            deleteResults.add(pvcOperations.reconcile(namespace, pvcName, null));
+                        }
+                        return CompositeFuture.join(deleteResults);
+                    })
+                    .compose(ignored -> {
+                        // The pod deletion just triggers it asynchronously
+                        // We have to wait for the pod to be actually deleted
+                        log.debug("{}: Checking if Pod {} has been deleted", reconciliation, podName);
+
+                        Future<Void> waitForDeletion = podOperations.waitFor(namespace, podName, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                            Pod deletion = podOperations.get(namespace, podName);
+                            log.trace("Checking if Pod {} in namespace {} has been deleted or recreated", podName, namespace);
+                            return deletion == null;
+                        });
+
+                        return waitForDeletion;
+                    })
+                    .compose(ignored -> {
+                        // Once the pod is deleted, the PVCs should delete as well
+                        // Faked PVCs on Minishift etc. might delete while the pod is running, real PVCs will not
+                        List<Future> waitForDeletionResults = new ArrayList<>(deletePvcs.size());
+
+                        for (PersistentVolumeClaim pvc : deletePvcs)    {
+                            String pvcName = pvc.getMetadata().getName();
+                            String uid = pvc.getMetadata().getUid();
+
+                            log.debug("{}: Checking if PVC {} for Pod {} has been deleted", reconciliation, pvcName, podName);
+
+                            Future<Void> waitForDeletion = pvcOperations.waitFor(namespace, pvcName, pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                                PersistentVolumeClaim deletion = pvcOperations.get(namespace, pvcName);
+                                log.trace("Checking if {} {} in namespace {} has been deleted", pvc.getKind(), pvcName, namespace);
+                                return deletion == null || (deletion.getMetadata() != null && !uid.equals(deletion.getMetadata().getUid()));
+                            });
+
+                            waitForDeletionResults.add(waitForDeletion);
+                        }
+
+                        return CompositeFuture.join(waitForDeletionResults);
+                    })
+                    .compose(ignored -> {
+                        // Once everything was deleted, we can start recreating it.
+                        // First we recreate the PVCs
+                        List<Future> createResults = new ArrayList<>(createPvcs.size());
+
+                        for (PersistentVolumeClaim pvc : createPvcs)    {
+                            log.debug("{}: Reconciling PVC {} for Pod {} after it was deleted and maybe recreated by the pod", reconciliation, pvc.getMetadata().getName(), podName);
+                            createResults.add(pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc));
+                        }
+
+                        return CompositeFuture.join(createResults);
+                    })
+                    .compose(ignored -> {
+                        // After the PVCs we recreate the StatefulSet which will in turn recreate the missing Pod
+                        // We cannot use the new StatefulSet here because there might have been some other changes for
+                        // which we are not yet ready - e.g. changes to off-cluster access etc. which might not work
+                        // without the CO creating some other infrastructure.
+                        // Therefore we use the old STS and just remove some things such as Status, ResourceVersion, UID
+                        // or self link. These will be recreated by Kubernetes after it is created.
+                        sts.getMetadata().setResourceVersion(null);
+                        sts.getMetadata().setSelfLink(null);
+                        sts.getMetadata().setUid(null);
+                        sts.setStatus(null);
+
+                        return stsOperator.reconcile(namespace, sts.getMetadata().getName(), sts);
+                    })
+                    .compose(ignored -> podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs));
+
+            return fut;
         }
 
         /**
@@ -1833,7 +2002,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @param createPvcs The list of PVCs which should be recreated
          * @return
          */
-        Future<Void> cleanPodAndPvc(String podName, List<PersistentVolumeClaim> deletePvcs, List<PersistentVolumeClaim> createPvcs) {
+        /*Future<Void> cleanPodAndPvc(String podName, List<PersistentVolumeClaim> deletePvcs, List<PersistentVolumeClaim> createPvcs) {
             long pollingIntervalMs = 1_000;
             long timeoutMs = operationTimeoutMs;
 
@@ -1881,7 +2050,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(ignored -> podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs));
 
             return fut;
-        }
+        }*/
 
         /**
          * Deletion of PVCs after the cluster is deleted is handled by owner reference and garbage collection. However,
