@@ -23,7 +23,7 @@ import java.util.List;
 
 public class K8sImpl implements K8s {
 
-    private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
+    private final static Logger LOGGER = LogManager.getLogger(K8sImpl.class);
 
     private final Labels labels;
     private final String namespace;
@@ -43,7 +43,9 @@ public class K8sImpl implements K8s {
     public void createResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                operation().inNamespace(namespace).create(topicResource);
+                KafkaTopic kafkaTopic = operation().inNamespace(namespace).create(topicResource);
+                LOGGER.debug("KafkaTopic {} created with version {}", kafkaTopic.getMetadata().getName(),
+                        kafkaTopic.getMetadata().getResourceVersion());
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -55,7 +57,9 @@ public class K8sImpl implements K8s {
     public void updateResource(KafkaTopic topicResource, Handler<AsyncResult<Void>> handler) {
         vertx.executeBlocking(future -> {
             try {
-                operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(topicResource);
+                KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(topicResource);
+                LOGGER.debug("KafkaTopic {} updated with version {}", kafkaTopic.getMetadata().getName(),
+                        kafkaTopic.getMetadata().getResourceVersion());
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -69,6 +73,7 @@ public class K8sImpl implements K8s {
             try {
                 // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
                 operation().inNamespace(namespace).withName(resourceName.toString()).delete();
+                LOGGER.debug("KafkaTopic {} deleted", resourceName.toString());
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);

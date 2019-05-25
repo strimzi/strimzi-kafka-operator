@@ -199,7 +199,7 @@ public class Session extends AbstractVerticle {
                     public void handle(Long oldTimerId) {
                         if (!stopped) {
                             timerId = null;
-                            topicOperator.reconcileAllTopics("periodic").setHandler(result -> {
+                            topicOperator.reconcileAllTopics(oldTimerId == null ? "initial " : "periodic ").setHandler(result -> {
                                 if (!stopped) {
                                     timerId = vertx.setTimer(interval, this);
                                 }
