@@ -67,10 +67,10 @@ spec:
                       items:
                         type: object
                         properties:
-                          broker:
-                            type: integer
                           class:
                             type: string
+                          broker:
+                            type: integer
                     selector:
                       type: object
                     size:
@@ -98,10 +98,10 @@ spec:
                             items:
                               type: object
                               properties:
-                                broker:
-                                  type: integer
                                 class:
                                   type: string
+                                broker:
+                                  type: integer
                           selector:
                             type: object
                           size:
@@ -1128,10 +1128,10 @@ spec:
                       items:
                         type: object
                         properties:
-                          broker:
-                            type: integer
                           class:
                             type: string
+                          broker:
+                            type: integer
                     selector:
                       type: object
                     size:

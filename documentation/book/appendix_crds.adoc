@@ -143,10 +143,10 @@ Used in: xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 [options="header"]
 |====
 |Field          |Description
-|broker  1.2+<.<|Id of the kafka broker (broker identifier).
-|integer
 |class   1.2+<.<|The storage class to use for dynamic volume allocation for this broker.
 |string
+|broker  1.2+<.<|Id of the kafka broker (broker identifier).
+|integer
 |====
 
 [id='type-JbodStorage-{context}']
