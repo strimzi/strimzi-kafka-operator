@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.storage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,6 +12,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,6 +34,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
     private String storageClass;
     private Map<String, String> selector;
     private boolean deleteClaim;
+    private List<PersistentClaimStorageOverride> overrides;
 
     private Integer id;
 
@@ -93,5 +95,16 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     public void setDeleteClaim(boolean deleteClaim) {
         this.deleteClaim = deleteClaim;
+    }
+
+    @Description("Overrides for individual brokers. " +
+            "The `overrides` field allows to specify a different configuration for different brokers.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<PersistentClaimStorageOverride> getOverrides() {
+        return overrides;
+    }
+
+    public void setOverrides(List<PersistentClaimStorageOverride> overrides) {
+        this.overrides = overrides;
     }
 }

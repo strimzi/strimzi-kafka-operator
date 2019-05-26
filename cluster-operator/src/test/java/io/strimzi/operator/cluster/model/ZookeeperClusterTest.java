@@ -22,14 +22,15 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
-import io.strimzi.api.kafka.model.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.RackBuilder;
-import io.strimzi.api.kafka.model.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -799,6 +800,50 @@ public class ZookeeperClusterTest {
         for (PersistentVolumeClaim pvc : pvcs) {
             assertEquals(new Quantity("100Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
             assertEquals("gp2-ssd", pvc.getSpec().getStorageClassName());
+            assertTrue(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME));
+            assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
+            assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsPersistentWithOverride() {
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson))
+                .editSpec()
+                .editZookeeper()
+                .withNewPersistentClaimStorage()
+                    .withStorageClass("gp2-ssd")
+                    .withDeleteClaim(false)
+                    .withSize("100Gi")
+                    .withOverrides(new PersistentClaimStorageOverrideBuilder()
+                            .withBroker(1)
+                            .withStorageClass("gp2-ssd-az1")
+                            .build())
+                .endPersistentClaimStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage()), zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
+
+        assertEquals(3, pvcs.size());
+
+        for (int i = 0; i < 3; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+
+            assertEquals(new Quantity("100Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
+
+            if (i != 1) {
+                assertEquals("gp2-ssd", pvc.getSpec().getStorageClassName());
+            } else {
+                assertEquals("gp2-ssd-az1", pvc.getSpec().getStorageClassName());
+            }
+
             assertTrue(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME));
             assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
             assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));

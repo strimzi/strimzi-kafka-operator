@@ -4,10 +4,11 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.EphemeralStorageBuilder;
-import io.strimzi.api.kafka.model.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
+import io.strimzi.api.kafka.model.storage.Storage;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -50,6 +51,48 @@ public class StorageDiffTest {
         assertFalse(new StorageDiff(persistent, persistent2).changesType());
         assertFalse(new StorageDiff(persistent, persistent2).isEmpty());
         assertFalse(new StorageDiff(persistent, persistent2).shrinkSize());
+    }
+
+    @Test
+    public void testPersistentDiffWithOverrides()    {
+        Storage persistent = new PersistentClaimStorageBuilder()
+                .withStorageClass("gp2-ssd")
+                .withDeleteClaim(false)
+                .withId(0)
+                .withSize("100Gi")
+                .build();
+        Storage persistent2 = new PersistentClaimStorageBuilder()
+                .withStorageClass("gp2-ssd")
+                .withDeleteClaim(false)
+                .withId(0)
+                .withSize("100Gi")
+                .withOverrides(new PersistentClaimStorageOverrideBuilder()
+                        .withBroker(1)
+                        .withStorageClass("gp2-ssd-az1")
+                        .build())
+                .build();
+        Storage persistent3 = new PersistentClaimStorageBuilder()
+                .withStorageClass("gp2-ssd")
+                .withDeleteClaim(false)
+                .withId(0)
+                .withSize("100Gi")
+                .withOverrides(new PersistentClaimStorageOverrideBuilder()
+                        .withBroker(1)
+                        .withStorageClass("gp2-ssd-az2")
+                        .build())
+                .build();
+
+        assertFalse(new StorageDiff(persistent, persistent).changesType());
+        assertTrue(new StorageDiff(persistent, persistent).isEmpty());
+        assertFalse(new StorageDiff(persistent, persistent).shrinkSize());
+
+        assertFalse(new StorageDiff(persistent, persistent2).changesType());
+        assertFalse(new StorageDiff(persistent, persistent2).isEmpty());
+        assertFalse(new StorageDiff(persistent, persistent2).shrinkSize());
+
+        assertFalse(new StorageDiff(persistent2, persistent3).changesType());
+        assertFalse(new StorageDiff(persistent2, persistent3).isEmpty());
+        assertFalse(new StorageDiff(persistent2, persistent3).shrinkSize());
     }
 
     @Test

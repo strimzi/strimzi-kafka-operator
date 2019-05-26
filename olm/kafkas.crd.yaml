@@ -57,6 +57,15 @@ spec:
                     id:
                       type: integer
                       minimum: 0
+                    overrides:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          broker:
+                            type: integer
+                          class:
+                            type: string
                     selector:
                       type: object
                     size:
@@ -79,6 +88,15 @@ spec:
                           id:
                             type: integer
                             minimum: 0
+                          overrides:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                broker:
+                                  type: integer
+                                class:
+                                  type: string
                           selector:
                             type: object
                           size:
@@ -1100,6 +1118,15 @@ spec:
                     id:
                       type: integer
                       minimum: 0
+                    overrides:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          broker:
+                            type: integer
+                          class:
+                            type: string
                     selector:
                       type: object
                     size:
