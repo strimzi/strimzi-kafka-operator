@@ -5,7 +5,7 @@
 [id='proc-resizing-persistent-volumes-{context}']
 = Resizing persistent volumes
 
-This procedure described how to increase the size of persistent volumes used by existing {ProductName} cluster.
+This procedure describes how to increase the size of persistent volumes used by existing {ProductName} cluster.
 This procedure can be applied to clusters using a single persistent volumes as well as to clusters using multiple persistent volumes in a JBOD storage.
 
 NOTE: {ProductPlatformName} currently supports only increasing size of persistent volumes.
