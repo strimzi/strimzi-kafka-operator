@@ -60,6 +60,7 @@ direct=`mktemp -d`
 resources_to_fetch=(
 	"deployments"
 	"statefulsets"
+	"replicasets"
 	"configmaps"
 	"secrets"
 	"services"
@@ -69,6 +70,7 @@ resources_to_fetch=(
 	"networkpolicies"
 	"routes"
 	"pods"
+	"persistentvolumeclaims"
 	)
 
 nonnamespaced_resources_to_fetch=(
@@ -146,6 +148,10 @@ co_pod=$($platform get pod -l strimzi.io/kind=cluster-operator -o name -n $names
 $platform get pod -l strimzi.io/kind=cluster-operator -o yaml -n $namespace > $direct/reports/deployments/cluster-operator.yaml
 $platform logs $co_pod -n $namespace > $direct/reports/podLogs/cluster-operator.yaml
 $platform logs $co_pod -p -n $namespace 2>/dev/null > $direct/reports/podLogs/previous-cluster-operator.yaml
+
+# getting CO replicaset
+co_rs=$($platform get replicaset -l strimzi.io/kind=cluster-operator -o name -n $namespace)
+$platform describe $co_rs -n $namespace > $direct/reports/replicasets/cluster-operator-replicaset.yaml
 
 #Kafka, KafkaConnect, KafkaConnectS2i, KafkaTopic, KafkaUser, KafkaMirrorMaker
 echo "CRs:"
