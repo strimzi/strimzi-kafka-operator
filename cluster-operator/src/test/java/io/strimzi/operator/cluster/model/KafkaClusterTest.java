@@ -30,16 +30,17 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
-import io.strimzi.api.kafka.model.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.RackBuilder;
-import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -1675,7 +1676,117 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void testGeneratePersistentVolumeClaimsPersistentWithOverride() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withNewPersistentClaimStorage()
+                    .withStorageClass("gp2-ssd")
+                    .withDeleteClaim(false)
+                    .withSize("100Gi")
+                    .withOverrides(new PersistentClaimStorageOverrideBuilder()
+                            .withBroker(1)
+                            .withStorageClass("gp2-ssd-az1")
+                            .build())
+                .endPersistentClaimStorage()
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
+
+        assertEquals(3, pvcs.size());
+
+        for (int i = 0; i < 3; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+
+            assertEquals(new Quantity("100Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
+
+            if (i != 1) {
+                assertEquals("gp2-ssd", pvc.getSpec().getStorageClassName());
+            } else {
+                assertEquals("gp2-ssd-az1", pvc.getSpec().getStorageClassName());
+            }
+
+            assertTrue(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME));
+            assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
+            assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
     public void testGeneratePersistentVolumeClaimsJbod() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withStorage(new JbodStorageBuilder().withVolumes(
+                        new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd")
+                                .withDeleteClaim(false)
+                                .withId(0)
+                                .withSize("100Gi")
+                                .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(1).withStorageClass("gp2-ssd-az1").build())
+                                .build(),
+                        new PersistentClaimStorageBuilder()
+                                .withStorageClass("gp2-st1")
+                                .withDeleteClaim(true)
+                                .withId(1)
+                                .withSize("1000Gi")
+                                .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(1).withStorageClass("gp2-st1-az1").build())
+                                .build())
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check Storage annotation on STS
+        assertEquals(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage()), kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE));
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
+
+        assertEquals(6, pvcs.size());
+
+        for (int i = 0; i < 3; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+            assertEquals(new Quantity("100Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
+
+            if (i != 1) {
+                assertEquals("gp2-ssd", pvc.getSpec().getStorageClassName());
+            } else {
+                assertEquals("gp2-ssd-az1", pvc.getSpec().getStorageClassName());
+            }
+
+            assertTrue(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME));
+            assertEquals(0, pvc.getMetadata().getOwnerReferences().size());
+            assertEquals("false", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+
+        for (int i = 3; i < 6; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+            assertEquals(new Quantity("1000Gi"), pvc.getSpec().getResources().getRequests().get("storage"));
+
+            if (i != 4) {
+                assertEquals("gp2-st1", pvc.getSpec().getStorageClassName());
+            } else {
+                assertEquals("gp2-st1-az1", pvc.getSpec().getStorageClassName());
+            }
+
+            assertTrue(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME));
+            assertEquals(1, pvc.getMetadata().getOwnerReferences().size());
+            assertEquals("true", pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM));
+        }
+    }
+
+    @Test
+    public void testGeneratePersistentVolumeClaimsJbodWithOverrides() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafkaCluster(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, configuration, emptyMap()))
                 .editSpec()

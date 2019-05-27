@@ -55,12 +55,13 @@ import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudgetBuilder;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.JbodStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonObject;
@@ -636,13 +637,21 @@ public abstract class AbstractModel {
         return pvc;
     }
 
-    protected PersistentVolumeClaim createPersistentVolumeClaim(String name, PersistentClaimStorage storage) {
+    protected PersistentVolumeClaim createPersistentVolumeClaim(int podNumber, String name, PersistentClaimStorage storage) {
         Map<String, Quantity> requests = new HashMap<>();
         requests.put("storage", new Quantity(storage.getSize(), null));
 
         LabelSelector selector = null;
         if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
             selector = new LabelSelector(null, storage.getSelector());
+        }
+
+        String storageClass = storage.getStorageClass();
+        if (storage.getOverrides() != null) {
+            storageClass = storage.getOverrides().stream().filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == podNumber && broker.getStorageClass() != null)
+                    .map(PersistentClaimStorageOverride::getStorageClass)
+                    .findAny()
+                    .orElse(storageClass);
         }
 
         PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
@@ -657,7 +666,7 @@ public abstract class AbstractModel {
                     .withNewResources()
                         .withRequests(requests)
                     .endResources()
-                    .withStorageClassName(storage.getStorageClass())
+                    .withStorageClassName(storageClass)
                     .withSelector(selector)
                 .endSpec()
                 .build();

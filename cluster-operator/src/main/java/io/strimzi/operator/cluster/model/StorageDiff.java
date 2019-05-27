@@ -6,10 +6,10 @@ package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
-import io.strimzi.api.kafka.model.JbodStorage;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.operator.resource.AbstractResourceDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +35,6 @@ public class StorageDiff extends AbstractResourceDiff {
         this(current, desired, "");
     }
 
-    //@SuppressFBWarnings("unchecked")
     public StorageDiff(Storage current, Storage desired, String volumeDesc) {
         boolean changesType = false;
         boolean shrinkSize = false;

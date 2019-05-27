@@ -2,46 +2,44 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model;
+package io.strimzi.api.kafka.model.storage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
-import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
-/**
- * Representation for ephemeral storage.
- */
-@Buildable(
-        editableEnabled = false,
-        generateBuilderPackage = false,
-        builderPackage = "io.fabric8.kubernetes.api.builder"
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type"
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = EphemeralStorage.class, name = Storage.TYPE_EPHEMERAL),
+        @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class EphemeralStorage extends SingleVolumeStorage {
+public abstract class SingleVolumeStorage extends Storage {
 
     private static final long serialVersionUID = 1L;
 
     private Integer id;
 
-    @Description("Must be `" + TYPE_EPHEMERAL + "`")
     @Override
-    public String getType() {
-        return TYPE_EPHEMERAL;
-    }
+    @Description("Storage type, must be either 'ephemeral' or 'persistent-claim'.")
+    public abstract String getType();
 
-    @Override
     @Description("Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'")
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getId() {
-        return super.getId();
+        return id;
     }
 
-    @Override
     public void setId(Integer id) {
-        super.setId(id);
+        this.id = id;
     }
 }
