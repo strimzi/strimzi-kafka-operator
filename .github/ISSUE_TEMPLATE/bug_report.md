@@ -26,11 +26,12 @@ A clear and concise description of what you expected to happen.
  - Kubernetes cluster: [e.g. Kubernetes 1.14, OpenShift 3.9]
  - Infrastructure: [e.g. Amazon EKS, Minikube]
 
-**Custom Resource YAMLs**
-Attach or copy paste the custom resources you used.
+**YAML files and logs**
 
-**Logs**
-Attach or copy and paste the relevant logs.
+Attach or copy paste the custom resources you used to deploy the Kafka cluster and the relevant YAMLs created by the Cluster Operator.
+Attach or copy and paste also the relevant logs.
+
+*To easily collect all YAMLs and logs, you can use our [report script](https://github.com/strimzi/strimzi-kafka-operator/blob/master/tools/report.sh) whcih will automatically collect all files and prepare a ZIP archive which can be easily attached to this issue.*
 
 **Additional context**
 Add any other context about the problem here.
