@@ -68,6 +68,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_PASSWORD_FILE = "KAFKA_BRIDGE_SASL_PASSWORD_FILE";
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_USERNAME = "KAFKA_BRIDGE_SASL_USERNAME";
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM = "KAFKA_BRIDGE_SASL_MECHANISM";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED = "KAFKA_BRIDGE_HTTP_ENABLED";
 
     protected String bootstrapServers;
     private KafkaBridgeTls tls;
@@ -76,6 +77,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     private String username;
     private String saslMechanism;
     private KafkaBridgeHttpConfig http;
+    private boolean httpEnabled = false;
 
     /**
      * Constructor
@@ -90,10 +92,10 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.serviceName = name + "-service";
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
         this.replicas = DEFAULT_REPLICAS;
-        this.readinessPath = "/";
+        this.readinessPath = "/readiness";
         this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
-        this.livenessPath = "/";
+        this.livenessPath = "/readiness";
         this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED;
@@ -189,7 +191,13 @@ public class KafkaBridgeCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
         }
 
-        kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
+        if (spec.getHttp() != null) {
+            kafkaBridgeCluster.setHttpEnabled(true);
+            kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
+        } else {
+            // TODO amqp
+            log.warn("No protocol specified.");
+        }
         kafkaBridgeCluster.setOwnerReference(kafkaBridge);
 
         return kafkaBridgeCluster;
@@ -328,6 +336,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED, String.valueOf(httpEnabled)));
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
@@ -443,5 +452,13 @@ public class KafkaBridgeCluster extends AbstractModel {
      */
     public static String containerServiceAccountName(String bridgeResourceName) {
         return kafkaBridgeClusterName(bridgeResourceName);
+    }
+
+    /**
+     * Set whether the HTTP is enabled
+     * @param httpEnabled HTTP enabled
+     */
+    protected void setHttpEnabled(boolean httpEnabled) {
+        this.httpEnabled = httpEnabled;
     }
 }

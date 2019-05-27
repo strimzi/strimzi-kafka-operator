@@ -6,5 +6,7 @@ spec:
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9092
   image: strimzi/kafka-bridge:latest
+  http:
+    port: 8080
  
 
