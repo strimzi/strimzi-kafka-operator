@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 oc_installed=false
 kubectl_installed=false
@@ -186,5 +186,9 @@ $platform get event -n $namespace > /$direct/reports/events/events.yaml
 
 filename=`date +"%d-%m-%Y_%H-%M-%S"`
 filename=report-"$filename"
-zip -qr $filename.zip /$direct/reports/
+olddir=$(pwd)
+cd /$direct
+zip -qr $filename.zip ./reports/
+cd $olddir
+mv /$direct/$filename.zip ./
 echo "Report file $filename.zip created"
