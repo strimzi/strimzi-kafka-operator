@@ -44,7 +44,7 @@ import static java.util.Collections.unmodifiableList;
                         @Crd.Spec.Version(
                                 name = KafkaBridge.V1ALPHA1,
                                 served = true,
-                                storage = false
+                                storage = true
                         )
                 },
                 additionalPrinterColumns = {
@@ -86,7 +86,7 @@ public class KafkaBridge extends CustomResource implements UnknownPropertyPreser
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
     public static final String RESOURCE_PLURAL = "kafkabridges";
     public static final String RESOURCE_SINGULAR = "kafkabridge";
-    public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1alpha1";
+    public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kb";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
