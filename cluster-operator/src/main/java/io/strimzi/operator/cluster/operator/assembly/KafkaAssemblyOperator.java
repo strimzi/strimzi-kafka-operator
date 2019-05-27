@@ -1583,7 +1583,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             result.complete();
                         } else {
                             // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
-                            //Quantity currentSize = currentPvc.getStatus().getCapacity().get("storage");
                             Quantity currentSize = currentPvc.getSpec().getResources().getRequests().get("storage");
                             Quantity desiredSize = desiredPvc.getSpec().getResources().getRequests().get("storage");
 

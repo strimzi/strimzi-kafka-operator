@@ -19,7 +19,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * Configures external listener overrides for broker services and advertised addresses
+ * Configures persistent claim overrides for storage - allows to override storage class with per broker configuration
  */
 @JsonPropertyOrder({"class"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
