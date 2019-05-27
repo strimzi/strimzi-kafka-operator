@@ -151,8 +151,8 @@ public final class TestUtils {
         return "";
     }
 
-    public static String changeOrgAndTag(String image, String newOrg, String newTag) {
-        image = image.replaceFirst("^strimzi/", newOrg + "/");
+    public static String changeOrgAndTag(String image, String registry, String newOrg, String newTag) {
+        image = image.replaceFirst("^strimzi/", registry + "/" + newOrg + "/");
         Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
         StringBuffer sb = new StringBuffer();
         if (m.find()) {
@@ -168,9 +168,11 @@ public final class TestUtils {
     public static String changeOrgAndTag(String image) {
         String strimziOrg = "strimzi";
         String strimziTag = "latest";
+        String strimziRegistry = "docker.io";
         String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", strimziOrg);
         String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", strimziTag);
-        return changeOrgAndTag(image, dockerOrg, dockerTag);
+        String dockerRegistry = System.getenv().getOrDefault("DOCKER_REGISTRY", strimziRegistry);
+        return changeOrgAndTag(image, dockerRegistry, dockerOrg, dockerTag);
     }
 
     public static String changeOrgAndTagInImageMap(String imageMap) {

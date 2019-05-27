@@ -229,7 +229,7 @@ class ConnectST extends AbstractST {
 
         String connectVersion = Crds.kafkaConnectOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(KAFKA_CLUSTER_NAME).get().getSpec().getVersion();
         if (connectVersion == null) {
-            connectVersion = ENVIRONMENT.getStKafkaVersionEnv();
+            connectVersion = Environment.ST_KAFKA_VERSION;
         }
 
         assertEquals(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), connectImageName);

@@ -236,13 +236,14 @@ We can configure our system tests with several environment variables, which are 
 | :---: | :---: | :---: |
 | DOCKER_ORG | Specify organization which owns image used in system tests | strimzi |
 | DOCKER_TAG | Specify image tags used in system tests | latest |
+| DOCKER_REGISTRY | Specify docker registry used in system tests | docker.io |
 | TEST_LOG_DIR | Directory for store logs collected during the tests | ../systemtest/target/logs/ |
 | ST_KAFKA_VERSION | Kafka version used in images during the system tests | 2.1.1 |
 | STRIMZI_DEFAULT_LOG_LEVEL | Log level for cluster operator | DEBUG |
 | KUBERNETES_DOMAIN | Cluster domain. It's used for specify URL endpoint of testing clients | .nip.io |
 | KUBERNETES_API_URL | URL of the kubernetes cluster. It's used for specify URL endpoint of testing clients | https://127.0.0.1:8443 |
 
-If you want to use your own images with different tag or from different repository, you can use `DOCKER_ORG` and `DOCKER_TAG` environment variables. 
+If you want to use your own images with different tag or from different repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
 
 `KUBERNETES_DOMAIN` and `KUBERNETES_API_URL` should be specified only in case you are using specific configuration in your kubernetes cluster.
 

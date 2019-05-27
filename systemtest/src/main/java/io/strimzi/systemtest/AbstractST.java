@@ -87,8 +87,6 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
         Crds.registerCustomKinds();
     }
 
-    protected static final Environment ENVIRONMENT = Environment.getInstance();
-
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     protected static final String CLUSTER_NAME = "my-cluster";
     protected static final String ZK_IMAGE = "STRIMZI_DEFAULT_ZOOKEEPER_IMAGE";
@@ -111,7 +109,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
-    public static final String TEST_LOG_DIR = ENVIRONMENT.getTestLogDir();
+    public static final String TEST_LOG_DIR = Environment.TEST_LOG_DIR;
 
     Resources testMethodResources;
     static Resources testClassResources;
@@ -553,8 +551,8 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
      * Deploy CO via helm chart. Using config file stored in test resources.
      */
     void deployClusterOperatorViaHelmChart() {
-        String dockerOrg = ENVIRONMENT.getStrimziOrg();
-        String dockerTag = ENVIRONMENT.getStrimziTag();
+        String dockerOrg = Environment.STRIMZI_ORG;
+        String dockerTag = Environment.STRIMZI_TAG;
 
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
                 entry("imageRepositoryOverride", dockerOrg),
@@ -564,7 +562,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
                 entry("resources.requests.cpu", REQUESTS_CPU),
                 entry("resources.limits.memory", LIMITS_MEMORY),
                 entry("resources.limits.cpu", LIMITS_CPU),
-                entry("logLevel", ENVIRONMENT.getStrimziLogLevel()))
+                entry("logLevel", Environment.STRIMZI_LOG_LEVEL))
                 .collect(TestUtils.entriesToMap()));
 
         LOGGER.info("Creating cluster operator with Helm Chart before test class {}", testClass);
@@ -656,7 +654,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext context) throws Exception {
-        if (ENVIRONMENT.getNoteardown() == null) {
+        if (Environment.SKIP_TEARDOWN == null) {
             if (context.getExecutionException().isPresent()) {
                 LOGGER.info("Test execution contains exception, going to recreate test environment");
                 recreateTestEnv(clusterOperatorNamespace, bindingsNamespaces);
@@ -668,7 +666,7 @@ public abstract class AbstractST extends BaseITST implements TestSeparator {
 
     @AfterAll
     void teardownEnvironmentClass() {
-        if (ENVIRONMENT.getNoteardown() == null) {
+        if (Environment.SKIP_TEARDOWN == null) {
             tearDownEnvironmentAfterAll();
             teardownEnvForOperator();
         }
