@@ -32,6 +32,7 @@ import io.strimzi.systemtest.clients.lib.KafkaClient;
 import io.strimzi.systemtest.interfaces.TestSeparator;
 import io.strimzi.systemtest.utils.TestExecutionWatcher;
 import io.strimzi.test.BaseITST;
+import io.strimzi.test.Environment;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClusterException;

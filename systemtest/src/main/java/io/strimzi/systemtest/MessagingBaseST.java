@@ -9,6 +9,7 @@ import io.strimzi.systemtest.clients.api.ClientArgument;
 import io.strimzi.systemtest.clients.api.ClientArgumentMap;
 import io.strimzi.systemtest.clients.api.MsgCliApiClient;
 import io.strimzi.systemtest.clients.api.VerifiableClient;
+import io.strimzi.test.Environment;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;

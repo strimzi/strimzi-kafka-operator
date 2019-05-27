@@ -166,13 +166,7 @@ public final class TestUtils {
     }
 
     public static String changeOrgAndTag(String image) {
-        String strimziOrg = "strimzi";
-        String strimziTag = "latest";
-        String strimziRegistry = "docker.io";
-        String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", strimziOrg);
-        String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", strimziTag);
-        String dockerRegistry = System.getenv().getOrDefault("DOCKER_REGISTRY", strimziRegistry);
-        return changeOrgAndTag(image, dockerRegistry, dockerOrg, dockerTag);
+        return changeOrgAndTag(image, Environment.STRIMZI_REGISTRY, Environment.STRIMZI_ORG, Environment.STRIMZI_TAG);
     }
 
     public static String changeOrgAndTagInImageMap(String imageMap) {

@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.test;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,19 +55,19 @@ public class Environment {
     private static final String TEST_LOG_DIR_DEFAULT = "../systemtest/target/logs/";
     private static final String ST_KAFKA_VERSION_DEFAULT = "2.2.0";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
-    static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
+    public static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     private static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT = "30000";
-    static final int INGRESS_DEFAULT_PORT = 4242;
+    public static final int INGRESS_DEFAULT_PORT = 4242;
 
-    static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
-    static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
-    static final String STRIMZI_REGISTRY = System.getenv().getOrDefault(STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY_DEFAULT);
-    static final String TEST_LOG_DIR = System.getenv().getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
-    static final String ST_KAFKA_VERSION = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
-    static final String STRIMZI_LOG_LEVEL = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
-    static final String KUBERNETES_DOMAIN = System.getenv().getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
-    static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = System.getenv().getOrDefault(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV, STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT);
-    static final String SKIP_TEARDOWN = System.getenv(SKIP_TEARDOWN_ENV);
+    public static final String STRIMZI_ORG = System.getenv().getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
+    public static final String STRIMZI_TAG = System.getenv().getOrDefault(STRIMZI_TAG_ENV, STRIMZI_TAG_DEFAULT);
+    public static final String STRIMZI_REGISTRY = System.getenv().getOrDefault(STRIMZI_REGISTRY_ENV, STRIMZI_REGISTRY_DEFAULT);
+    public static final String TEST_LOG_DIR = System.getenv().getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
+    public static final String ST_KAFKA_VERSION = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
+    public static final String STRIMZI_LOG_LEVEL = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
+    public static final String KUBERNETES_DOMAIN = System.getenv().getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
+    public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = System.getenv().getOrDefault(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_ENV, STRIMZI_FULL_RECONCILIATION_INTERVAL_MS_DEFAULT);
+    public static final String SKIP_TEARDOWN = System.getenv(SKIP_TEARDOWN_ENV);
 
     private Environment() {
     }
