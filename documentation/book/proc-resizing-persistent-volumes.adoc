@@ -1,0 +1,60 @@
+// Module included in the following assemblies:
+//
+// assembly-storage.adoc
+
+[id='proc-resizing-persistent-volumes-{context}']
+= Resizing persistent volumes
+
+This procedure described how to increase the size of persistent volumes used by existing {ProductName} cluster.
+This procedure can be applied to clusters using a single persistent volumes as well as to clusters using multiple persistent volumes in a JBOD storage.
+
+NOTE: {ProductPlatformName} currently supports only increasing size of persistent volumes.
+Shrinking of volumes is currently not possible.
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster with support for volume resizing
+* A running Cluster Operator
+* A storage class which supports volume expansion
+* A Kafka cluster using persistent volumes created using given storage class
+
+.Procedure
+
+. Edit the `spec.kafka.storage` or `spec.zookeeper.storage` property in the `Kafka` resource.
+Increase the volume size.
+For example, change the size of the volume from `1000Gi` to `2000Gi`:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    storage:
+      type: persistent-claim
+      size: 1000Gi
+      class: my-storage-class
+    # ...
+  zookeeper:
+    # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _your-file_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _your-file_
++
+. The Cluster Operator will request the {ProductPlatformName} to increase the capacity of the persistent volumes.
+. Once the persistent volumes are resized, the pods using them need to be restarted in order to resize the file system.
+This restart will be done automatically by the Cluster Operator.

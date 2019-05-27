@@ -30,8 +30,9 @@ It contains key:value pairs representing labels for selecting such a volume.
 Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
 Default is `false`.
 
-WARNING: Resizing persistent storage for existing {ProductName} clusters is not currently supported.
-You must decide the necessary storage size before deploying the cluster.
+WARNING: Increasing of volume size for existing {ProductName} clusters is supported only on {ProductPlatformName} versions which support persistent volume resizing and with storage classes which support volume expansion.
+For other versions of {ProductPlatformName} and storage classes which do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
+Shrinking of existing volumes is not possible.
 
 .Example fragment of persistent storage configuration with 1000Gi `size`
 [source,yaml]
@@ -70,6 +71,51 @@ storage:
   deleteClaim: true
 # ...
 ----
+
+== Storage class overrides
+
+{ProductName} allows to specify different storage class for each broker.
+This is useful for example when the storage classes are restricted to different availability zones / datacenters.
+You can use the `overrides` field for this purpose.
+
+.Example of {ProductName} cluster using the storage class overrides
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  labels:
+    app: my-cluster
+  name: my-cluster
+  namespace: myproject
+spec:
+  # ...
+  kafka:
+    replicas: 3
+    storage:
+      deleteClaim: true
+      size: 100Gi
+      type: persistent-claim
+      class: my-storage-class
+      overrides:
+        - broker: 0
+          class: my-storage-class-zone-1a
+        - broker: 1
+          class: my-storage-class-zone-1b
+        - broker: 2
+          class: my-storage-class-zone-1c
+  # ...
+----
+
+In the example above, the default storage class is `my-storage-class`.
+But thanks to the configured `overrides` property, the broker volumes will use following storage classes:
+
+* Persistent volumes of broker 0 will use `my-storage-class-zone-1a`
+* Persistent volumes of broker 1 will use `my-storage-class-zone-1b`
+* Persistent volumes of broker 2 will use `my-storage-class-zone-1c`
+
+The `overrides` property can be currently used only to override the storage class configuration.
+Other fields from the storage configuration are currently not supported.
 
 == Persistent Volume Claim naming
 
