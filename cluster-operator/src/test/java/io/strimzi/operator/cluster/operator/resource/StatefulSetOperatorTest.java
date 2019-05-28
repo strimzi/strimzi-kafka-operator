@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -407,12 +406,15 @@ public class StatefulSetOperatorTest
             }
         };
 
-        op.deleteAsync("myns", "mysts", true).setHandler(res -> {
+        Async async = context.async();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, true).setHandler(res -> {
             if (res.succeeded())    {
                 assertTrue(cascadingCaptor.getValue());
             } else {
                 fail();
             }
+
+            async.complete();
         });
     }
 
@@ -444,12 +446,15 @@ public class StatefulSetOperatorTest
             }
         };
 
-        op.deleteAsync("myns", "mysts", false).setHandler(res -> {
+        Async async = context.async();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
             if (res.succeeded())    {
                 assertFalse(cascadingCaptor.getValue());
             } else {
                 fail();
             }
+
+            async.complete();
         });
     }
 
@@ -480,10 +485,13 @@ public class StatefulSetOperatorTest
             }
         };
 
-        op.deleteAsync("myns", "mysts", false).setHandler(res -> {
+        Async async = context.async();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
             if (res.succeeded())    {
                 fail();
             }
+
+            async.complete();
         });
     }
 
@@ -514,12 +522,16 @@ public class StatefulSetOperatorTest
             }
         };
 
-        op.deleteAsync("myns", "mysts", false).setHandler(res -> {
+        Async async = context.async();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
             if (res.succeeded())    {
                 fail();
             } else {
-                assertEquals("Something failed", res.cause().getMessage());
+                assertTrue("org.mockito.exceptions.base.MockitoException".equals(res.cause().getClass().getName()));
+                assertTrue("Something failed".equals(res.cause().getMessage()));
             }
+
+            async.complete();
         });
     }
 }

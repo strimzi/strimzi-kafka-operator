@@ -338,7 +338,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                         log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
                         future.complete();
                     } else  {
-                        log.error("{} {} in namespace {} has been not been deleted", resourceKind, name, namespace);
+                        log.debug("{} {} in namespace {} has been not been deleted", resourceKind, name, namespace);
                         future.fail(resourceKind + " " + name + " in namespace " + namespace + " has been not been deleted");
                     }
                 } catch (Exception e) {
