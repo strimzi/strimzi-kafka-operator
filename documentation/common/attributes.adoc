@@ -56,7 +56,7 @@
 :K8sLivenessReadinessProbes: link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Configure Liveness and Readiness Probes^]
 :K8sPullingImagesFromPrivateRegistries: link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/[Pull an Image from a Private Registry^]
 :K8sConfigureSecurityContext: link:https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Configure a Security Context for a Pod or Container^]
-:K8sNetworkPolicyPeerAPI: link:https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#networkpolicypeer-v1-networking[NetworkPolicyPeer API reference^]
+:K8sNetworkPolicyPeerAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer API reference^]
 :K8sPodDisruptionBudgets: link:https://kubernetes.io/docs/concepts/workloads/pods/disruptions/[Disruptions^]
 :K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Disruptions^]
 :K8sCRDs: link:https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/[Extend the Kubernetes API with CustomResourceDefinitions]
