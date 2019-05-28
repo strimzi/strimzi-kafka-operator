@@ -48,8 +48,6 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -73,9 +71,6 @@ public final class TestUtils {
     public static final String CRD_KAFKA_USER = "../install/cluster-operator/044-Crd-kafkauser.yaml";
 
     public static final String CRD_KAFKA_MIRROR_MAKER = "../install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
-
-    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)(?<kafka>[-|_]kafka[-|_])(?<version>[0-9.])");
-    private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
     private TestUtils() {
         // All static methods
@@ -149,34 +144,6 @@ public final class TestUtils {
             LOGGER.info("File with path {} not found", filePath);
         }
         return "";
-    }
-
-    public static String changeOrgAndTag(String image, String registry, String newOrg, String newTag) {
-        image = image.replaceFirst("^strimzi/", registry + "/" + newOrg + "/");
-        Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
-        StringBuffer sb = new StringBuffer();
-        if (m.find()) {
-            m.appendReplacement(sb, ":" + newTag + m.group("kafka") + m.group("version"));
-            m.appendTail(sb);
-            image = sb.toString();
-        } else {
-            image = image.replaceFirst(":[^:]+$", ":" + newTag);
-        }
-        return image;
-    }
-
-    public static String changeOrgAndTag(String image) {
-        return changeOrgAndTag(image, Environment.STRIMZI_REGISTRY, Environment.STRIMZI_ORG, Environment.STRIMZI_TAG);
-    }
-
-    public static String changeOrgAndTagInImageMap(String imageMap) {
-        Matcher m = VERSION_IMAGE_PATTERN.matcher(imageMap);
-        StringBuffer sb = new StringBuffer();
-        while (m.find()) {
-            m.appendReplacement(sb, m.group("version") + "=" + TestUtils.changeOrgAndTag(m.group("image")));
-        }
-        m.appendTail(sb);
-        return sb.toString();
     }
 
     /**
