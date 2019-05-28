@@ -23,8 +23,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.KubernetesRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -366,16 +366,16 @@ public class KubeClient {
                 .collect(Collectors.toList());
     }
 
-    public KubernetesRoleBinding createOrReplaceKubernetesRoleBinding(KubernetesRoleBinding kubernetesRoleBinding) {
-        return client.rbac().kubernetesRoleBindings().inNamespace(getNamespace()).createOrReplace(kubernetesRoleBinding);
+    public RoleBinding createOrReplaceRoleBinding(RoleBinding roleBinding) {
+        return client.rbac().roleBindings().inNamespace(getNamespace()).createOrReplace(roleBinding);
     }
 
-    public KubernetesClusterRoleBinding createOrReplaceKubernetesClusterRoleBinding(KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
-        return client.rbac().kubernetesClusterRoleBindings().inNamespace(getNamespace()).createOrReplace(kubernetesClusterRoleBinding);
+    public ClusterRoleBinding createOrReplaceClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
+        return client.rbac().clusterRoleBindings().inNamespace(getNamespace()).createOrReplace(clusterRoleBinding);
     }
 
-    public Boolean deleteKubernetesClusterRoleBinding(KubernetesClusterRoleBinding kubernetesClusterRoleBinding) {
-        return client.rbac().kubernetesClusterRoleBindings().inNamespace(getNamespace()).delete(kubernetesClusterRoleBinding);
+    public Boolean deleteClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
+        return client.rbac().clusterRoleBindings().inNamespace(getNamespace()).delete(clusterRoleBinding);
     }
 
     public <T extends HasMetadata, L extends KubernetesResourceList, D extends Doneable<T>> MixedOperation<T, L, D, Resource<T, D>> customResources(CustomResourceDefinition crd, Class<T> resourceType, Class<L> listClass, Class<D> doneClass) {

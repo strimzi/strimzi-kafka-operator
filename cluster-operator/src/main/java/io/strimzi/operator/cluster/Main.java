@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.api.model.rbac.KubernetesClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -146,7 +146,7 @@ public class Main {
                         new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()),
                                 StandardCharsets.UTF_8))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
-                    KubernetesClusterRole role = cro.convertYamlToClusterRole(yaml);
+                    ClusterRole role = cro.convertYamlToClusterRole(yaml);
                     Future fut = cro.reconcile(role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {
