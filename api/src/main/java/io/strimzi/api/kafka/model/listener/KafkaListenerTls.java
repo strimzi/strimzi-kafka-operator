@@ -53,7 +53,7 @@ public class KafkaListenerTls implements UnknownPropertyPreserving, Serializable
             "Peers in this list are combined using a logical OR operation. " +
             "If this field is empty or missing, all connections will be allowed for this listener. " +
             "If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.")
-    @KubeLink(group = "networking", version = "v1", kind = "networkpolicypeer")
+    @KubeLink(group = "networking.k8s.io", version = "v1", kind = "networkpolicypeer")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<NetworkPolicyPeer> getNetworkPolicyPeers() {
         return networkPolicyPeers;

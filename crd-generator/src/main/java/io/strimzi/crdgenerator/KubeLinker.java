@@ -10,13 +10,13 @@ public class KubeLinker implements Linker {
     private final String baseUrl;
 
     public KubeLinker(String baseUrl) {
-        //https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/
+        //https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/
         this.baseUrl = baseUrl;
     }
 
     @Override
     public String link(KubeLink kubeLink) {
-        //https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#ingress-v1beta1-extensions
-        return baseUrl + "#" + kubeLink.kind() + "-" + kubeLink.version() + "-" + kubeLink.group();
+        //https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#networkpolicyingressrule-v1-networking-k8s-io
+        return baseUrl + "#" + kubeLink.kind() + "-" + kubeLink.version() + "-" + kubeLink.group().replace(".", "-");
     }
 }
