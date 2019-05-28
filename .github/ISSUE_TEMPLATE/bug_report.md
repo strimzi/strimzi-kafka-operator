@@ -31,7 +31,7 @@ A clear and concise description of what you expected to happen.
 Attach or copy paste the custom resources you used to deploy the Kafka cluster and the relevant YAMLs created by the Cluster Operator.
 Attach or copy and paste also the relevant logs.
 
-*To easily collect all YAMLs and logs, you can use our [report script](https://github.com/strimzi/strimzi-kafka-operator/blob/master/tools/report.sh) whcih will automatically collect all files and prepare a ZIP archive which can be easily attached to this issue.*
+*To easily collect all YAMLs and logs, you can use our [report script](https://github.com/strimzi/strimzi-kafka-operator/blob/master/tools/report.sh) which will automatically collect all files and prepare a ZIP archive which can be easily attached to this issue.*
 
 **Additional context**
 Add any other context about the problem here.
