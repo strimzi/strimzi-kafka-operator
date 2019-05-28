@@ -38,10 +38,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -373,7 +370,7 @@ public class StatefulSetOperatorTest
         Async async = context.async();
         op.reconcile(sts1.getMetadata().getNamespace(), sts1.getMetadata().getName(), sts2).setHandler(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
-            assertTrue(ar.succeeded());
+            context.assertTrue(ar.succeeded());
             verify(mockERPD).delete();
             async.complete();
         });
@@ -407,12 +404,15 @@ public class StatefulSetOperatorTest
             }
         };
 
-        op.deleteAsync("myns", "mysts", true).setHandler(res -> {
+        Async async = context.async();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, true).setHandler(res -> {
             if (res.succeeded())    {
-                assertTrue(cascadingCaptor.getValue());
+                context.assertTrue(cascadingCaptor.getValue());
             } else {
-                fail();
+                context.fail();
             }
+
+            async.complete();
         });
     }
 
@@ -444,12 +444,15 @@ public class StatefulSetOperatorTest
             }
         };
 
-        op.deleteAsync("myns", "mysts", false).setHandler(res -> {
+        Async async = context.async();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
             if (res.succeeded())    {
-                assertFalse(cascadingCaptor.getValue());
+                context.assertFalse(cascadingCaptor.getValue());
             } else {
-                fail();
+                context.fail();
             }
+
+            async.complete();
         });
     }
 
@@ -480,10 +483,13 @@ public class StatefulSetOperatorTest
             }
         };
 
-        op.deleteAsync("myns", "mysts", false).setHandler(res -> {
+        Async async = context.async();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
             if (res.succeeded())    {
-                fail();
+                context.fail();
             }
+
+            async.complete();
         });
     }
 
@@ -514,12 +520,16 @@ public class StatefulSetOperatorTest
             }
         };
 
-        op.deleteAsync("myns", "mysts", false).setHandler(res -> {
+        Async async = context.async();
+        op.deleteAsync(NAMESPACE, RESOURCE_NAME, false).setHandler(res -> {
             if (res.succeeded())    {
-                fail();
+                context.fail();
             } else {
-                assertEquals("Something failed", res.cause().getMessage());
+                context.assertTrue("org.mockito.exceptions.base.MockitoException".equals(res.cause().getClass().getName()));
+                context.assertTrue("Something failed".equals(res.cause().getMessage()));
             }
+
+            async.complete();
         });
     }
 }
