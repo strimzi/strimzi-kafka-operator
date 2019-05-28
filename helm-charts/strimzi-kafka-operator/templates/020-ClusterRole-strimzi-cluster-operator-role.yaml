@@ -272,3 +272,4 @@ rules:
   - delete
   - patch
   - update
+{{- end -}}
