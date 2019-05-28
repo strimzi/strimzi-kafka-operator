@@ -57,7 +57,7 @@ oc apply -f _your-file_
 +
 . The Cluster Operator will request the {ProductPlatformName} to increase the capacity of the persistent volumes.
 . Once the persistent volumes are resized, the pods using them need to be restarted in order to resize the file system.
-This restart will be done automatically by the Cluster Operator.
+The restart is performed automatically by the Cluster Operator.
 
 .Additional resources
 

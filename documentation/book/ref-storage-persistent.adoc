@@ -32,7 +32,7 @@ Default is `false`.
 
 WARNING: Increasing of volume size for existing {ProductName} clusters is supported only on {ProductPlatformName} versions which support persistent volume resizing and with storage classes which support volume expansion.
 For other versions of {ProductPlatformName} and storage classes which do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
-Shrinking of existing volumes is not possible.
+Decreasing the size of existing volumes is not possible.
 
 .Example fragment of persistent storage configuration with 1000Gi `size`
 [source,yaml]
@@ -74,11 +74,11 @@ storage:
 
 == Storage class overrides
 
-{ProductName} allows to specify different storage class for each broker.
-This is useful for example when the storage classes are restricted to different availability zones / datacenters.
+{ProductName} allows you to specify a different storage class for each broker.
+This is useful, for example, when storage classes are restricted to different availability zones or datacenters.
 You can use the `overrides` field for this purpose.
 
-.Example of {ProductName} cluster using the storage class overrides
+.Example {ProductName} cluster using storage class overrides
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: kafka.strimzi.io/v1beta1
@@ -108,13 +108,13 @@ spec:
 ----
 
 In the example above, the default storage class is `my-storage-class`.
-But thanks to the configured `overrides` property, the broker volumes will use following storage classes:
+As a result of the configured `overrides` property, the broker volumes use the following storage classes:
 
 * Persistent volumes of broker 0 will use `my-storage-class-zone-1a`
 * Persistent volumes of broker 1 will use `my-storage-class-zone-1b`
 * Persistent volumes of broker 2 will use `my-storage-class-zone-1c`
 
-The `overrides` property can be currently used only to override the storage class configuration.
+The `overrides` property is currently used only to override the storage class configuration.
 Other fields from the storage configuration are currently not supported.
 
 == Persistent Volume Claim naming
