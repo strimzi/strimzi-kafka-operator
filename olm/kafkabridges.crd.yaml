@@ -95,6 +95,8 @@ spec:
             http:
               type: object
               properties:
+                host:
+                  type: string
                 port:
                   type: integer
             image:

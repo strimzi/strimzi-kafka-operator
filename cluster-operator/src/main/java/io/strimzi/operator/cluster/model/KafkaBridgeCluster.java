@@ -68,7 +68,21 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_PASSWORD_FILE = "KAFKA_BRIDGE_SASL_PASSWORD_FILE";
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_USERNAME = "KAFKA_BRIDGE_SASL_USERNAME";
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM = "KAFKA_BRIDGE_SASL_MECHANISM";
+
+    protected static final String ENV_VAR_KAFKA_BRIDGE_PRODUCER_ACKS = "KAFKA_BRIDGE_PRODUCER_ACKS";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_CONSUMER_AUTO_OFFSET_RESET = "KAFKA_BRIDGE_CONSUMER_AUTO_OFFSET_RESET";
+
+    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED = "KAFKA_BRIDGE_AMQP_ENABLED";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_FLOW_CREDIT = "KAFKA_BRIDGE_AMQP_FLOW_CREDIT";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_MODE = "KAFKA_BRIDGE_AMQP_MODE";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_HOST = "KAFKA_BRIDGE_AMQP_HOST";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_PORT = "KAFKA_BRIDGE_AMQP_PORT";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_CERT_DIR = "KAFKA_BRIDGE_AMQP_CERT_DIR";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_MESSAGE_CONNVERTER = "KAFKA_BRIDGE_AMQP_MESSAGE_CONNVERTER";
+
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED = "KAFKA_BRIDGE_HTTP_ENABLED";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_HOST = "KAFKA_BRIDGE_HTTP_HOST";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_PORT = "KAFKA_BRIDGE_HTTP_PORT";
 
     protected String bootstrapServers;
     private KafkaBridgeTls tls;
@@ -78,6 +92,9 @@ public class KafkaBridgeCluster extends AbstractModel {
     private String saslMechanism;
     private KafkaBridgeHttpConfig http;
     private boolean httpEnabled = false;
+    private boolean amqpEnabled = false;
+    private String producerAcks = "1";
+    private String consumerAutoOffsetReset = "earliest";
 
     /**
      * Constructor
@@ -315,7 +332,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
-                .withCommand("/run_bridge.sh")
+                .withCommand("/kafka_bridge_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessInitialDelay, livenessTimeout))
@@ -334,9 +351,18 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_AUTO_OFFSET_RESET, consumerAutoOffsetReset));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_ACKS, producerAcks));
+
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED, String.valueOf(httpEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, http.getHost()));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http.getPort())));
+
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED, String.valueOf(amqpEnabled)));
+        //TODO amqp configuration
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);

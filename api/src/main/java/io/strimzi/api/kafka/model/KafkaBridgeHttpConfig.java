@@ -29,6 +29,7 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
     private static final long serialVersionUID = 1L;
 
     private int port = 8080;
+    private String host = "0.0.0.0";
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public KafkaBridgeHttpConfig() {
@@ -48,6 +49,15 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
         this.port = port;
     }
 
+    @Description("The address of the server.")
+    @DefaultValue("0.0.0.0")
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
 
     @Override
     public Map<String, Object> getAdditionalProperties() {
