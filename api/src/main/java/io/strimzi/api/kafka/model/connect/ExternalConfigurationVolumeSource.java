@@ -51,7 +51,7 @@ public class ExternalConfigurationVolumeSource implements Serializable, UnknownP
 
     @Description("Reference to a key in a Secret. " +
             "Exactly one Secret or ConfigMap has to be specified.")
-    @KubeLink(group = "core", version = "v1", kind = "SecretVolumeSource")
+    @KubeLink(group = "core", version = "v1", kind = "secretvolumesource")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public SecretVolumeSource getSecret() {
         return secret;
@@ -63,7 +63,7 @@ public class ExternalConfigurationVolumeSource implements Serializable, UnknownP
 
     @Description("Reference to a key in a ConfigMap. " +
             "Exactly one Secret or ConfigMap has to be specified.")
-    @KubeLink(group = "core", version = "v1", kind = "ConfigMapVolumeSource")
+    @KubeLink(group = "core", version = "v1", kind = "configmapvolumesource")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public ConfigMapVolumeSource getConfigMap() {
         return configMap;

@@ -38,7 +38,7 @@ public class ExternalConfigurationEnvVarSource implements Serializable, UnknownP
     // TODO: We should make it possible to generate a CRD configuring that exactly one of secretKeyRef and configMapKeyRef has to be defined.
 
     @Description("Reference to a key in a Secret.")
-    @KubeLink(group = "core", version = "v1", kind = "SecretKeySelector")
+    @KubeLink(group = "core", version = "v1", kind = "secretkeyselector")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public SecretKeySelector getSecretKeyRef() {
         return secretKeyRef;
@@ -49,7 +49,7 @@ public class ExternalConfigurationEnvVarSource implements Serializable, UnknownP
     }
 
     @Description("Refernce to a key in a ConfigMap.")
-    @KubeLink(group = "core", version = "v1", kind = "ConfigMapKeySelector")
+    @KubeLink(group = "core", version = "v1", kind = "configmapkeyselector")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public ConfigMapKeySelector getConfigMapKeyRef() {
         return configMapKeyRef;

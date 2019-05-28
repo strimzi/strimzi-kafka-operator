@@ -168,7 +168,7 @@
                                 <argument>io.strimzi.crdgenerator.DocGenerator</argument>
                                 <argument>--linker</argument>
                                 <argument>io.strimzi.crdgenerator.KubeLinker</argument>
-                                <argument>https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/</argument>
+                                <argument>https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/</argument>
                                 <argument>appendix_crds.adoc</argument>
                                 <argument>io.strimzi.api.kafka.model.Kafka</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnect</argument>

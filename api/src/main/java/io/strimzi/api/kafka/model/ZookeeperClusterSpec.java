@@ -193,7 +193,7 @@ public class ZookeeperClusterSpec implements UnknownPropertyPreserving, Serializ
     }
 
     @Description("The pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @DeprecatedProperty(movedToPath = "spec.zookeeper.template.pod.tolerations")
     @Deprecated

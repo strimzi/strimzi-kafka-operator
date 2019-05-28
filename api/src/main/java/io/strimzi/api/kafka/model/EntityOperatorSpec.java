@@ -83,7 +83,7 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
     }
 
     @Description("The pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations")
     @Deprecated

@@ -177,7 +177,7 @@ public class KafkaConnectSpec implements Serializable, UnknownPropertyPreserving
     }
 
     @Description("The pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "tolerations")
+    @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations")
     @Deprecated
