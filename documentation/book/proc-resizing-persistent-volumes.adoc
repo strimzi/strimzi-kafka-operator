@@ -5,18 +5,18 @@
 [id='proc-resizing-persistent-volumes-{context}']
 = Resizing persistent volumes
 
-This procedure describes how to increase the size of persistent volumes used by existing {ProductName} cluster.
+This procedure describes how to increase the size of persistent volumes used by an existing {ProductName} cluster.
 This procedure can be applied to clusters using a single persistent volumes as well as to clusters using multiple persistent volumes in a JBOD storage.
 
-NOTE: {ProductPlatformName} currently supports only increasing size of persistent volumes.
-Shrinking of volumes is currently not possible.
+NOTE: {ProductPlatformName} currently supports only increasing the size of persistent volumes.
+Decreasing the size of persistent volumes is currently not possible.
 
 .Prerequisites
 
 * An {ProductPlatformName} cluster with support for volume resizing
 * A running Cluster Operator
 * A storage class which supports volume expansion
-* A Kafka cluster using persistent volumes created using given storage class
+* A Kafka cluster using persistent volumes created using a given storage class
 
 .Procedure
 
