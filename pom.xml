@@ -69,7 +69,7 @@
         <jacoco.version>0.7.9</jacoco.version>
         <license.maven.version>2.11</license.maven.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
-        <sundrio.version>0.18.0</sundrio.version>
+        <sundrio.version>0.19.0</sundrio.version>
 
         <fabric8.kubernetes-client.version>4.2.2</fabric8.kubernetes-client.version>
         <fabric8.openshift-client.version>4.2.2</fabric8.openshift-client.version>
@@ -621,8 +621,6 @@
                                 <ignoredUnusedDeclaredDependency>io.sundr:builder-annotations</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.projectlombok:lombok</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.bouncycastle:bcpkix-jdk15on:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.bouncycastle:bcprov-jdk15on:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredDependency>org.junit.jupiter</ignoredDependency>
                                 <ignoredDependency>org.junit.vintage</ignoredDependency>
