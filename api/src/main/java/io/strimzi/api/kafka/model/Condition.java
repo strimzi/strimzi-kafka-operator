@@ -47,7 +47,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.reason = reason;
     }
 
-    @Description("The type of condition")
+    @Description("The unique identifier of a condition, used to distinguish between other conditions in the resource")
     public String getType() {
         return type;
     }
@@ -56,7 +56,8 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.type = type;
     }
 
-    @Description("Last time the condition transit from one status to another")
+    @Description("Last time the condition of a type changes from one status to another." +
+            "The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone")
     public String getLastTransitionTime() {
         return lastTransitionTime;
     }
