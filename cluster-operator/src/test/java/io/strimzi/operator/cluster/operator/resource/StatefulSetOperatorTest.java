@@ -39,8 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
