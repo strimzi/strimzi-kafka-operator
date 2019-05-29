@@ -13,14 +13,14 @@ Decreasing the size of persistent volumes is not currently supported in {Product
 
 .Prerequisites
 
-* An {ProductPlatformName} cluster with support for volume resizing
+* An {ProductPlatformName} cluster with support for volume resizing.
 * The Cluster Operator is running.
-* A Kafka cluster using persistent volumes created using a storage class
-** The storage class has to support volume expansion
+* A Kafka cluster using persistent volumes created using a storage class that supports volume expansion.
 
 .Procedure
 
 . In a `Kafka` resource, increase the size of the persistent volume allocated to the Kafka cluster, the Zookeeper cluster, or both.
+
 * To increase the volume size allocated to the Kafka cluster, edit the `spec.kafka.storage` property.
 * To increase the volume size allocated to the Zookeeper cluster, edit the `spec.zookeeper.storage` property.
 +
