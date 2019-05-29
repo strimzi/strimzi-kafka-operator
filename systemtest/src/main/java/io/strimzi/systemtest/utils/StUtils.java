@@ -306,6 +306,13 @@ public class StUtils {
         );
     }
 
+    public static void waitForKafkaClusterPodsDeletion(String clusterName) {
+        LOGGER.info("Waiting when all pods in Kafka cluster {} will be deleted", clusterName);
+        kubeClient().listPods().stream()
+                .filter(p -> p.getMetadata().getName().startsWith(clusterName))
+                .forEach(p -> StUtils.waitForPodDeletion(p.getMetadata().getName()));
+    }
+
     public static String getPodNameByPrefix(String prefix) {
         return kubeClient().listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
                 .findFirst().get().getMetadata().getName();

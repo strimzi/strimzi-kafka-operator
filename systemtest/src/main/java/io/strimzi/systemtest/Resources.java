@@ -57,6 +57,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -225,11 +226,11 @@ public class Resources extends AbstractResources {
         return kafka(defaultKafka(name, kafkaReplicas, zookeeperReplicas).build());
     }
 
-    DoneableKafka kafkaJBOD(String name, int kafkaReplicas, List<SingleVolumeStorage> volumes) {
+    DoneableKafka kafkaJBOD(String name, int kafkaReplicas, JbodStorage jbodStorage) {
         return kafka(defaultKafka(name, kafkaReplicas).
                 editSpec()
                     .editKafka()
-                        .withNewJbodStorage().withVolumes(volumes).endJbodStorage()
+                        .withStorage(jbodStorage)
                     .endKafka()
                     .editZookeeper().
                         withReplicas(1)
