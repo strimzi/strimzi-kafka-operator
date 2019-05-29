@@ -1044,8 +1044,7 @@ class KafkaST extends MessagingBaseST {
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
             new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build())
-        .build();
+            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
         testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
         // kafka cluster already deployed
@@ -1063,8 +1062,7 @@ class KafkaST extends MessagingBaseST {
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
             new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build())
-        .build();
+            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
         testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
         // kafka cluster already deployed
@@ -1085,8 +1083,7 @@ class KafkaST extends MessagingBaseST {
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
             new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build())
-        .build();
+            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
         testMethodResources().kafkaJBOD(CLUSTER_NAME, kafkaReplicas, jbodStorage).done();
         // kafka cluster already deployed
