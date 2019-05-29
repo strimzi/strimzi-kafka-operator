@@ -26,9 +26,13 @@ spec:
           env:
             - name: STRIMZI_NAMESPACE
               {{- if .Values.watchNamespaces -}}
+              {{- if has "*" .Values.watchNamespaces }}
+              value: "*"
+              {{- else }}
               {{- $ns := .Values.watchNamespaces -}}
               {{- $ns := append $ns .Release.Namespace }}
               value: "{{ join "," $ns }}"
+              {{- end }}
               {{- else }}
               valueFrom:
                 fieldRef:
