@@ -28,16 +28,12 @@
 :Namespace: {OpenShiftName} project or {KubernetesName} namespace
 :Namespaces: {OpenShiftName} projects or {KubernetesName} namespaces
 
-// Kafka upgrade attributes used in strimzi and kafka upgrades section
-:ProductVersionUpgradingFrom: 0.9.x
-:ProductVersionUpgradingTo: 0.10.0
-:KafkaVersionLower: 2.0.0
-:KafkaVersionHigher: 2.1.1
+// Kafka upgrade attributes used in kafka upgrades section
+:KafkaVersionLower: 2.1.1
+:KafkaVersionHigher: 2.2.0
 //log message format version
-:LogMsgVersLower: 2.0
-:LogMsgVersHigher: 2.1
-//used in the procedure for cluster operator upgrade
-:ExistingKafkaVersionUpgradingClusterOperator: 2.0.1
+:LogMsgVersLower: 2.1
+:LogMsgVersHigher: 2.2
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
