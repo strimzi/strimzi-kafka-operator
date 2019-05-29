@@ -5,16 +5,16 @@
 [id='proc-resizing-persistent-volumes-{context}']
 = Resizing persistent volumes
 
-This procedure describes how to increase the size of persistent volumes used by an existing {ProductName} cluster.
-This procedure can be applied to clusters using a single persistent volumes as well as to clusters using multiple persistent volumes in a JBOD storage.
+You can provision increased storage capacity by increasing the size of the persistent volumes used by an existing {ProductName} cluster.
+Resizing persistent volumes is supported in clusters that use either a single persistent volume or multiple persistent volumes in a JBOD storage configuration.
 
-NOTE: {ProductPlatformName} currently supports only increasing the size of persistent volumes.
+NOTE: You can increase but not decrease the size of persistent volumes. Decreasing the size of persistent volumes is not currently supported in {ProductPlatformName}.
 Decreasing the size of persistent volumes is currently not possible.
 
 .Prerequisites
 
 * An {ProductPlatformName} cluster with support for volume resizing
-* A running Cluster Operator
+* The Cluster Operator is running.
 * A storage class which supports volume expansion
 * A Kafka cluster using persistent volumes created using a given storage class
 
@@ -22,7 +22,7 @@ Decreasing the size of persistent volumes is currently not possible.
 
 . Edit the `spec.kafka.storage` or `spec.zookeeper.storage` property in the `Kafka` resource.
 Increase the volume size.
-For example, change the size of the volume from `1000Gi` to `2000Gi`:
+For example, to increase the volume size from `1000Gi` to `2000Gi`:
 +
 [source,yaml,subs=attributes+]
 ----
@@ -35,7 +35,7 @@ spec:
     # ...
     storage:
       type: persistent-claim
-      size: 1000Gi
+      size: 2000Gi
       class: my-storage-class
     # ...
   zookeeper:
@@ -45,17 +45,17 @@ spec:
 . Create or update the resource.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName}, use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName}, use `oc apply`:
 +
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
 +
-. The Cluster Operator will request the {ProductPlatformName} to increase the capacity of the persistent volumes.
+{ProductPlatformName} increases the capacity of the selected persistent volumes in response to a request from the Cluster Operator. When the resizing is complete, the Cluster Operator restarts all pods that use the resized persistent volumes. This happens automatically.
 . Once the persistent volumes are resized, the pods using them need to be restarted in order to resize the file system.
 The restart is performed automatically by the Cluster Operator.
 

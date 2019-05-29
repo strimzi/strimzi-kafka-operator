@@ -30,9 +30,9 @@ It contains key:value pairs representing labels for selecting such a volume.
 Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
 Default is `false`.
 
-WARNING: Increasing of volume size for existing {ProductName} clusters is supported only on {ProductPlatformName} versions which support persistent volume resizing and with storage classes which support volume expansion.
+WARNING: Increasing the size of persistent volumes in an existing {ProductName} cluster is only supported in {ProductPlatformName} versions that support persistent volume resizing. The persistent volume to be resized must use a storage class that supports volume expansion. 
 For other versions of {ProductPlatformName} and storage classes which do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
-Decreasing the size of existing volumes is not possible.
+Decreasing the size of existing persistent volumes is not possible.
 
 .Example fragment of persistent storage configuration with 1000Gi `size`
 [source,yaml]
@@ -74,8 +74,8 @@ storage:
 
 == Storage class overrides
 
-{ProductName} allows you to specify a different storage class for each broker.
-This is useful, for example, when storage classes are restricted to different availability zones or datacenters.
+You can specify a different storage class for one or more Kafka brokers, instead of using the default storage class.
+This is useful if, for example, storage classes are restricted to different availability zones or data centers.
 You can use the `overrides` field for this purpose.
 
 .Example {ProductName} cluster using storage class overrides
@@ -110,11 +110,11 @@ spec:
 In the example above, the default storage class is `my-storage-class`.
 As a result of the configured `overrides` property, the broker volumes use the following storage classes:
 
-* Persistent volumes of broker 0 will use `my-storage-class-zone-1a`
-* Persistent volumes of broker 1 will use `my-storage-class-zone-1b`
-* Persistent volumes of broker 2 will use `my-storage-class-zone-1c`
+* The persistent volumes of broker 0 will use `my-storage-class-zone-1a`.
+* The persistent volumes of broker 1 will use `my-storage-class-zone-1b`.
+* The persistent volumes of broker 2 will use `my-storage-class-zone-1c`.
 
-The `overrides` property is currently used only to override the storage class configuration.
+The `overrides` property is currently used only to override storage class configurations. Overriding other storage configuration fields is not currently supported.
 Other fields from the storage configuration are currently not supported.
 
 == Persistent Volume Claim naming
