@@ -437,6 +437,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         String clusterCmNamespace = "test";
 
         KafkaBridge clusterCm = ResourceUtils.createEmptyKafkaBridgeCluster(clusterCmNamespace, clusterCmName);
+        clusterCm.getSpec().setKafka(new KafkaBridgeConfigurationSpec());
+        clusterCm.getSpec().getKafka().setBootstrapServers("bootstrapserver");
         clusterCm.getSpec().setReplicas(0);
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm, VERSIONS);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
@@ -488,6 +490,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         String clusterCmNamespace = "test";
 
         KafkaBridge clusterCm = ResourceUtils.createEmptyKafkaBridgeCluster(clusterCmNamespace, clusterCmName);
+        clusterCm.getSpec().setKafka(new KafkaBridgeConfigurationSpec());
+        clusterCm.getSpec().getKafka().setBootstrapServers("bootstrapserver");
         clusterCm.getSpec().setReplicas(3);
         clusterCm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(clusterCm, VERSIONS);

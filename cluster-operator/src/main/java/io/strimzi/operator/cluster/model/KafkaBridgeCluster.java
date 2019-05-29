@@ -72,9 +72,8 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_USERNAME = "KAFKA_BRIDGE_SASL_USERNAME";
     protected static final String ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM = "KAFKA_BRIDGE_SASL_MECHANISM";
 
-    protected static final String ENV_VAR_KAFKA_BRIDGE_BRIDGE_CONFIG = "KAFKA_BRIDGE_CONSUMER_AUTO_OFFSET_RESET";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG = "KAFKA_BRIDGE_PRODUCER_ACKS";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG = "KAFKA_BRIDGE_CONSUMER_AUTO_OFFSET_RESET";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG = "KAFKA_BRIDGE_PRODUCER_CONFIG";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG = "KAFKA_BRIDGE_CONSUMER_CONFIG";
 
     protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED = "KAFKA_BRIDGE_AMQP_ENABLED";
     protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_FLOW_CREDIT = "KAFKA_BRIDGE_AMQP_FLOW_CREDIT";
@@ -88,7 +87,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_HOST = "KAFKA_BRIDGE_HTTP_HOST";
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_PORT = "KAFKA_BRIDGE_HTTP_PORT";
 
-    protected String bootstrapServers;
     private KafkaBridgeTls tls;
     private CertAndKeySecretSource tlsAuthCertAndKey;
     private PasswordSecretSource passwordSecret;
@@ -363,8 +361,8 @@ public class KafkaBridgeCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG, kafkaBridgeProducer == null ? "" : new KafkaBridgeProducerConfiguration(kafkaBridgeProducer.getConfig().entrySet()).getConfiguration()));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED, String.valueOf(httpEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, http != null ? http.getHost() : KafkaBridgeHttpConfig.httpDefaultHost));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http != null ? http.getPort() : KafkaBridgeHttpConfig.httpDefaultPort)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, http != null ? http.getHost() : KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http != null ? http.getPort() : KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED, String.valueOf(amqpEnabled)));
         //TODO amqp configuration
@@ -418,14 +416,6 @@ public class KafkaBridgeCluster extends AbstractModel {
      */
     protected void setKafkaBridgeHttpConfig(KafkaBridgeHttpConfig kafkaBridgeHttpConfig) {
         this.http = kafkaBridgeHttpConfig;
-    }
-
-    /**
-     * Set the bootstrap servers to connect to
-     * @param bootstrapServers bootstrap servers comma separated list
-     */
-    protected void setBootstrapServers(String bootstrapServers) {
-        this.bootstrapServers = bootstrapServers;
     }
 
     /**
@@ -495,7 +485,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     /**
      * Set Kafka consumer's configuration
-     * @param kafkaBridgeConsumer condifuration
+     * @param kafkaBridgeConsumer configuration
      */
     protected void setKafkaConsumerConfiguration(KafkaBridgeConsumerSpec kafkaBridgeConsumer) {
         this.kafkaBridgeConsumer = kafkaBridgeConsumer;
@@ -503,7 +493,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     /**
      * Set Kafka producer's configuration
-     * @param kafkaBridgeProducer condifuration
+     * @param kafkaBridgeProducer configuration
      */
     protected void setKafkaProducerConfiguration(KafkaBridgeProducerSpec kafkaBridgeProducer) {
         this.kafkaBridgeProducer = kafkaBridgeProducer;
@@ -511,7 +501,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     /**
      * Set Kafka Bridge configuration
-     * @param kafkaBridgeConfiguration condifuration
+     * @param kafkaBridgeConfiguration configuration
      */
     protected void setKafkaBridgeConfiguration(KafkaBridgeConfigurationSpec kafkaBridgeConfiguration) {
         this.kafkaBridgeConfiguration = kafkaBridgeConfiguration;
