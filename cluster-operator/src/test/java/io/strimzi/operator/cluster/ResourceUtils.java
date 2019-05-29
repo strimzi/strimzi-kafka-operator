@@ -18,6 +18,9 @@ import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
+import io.strimzi.api.kafka.model.KafkaBridgeConfigurationSpec;
+import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
+import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -479,7 +482,7 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static KafkaBridge createKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName, String image, int replicas, String bootstrapServers, Map<String, Object> metricsCm) {
+    public static KafkaBridge createKafkaBridgeCluster(String clusterCmNamespace, String clusterCmName, String image, int replicas, KafkaBridgeConfigurationSpec kafkaConf, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, Map<String, Object> metricsCm) {
         return new KafkaBridgeBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(clusterCmName)
@@ -490,7 +493,9 @@ public class ResourceUtils {
                 .withNewSpec()
                 .withImage(image)
                 .withReplicas(replicas)
-                .withBootstrapServers(bootstrapServers)
+                .withKafka(kafkaConf)
+                .withProducer(producer)
+                .withConsumer(consumer)
                 .withMetrics(metricsCm)
                 .endSpec()
                 .build();

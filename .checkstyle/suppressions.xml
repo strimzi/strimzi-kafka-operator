@@ -36,7 +36,7 @@
     <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaConnectCluster.java"/>
 
-    <suppress checks="CyclomaticComplexity"
+    <suppress checks="NPathComplexity|CyclomaticComplexity"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaBridgeCluster.java"/>
 
     <!-- topic operator -->

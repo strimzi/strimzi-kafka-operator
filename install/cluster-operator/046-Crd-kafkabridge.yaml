@@ -39,59 +39,8 @@ spec:
             replicas:
               type: integer
               minimum: 0
-            bootstrapServers:
+            image:
               type: string
-            authentication:
-              type: object
-              properties:
-                certificateAndKey:
-                  type: object
-                  properties:
-                    certificate:
-                      type: string
-                    key:
-                      type: string
-                    secretName:
-                      type: string
-                  required:
-                  - certificate
-                  - key
-                  - secretName
-                passwordSecret:
-                  type: object
-                  properties:
-                    password:
-                      type: string
-                    secretName:
-                      type: string
-                  required:
-                  - password
-                  - secretName
-                type:
-                  type: string
-                  enum:
-                  - tls
-                  - scram-sha-512
-                  - plain
-                username:
-                  type: string
-              required:
-              - type
-            tls:
-              type: object
-              properties:
-                trustedCertificates:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      certificate:
-                        type: string
-                      secretName:
-                        type: string
-                    required:
-                    - certificate
-                    - secretName
             http:
               type: object
               properties:
@@ -99,8 +48,74 @@ spec:
                   type: string
                 port:
                   type: integer
-            image:
-              type: string
+            kafka:
+              type: object
+              properties:
+                authentication:
+                  type: object
+                  properties:
+                    certificateAndKey:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                        key:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - certificate
+                      - key
+                      - secretName
+                    passwordSecret:
+                      type: object
+                      properties:
+                        password:
+                          type: string
+                        secretName:
+                          type: string
+                      required:
+                      - password
+                      - secretName
+                    type:
+                      type: string
+                      enum:
+                      - tls
+                      - scram-sha-512
+                      - plain
+                    username:
+                      type: string
+                  required:
+                  - type
+                bootstrapServers:
+                  type: string
+                tls:
+                  type: object
+                  properties:
+                    trustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                          secretName:
+                            type: string
+                        required:
+                        - certificate
+                        - secretName
+              required:
+              - bootstrapServers
+            consumer:
+              type: object
+              properties:
+                config:
+                  type: object
+            producer:
+              type: object
+              properties:
+                config:
+                  type: object
             resources:
               type: object
               properties:
@@ -471,4 +486,4 @@ spec:
                       minimum: 0
           required:
           - replicas
-          - bootstrapServers
+          - kafka

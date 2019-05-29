@@ -25,21 +25,21 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "bootstrapServers", "authentication",
-        "tls", "http", "image", "resources", "jvmOptions",
-        "logging", "metrics", "livenessProbe", "readinessProbe", "template"})
+        "replicas", "image", "http", "kafka", "consumer",
+        "producer", "resources", "jvmOptions", "logging",
+        "metrics", "livenessProbe", "readinessProbe", "template"})
 @EqualsAndHashCode
 public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private int replicas;
-    private String bootstrapServers;
 
-    private KafkaBridgeAuthentication authentication;
-    private KafkaBridgeTls tls;
-    private KafkaBridgeHttpConfig http;
     private String image;
+    private KafkaBridgeHttpConfig http;
+    private KafkaBridgeConfigurationSpec kafka;
+    private KafkaBridgeConsumerSpec consumer;
+    private KafkaBridgeProducerSpec producer;
     private ResourceRequirements resources;
     private JvmOptions jvmOptions;
     private Logging logging;
@@ -58,16 +58,6 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     public void setReplicas(int replicas) {
         this.replicas = replicas;
-    }
-
-    @Description("A list of host:port pairs to use for establishing the connection to the Kafka cluster.")
-    @JsonProperty(required = true)
-    public String getBootstrapServers() {
-        return bootstrapServers;
-    }
-
-    public void setBootstrapServers(String bootstrapServers) {
-        this.bootstrapServers = bootstrapServers;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -122,24 +112,34 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.additionalProperties.put(name, value);
     }
 
-    @Description("**Currently not supported** Configures Kafka Bridge authentication.")
+    @Description("Configures Kafka Bridge.")
+    @JsonProperty(required = true)
+    public KafkaBridgeConfigurationSpec getKafka() {
+        return kafka;
+    }
+
+    public void setKafka(KafkaBridgeConfigurationSpec kafka) {
+        this.kafka = kafka;
+    }
+
+    @Description("Configures Kafka Producer.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public KafkaBridgeAuthentication getAuthentication() {
-        return authentication;
+    public KafkaBridgeProducerSpec getProducer() {
+        return producer;
     }
 
-    public void setAuthentication(KafkaBridgeAuthentication logging) {
-        this.authentication = logging;
+    public void setProducer(KafkaBridgeProducerSpec producer) {
+        this.producer = producer;
     }
 
-    @Description("**Currently not supported** TLS configuration for connecting to the cluster.")
+    @Description("Configures Kafka Consumer.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public KafkaBridgeTls getTls() {
-        return tls;
+    public KafkaBridgeConsumerSpec getConsumer() {
+        return consumer;
     }
 
-    public void setTls(KafkaBridgeTls kafkaBridgeTls) {
-        this.tls = kafkaBridgeTls;
+    public void setConsumer(KafkaBridgeConsumerSpec consumer) {
+        this.consumer = consumer;
     }
 
     @Description("The HTTP related configuration.")
