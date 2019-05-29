@@ -553,7 +553,10 @@ public class Resources extends AbstractResources {
     }
 
     DoneableKafkaTopic topic(String clusterName, String topicName, int partitions, int replicas) {
-        return topic(defaultTopic(clusterName, topicName, partitions, replicas).build());
+        return topic(defaultTopic(clusterName, topicName, partitions, replicas)
+            .editSpec()
+            .addToConfig("min.insync.replicas", replicas)
+            .endSpec().build());
     }
 
     private KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas) {
@@ -568,7 +571,6 @@ public class Resources extends AbstractResources {
                 .withNewSpec()
                     .withPartitions(partitions)
                     .withReplicas(replicas)
-                    .addToConfig("min.insync.replicas", replicas)
                 .endSpec();
     }
 
