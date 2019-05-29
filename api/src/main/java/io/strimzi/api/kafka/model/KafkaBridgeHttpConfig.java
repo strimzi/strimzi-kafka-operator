@@ -28,10 +28,10 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
 
     private static final long serialVersionUID = 1L;
 
-    public static int HTTP_DEFAULT_PORT = 8080;
-    public static String HTTP_DEFAULT_HOST = "0.0.0.0";
-    private int port = HTTP_DEFAULT_PORT;
-    private String host = HTTP_DEFAULT_HOST;
+    public static int httpDefaultPort = 8080;
+    public static String httpDefaultHost = "0.0.0.0";
+    private int port = httpDefaultPort;
+    private String host = httpDefaultHost;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public KafkaBridgeHttpConfig() {

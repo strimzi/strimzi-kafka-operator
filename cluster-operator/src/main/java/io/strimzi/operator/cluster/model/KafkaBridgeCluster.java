@@ -358,8 +358,8 @@ public class KafkaBridgeCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_ACKS, producerAcks));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED, String.valueOf(httpEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, http != null ? http.getHost() : KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http != null ? http.getPort() : KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, http != null ? http.getHost() : KafkaBridgeHttpConfig.httpDefaultHost));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http != null ? http.getPort() : KafkaBridgeHttpConfig.httpDefaultPort)));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED, String.valueOf(amqpEnabled)));
         //TODO amqp configuration
