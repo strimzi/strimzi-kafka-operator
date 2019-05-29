@@ -15,13 +15,15 @@ Decreasing the size of persistent volumes is currently not possible.
 
 * An {ProductPlatformName} cluster with support for volume resizing
 * The Cluster Operator is running.
-* A storage class which supports volume expansion
-* A Kafka cluster using persistent volumes created using a given storage class
+* A Kafka cluster using persistent volumes created using a storage class
+** The storage class has to support volume expansion
 
 .Procedure
 
-. Edit the `spec.kafka.storage` or `spec.zookeeper.storage` property in the `Kafka` resource.
-Increase the volume size.
+. In a `Kafka` resource, increase the size of the persistent volume allocated to the Kafka cluster, the Zookeeper cluster, or both.
+* To increase the volume size allocated to the Kafka cluster, edit the `spec.kafka.storage` property.
+* To increase the volume size allocated to the Zookeeper cluster, edit the `spec.zookeeper.storage` property.
++
 For example, to increase the volume size from `1000Gi` to `2000Gi`:
 +
 [source,yaml,subs=attributes+]
@@ -55,9 +57,9 @@ On {OpenShiftName}, use `oc apply`:
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
 +
-{ProductPlatformName} increases the capacity of the selected persistent volumes in response to a request from the Cluster Operator. When the resizing is complete, the Cluster Operator restarts all pods that use the resized persistent volumes. This happens automatically.
-. Once the persistent volumes are resized, the pods using them need to be restarted in order to resize the file system.
-The restart is performed automatically by the Cluster Operator.
+{ProductPlatformName} increases the capacity of the selected persistent volumes in response to a request from the Cluster Operator.
+When the resizing is complete, the Cluster Operator restarts all pods that use the resized persistent volumes.
+This happens automatically.
 
 .Additional resources
 

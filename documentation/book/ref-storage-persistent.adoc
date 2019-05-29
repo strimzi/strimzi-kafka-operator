@@ -78,6 +78,8 @@ You can specify a different storage class for one or more Kafka brokers, instead
 This is useful if, for example, storage classes are restricted to different availability zones or data centers.
 You can use the `overrides` field for this purpose.
 
+In this example, the default storage class is named `my-storage-class`:
+
 .Example {ProductName} cluster using storage class overrides
 [source,yaml,subs="attributes+"]
 ----
@@ -107,7 +109,6 @@ spec:
   # ...
 ----
 
-In the example above, the default storage class is `my-storage-class`.
 As a result of the configured `overrides` property, the broker volumes use the following storage classes:
 
 * The persistent volumes of broker 0 will use `my-storage-class-zone-1a`.
