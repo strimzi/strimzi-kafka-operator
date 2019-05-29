@@ -8,8 +8,8 @@
 You can provision increased storage capacity by increasing the size of the persistent volumes used by an existing {ProductName} cluster.
 Resizing persistent volumes is supported in clusters that use either a single persistent volume or multiple persistent volumes in a JBOD storage configuration.
 
-NOTE: You can increase but not decrease the size of persistent volumes. Decreasing the size of persistent volumes is not currently supported in {ProductPlatformName}.
-Decreasing the size of persistent volumes is currently not possible.
+NOTE: You can increase but not decrease the size of persistent volumes.
+Decreasing the size of persistent volumes is not currently supported in {ProductPlatformName}.
 
 .Prerequisites
 
