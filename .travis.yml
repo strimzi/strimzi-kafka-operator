@@ -25,6 +25,7 @@ env:
   - TAG=${TRAVIS_TAG:-latest}
   - BRANCH=${TRAVIS_BRANCH:-master}
   - DOCKER_ORG=strimzici
+  - DOCKER_REGISTRY=docker.io
   - TEST_CLUSTER=minikube
   - TEST_KUBECTL_VERSION=v1.10.0
   - TEST_NSENTER_VERSION=2.32

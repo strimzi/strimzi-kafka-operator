@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +27,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -35,6 +38,8 @@ import static io.strimzi.test.BaseITST.kubeClient;
 public class StUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StUtils.class);
+    private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile(":([^:]*?)(?<kafka>[-|_]kafka[-|_])(?<version>[0-9.])");
+    private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
     private StUtils() { }
 
@@ -340,5 +345,38 @@ public class StUtils {
         TestUtils.waitFor("Waits for Kafka topic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS, () ->
             Crds.topicOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(topicName).get() == null
         );
+    }
+
+    private static String changeOrgAndTag(String image, String registry, String newOrg, String newTag) {
+        image = image.replaceFirst("^strimzi/", registry + "/" + newOrg + "/");
+        Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
+        StringBuffer sb = new StringBuffer();
+        if (m.find()) {
+            m.appendReplacement(sb, ":" + newTag + m.group("kafka") + m.group("version"));
+            m.appendTail(sb);
+            image = sb.toString();
+        } else {
+            image = image.replaceFirst(":[^:]+$", ":" + newTag);
+        }
+        return image;
+    }
+
+    /**
+     * The method to configure docker image to use proper docker registry, docker org and docker tag.
+     * @param image Image that needs to be changed
+     * @return Updated docker image with a proper registry, org, tag
+     */
+    public static String changeOrgAndTag(String image) {
+        return changeOrgAndTag(image, Environment.STRIMZI_REGISTRY, Environment.STRIMZI_ORG, Environment.STRIMZI_TAG);
+    }
+
+    public static String changeOrgAndTagInImageMap(String imageMap) {
+        Matcher m = VERSION_IMAGE_PATTERN.matcher(imageMap);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            m.appendReplacement(sb, m.group("version") + "=" + StUtils.changeOrgAndTag(m.group("image")));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 }

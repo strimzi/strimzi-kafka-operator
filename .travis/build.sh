@@ -55,7 +55,7 @@ echo "Docker push with registry $DOCKER_REGISTRY and org $DOCKER_ORG under tag $
 make docker_push
 
 OLD_DOCKER_ORG=$DOCKER_ORG
-export DOCKER_ORG="localhost:5000/strimzici"
+export DOCKER_ORG="strimzici"
 
 echo "Running systemtests"
 ./systemtest/scripts/run_tests.sh ${SYSTEMTEST_ARGS}

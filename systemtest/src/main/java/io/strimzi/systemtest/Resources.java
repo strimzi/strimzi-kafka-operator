@@ -76,16 +76,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import static io.strimzi.test.TestUtils.changeOrgAndTag;
+import static io.strimzi.systemtest.utils.StUtils.changeOrgAndTag;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class Resources extends AbstractResources {
 
-    private static final Environment ENVIRONMENT = Environment.getInstance();
-
     private static final Logger LOGGER = LogManager.getLogger(Resources.class);
-    private static final String KAFKA_VERSION = ENVIRONMENT.getStKafkaVersionEnv();
+    private static final String KAFKA_VERSION = Environment.ST_KAFKA_VERSION;
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = "../install/cluster-operator/050-Deployment-strimzi-cluster-operator.yaml";
 
@@ -245,8 +243,8 @@ public class Resources extends AbstractResources {
     }
 
     public KafkaBuilder defaultKafka(String name, int kafkaReplicas, int zookeeperReplicas) {
-        String tOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
-        String uOImage = TestUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
+        String tOImage = StUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE"));
+        String uOImage = StUtils.changeOrgAndTag(getImageValueFromCO("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE"));
 
         return new KafkaBuilder()
                     .withMetadata(new ObjectMetaBuilder().withName(name).withNamespace(client().getNamespace()).build())
@@ -645,23 +643,23 @@ public class Resources extends AbstractResources {
         for (EnvVar envVar : envVars) {
             switch (envVar.getName()) {
                 case "STRIMZI_LOG_LEVEL":
-                    envVar.setValue(ENVIRONMENT.getStrimziLogLevel());
+                    envVar.setValue(Environment.STRIMZI_LOG_LEVEL);
                     break;
                 case "STRIMZI_NAMESPACE":
                     envVar.setValue(namespace);
                     envVar.setValueFrom(null);
                     break;
                 case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
-                    envVar.setValue(ENVIRONMENT.getStrimziFullReconciliationInterval());
+                    envVar.setValue(Environment.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
                     break;
                 case "STRIMZI_OPERATION_TIMEOUT_MS":
                     envVar.setValue(operationTimeout);
                     break;
                 default:
                     if (envVar.getName().contains("STRIMZI_DEFAULT")) {
-                        envVar.setValue(TestUtils.changeOrgAndTag(envVar.getValue()));
+                        envVar.setValue(StUtils.changeOrgAndTag(envVar.getValue()));
                     } else if (envVar.getName().contains("IMAGES")) {
-                        envVar.setValue(TestUtils.changeOrgAndTagInImageMap(envVar.getValue()));
+                        envVar.setValue(StUtils.changeOrgAndTagInImageMap(envVar.getValue()));
                     }
             }
         }
@@ -677,7 +675,7 @@ public class Resources extends AbstractResources {
                     .editTemplate()
                         .editSpec()
                             .editFirstContainer()
-                                .withImage(TestUtils.changeOrgAndTag(coImage))
+                                .withImage(StUtils.changeOrgAndTag(coImage))
                             .endContainer()
                         .endSpec()
                     .endTemplate()
@@ -885,7 +883,7 @@ public class Resources extends AbstractResources {
                 .endMetadata()
                 .withNewSpec()
                 .withRules(new IngressRuleBuilder()
-                        .withHost(appName + "." +  (ENVIRONMENT.getKubernetesDomain().equals(".nip.io") ?  new URL(url).getHost() + ".nip.io" : ENVIRONMENT.getKubernetesDomain()))
+                        .withHost(appName + "." +  (Environment.KUBERNETES_DOMAIN.equals(".nip.io") ?  new URL(url).getHost() + ".nip.io" : Environment.KUBERNETES_DOMAIN))
                         .withNewHttp()
                         .withPaths(path)
                         .endHttp()
