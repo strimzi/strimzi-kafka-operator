@@ -22,7 +22,7 @@ This procedure describes how to upgrade a Cluster Operator deployment to a later
 
 . Update the Cluster Operator.
 +
-Modify the installation files according to the namespace the Cluster Operator is running in.
+Modify the installation files according to the {Namespace} the Cluster Operator is running in.
 +
 include::frag-cluster-operator-namespace-sed.adoc[]
 +
