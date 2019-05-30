@@ -1,0 +1,16 @@
+---
+apiVersion: "kafka.strimzi.io/v1alpha1"
+kind: "KafkaBridge"
+metadata:
+  name: "test-kafka-bridge"
+spec:
+  replicas: 1
+  image: "foo"
+  kafka:
+    bootstrapServers: "my-cluster-kafka:9092"
+  consumer:
+    config:
+      foo: "bur"
+  producer:
+    config:
+      foo: "buz"

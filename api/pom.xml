@@ -177,6 +177,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaTopic</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaUser</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaBridge</argument>
                             </arguments>
                             <workingDirectory>${pom.basedir}${file.separator}..${file.separator}documentation${file.separator}book</workingDirectory>
                         </configuration>

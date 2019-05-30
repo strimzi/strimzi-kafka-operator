@@ -1,0 +1,14 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaBridge
+metadata:
+  name: test-kafka-bridge
+spec:
+  replicas: 1
+  kafka:
+    bootstrapServers: my-cluster-kafka:9092
+    authentication:
+      type: scram-sha-512
+      username: johndoe
+      passwordSecret:
+        secretName: my-user-secret
+        password: password

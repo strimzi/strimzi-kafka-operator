@@ -1,0 +1,10 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaBridge
+metadata:
+  name: test-kafka-bridge
+spec:
+  replicas: 1
+  kafka:
+    bootstrapServers: my-cluster-kafka:9092
+  extra: true
+extra: true

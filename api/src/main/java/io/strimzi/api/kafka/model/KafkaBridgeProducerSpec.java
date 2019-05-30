@@ -5,8 +5,11 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
+
+import java.util.Map;
 
 @Buildable(
         editableEnabled = false,
@@ -18,4 +21,9 @@ import lombok.EqualsAndHashCode;
 public class KafkaBridgeProducerSpec extends KafkaBridgeClientSpec {
     private static final long serialVersionUID = 1L;
 
+    @Override
+    @Description("The Kafka bridge producer config")
+    public Map<String, Object> getConfig() {
+        return config;
+    }
 }

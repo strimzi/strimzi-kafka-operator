@@ -1,0 +1,43 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaBridge
+metadata:
+  name: test-kafka-bridge
+spec:
+  image: foo
+  replicas: 1
+  kafka:
+    bootstrapServers: my-cluster-kafka:9092
+  template:
+    deployment:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
+    pod:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
+      imagePullSecrets:
+        - name: some-secret
+        - name: some-other-secret
+      securityContext:
+        runAsUser: 1000001
+        runAsGroup: 1000001
+        fsGroup: 0
+      terminationGracePeriodSeconds: 30
+    podDisruptionBudget:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
+      maxUnavailable: 1
