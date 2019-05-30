@@ -1,0 +1,36 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-configuration.adoc
+
+[id='ref-kafka-bridge-consumer-configuration-{context}']
+= Kafka Bridge Consumer configuration
+
+Kafka Bridge consumer is configured using the properties in `KafkaBridge.spec.consumer`.
+This property contains the Kafka Bridge consumer configuration options as keys.
+The values can be one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+You can specify and configure the options listed in the {ApacheKafkaConsumerConfig}.
+
+IMPORTANT: The Cluster Operator does not validate keys or values in the `config` object provided.
+When an invalid configuration is provided, the Kafka Bridge cluster might not start or might become unstable.
+In this circumstance, fix the configuration in the `KafkaBridge.spec.consumer.config` object, then the Cluster Operator can roll out the new configuration to all Kafka Bridge nodes.
+
+.Example Kafka Bridge consumer configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersionPrev}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  consumer:
+    config:
+      auto.offset.reset: earliest
+      enable.auto.commit: true
+  # ...
+----

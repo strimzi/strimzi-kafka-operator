@@ -1,0 +1,27 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-configuration.adoc
+
+[id='ref-kafka-bridge-consumer-configuration-{context}']
+= Kafka Bridge Consumer configuration
+
+Kafka Bridge HTTP configuration is set using the properties in `KafkaBridge.spec.http`.
+This property contains the Kafka Bridge HTTP configuration options.
+
+* `host`
+* `port`
+
+.Example Kafka Bridge HTTP configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersionPrev}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  http:
+    port: 8080
+    host: 0.0.0.0
+  # ...
+----
