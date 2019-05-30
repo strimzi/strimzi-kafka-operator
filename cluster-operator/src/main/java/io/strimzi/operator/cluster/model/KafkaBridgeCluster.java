@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018, Strimzi authors.
+ * Copyright 2017-2019, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.cluster.model;
@@ -32,6 +32,8 @@ import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeTls;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.operator.common.model.Labels;
 
@@ -60,6 +62,10 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     protected static final boolean DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED = false;
+
+    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
+            .withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
+            .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
 
     // Kafka Bridge configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED = "KAFKA_BRIDGE_METRICS_ENABLED";
@@ -113,11 +119,9 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/ready";
-        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.livenessPath = "/healthy";
-        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
+        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/bridge";
@@ -152,6 +156,13 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setKafkaBridgeConfiguration(spec.getKafka());
         kafkaBridgeCluster.setKafkaConsumerConfiguration(spec.getConsumer());
         kafkaBridgeCluster.setKafkaProducerConfiguration(spec.getProducer());
+        if (kafkaBridge.getSpec().getLivenessProbe() != null) {
+            kafkaBridgeCluster.setLivenessProbe(kafkaBridge.getSpec().getLivenessProbe());
+        }
+
+        if (kafkaBridge.getSpec().getReadinessProbe() != null) {
+            kafkaBridgeCluster.setLivenessProbe(kafkaBridge.getSpec().getReadinessProbe());
+        }
 
         Map<String, Object> metrics = spec.getMetrics();
         if (metrics != null) {
@@ -338,8 +349,8 @@ public class KafkaBridgeCluster extends AbstractModel {
                 .withCommand("/kafka_bridge_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
+                .withLivenessProbe(ModelUtils.createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(ModelUtils.createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessProbeOptions))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))

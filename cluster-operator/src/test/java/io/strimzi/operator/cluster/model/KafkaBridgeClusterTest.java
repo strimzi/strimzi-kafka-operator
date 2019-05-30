@@ -121,20 +121,20 @@ public class KafkaBridgeClusterTest {
 
         assertEquals("strimzi/kafka-bridge:latest", kbc.image);
         assertEquals(KafkaBridgeCluster.DEFAULT_REPLICAS, kbc.replicas);
-        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY, kbc.readinessInitialDelay);
-        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kbc.readinessTimeout);
-        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY, kbc.livenessInitialDelay);
-        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kbc.livenessTimeout);
+        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY, kbc.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kbc.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY, kbc.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kbc.livenessProbeOptions.getTimeoutSeconds());
     }
 
     @Test
     public void testFromCrd() {
         assertEquals(replicas, kbc.replicas);
         assertEquals(image, kbc.image);
-        assertEquals(healthDelay, kbc.readinessInitialDelay);
-        assertEquals(healthTimeout, kbc.readinessTimeout);
-        assertEquals(healthDelay, kbc.livenessInitialDelay);
-        assertEquals(healthTimeout, kbc.livenessTimeout);
+        assertEquals(healthDelay, kbc.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(healthTimeout, kbc.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(healthDelay, kbc.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(healthTimeout, kbc.livenessProbeOptions.getTimeoutSeconds());
     }
 
     @Test

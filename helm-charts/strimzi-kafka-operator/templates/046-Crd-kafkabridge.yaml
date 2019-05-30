@@ -160,18 +160,30 @@ spec:
             livenessProbe:
               type: object
               properties:
+                failureThreshold:
+                  type: integer
                 initialDelaySeconds:
                   type: integer
                   minimum: 0
+                periodSeconds:
+                  type: integer
+                successThreshold:
+                  type: integer
                 timeoutSeconds:
                   type: integer
                   minimum: 0
             readinessProbe:
               type: object
               properties:
+                failureThreshold:
+                  type: integer
                 initialDelaySeconds:
                   type: integer
                   minimum: 0
+                periodSeconds:
+                  type: integer
+                successThreshold:
+                  type: integer
                 timeoutSeconds:
                   type: integer
                   minimum: 0
