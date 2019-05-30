@@ -38,6 +38,8 @@ import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.KafkaConnectTls;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
@@ -49,6 +51,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static io.strimzi.operator.cluster.model.ModelUtils.createHttpProbe;
 
 public class KafkaConnectCluster extends AbstractModel {
 
@@ -67,8 +71,10 @@ public class KafkaConnectCluster extends AbstractModel {
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 3;
-    protected static final int DEFAULT_HEALTHCHECK_DELAY = 60;
-    protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    static final int DEFAULT_HEALTHCHECK_DELAY = 60;
+    static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
+            .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
     protected static final boolean DEFAULT_KAFKA_CONNECT_METRICS_ENABLED = false;
 
     // Kafka Connect configuration keys (EnvVariables)
@@ -107,11 +113,9 @@ public class KafkaConnectCluster extends AbstractModel {
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
-        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";
-        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isMetricsEnabled = DEFAULT_KAFKA_CONNECT_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
@@ -164,12 +168,10 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
         kafkaConnect.setJvmOptions(spec.getJvmOptions());
         if (spec.getReadinessProbe() != null) {
-            kafkaConnect.setReadinessInitialDelay(spec.getReadinessProbe().getInitialDelaySeconds());
-            kafkaConnect.setReadinessTimeout(spec.getReadinessProbe().getTimeoutSeconds());
+            kafkaConnect.setReadinessProbe(spec.getReadinessProbe());
         }
         if (spec.getLivenessProbe() != null) {
-            kafkaConnect.setLivenessInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
-            kafkaConnect.setLivenessTimeout(spec.getLivenessProbe().getTimeoutSeconds());
+            kafkaConnect.setLivenessProbe(spec.getLivenessProbe());
         }
 
         Map<String, Object> metrics = spec.getMetrics();
@@ -457,8 +459,8 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withCommand("/opt/kafka/kafka_connect_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessInitialDelay, livenessTimeout))
-                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout))
+                .withLivenessProbe(createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessProbeOptions))
+                .withReadinessProbe(createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessProbeOptions))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))

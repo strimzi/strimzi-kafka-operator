@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
@@ -288,8 +287,14 @@ public class KafkaClusterTest {
         assertEquals(image, containers.get(0).getImage());
         assertEquals(new Integer(healthTimeout), containers.get(0).getLivenessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getLivenessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(10), containers.get(0).getLivenessProbe().getFailureThreshold());
+        assertEquals(new Integer(4), containers.get(0).getLivenessProbe().getSuccessThreshold());
+        assertEquals(new Integer(33), containers.get(0).getLivenessProbe().getPeriodSeconds());
         assertEquals(new Integer(healthTimeout), containers.get(0).getReadinessProbe().getTimeoutSeconds());
         assertEquals(new Integer(healthDelay), containers.get(0).getReadinessProbe().getInitialDelaySeconds());
+        assertEquals(new Integer(10), containers.get(0).getReadinessProbe().getFailureThreshold());
+        assertEquals(new Integer(4), containers.get(0).getReadinessProbe().getSuccessThreshold());
+        assertEquals(new Integer(33), containers.get(0).getReadinessProbe().getPeriodSeconds());
         assertEquals("foo=bar" + LINE_SEPARATOR, AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
         assertEquals(KafkaCluster.DEFAULT_KAFKA_GC_LOG_ENABLED, AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED));
         assertEquals(kc.dataVolumeMountPaths.stream().map(volumeMount -> volumeMount.getMountPath()).collect(Collectors.joining(",")),
@@ -434,15 +439,6 @@ public class KafkaClusterTest {
     public void withTolerations() throws IOException {
         resourceTester.assertDesiredResource("-SS.yaml",
             kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getTolerations());
-    }
-
-    @Test
-    public void testCreateTcpSocketProbe()  {
-        Probe probe = kc.createTcpSocketProbe(1234, 10, 20);
-
-        assertEquals(new Integer(1234), probe.getTcpSocket().getPort().getIntVal());
-        assertEquals(new Integer(10), probe.getInitialDelaySeconds());
-        assertEquals(new Integer(20), probe.getTimeoutSeconds());
     }
 
     @Test

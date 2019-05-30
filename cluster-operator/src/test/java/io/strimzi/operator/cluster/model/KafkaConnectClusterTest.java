@@ -139,10 +139,10 @@ public class KafkaConnectClusterTest {
 
         assertEquals("strimzi/kafka-connect:latest-kafka-2.0.0", kc.image);
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, kc.replicas);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessInitialDelay);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessTimeout);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessInitialDelay);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.livenessTimeout);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.livenessProbeOptions.getTimeoutSeconds());
         assertEquals(defaultConfiguration, kc.getConfiguration().asOrderedProperties());
     }
 
@@ -150,10 +150,10 @@ public class KafkaConnectClusterTest {
     public void testFromCrd() {
         assertEquals(replicas, kc.replicas);
         assertEquals(image, kc.image);
-        assertEquals(healthDelay, kc.readinessInitialDelay);
-        assertEquals(healthTimeout, kc.readinessTimeout);
-        assertEquals(healthDelay, kc.livenessInitialDelay);
-        assertEquals(healthTimeout, kc.livenessTimeout);
+        assertEquals(healthDelay, kc.readinessProbeOptions.getInitialDelaySeconds());
+        assertEquals(healthTimeout, kc.readinessProbeOptions.getTimeoutSeconds());
+        assertEquals(healthDelay, kc.livenessProbeOptions.getInitialDelaySeconds());
+        assertEquals(healthTimeout, kc.livenessProbeOptions.getTimeoutSeconds());
         assertEquals(expectedConfiguration, kc.getConfiguration().asOrderedProperties());
         assertEquals(bootstrapServers, kc.bootstrapServers);
     }
