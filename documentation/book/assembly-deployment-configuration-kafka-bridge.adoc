@@ -29,15 +29,7 @@ include::assembly-kafka-bridge-authentication.adoc[leveloffset=+1]
 
 include::assembly-kafka-bridge-configuration.adoc[leveloffset=+1]
 
-//include::assembly-resource-limits-and-requests.adoc[leveloffset=+1]
-
-//include::assembly-logging.adoc[leveloffset=+1]
-
 include::assembly-healthchecks.adoc[leveloffset=+1]
-
-//include::assembly-metrics.adoc[leveloffset=+1]
-
-//include::assembly-jvm-options.adoc[leveloffset=+1]
 
 include::assembly-configuring-container-images.adoc[leveloffset=+1]
 
