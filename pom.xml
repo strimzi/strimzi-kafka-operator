@@ -86,7 +86,7 @@
         <kafka.version>2.2.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.8</scala-library.version>
-        <zookeeper.version>3.4.13</zookeeper.version>
+        <zookeeper.version>3.4.14</zookeeper.version>
         <mockito.version>2.23.4</mockito.version>
         <jsonpath.version>2.4.0</jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
