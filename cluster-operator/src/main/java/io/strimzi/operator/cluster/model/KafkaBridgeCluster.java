@@ -112,10 +112,10 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.serviceName = name + "-service";
         this.ancillaryConfigName = logAndMetricsConfigName(cluster);
         this.replicas = DEFAULT_REPLICAS;
-        this.readinessPath = "/readiness";
+        this.readinessPath = "/ready";
         this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
-        this.livenessPath = "/readiness";
+        this.livenessPath = "/healthy";
         this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
         this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED;
@@ -216,7 +216,6 @@ public class KafkaBridgeCluster extends AbstractModel {
             kafkaBridgeCluster.setHttpEnabled(true);
             kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
         } else {
-            // TODO amqp
             log.warn("No protocol specified.");
         }
         kafkaBridgeCluster.setOwnerReference(kafkaBridge);

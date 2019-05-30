@@ -122,7 +122,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.kafka = kafka;
     }
 
-    @Description("Configures Kafka Producer.")
+    @Description("Kafka producer related configuration")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaBridgeProducerSpec getProducer() {
         return producer;
@@ -132,7 +132,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.producer = producer;
     }
 
-    @Description("Configures Kafka Consumer.")
+    @Description("Kafka consumer related configuration.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaBridgeConsumerSpec getConsumer() {
         return consumer;

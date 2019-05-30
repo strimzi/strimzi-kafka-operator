@@ -491,12 +491,12 @@ public class ResourceUtils {
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()
-                .withImage(image)
-                .withReplicas(replicas)
-                .withKafka(kafkaConf)
-                .withProducer(producer)
-                .withConsumer(consumer)
-                .withMetrics(metricsCm)
+                    .withImage(image)
+                    .withReplicas(replicas)
+                    .withKafka(kafkaConf)
+                    .withProducer(producer)
+                    .withConsumer(consumer)
+                    .withMetrics(metricsCm)
                 .endSpec()
                 .build();
     }

@@ -1753,9 +1753,9 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 |kafka           1.2+<.<|Configures Kafka Bridge.
 |xref:type-KafkaBridgeConfigurationSpec-{context}[`KafkaBridgeConfigurationSpec`]
-|consumer        1.2+<.<|Configures Kafka Consumer.
+|consumer        1.2+<.<|Kafka consumer related configuration.
 |xref:type-KafkaBridgeConsumerSpec-{context}[`KafkaBridgeConsumerSpec`]
-|producer        1.2+<.<|Configures Kafka Producer.
+|producer        1.2+<.<|Kafka producer related configuration.
 |xref:type-KafkaBridgeProducerSpec-{context}[`KafkaBridgeProducerSpec`]
 |resources       1.2+<.<|**Currently not supported** Resource constraints (limits and requests).
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
