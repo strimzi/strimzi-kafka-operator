@@ -69,6 +69,12 @@ public class StUtils {
         return podSnapshot(selector);
     }
 
+    /**
+     * Method to check that all pods for expected StatefulSet were rolled
+     * @param name StatefulSet name
+     * @param snapshot Snapshot of pods for StatefulSet before the rolling update
+     * @return true when the pods for StatefulSet are recreated
+     */
     public static boolean ssHasRolled(String name, Map<String, String> snapshot) {
         boolean log = true;
         if (log) {
@@ -116,6 +122,12 @@ public class StUtils {
         return true;
     }
 
+    /**
+     * Method to check that all pods for expected Deployment were rolled
+     * @param name Deployment name
+     * @param snapshot Snapshot of pods for Deployment before the rolling update
+     * @return true when the pods for Deployment are recreated
+     */
     public static boolean depHasRolled(String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}", new TreeMap(snapshot));
         Map<String, String> map = podSnapshot(kubeClient().getDeployment(name).getSpec().getSelector());
@@ -131,13 +143,16 @@ public class StUtils {
         }
     }
 
+    /**
+     *  Method to wait when StatefulSet will be recreated after rolling update
+     * @param name StatefulSet name
+     * @param expectedPods Expected number of pods
+     * @param snapshot Snapshot of pods for StatefulSet before the rolling update
+     * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
+     */
     public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
-        return waitTillSsHasRolled(name, expectedPods, snapshot, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT);
-    }
-
-    public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot, long timeout) {
         TestUtils.waitFor("SS roll of " + name,
-                Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, timeout, () -> {
+                Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> {
                 try {
                     return ssHasRolled(name, snapshot);
                 } catch (Exception e) {
@@ -149,6 +164,13 @@ public class StUtils {
         return ssSnapshot(name);
     }
 
+    /**
+     * Method to wait when Deployment will be recreated after rolling update
+     * @param name Deployment name
+     * @param expectedPods Expected number of pods
+     * @param snapshot Snapshot of pods for Deployment before the rolling update
+     * @return The snapshot of the Deployment after rolling update with Uid for every pod
+     */
     public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
         TestUtils.waitFor("Deployment roll of " + name,
                 Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT, () -> depHasRolled(name, snapshot));
@@ -306,6 +328,11 @@ public class StUtils {
         );
     }
 
+    /**
+     * The method to wait when all pods for Kafka cluster will be deleted.
+     * To wait for the cluster to be updated, the following methods must be used: {@link #ssHasRolled(String, Map)}, {@link #waitTillSsHasRolled(String, int, Map)} )}
+     * @param clusterName Cluster name where pods should be deleted
+     */
     public static void waitForKafkaClusterPodsDeletion(String clusterName) {
         LOGGER.info("Waiting when all pods in Kafka cluster {} will be deleted", clusterName);
         kubeClient().listPods().stream()

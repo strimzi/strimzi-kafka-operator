@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
@@ -113,7 +114,6 @@ class KafkaST extends MessagingBaseST {
 
     @Test
     void testKafkaAndZookeeperScaleUpScaleDown() throws Exception {
-        long kafkaRollingUpdateTimeout = 600000;
         operationID = startTimeMeasuring(Operation.SCALE_UP);
         testMethodResources().kafkaEphemeral(CLUSTER_NAME, 3)
             .editSpec()
@@ -143,7 +143,7 @@ class KafkaST extends MessagingBaseST {
         String kafkaSsName = kafkaStatefulSetName(CLUSTER_NAME);
         Map<String, String> kafkaPods = StUtils.ssSnapshot(kafkaSsName);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(scaleTo));
-        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods, kafkaRollingUpdateTimeout);
+        kafkaPods = StUtils.waitTillSsHasRolled(kafkaSsName, scaleTo, kafkaPods);
 
         String firstTopicName = "test-topic";
         testMethodResources().topic(CLUSTER_NAME, firstTopicName, scaleTo, scaleTo).done();
@@ -163,7 +163,7 @@ class KafkaST extends MessagingBaseST {
         uid = kubeClient().getPodUid(newPodName);
         operationID = startTimeMeasuring(Operation.SCALE_DOWN);
         replaceKafkaResource(CLUSTER_NAME, k -> k.getSpec().getKafka().setReplicas(initialReplicas));
-        StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods, kafkaRollingUpdateTimeout);
+        StUtils.waitTillSsHasRolled(kafkaSsName, initialReplicas, kafkaPods);
 
         final int finalReplicas = kubeClient().getStatefulSet(kafkaClusterName(CLUSTER_NAME)).getStatus().getReplicas();
         assertEquals(initialReplicas, finalReplicas);
@@ -880,7 +880,7 @@ class KafkaST extends MessagingBaseST {
                 .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
 
         // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
             () -> getAnnotationsForSS(kafkaClusterName(CLUSTER_NAME)) == null
                 || !getAnnotationsForSS(kafkaClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
 
@@ -901,7 +901,7 @@ class KafkaST extends MessagingBaseST {
                 .getMetadata().getAnnotations().get("strimzi.io/manual-rolling-update")));
 
         // wait when annotation will be removed
-        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
+        waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, WAIT_FOR_ROLLING_UPDATE_TIMEOUT,
             () -> getAnnotationsForSS(zookeeperClusterName(CLUSTER_NAME)) == null
                 || !getAnnotationsForSS(zookeeperClusterName(CLUSTER_NAME)).containsKey("strimzi.io/manual-rolling-update"));
 
