@@ -1,0 +1,8 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-kafka-bridge.adoc
+
+[id='con-supported-data-formats-kafka-bridge-{context}']
+= Supported data formats
+
+Content goes here.

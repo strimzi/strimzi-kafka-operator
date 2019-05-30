@@ -1,0 +1,8 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-kafka-bridge.adoc
+
+[id='con-sending-requests-to-kafka-bridge-{context}']
+= Sending requests to the {ProductName} Kafka Bridge
+
+Content goes here.

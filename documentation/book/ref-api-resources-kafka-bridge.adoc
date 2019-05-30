@@ -1,0 +1,8 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-kafka-bridge.adoc
+
+[id='ref-api-resources-kafka-bridge-{context}']
+= {ProductName} Kafka Bridge API resources
+
+Content goes here.

@@ -1,0 +1,8 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-kafka-bridge.adoc
+
+[id='proc-using-port-forwarding-kafka-bridge-{context}']
+= Using port forwarding to access the {ProductName} Kafka Bridge locally
+
+Content goes here.

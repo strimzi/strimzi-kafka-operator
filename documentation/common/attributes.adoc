@@ -74,6 +74,7 @@
 
 :OperatorHub: link:https://operatorhub.io/[OperatorHub.io^]
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
+:TechPreviewFeatures: link:https://access.redhat.com/support/offerings/techpreview/[Technology Preview Features Support Scope^]
 
 // Container image names and repositories
 :DockerOrg: docker.io/strimzi
@@ -120,6 +121,7 @@
 :MetricsAppendix:
 :Downloading:
 :SecurityImg:
+:TechPreview:
 
 //EXCLUSIVE TO STRIMZI
 :sectlinks:

@@ -1,0 +1,8 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-kafka-bridge.adoc
+
+[id='con-configuring-consumer-producer-options-kafka-bridge-{context}']
+= Configuring consumer and producer options
+
+Content goes here.
