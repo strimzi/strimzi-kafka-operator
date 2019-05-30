@@ -1,0 +1,42 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-bootstrap-servers.adoc
+
+[id='proc-configuring-kafka-beridge-bootstrap-servers-{context}']
+= Configuring bootstrap servers
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `bootstrapServers` property in the `KafkaBridge` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersionPrev}
+kind: KafkaBridge
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  kafka:
+    bootstrapServers: my-cluster-kafka-bootstrap:9092
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _your-file_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _your-file_

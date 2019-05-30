@@ -1,0 +1,60 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-authentication.adoc
+
+[id='proc-configuring-kafka-bridge-authentication-tls-{context}']
+= Configuring TLS client authentication in Kafka Bridge
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+* If they exist, the name of the `Secret` with the public and private keys used for TLS Client Authentication, and the keys under which they are stored in the `Secret`
+
+.Procedure
+
+. (Optional) If they do not already exist, prepare the keys used for authentication in a file and create the `Secret`.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl create`:
+[source,shell,subs=+quotes]
+kubectl create secret generic _my-secret_ --from-file=_my-public.crt_ --from-file=_my-private.key_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc create`:
++
+[source,shell,subs=+quotes]
+oc create secret generic _my-secret_ --from-file=_my-public.crt_ --from-file=_my-private.key_
+. Edit the `authentication` property in the `KafkaBridge` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersionPrev}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  kafka:
+    authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-secret
+      certificate: my-public.crt
+      key: my-private.key
+  # ...
+----
++
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _your-file_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _your-file_

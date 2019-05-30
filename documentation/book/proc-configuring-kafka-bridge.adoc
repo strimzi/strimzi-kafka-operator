@@ -1,0 +1,50 @@
+// Module included in the following assemblies:
+//
+// assembly-kafka-bridge-configuration.adoc
+
+[id='proc-configuring-kafka-bridge-{context}']
+= Configuring Kafka Bridge
+
+.Prerequisites
+
+* An {ProductPlatformName} cluster
+* A running Cluster Operator
+
+.Procedure
+
+. Edit the `kafka`, `http`, `consumer` or `producer` property in the `KafkaBridge` resource.
+For example:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersionPrev}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  kafka:
+    bootstrapServers: my-cluster-kafka:9092
+  http:
+    port: 8080
+  consumer:
+    config:
+      auto.offset.reset: earliest
+  producer:
+    config:
+      delivery.timeout.ms: 300000
+  # ...
+----
+
+. Create or update the resource.
++
+ifdef::Kubernetes[]
+On {KubernetesName} this can be done using `kubectl apply`:
+[source,shell,subs=+quotes]
+kubectl apply -f _your-file_
++
+endif::Kubernetes[]
+On {OpenShiftName} this can be done using `oc apply`:
++
+[source,shell,subs=+quotes]
+oc apply -f _your-file_
