@@ -56,8 +56,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/bridge/bridge-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/bridge/bridge-password/";
-    protected static final String DEFAULT_BRIDGE_IMAGE = "strimzi/kafka-bridge:latest";
-
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
@@ -153,7 +151,11 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setLogging(spec.getLogging());
         kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
         kafkaBridgeCluster.setJvmOptions(spec.getJvmOptions());
-        kafkaBridgeCluster.setImage(spec.getImage() == null ? DEFAULT_BRIDGE_IMAGE : spec.getImage());
+        String image = spec.getImage();
+        if (image == null) {
+            image = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE", "strimzi/kafka-bridge:latest");
+        }
+        kafkaBridgeCluster.setImage(image);
         kafkaBridgeCluster.setReplicas(spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
         kafkaBridgeCluster.setBootstrapServers(spec.getBootstrapServers());
         kafkaBridgeCluster.setKafkaConsumerConfiguration(spec.getConsumer());
