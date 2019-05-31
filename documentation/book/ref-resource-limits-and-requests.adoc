@@ -16,6 +16,7 @@ Resource limits and requests are configured using the `resources` property in th
 * `Kafka.spec.entityOperator.tlsSidecar`
 * `KafkaConnect.spec`
 * `KafkaConnectS2I.spec`
+* `KafkaBridge.spec`
 
 .Additional resources
 * For more information about managing computing resources on {ProductPlatformName}, see {K8sManagingComputingResources}.

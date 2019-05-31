@@ -23,8 +23,7 @@ metadata:
   name: my-cluster
 spec:
   # ...
-  kafka:
-    bootstrapServers: my-cluster-kafka-bootstrap:9092
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
   # ...
 ----
 +

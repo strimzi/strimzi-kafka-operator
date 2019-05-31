@@ -12,6 +12,7 @@ Tolerations can be configured using the `tolerations` property in following reso
 * `Kafka.spec.entityOperator.template.pod`
 * `KafkaConnect.spec.template.pod`
 * `KafkaConnectS2I.spec.template.pod`
+* `KafkaBridge.spec.template.pod`
 
 The format of the `tolerations` property follows the {ProductPlatformName} specification.
 For more details, see the {K8sTolerations}.
