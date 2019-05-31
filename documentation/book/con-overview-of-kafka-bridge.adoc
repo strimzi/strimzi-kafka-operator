@@ -5,4 +5,54 @@
 [id='con-overview-of-kafka-bridge-{context}']
 = Overview of the {ProductName} Kafka Bridge
 
-Content goes here.
+The {ProductName} Kafka Bridge provides a REST API for integrating HTTP-based clients with a Kafka cluster running on {ProductPlatformName}. You can use it to integrate clients that do not have a Kafka client library and so cannot transfer data using the native Kafka protocol.
+
+The Kafka Bridge API consists of two resources -- `consumers` and `topics` -- that together provide several endpoints for interacting with Kafka consumers and producers. You can use the API to: 
+
+* Send messages to a topic or partition.
+
+* Create and delete consumers.
+
+* Subscribe consumers to topics, so that they start receiving messages from those topics.
+
+* Unsubscribe consumers from topics.
+
+* Assign partitions to consumers.
+
+* Retrieve messages from topics.
+
+* Commit a list of consumer offsets.
+
+* Perform seek operations on consumers, so that they start receiving messages from the first or last offset position, or a given offset position.
+
+For more information on these tasks, see LINK **{ProductName} Kafka Bridge API resources**.
+
+Similar to a Kafka Connect cluster, you deploy the Kafka Bridge into your {ProductPlatformName} cluster using the Cluster Operator. For deployment instructions, see LINK **Deploying the {ProductName} Kafka Bridge to OpenShift / Kubernetes**.
+
+After the Kafka Bridge is deployed, the Cluster Operator creates the following resources in your {ProductPlatformName} cluster:
+
+* A **Kafka-Bridge** `Deployment`
+* A **service-name** `Service`
+* A **pod-name** `Pod`
+
+== Supported clients
+
+You can integrate two types of clients using the Kafka Bridge:
+
+* Client applications running in the same {ProductPlatformName} cluster as the Kafka Bridge itself. These are referred to as internal clients.
+
+* Client applications running outside the {ProductPlatformName} cluster in which the Kafka Bridge is deployed. These are referred to as external clients.
+
+Internal clients can access the Kafka Bridge on the host and port defined in the `KafkaBridge` custom resource. External clients can only access the Kafka Bridge by using an {OpenShiftName} route or a LoadBalancer service that you create.
+
+For more information on configuring the host and port for the `KafkaBridge` resource, see LINK *Kafka Bridge HTTP configuration*.
+
+== Authentication and encryption
+
+Authentication and encryption between clients and the Kafka Bridge is not yet supported. This means that:
+
+* Requests sent from clients to the Kafka Bridge are not encrypted and must use HTTP rather than HTTPS.
+
+* There is no authentication mechanism between clients and the Kafka Bridge so HTTP requests are sent without authentication. 
+
+Within your {ProductPlatformName} cluster, you can configure TLS or SASL-based authentication between the Kafka Bridge and your Kafka cluster. For more information, see LINK **Connecting to Kafka brokers with Authentication**. 
