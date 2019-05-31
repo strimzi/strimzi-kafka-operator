@@ -16,12 +16,12 @@
 . (Optional) If they do not already exist, prepare the TLS certificate used in authentication in a file and create a `Secret`.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl create`:
+On {KubernetesName} use:
 [source,shell,subs=+quotes]
 kubectl create secret generic _my-secret_ --from-file=_my-file.crt_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc create`:
+On {OpenShiftName} use:
 +
 [source,shell,subs=+quotes]
 oc create secret generic _my-secret_ --from-file=_my-file.crt_
@@ -46,12 +46,12 @@ spec:
 . Create or update the resource.
 +
 ifdef::Kubernetes[]
-On {KubernetesName} this can be done using `kubectl apply`:
+On {KubernetesName} use:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 +
 endif::Kubernetes[]
-On {OpenShiftName} this can be done using `oc apply`:
+On {OpenShiftName} use:
 +
 [source,shell,subs=+quotes]
 oc apply -f _your-file_

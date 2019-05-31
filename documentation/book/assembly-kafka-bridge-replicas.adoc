@@ -15,7 +15,7 @@ The number of nodes is defined in the `KafkaBridge` resource.
 Running a Kafka Bridge cluster with multiple nodes can provide better availability and scalability.
 However, when running Kafka Bridge on {ProductPlatformName} it is not absolutely necessary to run multiple nodes of Kafka Bridge for high availability.
 When the node where Kafka Bridge is deployed to crashes, {ProductPlatformName} will automatically reschedule the Kafka Bridge pod to a different node.
-However, running Kafka Bridge can cause issues because the requests may be processed by different Kafka Bridge instances.
+However, there may be issues when running Kafka Bridge due to requests being processed by different Kafka Bridge instances.
 Each of these instances have its own state which is not shared with another instances.
 
 include::proc-configuring-kafka-bridge-replicas.adoc[leveloffset=+1]
