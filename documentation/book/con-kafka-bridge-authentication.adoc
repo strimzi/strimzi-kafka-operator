@@ -41,7 +41,7 @@ spec:
   # ...
 ----
 
-== SASL based SCRAM-SHA-512 authentication
+== SCRAM-SHA-512 authentication
 
 To configure Kafka Bridge to use SASL-based SCRAM-SHA-512 authentication, set the `type` property to `scram-sha-512`.
 This authentication mechanism requires a username and password.
@@ -69,7 +69,7 @@ spec:
   # ...
 ----
 
-== SASL based PLAIN authentication
+== SASL-based PLAIN authentication
 
 To configure Kafka Bridge to use SASL-based PLAIN authentication, set the `type` property to `plain`.
 This authentication mechanism requires a username and password.
@@ -78,7 +78,7 @@ WARNING: The SASL PLAIN mechanism will transfer the username and password across
 Only use SASL PLAIN authentication if TLS encryption is enabled.
 
 * Specify the username in the `username` property.
-* In the `passwordSecret` property, specify a link to a `Secret` containing the password. The `secretName` property contains the name of such a `Secret` and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
+* In the `passwordSecret` property, specify a link to a `Secret` containing the password. The `secretName` property contains the name the `Secret` and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
 
 IMPORTANT: Do not specify the actual password in the `password` field.
 

@@ -2,7 +2,7 @@
 //
 // assembly-kafka-bridge-configuration.adoc
 
-[id='ref-kafka-bridge-consumer-configuration-{context}']
+[id='ref-kafka-bridge-http-configuration-{context}']
 = Kafka Bridge Consumer configuration
 
 Kafka Bridge HTTP configuration is set using the properties in `KafkaBridge.spec.http`.
