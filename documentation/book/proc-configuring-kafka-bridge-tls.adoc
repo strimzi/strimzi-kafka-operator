@@ -36,11 +36,10 @@ metadata:
   name: my-bridge
 spec:
   # ...
-  kafka:
-    tls:
-      trustedCertificates:
-        - secretName: my-cluster-cluster-cert
-          certificate: ca.crt
+  tls:
+	trustedCertificates:
+	  - secretName: my-cluster-cluster-cert
+	    certificate: ca.crt
   # ...
 ----
 +

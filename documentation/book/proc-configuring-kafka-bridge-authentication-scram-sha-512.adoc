@@ -39,13 +39,12 @@ metadata:
   name: my-bridge
 spec:
   # ...
-  kafka:
-    authentication:
-      type: scram-sha-512
-      username: _<my-username>_
-      passwordSecret:
-        secretName: _<my-secret>_
-        password: _<my-password.txt>_
+  authentication:
+    type: scram-sha-512
+    username: _<my-username>_
+    passwordSecret:
+      secretName: _<my-secret>_
+      password: _<my-password.txt>_
   # ...
 ----
 +

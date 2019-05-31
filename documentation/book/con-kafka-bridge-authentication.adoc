@@ -32,13 +32,12 @@ metadata:
   name: my-cluster
 spec:
   # ...
-  kafka:
-    authentication:
-      type: tls
-      certificateAndKey:
-        secretName: my-secret
-        certificate: public.crt
-        key: private.key
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-secret
+      certificate: public.crt
+      key: private.key
   # ...
 ----
 
@@ -61,13 +60,12 @@ metadata:
   name: my-cluster
 spec:
   # ...
-  kafka:
-    authentication:
-    type: scram-sha-512
-    username: my-bridge-user
-    passwordSecret:
-      secretName: my-bridge-user
-      password: my-bridge-password-key
+  authentication:
+  type: scram-sha-512
+  username: my-bridge-user
+  passwordSecret:
+    secretName: my-bridge-user
+    password: my-bridge-password-key
   # ...
 ----
 
@@ -93,12 +91,11 @@ metadata:
   name: my-cluster
 spec:
   # ...
-  kafka:
-    authentication:
-    type: plain
-    username: my-bridge-user
-    passwordSecret:
-      secretName: my-bridge-user
-      password: my-bridge-password-key
+  authentication:
+  type: plain
+  username: my-bridge-user
+  passwordSecret:
+    secretName: my-bridge-user
+    password: my-bridge-password-key
   # ...
 ----

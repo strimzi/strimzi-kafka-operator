@@ -20,8 +20,6 @@ Configuration options that can be configured relate to:
 * Producer configuration
 * HTTP configuration
 
-These options are automatically configured by {ProductName}.
-
 include::ref-kafka-bridge-consumer-configuration.adoc[leveloffset=+1]
 
 include::ref-kafka-bridge-producer-configuration.adoc[leveloffset=+1]

@@ -36,13 +36,12 @@ metadata:
   name: my-bridge
 spec:
   # ...
-  kafka:
-    authentication:
-    type: tls
-    certificateAndKey:
-      secretName: my-secret
-      certificate: my-public.crt
-      key: my-private.key
+  authentication:
+  type: tls
+  certificateAndKey:
+    secretName: my-secret
+    certificate: my-public.crt
+    key: my-private.key
   # ...
 ----
 +
