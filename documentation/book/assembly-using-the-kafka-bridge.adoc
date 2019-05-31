@@ -21,8 +21,6 @@ include::con-configuring-consumer-producer-options-kafka-bridge.adoc[leveloffset
 
 include::con-sending-requests-to-kafka-bridge.adoc[leveloffset=+1]
 
-include::proc-using-port-forwarding-kafka-bridge.adoc[leveloffset=+1]
-
 include::ref-api-resources-kafka-bridge.adoc[leveloffset=+1]
 
 
