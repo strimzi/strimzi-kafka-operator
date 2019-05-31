@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
+import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
@@ -25,7 +26,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "http", "kafka", "consumer",
+        "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "consumer",
         "producer", "resources", "jvmOptions", "logging",
         "metrics", "livenessProbe", "readinessProbe", "template"})
 @EqualsAndHashCode
@@ -37,7 +38,9 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     private String image;
     private KafkaBridgeHttpConfig http;
-    private KafkaBridgeConfigurationSpec kafka;
+    private String bootstrapServers;
+    private KafkaBridgeTls tls;
+    private KafkaBridgeAuthentication authentication;
     private KafkaBridgeConsumerSpec consumer;
     private KafkaBridgeProducerSpec producer;
     private ResourceRequirements resources;
@@ -51,7 +54,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     @Description("The number of pods in the `Deployment`.")
     @Minimum(0)
-    @JsonProperty(required = true)
+    @DefaultValue("1")
     public int getReplicas() {
         return replicas;
     }
@@ -93,7 +96,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("**Currently not supported** Resource constraints (limits and requests).")
+    @Description("Resource constraints (limits and requests).")
     public ResourceRequirements getResources() {
         return resources;
     }
@@ -102,24 +105,34 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.resources = resources;
     }
 
-    @Override
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+    @Description("Authentication configuration for connecting to the cluster.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public KafkaBridgeAuthentication getAuthentication() {
+        return authentication;
     }
 
-    @Override
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
+    public void setAuthentication(KafkaBridgeAuthentication authentication) {
+        this.authentication = authentication;
     }
 
-    @Description("Configures Kafka Bridge.")
+    @Description("TLS configuration for connecting to the cluster.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KafkaBridgeTls getTls() {
+        return tls;
+    }
+
+    public void setTls(KafkaBridgeTls tls) {
+        this.tls = tls;
+    }
+
+    @Description("A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.")
     @JsonProperty(required = true)
-    public KafkaBridgeConfigurationSpec getKafka() {
-        return kafka;
+    public String getBootstrapServers() {
+        return bootstrapServers;
     }
 
-    public void setKafka(KafkaBridgeConfigurationSpec kafka) {
-        this.kafka = kafka;
+    public void setBootstrapServers(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
     }
 
     @Description("Kafka producer related configuration")
@@ -191,5 +204,15 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
 
     public void setReadinessProbe(Probe readinessProbe) {
         this.readinessProbe = readinessProbe;
+    }
+
+    @Override
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @Override
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

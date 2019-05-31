@@ -31,7 +31,6 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
     public static final int HTTP_DEFAULT_PORT = 8080;
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
     private int port = HTTP_DEFAULT_PORT;
-    private String host = HTTP_DEFAULT_HOST;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public KafkaBridgeHttpConfig() {
@@ -49,16 +48,6 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
 
     public void setPort(int port) {
         this.port = port;
-    }
-
-    @Description("The address of the server.")
-    @DefaultValue("0.0.0.0")
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
     }
 
     @Override

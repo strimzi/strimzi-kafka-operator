@@ -43,7 +43,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage(), e.getMessage().contains("spec.kafka in body is required"));
+            assertTrue(e.getMessage(), e.getMessage().contains("spec.bootstrapServers in body is required"));
         }
     }
 
@@ -62,8 +62,8 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         try {
             createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth-with-missing-required.yaml");
         } catch (KubeClusterException.InvalidResource e) {
-            assertTrue(e.getMessage().contains("spec.kafka.authentication.certificateAndKey.certificate in body is required"));
-            assertTrue(e.getMessage().contains("spec.kafka.authentication.certificateAndKey.key in body is required"));
+            assertTrue(e.getMessage().contains("spec.authentication.certificateAndKey.certificate in body is required"));
+            assertTrue(e.getMessage().contains("spec.authentication.certificateAndKey.key in body is required"));
         }
     }
 

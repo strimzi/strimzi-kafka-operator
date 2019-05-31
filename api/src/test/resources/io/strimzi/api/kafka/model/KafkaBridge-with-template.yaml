@@ -5,8 +5,7 @@ metadata:
 spec:
   image: foo
   replicas: 1
-  kafka:
-    bootstrapServers: my-cluster-kafka:9092
+  bootstrapServers: my-cluster-kafka:9092
   template:
     deployment:
       metadata:

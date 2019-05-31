@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.KafkaBridgeConfigurationSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridge;
@@ -101,7 +100,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     private KafkaBridgeHttpConfig http;
     private boolean httpEnabled = false;
     private boolean amqpEnabled = false;
-    private KafkaBridgeConfigurationSpec kafkaBridgeConfiguration;
+    private String bootstrapServers;
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
     private KafkaBridgeProducerSpec kafkaBridgeProducer;
 
@@ -153,7 +152,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setJvmOptions(spec.getJvmOptions());
         kafkaBridgeCluster.setImage(spec.getImage() == null ? DEFAULT_BRIDGE_IMAGE : spec.getImage());
         kafkaBridgeCluster.setReplicas(spec.getReplicas() > 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
-        kafkaBridgeCluster.setKafkaBridgeConfiguration(spec.getKafka());
+        kafkaBridgeCluster.setBootstrapServers(spec.getBootstrapServers());
         kafkaBridgeCluster.setKafkaConsumerConfiguration(spec.getConsumer());
         kafkaBridgeCluster.setKafkaProducerConfiguration(spec.getProducer());
         if (kafkaBridge.getSpec().getLivenessProbe() != null) {
@@ -170,22 +169,22 @@ public class KafkaBridgeCluster extends AbstractModel {
             kafkaBridgeCluster.setMetricsConfig(metrics.entrySet());
         }
 
-        kafkaBridgeCluster.setTls(spec.getKafka() != null ? spec.getKafka().getTls() : null);
+        kafkaBridgeCluster.setTls(spec.getTls() != null ? spec.getTls() : null);
 
-        if (spec.getKafka() != null && spec.getKafka().getAuthentication() != null)   {
-            if (spec.getKafka().getAuthentication() instanceof KafkaBridgeAuthenticationTls) {
-                KafkaBridgeAuthenticationTls auth = (KafkaBridgeAuthenticationTls) spec.getKafka().getAuthentication();
+        if (spec.getAuthentication() != null)   {
+            if (spec.getAuthentication() instanceof KafkaBridgeAuthenticationTls) {
+                KafkaBridgeAuthenticationTls auth = (KafkaBridgeAuthenticationTls) spec.getAuthentication();
                 if (auth.getCertificateAndKey() != null) {
                     kafkaBridgeCluster.setTlsAuthCertAndKey(auth.getCertificateAndKey());
-                    if (spec.getKafka().getTls() == null) {
+                    if (spec.getTls() == null) {
                         log.warn("TLS configuration missing: related TLS client authentication will not work properly");
                     }
                 } else {
                     log.warn("TLS Client authentication selected, but no certificate and key configured.");
                     throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
                 }
-            } else if (spec.getKafka().getAuthentication() instanceof KafkaBridgeAuthenticationScramSha512)    {
-                KafkaBridgeAuthenticationScramSha512 auth = (KafkaBridgeAuthenticationScramSha512) spec.getKafka().getAuthentication();
+            } else if (spec.getAuthentication() instanceof KafkaBridgeAuthenticationScramSha512)    {
+                KafkaBridgeAuthenticationScramSha512 auth = (KafkaBridgeAuthenticationScramSha512) spec.getAuthentication();
                 if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
                     kafkaBridgeCluster.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
                     kafkaBridgeCluster.setSaslMechanism(auth.getType());
@@ -193,8 +192,8 @@ public class KafkaBridgeCluster extends AbstractModel {
                     log.warn("SCRAM-SHA-512 authentication selected, but no username and password configured.");
                     throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but no username and password configured.");
                 }
-            } else if (spec.getKafka().getAuthentication() instanceof KafkaBridgeAuthenticationPlain) {
-                KafkaBridgeAuthenticationPlain auth = (KafkaBridgeAuthenticationPlain) spec.getKafka().getAuthentication();
+            } else if (spec.getAuthentication() instanceof KafkaBridgeAuthenticationPlain) {
+                KafkaBridgeAuthenticationPlain auth = (KafkaBridgeAuthenticationPlain) spec.getAuthentication();
                 if (auth.getUsername() != null && auth.getPasswordSecret() != null) {
                     kafkaBridgeCluster.setUsernameAndPassword(auth.getUsername(), auth.getPasswordSecret());
                     kafkaBridgeCluster.setSaslMechanism(auth.getType());
@@ -346,7 +345,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
-                .withCommand("/kafka_bridge_run.sh")
+                .withCommand("/opt/strimzi/bin/docker/kafka_bridge_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(ModelUtils.createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessProbeOptions))
@@ -366,12 +365,12 @@ public class KafkaBridgeCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
 
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, kafkaBridgeConfiguration.getBootstrapServers()));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG, kafkaBridgeProducer == null ? "" : new KafkaBridgeProducerConfiguration(kafkaBridgeProducer.getConfig().entrySet()).getConfiguration()));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED, String.valueOf(httpEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, http != null ? http.getHost() : KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http != null ? http.getPort() : KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED, String.valueOf(amqpEnabled)));
@@ -510,11 +509,11 @@ public class KafkaBridgeCluster extends AbstractModel {
     }
 
     /**
-     * Set Kafka Bridge configuration
-     * @param kafkaBridgeConfiguration configuration
+     * Set Bootstrap servers for connection to cluster
+     * @param bootstrapServers bootstrap servers
      */
-    protected void setKafkaBridgeConfiguration(KafkaBridgeConfigurationSpec kafkaBridgeConfiguration) {
-        this.kafkaBridgeConfiguration = kafkaBridgeConfiguration;
+    protected void setBootstrapServers(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
     }
 
 }

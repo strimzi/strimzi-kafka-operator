@@ -6,8 +6,7 @@ metadata:
 spec:
   replicas: 1
   image: "foo"
-  kafka:
-    bootstrapServers: "my-cluster-kafka:9092"
+  bootstrapServers: "my-cluster-kafka:9092"
   consumer:
     config:
       foo: "bur"

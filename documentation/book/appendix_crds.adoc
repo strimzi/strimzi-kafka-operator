@@ -1744,71 +1744,56 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 
 [options="header"]
 |====
-|Field                  |Description
-|replicas        1.2+<.<|The number of pods in the `Deployment`.
-|integer
-|image           1.2+<.<|The docker image for the pods.
-|string
-|http            1.2+<.<|The HTTP related configuration.
-|xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
-|kafka           1.2+<.<|Configures Kafka Bridge.
-|xref:type-KafkaBridgeConfigurationSpec-{context}[`KafkaBridgeConfigurationSpec`]
-|consumer        1.2+<.<|Kafka consumer related configuration.
-|xref:type-KafkaBridgeConsumerSpec-{context}[`KafkaBridgeConsumerSpec`]
-|producer        1.2+<.<|Kafka producer related configuration.
-|xref:type-KafkaBridgeProducerSpec-{context}[`KafkaBridgeProducerSpec`]
-|resources       1.2+<.<|**Currently not supported** Resource constraints (limits and requests).
-|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
-|jvmOptions      1.2+<.<|**Currently not supported** JVM Options for pods.
-|xref:type-JvmOptions-{context}[`JvmOptions`]
-|logging         1.2+<.<|**Currently not supported** Logging configuration for Mirror Maker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
-|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics         1.2+<.<|**Currently not supported** The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
-|map
-|livenessProbe   1.2+<.<|**Currently not supported** Pod liveness checking.
-|xref:type-Probe-{context}[`Probe`]
-|readinessProbe  1.2+<.<|**Currently not supported** Pod readiness checking.
-|xref:type-Probe-{context}[`Probe`]
-|template        1.2+<.<|Template for Kafka Bridge resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
-|xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
-|====
-
-[id='type-KafkaBridgeHttpConfig-{context}']
-### `KafkaBridgeHttpConfig` schema reference
-
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
-
-
-[options="header"]
-|====
-|Field        |Description
-|host  1.2+<.<|The address of the server.
-|string
-|port  1.2+<.<|The port which is the server listening on.
-|integer
-|====
-
-[id='type-KafkaBridgeConfigurationSpec-{context}']
-### `KafkaBridgeConfigurationSpec` schema reference
-
-Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
-
-
-[options="header"]
-|====
 |Field                    |Description
-|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
-|xref:type-KafkaBridgeAuthenticationTls-{context}[`KafkaBridgeAuthenticationTls`], xref:type-KafkaBridgeAuthenticationScramSha512-{context}[`KafkaBridgeAuthenticationScramSha512`], xref:type-KafkaBridgeAuthenticationPlain-{context}[`KafkaBridgeAuthenticationPlain`]
+|replicas          1.2+<.<|The number of pods in the `Deployment`.
+|integer
+|image             1.2+<.<|The docker image for the pods.
+|string
 |bootstrapServers  1.2+<.<|A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
 |string
 |tls               1.2+<.<|TLS configuration for connecting to the cluster.
 |xref:type-KafkaBridgeTls-{context}[`KafkaBridgeTls`]
+|authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain].
+|xref:type-KafkaBridgeAuthenticationTls-{context}[`KafkaBridgeAuthenticationTls`], xref:type-KafkaBridgeAuthenticationScramSha512-{context}[`KafkaBridgeAuthenticationScramSha512`], xref:type-KafkaBridgeAuthenticationPlain-{context}[`KafkaBridgeAuthenticationPlain`]
+|http              1.2+<.<|The HTTP related configuration.
+|xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
+|consumer          1.2+<.<|Kafka consumer related configuration.
+|xref:type-KafkaBridgeConsumerSpec-{context}[`KafkaBridgeConsumerSpec`]
+|producer          1.2+<.<|Kafka producer related configuration.
+|xref:type-KafkaBridgeProducerSpec-{context}[`KafkaBridgeProducerSpec`]
+|resources         1.2+<.<|Resource constraints (limits and requests).
+|xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
+|jvmOptions        1.2+<.<|**Currently not supported** JVM Options for pods.
+|xref:type-JvmOptions-{context}[`JvmOptions`]
+|logging           1.2+<.<|**Currently not supported** Logging configuration for Mirror Maker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|metrics           1.2+<.<|**Currently not supported** The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
+|map
+|livenessProbe     1.2+<.<|**Currently not supported** Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|readinessProbe    1.2+<.<|**Currently not supported** Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
+|template          1.2+<.<|Template for Kafka Bridge resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
+|xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
+|====
+
+[id='type-KafkaBridgeTls-{context}']
+### `KafkaBridgeTls` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+[options="header"]
+|====
+|Field                       |Description
+|trustedCertificates  1.2+<.<|Trusted certificates for TLS connection.
+|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
 |====
 
 [id='type-KafkaBridgeAuthenticationTls-{context}']
 ### `KafkaBridgeAuthenticationTls` schema reference
 
-Used in: xref:type-KafkaBridgeConfigurationSpec-{context}[`KafkaBridgeConfigurationSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaBridgeAuthenticationTls` from xref:type-KafkaBridgeAuthenticationScramSha512-{context}[`KafkaBridgeAuthenticationScramSha512`], xref:type-KafkaBridgeAuthenticationPlain-{context}[`KafkaBridgeAuthenticationPlain`].
@@ -1825,7 +1810,7 @@ It must have the value `tls` for the type `KafkaBridgeAuthenticationTls`.
 [id='type-KafkaBridgeAuthenticationScramSha512-{context}']
 ### `KafkaBridgeAuthenticationScramSha512` schema reference
 
-Used in: xref:type-KafkaBridgeConfigurationSpec-{context}[`KafkaBridgeConfigurationSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaBridgeAuthenticationScramSha512` from xref:type-KafkaBridgeAuthenticationTls-{context}[`KafkaBridgeAuthenticationTls`], xref:type-KafkaBridgeAuthenticationPlain-{context}[`KafkaBridgeAuthenticationPlain`].
@@ -1844,7 +1829,7 @@ It must have the value `scram-sha-512` for the type `KafkaBridgeAuthenticationSc
 [id='type-KafkaBridgeAuthenticationPlain-{context}']
 ### `KafkaBridgeAuthenticationPlain` schema reference
 
-Used in: xref:type-KafkaBridgeConfigurationSpec-{context}[`KafkaBridgeConfigurationSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 
 The `type` property is a discriminator that distinguishes the use of the type `KafkaBridgeAuthenticationPlain` from xref:type-KafkaBridgeAuthenticationTls-{context}[`KafkaBridgeAuthenticationTls`], xref:type-KafkaBridgeAuthenticationScramSha512-{context}[`KafkaBridgeAuthenticationScramSha512`].
@@ -1860,17 +1845,17 @@ It must have the value `plain` for the type `KafkaBridgeAuthenticationPlain`.
 |string
 |====
 
-[id='type-KafkaBridgeTls-{context}']
-### `KafkaBridgeTls` schema reference
+[id='type-KafkaBridgeHttpConfig-{context}']
+### `KafkaBridgeHttpConfig` schema reference
 
-Used in: xref:type-KafkaBridgeConfigurationSpec-{context}[`KafkaBridgeConfigurationSpec`]
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 
 
 [options="header"]
 |====
-|Field                       |Description
-|trustedCertificates  1.2+<.<|Trusted certificates for TLS connection.
-|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
+|Field        |Description
+|port  1.2+<.<|The port which is the server listening on.
+|integer
 |====
 
 [id='type-KafkaBridgeConsumerSpec-{context}']

@@ -65,9 +65,7 @@ public class KafkaBridgeClusterTest {
             .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
             .withImage(image)
             .withReplicas(replicas)
-            .withNewKafka()
-                .withBootstrapServers(bootstrapServers)
-            .endKafka()
+            .withBootstrapServers(bootstrapServers)
             .endSpec()
             .build();
     private final KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
@@ -191,13 +189,11 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeploymentWithTls() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                .editOrNewKafka()
-                .editOrNewTls()
-                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("new-cert.crt").build())
-                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-another-secret").withCertificate("another-cert.crt").build())
-                .endTls()
-                .endKafka()
+                    .editOrNewTls()
+                        .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                        .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("new-cert.crt").build())
+                        .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-another-secret").withCertificate("another-cert.crt").build())
+                    .endTls()
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
@@ -223,19 +219,17 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeploymentWithTlsAuth() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                .editOrNewKafka()
-                .editOrNewTls()
-                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                .endTls()
-                .withAuthentication(
-                        new KafkaBridgeAuthenticationTlsBuilder()
-                                .withNewCertificateAndKey()
-                                .withSecretName("user-secret")
-                                .withCertificate("user.crt")
-                                .withKey("user.key")
-                                .endCertificateAndKey()
-                                .build())
-                .endKafka()
+                    .editOrNewTls()
+                        .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                    .endTls()
+                    .withAuthentication(
+                            new KafkaBridgeAuthenticationTlsBuilder()
+                                    .withNewCertificateAndKey()
+                                    .withSecretName("user-secret")
+                                    .withCertificate("user.crt")
+                                    .withKey("user.key")
+                                    .endCertificateAndKey()
+                                    .build())
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
@@ -260,19 +254,17 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeploymentWithTlsSameSecret() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                .editOrNewKafka()
-                .editOrNewTls()
-                .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                .endTls()
-                .withAuthentication(
-                        new KafkaBridgeAuthenticationTlsBuilder()
-                                .withNewCertificateAndKey()
-                                .withSecretName("my-secret")
-                                .withCertificate("user.crt")
-                                .withKey("user.key")
-                                .endCertificateAndKey()
-                                .build())
-                .endKafka()
+                    .editOrNewTls()
+                        .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
+                    .endTls()
+                    .withAuthentication(
+                            new KafkaBridgeAuthenticationTlsBuilder()
+                                    .withNewCertificateAndKey()
+                                    .withSecretName("my-secret")
+                                    .withCertificate("user.crt")
+                                    .withKey("user.key")
+                                    .endCertificateAndKey()
+                                    .build())
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
@@ -287,7 +279,6 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeploymentWithScramSha512Auth() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                    .editOrNewKafka()
                     .withNewKafkaBridgeAuthenticationScramSha512()
                         .withUsername("user1")
                         .withNewPasswordSecret()
@@ -295,7 +286,6 @@ public class KafkaBridgeClusterTest {
                             .withPassword("password")
                         .endPasswordSecret()
                     .endKafkaBridgeAuthenticationScramSha512()
-                .endKafka()
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
@@ -320,7 +310,6 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeploymentWithPlainAuth() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                .editOrNewKafka()
                     .withNewKafkaBridgeAuthenticationPlain()
                         .withUsername("user1")
                         .withNewPasswordSecret()
@@ -328,7 +317,6 @@ public class KafkaBridgeClusterTest {
                             .withPassword("password")
                         .endPasswordSecret()
                     .endKafkaBridgeAuthenticationPlain()
-                .endKafka()
             .endSpec()
             .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
