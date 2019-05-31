@@ -1765,7 +1765,7 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |jvmOptions        1.2+<.<|**Currently not supported** JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|logging           1.2+<.<|**Currently not supported** Logging configuration for Mirror Maker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|logging           1.2+<.<|**Currently not supported** Logging configuration for Kafka Bridge. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics           1.2+<.<|**Currently not supported** The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map

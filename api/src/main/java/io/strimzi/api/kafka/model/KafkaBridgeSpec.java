@@ -74,7 +74,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.metrics = metrics;
     }
 
-    @Description("**Currently not supported** Logging configuration for Mirror Maker.")
+    @Description("**Currently not supported** Logging configuration for Kafka Bridge.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging;

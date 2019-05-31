@@ -149,7 +149,6 @@ public class KafkaBridgeCluster extends AbstractModel {
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         kafkaBridgeCluster.setResources(spec.getResources());
         kafkaBridgeCluster.setLogging(spec.getLogging());
-        kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
         kafkaBridgeCluster.setJvmOptions(spec.getJvmOptions());
         String image = spec.getImage();
         if (image == null) {
