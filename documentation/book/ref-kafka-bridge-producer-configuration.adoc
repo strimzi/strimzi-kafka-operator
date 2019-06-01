@@ -13,7 +13,14 @@ The values can be one of the following JSON types:
 * Number
 * Boolean
 
-You can specify and configure the options listed in the {ApacheKafkaProducerConfig}.
+Users can specify and configure the options listed in the {ApacheKafkaProducerConfig} with the exception of those options which are managed directly by {ProductName}.
+Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
+
+* `ssl.`
+* `sasl.`
+* `security.`
+* `bootstrap.servers`
+* `group.id`
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the `config` object provided.
 When an invalid configuration is provided, the Kafka Bridge cluster might not start or might become unstable.
