@@ -54,8 +54,8 @@ public class KafkaBridgeCluster extends AbstractModel {
     private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-api";
 
     private static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
-    protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/bridge/bridge-certs/";
-    protected static final String PASSWORD_VOLUME_MOUNT = "/opt/bridge/bridge-password/";
+    protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
+    protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
@@ -126,7 +126,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         this.mountPath = "/var/lib/bridge";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/bridge/custom-config/";
+        this.logAndMetricsConfigMountPath = "/opt/strimzi/custom-config/";
     }
 
     public static String kafkaBridgeClusterName(String cluster) {
@@ -149,7 +149,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         kafkaBridgeCluster.setResources(spec.getResources());
         kafkaBridgeCluster.setLogging(spec.getLogging());
-        kafkaBridgeCluster.setJvmOptions(spec.getJvmOptions());
+        kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? true : spec.getJvmOptions().isGcLoggingEnabled());
         String image = spec.getImage();
         if (image == null) {
             image = System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE", "strimzi/kafka-bridge:latest");
