@@ -230,11 +230,13 @@ public class KafkaBridgeCluster extends AbstractModel {
             kafkaBridgeCluster.setHttpEnabled(true);
             if (spec.getHttp().getPort() == HEALTH_CHECK_PORT) {
                 log.warn("HTTP port cannot be set to {}. This port is already used for heath check.", HEALTH_CHECK_PORT);
+                throw new InvalidResourceException("HTTP port cannot be set to " + HEALTH_CHECK_PORT + ". This port is already used for heath check.");
             } else {
                 kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
             }
         } else {
             log.warn("No protocol specified.");
+            throw new InvalidResourceException("No protocol for communication with Bridge specified. Use HTTP.");
         }
         kafkaBridgeCluster.setOwnerReference(kafkaBridge);
 
@@ -374,6 +376,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));
@@ -384,10 +387,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http != null ? http.getPort() : KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED, String.valueOf(amqpEnabled)));
-        //TODO amqp configuration
 
-        heapOptions(varList, 1.0, 0L);
-        jvmPerformanceOptions(varList);
 
         if (tls != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS, "true"));

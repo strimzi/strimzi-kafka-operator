@@ -21,8 +21,10 @@ import java.util.Map;
 public class KafkaBridgeConsumerSpec extends KafkaBridgeClientSpec {
     private static final long serialVersionUID = 1L;
 
+    public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, group.id, sasl., security.";
+
     @Override
-    @Description("The Kafka bridge consumer config")
+    @Description("The Kafka bridge consumer config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
         return config;
     }

@@ -1765,13 +1765,13 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |xref:type-ResourceRequirements-{context}[`ResourceRequirements`]
 |jvmOptions        1.2+<.<|**Currently not supported** JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|logging           1.2+<.<|**Currently not supported** Logging configuration for Kafka Bridge. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|logging           1.2+<.<|Logging configuration for Kafka Bridge. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics           1.2+<.<|**Currently not supported** The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map
-|livenessProbe     1.2+<.<|**Currently not supported** Pod liveness checking.
+|livenessProbe     1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
-|readinessProbe    1.2+<.<|**Currently not supported** Pod readiness checking.
+|readinessProbe    1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
 |template          1.2+<.<|Template for Kafka Bridge resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
 |xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
@@ -1854,7 +1854,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 [options="header"]
 |====
 |Field        |Description
-|port  1.2+<.<|The port which is the server listening on.
+|port  1.2+<.<|The port which is the server listening on. Avoid using port 8081 which is used for readiness checking.
 |integer
 |====
 
@@ -1867,7 +1867,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 [options="header"]
 |====
 |Field          |Description
-|config  1.2+<.<|The Kafka bridge consumer config.
+|config  1.2+<.<|The Kafka bridge consumer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl., security.
 |map
 |====
 
@@ -1880,7 +1880,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 [options="header"]
 |====
 |Field          |Description
-|config  1.2+<.<|The Kafka bridge producer config.
+|config  1.2+<.<|The Kafka bridge producer config. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
 |map
 |====
 

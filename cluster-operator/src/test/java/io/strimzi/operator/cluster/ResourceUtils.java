@@ -444,7 +444,8 @@ public class ResourceUtils {
                         .withLabels(TestUtils.map(Labels.STRIMZI_KIND_LABEL, "cluster",
                                 "my-user-label", "cromulent"))
                         .build())
-                .withNewSpec().endSpec()
+                .withNewSpec()
+                .withNewHttp(8080).endSpec()
                 .build();
     }
 

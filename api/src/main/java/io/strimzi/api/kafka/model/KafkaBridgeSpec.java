@@ -74,7 +74,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
         this.metrics = metrics;
     }
 
-    @Description("**Currently not supported** Logging configuration for Kafka Bridge.")
+    @Description("Logging configuration for Kafka Bridge.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging;
@@ -187,7 +187,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("**Currently not supported** Pod liveness checking.")
+    @Description("Pod liveness checking.")
     public Probe getLivenessProbe() {
         return livenessProbe;
     }
@@ -197,7 +197,7 @@ public class KafkaBridgeSpec implements UnknownPropertyPreserving, Serializable 
     }
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Description("**Currently not supported** Pod readiness checking.")
+    @Description("Pod readiness checking.")
     public Probe getReadinessProbe() {
         return readinessProbe;
     }

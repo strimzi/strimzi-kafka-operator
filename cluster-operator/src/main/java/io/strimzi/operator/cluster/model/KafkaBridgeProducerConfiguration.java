@@ -5,9 +5,13 @@
 
 package io.strimzi.operator.cluster.model;
 
-import java.util.Collections;
+import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
 
 
 /**
@@ -15,9 +19,12 @@ import java.util.Map;
  */
 public class KafkaBridgeProducerConfiguration extends AbstractConfiguration {
 
+    private static final List<String> FORBIDDEN_OPTIONS;
+
     private static final Map<String, String> DEFAULTS;
 
     static {
+        FORBIDDEN_OPTIONS = asList(KafkaBridgeProducerSpec.FORBIDDEN_PREFIXES.split(", "));
 
         DEFAULTS = new HashMap<>();
     }
@@ -29,6 +36,6 @@ public class KafkaBridgeProducerConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaBridgeProducerConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, Collections.EMPTY_LIST, DEFAULTS);
+        super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 }
